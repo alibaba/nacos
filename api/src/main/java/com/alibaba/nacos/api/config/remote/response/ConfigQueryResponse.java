@@ -28,6 +28,15 @@ public class ConfigQueryResponse extends Response {
     
     public static final int CONFIG_NOT_FOUND = 300;
     
+    /**
+     * Config not modified (304). Returned when the client's localMd5 matches
+     * the server-side config MD5, indicating the cached content is still valid.
+     * The response will not contain the config content in this case.
+     *
+     * @since 3.3.0
+     */
+    public static final int CONFIG_NOT_MODIFIED = 304;
+    
     public static final int CONFIG_QUERY_CONFLICT = 400;
     
     public static final int NO_RIGHT = 403;

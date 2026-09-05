@@ -177,7 +177,7 @@ inner 请求的详细规则由
 
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
-| `ConfigQueryRequest` | `ConfigQueryResponse` | read | `dataId`, `group`, `tenant`, `tag` | 查询配置内容、md5、类型、加密 key、beta/tag 元数据。 |
+| `ConfigQueryRequest` | `ConfigQueryResponse` | read | `dataId`, `group`, `tenant`, `tag`, `localMd5` | 查询配置内容、md5、类型、加密 key、beta/tag 元数据。从 Nacos 3.3 开始支持 `localMd5` 条件查询：当客户端提供的 `localMd5` 与服务端配置 md5 一致时，服务端返回 `errorCode=304`（Not-Modified），响应中不含 `content`，但包含 `md5`、`contentType`、`lastModified` 等元数据；客户端应从本地缓存恢复内容。混合版本场景下，旧版本客户端不发送 `localMd5`，服务端按原逻辑返回完整内容。 |
 | `ConfigPublishRequest` | `ConfigPublishResponse` | write | `dataId`, `group`, `tenant`, `content`, `casMd5`, `additionMap` | 发布配置或 CAS 发布配置。 |
 | `ConfigRemoveRequest` | `ConfigRemoveResponse` | write | `dataId`, `group`, `tenant`, `tag` | 删除配置。 |
 | `ConfigBatchListenRequest` | `ConfigChangeBatchListenResponse` | read | `listen`, `ConfigListenContext[]` | 添加或移除配置监听，并返回发生变化的配置。 |

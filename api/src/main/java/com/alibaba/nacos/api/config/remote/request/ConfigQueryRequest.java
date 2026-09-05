@@ -29,6 +29,17 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     private String tag;
     
     /**
+     * Local cached MD5 of the configuration content.
+     *
+     * <p>Used for 304-based conditional GET. When set and matching the
+     * server-side MD5, the server returns 304 Not-Modified without content,
+     * reducing network bandwidth and server overhead.</p>
+     *
+     * @since 3.3.0
+     */
+    private String localMd5;
+    
+    /**
      * request builder.
      *
      * @param dataId dataId
@@ -60,6 +71,26 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
      */
     public void setTag(String tag) {
         this.tag = tag;
+    }
+    
+    /**
+     * Getter method for property <tt>localMd5</tt>.
+     *
+     * @return property value of localMd5
+     * @since 3.3.0
+     */
+    public String getLocalMd5() {
+        return localMd5;
+    }
+    
+    /**
+     * Setter method for property <tt>localMd5</tt>.
+     *
+     * @param localMd5 value to be assigned to property localMd5
+     * @since 3.3.0
+     */
+    public void setLocalMd5(String localMd5) {
+        this.localMd5 = localMd5;
     }
     
     public boolean isNotify() {

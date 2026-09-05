@@ -18,6 +18,11 @@ package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.GetConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigResult;
+import com.alibaba.nacos.api.config.RemoveConfigRequest;
+import com.alibaba.nacos.api.config.RemoveConfigResult;
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -95,12 +100,15 @@ class NacosConfigServiceTest {
         ConfigResponse response = new ConfigResponse();
         response.setContent("aa");
         response.setConfigType("bb");
-        Mockito.when(mockWoker.getServerConfig(dataId, group, tenant, timeout, false))
-            .thenReturn(response);
+        Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+            eq(false), Mockito.isNull())).thenReturn(response);
+        Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+            eq(false))).thenReturn(response);
         final String config = nacosConfigService.getConfig(dataId, group, timeout);
         assertEquals("aa", config);
-        Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout,
-            false);
+        Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(eq(dataId), eq(group),
+            eq(tenant), eq((long) timeout),
+            eq(false));
         
     }
     
@@ -151,8 +159,10 @@ class NacosConfigServiceTest {
                 .thenReturn(contentFailOver);
             //form server error.
             final int timeout = 3000;
-            Mockito.when(mockWoker.getServerConfig(dataId, group, tenant, timeout, false))
-                .thenThrow(new NacosException());
+            Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+                eq(false), Mockito.isNull())).thenThrow(new NacosException());
+            Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+                eq(false))).thenThrow(new NacosException());
             
             final String config = nacosConfigService.getConfig(dataId, group, timeout);
             assertEquals(contentFailOver, config);
@@ -180,8 +190,11 @@ class NacosConfigServiceTest {
             
             //form server error.
             final int timeout = 3000;
-            Mockito.when(mockWoker.getServerConfig(dataId, group, tenant, timeout, false))
-                .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
+            Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+                eq(false), Mockito.isNull())).thenThrow(
+                    new NacosException(NacosException.NO_RIGHT, "no right"));
+            Mockito.when(mockWoker.getServerConfig(eq(dataId), eq(group), eq(tenant), eq((long) timeout),
+                eq(false))).thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
             try {
                 nacosConfigService.getConfig(dataId, group, timeout);
                 assertTrue(false);
@@ -318,15 +331,20 @@ class NacosConfigServiceTest {
         String content = "123";
         String namespace = "public";
         String type = ConfigType.getDefaultType().getType();
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content,
-            "", null, type))
-            .thenReturn(true);
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse publishResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+            Mockito.isNull(), eq(type))).thenReturn(publishResponse);
         
         final boolean b = nacosConfigService.publishConfig(dataId, group, content);
         assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1))
-            .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
+            .publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+                Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+                Mockito.isNull(), eq(type));
     }
     
     @Test
@@ -336,16 +354,20 @@ class NacosConfigServiceTest {
         String content = "123";
         String namespace = "public";
         String type = ConfigType.PROPERTIES.getType();
-        
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content,
-            "", null, type))
-            .thenReturn(true);
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse publishResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+            Mockito.isNull(), eq(type))).thenReturn(publishResponse);
         
         final boolean b = nacosConfigService.publishConfig(dataId, group, content, type);
         assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1))
-            .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
+            .publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+                Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+                Mockito.isNull(), eq(type));
     }
     
     @Test
@@ -356,17 +378,20 @@ class NacosConfigServiceTest {
         String namespace = "public";
         String casMd5 = "96147704e3cb8be8597d55d75d244a02";
         String type = ConfigType.getDefaultType().getType();
-        
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content,
-            "", casMd5, type))
-            .thenReturn(true);
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse publishResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+            eq(casMd5), eq(type))).thenReturn(publishResponse);
         
         final boolean b = nacosConfigService.publishConfigCas(dataId, group, content, casMd5);
         assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1))
-            .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5,
-                type);
+            .publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+                Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+                eq(casMd5), eq(type));
     }
     
     @Test
@@ -377,17 +402,20 @@ class NacosConfigServiceTest {
         String namespace = "public";
         String casMd5 = "96147704e3cb8be8597d55d75d244a02";
         String type = ConfigType.PROPERTIES.getType();
-        
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content,
-            "", casMd5, type))
-            .thenReturn(true);
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse publishResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+            eq(casMd5), eq(type))).thenReturn(publishResponse);
         
         final boolean b = nacosConfigService.publishConfigCas(dataId, group, content, casMd5, type);
         assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1))
-            .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5,
-                type);
+            .publishConfigWithResponse(eq(dataId), eq(group), eq(namespace),
+                Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), eq(content), eq(""),
+                eq(casMd5), eq(type));
     }
     
     @Test
@@ -395,13 +423,17 @@ class NacosConfigServiceTest {
         String dataId = "1";
         String group = "2";
         String tenant = "public";
-        
-        Mockito.when(mockWoker.removeConfig(dataId, group, tenant, null)).thenReturn(true);
+        com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse removeResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.removeConfigWithResponse(eq(dataId), eq(group), eq(tenant),
+            Mockito.isNull())).thenReturn(removeResponse);
         
         final boolean b = nacosConfigService.removeConfig(dataId, group);
         assertTrue(b);
         
-        Mockito.verify(mockWoker, Mockito.times(1)).removeConfig(dataId, group, tenant, null);
+        Mockito.verify(mockWoker, Mockito.times(1))
+            .removeConfigWithResponse(eq(dataId), eq(group), eq(tenant), Mockito.isNull());
     }
     
     @Test
@@ -559,8 +591,10 @@ class NacosConfigServiceTest {
         response.setMd5("md5val");
         response.setConfigType("yaml");
         response.setEncryptedDataKey("ek");
-        Mockito.when(mockWoker.getServerConfig("d", "g", "public", 3000, false))
-            .thenReturn(response);
+        Mockito.when(mockWoker.getServerConfig(eq("d"), eq("g"), eq("public"), eq(3000L),
+            eq(false), Mockito.isNull())).thenReturn(response);
+        Mockito.when(mockWoker.getServerConfig(eq("d"), eq("g"), eq("public"), eq(3000L),
+            eq(false))).thenReturn(response);
         com.alibaba.nacos.api.config.ConfigQueryResult result =
             nacosConfigService.getConfigWithResult("d", "g", 3000);
         assertEquals("server-content", result.getContent());
@@ -589,8 +623,11 @@ class NacosConfigServiceTest {
                 eq("dsnap"), eq("g"), eq("public"))).thenReturn(null);
             processor.when(() -> LocalConfigInfoProcessor.getSnapshot(any(),
                 eq("dsnap"), eq("g"), eq("public"))).thenReturn("snapshot-content");
-            Mockito.when(mockWoker.getServerConfig("dsnap", "g", "public", 3000, false))
-                .thenThrow(new NacosException(500, "down"));
+            Mockito.when(mockWoker.getServerConfig(eq("dsnap"), eq("g"), eq("public"),
+                eq(3000L), eq(false), Mockito.isNull())).thenThrow(
+                    new NacosException(500, "down"));
+            Mockito.when(mockWoker.getServerConfig(eq("dsnap"), eq("g"), eq("public"),
+                eq(3000L), eq(false))).thenThrow(new NacosException(500, "down"));
             com.alibaba.nacos.api.config.ConfigQueryResult result =
                 nacosConfigService.getConfigWithResult("dsnap", "g", 3000);
             assertEquals("snapshot-content", result.getContent());
@@ -603,8 +640,12 @@ class NacosConfigServiceTest {
             Mockito.mockStatic(LocalConfigInfoProcessor.class)) {
             processor.when(() -> LocalConfigInfoProcessor.getFailover(any(),
                 eq("dnr"), eq("g"), eq("public"))).thenReturn(null);
-            Mockito.when(mockWoker.getServerConfig("dnr", "g", "public", 3000, false))
-                .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
+            Mockito.when(mockWoker.getServerConfig(eq("dnr"), eq("g"), eq("public"),
+                eq(3000L), eq(false), Mockito.isNull())).thenThrow(
+                    new NacosException(NacosException.NO_RIGHT, "no right"));
+            Mockito.when(mockWoker.getServerConfig(eq("dnr"), eq("g"), eq("public"),
+                eq(3000L), eq(false))).thenThrow(
+                    new NacosException(NacosException.NO_RIGHT, "no right"));
             NacosException ex = Assertions.assertThrows(NacosException.class,
                 () -> nacosConfigService.getConfigWithResult("dnr", "g", 3000));
             assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
@@ -660,5 +701,113 @@ class NacosConfigServiceTest {
         com.alibaba.nacos.api.config.filter.IConfigFilter filter =
             Mockito.mock(com.alibaba.nacos.api.config.filter.IConfigFilter.class);
         Assertions.assertDoesNotThrow(() -> nacosConfigService.addConfigFilter(filter));
+    }
+    
+    @Test
+    void testGetConfigWithRequestFromServer() throws NacosException {
+        ConfigResponse response = new ConfigResponse();
+        response.setContent("request-content");
+        response.setMd5("request-md5");
+        response.setConfigType("json");
+        response.setEncryptedDataKey("request-ek");
+        Mockito.when(mockWoker.getServerConfig(eq("req-data"), eq("req-group"), eq("public"),
+            eq(3000L), eq(false), Mockito.isNull())).thenReturn(response);
+        
+        GetConfigRequest request = GetConfigRequest.builder()
+            .dataId("req-data")
+            .group("req-group")
+            .timeoutMs(3000)
+            .build();
+        com.alibaba.nacos.api.config.ConfigQueryResult result =
+            nacosConfigService.getConfig(request);
+        
+        assertEquals("request-content", result.getContent());
+        assertEquals("request-md5", result.getMd5());
+        assertEquals("json", result.getConfigType());
+        assertEquals("request-ek", result.getEncryptedDataKey());
+    }
+    
+    @Test
+    void testPublishConfigWithRequestSuccess() throws NacosException {
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse publishResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.publishConfigWithResponse(anyString(), anyString(), anyString(),
+            Mockito.any(), Mockito.any(), Mockito.any(), anyString(), Mockito.any(),
+            Mockito.any(), anyString())).thenReturn(publishResponse);
+        
+        PublishConfigRequest request = PublishConfigRequest.builder()
+            .dataId("pub-data")
+            .group("pub-group")
+            .content("pub-content")
+            .type("text")
+            .build();
+        PublishConfigResult result = nacosConfigService.publishConfig(request);
+        
+        assertTrue(result.isSuccess());
+        Mockito.verify(mockWoker, Mockito.times(1)).publishConfigWithResponse(eq("pub-data"),
+            eq("pub-group"), eq("public"), Mockito.any(), Mockito.any(), Mockito.any(),
+            eq("pub-content"), Mockito.any(), Mockito.any(), eq("text"));
+    }
+    
+    @Test
+    void testPublishConfigWithRequestFailureWithDetails() throws NacosException {
+        com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse failResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                .buildFailResponse(403, "no permission");
+        Mockito.when(mockWoker.publishConfigWithResponse(anyString(), anyString(), anyString(),
+            Mockito.any(), Mockito.any(), Mockito.any(), anyString(), Mockito.any(),
+            Mockito.any(), anyString())).thenReturn(failResponse);
+        
+        PublishConfigRequest request = PublishConfigRequest.builder()
+            .dataId("pub-fail")
+            .group("pub-group")
+            .content("pub-content")
+            .type("text")
+            .build();
+        PublishConfigResult result = nacosConfigService.publishConfig(request);
+        
+        Assertions.assertFalse(result.isSuccess());
+        assertEquals(403, result.getErrorCode());
+        assertEquals("no permission", result.getErrorMessage());
+    }
+    
+    @Test
+    void testRemoveConfigWithRequestSuccess() throws NacosException {
+        com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse removeResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse
+                .buildSuccessResponse();
+        Mockito.when(mockWoker.removeConfigWithResponse(anyString(), anyString(), anyString(),
+            Mockito.isNull())).thenReturn(removeResponse);
+        
+        RemoveConfigRequest request = RemoveConfigRequest.builder()
+            .dataId("rem-data")
+            .group("rem-group")
+            .build();
+        RemoveConfigResult result = nacosConfigService.removeConfig(request);
+        
+        assertTrue(result.isSuccess());
+        Mockito.verify(mockWoker, Mockito.times(1)).removeConfigWithResponse(eq("rem-data"),
+            eq("rem-group"), eq("public"), Mockito.isNull());
+    }
+    
+    @Test
+    void testRemoveConfigWithRequestFailureWithDetails() throws NacosException {
+        com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse failResponse =
+            com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse
+                .buildFailResponse("server error");
+        failResponse.setErrorCode(500);
+        Mockito.when(mockWoker.removeConfigWithResponse(anyString(), anyString(), anyString(),
+            Mockito.isNull())).thenReturn(failResponse);
+        
+        RemoveConfigRequest request = RemoveConfigRequest.builder()
+            .dataId("rem-fail")
+            .group("rem-group")
+            .build();
+        RemoveConfigResult result = nacosConfigService.removeConfig(request);
+        
+        Assertions.assertFalse(result.isSuccess());
+        assertEquals(500, result.getErrorCode());
+        assertEquals("server error", result.getErrorMessage());
     }
 }

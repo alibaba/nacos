@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
@@ -101,6 +102,24 @@ public class ConfigQueryRequestHandler
                 return ConfigQueryResponse.buildFailResponse(errorCode, chainResponse.getMessage());
             }
             
+            // 304 Not-Modified: if client provides localMd5 and it matches server md5,
+            // return 304 without content to save network bandwidth and server overhead.
+            String localMd5 = request.getLocalMd5();
+            if (StringUtils.isNotBlank(localMd5) && chainResponse.getMd5() != null
+                && localMd5.equals(chainResponse.getMd5())
+                && chainResponse.getContent() != null) {
+                // Emit pull log and trace event before returning 304, equivalent to normal path
+                String pullEvent = resolvePullEventType(chainResponse, request.getTag());
+                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp,
+                    chainResponse.getMd5(), TimeUtils.getCurrentTimeStr());
+                final long delayed304 = System.currentTimeMillis() - chainResponse.getLastModified();
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp,
+                    chainResponse.getLastModified(), pullEvent,
+                    ConfigTraceService.PULL_TYPE_OK, delayed304, clientIp, notify, "grpc");
+                return buildNotModifiedResponse(chainResponse.getMd5(),
+                    chainResponse.getConfigType(), chainResponse.getLastModified());
+            }
+            
             if (chainResponse
                 .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
                 return handlerConfigNotFound(request.getDataId(), request.getGroup(),
@@ -175,6 +194,31 @@ public class ConfigQueryRequestHandler
         response.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
             "requested file is being modified, please try later.");
         
+        return response;
+    }
+    
+    /**
+     * Build a 304 Not-Modified response.
+     *
+     * <p>When the client's local MD5 matches the server-side config MD5,
+     * return this response without content to save network bandwidth.
+     * Includes non-content metadata (md5, contentType, lastModified) so the
+     * client can fully reconstruct the ConfigResponse.</p>
+     *
+     * @param md5          MD5 of the current config content
+     * @param contentType  config type (json, yaml, properties, etc.)
+     * @param lastModified last modified timestamp
+     * @return 304 response
+     * @since 3.3.0
+     */
+    private ConfigQueryResponse buildNotModifiedResponse(String md5, String contentType,
+        long lastModified) {
+        ConfigQueryResponse response = new ConfigQueryResponse();
+        response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_MODIFIED,
+            "config not modified, use local cache");
+        response.setMd5(md5);
+        response.setContentType(contentType);
+        response.setLastModified(lastModified);
         return response;
     }
     

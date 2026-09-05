@@ -19,6 +19,11 @@ package com.alibaba.nacos.test.sdk.config;
 import com.alibaba.nacos.api.config.ConfigQueryResult;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.GetConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigRequest;
+import com.alibaba.nacos.api.config.PublishConfigResult;
+import com.alibaba.nacos.api.config.RemoveConfigRequest;
+import com.alibaba.nacos.api.config.RemoveConfigResult;
 import com.alibaba.nacos.api.config.filter.AbstractConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
@@ -389,6 +394,101 @@ public class ConfigServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertTrue(configService.publishConfig(afterCancelDataId, group, "fuzzy.after.cancel"));
         assertFalse(afterCancelLatch.await(2, TimeUnit.SECONDS),
                 "canceled fuzzy watcher should not receive later events");
+    }
+
+    @Test
+    public void testRequestObjectQueryPublishAndRemove() throws Exception {
+        ConfigService configService = createConfigService();
+        String group = randomGroup("request-object");
+        String dataId = randomDataId("request-object");
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        // Publish with request object
+        PublishConfigRequest publishRequest = PublishConfigRequest.builder()
+                .dataId(dataId)
+                .group(group)
+                .content("request.object.content")
+                .type(ConfigType.TEXT.getType())
+                .build();
+        PublishConfigResult publishResult = configService.publishConfig(publishRequest);
+        assertTrue(publishResult.isSuccess());
+        assertNotNull(publishResult.getMd5());
+
+        // Query with request object
+        waitUntilConfigEquals(configService, dataId, group, "request.object.content");
+        GetConfigRequest getRequest = GetConfigRequest.builder()
+                .dataId(dataId)
+                .group(group)
+                .timeoutMs(DEFAULT_TIMEOUT_MS)
+                .build();
+        ConfigQueryResult queryResult = configService.getConfig(getRequest);
+        assertEquals("request.object.content", queryResult.getContent());
+        assertNotNull(queryResult.getMd5());
+        assertEquals(ConfigType.TEXT.getType(), queryResult.getConfigType());
+
+        // Remove with request object
+        RemoveConfigRequest removeRequest = RemoveConfigRequest.builder()
+                .dataId(dataId)
+                .group(group)
+                .build();
+        RemoveConfigResult removeResult = configService.removeConfig(removeRequest);
+        assertTrue(removeResult.isSuccess());
+
+        waitUntil("config should be removed",
+                () -> null == configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+    }
+
+    @Test
+    public void testRequestObjectPublishCasFailureReturnsDetails() throws Exception {
+        ConfigService configService = createConfigService();
+        String group = randomGroup("cas-failure");
+        String dataId = randomDataId("cas-failure");
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        // Publish initial config
+        assertTrue(configService.publishConfig(dataId, group, "initial.content"));
+        waitUntilConfigEquals(configService, dataId, group, "initial.content");
+
+        // CAS publish with wrong md5 should fail with details
+        PublishConfigRequest casRequest = PublishConfigRequest.builder()
+                .dataId(dataId)
+                .group(group)
+                .content("updated.content")
+                .type(ConfigType.TEXT.getType())
+                .casMd5("wrong-md5-that-does-not-match")
+                .build();
+        PublishConfigResult casResult = configService.publishConfig(casRequest);
+        assertFalse(casResult.isSuccess());
+        assertTrue(casResult.getErrorCode() != 0 || casResult.getErrorMessage() != null);
+
+        // Content should remain unchanged
+        assertEquals("initial.content", configService.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+    }
+
+    @Test
+    public void testRequestObjectQueryResultContainsMetadata() throws Exception {
+        ConfigService configService = createConfigService();
+        String group = randomGroup("query-metadata");
+        String dataId = randomDataId("query-metadata");
+        addCleanup(() -> configService.removeConfig(dataId, group));
+
+        // Publish with yaml type
+        assertTrue(configService.publishConfig(dataId, group, "key: value", ConfigType.YAML.getType()));
+        waitUntilConfigEquals(configService, dataId, group, "key: value");
+
+        // Query with request object and verify all metadata fields
+        GetConfigRequest request = GetConfigRequest.builder()
+                .dataId(dataId)
+                .group(group)
+                .timeoutMs(DEFAULT_TIMEOUT_MS)
+                .build();
+        ConfigQueryResult result = configService.getConfig(request);
+
+        assertEquals("key: value", result.getContent());
+        assertNotNull(result.getMd5(), "md5 should be present in query result");
+        assertEquals(ConfigType.YAML.getType(), result.getConfigType(),
+                "configType should be preserved from publish");
+        assertNotNull(result.getEncryptedDataKey(), "encryptedDataKey should be present (may be empty)");
     }
 
     private Listener listenerForContent(String expectedContent, CountDownLatch latch,

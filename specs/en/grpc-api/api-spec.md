@@ -193,7 +193,7 @@ inner server-to-server rules are defined by the
 
 | Request type | Response type | Action | Main fields | Contract |
 | --- | --- | --- | --- | --- |
-| `ConfigQueryRequest` | `ConfigQueryResponse` | read | `dataId`, `group`, `tenant`, `tag` | Query config content, md5, type, encrypted key, beta/tag metadata. |
+| `ConfigQueryRequest` | `ConfigQueryResponse` | read | `dataId`, `group`, `tenant`, `tag`, `localMd5` | Query config content, md5, type, encrypted key, beta/tag metadata. Since Nacos 3.3, supports `localMd5` conditional query: when the client-provided `localMd5` matches the server-side config md5, the server returns `errorCode=304` (Not-Modified) without `content` in the response, but includes `md5`, `contentType`, `lastModified` and other metadata; the client should restore content from local cache. In mixed-version scenarios, older clients that do not send `localMd5` will receive the full content as before. |
 | `ConfigPublishRequest` | `ConfigPublishResponse` | write | `dataId`, `group`, `tenant`, `content`, `casMd5`, `additionMap` | Publish or CAS-publish config. |
 | `ConfigRemoveRequest` | `ConfigRemoveResponse` | write | `dataId`, `group`, `tenant`, `tag` | Remove config. |
 | `ConfigBatchListenRequest` | `ConfigChangeBatchListenResponse` | read | `listen`, `ConfigListenContext[]` | Add or remove config listeners and return changed configs. |

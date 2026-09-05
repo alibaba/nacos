@@ -482,6 +482,68 @@ class ConfigQueryRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals("chain boom", response.getMessage());
     }
+
+    @Test
+    void testHandleWithMatchingLocalMd5Returns304() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.SUCCESS.getCode());
+        chainResponse.setContent("cached content");
+        chainResponse.setMd5("matching-md5-hash");
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+
+        ConfigQueryRequest request = newConfigQueryRequest();
+        request.setLocalMd5("matching-md5-hash");
+
+        ConfigQueryResponse response = requestHandler.handle(request, newRequestMeta());
+
+        assertEquals(ConfigQueryResponse.CONFIG_NOT_MODIFIED, response.getErrorCode());
+        assertEquals("matching-md5-hash", response.getMd5());
+        assertNull(response.getContent());
+    }
+
+    @Test
+    void testHandleWithNonMatchingLocalMd5ReturnsContent() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.SUCCESS.getCode());
+        chainResponse.setContent("fresh content");
+        chainResponse.setMd5("server-md5-hash");
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+
+        ConfigQueryRequest request = newConfigQueryRequest();
+        request.setLocalMd5("different-md5-hash");
+
+        ConfigQueryResponse response = requestHandler.handle(request, newRequestMeta());
+
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        assertEquals("fresh content", response.getContent());
+        assertEquals("server-md5-hash", response.getMd5());
+    }
+
+    @Test
+    void testHandleWithNullLocalMd5ReturnsContent() throws Exception {
+        ConfigQueryChainService chainService = Mockito.mock(ConfigQueryChainService.class);
+        ConfigQueryChainResponse chainResponse = new ConfigQueryChainResponse();
+        chainResponse.setResultCode(ResponseCode.SUCCESS.getCode());
+        chainResponse.setContent("normal content");
+        chainResponse.setMd5("normal-md5");
+        chainResponse.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(chainService.handle(any())).thenReturn(chainResponse);
+        ConfigQueryRequestHandler requestHandler = new ConfigQueryRequestHandler(chainService);
+
+        ConfigQueryRequest request = newConfigQueryRequest();
+
+        ConfigQueryResponse response = requestHandler.handle(request, newRequestMeta());
+
+        assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
+        assertEquals("normal content", response.getContent());
+        assertEquals("normal-md5", response.getMd5());
+    }
     
     private ConfigQueryRequest newConfigQueryRequest() {
         ConfigQueryRequest request = new ConfigQueryRequest();
