@@ -35,7 +35,7 @@ public class TlsConfig {
     
     /**
      * tls version: TLSv1.1,TLSv1.2,TLSv1.3
-     * if want to support multi protocol, use comma  seperated. like TLSv1.1,TLSv1.2,TLSv1.3
+     * if want to support multi protocol, use comma  separated. like TLSv1.1,TLSv1.2,TLSv1.3
      */
     private String protocols;
     
