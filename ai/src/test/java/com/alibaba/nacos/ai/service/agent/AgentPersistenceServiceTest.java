@@ -1442,10 +1442,12 @@ class AgentPersistenceServiceTest {
     
     @Test
     void testGetExactVersionLoadsAndVerifiesContentOnce() throws NacosException {
+        AiResourceVersion storedVersion = storedVersion();
+        storedVersion.setPublishPipelineInfo(publishPipelineInfo());
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
         when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
-            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion);
         when(storageService.load(any(AgentVersionStorageDescriptor.class))).thenReturn(content);
         
         AgentVersionDetail result = service.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
@@ -1453,6 +1455,7 @@ class AgentPersistenceServiceTest {
         assertEquals(AGENT_NAME, result.getAgentName());
         assertEquals(VERSION, result.getVersion());
         assertEquals(AiConstants.Agent.VERSION_STATUS_DRAFT, result.getStatus());
+        assertEquals(publishPipelineInfo(), result.getPublishPipelineInfo());
         assertEquals("a2a", result.getCallInterfaces().get(0).getProtocol());
         assertEquals(prepared.getDescriptor().getContentDigest(), result.getContentDigest());
         assertEquals(3000L, result.getCreateTime());
@@ -2066,6 +2069,7 @@ class AgentPersistenceServiceTest {
     void testVersionSummaryReadsNeverLoadVersionContent() throws NacosException {
         AiResourceVersion online = storedVersion();
         online.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        online.setPublishPipelineInfo(publishPipelineInfo());
         Page<AiResourceVersion> sourcePage =
             versionPage(Collections.singletonList(online), 1, 1);
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
@@ -2085,8 +2089,11 @@ class AgentPersistenceServiceTest {
         assertEquals(VERSION, result.getPageItems().get(0).getVersion());
         assertEquals(prepared.getDescriptor().getContentDigest(),
             result.getPageItems().get(0).getContentDigest());
+        assertEquals(publishPipelineInfo(),
+            result.getPageItems().get(0).getPublishPipelineInfo());
         assertEquals(VERSION, exact.getVersion());
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, exact.getStatus());
+        assertEquals(publishPipelineInfo(), exact.getPublishPipelineInfo());
         verifyNoInteractions(storageService);
     }
     
@@ -2917,6 +2924,10 @@ class AgentPersistenceServiceTest {
             result.append(value);
         }
         return result.toString();
+    }
+    
+    private String publishPipelineInfo() {
+        return "{\"executionId\":\"pipeline-1\",\"status\":\"REJECTED\",\"pipeline\":[]}";
     }
     
     private void assertCreatedDetail(AgentVersionDetail result) {

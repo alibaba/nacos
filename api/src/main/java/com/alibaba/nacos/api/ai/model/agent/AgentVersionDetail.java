@@ -39,6 +39,8 @@ public class AgentVersionDetail implements Serializable {
     
     private String status;
     
+    private String publishPipelineInfo;
+    
     private List<AgentCallInterface> callInterfaces;
     
     private String author;
@@ -81,6 +83,14 @@ public class AgentVersionDetail implements Serializable {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public String getPublishPipelineInfo() {
+        return publishPipelineInfo;
+    }
+    
+    public void setPublishPipelineInfo(String publishPipelineInfo) {
+        this.publishPipelineInfo = publishPipelineInfo;
     }
     
     public List<AgentCallInterface> getCallInterfaces() {

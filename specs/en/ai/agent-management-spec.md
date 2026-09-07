@@ -178,6 +178,7 @@ An Agent Version exposes this metadata:
 | --- | :---: | --- |
 | `namespaceId`, `agentName`, `version` | Yes | Exact version identity. |
 | `status` | Yes | Shared AI Resource version status. |
+| `publishPipelineInfo` | Read-only | Serialized review Pipeline execution and outcome; omitted before a Pipeline execution exists. |
 | `callInterfaces[]` | Yes | Ordered protocol bindings; at least one. |
 | `author` | No | Version author. |
 | `changeDescription` | No | Version change description. |
@@ -343,7 +344,7 @@ Management APIs use bounded views rather than one unbounded aggregate:
 | --- | --- | --- |
 | `AgentSummary` | Presentation, governance, and version-catalog summary. | Descriptor, Endpoint, full history, extensions. |
 | `AgentOverview` | Full Agent and a bounded page of Version summaries. | Version payload and Runtime Endpoint. |
-| `AgentVersionSummary` | Version, status, author, change description, digest, and timestamps. | CallInterface payload. |
+| `AgentVersionSummary` | Version, status, review Pipeline outcome, author, change description, digest, and timestamps. | CallInterface payload. |
 | `AgentVersionDetail` | Exact Version metadata and complete CallInterfaces. | Runtime Endpoint. |
 | `RuntimeEndpointSnapshot` | Raw runtime snapshot for one Agent and protocol, optionally filtered by Version. | Descriptor, publisher identity, final discoverability decision. |
 

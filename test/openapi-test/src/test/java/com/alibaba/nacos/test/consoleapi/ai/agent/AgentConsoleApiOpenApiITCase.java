@@ -59,6 +59,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 agentForm(agentInitialDraftRequest(null, agentName, firstVersion))).get("data");
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         assertVersion(draft, firstVersion, "draft");
+        assertFalse(draft.has("publishPipelineInfo"), draft.toString());
 
         JsonNode overview = getJsonOk(CONSOLE_AGENT_PATH,
                 agentIdentityQuery(null, agentName)).get("data");
@@ -66,6 +67,8 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 overview.toString());
         assertEquals(agentName, overview.get("agent").get("agentName").asText(),
                 overview.toString());
+        assertFalse(overview.get("versionPage").get("pageItems").get(0)
+                .has("publishPipelineInfo"), overview.toString());
 
         JsonNode updated = putFormOk(CONSOLE_AGENT_PATH,
                 agentForm(agentUpdateRequest(null, agentName, "console"))).get("data");
@@ -91,6 +94,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode versionDetail = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, firstVersion)).get("data");
         assertVersion(versionDetail, firstVersion, "draft");
+        assertFalse(versionDetail.has("publishPipelineInfo"), versionDetail.toString());
 
         JsonNode replaced = putFormOk(CONSOLE_AGENT_PATH + "/draft",
                 agentForm(agentDraftUpdateRequest(null, agentName, firstVersion,

@@ -1357,6 +1357,7 @@ public class AgentPersistenceService {
         result.setAgentName(row.getName());
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
+        result.setPublishPipelineInfo(row.getPublishPipelineInfo());
         result.setCallInterfaces(content.getCallInterfaces());
         result.setAuthor(row.getAuthor());
         result.setChangeDescription(row.getDesc());
@@ -1372,6 +1373,7 @@ public class AgentPersistenceService {
         AgentVersionSummary result = new AgentVersionSummary();
         result.setVersion(row.getVersion());
         result.setStatus(row.getStatus());
+        result.setPublishPipelineInfo(row.getPublishPipelineInfo());
         result.setAuthor(row.getAuthor());
         result.setChangeDescription(row.getDesc());
         result.setContentDigest(descriptor.getContentDigest());

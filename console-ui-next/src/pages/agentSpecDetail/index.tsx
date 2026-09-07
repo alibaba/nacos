@@ -20,18 +20,15 @@ import {
   PowerOff,
   Trash2,
   Pencil,
-  Lock,
   Save,
   X,
   AlertCircle,
   Loader2,
-  ShieldAlert,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -74,6 +71,7 @@ import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { canResubmitReview } from '@/components/ai/version-lifecycle';
@@ -929,60 +927,25 @@ export default function AgentSpecDetailPage() {
                   </span>
                 )}
               </div>
-              {/* Enable toggle switch */}
-              <div className="flex items-center gap-4 mt-1.5 mb-1">
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                  <Switch
-                    checked={detail.enable}
-                    disabled={enableToggling || !canWriteResource}
-                    onCheckedChange={handleToggleEnable}
-                    className={cn(
-                      detail.enable
-                        ? 'data-[state=checked]:bg-emerald-500'
-                        : '',
-                    )}
-                  />
-                  <span className={cn(
-                    'text-xs font-medium',
-                    detail.enable ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
-                  )}>
-                    {detail.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
-                  </span>
-                </label>
-                <div className="h-4 w-px bg-border" />
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                  <Switch
-                    checked={detail.scope === 'PUBLIC'}
-                    disabled={scopeToggling || !canWriteResource}
-                    onCheckedChange={handleToggleScope}
-                  />
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                    {detail.scope === 'PUBLIC' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    {detail.scope === 'PUBLIC' ? t('agentSpec.scopePublic') : t('agentSpec.scopePrivate')}
-                  </span>
-                </label>
-                {canManageVisibility && (
-                  <>
-                    <div className="h-4 w-px bg-border" />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => setVisibilityDialogOpen(true)}
-                        >
-                          <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                          {t('common.visibilityAuthorization.entry')}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('common.visibilityAuthorization.title')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </>
-                )}
-              </div>
+              <AiResourceStatusControls
+                enabled={detail.enable}
+                scope={detail.scope}
+                enabledLabel={t('agentSpec.enabled')}
+                disabledLabel={t('agentSpec.disabled')}
+                publicLabel={t('agentSpec.scopePublic')}
+                privateLabel={t('agentSpec.scopePrivate')}
+                enableDisabled={enableToggling || !canWriteResource}
+                scopeDisabled={scopeToggling || !canWriteResource}
+                onEnabledChange={handleToggleEnable}
+                onScopeChange={handleToggleScope}
+                visibilityLabel={canManageVisibility
+                  ? t('common.visibilityAuthorization.entry')
+                  : undefined}
+                visibilityTooltip={t('common.visibilityAuthorization.title')}
+                onVisibilityClick={canManageVisibility
+                  ? () => setVisibilityDialogOpen(true)
+                  : undefined}
+              />
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
                 <Textarea

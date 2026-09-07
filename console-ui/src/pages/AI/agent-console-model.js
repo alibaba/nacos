@@ -488,14 +488,33 @@ export function callInterfacesToFormValues(callInterfaces) {
   };
 }
 
-export function getVersionActions(status) {
+export function parsePipelineInfo(raw) {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed.executionId === 'string' && typeof parsed.status === 'string'
+      ? parsed
+      : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export function getVersionActions(status, pipelineInfo = null, globalAdmin = false) {
+  const showForcePublish =
+    globalAdmin &&
+    pipelineInfo &&
+    pipelineInfo.status === 'REJECTED' &&
+    (status === 'reviewing' || status === 'reviewed');
   switch (status) {
     case 'draft':
-      return ['editDraft', 'submit', 'forcePublish', 'deleteDraft'];
+      return ['editDraft', 'submit', 'deleteDraft'];
     case 'reviewing':
-      return ['forcePublish'];
+      return showForcePublish ? ['forcePublish'] : [];
     case 'reviewed':
-      return ['publish', 'forcePublish', 'redraft'];
+      return showForcePublish ? ['publish', 'forcePublish', 'redraft'] : ['publish', 'redraft'];
     case 'online':
       return ['offline'];
     case 'offline':

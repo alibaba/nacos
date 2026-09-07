@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -38,6 +37,7 @@ import type {
   A2aImportProjection,
   AgentEditorMode,
   AgentEditorValues,
+  DeclaredEndpointEditorValue,
   DraftContentMode,
   EndpointSourceMode,
   StructuredProtocolEditorKind,
@@ -47,10 +47,13 @@ import {
   buildDraftCreateData,
   buildDraftUpdateData,
   buildMetadataUpdateData,
-  callInterfacesToEditorValues,
+  a2aDeclaredEndpointsFromAgentCard,
+  callInterfacesToProtocolEditors,
   createStructuredProtocolEditor,
+  endpointSourceModeLabelKey,
   metadataToEditorValues,
   projectA2aAgentCard,
+  updateA2aAgentCardEndpoints,
 } from './agent-console-model';
 
 type CreatePath = 'choose' | 'import' | 'new';
@@ -75,7 +78,11 @@ const DEFAULT_AGENT_CARD = JSON.stringify({
   skills: [],
 }, null, 2);
 
-function emptyValues(agentName = '', version = ''): AgentEditorValues {
+function emptyValues(
+  agentName = '',
+  version = '',
+  basedOnVersion = '',
+): AgentEditorValues {
   return {
     agentName,
     version,
@@ -96,7 +103,7 @@ function emptyValues(agentName = '', version = ''): AgentEditorValues {
     endpointSourceMode: 'declared-runtime',
     declaredEndpoints: [{ uri: '', transport: 'HTTP' }],
     callInterfaces: '',
-    basedOnVersion: '',
+    basedOnVersion,
     author: '',
     changeDescription: '',
   };
@@ -118,8 +125,15 @@ export default function NewAgentPage() {
   const mode = resolveMode(searchParams.get('mode'));
   const queryAgentName = searchParams.get('name') || '';
   const queryVersion = searchParams.get('version') || '';
-  const [values, setValues] = useState(() => emptyValues(queryAgentName, queryVersion));
-  const [contentMode, setContentMode] = useState<DraftContentMode>('direct');
+  const queryBasedOnVersion = searchParams.get('basedOnVersion') || '';
+  const [values, setValues] = useState(() => emptyValues(
+    queryAgentName,
+    queryVersion,
+    queryBasedOnVersion,
+  ));
+  const contentMode: DraftContentMode = mode === 'draft-create' && queryBasedOnVersion
+    ? 'copy'
+    : 'direct';
   const [createPath, setCreatePath] = useState<CreatePath>(
     mode === 'create' ? 'choose' : 'new',
   );
@@ -142,6 +156,8 @@ export default function NewAgentPage() {
   const protocolVisible = mode !== 'metadata'
     && contentMode === 'direct'
     && (mode !== 'create' || (guidedCreate && createStep === 2));
+  const usesProtocolCollection = guidedCreate || mode === 'draft-edit'
+    || (mode === 'draft-create' && contentMode === 'direct');
   const title = mode === 'metadata'
     ? t('agent.editMetadata')
     : mode === 'draft-edit'
@@ -194,11 +210,12 @@ export default function NewAgentPage() {
             version: queryVersion,
           });
           if (active) {
+            setProtocolEditors(callInterfacesToProtocolEditors(response.data.callInterfaces));
+            setActiveProtocolIndex(0);
             setValues((current) => ({
               ...current,
               agentName: queryAgentName,
               version: queryVersion,
-              ...callInterfacesToEditorValues(response.data.callInterfaces),
               changeDescription: response.data.changeDescription || '',
             }));
           }
@@ -254,7 +271,11 @@ export default function NewAgentPage() {
         return;
       }
       if (mode === 'draft-edit') {
-        const response = await agentApi.updateDraft(buildDraftUpdateData(namespaceId, values));
+        const response = await agentApi.updateDraft(buildDraftUpdateData(
+          namespaceId,
+          values,
+          protocolEditors,
+        ));
         toast.success(t('agent.updateSuccess'));
         goToDetail(response.data.agentName, response.data.version);
         return;
@@ -285,7 +306,7 @@ export default function NewAgentPage() {
           values,
           initialDraft,
           initialDraft ? 'direct' : contentMode,
-          guidedCreate ? protocolEditors : undefined,
+          usesProtocolCollection ? protocolEditors : undefined,
         ),
       );
       toast.success(t('agent.createDraftSuccess'));
@@ -356,20 +377,19 @@ export default function NewAgentPage() {
           mode={mode}
           contentMode={contentMode}
           values={values}
-          setContentMode={setContentMode}
           setValue={setValue}
         />
       )}
 
       {protocolVisible && (
-        guidedCreate ? (
+        usesProtocolCollection ? (
           <MultiProtocolEditor
             editors={protocolEditors}
             activeIndex={activeProtocolIndex}
             setEditors={setProtocolEditors}
             setActiveIndex={setActiveProtocolIndex}
           />
-        ) : <ProtocolEditor values={values} setValue={setValue} />
+        ) : null
       )}
 
       <div className="flex justify-between gap-3 pb-5">
@@ -688,13 +708,11 @@ function VersionEditor({
   mode,
   contentMode,
   values,
-  setContentMode,
   setValue,
 }: {
   mode: AgentEditorMode;
   contentMode: DraftContentMode;
   values: AgentEditorValues;
-  setContentMode: (value: DraftContentMode) => void;
   setValue: <K extends keyof AgentEditorValues>(
     key: K,
     value: AgentEditorValues[K],
@@ -720,30 +738,12 @@ function VersionEditor({
           disabled={mode === 'draft-edit'}
           onChange={(value) => setValue('version', value)}
         />
-        {mode === 'draft-create' && (
-          <div className="space-y-2">
-            <Label>{t('agent.draftContentMode')}</Label>
-            <RadioGroup
-              value={contentMode}
-              onValueChange={(value) => setContentMode(value as DraftContentMode)}
-              className="flex gap-6"
-            >
-              <label className="flex items-center gap-2 text-sm">
-                <RadioGroupItem value="direct" />
-                {t('agent.directContent')}
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <RadioGroupItem value="copy" />
-                {t('agent.copyVersion')}
-              </label>
-            </RadioGroup>
-          </div>
-        )}
         {mode === 'draft-create' && contentMode === 'copy' && (
           <Field
             label={t('agent.basedOnVersion')}
             required
             value={values.basedOnVersion}
+            disabled
             onChange={(value) => setValue('basedOnVersion', value)}
           />
         )}
@@ -886,70 +886,6 @@ function MultiProtocolEditor({
   );
 }
 
-function ProtocolEditor({
-  values,
-  setValue,
-}: {
-  values: AgentEditorValues;
-  setValue: <K extends keyof AgentEditorValues>(
-    key: K,
-    value: AgentEditorValues[K],
-  ) => void;
-}) {
-  const { t } = useTranslation();
-  if (values.protocolEditorKind === 'raw') {
-    return (
-      <EditorCard icon={<FileJson className="h-4 w-4" />} title={t('agent.protocolConfig')}>
-        <div className="space-y-4">
-          <SelectField
-            label={t('agent.protocolType')}
-            value="raw"
-            options={[{ value: 'raw', label: t('agent.rawCallInterfaces') }]}
-            onChange={() => undefined}
-          />
-          <div className="space-y-2">
-            <Label>{t('agent.rawCallInterfaces')}</Label>
-            <Textarea
-              value={values.callInterfaces}
-              rows={22}
-              className="font-mono text-xs"
-              onChange={(event) => setValue('callInterfaces', event.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t('agent.rawCallInterfacesHelp')}
-            </p>
-          </div>
-        </div>
-      </EditorCard>
-    );
-  }
-  const editor: StructuredProtocolEditorValues = {
-    protocolEditorKind: values.protocolEditorKind,
-    agentCard: values.agentCard,
-    customProtocol: values.customProtocol,
-    customProtocolVersion: values.customProtocolVersion,
-    customDescriptorMediaType: values.customDescriptorMediaType,
-    customNativeDescriptor: values.customNativeDescriptor,
-    endpointSourceMode: values.endpointSourceMode,
-    declaredEndpoints: values.declaredEndpoints,
-  };
-  const updateEditor = (updated: StructuredProtocolEditorValues) => {
-    setValue('protocolEditorKind', updated.protocolEditorKind);
-    setValue('agentCard', updated.agentCard);
-    setValue('customProtocol', updated.customProtocol);
-    setValue('customProtocolVersion', updated.customProtocolVersion);
-    setValue('customDescriptorMediaType', updated.customDescriptorMediaType);
-    setValue('customNativeDescriptor', updated.customNativeDescriptor);
-    setValue('endpointSourceMode', updated.endpointSourceMode);
-    setValue('declaredEndpoints', updated.declaredEndpoints);
-  };
-  return (
-    <EditorCard icon={<FileJson className="h-4 w-4" />} title={t('agent.protocolConfig')}>
-      <StructuredProtocolFields editor={editor} onChange={updateEditor} />
-    </EditorCard>
-  );
-}
-
 function StructuredProtocolFields({
   editor,
   onChange,
@@ -962,10 +898,34 @@ function StructuredProtocolFields({
     key: K,
     value: StructuredProtocolEditorValues[K],
   ) => onChange({ ...editor, [key]: value });
+  const setDeclaredEndpoints = (endpoints: DeclaredEndpointEditorValue[]) => {
+    if (editor.protocolEditorKind !== 'a2a') {
+      setEditorValue('declaredEndpoints', endpoints);
+      return;
+    }
+    try {
+      onChange({
+        ...editor,
+        agentCard: updateA2aAgentCardEndpoints(editor.agentCard, endpoints),
+        declaredEndpoints: endpoints,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('agent.jsonFormatError'));
+    }
+  };
   const updateEndpoint = (index: number, field: 'uri' | 'transport', value: string) => {
-    setEditorValue('declaredEndpoints', editor.declaredEndpoints.map((endpoint, itemIndex) => (
+    setDeclaredEndpoints(editor.declaredEndpoints.map((endpoint, itemIndex) => (
       itemIndex === index ? { ...endpoint, [field]: value } : endpoint
     )));
+  };
+  const updateAgentCard = (agentCard: string) => {
+    const updated = { ...editor, agentCard };
+    try {
+      updated.declaredEndpoints = a2aDeclaredEndpointsFromAgentCard(agentCard);
+    } catch {
+      // Keep the last valid Endpoint projection while the JSON is being edited.
+    }
+    onChange(updated);
   };
 
   return (
@@ -983,20 +943,33 @@ function StructuredProtocolFields({
         )}
       />
       {editor.protocolEditorKind === 'a2a' && (
-        <div className="space-y-2">
-          <Label>
-            {t('agent.agentCard')} <span className="text-destructive">*</span>
-          </Label>
-          <Textarea
-            value={editor.agentCard}
-            rows={22}
-            className="font-mono text-xs"
-            placeholder={t('agent.agentCardPlaceholder')}
-            onChange={(event) => setEditorValue('agentCard', event.target.value)}
+        <div className="space-y-5">
+          <EndpointSourceSelect
+            value={editor.endpointSourceMode}
+            onChange={(value) => setEditorValue('endpointSourceMode', value)}
           />
-          <p className="text-xs leading-5 text-muted-foreground">
-            {t('agent.agentCardHelp')}
-          </p>
+          <div className="space-y-2">
+            <Label>
+              {t('agent.agentCard')} <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              value={editor.agentCard}
+              rows={22}
+              className="font-mono text-xs"
+              placeholder={t('agent.agentCardPlaceholder')}
+              onChange={(event) => updateAgentCard(event.target.value)}
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              {t('agent.agentCardHelp')}
+            </p>
+          </div>
+          <DeclaredEndpointsEditor
+            endpoints={editor.declaredEndpoints}
+            help={t('agent.a2aDeclaredEndpointsHelp')}
+            requireOne
+            onChange={setDeclaredEndpoints}
+            onUpdate={updateEndpoint}
+          />
         </div>
       )}
       {editor.protocolEditorKind === 'custom' && (
@@ -1019,19 +992,9 @@ function StructuredProtocolFields({
               value={editor.customDescriptorMediaType}
               onChange={(value) => setEditorValue('customDescriptorMediaType', value)}
             />
-            <SelectField
-              label={t('agent.endpointSourceOrder')}
+            <EndpointSourceSelect
               value={editor.endpointSourceMode}
-              options={[
-                { value: 'declared-runtime', label: 'DECLARED → RUNTIME' },
-                { value: 'runtime-declared', label: 'RUNTIME → DECLARED' },
-                { value: 'declared-only', label: 'DECLARED' },
-                { value: 'runtime-only', label: 'RUNTIME' },
-              ]}
-              onChange={(value) => setEditorValue(
-                'endpointSourceMode',
-                value as EndpointSourceMode,
-              )}
+              onChange={(value) => setEditorValue('endpointSourceMode', value)}
             />
           </div>
           <div className="space-y-2">
@@ -1045,66 +1008,109 @@ function StructuredProtocolFields({
               onChange={(event) => setEditorValue('customNativeDescriptor', event.target.value)}
             />
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <Label>{t('agent.declaredEndpoints')}</Label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t('agent.declaredEndpointsHelp')}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setEditorValue('declaredEndpoints', [
-                  ...editor.declaredEndpoints,
-                  { uri: '', transport: 'HTTP' },
-                ])}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                {t('agent.addEndpoint')}
-              </Button>
-            </div>
-            {editor.declaredEndpoints.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
-                {t('agent.noDeclaredEndpoints')}
-              </div>
-            ) : editor.declaredEndpoints.map((endpoint, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-1 items-end gap-3 rounded-lg border bg-muted/10 p-3 md:grid-cols-[minmax(0,1fr)_220px_auto]"
-              >
-                <Field
-                  label={t('agent.endpointUri')}
-                  value={endpoint.uri}
-                  placeholder="https://agent.example.com/api"
-                  onChange={(value) => updateEndpoint(index, 'uri', value)}
-                />
-                <Field
-                  label={t('agent.transport')}
-                  value={endpoint.transport}
-                  placeholder="HTTP"
-                  onChange={(value) => updateEndpoint(index, 'transport', value)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive"
-                  aria-label={t('common.delete')}
-                  onClick={() => setEditorValue(
-                    'declaredEndpoints',
-                    editor.declaredEndpoints.filter((_, itemIndex) => itemIndex !== index),
-                  )}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+          <DeclaredEndpointsEditor
+            endpoints={editor.declaredEndpoints}
+            help={t('agent.declaredEndpointsHelp')}
+            onChange={setDeclaredEndpoints}
+            onUpdate={updateEndpoint}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+function EndpointSourceSelect({
+  value,
+  onChange,
+}: {
+  value: EndpointSourceMode;
+  onChange: (value: EndpointSourceMode) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      label={t('agent.endpointSourceOrder')}
+      value={value}
+      options={([
+        'declared-runtime',
+        'runtime-declared',
+        'declared-only',
+        'runtime-only',
+      ] as EndpointSourceMode[]).map((mode) => ({
+        value: mode,
+        label: t(endpointSourceModeLabelKey(mode)),
+      }))}
+      onChange={(mode) => onChange(mode as EndpointSourceMode)}
+    />
+  );
+}
+
+function DeclaredEndpointsEditor({
+  endpoints,
+  help,
+  requireOne = false,
+  onChange,
+  onUpdate,
+}: {
+  endpoints: DeclaredEndpointEditorValue[];
+  help: string;
+  requireOne?: boolean;
+  onChange: (endpoints: DeclaredEndpointEditorValue[]) => void;
+  onUpdate: (index: number, field: 'uri' | 'transport', value: string) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <Label>{t('agent.declaredEndpoints')}</Label>
+          <p className="mt-1 text-xs text-muted-foreground">{help}</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([...endpoints, { uri: '', transport: 'HTTP' }])}
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          {t('agent.addEndpoint')}
+        </Button>
+      </div>
+      {endpoints.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
+          {t('agent.noDeclaredEndpoints')}
+        </div>
+      ) : endpoints.map((endpoint, index) => (
+        <div
+          key={index}
+          className="grid grid-cols-1 items-end gap-3 rounded-lg border bg-muted/10 p-3 md:grid-cols-[minmax(0,1fr)_220px_auto]"
+        >
+          <Field
+            label={t('agent.endpointUri')}
+            value={endpoint.uri}
+            placeholder="https://agent.example.com/api"
+            onChange={(value) => onUpdate(index, 'uri', value)}
+          />
+          <Field
+            label={t('agent.transport')}
+            value={endpoint.transport}
+            placeholder="HTTP"
+            onChange={(value) => onUpdate(index, 'transport', value)}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            aria-label={t('common.delete')}
+            disabled={requireOne && endpoints.length === 1}
+            onClick={() => onChange(endpoints.filter((_, itemIndex) => itemIndex !== index))}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
     </div>
   );
 }

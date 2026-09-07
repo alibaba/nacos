@@ -101,6 +101,12 @@ standalone profile has no MCP review Pipeline plugin, so the existing MCP row
 covers the no-Pipeline response while focused component tests cover both
 terminal Pipeline payloads.
 
+Agent Version summaries and exact details now expose the same optional
+`publishPipelineInfo`. `AgentVersionAdminApiOpenApiITCase` verifies that this
+field is omitted before a review Pipeline exists. Terminal Agent Pipeline
+payloads remain covered by focused persistence and model tests because the
+standalone profile has no deterministic Agent review Pipeline.
+
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | `AgentAdminApiOpenApiITCase` | `POST /v3/admin/ai/agents/draft` (definition setup)<br>`GET,PUT,DELETE /v3/admin/ai/agents`<br>`GET /v3/admin/ai/agents/list`<br>`GET /v3/admin/ai/agents/versions`<br>`GET /v3/admin/ai/agents/version` | Covered | Creates missing Agent metadata through the unified draft Form, reads bounded Overview and exact Version data, replaces writable metadata while preserving server-managed owner/scope, filters by fuzzy name and one business tag plus scope/owner, pages Agent/Version summaries, and deletes all definition content. Covers omitted/blank namespace defaulting to `public`, explicit namespace isolation, server-derived initial enable/owner/default-scope fields (including the `nacos` owner fallback without request identity), identity/Version/protocol/pagination validation, malformed nested Form JSON, absent resources, and post-delete controlled errors. The removed root `POST /agents` create operation is not part of the contract. |

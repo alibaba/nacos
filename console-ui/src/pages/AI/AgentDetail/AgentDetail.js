@@ -35,6 +35,7 @@ import {
   getProtocols,
   getVersionActions,
   namingDetailPath,
+  parsePipelineInfo,
   runtimeCacheKey,
   usesRuntimeSource,
 } from '../agent-console-model';
@@ -101,6 +102,14 @@ class AgentDetail extends React.Component {
   namespaceId = () => getParams('namespace') || 'public';
 
   agentName = () => getParams('name') || '';
+
+  isGlobalAdmin = () => {
+    try {
+      return Boolean(JSON.parse(localStorage.getItem('token') || '{}').globalAdmin);
+    } catch (error) {
+      return false;
+    }
+  };
 
   loadOverview = () => {
     const agentName = this.agentName();
@@ -386,7 +395,12 @@ class AgentDetail extends React.Component {
     }
     const { agent } = overview;
     const protocols = getProtocols((versionDetail && versionDetail.callInterfaces) || []);
-    const actions = getVersionActions(versionDetail && versionDetail.status);
+    const pipelineInfo = parsePipelineInfo(versionDetail && versionDetail.publishPipelineInfo);
+    const actions = getVersionActions(
+      versionDetail && versionDetail.status,
+      pipelineInfo,
+      this.isGlobalAdmin()
+    );
 
     return (
       <div className="agent-detail-page">
@@ -462,6 +476,9 @@ class AgentDetail extends React.Component {
                       type={action === 'submit' || action === 'publish' ? 'primary' : 'normal'}
                       size="small"
                       loading={actionLoading}
+                      disabled={
+                        action === 'publish' && pipelineInfo && pipelineInfo.status !== 'APPROVED'
+                      }
                       onClick={() => this.runAction(action)}
                     >
                       {ACTION_LABELS[action]}

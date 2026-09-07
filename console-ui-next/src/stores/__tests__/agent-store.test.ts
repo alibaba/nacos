@@ -192,6 +192,31 @@ describe('Agent Console store', () => {
     });
   });
 
+  it('clears stale Version state when the Agent no longer has any Version', async () => {
+    const emptyOverview: AgentOverview = {
+      ...overview,
+      versionPage: {
+        totalCount: 0,
+        pageNumber: 1,
+        pagesAvailable: 0,
+        pageItems: [],
+      },
+    };
+    useAgentStore.setState({
+      currentVersion: version,
+      runtimeCache: { stale: runtime },
+    });
+    mockAgentApi.getAgent.mockResolvedValueOnce({ data: emptyOverview });
+
+    await expect(useAgentStore.getState().fetchOverview('public', 'demo'))
+      .resolves.toEqual(emptyOverview);
+    expect(useAgentStore.getState()).toMatchObject({
+      currentOverview: emptyOverview,
+      currentVersion: null,
+      runtimeCache: {},
+    });
+  });
+
   it('loads a filtered Version page and reports its failures', async () => {
     await expect(useAgentStore.getState().fetchVersionPage(
       'public',

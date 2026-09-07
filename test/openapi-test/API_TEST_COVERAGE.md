@@ -202,7 +202,11 @@ row. It mirrors the Agent Admin relative paths and form contracts, while
 `GET /v3/console/ai/agents/runtime-endpoints` adds only the Console-specific
 Naming service reference wrapper. Agent lifecycle and persistence semantics
 remain covered by the existing Admin rows rather than being redefined by the
-Console facade. The Client Endpoint scenario cross-validates an Admin-created
+Console facade. Agent Version summaries and exact details expose optional
+`publishPipelineInfo`; Admin and Console IT assert that no value is invented
+before a review Pipeline exists, while focused tests cover terminal rejection
+projection and force-publish visibility. The Client Endpoint scenario
+cross-validates an Admin-created
 and published Agent through Console Overview, then verifies that Client
 registration and deregistration produce matching populated and empty Runtime
 snapshots through both Admin and Console.

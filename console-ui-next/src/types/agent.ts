@@ -73,6 +73,7 @@ export interface AgentCallInterface {
 export interface AgentVersionSummary {
   version: string;
   status: AgentVersionStatus;
+  publishPipelineInfo?: string;
   author?: string;
   changeDescription?: string;
   contentDigest?: string;

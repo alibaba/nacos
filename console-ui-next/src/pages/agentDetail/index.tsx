@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -7,10 +7,13 @@ import {
   ArrowLeft,
   Bot,
   CheckCircle2,
+  Clock,
   ExternalLink,
   FilePenLine,
+  Globe,
   Layers3,
   Pencil,
+  Plus,
   Power,
   PowerOff,
   RefreshCw,
@@ -21,6 +24,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentApi } from '@/api/agent';
+import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
+import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import {
+  VersionLifecycleActionBar,
+  VersionLifecycleActionDivider,
+} from '@/components/ai/VersionLifecycleActionBar';
+import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,14 +45,19 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentStore } from '@/stores/agent-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import type {
   AgentVersionActionData,
   AgentVersionStatus,
   AgentVersionSummary,
 } from '@/types/agent';
+import { parsePipelineInfo } from '@/types/pipeline';
 import {
   type AgentVersionAction,
+  buildAgentStatusUpdateData,
+  endpointSourceOrderLabelKey,
+  formatProtocolLabel,
   getProtocols,
   getVersionActions,
   namingDetailPath,
@@ -116,6 +131,7 @@ export default function AgentDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
+  const { globalAdmin, username } = useAuthStore();
   const namespaceId = searchParams.get('namespaceId') || currentNamespace || 'public';
   const agentName = searchParams.get('name') || '';
   const requestedVersion = searchParams.get('version') || '';
@@ -138,6 +154,8 @@ export default function AgentDetailPage() {
   const [versionStatus, setVersionStatus] = useState<AgentVersionStatus | 'ALL'>('ALL');
   const [versionPageNo, setVersionPageNo] = useState(1);
   const [actionLoading, setActionLoading] = useState(false);
+  const [enableToggling, setEnableToggling] = useState(false);
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [labelsText, setLabelsText] = useState('{}');
 
   const loadOverview = useCallback(async () => {
@@ -209,10 +227,13 @@ export default function AgentDetailPage() {
     ? runtimeCache[runtimeCacheKey(currentVersion.version, selectedProtocol)]
     : undefined;
 
-  const editPath = (mode: string, version?: string) => {
+  const editPath = (mode: string, version?: string, basedOnVersion?: string) => {
     const params = new URLSearchParams({ namespaceId, name: agentName, mode });
     if (version) {
       params.set('version', version);
+    }
+    if (basedOnVersion) {
+      params.set('basedOnVersion', basedOnVersion);
     }
     navigate(`/newAgent?${params.toString()}`);
   };
@@ -305,6 +326,21 @@ export default function AgentDetailPage() {
     }
   };
 
+  const toggleAgentEnable = async (enabled: boolean) => {
+    const agent = currentOverview?.agent;
+    if (!agent || agent.status === (enabled ? 'enable' : 'disable')) {
+      return;
+    }
+    setEnableToggling(true);
+    try {
+      await agentApi.updateAgent(buildAgentStatusUpdateData(namespaceId, agent, enabled));
+      toast.success(t('agent.updateSuccess'));
+      await loadOverview();
+    } finally {
+      setEnableToggling(false);
+    }
+  };
+
   if (detailLoading && !currentOverview) {
     return (
       <div className="space-y-4">
@@ -326,117 +362,221 @@ export default function AgentDetailPage() {
   }
 
   const agent = currentOverview.agent;
-  const actions = currentVersion ? getVersionActions(currentVersion.status) : [];
+  const currentPipelineInfo = parsePipelineInfo(currentVersion?.publishPipelineInfo);
+  const actions = currentVersion
+    ? getVersionActions(currentVersion.status, currentPipelineInfo, globalAdmin)
+    : [];
+  const canManageVisibility = globalAdmin || Boolean(username && agent.owner === username);
+  const onlineVersionCount = agent.versionCatalog?.onlineVersions?.length
+    ?? agent.versionInfo?.onlineCnt
+    ?? 0;
+  const latestVersion = agent.versionCatalog?.latestVersion;
+  const canCreateDraftFrom = currentVersion?.status === 'online'
+    || currentVersion?.status === 'offline';
+  const hasUnpublishedVersion = Boolean(
+    agent.versionInfo?.editingVersion || agent.versionInfo?.reviewingVersion,
+  );
 
   return (
     <div className="space-y-5">
       <div className="relative overflow-hidden rounded-xl border bg-card">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.04] via-transparent to-fuchsia-500/[0.03]" />
         <div className="relative p-5">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-2 h-7 w-fit text-muted-foreground hover:text-foreground"
-            onClick={() => navigate('/agentManagement')}
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            {t('agent.backToList')}
-          </Button>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-              <SelectTrigger className="h-7 w-[160px] bg-background/80 text-xs">
-                <SelectValue placeholder={t('agent.selectVersion')} />
-              </SelectTrigger>
-              <SelectContent>
-                {(versionPage?.pageItems || []).map((version) => (
-                  <SelectItem key={version.version} value={version.version}>
-                    {version.version} · {versionStatusLabel(t, version.status)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-7 gap-1.5 text-xs"
-              onClick={() => editPath('metadata')}
+              className="-ml-2 h-7 w-fit text-muted-foreground hover:text-foreground"
+              onClick={() => navigate('/agentManagement')}
             >
-              <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              {t('agent.editMetadata')}
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              {t('agent.backToList')}
             </Button>
-            <Button
-              size="sm"
-              className="h-7 gap-1.5 text-xs"
-              onClick={() => editPath('draft-create')}
-            >
-              <FilePenLine className="mr-1.5 h-3.5 w-3.5" />
-              {t('agent.createDraft')}
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-500">
-            <Bot className="h-7 w-7 text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{agent.displayName || agent.agentName}</h1>
-              <Badge>
-                {agent.status === 'enable' ? t('agent.enabled') : t('agent.disabled')}
-              </Badge>
-              {agent.scope && (
-                <Badge variant="outline">
-                  {agent.scope === 'PUBLIC' ? t('agent.publicScope') : t('agent.privateScope')}
-                </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                <SelectTrigger className="h-7 w-[160px] bg-background/80 text-xs">
+                  <SelectValue placeholder={t('agent.selectVersion')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(versionPage?.pageItems || []).map((version) => {
+                    const pipelineInfo = parsePipelineInfo(version.publishPipelineInfo);
+                    const pendingPublish = (version.status === 'reviewed'
+                      && pipelineInfo?.status !== 'REJECTED')
+                      || (version.status === 'reviewing'
+                        && pipelineInfo?.status === 'APPROVED');
+                    const rejected = version.status === 'reviewed'
+                      && pipelineInfo?.status === 'REJECTED';
+                    return (
+                      <SelectItem key={version.version} value={version.version}>
+                        <span className="flex items-center gap-2">
+                          <span>{version.version}</span>
+                          {latestVersion === version.version && (
+                            <Badge className="border-0 bg-emerald-100 px-1 py-0 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              {t('agent.latestBadge')}
+                            </Badge>
+                          )}
+                          {version.status === 'draft' && (
+                            <Badge className="border-0 bg-amber-100 px-1 py-0 text-[10px] text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                              {t('agent.statusDraft')}
+                            </Badge>
+                          )}
+                          {rejected && (
+                            <Badge className="border-0 bg-red-100 px-1 py-0 text-[10px] text-red-700 dark:bg-red-950/50 dark:text-red-300">
+                              {t('agent.statusRejected')}
+                            </Badge>
+                          )}
+                          {!rejected
+                            && (version.status === 'reviewing'
+                              || version.status === 'reviewed') && (
+                            <Badge className={pendingPublish
+                              ? 'border-0 bg-teal-100 px-1 py-0 text-[10px] text-teal-700 dark:bg-teal-950/50 dark:text-teal-300'
+                              : 'border-0 bg-blue-100 px-1 py-0 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'}
+                            >
+                              {t(pendingPublish
+                                ? 'agent.statusPendingPublish'
+                                : 'agent.statusReviewing')}
+                            </Badge>
+                          )}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 text-xs"
+                onClick={() => editPath('metadata')}
+              >
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                {t('agent.editMetadata')}
+              </Button>
+              {currentOverview?.versionPage.totalCount === 0 && (
+                <Button
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => editPath('draft-create')}
+                >
+                  <FilePenLine className="mr-1.5 h-3.5 w-3.5" />
+                  {t('agent.createDraft')}
+                </Button>
               )}
             </div>
-            <p className="text-xs font-mono text-muted-foreground mt-1">{agent.agentName}</p>
-            <p className="text-sm text-muted-foreground mt-2">{agent.description || '-'}</p>
-            {currentVersion && (
-              <div className="mt-3 border-t border-border/40 pt-3">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="font-mono">
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-400 shadow-lg shadow-violet-500/20">
+              <Bot className="h-7 w-7 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2.5">
+                <h1 className="text-xl font-bold tracking-tight">
+                  {agent.displayName || agent.agentName}
+                </h1>
+                {currentVersion && (
+                  <span className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
                     {currentVersion.version}
-                  </Badge>
-                  <Badge>{versionStatusLabel(t, currentVersion.status)}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {currentVersion.changeDescription || '-'}
                   </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
+                )}
+              </div>
+              <AiResourceStatusControls
+                enabled={agent.status === 'enable'}
+                scope={agent.scope}
+                enabledLabel={t('agent.enabled')}
+                disabledLabel={t('agent.disabled')}
+                publicLabel={t('agent.publicScope')}
+                privateLabel={t('agent.privateScope')}
+                enableDisabled={enableToggling}
+                scopeDisabled
+                onEnabledChange={toggleAgentEnable}
+                visibilityLabel={canManageVisibility
+                  ? t('common.visibilityAuthorization.entry')
+                  : undefined}
+                visibilityTooltip={t('common.visibilityAuthorization.title')}
+                onVisibilityClick={canManageVisibility
+                  ? () => setVisibilityDialogOpen(true)
+                  : undefined}
+              />
+              <p className="mt-1 font-mono text-xs text-muted-foreground">{agent.agentName}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {agent.description || '-'}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  {t('agent.onlineVersions')}: {onlineVersionCount}
+                </span>
+                {!!agent.updateTime && agent.updateTime > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {formatTime(agent.updateTime)}
+                  </span>
+                )}
+                {currentVersion?.changeDescription && (
+                  <span className="inline-flex items-center gap-1">
+                    <FilePenLine className="h-3 w-3" />
+                    {currentVersion.changeDescription}
+                  </span>
+                )}
+              </div>
+              {currentVersion && (actions.length > 0 || canCreateDraftFrom) && (
+                <VersionLifecycleActionBar>
                   {actions.map((action) => (
-                    <Button
-                      key={action}
-                      size="sm"
-                      variant={action === 'deleteDraft'
-                        ? 'destructive'
-                        : action === 'submit' || action === 'publish' || action === 'online'
+                    <Fragment key={action}>
+                      {currentVersion.status === 'draft' && action === 'submit' && (
+                        <VersionLifecycleActionDivider />
+                      )}
+                      <Button
+                        size="sm"
+                        variant={action === 'submit'
+                          || action === 'publish'
+                          || action === 'online'
                           ? 'default'
                           : 'outline'}
-                      className={action === 'forcePublish'
-                        ? 'h-7 gap-1.5 border-destructive/40 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive'
-                        : 'h-7 gap-1.5 text-xs'}
-                      disabled={actionLoading}
-                      onClick={() => {
-                        if (action === 'editDraft') {
-                          editPath('draft-edit', currentVersion.version);
-                        } else if (action === 'deleteDraft') {
-                          deleteDraft();
-                        } else {
-                          runLifecycleAction(action);
-                        }
-                      }}
-                    >
-                      <ActionIcon action={action} />
-                      {actionLabel(t, action)}
-                    </Button>
+                        className={action === 'forcePublish'
+                          ? 'h-7 gap-1.5 border-destructive/40 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive'
+                          : action === 'deleteDraft'
+                            ? 'h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive'
+                            : 'h-7 gap-1.5 text-xs'}
+                        disabled={actionLoading || (action === 'publish'
+                          && !!currentPipelineInfo
+                          && currentPipelineInfo.status !== 'APPROVED')}
+                        onClick={() => {
+                          if (action === 'editDraft') {
+                            editPath('draft-edit', currentVersion.version);
+                          } else if (action === 'deleteDraft') {
+                            deleteDraft();
+                          } else {
+                            runLifecycleAction(action);
+                          }
+                        }}
+                      >
+                        <ActionIcon action={action} />
+                        {actionLabel(t, action)}
+                      </Button>
+                    </Fragment>
                   ))}
-                </div>
-              </div>
-            )}
+                  {canCreateDraftFrom && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      disabled={actionLoading || hasUnpublishedVersion}
+                      title={hasUnpublishedVersion ? t('agent.draftExistsTip') : undefined}
+                      onClick={() => editPath(
+                        'draft-create',
+                        undefined,
+                        currentVersion.version,
+                      )}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {t('agent.createDraftFrom')}
+                    </Button>
+                  )}
+                </VersionLifecycleActionBar>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -462,7 +602,9 @@ export default function AgentDetailPage() {
                         <div className="overflow-x-auto pb-1">
                           <TabsList className="w-max min-w-full justify-start">
                           {protocols.map((protocol) => (
-                            <TabsTrigger key={protocol} value={protocol}>{protocol}</TabsTrigger>
+                            <TabsTrigger key={protocol} value={protocol}>
+                              {formatProtocolLabel(protocol)}
+                            </TabsTrigger>
                           ))}
                           </TabsList>
                         </div>
@@ -470,7 +612,10 @@ export default function AgentDetailPage() {
                         <TabsContent value={selectedProtocol} className="mt-4 space-y-4">
                           <div className="rounded-lg border bg-muted/15 p-4">
                           <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-                            <Info label={t('agent.protocol')} value={selectedInterface.protocol} />
+                            <Info
+                              label={t('agent.protocol')}
+                              value={formatProtocolLabel(selectedInterface.protocol)}
+                            />
                             <Info
                               label={t('agent.protocolVersion')}
                               value={selectedInterface.protocolVersion || '-'}
@@ -481,7 +626,9 @@ export default function AgentDetailPage() {
                             />
                             <Info
                               label={t('agent.sourceOrder')}
-                              value={selectedInterface.endpointSourceOrder.join(' → ')}
+                              value={t(endpointSourceOrderLabelKey(
+                                selectedInterface.endpointSourceOrder,
+                              ))}
                             />
                           </div>
                           </div>
@@ -616,7 +763,16 @@ export default function AgentDetailPage() {
             <CardContent className="p-5 space-y-3">
               <Info label={t('agent.owner')} value={agent.owner || '-'} />
               <Info label={t('agent.provider')} value={agent.provider?.name || '-'} />
-              <Info label={t('agent.tags')} value={(agent.tags || []).join(', ') || '-'} />
+              <div>
+                <p className="text-xs text-muted-foreground">{t('agent.tags')}</p>
+                {(agent.tags || []).length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {agent.tags?.map((tag) => <DetailTagChip key={tag} label={tag} />)}
+                  </div>
+                ) : (
+                  <p className="text-sm">-</p>
+                )}
+              </div>
               <Info
                 label={t('agent.latestVersion')}
                 value={agent.versionCatalog?.latestVersion || '-'}
@@ -708,6 +864,16 @@ export default function AgentDetailPage() {
           </Card>
         </div>
       </div>
+      <VisibilityAuthorizationDialog
+        open={visibilityDialogOpen}
+        namespaceId={namespaceId}
+        resourceType="agent"
+        resourceName={agentName}
+        onOpenChange={setVisibilityDialogOpen}
+        onSuccess={async () => {
+          await loadOverview();
+        }}
+      />
     </div>
   );
 }

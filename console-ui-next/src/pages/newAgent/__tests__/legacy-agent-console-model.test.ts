@@ -221,9 +221,25 @@ describe('Legacy Agent Console editor model', () => {
   });
 
   it('covers lifecycle, protocol, Runtime cache and Naming navigation helpers', () => {
-    expect(legacy.getVersionActions('draft')).toHaveLength(4);
-    expect(legacy.getVersionActions('reviewing')).toEqual(['forcePublish']);
-    expect(legacy.getVersionActions('reviewed')).toEqual(['publish', 'forcePublish', 'redraft']);
+    const rejectedPipeline = legacy.parsePipelineInfo(JSON.stringify({
+      executionId: 'pipeline-1',
+      status: 'REJECTED',
+      pipeline: [],
+    }));
+    expect(rejectedPipeline).toMatchObject({ status: 'REJECTED' });
+    expect(legacy.parsePipelineInfo('{')).toBeNull();
+    expect(legacy.parsePipelineInfo('{}')).toBeNull();
+    expect(legacy.getVersionActions('draft')).toEqual(['editDraft', 'submit', 'deleteDraft']);
+    expect(legacy.getVersionActions('draft', rejectedPipeline, true))
+      .not.toContain('forcePublish');
+    expect(legacy.getVersionActions('reviewing')).toEqual([]);
+    expect(legacy.getVersionActions('reviewing', rejectedPipeline, true))
+      .toEqual(['forcePublish']);
+    expect(legacy.getVersionActions('reviewed')).toEqual(['publish', 'redraft']);
+    expect(legacy.getVersionActions('reviewed', rejectedPipeline, false))
+      .toEqual(['publish', 'redraft']);
+    expect(legacy.getVersionActions('reviewed', rejectedPipeline, true))
+      .toEqual(['publish', 'forcePublish', 'redraft']);
     expect(legacy.getVersionActions('online')).toEqual(['offline']);
     expect(legacy.getVersionActions('offline')).toEqual(['online']);
     expect(legacy.getVersionActions('unknown')).toEqual([]);

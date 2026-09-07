@@ -162,6 +162,7 @@ Agent Version 暴露以下元数据：
 | --- | :---: | --- |
 | `namespaceId`、`agentName`、`version` | 是 | 精确版本身份。 |
 | `status` | 是 | 共享 AI Resource Version 状态。 |
+| `publishPipelineInfo` | 只读 | 序列化的审核 Pipeline 执行过程与结果；尚未执行 Pipeline 时省略。 |
 | `callInterfaces[]` | 是 | 有序协议绑定；至少一个。 |
 | `author` | 否 | Version 作者。 |
 | `changeDescription` | 否 | Version 变更说明。 |
@@ -299,7 +300,7 @@ descriptor 仍由 canonical content 完整表达。
 | --- | --- | --- |
 | `AgentSummary` | 展示、治理和 Version Catalog 摘要。 | Descriptor、Endpoint、完整历史、extensions。 |
 | `AgentOverview` | 完整 Agent 和有界的 Version Summary page。 | Version payload 和 Runtime Endpoint。 |
-| `AgentVersionSummary` | Version、status、author、change description、digest 和时间。 | CallInterface payload。 |
+| `AgentVersionSummary` | Version、status、审核 Pipeline 结果、author、change description、digest 和时间。 | CallInterface payload。 |
 | `AgentVersionDetail` | 精确 Version 元数据和完整 CallInterface。 | Runtime Endpoint。 |
 | `RuntimeEndpointSnapshot` | 一个 Agent 和 protocol 的原始运行时快照，可按 Version 过滤。 | Descriptor、publisher identity、最终可发现性结论。 |
 

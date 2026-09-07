@@ -27,7 +27,6 @@ import {
   Sparkles,
   AlertTriangle,
   AlertCircle,
-  Lock,
   Loader2,
   ShieldAlert,
   MessageSquare,
@@ -41,7 +40,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import MDEditor from '@uiw/react-md-editor';
 import {
@@ -88,6 +86,7 @@ import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
 import {
   VersionLifecycleActionBar,
   VersionLifecycleActionDivider,
@@ -858,60 +857,25 @@ export default function SkillDetailPage() {
                   </span>
                 )}
               </div>
-              {/* Enable & Scope toggle switches */}
-              <div className="flex items-center gap-4 mt-1.5 mb-1">
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                  <Switch
-                    checked={detail.enable}
-                    disabled={enableToggling || !canWriteResource}
-                    onCheckedChange={handleToggleEnable}
-                    className={cn(
-                      detail.enable
-                        ? 'data-[state=checked]:bg-emerald-500'
-                        : '',
-                    )}
-                  />
-                  <span className={cn(
-                    'text-xs font-medium',
-                    detail.enable ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
-                  )}>
-                    {detail.enable ? t('skill.enabled') : t('skill.disabled')}
-                  </span>
-                </label>
-                <div className="h-4 w-px bg-border" />
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                  <Switch
-                    checked={detail.scope === 'PUBLIC'}
-                    disabled={scopeToggling || !canWriteResource}
-                    onCheckedChange={handleToggleScope}
-                  />
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                    {detail.scope === 'PUBLIC' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    {detail.scope === 'PUBLIC' ? t('skill.scopePublic') : t('skill.scopePrivate')}
-                  </span>
-                </label>
-                {canManageVisibility && (
-                  <>
-                    <div className="h-4 w-px bg-border" />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => setVisibilityDialogOpen(true)}
-                        >
-                          <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                          {t('common.visibilityAuthorization.entry')}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('common.visibilityAuthorization.title')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </>
-                )}
-              </div>
+              <AiResourceStatusControls
+                enabled={detail.enable}
+                scope={detail.scope}
+                enabledLabel={t('skill.enabled')}
+                disabledLabel={t('skill.disabled')}
+                publicLabel={t('skill.scopePublic')}
+                privateLabel={t('skill.scopePrivate')}
+                enableDisabled={enableToggling || !canWriteResource}
+                scopeDisabled={scopeToggling || !canWriteResource}
+                onEnabledChange={handleToggleEnable}
+                onScopeChange={handleToggleScope}
+                visibilityLabel={canManageVisibility
+                  ? t('common.visibilityAuthorization.entry')
+                  : undefined}
+                visibilityTooltip={t('common.visibilityAuthorization.title')}
+                onVisibilityClick={canManageVisibility
+                  ? () => setVisibilityDialogOpen(true)
+                  : undefined}
+              />
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
                 <Textarea

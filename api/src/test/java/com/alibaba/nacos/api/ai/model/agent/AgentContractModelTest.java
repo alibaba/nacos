@@ -177,6 +177,7 @@ class AgentContractModelTest extends BasicRequestTest {
         detail.setAgentName("Demo Agent");
         detail.setVersion("1.0.0-RC1");
         detail.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        detail.setPublishPipelineInfo(publishPipelineInfo());
         detail.setCallInterfaces(Collections.singletonList(newCallInterface()));
         detail.setAuthor("nacos");
         detail.setChangeDescription("Initial online version");
@@ -189,6 +190,7 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals("Demo Agent", restored.getAgentName());
         assertEquals("1.0.0-RC1", restored.getVersion());
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, restored.getStatus());
+        assertEquals(publishPipelineInfo(), restored.getPublishPipelineInfo());
         assertEquals("nacos", restored.getAuthor());
         assertEquals("Initial online version", restored.getChangeDescription());
         assertEquals(contentDigest(), restored.getContentDigest());
@@ -452,6 +454,7 @@ class AgentContractModelTest extends BasicRequestTest {
         AgentVersionSummary summary = new AgentVersionSummary();
         summary.setVersion("1.0.0");
         summary.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
+        summary.setPublishPipelineInfo(publishPipelineInfo());
         summary.setAuthor("nacos");
         summary.setChangeDescription("Initial online version");
         summary.setContentDigest(contentDigest());
@@ -503,11 +506,16 @@ class AgentContractModelTest extends BasicRequestTest {
     private void assertVersionSummary(AgentVersionSummary summary) {
         assertEquals("1.0.0", summary.getVersion());
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, summary.getStatus());
+        assertEquals(publishPipelineInfo(), summary.getPublishPipelineInfo());
         assertEquals("nacos", summary.getAuthor());
         assertEquals("Initial online version", summary.getChangeDescription());
         assertEquals(contentDigest(), summary.getContentDigest());
         assertEquals(Long.valueOf(1L), summary.getCreateTime());
         assertEquals(Long.valueOf(2L), summary.getUpdateTime());
+    }
+    
+    private String publishPipelineInfo() {
+        return "{\"executionId\":\"pipeline-1\",\"status\":\"REJECTED\",\"pipeline\":[]}";
     }
     
     @SuppressWarnings("unchecked")

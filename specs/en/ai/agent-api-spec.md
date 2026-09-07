@@ -685,6 +685,12 @@ Console uses `/v3/console/ai/agents` and mirrors every Admin relative path,
 request, result, lifecycle rule, and authorization intent. It is a UI facade,
 not a second Agent application service.
 
+The Console reads `publishPipelineInfo` from the selected Version. It must not
+offer force publish for a fresh draft or an in-progress/approved review. The
+force-publish action is shown only to a global administrator after the current,
+non-historical review result is `REJECTED` and the Version is `reviewing` or
+`reviewed`.
+
 The only Console-specific response is `ConsoleRuntimeEndpointView`, which
 wraps `RuntimeEndpointSnapshot` and adds:
 

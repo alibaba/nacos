@@ -101,6 +101,11 @@
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
+    "PublishPipelineInfo": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Serialized current review Pipeline execution and outcome."
+    },
     "EpochMillis": {
       "type": "integer",
       "minimum": 0,
@@ -473,6 +478,9 @@
         "status": {
           "$ref": "#/$defs/AgentVersionStatus"
         },
+        "publishPipelineInfo": {
+          "$ref": "#/$defs/PublishPipelineInfo"
+        },
         "author": {
           "type": "string",
           "maxLength": 128
@@ -677,6 +685,9 @@
         },
         "status": {
           "$ref": "#/$defs/AgentVersionStatus"
+        },
+        "publishPipelineInfo": {
+          "$ref": "#/$defs/PublishPipelineInfo"
         },
         "callInterfaces": {
           "type": "array",

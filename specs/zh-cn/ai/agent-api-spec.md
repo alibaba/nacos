@@ -552,6 +552,10 @@ Request/Command 对象。它不绑定 namespace；每个操作同时提供显式
 Console 使用 `/v3/console/ai/agents`，镜像 Admin 的每个相对路径、请求、结果、生命周期
 和鉴权意图。它是 UI Facade，不是第二套 Agent Application Service。
 
+Console 从所选 Version 读取 `publishPipelineInfo`。新建 draft、审核进行中或审核通过时不得
+提供强制发布；只有当前非历史审核结果为 `REJECTED`，Version 处于 `reviewing` 或
+`reviewed`，且当前用户是全局管理员时，才展示强制发布操作。
+
 唯一 Console 专用响应为 `ConsoleRuntimeEndpointView`，它包装
 `RuntimeEndpointSnapshot` 并增加：
 

@@ -8,14 +8,15 @@ describe('Skill visibility authorization entry', () => {
   it('shows the entry only for the resource owner or a global administrator', () => {
     expect(SOURCE).toContain('const { globalAdmin, username } = useAuthStore();');
     expect(SOURCE).toContain('const canManageVisibility = globalAdmin || detail.owner === username;');
-    expect(SOURCE).toContain('{canManageVisibility && (');
+    expect(SOURCE).toContain('visibilityLabel={canManageVisibility');
+    expect(SOURCE).toContain('onVisibilityClick={canManageVisibility');
   });
 
   it('keeps draft and lifecycle write operations guarded by resource write permission', () => {
     expect(SOURCE).toContain('const canWriteResource = detail.writable;');
     expect(SOURCE).toContain('{canWriteResource && selectedVersion && currentVersionStatus && (');
-    expect(SOURCE).toContain('disabled={enableToggling || !canWriteResource}');
-    expect(SOURCE).toContain('disabled={scopeToggling || !canWriteResource}');
+    expect(SOURCE).toContain('enableDisabled={enableToggling || !canWriteResource}');
+    expect(SOURCE).toContain('scopeDisabled={scopeToggling || !canWriteResource}');
     expect(SOURCE).toContain('canWrite={canWriteResource}');
   });
 

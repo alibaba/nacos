@@ -128,10 +128,15 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     set({ detailLoading: true, error: null });
     try {
       const response = await agentApi.getAgent({ namespaceId, agentName });
-      set({
-        currentOverview: response.data,
-        versionPage: response.data.versionPage,
-        detailLoading: false,
+      set((state) => {
+        const hasVersions = response.data.versionPage.totalCount > 0;
+        return {
+          currentOverview: response.data,
+          currentVersion: hasVersions ? state.currentVersion : null,
+          versionPage: response.data.versionPage,
+          runtimeCache: hasVersions ? state.runtimeCache : {},
+          detailLoading: false,
+        };
       });
       return response.data;
     } catch (error) {
