@@ -427,6 +427,38 @@ class McpAdminControllerTest {
         verify(lifecycleOperationService).updateMcpServerLabels(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", Map.of());
     }
+
+    @Test
+    void updateScopeSuccess() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/scope").param("mcpName", "nacos-mcp-server")
+            .param("scope", "PUBLIC")).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(),
+            new TypeReference<>() {
+            });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(lifecycleOperationService).updateScope(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "PUBLIC");
+    }
+
+    @Test
+    void updateScopeRequiresScope() throws Throwable {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/scope").param("mcpName", "nacos-mcp-server");
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(request).andReturn(),
+            "ErrCode:400, ErrMsg:Required parameter 'scope' type String is not present");
+    }
+
+    @Test
+    void updateScopeRejectsInvalidScope() throws Throwable {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/scope").param("mcpName", "nacos-mcp-server")
+            .param("scope", "INVALID");
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(request).andReturn(),
+            "ErrCode:400, ErrMsg:Parameter 'scope' must be PUBLIC or PRIVATE");
+    }
     
     @Test
     void standardLifecycleApiDoesNotAcceptCompatibilityIdAsIdentity() throws Throwable {

@@ -485,6 +485,20 @@ public class McpLifecycleOperationService implements McpOperationService {
         scheduleIndex(lifecycle.resource.getNamespaceId(), lifecycle.resource.getName());
         return result;
     }
+
+    /**
+     * Update the visibility scope of one MCP resource.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName MCP resource name
+     * @param scope target visibility scope
+     * @throws NacosException when the resource is absent, not writable, or persistence fails
+     */
+    public void updateScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        resourceManager.doUpdateScope(namespaceId, mcpName, RESOURCE_TYPE, scope);
+        scheduleIndex(namespaceId, mcpName);
+    }
     
     @Override
     public Page<McpServerBasicInfo> listMcpServerWithPage(String namespaceId, String mcpName,

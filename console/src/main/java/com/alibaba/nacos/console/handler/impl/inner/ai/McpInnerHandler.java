@@ -181,6 +181,12 @@ public class McpInnerHandler implements McpHandler {
         Map<String, String> labels) throws NacosException {
         return lifecycleOperationService.updateMcpServerLabels(namespaceId, mcpName, labels);
     }
+
+    @Override
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        lifecycleOperationService.updateScope(namespaceId, mcpName, scope);
+    }
     
     @Deprecated
     @Override

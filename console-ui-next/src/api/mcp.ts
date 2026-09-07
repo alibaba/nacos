@@ -12,6 +12,7 @@ import type {
   McpVersionIdentity,
   McpVersionStatus,
 } from '@/types/mcp';
+import type { ConflictPolicy } from '@/types/config';
 
 const BASE = 'v3/console/ai/mcp';
 const FORM_HEADERS = { 'Content-Type': 'application/x-www-form-urlencoded' };
@@ -123,4 +124,25 @@ export const mcpApi = {
     authToken?: string;
   }): ApiResult<McpTool[]> =>
     client.get(`${BASE}/importToolsFromMcp`, { params }) as ApiResult<McpTool[]>,
+
+  /** Export selected MCP servers as a JSON download. */
+  exportServers: (params: { namespaceId: string; mcpNames: string[] }): Promise<Blob> =>
+    client.get(`${BASE}/export`, {
+      params: { namespaceId: params.namespaceId, mcpNames: params.mcpNames.join(',') },
+      responseType: 'blob',
+    }) as Promise<Blob>,
+
+  /** Clone selected MCP servers with an explicit conflict policy. */
+  cloneServers: (
+    params: { namespaceId: string; targetNamespaceId?: string; policy: ConflictPolicy },
+    items: Array<{ sourceName: string; targetName?: string }>,
+  ): ApiResult<Record<string, unknown>> =>
+    client.post(`${BASE}/clone`, items, {
+      params: {
+        namespaceId: params.namespaceId,
+        targetNamespaceId: params.targetNamespaceId || params.namespaceId,
+        policy: params.policy,
+      },
+      headers: { 'Content-Type': 'application/json' },
+    }) as ApiResult<Record<string, unknown>>,
 };

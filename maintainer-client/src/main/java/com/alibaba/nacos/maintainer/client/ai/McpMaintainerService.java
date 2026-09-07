@@ -1005,4 +1005,30 @@ public interface McpMaintainerService {
         throws NacosException {
         return updateMcpServerLabels(Constants.DEFAULT_NAMESPACE_ID, request);
     }
+
+    /**
+     * Update MCP visibility scope.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName MCP resource name
+     * @param scope target visibility scope
+     * @return true when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    boolean updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException;
+
+    /**
+     * Update MCP visibility scope in the default namespace.
+     *
+     * @param mcpName MCP resource name
+     * @param scope target visibility scope
+     * @return true when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default boolean updateMcpServerScope(String mcpName, String scope) throws NacosException {
+        return updateMcpServerScope(Constants.DEFAULT_NAMESPACE_ID, mcpName, scope);
+    }
 }

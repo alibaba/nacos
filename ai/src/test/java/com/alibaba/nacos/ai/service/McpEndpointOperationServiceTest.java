@@ -116,6 +116,23 @@ class McpEndpointOperationServiceTest {
         assertEquals("groupName", service.getGroup());
         assertEquals("serviceName", service.getName());
     }
+
+    @Test
+    void createMcpServerEndpointServiceIfNecessaryTypeRefUsesReferencedNamespace()
+        throws NacosException {
+        McpEndpointSpec mcpEndpointSpec = new McpEndpointSpec();
+        mcpEndpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
+        mcpEndpointSpec.getData().put("namespaceId", "backend-ns");
+        mcpEndpointSpec.getData().put("groupName", "groupName");
+        mcpEndpointSpec.getData().put("serviceName", "serviceName");
+
+        Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false);
+
+        assertEquals("backend-ns", service.getNamespace());
+        assertEquals("groupName", service.getGroup());
+        assertEquals("serviceName", service.getName());
+    }
     
     @Test
     void createMcpServerEndpointServiceIfNecessaryTypeDirectWithoutExistService()

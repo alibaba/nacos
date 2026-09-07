@@ -112,4 +112,24 @@ describe('MCP Console lifecycle API', () => {
       version: '1.0.0',
     });
   });
+
+  it('uses the batch export and clone routes', async () => {
+    mockClient.get.mockResolvedValueOnce(new Blob(['[]'], { type: 'application/json' }));
+    await mcpApi.exportServers({ namespaceId: 'public', mcpNames: ['demo', 'other'] });
+    expect(mockClient.get).toHaveBeenLastCalledWith(`${BASE}/export`, {
+      params: { namespaceId: 'public', mcpNames: 'demo,other' },
+      responseType: 'blob',
+    });
+
+    const items = [{ sourceName: 'demo', targetName: 'demo-copy' }];
+    await mcpApi.cloneServers({ namespaceId: 'public', policy: 'ABORT' }, items);
+    expect(mockClient.post).toHaveBeenLastCalledWith(`${BASE}/clone`, items, {
+      params: {
+        namespaceId: 'public',
+        targetNamespaceId: 'public',
+        policy: 'ABORT',
+      },
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
 });

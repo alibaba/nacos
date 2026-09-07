@@ -231,6 +231,14 @@ public class McpProxy {
         Map<String, String> labels) throws NacosException {
         return mcpHandler.updateMcpServerLabels(namespaceId, mcpName, labels);
     }
+
+    /**
+     * Update MCP visibility scope.
+     */
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        mcpHandler.updateMcpServerScope(namespaceId, mcpName, scope);
+    }
     
     /**
      * Validate MCP server import request.

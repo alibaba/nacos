@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerDraftForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerLabelsForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpScopeForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
@@ -345,5 +346,22 @@ public class McpAdminController {
         Map<String, String> labels = McpRequestUtil.parseMcpServerLabels(form.getLabels());
         return Result.success(lifecycleOperationService.updateMcpServerLabels(
             form.getNamespaceId(), form.getMcpName(), labels));
+    }
+
+    /**
+     * Update MCP visibility scope (PUBLIC or PRIVATE).
+     *
+     * @param form scope update request
+     * @return successful result
+     * @throws NacosException if the MCP is not found, not writable, or the update fails
+     */
+    @Since("3.3.0")
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateScope(McpScopeForm form) throws NacosException {
+        form.validate();
+        lifecycleOperationService.updateScope(form.getNamespaceId(), form.getMcpName(),
+            form.getScope());
+        return Result.success("ok");
     }
 }

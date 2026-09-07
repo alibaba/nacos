@@ -189,6 +189,12 @@ public interface McpHandler {
      */
     Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException;
+
+    /**
+     * Update MCP visibility scope.
+     */
+    void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException;
     
     /**
      * Validate MCP server import request.

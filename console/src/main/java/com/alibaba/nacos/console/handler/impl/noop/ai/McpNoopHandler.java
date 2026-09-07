@@ -169,6 +169,12 @@ public class McpNoopHandler implements McpHandler {
         Map<String, String> labels) throws NacosException {
         throw disabled();
     }
+
+    @Override
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        throw disabled();
+    }
     
     @Deprecated
     @Override
