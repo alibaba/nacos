@@ -231,6 +231,12 @@ AgentCard polling tasks.
 | Admin `/v3/admin/ai/a2a` and `A2aMaintainerService` | Supported through the 4.0.x compatibility window. |
 | Console `/v3/console/ai/a2a` | Supported through the 3.4.x compatibility window. |
 
+The legacy Console Agent pages are an A2A-only compatibility UI and use
+`/v3/console/ai/a2a`. Protocol-neutral Agent lifecycle, multi-protocol editing,
+and generic Agent metadata management belong to the next Console and its
+canonical Agent APIs. A generic Agent without an online A2A binding is not
+required to appear in the legacy Console list.
+
 Legacy paths, payload type names, DTOs, ability keys, authorization identity,
 and response wrappers remain stable during their windows. New Agent/RAD APIs
 must not expose `registrationType`, `setAsLatest`, or AgentCard-specific list

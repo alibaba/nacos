@@ -182,6 +182,10 @@ SDK shutdown 必须停止所有旧 AgentCard 轮询任务。
 | Admin `/v3/admin/ai/a2a` 和 `A2aMaintainerService` | 兼容到 4.0.x 窗口。 |
 | Console `/v3/console/ai/a2a` | 兼容到 3.4.x 窗口。 |
 
+旧控制台的 Agent 页面是仅支持 A2A 的兼容 UI，使用 `/v3/console/ai/a2a`。协议无关的
+Agent 生命周期、多协议编辑和通用 Agent 元数据管理属于新控制台及其标准 Agent API。
+没有 online A2A Binding 的通用 Agent 不要求出现在旧控制台列表中。
+
 兼容窗口内，旧路径、Payload type、DTO、能力位、鉴权身份和响应包装保持稳定。新 Agent/RAD API
 不得暴露 `registrationType`、`setAsLatest` 或 AgentCard 专属列表包装。
 

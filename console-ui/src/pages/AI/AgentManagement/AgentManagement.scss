@@ -1,12 +1,8 @@
 .agent-management {
   .search-form {
-    padding: 12px 0;
+    padding: 16px;
+    border-radius: 4px;
     margin-bottom: 16px;
-
-    .next-form-item {
-      margin-right: 8px;
-      margin-bottom: 8px;
-    }
   }
 
   .agent-table {
@@ -64,7 +60,7 @@
       margin-right: 4px;
     }
   }
-  
+
   .form-help-text {
     color: #666;
     font-size: 12px;
@@ -89,7 +85,7 @@
       word-break: break-all;
     }
   }
-  
+
   .version-table {
     .version-tag {
       border-radius: 12px;
