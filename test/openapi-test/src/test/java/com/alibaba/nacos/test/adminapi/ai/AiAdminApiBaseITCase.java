@@ -30,9 +30,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -52,9 +54,16 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected static final String DEFAULT_NAMESPACE = "public";
 
+    private static final String AUTH_VISIBILITY_PATH = nacosPath("/v3/auth/visibility");
+
+    private static final String ANONYMOUS_USERNAME = System.getProperty(
+            "nacos.test.auth.anonymous.username", "__nacos_anonymous__");
+
     private static final int MCP_DELETE_MAX_RETRIES = 60;
 
     private static final long MCP_DELETE_RETRY_INTERVAL_MILLIS = 250L;
+
+    private final Set<String> registeredVisibilityGrants = new HashSet<>();
 
     protected static final String ADMIN_A2A_PATH = nacosPath(Constants.A2A.ADMIN_PATH);
 
@@ -137,6 +146,41 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
 
     protected String randomPromptKey(String scenario) {
         return "oit_" + scenario + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    protected void grantClientReadVisibility(String resourceType, String resourceName)
+            throws Exception {
+        grantClientReadVisibility(DEFAULT_NAMESPACE, resourceType, resourceName);
+    }
+
+    protected void grantClientReadVisibility(String namespaceId, String resourceType,
+            String resourceName) throws Exception {
+        if (AUTH_ENABLED) {
+            grantReadVisibility(identityUsername(AuthIdentity.CLIENT_READ_WRITE), namespaceId,
+                    resourceType, resourceName);
+        }
+    }
+
+    protected void grantAnonymousReadVisibility(String resourceType, String resourceName)
+            throws Exception {
+        if (AUTH_ENABLED) {
+            grantReadVisibility(ANONYMOUS_USERNAME, DEFAULT_NAMESPACE, resourceType,
+                    resourceName);
+        }
+    }
+
+    private void grantReadVisibility(String username, String namespaceId, String resourceType,
+            String resourceName) throws Exception {
+        String grantKey = username + '\n' + namespaceId + '\n' + resourceType + '\n'
+                + resourceName;
+        if (!registeredVisibilityGrants.add(grantKey)) {
+            return;
+        }
+        Query grant = Query.newInstance().addParam("namespaceId", namespaceId)
+                .addParam("resourceType", resourceType).addParam("resourceName", resourceName)
+                .addParam("username", username).addParam("action", "r");
+        postFormOk(AUTH_VISIBILITY_PATH, grant);
+        addCleanup(() -> deleteQuietly(AUTH_VISIBILITY_PATH, grant));
     }
 
     protected Query mcpIdentityQuery(String mcpName, String mcpId, String version) {
@@ -407,14 +451,14 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
     }
 
     protected HttpResponse postFormRaw(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> result = nacosRestTemplate.postForm(requestUrl(path), Header.EMPTY,
-                form, String.class);
+        HttpRestResult<String> result = nacosRestTemplate.postForm(requestUrl(path),
+                requestHeader(requestUrl(path)), form, String.class);
         return toHttpResponse(result);
     }
 
     protected HttpResponse putFormRaw(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> result = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY,
-                form, String.class);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(requestUrl(path),
+                requestHeader(requestUrl(path)), form, String.class);
         return toHttpResponse(result);
     }
 

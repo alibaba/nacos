@@ -57,6 +57,15 @@ V3 HTTP API 应声明 `@Secured`，除非该端点被明确设计为：
 Admin API 应使用 `ApiType.ADMIN_API`。Console API 应使用
 `ApiType.CONSOLE_API`。Open API 应使用 `ApiType.OPEN_API`。
 
+### 3.1 鉴权范围默认行为
+
+从 Nacos 3.3 开始，Client/Open API、Admin API 和 Console API 鉴权全部默认开启。因此
+`nacos.core.auth.enabled` 属性缺失时，Client HTTP API 及对应 Java SDK 和 gRPC 请求也必须受到保护。
+显式 `false` 继续作为受支持的兼容覆盖值。
+
+HTTP Filter、条件 Bean、插件激活策略和配置对象必须使用相同的属性缺失默认值。修改 Client 范围不得
+隐式修改 Admin 或 Console 范围。公开和初始化例外继续由下文显式规则决定，不因范围默认值而改变。
+
 ## 4. 公开端点和初始化端点
 
 端点只有在被明确设计为公开端点、初始化端点、健康检查端点或兼容端点时，

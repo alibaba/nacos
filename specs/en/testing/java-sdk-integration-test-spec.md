@@ -25,9 +25,10 @@ The goal is SDK scenario coverage. It is not line coverage or branch coverage.
 
 ## 1. Scope
 
-The primary Java SDK IT location is `test/java-sdk-test`. Tests in this module
-assume a standalone Nacos server is already running and create real Java SDK
-clients as external applications.
+Public Client SDK IT lives in `test/java-sdk-test`. Maintainer SDK IT lives in
+`test/maintainer-sdk-test`. Both modules assume a standalone Nacos server is
+already running and create real external clients, but they keep separate Maven
+profiles, reports, and failure boundaries.
 
 This spec applies when changing:
 
@@ -101,6 +102,20 @@ For listener APIs, verify initial query behavior when applicable, callback
 delivery for an observable change, unsubscribe/remove behavior, and cleanup.
 Use bounded waits and clear assertion messages.
 
+### 3.6 Authentication And Authorization
+
+With the Nacos 3.3 default-auth baseline, verify successful remote behavior with
+an audience-appropriate identity, missing and invalid credentials, an
+authenticated identity without authority, read/write boundaries where the SDK
+exposes both actions, and exact-resource boundaries where they are observable.
+Authentication or authority failure must remain a controlled SDK exception or
+documented result and must not be mistaken for timeout, not-found, empty data,
+or local-cache success.
+
+Listener, subscription, Watch, retry, reconnect, token refresh, redo, and
+shutdown paths must preserve the same identity boundary. Tests must not create
+a replacement client merely to hide re-authentication or reconnect defects.
+
 ## 4. Test Organization
 
 Java SDK ITs should live under:
@@ -109,8 +124,9 @@ Java SDK ITs should live under:
 - `com.alibaba.nacos.test.sdk.naming`
 - `com.alibaba.nacos.test.sdk.ai`
 - `com.alibaba.nacos.test.sdk.lock`
-- `com.alibaba.nacos.test.sdk.maintainer.<domain>` when maintainer SDK ITs are
-  added
+
+Maintainer SDK ITs use the corresponding domain packages under
+`test/maintainer-sdk-test/src/test/java/com/alibaba/nacos/test/maintainer`.
 
 Prefer one public SDK interface, or one tightly coupled API family, per test
 class. Shared client construction, cleanup, bounded waits, random resource
@@ -129,12 +145,25 @@ Java SDK ITs must:
 - shut down every SDK instance even when assertions fail;
 - use bounded retries for asynchronous server effects.
 
+The standard Nacos 3.3 standalone SDK IT baseline uses the packaged defaults
+with Client, Admin, and Console auth enabled. The workflow configures only the
+deployment-specific token secret, server identity, test identities, and
+functional fixtures; it does not force auth scopes or the authorization cache.
+
+Public Client SDK functional tests use a non-admin identity with the minimum
+read/write permissions required by the scenario. Maintainer SDK functional
+tests use a global administrator or an explicitly scoped management identity
+when that distinction is under test. Both modules add focused missing,
+invalid, no-authority, and read-only cases instead of multiplying every
+business workflow by every identity. Default and Jackson 3 adapters must use
+the same auth expectations.
+
 ## 6. Scenario Documentation
 
 Each SDK IT class must include a compact `Scenario coverage` Javadoc section,
-or update `test/java-sdk-test/JAVA_SDK_IT_COVERAGE.md` when the matrix is large.
-The documentation must say what is verified and why any branch is intentionally
-not covered.
+or update the appropriate `JAVA_SDK_IT_COVERAGE.md` or
+`MAINTAINER_SDK_IT_COVERAGE.md` when the matrix is large. The documentation
+must say what is verified and why any branch is intentionally not covered.
 
 ## 7. Validation
 
@@ -142,6 +171,11 @@ For Java SDK IT changes, run:
 
 - `mvn -pl test/java-sdk-test spotless:check`
 - `mvn -pl test/java-sdk-test -DskipTests test-compile`
+
+For Maintainer SDK IT changes, run:
+
+- `mvn -pl test/maintainer-sdk-test spotless:check`
+- `mvn -pl test/maintainer-sdk-test -DskipTests test-compile`
 
 When a standalone Nacos server is available, run the relevant Failsafe
 selection or
@@ -152,6 +186,10 @@ Java SDK ITs intentionally use the dedicated `java-sdk-integration-test` Maven
 profile. The generic `integration-test` profile is reserved for HTTP API IT
 workflows and must not accidentally run SDK tests that depend on SDK gRPC
 connection readiness or optional server abilities.
+
+Maintainer SDK ITs use the separate `maintainer-sdk-integration-test` profile.
+The Client and Maintainer modules may share one running server and one CI job,
+but one profile must not implicitly execute the other module.
 
 ## 8. AI Resource Search And Agent Scenarios
 

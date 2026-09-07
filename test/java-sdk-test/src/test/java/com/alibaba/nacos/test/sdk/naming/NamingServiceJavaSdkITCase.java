@@ -32,7 +32,12 @@ import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -74,6 +79,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
  *     unsubscribe stops later callbacks, fuzzy watch returns matched service keys, receives add
  *     events, stops callbacks after cancel, and deregister cleanup plus SDK shutdown are safe.</li>
+ *     <li>Directed recovery: the original publisher and subscriber reconnect after a real
+ *     standalone process replacement, redo an ephemeral registration, restore the subscription,
+ *     and observe a later instance update.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -81,6 +89,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static final String TEST_IP = "127.0.0.1";
+
+    private static final String RECONNECT_ENABLED_PROPERTY = "nacos.naming.reconnect.enabled";
+
+    private static final String RECONNECT_CONTROL_DIR_PROPERTY =
+            "nacos.naming.reconnect.control.dir";
+
+    private static final long RECONNECT_TIMEOUT_MILLIS = 120000L;
 
     @Test
     public void testRegisterQuerySelectListAndDeregisterInstance() throws Exception {
@@ -396,6 +411,65 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = RECONNECT_ENABLED_PROPERTY, matches = "true")
+    public void shouldRedoEphemeralRegistrationAndSubscriptionAfterRealServerRestart()
+            throws Exception {
+        Path controlDirectory = reconnectControlDirectory();
+        Path ready = resetMarker(controlDirectory, "client-ready");
+        Path serverStopped = resetMarker(controlDirectory, "server-stopped");
+        Path downObserved = resetMarker(controlDirectory, "client-observed-down");
+        Path serverRestarted = resetMarker(controlDirectory, "server-restarted");
+
+        NamingService publisher = createNamingService();
+        NamingService subscriber = createNamingService();
+        String serviceName = randomServiceName("restart-redo");
+        String groupName = randomGroup("restart-redo");
+        Instance beforeRestart = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance afterRestart = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        AtomicReference<List<Instance>> received = new AtomicReference<>();
+        EventListener listener = event -> {
+            if (event instanceof NamingEvent
+                    && eventContainsInstance(event, afterRestart.getPort())) {
+                received.set(((NamingEvent) event).getInstances());
+            }
+        };
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, listener));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, afterRestart));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, beforeRestart));
+
+        publisher.registerInstance(serviceName, groupName, beforeRestart);
+        waitUntil("the initial ephemeral instance should become visible",
+                () -> containsInstance(subscriber.getAllInstances(serviceName, groupName, false),
+                        beforeRestart.getPort()));
+        subscriber.subscribe(serviceName, groupName, listener);
+        writeMarker(ready, serviceName);
+
+        waitForMarker(serverStopped, "external harness should stop the standalone server");
+        waitUntil("the original Naming clients should observe the stopped server",
+                RECONNECT_TIMEOUT_MILLIS,
+                () -> "DOWN".equals(publisher.getServerStatus())
+                        && "DOWN".equals(subscriber.getServerStatus()));
+        writeMarker(downObserved, serviceName);
+        waitForMarker(serverRestarted, "external harness should restart the standalone server");
+
+        waitUntil("the original Naming clients should reconnect after restart",
+                RECONNECT_TIMEOUT_MILLIS,
+                () -> "UP".equals(publisher.getServerStatus())
+                        && "UP".equals(subscriber.getServerStatus()));
+        waitUntil("Naming redo should restore the pre-restart ephemeral instance",
+                RECONNECT_TIMEOUT_MILLIS,
+                () -> containsInstance(subscriber.getAllInstances(serviceName, groupName, false),
+                        beforeRestart.getPort()));
+        publisher.registerInstance(serviceName, groupName, afterRestart);
+        waitUntil("the subscription registered before restart should receive a later change",
+                RECONNECT_TIMEOUT_MILLIS,
+                () -> received.get() != null
+                        && containsInstance(received.get(), afterRestart.getPort()));
+        assertTrue(containsInstance(subscriber.getAllInstances(serviceName, groupName, false),
+                afterRestart.getPort()));
+    }
+
+    @Test
     public void testGetAllInstancesSubscribeTrueUsesPushedCache() throws Exception {
         NamingService namingService = createNamingService();
         String serviceName = randomServiceName("subscribe-cache");
@@ -658,6 +732,31 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         instance.setEnabled(true);
         instance.addMetadata("source", "java-sdk-test");
         return instance;
+    }
+
+    private Path reconnectControlDirectory() throws Exception {
+        String value = System.getProperty(RECONNECT_CONTROL_DIR_PROPERTY, "");
+        if (value.isBlank()) {
+            throw new IllegalStateException("Missing required restart IT property: "
+                    + RECONNECT_CONTROL_DIR_PROPERTY);
+        }
+        Path result = Paths.get(value);
+        Files.createDirectories(result);
+        return result;
+    }
+
+    private Path resetMarker(Path controlDirectory, String name) throws Exception {
+        Path result = controlDirectory.resolve(name);
+        Files.deleteIfExists(result);
+        return result;
+    }
+
+    private void waitForMarker(Path marker, String reason) throws Exception {
+        waitUntil(reason, RECONNECT_TIMEOUT_MILLIS, () -> Files.isRegularFile(marker));
+    }
+
+    private void writeMarker(Path marker, String value) throws Exception {
+        Files.write(marker, Collections.singletonList(value), StandardCharsets.UTF_8);
     }
 
     private NamingSelector metadataSelector(String key, String expectedValue) {

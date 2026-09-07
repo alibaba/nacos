@@ -126,7 +126,7 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
         int retryTime = 10;
         while (retryTime-- > 0) {
             HttpRestResult<String> httpResult =
-                nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), Header.EMPTY, query,
+                nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), requestHeader(url(CLIENT_CONFIG_PATH)), query,
                     String.class);
             assertTrue(httpResult.ok());
             actual = JacksonUtils.toObj(httpResult.getData(), new TypeReference<>() {
@@ -205,7 +205,8 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
         throws Exception {
         Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", group)
             .addParam("namespaceId", namespace);
-        return nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), Header.EMPTY, query, String.class);
+        return nacosRestTemplate.get(url(CLIENT_CONFIG_PATH), requestHeader(url(CLIENT_CONFIG_PATH)), query,
+                String.class);
     }
     
     private void assertBadRequestResult(HttpResponse response, ErrorCode errorCode,
@@ -235,7 +236,7 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
         String content) throws Exception {
         Map<String, String> form = buildPublishForm(dataId, groupName, namespaceId, content);
         HttpRestResult<String> httpResult =
-            nacosRestTemplate.postForm(url(ADMIN_CONFIG_PATH), Header.EMPTY, form,
+            nacosRestTemplate.postForm(url(ADMIN_CONFIG_PATH), requestHeader(url(ADMIN_CONFIG_PATH)), form,
                 String.class);
         assertTrue(httpResult.ok(),
             "publish HTTP status should be 2xx, body=" + httpResult.getData());
@@ -251,7 +252,7 @@ public class ConfigOpenApiITCase extends OpenApiBaseITCase {
             Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
                 .addParam("namespaceId", namespaceId).addParam("tag", "");
         HttpRestResult<String> httpResult =
-            nacosRestTemplate.delete(url(ADMIN_CONFIG_PATH), Header.EMPTY, query,
+            nacosRestTemplate.delete(url(ADMIN_CONFIG_PATH), requestHeader(url(ADMIN_CONFIG_PATH)), query,
                 String.class);
         if (!httpResult.ok()) {
             logger().warn("deleteConfig non-OK: code={} body={}", httpResult.getCode(),

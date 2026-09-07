@@ -33,6 +33,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -43,10 +44,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,12 +69,25 @@ public abstract class OpenApiBaseITCase {
     protected static final String NACOS_PORT = System.getProperty("nacos.port", "8848");
     
     protected static final String BASE_URL = "http://" + NACOS_HOST + ":" + NACOS_PORT;
+
+    protected static final boolean AUTH_ENABLED = Boolean.parseBoolean(
+            System.getProperty("nacos.test.auth.enabled", "false"));
+
+    protected static final boolean EXPECTED_ANONYMOUS_AI_ENABLED = Boolean.parseBoolean(
+            System.getProperty("nacos.test.auth.anonymous-ai.enabled", "false"));
+
+    protected static final String EXPECTED_ANONYMOUS_AI_CONFIG_SOURCE =
+            System.getProperty("nacos.test.auth.anonymous-ai.source", "DEFAULT");
+
+    private static final String AUTH_USER_PATH = nacosPath("/v3/auth/user/login");
     
     protected CloseableHttpClient httpClient;
     
     protected NacosRestTemplate nacosRestTemplate;
     
     private final Deque<CleanupAction> cleanupActions = new ArrayDeque<>();
+
+    private final Map<AuthIdentity, String> accessTokens = new EnumMap<>(AuthIdentity.class);
     
     private Logger logger;
     
@@ -119,9 +136,18 @@ public abstract class OpenApiBaseITCase {
     protected HttpResponse getRaw(String pathAndQuery) throws Exception {
         return executeRaw(new HttpGet(requestUrl(pathAndQuery)));
     }
+
+    protected HttpResponse getRaw(String pathAndQuery, AuthIdentity identity) throws Exception {
+        return executeRaw(new HttpGet(requestUrl(pathAndQuery)), identity);
+    }
     
     protected HttpResponse getRaw(String path, Query query) throws Exception {
         return getRaw(path + "?" + query.toQueryUrl());
+    }
+
+    protected HttpResponse getRaw(String path, Query query, AuthIdentity identity)
+            throws Exception {
+        return getRaw(path + "?" + query.toQueryUrl(), identity);
     }
     
     protected ByteResponse getRawBytes(String path, Query query) throws Exception {
@@ -131,17 +157,41 @@ public abstract class OpenApiBaseITCase {
     protected HttpResponse postRaw(String path, Query query) throws Exception {
         return executeRaw(new HttpPost(requestUrl(path + "?" + query.toQueryUrl())));
     }
+
+    protected HttpResponse postRaw(String path, Query query, AuthIdentity identity)
+            throws Exception {
+        return executeRaw(new HttpPost(requestUrl(path + "?" + query.toQueryUrl())),
+                identity);
+    }
     
     protected HttpResponse putRaw(String path, Query query) throws Exception {
         return executeRaw(new HttpPut(requestUrl(path + "?" + query.toQueryUrl())));
+    }
+
+    protected HttpResponse putRaw(String path, Query query, AuthIdentity identity)
+            throws Exception {
+        return executeRaw(new HttpPut(requestUrl(path + "?" + query.toQueryUrl())),
+                identity);
     }
     
     protected HttpResponse deleteRaw(String path, Query query) throws Exception {
         return executeRaw(new HttpDelete(requestUrl(path + "?" + query.toQueryUrl())));
     }
+
+    protected HttpResponse deleteRaw(String path, Query query, AuthIdentity identity)
+            throws Exception {
+        return executeRaw(new HttpDelete(requestUrl(path + "?" + query.toQueryUrl())),
+                identity);
+    }
     
     protected JsonNode getJsonOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.get(requestUrl(path), Header.EMPTY, query, String.class);
+        return getJsonOk(path, query, defaultIdentityFor(requestUrl(path)));
+    }
+
+    protected JsonNode getJsonOk(String path, Query query, AuthIdentity identity)
+            throws Exception {
+        HttpRestResult<String> restResult = nacosRestTemplate.get(requestUrl(path),
+                authHeader(identity), query, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -154,7 +204,9 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode postFormOk(String path, Header header, Map<String, String> form) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path), header, form, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path),
+                mergeIdentity(header, defaultIdentityFor(requestUrl(path))), form,
+                String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -163,8 +215,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode postFormOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path), Header.EMPTY, query,
-                Collections.emptyMap(), String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(requestUrl(path),
+                requestHeader(requestUrl(path)), query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -217,8 +269,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode putFormOk(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY, form,
-                String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path),
+                requestHeader(requestUrl(path)), form, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -227,8 +279,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode putFormOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path), Header.EMPTY, query,
-                Collections.emptyMap(), String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(requestUrl(path),
+                requestHeader(requestUrl(path)), query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -237,8 +289,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected JsonNode deleteJsonOk(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path), Header.EMPTY, query,
-                String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path),
+                requestHeader(requestUrl(path)), query, String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -247,8 +299,8 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected void deleteQuietly(String path, Query query) throws Exception {
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path), Header.EMPTY, query,
-                String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(requestUrl(path),
+                requestHeader(requestUrl(path)), query, String.class);
         if (!restResult.ok()) {
             logger().warn("delete non-OK: path={} code={} body={}", path, restResult.getCode(), restResult.getData());
         }
@@ -272,6 +324,21 @@ public abstract class OpenApiBaseITCase {
     }
 
     protected HttpResponse executeRaw(ClassicHttpRequest request) throws Exception {
+        return executeRaw(request, defaultIdentityFor(request.getUri()));
+    }
+
+    protected HttpResponse executeRaw(ClassicHttpRequest request, AuthIdentity identity)
+            throws Exception {
+        applyIdentity(request, identity);
+        return executeRawRequest(request);
+    }
+
+    protected HttpResponse executeExternalRaw(ClassicHttpRequest request) throws Exception {
+        assertExternalRequest(request);
+        return executeRawRequest(request);
+    }
+
+    private HttpResponse executeRawRequest(ClassicHttpRequest request) throws Exception {
         HttpClientResponseHandler<HttpResponse> responseHandler = response -> {
             String body = null == response.getEntity() ? "" : EntityUtils.toString(response.getEntity());
             return new HttpResponse(response.getCode(), body);
@@ -284,6 +351,21 @@ public abstract class OpenApiBaseITCase {
     }
     
     protected ByteResponse executeRawBytes(ClassicHttpRequest request) throws Exception {
+        return executeRawBytes(request, defaultIdentityFor(request.getUri()));
+    }
+
+    protected ByteResponse executeRawBytes(ClassicHttpRequest request, AuthIdentity identity)
+            throws Exception {
+        applyIdentity(request, identity);
+        return executeRawBytesRequest(request);
+    }
+
+    protected ByteResponse executeExternalRawBytes(ClassicHttpRequest request) throws Exception {
+        assertExternalRequest(request);
+        return executeRawBytesRequest(request);
+    }
+
+    private ByteResponse executeRawBytesRequest(ClassicHttpRequest request) throws Exception {
         HttpClientResponseHandler<ByteResponse> responseHandler = response -> {
             byte[] body = null == response.getEntity() ? new byte[0] : EntityUtils.toByteArray(response.getEntity());
             String contentType = null == response.getEntity() || null == response.getEntity().getContentType()
@@ -293,6 +375,136 @@ public abstract class OpenApiBaseITCase {
             return new ByteResponse(response.getCode(), body, contentType, contentDisposition);
         };
         return httpClient.execute(request, responseHandler);
+    }
+
+    protected Header authHeader(AuthIdentity identity) throws Exception {
+        Header header = Header.newInstance();
+        String token = accessToken(identity);
+        if (null != token) {
+            header.addParam(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+        return header;
+    }
+
+    protected Header requestHeader(String requestUrl) throws Exception {
+        return authHeader(defaultIdentityFor(requestUrl));
+    }
+
+    protected String identityUsername(AuthIdentity identity) {
+        if (null == identity.usernameProperty()) {
+            throw new IllegalArgumentException("Test identity has no username: " + identity);
+        }
+        return requiredProperty(identity.usernameProperty());
+    }
+
+    private Header mergeIdentity(Header source, AuthIdentity identity) throws Exception {
+        Header result = Header.newInstance();
+        result.addAll(source.getHeader());
+        if (null != result.getValue(HttpHeaders.AUTHORIZATION)) {
+            throw new IllegalArgumentException(
+                    "Authorization must be selected through an AuthIdentity");
+        }
+        String token = accessToken(identity);
+        if (null != token) {
+            result.addParam(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+        return result;
+    }
+
+    private AuthIdentity defaultIdentityFor(String requestUrl) {
+        return defaultIdentityFor(URI.create(requestUrl));
+    }
+
+    private AuthIdentity defaultIdentityFor(URI requestUri) {
+        if (!AUTH_ENABLED) {
+            return AuthIdentity.ANONYMOUS;
+        }
+        String path = requestUri.getPath();
+        if (hasPathPrefix(path, "/nacos/v3/client")) {
+            return AuthIdentity.CLIENT_READ_WRITE;
+        }
+        if (hasPathPrefix(path, "/nacos/v3/admin")
+                || hasPathPrefix(path, "/nacos/v3/auth")
+                || hasPathPrefix(path, "/v3/console")) {
+            return AuthIdentity.ADMIN;
+        }
+        throw new IllegalArgumentException(
+                "Auth-enabled Nacos request has no classified identity: " + requestUri);
+    }
+
+    private boolean hasPathPrefix(String path, String prefix) {
+        return path.equals(prefix) || path.startsWith(prefix + '/');
+    }
+
+    private void applyIdentity(ClassicHttpRequest request, AuthIdentity identity)
+            throws Exception {
+        String token = accessToken(identity);
+        if (null == token) {
+            request.removeHeaders(HttpHeaders.AUTHORIZATION);
+        } else {
+            request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+    }
+
+    private String accessToken(AuthIdentity identity) throws Exception {
+        if (AuthIdentity.ANONYMOUS == identity) {
+            return null;
+        }
+        if (AuthIdentity.INVALID == identity) {
+            return "invalid-token";
+        }
+        if (!AUTH_ENABLED) {
+            throw new IllegalStateException(
+                    "Authenticated request requires -Dnacos.test.auth.enabled=true");
+        }
+        String cached = accessTokens.get(identity);
+        if (null != cached) {
+            return cached;
+        }
+        String username = requiredProperty(identity.usernameProperty());
+        String password = requiredProperty(identity.passwordProperty());
+        Query credentials = Query.newInstance().addParam("username", username)
+                .addParam("password", password);
+        HttpRestResult<String> response = nacosRestTemplate.postForm(BASE_URL + AUTH_USER_PATH,
+                Header.EMPTY, credentials, Collections.emptyMap(), String.class);
+        assertTrue(response.ok(), "Authentication failed for test identity " + identity
+                + ", HTTP code=" + response.getCode());
+        JsonNode body = JacksonUtils.toObj(response.getData());
+        assertNotNull(body, "Authentication response is empty for test identity " + identity);
+        assertTrue(body.hasNonNull("accessToken"),
+                "Authentication response has no accessToken for test identity " + identity);
+        String token = body.get("accessToken").asText();
+        accessTokens.put(identity, token);
+        return token;
+    }
+
+    private String requiredProperty(String propertyName) {
+        String result = System.getProperty(propertyName, "");
+        if (result.isBlank()) {
+            String environmentName = propertyName.toUpperCase(Locale.ROOT)
+                    .replace('.', '_').replace('-', '_');
+            result = System.getenv().getOrDefault(environmentName, "");
+        }
+        if (result.isBlank()) {
+            throw new IllegalStateException("Required test property is blank: " + propertyName);
+        }
+        return result;
+    }
+
+    private void assertExternalRequest(ClassicHttpRequest request) throws Exception {
+        URI target = request.getUri();
+        int port = target.getPort();
+        int serverPort = Integer.parseInt(NACOS_PORT);
+        int consolePort = Integer.parseInt(
+                System.getProperty("nacos.console.port", "8080"));
+        if (port == serverPort || port == consolePort) {
+            throw new IllegalArgumentException(
+                    "Nacos server request cannot use the external request helper: " + target);
+        }
+        if (request.containsHeader(HttpHeaders.AUTHORIZATION)) {
+            throw new IllegalArgumentException(
+                    "External request must not carry the Nacos Authorization header");
+        }
     }
     
     protected static void addIfNotBlank(Query query, String name, String value) {
@@ -353,5 +565,34 @@ public abstract class OpenApiBaseITCase {
     }
     
     protected record ByteResponse(int code, byte[] body, String contentType, String contentDisposition) {
+    }
+
+    protected enum AuthIdentity {
+        ANONYMOUS(null, null),
+        INVALID(null, null),
+        CLIENT_READ_WRITE("nacos.test.auth.client.username",
+                "nacos.test.auth.client.password"),
+        CLIENT_READ_ONLY("nacos.test.auth.readonly.username",
+                "nacos.test.auth.readonly.password"),
+        CLIENT_NO_PERMISSION("nacos.test.auth.no-permission.username",
+                "nacos.test.auth.no-permission.password"),
+        ADMIN("nacos.test.auth.admin.username", "nacos.test.auth.admin.password");
+
+        private final String usernameProperty;
+
+        private final String passwordProperty;
+
+        AuthIdentity(String usernameProperty, String passwordProperty) {
+            this.usernameProperty = usernameProperty;
+            this.passwordProperty = passwordProperty;
+        }
+
+        private String usernameProperty() {
+            return usernameProperty;
+        }
+
+        private String passwordProperty() {
+            return passwordProperty;
+        }
     }
 }

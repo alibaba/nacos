@@ -39,104 +39,375 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean install -Prelease-nacos -DskipTests=true
 
-      - name: Start Server Without Auth
+      - name: Generate Ephemeral Auth Test Credentials
         run: |
-          echo "Configuring application.properties..."
+          ADMIN_PASSWORD="NacosIt-$(openssl rand -hex 16)-A1!"
+          CLIENT_PASSWORD="NacosIt-$(openssl rand -hex 16)-C1!"
+          READONLY_PASSWORD="NacosIt-$(openssl rand -hex 16)-R1!"
+          NO_PERMISSION_PASSWORD="NacosIt-$(openssl rand -hex 16)-N1!"
+          TOKEN_SECRET="$(openssl rand -base64 48 | tr -d '\n')"
+          SERVER_IDENTITY_KEY="nacos-it-$(openssl rand -hex 8)"
+          SERVER_IDENTITY_VALUE="$(openssl rand -hex 32)"
+
+          for VALUE in "$ADMIN_PASSWORD" "$CLIENT_PASSWORD" "$READONLY_PASSWORD" \
+            "$NO_PERMISSION_PASSWORD" "$TOKEN_SECRET" "$SERVER_IDENTITY_KEY" \
+            "$SERVER_IDENTITY_VALUE"; do
+            echo "::add-mask::$VALUE"
+          done
+
+          {
+            echo "NACOS_TEST_AUTH_ADMIN_USERNAME=nacos"
+            echo "NACOS_TEST_AUTH_ADMIN_PASSWORD=$ADMIN_PASSWORD"
+            echo "NACOS_TEST_AUTH_CLIENT_USERNAME=nacos_it_client_rw"
+            echo "NACOS_TEST_AUTH_CLIENT_PASSWORD=$CLIENT_PASSWORD"
+            echo "NACOS_TEST_AUTH_READONLY_USERNAME=nacos_it_client_readonly"
+            echo "NACOS_TEST_AUTH_READONLY_PASSWORD=$READONLY_PASSWORD"
+            echo "NACOS_TEST_AUTH_NO_PERMISSION_USERNAME=nacos_it_client_no_permission"
+            echo "NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD=$NO_PERMISSION_PASSWORD"
+            echo "NACOS_TEST_AUTH_TOKEN_SECRET=$TOKEN_SECRET"
+            echo "NACOS_TEST_AUTH_SERVER_IDENTITY_KEY=$SERVER_IDENTITY_KEY"
+            echo "NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE=$SERVER_IDENTITY_VALUE"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify Defaults And Start Auth-enabled Server
+        run: |
           PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
-          echo "Updating file: $PROP_FILE"
-          sed 's|^nacos.plugin.auth.nacos.token.secret.key=$|nacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=testKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=testValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          sed 's|nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          NACOS_HOME=$(cd "$(dirname "$PROP_FILE")/.." && pwd)
+
+          assert_default() {
+            local property="$1"
+            local expected="$2"
+            local count
+            count=$(awk -F= -v key="$property" '$1 == key { count++ } END { print count + 0 }' \
+              "$PROP_FILE")
+            if [ "$count" -ne 1 ] || ! grep -Fxq "${property}=${expected}" "$PROP_FILE"; then
+              echo "Packaged default mismatch for ${property}; expected exactly one ${property}=${expected}" >&2
+              exit 1
+            fi
+          }
+
+          assert_default nacos.core.auth.enabled true
+          assert_default nacos.core.auth.admin.enabled true
+          assert_default nacos.core.auth.console.enabled true
+          assert_default nacos.plugin.auth.nacos.caching.enabled true
+
+          # Keep auth scopes and auth cache untouched: this workflow validates packaged defaults.
+          sed "s|^nacos.plugin.auth.nacos.token.secret.key=.*|nacos.plugin.auth.nacos.token.secret.key=${NACOS_TEST_AUTH_TOKEN_SECRET}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed "s|^nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=${NACOS_TEST_AUTH_SERVER_IDENTITY_KEY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed "s|^nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=${NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^#nacos.plugin.auth.nacos.anonymous.ai.enabled=.*|nacos.plugin.auth.nacos.anonymous.ai.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.publication.max-publications-per-client=.*|nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
-          # Keep the real two-pass Search readiness and MCP cutover flow while avoiding the
-          # production five-minute reconciliation interval in standalone integration tests.
-          echo "nacos.ai.resource.search.index.reconcile.interval-seconds=30" >> "$PROP_FILE"
-          echo "nacos.ai.mcp.resource.reconciliation.interval-seconds=30" >> "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.watch.max-per-client=.*|nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=.*|nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          {
+            echo "nacos.ai.mcp.resource.reconciliation.interval-seconds=1"
+            echo "nacos.ai.resource.search.index.reconcile.interval-seconds=1"
+          } >> "$PROP_FILE"
 
-          echo "RAD capacity configuration:"
-          grep -Fx "nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}" "$PROP_FILE"
-          grep -Fx "nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}" "$PROP_FILE"
-          grep -Fx "nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}" "$PROP_FILE"
+          {
+            grep -E '^nacos\.core\.auth\.(enabled|admin\.enabled|console\.enabled)=' "$PROP_FILE"
+            grep -E '^nacos\.plugin\.auth\.(type|nacos\.caching\.enabled)=' "$PROP_FILE"
+          } > "$RUNNER_TEMP/nacos-it-config-summary.txt"
 
-          echo "Starting server..."
-          bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
+          echo "NACOS_TEST_HOME=$NACOS_HOME" >> "$GITHUB_ENV"
+          bash "$NACOS_HOME/bin/startup.sh" -m standalone
+          SERVER_PID=""
+          for ATTEMPT in $(seq 1 40); do
+            SERVER_PID=$(pgrep -f -- "-Dnacos.home=${NACOS_HOME}" | head -n 1 || true)
+            if [ -n "$SERVER_PID" ]; then
+              break
+            fi
+            sleep 0.25
+          done
+          if [ -z "$SERVER_PID" ]; then
+            echo "Unable to locate the Nacos process for ${NACOS_HOME}" >&2
+            exit 1
+          fi
+          echo "NACOS_TEST_SERVER_PID=$SERVER_PID" >> "$GITHUB_ENV"
 
       - name: Wait for Server Startup
         run: |
-          echo "Waiting for server to launch on port 8080..."
-          if ! timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done'; then
-            echo "Server failed to start"
-            LOG_DIR=$(ls -d distribution/target/nacos-server-*/nacos/logs 2>/dev/null | head -n 1 || true)
-            if [ -n "$LOG_DIR" ]; then
-              echo "::group::Nacos startup.log"
-              if [ -f "$LOG_DIR/startup.log" ]; then
-                tail -300 "$LOG_DIR/startup.log"
-              else
-                echo "startup.log not found"
-              fi
-              echo "::endgroup::"
-              echo "::group::Nacos nacos.log"
-              if [ -f "$LOG_DIR/nacos.log" ]; then
-                tail -300 "$LOG_DIR/nacos.log"
-              else
-                echo "nacos.log not found"
-              fi
-              echo "::endgroup::"
-              echo "::group::Nacos log directory"
-              ls -la "$LOG_DIR"
-              echo "::endgroup::"
-            else
-              echo "Nacos log directory not found"
-            fi
-            exit 1
-          fi
-          echo "Server is up"
-          echo "Waiting for the ARD adaptor to launch on port 9080..."
-          if ! timeout 60s bash -c 'until curl -s localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
-            echo "ARD adaptor failed to start"
-            exit 1
-          fi
-          echo "ARD adaptor is up"
+          show_startup_diagnostics() {
+            local log_dir="${NACOS_TEST_HOME}/logs"
+            echo "::group::Nacos startup.log"
+            tail -300 "$log_dir/startup.log" 2>/dev/null || true
+            echo "::endgroup::"
+            echo "::group::Nacos nacos.log"
+            tail -300 "$log_dir/nacos.log" 2>/dev/null || true
+            echo "::endgroup::"
+            echo "::group::Nacos log directory"
+            ls -la "$log_dir" 2>/dev/null || true
+            echo "::endgroup::"
+          }
 
-      - name: Run IT Tests
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 1; done'; then
+            echo "Nacos console liveness endpoint failed to start" >&2
+            show_startup_diagnostics
+            exit 1
+          fi
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:9080/.well-known/ai-catalog.json >/dev/null; do sleep 1; done'; then
+            echo "ARD adaptor failed to start" >&2
+            show_startup_diagnostics
+            exit 1
+          fi
+          if ! timeout 90s bash -c 'until grep -R -q "Persisted permanent MCP LIFECYCLE_MANAGED marker" "${NACOS_TEST_HOME}/logs" 2>/dev/null; do sleep 1; done'; then
+            echo "MCP lifecycle did not reach the stable LIFECYCLE_MANAGED state" >&2
+            show_startup_diagnostics
+            exit 1
+          fi
+
+      - name: Bootstrap Administrator And Prepare Test Identities
         run: |
-          cd test
-          mvn -B clean verify -Pintegration-test \
-            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
-            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
-            -Dnacos.agent.it.server.http.watch.waiter.capacity="${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}"
+          bash test/scripts/auth-it-identity.sh bootstrap
+          bash test/scripts/auth-it-identity.sh prepare
 
-      - name: Run Java SDK IT Tests
+      - name: Run Initial Auth Scope Guard
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -DskipTests=false -Dit.test=AuthScopeGuardITCase \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+
+      - name: Run Auth-enabled OpenAPI Integration Tests
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -DskipTests=false \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME" \
+            -Dnacos.test.auth.anonymous-ai.enabled=true \
+            -Dnacos.test.auth.anonymous-ai.source=STATIC \
+            -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
+            -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
+            -Dnacos.agent.it.server.http.watch.waiter.capacity="$RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY"
+
+      - name: Guard Auth Scopes After OpenAPI Tests
+        run: |
+          mvn -B -pl test/openapi-test verify -Pintegration-test \
+            -DskipTests=false -Dit.test=AuthScopeGuardITCase \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+
+      - name: Run Java SDK Integration Tests
         run: |
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
             -DskipTests=false \
-            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
-            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
-            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
-            -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.anonymous-ai.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME" \
+            -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
+            -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
+            -Dnacos.agent.it.client.publication.capacity="$RAD_CLIENT_PUBLICATION_CAPACITY" \
+            -Dnacos.agent.it.client.subscription.capacity="$RAD_CLIENT_SUBSCRIPTION_CAPACITY"
+          mkdir -p "$RUNNER_TEMP/nacos-it-reports/java-sdk-default"
+          cp -R test/java-sdk-test/target/failsafe-reports/. \
+            "$RUNNER_TEMP/nacos-it-reports/java-sdk-default/"
 
-      - name: Run Maintainer SDK IT Tests
-        run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test -DskipTests=false
-
-      - name: Run Java SDK IT Tests With Jackson 3
+      - name: Run Java SDK Integration Tests With Jackson 3
         run: |
           mvn -B -pl test/java-sdk-test clean verify \
             -Pjava-sdk-integration-test,jackson3-sdk-test \
             -DskipTests=false \
-            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
-            -Dnacos.agent.it.server.watch.capacity="${RAD_SERVER_WATCH_CAPACITY}" \
-            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}" \
-            -Dnacos.agent.it.client.subscription.capacity="${RAD_CLIENT_SUBSCRIPTION_CAPACITY}"
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.anonymous-ai.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME" \
+            -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
+            -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
+            -Dnacos.agent.it.client.publication.capacity="$RAD_CLIENT_PUBLICATION_CAPACITY" \
+            -Dnacos.agent.it.client.subscription.capacity="$RAD_CLIENT_SUBSCRIPTION_CAPACITY"
 
-      - name: Run Maintainer SDK IT Tests With Jackson 3
-        run: mvn -B -pl test/maintainer-sdk-test clean verify -Pmaintainer-sdk-integration-test,jackson3-sdk-test -DskipTests=false
+      - name: Guard Auth Scopes After Java SDK Tests
+        run: |
+          mvn -B -pl test/openapi-test verify -Pintegration-test \
+            -DskipTests=false -Dit.test=AuthScopeGuardITCase \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+
+      - name: Run Maintainer SDK Integration Tests
+        run: |
+          mvn -B -pl test/maintainer-sdk-test clean verify \
+            -Pmaintainer-sdk-integration-test \
+            -DskipTests=false \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+          mkdir -p "$RUNNER_TEMP/nacos-it-reports/maintainer-sdk-default"
+          cp -R test/maintainer-sdk-test/target/failsafe-reports/. \
+            "$RUNNER_TEMP/nacos-it-reports/maintainer-sdk-default/"
+
+      - name: Run Maintainer SDK Integration Tests With Jackson 3
+        run: |
+          mvn -B -pl test/maintainer-sdk-test clean verify \
+            -Pmaintainer-sdk-integration-test,jackson3-sdk-test \
+            -DskipTests=false \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+
+      - name: Run Final Auth Scope Guard
+        run: |
+          mvn -B -pl test/openapi-test verify -Pintegration-test \
+            -DskipTests=false -Dit.test=AuthScopeGuardITCase \
+            -Dnacos.test.auth.enabled=true \
+            -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
+            -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
+            -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
+            -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
+
+      - name: Verify Explicit Client Auth Disable And Restore
+        run: |
+          PROP_FILE="${NACOS_TEST_HOME}/conf/application.properties"
+          RESPONSE_FILE="$RUNNER_TEMP/nacos-auth-compatibility-response.json"
+          CLIENT_URL="http://127.0.0.1:8848/nacos/v3/client/ns/instance/list?namespaceId=public&groupName=DEFAULT_GROUP&serviceName=nacos-it-auth-compatibility"
+          ADMIN_URL="http://127.0.0.1:8848/nacos/v3/admin/core/namespace/list"
+          CONSOLE_URL="http://127.0.0.1:8080/v3/console/core/namespace?namespaceId=public"
+          LOGIN_URL="http://127.0.0.1:8848/nacos/v3/auth/user/login"
+
+          set_client_auth() {
+            local enabled="$1"
+            sed "s|^nacos.core.auth.enabled=.*|nacos.core.auth.enabled=${enabled}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+            grep -Fxq "nacos.core.auth.enabled=${enabled}" "$PROP_FILE"
+          }
+
+          request_status() {
+            local url="$1"
+            shift
+            curl --silent --show-error --output "$RESPONSE_FILE" \
+              --write-out '%{http_code}' "$@" "$url"
+          }
+
+          await_status() {
+            local expected="$1"
+            local url="$2"
+            shift 2
+            local actual=""
+            for ATTEMPT in $(seq 1 90); do
+              actual=$(request_status "$url" "$@")
+              if [ "$actual" = "$expected" ]; then
+                return
+              fi
+              sleep 1
+            done
+            echo "Expected HTTP ${expected} from ${url}, actual ${actual}" >&2
+            exit 1
+          }
+
+          restore_client_auth() {
+            set_client_auth true || true
+          }
+          trap restore_client_auth EXIT
+
+          LOGIN_STATUS=$(request_status "$LOGIN_URL" --request POST \
+            --data-urlencode "username=${NACOS_TEST_AUTH_CLIENT_USERNAME}" \
+            --data-urlencode "password=${NACOS_TEST_AUTH_CLIENT_PASSWORD}")
+          if [ "$LOGIN_STATUS" != "200" ]; then
+            echo "Unable to obtain the compatibility-smoke client identity" >&2
+            exit 1
+          fi
+          CLIENT_TOKEN=$(sed -n 's/.*"accessToken"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$RESPONSE_FILE" | head -n 1)
+          if [ -z "$CLIENT_TOKEN" ]; then
+            echo "Client login response did not contain an access token" >&2
+            exit 1
+          fi
+          echo "::add-mask::$CLIENT_TOKEN"
+
+          set_client_auth false
+          await_status 200 "$CLIENT_URL"
+          await_status 403 "$ADMIN_URL"
+          await_status 403 "$CONSOLE_URL"
+
+          set_client_auth true
+          await_status 403 "$CLIENT_URL"
+          await_status 200 "$CLIENT_URL" --header "Authorization: Bearer ${CLIENT_TOKEN}"
+          grep -Fxq 'nacos.core.auth.enabled=true' "$PROP_FILE"
+          trap - EXIT
+
+      - name: Redact Ephemeral Credentials From Diagnostics
+        if: always()
+        run: |
+          for VALUE in "${NACOS_TEST_AUTH_ADMIN_PASSWORD:-}" \
+            "${NACOS_TEST_AUTH_CLIENT_PASSWORD:-}" \
+            "${NACOS_TEST_AUTH_READONLY_PASSWORD:-}" \
+            "${NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD:-}" \
+            "${NACOS_TEST_AUTH_TOKEN_SECRET:-}" \
+            "${NACOS_TEST_AUTH_SERVER_IDENTITY_KEY:-}" \
+            "${NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE:-}"; do
+            if [ -n "$VALUE" ]; then
+              find test -type f \
+                \( -path '*/target/failsafe-reports/*' -o \
+                   -path '*/target/surefire-reports/*' \) \
+                -exec sed -i "s|$VALUE|[REDACTED]|g" {} +
+              if [ -n "${NACOS_TEST_HOME:-}" ] && [ -d "${NACOS_TEST_HOME}/logs" ]; then
+                find "${NACOS_TEST_HOME}/logs" -type f \
+                  \( -name '*.log' -o -name '*.out' -o -name '*.txt' \) \
+                  -exec sed -i "s|$VALUE|[REDACTED]|g" {} +
+              fi
+              if [ -d "$RUNNER_TEMP/nacos-it-reports" ]; then
+                find "$RUNNER_TEMP/nacos-it-reports" -type f \
+                  -exec sed -i "s|$VALUE|[REDACTED]|g" {} +
+              fi
+            fi
+          done
+
+      - name: Upload Integration Test Reports And Server Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-reports-and-logs
+          path: |
+            test/*/target/failsafe-reports/
+            test/*/target/surefire-reports/
+            distribution/target/nacos-server-*/nacos/logs/
+            ${{ runner.temp }}/nacos-it-reports/
+            ${{ runner.temp }}/nacos-it-config-summary.txt
+          if-no-files-found: warn
+
+      - name: Stop Server
+        if: always()
+        run: |
+          SERVER_PID="${NACOS_TEST_SERVER_PID:-}"
+          if [ -z "$SERVER_PID" ] && [ -n "${NACOS_TEST_HOME:-}" ]; then
+            SERVER_PID=$(pgrep -f -- "-Dnacos.home=${NACOS_TEST_HOME}" | head -n 1 || true)
+          fi
+          if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+            if [ -z "${NACOS_TEST_HOME:-}" ] || \
+              ! ps -p "$SERVER_PID" -o args= | grep -Fq -- "-Dnacos.home=${NACOS_TEST_HOME}"; then
+              echo "Refusing to stop PID ${SERVER_PID}: it is not the expected Nacos process" >&2
+              exit 1
+            fi
+            kill "$SERVER_PID"
+            for ATTEMPT in $(seq 1 40); do
+              if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+                exit 0
+              fi
+              sleep 0.25
+            done
+            echo "Nacos process ${SERVER_PID} did not stop after SIGTERM" >&2
+            exit 1
+          fi
 
       - name: Restart Server In Historical A2A Migration Mode
         run: |

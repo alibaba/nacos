@@ -57,11 +57,11 @@ public class AgentSpecSearchClientOpenApiITCase extends AgentSpecOpenApiBaseITCa
         String suffix = randomAgentSpecSuffix();
         String firstName = "oit-search-a-" + suffix;
         String secondName = "oit-search-b-" + suffix;
-        publishAgentSpec(firstName, "1.0.0", null, "Search AgentSpec A", "search-a", "soul a");
         addCleanup(() -> deleteAgentSpec(firstName));
+        publishAgentSpec(firstName, "1.0.0", null, "Search AgentSpec A", "search-a", "soul a");
         updateAgentSpecBizTags(firstName, "[\"openapi-it\"]");
-        publishAgentSpec(secondName, "1.0.0", null, "Search AgentSpec B", "search-b", "soul b");
         addCleanup(() -> deleteAgentSpec(secondName));
+        publishAgentSpec(secondName, "1.0.0", null, "Search AgentSpec B", "search-b", "soul b");
         updateAgentSpecBizTags(secondName, "[\"openapi-it\"]");
         
         JsonNode both = waitForSearchTotal(Query.newInstance().addParam("keyword", suffix), 2);
@@ -93,8 +93,8 @@ public class AgentSpecSearchClientOpenApiITCase extends AgentSpecOpenApiBaseITCa
     @Test
     public void testSearchAgentSpecsEmptyKeywordUsesPublicNamespace() throws Exception {
         String name = randomAgentSpecName("open-search");
-        publishAgentSpec(name, "1.0.0", null, "Open Search AgentSpec", "open-search", "open soul");
         addCleanup(() -> deleteAgentSpec(name));
+        publishAgentSpec(name, "1.0.0", null, "Open Search AgentSpec", "open-search", "open soul");
         
         JsonNode root = waitForSearchContains(Query.newInstance().addParam("pageNo", "1")
                 .addParam("pageSize", "500"), name);

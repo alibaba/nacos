@@ -226,7 +226,7 @@ public class AgentSpecConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 ErrorCode.PARAMETER_MISSING, "agentSpecName");
         assertError(putRaw(CONSOLE_AGENT_SPEC_PATH + "/draft",
                 agentSpecQuery(randomAiName("missing-card"))), 400,
-                ErrorCode.PARAMETER_MISSING, "agentSpecCard");
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "agentSpecCard");
 
         Map<String, String> invalidVersion = agentSpecDraftForm(randomAiName("bad-version"),
                 "bad-version");

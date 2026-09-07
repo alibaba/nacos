@@ -177,11 +177,18 @@ NamespaceId -> Group 或 resourceType -> resourceName
 
 鉴权启用状态按 API 受众划分：
 
-| 配置 | 范围 |
-|------|------|
-| `nacos.core.auth.enabled` | 启用 Open API 和通用鉴权系统。 |
-| `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 |
-| `nacos.core.auth.console.enabled` | 启用 Console API 和登录行为鉴权。 |
+| 配置 | 范围 | Nacos 3.3 起默认值 |
+|------|------|--------------------|
+| `nacos.core.auth.enabled` | 启用 Open API、Java SDK 与 gRPC 请求鉴权和通用鉴权系统。 | `true` |
+| `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 | `true` |
+| `nacos.core.auth.console.enabled` | 启用 Console API 和登录行为鉴权。 | `true` |
+
+范围配置缺失时使用表中的默认值。显式配置的 `true` 或 `false` 始终优先于默认值。修改 Client 范围
+不得隐式改变 Admin 或 Console 范围。
+
+Client 范围继续作为可运行时刷新的服务端配置。运维人员可以在分发应用身份期间显式保持关闭，然后在
+不重启服务端的情况下开启。application property reload 是节点本地机制，因此集群切换必须让每个成员
+获得相同的有效值。
 
 选中的鉴权插件由 `nacos.plugin.auth.type` 指定，`nacos.core.auth.system.type` 继续作为
 历史启动 alias。

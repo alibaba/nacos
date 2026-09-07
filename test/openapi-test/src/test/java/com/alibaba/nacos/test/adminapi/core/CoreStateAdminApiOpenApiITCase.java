@@ -42,18 +42,22 @@ public class CoreStateAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
 
     @Test
     public void testServerStateLivenessAndReadiness() throws Exception {
-        JsonNode state = getJsonOk(ADMIN_CORE_STATE_PATH, Query.newInstance()).get("data");
+        JsonNode state = getJsonOk(ADMIN_CORE_STATE_PATH, Query.newInstance(),
+                AuthIdentity.ANONYMOUS).get("data");
         assertTrue(state.isObject(), state.toString());
         assertTrue(state.size() > 0, state.toString());
 
         JsonNode stateWithUnexpectedQuery = getJsonOk(ADMIN_CORE_STATE_PATH,
-                Query.newInstance().addParam("unexpected", "ignored")).get("data");
+                Query.newInstance().addParam("unexpected", "ignored"),
+                AuthIdentity.ANONYMOUS).get("data");
         assertTrue(stateWithUnexpectedQuery.isObject(), stateWithUnexpectedQuery.toString());
 
-        JsonNode liveness = getJsonOk(ADMIN_CORE_STATE_PATH + "/liveness", Query.newInstance());
+        JsonNode liveness = getJsonOk(ADMIN_CORE_STATE_PATH + "/liveness",
+                Query.newInstance(), AuthIdentity.ANONYMOUS);
         assertEquals("ok", liveness.get("data").asText(), liveness.toString());
 
-        JsonNode readiness = getJsonOk(ADMIN_CORE_STATE_PATH + "/readiness", Query.newInstance());
+        JsonNode readiness = getJsonOk(ADMIN_CORE_STATE_PATH + "/readiness",
+                Query.newInstance(), AuthIdentity.ANONYMOUS);
         assertEquals("ok", readiness.get("data").asText(), readiness.toString());
     }
 }

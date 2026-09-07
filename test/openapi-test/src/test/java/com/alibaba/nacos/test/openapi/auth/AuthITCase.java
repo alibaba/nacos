@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.auth;
+package com.alibaba.nacos.test.openapi.auth;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,6 +38,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Shared auth-enabled standalone-server integration test support.
@@ -63,11 +64,24 @@ abstract class AuthITCase {
 
     protected static final String CONTEXT_PATH = "/nacos";
 
-    private static final String ADMIN_USERNAME =
-            System.getProperty("nacos.auth.username", "nacos");
+    private static final String ADMIN_USERNAME = System.getProperty(
+            "nacos.test.auth.admin.username",
+            System.getenv().getOrDefault("NACOS_TEST_AUTH_ADMIN_USERNAME",
+                    System.getProperty("nacos.auth.username", "nacos")));
 
-    private static final String ADMIN_PASSWORD =
-            System.getProperty("nacos.auth.password", "NacosAuth123!");
+    private static final String ADMIN_PASSWORD = System.getProperty(
+            "nacos.test.auth.admin.password",
+            System.getenv().getOrDefault("NACOS_TEST_AUTH_ADMIN_PASSWORD",
+                    System.getProperty("nacos.auth.password", "NacosAuth123!")));
+
+    private static final String NO_PERMISSION_USERNAME = System.getProperty(
+            "nacos.test.auth.no-permission.username",
+            System.getenv().getOrDefault("NACOS_TEST_AUTH_NO_PERMISSION_USERNAME",
+                    "nacos_it_client_no_permission"));
+
+    private static final String NO_PERMISSION_PASSWORD = System.getProperty(
+            "nacos.test.auth.no-permission.password",
+            System.getenv().getOrDefault("NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD", ""));
 
     private static final String USER_PATH = CONTEXT_PATH + "/v3/auth/user";
 
@@ -82,8 +96,16 @@ abstract class AuthITCase {
 
     private String adminToken;
 
+    private String noPermissionToken;
+
     @BeforeEach
     void setUpAuthClient() throws Exception {
+        assumeTrue(Boolean.parseBoolean(System.getProperty("nacos.test.auth.enabled", "false")),
+                "Authorization scenarios require an auth-enabled server");
+        if (ADMIN_PASSWORD.isBlank()) {
+            throw new IllegalStateException(
+                    "Required test property is blank: nacos.test.auth.admin.password");
+        }
         httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
     }
@@ -111,10 +133,21 @@ abstract class AuthITCase {
         return adminToken;
     }
 
+    protected String noPermissionToken() throws Exception {
+        if (noPermissionToken == null) {
+            if (NO_PERMISSION_PASSWORD.isBlank()) {
+                throw new IllegalStateException(
+                        "Required test property is blank: nacos.test.auth.no-permission.password");
+            }
+            noPermissionToken = login(NO_PERMISSION_USERNAME, NO_PERMISSION_PASSWORD);
+        }
+        return noPermissionToken;
+    }
+
     protected TestIdentity createIdentityWithoutPermission(String prefix) throws Exception {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         String username = prefix + '-' + suffix;
-        String password = "AuthTest123!";
+        String password = "AuthTest-" + suffix + "-A1!";
         String role = "ROLE_" + prefix.toUpperCase().replace('-', '_') + '_' + suffix;
 
         assertSuccess(postForm(SERVER_BASE_URL, USER_PATH, adminToken,
@@ -175,6 +208,38 @@ abstract class AuthITCase {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .timeout(Duration.ofSeconds(15)).GET();
         addToken(builder, token);
+        return execute(builder.build());
+    }
+
+    protected Response getWithAuthorization(String baseUrl, String path,
+            String authorization) throws Exception {
+        return requestWithAuthorization(RequestMethod.GET, baseUrl, path, authorization);
+    }
+
+    protected Response postJsonWithAuthorization(String baseUrl, String path,
+            String authorization, String body) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .timeout(Duration.ofSeconds(15))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        addAuthorization(builder, authorization);
+        return execute(builder.build());
+    }
+
+    protected Response requestWithAuthorization(RequestMethod method, String baseUrl,
+            String path, String authorization) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .timeout(Duration.ofSeconds(15));
+        addAuthorization(builder, authorization);
+        switch (method) {
+            case GET -> builder.GET();
+            case POST -> builder.header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.noBody());
+            case PUT -> builder.header("Content-Type", "application/x-www-form-urlencoded")
+                    .PUT(HttpRequest.BodyPublishers.noBody());
+            case DELETE -> builder.DELETE();
+            default -> throw new IllegalStateException("Unsupported request method: " + method);
+        }
         return execute(builder.build());
     }
 
@@ -240,6 +305,53 @@ abstract class AuthITCase {
         };
     }
 
+    protected Response awaitAuthorized(RequestMethod method, String baseUrl, String path,
+            String token) throws Exception {
+        return awaitAuthorized(() -> request(method, baseUrl, path, token));
+    }
+
+    protected Response awaitAuthorized(ResponseRequest request) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
+        Response response;
+        do {
+            response = request.execute();
+            if (response.status() != 403) {
+                return response;
+            }
+            Thread.sleep(250L);
+        } while (System.nanoTime() < deadline);
+        return response;
+    }
+
+    protected Response awaitStatus(ResponseRequest request, int expectedStatus) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
+        Response response;
+        do {
+            response = request.execute();
+            if (response.status() == expectedStatus) {
+                return response;
+            }
+            Thread.sleep(250L);
+        } while (System.nanoTime() < deadline);
+        return response;
+    }
+
+    protected Response awaitSuccess(ResponseRequest request) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
+        Response response;
+        do {
+            response = request.execute();
+            if (response.status() == 200) {
+                JsonNode root = JacksonUtils.toObj(response.body());
+                if (root != null && root.path("code").asInt(Integer.MIN_VALUE) == 0) {
+                    return response;
+                }
+            }
+            Thread.sleep(250L);
+        } while (System.nanoTime() < deadline);
+        return response;
+    }
+
     protected void assertDenied(Response response) {
         assertEquals(403, response.status(), response.body());
         JsonNode root = JacksonUtils.toObj(response.body());
@@ -281,6 +393,12 @@ abstract class AuthITCase {
         }
     }
 
+    private void addAuthorization(HttpRequest.Builder builder, String authorization) {
+        if (authorization != null) {
+            builder.header("Authorization", authorization);
+        }
+    }
+
     private String encodeParameters(Map<String, String> parameters) {
         StringBuilder result = new StringBuilder();
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
@@ -311,5 +429,11 @@ abstract class AuthITCase {
     protected interface CleanupAction {
 
         void run() throws Exception;
+    }
+
+    @FunctionalInterface
+    protected interface ResponseRequest {
+
+        Response execute() throws Exception;
     }
 }

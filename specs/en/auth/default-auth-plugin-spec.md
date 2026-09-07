@@ -40,19 +40,27 @@ auth plugin.
 
 ## Auth Framework Configuration
 
-| Configuration | Purpose |
-|---------------|---------|
-| `nacos.core.auth.enabled` | Enable the general auth system and Open API auth. |
-| `nacos.core.auth.admin.enabled` | Enable Admin API auth. |
-| `nacos.core.auth.console.enabled` | Enable Console API auth and default login behavior. |
-| `nacos.plugin.auth.type` | Select the auth plugin at startup, default `nacos`; `nacos.core.auth.system.type` is the legacy alias. |
-| `nacos.core.auth.server.identity.key` | Server-to-server identity key. |
-| `nacos.core.auth.server.identity.value` | Server-to-server identity value. |
+| Configuration | Purpose | Default since Nacos 3.3 |
+|---------------|---------|-------------------------|
+| `nacos.core.auth.enabled` | Enable the general auth system and Open API, Java SDK, and gRPC request auth. | `true` |
+| `nacos.core.auth.admin.enabled` | Enable Admin API auth. | `true` |
+| `nacos.core.auth.console.enabled` | Enable Console API auth and default login behavior. | `true` |
+| `nacos.plugin.auth.type` | Select the auth plugin at startup; `nacos.core.auth.system.type` is the legacy alias. | `nacos` |
+| `nacos.core.auth.server.identity.key` | Server-to-server identity key. | No shared default |
+| `nacos.core.auth.server.identity.value` | Server-to-server identity value. | No shared default |
 
 These settings control the auth module, API scopes, startup plugin selection,
 and server identity. They are not configuration items owned by `auth:nacos`.
 Plugin selection requires restart. Server identity values must be
 deployment-specific.
+
+An explicitly configured auth-scope value overrides the default. In
+particular, `nacos.core.auth.enabled=false` remains the supported compatibility
+setting while applications are being prepared with credentials. Enabling a
+scope that uses the default plugin requires a deployment-specific token secret,
+and enabling Client auth also requires non-empty server identity key/value for
+server-to-server calls. Distribution startup scripts may generate or migrate
+these values, but embedded and custom deployments must supply them explicitly.
 
 ## Managed Plugin Configuration
 
@@ -397,6 +405,14 @@ with the visible resource set and avoids full-load in-memory filtering.
 Legacy or compatibility endpoints may remain for existing clients, but new
 documentation and new development should target the v3 auth API and the plugin
 contracts defined here.
+
+Nacos 3.3 changes only the default value of Client API authentication. A
+missing `nacos.core.auth.enabled` setting and a new distribution template both
+enable Client auth. An existing configuration that explicitly contains
+`nacos.core.auth.enabled=false` remains disabled, and an explicit environment
+or deployment-tool value continues to win. Operators may distribute client
+credentials first while the switch is explicitly disabled and then enable the
+runtime-refreshable switch on every cluster member.
 
 Legacy static configuration aliases in the managed-plugin table remain
 supported. New distribution templates use canonical keys and identify the old

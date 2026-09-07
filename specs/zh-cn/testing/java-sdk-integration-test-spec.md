@@ -24,8 +24,9 @@ Java SDK IT 的目标是 SDK 场景覆盖，不是行覆盖率或分支覆盖率
 
 ## 1. 范围
 
-Java SDK IT 的主要位置是 `test/java-sdk-test`。该模块假设单机 Nacos 服务已经
-启动，并以外部应用身份创建真实 Java SDK 客户端。
+公开 Client SDK IT 位于 `test/java-sdk-test`，Maintainer SDK IT 位于
+`test/maintainer-sdk-test`。两个模块都假设单机 Nacos 服务已经启动，并创建真实外部客户端，但保留
+独立的 Maven profile、报告和失败边界。
 
 本规范适用于以下变更：
 
@@ -88,6 +89,15 @@ address 和 namespace 默认值，并能通过公开 shutdown 方法释放资源
 对于 listener API，应验证适用场景下的初始查询行为、可观测变更触发回调、
 unsubscribe/remove 行为和清理逻辑。等待必须有边界，并提供清晰断言信息。
 
+### 3.6 认证与授权
+
+在 Nacos 3.3 默认鉴权基线下，验证使用符合 API 受众的身份完成远程功能，并覆盖缺失和错误凭据、
+已认证但无权限、SDK 同时暴露读写动作时的读写边界，以及可观测时的精确资源边界。认证或权限失败必须
+保持为受控 SDK 异常或文档化结果，不能被误判为超时、不存在、空数据或本地缓存成功。
+
+Listener、subscription、Watch、retry、reconnect、token refresh、redo 和 shutdown 路径必须保持
+同一身份边界。测试不得通过新建替代客户端掩盖重新认证或重连缺陷。
+
 ## 4. 测试组织
 
 Java SDK IT 应放在：
@@ -96,7 +106,9 @@ Java SDK IT 应放在：
 - `com.alibaba.nacos.test.sdk.naming`
 - `com.alibaba.nacos.test.sdk.ai`
 - `com.alibaba.nacos.test.sdk.lock`
-- 新增 maintainer SDK IT 时使用 `com.alibaba.nacos.test.sdk.maintainer.<domain>`
+
+Maintainer SDK IT 使用 `test/maintainer-sdk-test/src/test/java/com/alibaba/nacos/test/maintainer`
+下对应的领域 package。
 
 建议一个公开 SDK interface 或一组强关联 API family 对应一个测试类。共享的客户端
 构造、清理、有界等待、随机资源名和 shutdown 逻辑应抽象到基础类。
@@ -114,11 +126,19 @@ Java SDK IT 必须：
 - 即使断言失败，也要关闭每个 SDK 实例；
 - 对异步服务端效果使用有界重试。
 
+Nacos 3.3 标准单机 SDK IT 基线使用发行包默认值开启 Client、Admin 和 Console 鉴权。工作流只配置
+部署环境独立的 token secret、server identity、测试身份和功能 fixture，不强制修改鉴权范围或权限缓存。
+
+公开 Client SDK 功能测试使用具备场景所需最小读写权限的非管理员身份。Maintainer SDK 功能测试使用
+全局管理员；需要验证权限差异时可以使用显式限定的管理身份。两个模块通过聚焦用例覆盖无凭据、错误凭据、
+无权限和只读场景，不要求把每个业务工作流与每种身份做笛卡尔积。默认 adapter 与 Jackson 3 adapter
+必须使用相同鉴权预期。
+
 ## 6. 场景文档
 
-每个 SDK IT 类都必须包含简洁的 `Scenario coverage` Javadoc；当矩阵较大时，
-应更新 `test/java-sdk-test/JAVA_SDK_IT_COVERAGE.md`。文档必须说明验证了什么，
-以及为什么有分支被有意跳过。
+每个 SDK IT 类都必须包含简洁的 `Scenario coverage` Javadoc；当矩阵较大时，应更新对应的
+`JAVA_SDK_IT_COVERAGE.md` 或 `MAINTAINER_SDK_IT_COVERAGE.md`。文档必须说明验证了什么，以及为什么
+有分支被有意跳过。
 
 ## 7. 验证
 
@@ -127,6 +147,11 @@ Java SDK IT 变更需要运行：
 - `mvn -pl test/java-sdk-test spotless:check`
 - `mvn -pl test/java-sdk-test -DskipTests test-compile`
 
+Maintainer SDK IT 变更需要运行：
+
+- `mvn -pl test/maintainer-sdk-test spotless:check`
+- `mvn -pl test/maintainer-sdk-test -DskipTests test-compile`
+
 当单机 Nacos 服务可用时，应运行相关 Failsafe 选择，或执行
 `mvn -pl test/java-sdk-test -Pjava-sdk-integration-test -DskipTests=false
 verify`。
@@ -134,6 +159,9 @@ verify`。
 Java SDK IT 必须使用独立的 `java-sdk-integration-test` Maven profile。通用
 `integration-test` profile 保留给 HTTP API IT 工作流，不能意外运行依赖 SDK
 gRPC 连接就绪状态或可选服务端能力的 SDK 测试。
+
+Maintainer SDK IT 使用独立的 `maintainer-sdk-integration-test` profile。Client 与 Maintainer
+模块可以共享一个运行中的服务端和同一个 CI Job，但任一 profile 都不得隐式执行另一个模块。
 
 ## 8. AI Resource Search 与 Agent 场景
 

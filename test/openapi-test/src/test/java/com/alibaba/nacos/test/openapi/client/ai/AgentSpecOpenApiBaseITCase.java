@@ -52,6 +52,7 @@ public abstract class AgentSpecOpenApiBaseITCase extends AiOpenApiBaseITCase {
         form.put("version", version);
         JsonNode published = postFormOk(AGENT_SPEC_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
+        grantClientReadVisibility("agentspec", name);
     }
     
     protected void updateAgentSpecLabels(String name, String labels) throws Exception {

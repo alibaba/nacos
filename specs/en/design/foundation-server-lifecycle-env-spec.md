@@ -132,9 +132,19 @@ Dynamic configuration rules:
 - Components that extend `AbstractDynamicConfig` must subscribe to
   `ServerConfigChangeEvent`, re-read values from `EnvUtil`, and keep the
   previous valid values when reload fails.
+- A missing property must use the default owned by its domain spec consistently
+  across configuration objects, plugin activation policies, and conditional
+  beans. For example, the Nacos 3.3 auth spec defines a missing
+  `nacos.core.auth.enabled` property as enabled, while an explicit `false`
+  remains effective.
 - Dynamic server configuration must be limited to runtime tunables that are
   explicitly safe to refresh. It must not silently change resource identity,
   storage schema, public API shape, or plugin type ownership.
+
+File watching and `ServerConfigChangeEvent` delivery are node-local. A dynamic
+setting that must have one cluster-wide effective value, including an auth
+scope switch, must be applied and verified on every member by the deployment
+or operational control plane.
 
 ## 6. Custom Environment Plugin
 

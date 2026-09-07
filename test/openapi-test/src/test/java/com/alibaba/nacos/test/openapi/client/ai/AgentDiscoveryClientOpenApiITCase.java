@@ -298,10 +298,10 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
             interfaces.add(callInterface);
         }
         draft.put("callInterfaces", interfaces);
-        postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(draft));
+        Map<String, String> publishForm = agentForm(draft);
+        publishForm.put("autoSubmit", Boolean.TRUE.toString());
+        postFormOk(AGENT_CLIENT_PATH, publishForm);
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
-        postFormOk(ADMIN_AGENT_PATH + "/force-publish", agentForm(
-                agentVersionCommand(null, agentName, "1.0.0")));
     }
 
     private void assertLiteralSearch(String stem, String literal, String expectedName)

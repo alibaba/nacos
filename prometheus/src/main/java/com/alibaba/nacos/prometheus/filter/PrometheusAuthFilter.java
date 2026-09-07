@@ -45,7 +45,8 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  */
 @NacosWebBean
 @Configuration
-@ConditionalOnProperty(value = Constants.Auth.NACOS_CORE_AUTH_ENABLED, havingValue = "true")
+@ConditionalOnProperty(value = Constants.Auth.NACOS_CORE_AUTH_ENABLED, havingValue = "true",
+    matchIfMissing = true)
 @ConditionalOnBean(PrometheusController.class)
 public class PrometheusAuthFilter {
     

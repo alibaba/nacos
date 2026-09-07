@@ -56,7 +56,7 @@ public class AuthPluginTypePolicy implements PluginTypePolicy {
     
     @Override
     public boolean isActive(PluginTypeConfiguration configuration) {
-        return configuration.getBooleanProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, false)
+        return configuration.getBooleanProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, true)
             || configuration.getBooleanProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, true)
             || configuration.getBooleanProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED,
                 true)

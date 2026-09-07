@@ -198,7 +198,7 @@ public class InstanceListOpenApiITCase extends OpenApiBaseITCase {
         Query query = buildInstanceQuery(serviceName, ip, port, clusterName, enabled, groupName,
                 healthy);
         HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(INSTANCE_PATH),
-                Header.EMPTY, query, Collections.emptyMap(), String.class);
+                requestHeader(url(INSTANCE_PATH)), query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(),
                 "register HTTP status should be 2xx, body=" + restResult.getData());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
@@ -214,7 +214,7 @@ public class InstanceListOpenApiITCase extends OpenApiBaseITCase {
                 .addParam("port", String.valueOf(port)).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
         HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
-                Header.EMPTY, query, String.class);
+                requestHeader(url(INSTANCE_PATH)), query, String.class);
         if (!restResult.ok()) {
             logger().warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
                     restResult.getData());
@@ -249,7 +249,7 @@ public class InstanceListOpenApiITCase extends OpenApiBaseITCase {
         addIfNotBlank(query, "clusterName", clusterName);
         addIfNotBlank(query, "healthyOnly", healthyOnly);
         HttpRestResult<String> restResult = nacosRestTemplate.get(url(INSTANCE_LIST_PATH),
-                Header.EMPTY, query, String.class);
+                requestHeader(url(INSTANCE_LIST_PATH)), query, String.class);
         assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
         });

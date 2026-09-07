@@ -339,8 +339,8 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     private JsonNode postAdminFormOk(String path, Map<String, String> form) throws Exception {
-        HttpRestResult<String> result = nacosRestTemplate.postForm(BASE_URL + path, Header.EMPTY,
-                form, String.class);
+        HttpRestResult<String> result = nacosRestTemplate.postForm(BASE_URL + path,
+                requestHeader(BASE_URL + path), form, String.class);
         assertTrue(result.ok(), "Admin HTTP status should be 2xx, code=" + result.getCode()
                 + ", body=" + result.getData() + ", message=" + result.getMessage());
         JsonNode root = JacksonUtils.toObj(result.getData());
@@ -349,8 +349,8 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     private JsonNode getAdminJsonOk(String path, Query query) throws Exception {
-        HttpRestResult<String> result = nacosRestTemplate.get(BASE_URL + path, Header.EMPTY,
-                query, String.class);
+        HttpRestResult<String> result = nacosRestTemplate.get(BASE_URL + path,
+                requestHeader(BASE_URL + path), query, String.class);
         assertTrue(result.ok(), "Admin HTTP status should be 2xx, code=" + result.getCode()
                 + ", body=" + result.getData() + ", message=" + result.getMessage());
         JsonNode root = JacksonUtils.toObj(result.getData());

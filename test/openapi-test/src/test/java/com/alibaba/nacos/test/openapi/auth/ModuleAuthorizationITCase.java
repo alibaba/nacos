@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.auth;
+package com.alibaba.nacos.test.openapi.auth;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,31 +22,109 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Authorization scenarios for every non-anonymous secured Nacos HTTP controller.
  *
- * <p>Each scenario verifies missing identity, invalid identity, valid identity without
- * authority, and valid identity with the required authority. Controller APIs whose resource
- * starts with {@code console/} intentionally require a global administrator and therefore use
- * the administrator as the authorized identity.</p>
+ * <p>Each scenario verifies missing identity, invalid identity, a shared valid identity without
+ * authority, and the global administrator. Fine-grained grants and resource parsing are covered
+ * by {@link ResourceAuthorizationITCase}; reusing prepared identities here keeps the exhaustive
+ * controller matrix deterministic and fast enough for the consolidated CI suite.</p>
  *
  * @author Nacos
  */
 public class ModuleAuthorizationITCase extends AuthITCase {
+
+    private static final int EXPECTED_SECURED_OPERATION_COUNT = 386;
+
+    private static final String OPERATION_COVERAGE_MANIFEST =
+            "test/openapi-test/AUTHORIZATION_OPERATION_COVERAGE.md";
+
+    private static final Pattern SECURED_ANNOTATION = Pattern.compile(
+            "@Secured(?:\\s*\\((.*?)\\))?", Pattern.DOTALL);
+
+    private static final Pattern FOLLOWING_PUBLIC_METHOD = Pattern.compile(
+            "\\bpublic\\s+(?:static\\s+)?(?:final\\s+)?[^;={}]*?"
+                    + "\\b([A-Za-z_$][\\w$]*)\\s*\\(", Pattern.DOTALL);
+
+    private static final Map<String, Integer> EXPECTED_SECURED_OPERATIONS = Map.ofEntries(
+            Map.entry("A2aAdminController", 6),
+            Map.entry("AgentAdminController", 17),
+            Map.entry("AgentClientController", 7),
+            Map.entry("AgentSpecAdminController", 18),
+            Map.entry("AgentSpecClientController", 2),
+            Map.entry("AiResourceImportAdminController", 4),
+            Map.entry("AiResourceSearchClientController", 1),
+            Map.entry("ArdSearchController", 5),
+            Map.entry("ArdWellKnownController", 1),
+            Map.entry("CapacityControllerV3", 2),
+            Map.entry("ClientControllerV3", 7),
+            Map.entry("ClusterControllerV3", 1),
+            Map.entry("ConfigControllerV3", 15),
+            Map.entry("ConfigOpenApiController", 1),
+            Map.entry("ConfigOpsControllerV3", 4),
+            Map.entry("ConsoleA2aController", 6),
+            Map.entry("ConsoleAgentController", 17),
+            Map.entry("ConsoleAgentSpecController", 17),
+            Map.entry("ConsoleAiResourceImportController", 4),
+            Map.entry("ConsoleClusterController", 1),
+            Map.entry("ConsoleConfigController", 13),
+            Map.entry("ConsoleCopilotConfigController", 2),
+            Map.entry("ConsoleCopilotController", 4),
+            Map.entry("ConsoleHistoryController", 4),
+            Map.entry("ConsoleInstanceController", 3),
+            Map.entry("ConsoleMcpController", 20),
+            Map.entry("ConsoleNamespaceController", 6),
+            Map.entry("ConsolePipelineController", 4),
+            Map.entry("ConsolePluginController", 5),
+            Map.entry("ConsolePromptController", 18),
+            Map.entry("ConsoleServiceController", 8),
+            Map.entry("ConsoleSkillController", 20),
+            Map.entry("CoreOpsControllerV3", 3),
+            Map.entry("HealthControllerV3", 2),
+            Map.entry("HistoryControllerV3", 4),
+            Map.entry("InstanceControllerV3", 8),
+            Map.entry("InstanceOpenApiController", 3),
+            Map.entry("ListenerControllerV3", 1),
+            Map.entry("McpAdminController", 17),
+            Map.entry("McpClientController", 6),
+            Map.entry("MetricsControllerV3", 2),
+            Map.entry("NacosClusterControllerV3", 4),
+            Map.entry("NamespaceControllerV3", 6),
+            Map.entry("OperatorControllerV3", 4),
+            Map.entry("PermissionControllerV3", 4),
+            Map.entry("PipelineAdminController", 4),
+            Map.entry("PluginControllerV3", 4),
+            Map.entry("PromptAdminController", 24),
+            Map.entry("PromptClientController", 2),
+            Map.entry("RoleControllerV3", 4),
+            Map.entry("ServerLoaderControllerV3", 5),
+            Map.entry("ServiceControllerV3", 7),
+            Map.entry("SkillAdminController", 20),
+            Map.entry("SkillClientController", 2),
+            Map.entry("UserControllerV3", 5),
+            Map.entry("VisibilityGrantControllerV3", 2));
 
     private static final Set<String> AUTH_PLUGIN_CONTROLLERS = Set.of(
             "PermissionControllerV3", "RoleControllerV3", "UserControllerV3",
             "VisibilityGrantControllerV3");
 
     private static final Set<String> ANONYMOUS_ONLY_CONTROLLERS = Set.of(
-            "ArdSearchController", "ArdWellKnownController", "SkillClientController");
+            "ArdSearchController", "ArdWellKnownController");
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("controllerScenarios")
@@ -55,43 +133,112 @@ public class ModuleAuthorizationITCase extends AuthITCase {
         assertDenied(request(scenario.method(), scenario.baseUrl(), scenario.path(),
                 "invalid-token"));
 
-        TestIdentity identity = createIdentityWithoutPermission(scenario.identityPrefix());
         assertDenied(request(scenario.method(), scenario.baseUrl(), scenario.path(),
-                identity.token()));
+                noPermissionToken()));
 
-        String authorizedToken;
-        if (scenario.globalAdminOnly()) {
-            authorizedToken = adminToken();
-        } else {
-            grantPermission(identity, "*", scenario.action());
-            authorizedToken = identity.token();
-        }
         Response authorized = request(scenario.method(), scenario.baseUrl(), scenario.path(),
-                authorizedToken);
+                adminToken());
         assertNotEquals(403, authorized.status(), scenario + ": " + authorized.body());
     }
 
     @Test
-    void testEverySecuredControllerIsCoveredOrExplicitlyExcluded() throws Exception {
+    void testEverySecuredOperationIsCoveredOrExplicitlyClassified() throws Exception {
         Set<String> expected = new TreeSet<>();
         controllerScenarios().map(ControllerScenario::controller).forEach(expected::add);
         expected.addAll(AUTH_PLUGIN_CONTROLLERS);
         expected.addAll(ANONYMOUS_ONLY_CONTROLLERS);
 
         Path repositoryRoot = findRepositoryRoot();
-        Set<String> actual = new TreeSet<>();
+        Map<String, Integer> actual = new TreeMap<>();
+        Map<String, String> actualOperations = new TreeMap<>();
         try (Stream<Path> paths = Files.walk(repositoryRoot)) {
             for (Path path : paths.filter(Files::isRegularFile)
                     .filter(ModuleAuthorizationITCase::isControllerSource).toList()) {
-                if (Files.readString(path).contains("@Secured")) {
+                long securedOperations = Files.readAllLines(path).stream()
+                        .map(String::stripLeading).filter(line -> line.startsWith("@Secured"))
+                        .count();
+                if (securedOperations > 0) {
                     String filename = path.getFileName().toString();
-                    actual.add(filename.substring(0, filename.length() - ".java".length()));
+                    String controller = filename.substring(0,
+                            filename.length() - ".java".length());
+                    actual.put(controller, Math.toIntExact(securedOperations));
+                    actualOperations.putAll(readSecuredOperations(path));
                 }
             }
         }
-        assertEquals(actual, expected,
-                "Every @Secured controller must have an authorization scenario or an explicit "
-                        + "anonymous-only exclusion");
+        assertEquals(expected, actual.keySet(),
+                "Every @Secured operation must belong to a directly tested controller, an "
+                        + "authorization-equivalent controller group, or an explicit "
+                        + "conditional-anonymous classification");
+        assertEquals(EXPECTED_SECURED_OPERATIONS, actual,
+                "The operation-level inventory changed; classify every added, removed, or "
+                        + "re-annotated @Secured method before updating the registry");
+        assertEquals(EXPECTED_SECURED_OPERATION_COUNT,
+                actual.values().stream().mapToInt(Integer::intValue).sum());
+        assertEquals(readManifestOperations(repositoryRoot), actualOperations,
+                "Every @Secured method and normalized authorization tuple must match the "
+                        + "operation-level coverage manifest");
+    }
+
+    private static Map<String, String> readSecuredOperations(Path source) throws Exception {
+        String content = Files.readString(source);
+        Matcher securedMatcher = SECURED_ANNOTATION.matcher(content);
+        Map<String, String> result = new HashMap<>();
+        while (securedMatcher.find()) {
+            Matcher methodMatcher = FOLLOWING_PUBLIC_METHOD.matcher(content);
+            methodMatcher.region(securedMatcher.end(), content.length());
+            assertTrue(methodMatcher.find(), "No public method follows @Secured in " + source);
+            String operation = source.getFileName().toString().replace(".java", "") + '#'
+                    + methodMatcher.group(1);
+            String tuple = normalizeWhitespace(securedMatcher.group(1));
+            assertNull(result.put(operation, tuple), "Duplicate secured operation: " + operation);
+        }
+        return result;
+    }
+
+    private static Map<String, String> readManifestOperations(Path repositoryRoot)
+            throws Exception {
+        Path manifest = repositoryRoot.resolve(OPERATION_COVERAGE_MANIFEST);
+        Map<String, String> result = new TreeMap<>();
+        for (String line : Files.readAllLines(manifest)) {
+            if (!line.startsWith("| `")) {
+                continue;
+            }
+            String[] cells = line.split("\\|", -1);
+            assertTrue(cells.length >= 7, "Malformed operation coverage row: " + line);
+            String operation = stripCode(cells[2]);
+            String tuple = stripCode(cells[3]);
+            String parser = stripCode(cells[4]);
+            String coverage = cells[5].trim();
+            assertFalse(parser.isBlank(), "Missing parser classification: " + operation);
+            assertFalse(coverage.isBlank(), "Missing test attribution: " + operation);
+            if (tuple.contains("ALLOW_ANONYMOUS")) {
+                assertTrue(coverage.contains("ConditionalAnonymousAuthorizationITCase"),
+                        "Conditional anonymous operation needs direct coverage: " + operation);
+            }
+            if (tuple.contains("ONLY_IDENTITY")) {
+                assertTrue(coverage.contains("IdentityOnlyAuthorizationITCase")
+                                || coverage.contains("DefaultAuthApiITCase")
+                                || coverage.contains("ResourceAuthorizationITCase"),
+                        "Identity-only operation needs direct coverage: " + operation);
+            }
+            assertNull(result.put(operation, tuple),
+                    "Duplicate operation coverage row: " + operation);
+        }
+        assertEquals(EXPECTED_SECURED_OPERATION_COUNT, result.size(),
+                "Operation manifest must classify every @Secured method");
+        return result;
+    }
+
+    private static String normalizeWhitespace(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", " ").trim();
+    }
+
+    private static String stripCode(String cell) {
+        String value = cell.trim();
+        assertTrue(value.length() >= 2 && value.startsWith("`") && value.endsWith("`"),
+                "Manifest value must use inline code: " + cell);
+        return value.substring(1, value.length() - 1);
     }
 
     private static Stream<ControllerScenario> controllerScenarios() {
@@ -124,6 +271,8 @@ public class ModuleAuthorizationITCase extends AuthITCase {
                         "/v3/client/ai/prompt?namespaceId=public&promptKey=auth-it-missing", "r"),
                 server("SkillAdminController", RequestMethod.GET,
                         "/v3/admin/ai/skills?namespaceId=public&skillName=auth-it-missing", "r"),
+                server("SkillClientController", RequestMethod.GET,
+                        "/v3/client/ai/skills/search?namespaceId=public&pageNo=1&pageSize=10", "r"),
 
                 console("ConsoleA2aController", RequestMethod.GET,
                         "/v3/console/ai/a2a/list?namespaceId=public&pageNo=1&pageSize=10", "r"),
@@ -238,7 +387,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         while (current != null) {
-            if (Files.isRegularFile(current.resolve("test/auth-test/pom.xml"))) {
+            if (Files.isRegularFile(current.resolve("test/openapi-test/pom.xml"))) {
                 return current;
             }
             current = current.getParent();
@@ -248,12 +397,6 @@ public class ModuleAuthorizationITCase extends AuthITCase {
 
     private record ControllerScenario(String controller, String baseUrl, String path,
             RequestMethod method, String action, boolean globalAdminOnly) {
-
-        private String identityPrefix() {
-            String simpleName = controller.replace("ControllerV3", "")
-                    .replace("Controller", "");
-            return simpleName.replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
-        }
 
         @Override
         public String toString() {

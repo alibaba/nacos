@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,8 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     controlled not-found responses instead of HTTP 500.</li>
  * </ul>
  *
- * <p>The standalone IT profile keeps authorization disabled, so authenticated owner, scope, and
- * grant-based visibility filtering is covered by focused Prompt service tests instead.
+ * <p>When authorization is enabled, Admin-created private fixtures receive an exact read-visibility
+ * grant for the ordinary Client identity before the Client endpoint is exercised.
  *
  * <p>Draft, force-publish, label, and delete calls to {@code /nacos/v3/admin/ai/prompt} are helper calls only; this
  * class keeps its assertions focused on the runtime client query contract.
@@ -61,8 +60,8 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
     @Test
     public void testQueryPromptByLatestVersionLabelAndMd5() throws Exception {
         String promptKey = randomPromptKey("prompt");
-        publishPrompt(promptKey, "1.0.0", "Hello {{name}} from v1");
         addCleanup(() -> deletePrompt(promptKey));
+        publishPrompt(promptKey, "1.0.0", "Hello {{name}} from v1");
         publishPrompt(promptKey, "2.0.0", "Hello {{name}} from v2");
         updateLabels(promptKey, "{\"stable\":\"1.0.0\"}");
         
@@ -113,8 +112,8 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
     @Test
     public void testQueryPromptUnknownVersionReturnsNotFoundAndUnknownLabelFallsBackLatest() throws Exception {
         String promptKey = randomPromptKey("missing");
-        publishPrompt(promptKey, "1.0.0", "only version");
         addCleanup(() -> deletePrompt(promptKey));
+        publishPrompt(promptKey, "1.0.0", "only version");
         
         assertError(getRaw(PROMPT_CLIENT_PATH,
                 Query.newInstance().addParam("promptKey", promptKey).addParam("version", "9.9.9")),
@@ -138,6 +137,7 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
         form.put("version", version);
         JsonNode published = postFormOk(PROMPT_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
+        grantClientReadVisibility("prompt", promptKey);
     }
     
     private void updateLabels(String promptKey, String labels) throws Exception {
@@ -162,10 +162,6 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
         form.put("description", "prompt client openapi integration test");
         form.put("bizTags", "openapi-it");
         return form;
-    }
-    
-    private String randomPromptKey(String scenario) {
-        return "oit_" + scenario + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     
     private void assertPrompt(JsonNode actual, String promptKey, String version, String template) {

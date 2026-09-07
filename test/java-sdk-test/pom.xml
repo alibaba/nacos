@@ -34,9 +34,35 @@
         <maven.compiler.target>17</maven.compiler.target>
         <nacos.client.json.adapter>auto</nacos.client.json.adapter>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <nacos.host>127.0.0.1</nacos.host>
+        <nacos.port>8848</nacos.port>
+        <nacos.server.address>${nacos.host}:${nacos.port}</nacos.server.address>
         <nacos.agent.it.server.publication.capacity>100</nacos.agent.it.server.publication.capacity>
+        <nacos.agent.it.server.watch.capacity>300</nacos.agent.it.server.watch.capacity>
         <nacos.agent.it.client.publication.capacity>3</nacos.agent.it.client.publication.capacity>
         <nacos.agent.it.client.subscription.capacity>3</nacos.agent.it.client.subscription.capacity>
+        <nacos.config.reconnect.enabled>false</nacos.config.reconnect.enabled>
+        <nacos.config.reconnect.control.dir>${project.build.directory}/config-reconnect-control</nacos.config.reconnect.control.dir>
+        <nacos.naming.reconnect.enabled>false</nacos.naming.reconnect.enabled>
+        <nacos.naming.reconnect.control.dir>${project.build.directory}/naming-reconnect-control</nacos.naming.reconnect.control.dir>
+        <nacos.lock.reconnect.enabled>false</nacos.lock.reconnect.enabled>
+        <nacos.lock.reconnect.control.dir>${project.build.directory}/lock-reconnect-control</nacos.lock.reconnect.control.dir>
+        <nacos.agent.reconnect.enabled>false</nacos.agent.reconnect.enabled>
+        <nacos.agent.reconnect.control.dir>${project.build.directory}/agent-reconnect-control</nacos.agent.reconnect.control.dir>
+        <nacos.agent.cluster.rolling.enabled>false</nacos.agent.cluster.rolling.enabled>
+        <nacos.agent.cluster.rolling.control.dir>${project.build.directory}/agent-cluster-rolling-control</nacos.agent.cluster.rolling.control.dir>
+        <nacos.agent.cluster.change.enabled>false</nacos.agent.cluster.change.enabled>
+        <nacos.agent.cluster.change.restart.enabled>false</nacos.agent.cluster.change.restart.enabled>
+        <nacos.agent.cluster.change.restart.control.dir>${project.build.directory}/agent-cluster-change-restart-control</nacos.agent.cluster.change.restart.control.dir>
+        <nacos.agent.cluster.node-a.address>127.0.0.1:8848</nacos.agent.cluster.node-a.address>
+        <nacos.agent.cluster.node-b.address>127.0.0.1:8858</nacos.agent.cluster.node-b.address>
+        <nacos.test.auth.enabled>false</nacos.test.auth.enabled>
+        <nacos.test.auth.anonymous-ai.enabled>false</nacos.test.auth.anonymous-ai.enabled>
+        <nacos.test.auth.admin.username>nacos</nacos.test.auth.admin.username>
+        <nacos.test.auth.client.username>nacos_it_client_rw</nacos.test.auth.client.username>
+        <nacos.test.auth.readonly.username>nacos_it_client_readonly</nacos.test.auth.readonly.username>
+        <nacos.test.auth.no-permission.username>nacos_it_client_no_permission</nacos.test.auth.no-permission.username>
+        <nacos.console.port>8080</nacos.console.port>
     </properties>
 
     <dependencies>
@@ -77,13 +103,36 @@
                         </executions>
                         <configuration>
                             <systemPropertyVariables>
-                                <nacos.host>127.0.0.1</nacos.host>
-                                <nacos.port>8848</nacos.port>
+                                <nacos.host>${nacos.host}</nacos.host>
+                                <nacos.port>${nacos.port}</nacos.port>
+                                <nacos.server.address>${nacos.server.address}</nacos.server.address>
+                                <nacos.console.port>${nacos.console.port}</nacos.console.port>
                                 <nacos.client.json.adapter>${nacos.client.json.adapter}</nacos.client.json.adapter>
+                                <nacos.test.auth.enabled>${nacos.test.auth.enabled}</nacos.test.auth.enabled>
+                                <nacos.test.auth.anonymous-ai.enabled>${nacos.test.auth.anonymous-ai.enabled}</nacos.test.auth.anonymous-ai.enabled>
+                                <nacos.test.auth.admin.username>${nacos.test.auth.admin.username}</nacos.test.auth.admin.username>
+                                <nacos.test.auth.client.username>${nacos.test.auth.client.username}</nacos.test.auth.client.username>
+                                <nacos.test.auth.readonly.username>${nacos.test.auth.readonly.username}</nacos.test.auth.readonly.username>
+                                <nacos.test.auth.no-permission.username>${nacos.test.auth.no-permission.username}</nacos.test.auth.no-permission.username>
                                 <nacos.agent.it.server.publication.capacity>${nacos.agent.it.server.publication.capacity}</nacos.agent.it.server.publication.capacity>
                                 <nacos.agent.it.server.watch.capacity>${nacos.agent.it.server.watch.capacity}</nacos.agent.it.server.watch.capacity>
                                 <nacos.agent.it.client.publication.capacity>${nacos.agent.it.client.publication.capacity}</nacos.agent.it.client.publication.capacity>
                                 <nacos.agent.it.client.subscription.capacity>${nacos.agent.it.client.subscription.capacity}</nacos.agent.it.client.subscription.capacity>
+                                <nacos.config.reconnect.enabled>${nacos.config.reconnect.enabled}</nacos.config.reconnect.enabled>
+                                <nacos.config.reconnect.control.dir>${nacos.config.reconnect.control.dir}</nacos.config.reconnect.control.dir>
+                                <nacos.naming.reconnect.enabled>${nacos.naming.reconnect.enabled}</nacos.naming.reconnect.enabled>
+                                <nacos.naming.reconnect.control.dir>${nacos.naming.reconnect.control.dir}</nacos.naming.reconnect.control.dir>
+                                <nacos.lock.reconnect.enabled>${nacos.lock.reconnect.enabled}</nacos.lock.reconnect.enabled>
+                                <nacos.lock.reconnect.control.dir>${nacos.lock.reconnect.control.dir}</nacos.lock.reconnect.control.dir>
+                                <nacos.agent.reconnect.enabled>${nacos.agent.reconnect.enabled}</nacos.agent.reconnect.enabled>
+                                <nacos.agent.reconnect.control.dir>${nacos.agent.reconnect.control.dir}</nacos.agent.reconnect.control.dir>
+                                <nacos.agent.cluster.rolling.enabled>${nacos.agent.cluster.rolling.enabled}</nacos.agent.cluster.rolling.enabled>
+                                <nacos.agent.cluster.rolling.control.dir>${nacos.agent.cluster.rolling.control.dir}</nacos.agent.cluster.rolling.control.dir>
+                                <nacos.agent.cluster.change.enabled>${nacos.agent.cluster.change.enabled}</nacos.agent.cluster.change.enabled>
+                                <nacos.agent.cluster.change.restart.enabled>${nacos.agent.cluster.change.restart.enabled}</nacos.agent.cluster.change.restart.enabled>
+                                <nacos.agent.cluster.change.restart.control.dir>${nacos.agent.cluster.change.restart.control.dir}</nacos.agent.cluster.change.restart.control.dir>
+                                <nacos.agent.cluster.node-a.address>${nacos.agent.cluster.node-a.address}</nacos.agent.cluster.node-a.address>
+                                <nacos.agent.cluster.node-b.address>${nacos.agent.cluster.node-b.address}</nacos.agent.cluster.node-b.address>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

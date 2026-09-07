@@ -25,6 +25,10 @@ Run these scenarios with the dedicated Maven profile
 generic `integration-test` profile is for HTTP API IT and must not be used to
 execute SDK IT cases implicitly.
 
+Destructive process-restart and multi-node variants are orchestrated by
+[`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md) rather
+than stopping the server shared by the required standalone suite.
+
 ## Status Legend
 
 | Status | Meaning |
@@ -37,6 +41,19 @@ execute SDK IT cases implicitly.
 An SDK API is not complete while important method parameters, defaulting rules,
 return variants, lifecycle paths, listener behavior, or exception mappings are
 left as `Partial` or `Pending` without a documented reason.
+
+## Authentication Baseline
+
+These cross-cutting rows do not change the public SDK-surface counts.
+
+| Scenario | Required behavior | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| Explicit identity selection | Tests can choose anonymous, read-write, read-only, or authenticated-no-permission credentials without logging passwords or tokens. | Covered | `JavaSdkBaseITCase` maps shared `nacos.test.auth.*` properties and password environment variables into public SDK factory properties. |
+| Auth-enabled functional matrix | A normal application identity executes the complete Config, Naming, AI, and Lock functional suite while administrative fixture setup uses a separate administrator identity. | Partial | Default and Jackson 3 each discover 101 tests: 81 pass and 20 skip with no failures or errors. Eight skips are exact product findings (`DAUTH-F04` once and `DAUTH-F05` seven times); twelve are environment-gated migration/restart/cluster cases. |
+| Negative identity and action matrix | Anonymous, invalid, authenticated-no-permission, read-only, and read-write callers produce controlled results without cache fallback or unauthorized side effects. | Partial | Config, Naming, HTTP/gRPC/AUTO, no-permission, and read-only checks remain active. `shouldRejectInvalidCredentialsInsteadOfDowngradingToAnonymousAi` is retained but disabled as `DAUTH-F04`. |
+| Async identity and SDK lifecycle | Listener/Watch delivery retains the admitted identity across worker threads, unsubscribe/shutdown stops later delivery, and SDK instances release global subscribers. | Partial | Seven exact Agent identity-context scenarios are disabled as `DAUTH-F05`. The possible `NacosAiService.shutdown()` notifier leak is recorded as `DAUTH-F06`; it did not cause a stable failure in either full adapter run and was not fixed in this change. |
+| Capacity, reconnect, and cluster fault injection | Capacity limits and real transport recovery remain authenticated and are not silently omitted from CI. | Partial | Config, Naming, Lock, Maintainer, Jackson 3, Agent rolling-restart, and Agent peer-restart reliability cases pass. Agent standalone restart and pinned-node convergence are explicitly disabled as `DAUTH-F05`; the runner writes a `status.txt` for each instead of reporting a false pass. |
+| Lock authorization denial | The experimental Lock server applies the documented `SignType.LOCK` guard and rejects insufficient identities. | Documented gap | The complete Lock lifecycle runs with the authenticated read-write identity, including a stable 5-second expiry/reacquire window. The current server handler lacks the authorization guard, so the suite does not assert a false denial contract. |
 
 ## ConfigService
 
@@ -91,12 +108,12 @@ The detailed operation, boundary, failure, and compound matrix is maintained in
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | Factory, namespace, and lifecycle | Default/custom namespace binding, caller isolation, invalid mismatch, inactive/active/repeated shutdown. | Covered | Default and custom service creation, omitted/explicit/mismatched namespace behavior, caller-owned request and Batch isolation, active HTTP publication cleanup, and repeated shutdown are covered in standalone IT; deterministic resource cleanup is also covered by unit tests. |
-| Agent transport mode | Explicit GRPC/HTTP and AUTO, synchronous initial gRPC startup, never-connected STARTING fallback, operation routing, and publication ownership. | Covered | Stable IT verifies AUTO on an available negotiated gRPC connection, AUTO Search/subscription/Publication over HTTP when a deliberately unreachable gRPC port remains STARTING, explicit HTTP independence from gRPC startup, and explicit GRPC failure without HTTP fallback. Probe thresholds, business-error classification, read-only fallback, sticky mixed Publication ownership, and reconnect suspension are deterministic UT scenarios. |
+| Agent transport mode | Explicit GRPC/HTTP and AUTO, synchronous initial gRPC startup, never-connected STARTING fallback, operation routing, and publication ownership. | Partial | Stable IT verifies AUTO on an available negotiated gRPC connection, AUTO Search/subscription/Publication over HTTP when a deliberately unreachable gRPC port remains STARTING, explicit HTTP independence from gRPC startup, and explicit GRPC failure without HTTP fallback. Probe thresholds, business-error classification, read-only fallback, sticky mixed Publication ownership, and reconnect suspension are deterministic UT scenarios. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
 | Search | Default, literal name, tags-all, protocols-any, combined filters, pagination, empty result, validation, and transport parity. | Covered | Individual/default/combined/empty/paged searches, local null/page/duplicate/protocol boundaries, namespace isolation, and HTTP/gRPC parity are covered. |
 | Discover | Latest/exact/label resolution, unfiltered and combined filters, declared/runtime source shape, not found, validation, and transport parity. | Covered | Latest/exact/label and combined-filter results, full unfiltered interface shape, declared/runtime source projection, not-found mapping, ambiguous/null reference validation, and HTTP/gRPC parity are covered. |
-| Definition and Version evolution | Endpoint-first and definition-first ordering, latest/exact/label consistency, catalog ordering, offline/online latest recalculation, and publication ranges. | Covered | Standalone IT covers Versions 1 through 3, Endpoint-first and definition-first transitions, latest/exact/label polling behavior, catalog ordering, latest recalculation through offline/online, and replacement between two inclusive Version ranges. |
-| Local polling subscription | Existing and missing initial target, full replacement callbacks, fingerprint de-duplication, unsubscribe, and listener isolation/failure. | Covered | Standalone IT covers subscribe-before-create, subscribe-existing, Runtime source-revision replacement, unchanged de-duplication, and post-unsubscribe suppression. Listener identity, failure, scheduling, shutdown races, digest/version revisions, and poll failures use deterministic unit tests. |
-| Complete Endpoint publication | Pre-registration, register/replace/idempotence, partial/final/unknown/repeated deregistration, multiple protocols/publishers, HTTP heartbeat identity, gRPC redo, validation, and shutdown. | Covered | Stable standalone IT covers pre-registration, complete replacement convergence, canonical natural-key partial removal, final/unknown/repeated removal, protocol isolation, two-publisher aggregation, HTTP publication observed through gRPC, active HTTP shutdown, and public local boundaries. An opt-in directed IT stops and restarts the real server and verifies gRPC reconnect redo plus HTTP `50404` replay through the same SDK process. Other heartbeat failures, retry classification, rollback, and redo races use deterministic unit tests. |
+| Definition and Version evolution | Endpoint-first and definition-first ordering, latest/exact/label consistency, catalog ordering, offline/online latest recalculation, and publication ranges. | Partial | Standalone IT covers Versions 1 through 3, Endpoint-first and definition-first transitions, latest/exact/label polling behavior, catalog ordering, latest recalculation through offline/online, and replacement between two inclusive Version ranges. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
+| Local polling subscription | Existing and missing initial target, full replacement callbacks, fingerprint de-duplication, unsubscribe, and listener isolation/failure. | Partial | Standalone IT covers subscribe-before-create, subscribe-existing, Runtime source-revision replacement, unchanged de-duplication, and post-unsubscribe suppression. Listener identity, failure, scheduling, shutdown races, digest/version revisions, and poll failures use deterministic unit tests. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
+| Complete Endpoint publication | Pre-registration, register/replace/idempotence, partial/final/unknown/repeated deregistration, multiple protocols/publishers, HTTP heartbeat identity, gRPC redo, validation, and shutdown. | Partial | Stable standalone IT covers pre-registration, complete replacement convergence, canonical natural-key partial removal, final/unknown/repeated removal, protocol isolation, two-publisher aggregation, HTTP publication observed through gRPC, active HTTP shutdown, and public local boundaries. An opt-in directed IT stops and restarts the real server and verifies gRPC reconnect redo plus HTTP `50404` replay through the same SDK process. Other heartbeat failures, retry classification, rollback, and redo races use deterministic unit tests. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
 
 ## Agent Code Publication
 
@@ -113,20 +130,22 @@ The complete implemented scenario matrix is maintained in
 | --- | --- | --- | --- |
 | Factory and shutdown | Create via `NacosLockFactory` and close cleanly after each test. | Covered | `JavaSdkBaseITCase` creates and shuts down the client. |
 | `lock` / `unLock` | Acquire, competing client rejection, release, reacquire, repeated release, invalid type, null or invalid fields, and expiration behavior. | Covered | Acquire/compete/release/reacquire/repeated release, unsupported type, missing key, null instance, and expiration are covered. |
-| `remoteTryLock` / `remoteReleaseLock` | Direct remote acquire/release path, repeated release, invalid input, and consistency with public `lock`/`unLock`. | Covered | Direct remote acquire/release, repeated acquire/release, and consistency with public lock behavior are covered. |
+| `remoteTryLock` / `remoteReleaseLock` | Direct remote acquire/release path, repeated release, invalid input, consistency with public `lock`/`unLock`, and reconnect behavior. | Covered | Direct remote acquire/release, repeated acquire/release, and consistency with public lock behavior are covered. A directed real-restart case uses a lease longer than the restart window to verify connection-scoped state reset, recovery of both original clients, mutex exclusion, release, and reacquire. |
 
 ## Later SDK Surfaces
 
 | Public SDK surface | Required scenarios | Current status | Notes |
 | --- | --- | --- | --- |
 | Deprecated `NamingMaintainService` | Create/query/update/delete service and update instance if the deprecated client can still be created in the standalone IT. | Pending | Listed separately because the API is deprecated after 3.3.0. |
-| Maintainer client SDK interfaces | Maintainer API behavior, authorization assumptions, validation, and controlled errors. | Pending | Needs a separate batch because it uses a different artifact and service model. |
+| Maintainer client SDK interfaces | Maintainer API behavior, authorization assumptions, validation, and controlled errors. | Covered | Tracked separately in `test/maintainer-sdk-test`; its default and Jackson 3 auth-enabled suites each discover 46 tests, including one environment-gated real-restart case. This row is not counted as a Java Client SDK surface. |
 
 ## Recommended Next Test Batches
 
-1. Confirm the intended contracts for Naming fuzzy-watch delete events and A2A
-   missing-agent endpoint registration, then add stable IT or file follow-up
+1. Confirm the intended contracts for Naming fuzzy-watch delete events and MCP
+   latest-listener unsubscribe behavior, then add stable IT or file follow-up
    issues as needed.
-2. Add functional Prompt/Skill/AgentSpec Java SDK IT after the public SDK
-   exposes stable create/upload setup APIs, or after the standalone framework
-   provides an approved setup helper for AI resource metadata.
+2. Add the remaining Prompt/Skill latest and custom-label selection plus
+   AgentSpec multi-resource assembly scenarios using the existing authenticated
+   Maintainer fixture.
+3. Decide whether the deprecated `NamingMaintainService` still warrants new IT
+   before its removal window.

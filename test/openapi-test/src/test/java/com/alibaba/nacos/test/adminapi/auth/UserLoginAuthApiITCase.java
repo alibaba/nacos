@@ -64,7 +64,8 @@ public class UserLoginAuthApiITCase extends OpenApiBaseITCase {
         assertEquals(200, v3Success.code(), v3Success.body());
         assertFlatTokenResponse(v3Success.body(), username);
 
-        HttpResponse v1Success = postRaw(V1_LOGIN_PATH, credentials(username, PASSWORD));
+        HttpResponse v1Success = postRaw(V1_LOGIN_PATH, credentials(username, PASSWORD),
+                AuthIdentity.ANONYMOUS);
         assertEquals(200, v1Success.code(), v1Success.body());
         assertFlatTokenResponse(v1Success.body(), username);
 
@@ -74,10 +75,13 @@ public class UserLoginAuthApiITCase extends OpenApiBaseITCase {
     }
 
     private HttpResponse verifyLoginFailureResponses(String loginPath, String username) throws Exception {
-        HttpResponse wrongPassword = postRaw(loginPath, credentials(username, "wrong-password"));
+        HttpResponse wrongPassword = postRaw(loginPath,
+                credentials(username, "wrong-password"), AuthIdentity.ANONYMOUS);
         HttpResponse unknownUser = postRaw(loginPath,
-            credentials("missing_" + UUID.randomUUID(), "wrong-password"));
-        HttpResponse blankPassword = postRaw(loginPath, credentials(username, ""));
+                credentials("missing_" + UUID.randomUUID(), "wrong-password"),
+                AuthIdentity.ANONYMOUS);
+        HttpResponse blankPassword = postRaw(loginPath, credentials(username, ""),
+                AuthIdentity.ANONYMOUS);
 
         assertLoginFailure(wrongPassword);
         assertEquals(wrongPassword, unknownUser);
@@ -88,7 +92,8 @@ public class UserLoginAuthApiITCase extends OpenApiBaseITCase {
     private HttpResponse waitForLoginSuccess(String loginPath, String username) throws Exception {
         HttpResponse response = null;
         for (int attempt = 0; attempt < 20; attempt++) {
-            response = postRaw(loginPath, credentials(username, PASSWORD));
+            response = postRaw(loginPath, credentials(username, PASSWORD),
+                    AuthIdentity.ANONYMOUS);
             if (response.code() == 200) {
                 return response;
             }

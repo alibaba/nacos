@@ -44,8 +44,8 @@ public class AgentSpecClientOpenApiITCase extends AgentSpecOpenApiBaseITCase {
     @Test
     public void testGetAgentSpecByLatestVersionAndLabel() throws Exception {
         String name = randomAgentSpecName("agentspec");
-        publishAgentSpec(name, "1.0.0", null, "AgentSpec v1", "scenario-v1", "soul v1");
         addCleanup(() -> deleteAgentSpec(name));
+        publishAgentSpec(name, "1.0.0", null, "AgentSpec v1", "scenario-v1", "soul v1");
         publishAgentSpec(name, "2.0.0", "1.0.0", "AgentSpec v2", "scenario-v2", "soul v2");
         updateAgentSpecLabels(name, "{\"stable\":\"1.0.0\",\"latest\":\"2.0.0\"}");
         
@@ -68,7 +68,7 @@ public class AgentSpecClientOpenApiITCase extends AgentSpecOpenApiBaseITCase {
     @Test
     public void testGetAgentSpecMissingNameReturnsBadRequest() throws Exception {
         assertError(getRaw(AGENT_SPEC_CLIENT_PATH + "?namespaceId=" + DEFAULT_NAMESPACE), 400,
-                ErrorCode.PARAMETER_MISSING, "AgentSpec name is required");
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "name");
     }
     
     @Test
@@ -81,8 +81,8 @@ public class AgentSpecClientOpenApiITCase extends AgentSpecOpenApiBaseITCase {
     @Test
     public void testGetAgentSpecUnknownVersionAndLabelFallback() throws Exception {
         String name = randomAgentSpecName("missing");
-        publishAgentSpec(name, "1.0.0", null, "Only AgentSpec", "only-scenario", "only soul");
         addCleanup(() -> deleteAgentSpec(name));
+        publishAgentSpec(name, "1.0.0", null, "Only AgentSpec", "only-scenario", "only soul");
         
         assertError(getRaw(AGENT_SPEC_CLIENT_PATH,
                 Query.newInstance().addParam("name", name).addParam("version", "9.9.9")),

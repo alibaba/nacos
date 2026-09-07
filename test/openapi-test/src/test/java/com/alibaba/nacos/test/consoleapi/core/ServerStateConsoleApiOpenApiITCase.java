@@ -44,27 +44,31 @@ public class ServerStateConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase
 
     @Test
     public void testServerStateGuideAndAnnouncement() throws Exception {
-        HttpResponse stateResponse = getRaw(CONSOLE_SERVER_PATH + "/state?unexpected=ignored");
+        HttpResponse stateResponse = getRaw(CONSOLE_SERVER_PATH + "/state?unexpected=ignored",
+                AuthIdentity.ANONYMOUS);
         assertEquals(200, stateResponse.code(), stateResponse.body());
         JsonNode state = JacksonUtils.toObj(stateResponse.body());
         assertTrue(state.isObject(), state.toString());
         assertTrue(state.size() > 0, state.toString());
 
-        JsonNode guide = getJsonOk(CONSOLE_SERVER_PATH + "/guide", Query.newInstance());
+        JsonNode guide = getJsonOk(CONSOLE_SERVER_PATH + "/guide", Query.newInstance(),
+                AuthIdentity.ANONYMOUS);
         assertTrue(guide.get("data").isTextual(), guide.toString());
 
         JsonNode defaultAnnouncement = getJsonOk(CONSOLE_SERVER_PATH + "/announcement",
-                Query.newInstance());
+                Query.newInstance(), AuthIdentity.ANONYMOUS);
         assertTrue(defaultAnnouncement.get("data").isTextual(), defaultAnnouncement.toString());
 
         JsonNode enAnnouncement = getJsonOk(CONSOLE_SERVER_PATH + "/announcement",
-                Query.newInstance().addParam("language", "en-US"));
+                Query.newInstance().addParam("language", "en-US"),
+                AuthIdentity.ANONYMOUS);
         assertTrue(enAnnouncement.get("data").isTextual(), enAnnouncement.toString());
     }
 
     @Test
     public void testUnsupportedAnnouncementLanguageReturnsFailureResult() throws Exception {
-        HttpResponse response = getRaw(CONSOLE_SERVER_PATH + "/announcement?language=fr-FR");
+        HttpResponse response = getRaw(CONSOLE_SERVER_PATH + "/announcement?language=fr-FR",
+                AuthIdentity.ANONYMOUS);
         assertEquals(200, response.code(), response.body());
         JsonNode root = JacksonUtils.toObj(response.body());
         assertEquals(ErrorCode.SERVER_ERROR.getCode(), root.get("code").asInt(), response.body());

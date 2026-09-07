@@ -199,11 +199,21 @@ group, resource type, and resource name.
 
 Auth enablement is scoped by API audience:
 
-| Configuration | Scope |
-|---------------|-------|
-| `nacos.core.auth.enabled` | Enables auth for Open APIs and the general auth system. |
-| `nacos.core.auth.admin.enabled` | Enables auth for Admin APIs. |
-| `nacos.core.auth.console.enabled` | Enables auth for Console APIs and login behavior. |
+| Configuration | Scope | Default since Nacos 3.3 |
+|---------------|-------|-------------------------|
+| `nacos.core.auth.enabled` | Enables auth for Open APIs, Java SDK and gRPC requests, and the general auth system. | `true` |
+| `nacos.core.auth.admin.enabled` | Enables auth for Admin APIs. | `true` |
+| `nacos.core.auth.console.enabled` | Enables auth for Console APIs and login behavior. | `true` |
+
+An absent scope property uses the default in this table. An explicitly
+configured `true` or `false` always wins over the default. Changing the Client
+scope does not implicitly change the Admin or Console scopes.
+
+The Client scope remains a runtime-refreshable server setting. Operators may
+explicitly keep it disabled while distributing application credentials and
+then enable it without restarting the server. A cluster rollout must apply the
+same effective value to every member because application-property reload is a
+node-local mechanism.
 
 The selected auth plugin is named by `nacos.plugin.auth.type`.
 `nacos.core.auth.system.type` remains a legacy startup alias.

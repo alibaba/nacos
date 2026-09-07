@@ -18,6 +18,7 @@ package com.alibaba.nacos.prometheus.filter;
 
 import jakarta.servlet.Filter;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -25,7 +26,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class PrometheusAuthFilterTest {
@@ -39,6 +42,15 @@ class PrometheusAuthFilterTest {
         assertUrlPatterns(prometheusAuthFilter.anonymousAuthenticationFilter());
         assertUrlPatterns(prometheusAuthFilter.authorizationFilter());
         assertUrlPatterns(prometheusAuthFilter.exceptionTranslationFilter());
+    }
+    
+    @Test
+    void testClientAuthConditionUsesEnabledDefaultAndExplicitBooleanOverride() {
+        ConditionalOnProperty condition =
+            PrometheusAuthFilter.class.getAnnotation(ConditionalOnProperty.class);
+        assertArrayEquals(new String[] {"nacos.core.auth.enabled"}, condition.value());
+        assertEquals("true", condition.havingValue());
+        assertTrue(condition.matchIfMissing());
     }
     
     private void assertUrlPatterns(FilterRegistrationBean<? extends Filter> registration) {

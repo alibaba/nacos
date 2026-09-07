@@ -215,7 +215,7 @@ class McpHttpClientJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private McpMaintainerService createMcpMaintainerService() throws NacosException {
-        Properties properties = sdkProperties();
+        Properties properties = maintainerProperties();
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties).mcp();
     }

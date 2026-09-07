@@ -43,10 +43,12 @@ public class HealthConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
     @Test
     public void testLivenessAndReadinessReturnHealthyResult() throws Exception {
         JsonNode liveness = getJsonOk(CONSOLE_HEALTH_PATH + "/liveness",
-                Query.newInstance().addParam("unexpected", "ignored"));
+                Query.newInstance().addParam("unexpected", "ignored"),
+                AuthIdentity.ANONYMOUS);
         assertEquals("ok", liveness.get("data").asText(), liveness.toString());
 
-        JsonNode readiness = getJsonOk(CONSOLE_HEALTH_PATH + "/readiness", Query.newInstance());
+        JsonNode readiness = getJsonOk(CONSOLE_HEALTH_PATH + "/readiness",
+                Query.newInstance(), AuthIdentity.ANONYMOUS);
         assertEquals("ok", readiness.get("data").asText(), readiness.toString());
     }
 }

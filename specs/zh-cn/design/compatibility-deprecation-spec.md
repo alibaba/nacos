@@ -120,6 +120,28 @@ Schema 清理应平衡正确性和运维成本。冗余字段可以为了避免�
 以及 Config beta/tag 旧表向 `config_info_gray` 的迁移，视为已移除兼容行为。从 3.0 之前版本
 升级时，如果使用过默认 namespace 或 beta 灰度发布，运维侧必须先完成相关数据迁移再升级。
 
+### 8.1 Nacos 3.3 Client API 鉴权默认值
+
+Nacos 3.3 将 Client API 鉴权从默认关闭改为默认开启。这是默认值变更，不是 API 废弃或移除。
+兼容规则如下：
+
+| 部署状态 | Client 鉴权有效行为 |
+| --- | --- |
+| 显式存在 `nacos.core.auth.enabled=false` | 继续关闭。 |
+| 显式存在 `nacos.core.auth.enabled=true` | 继续开启。 |
+| 属性缺失 | 使用 Nacos 3.3 默认值并开启。 |
+| 使用新的发行包配置模板 | 由模板开启。 |
+| 继续使用包含 `false` 的旧手工配置文件 | 继续关闭。 |
+| Docker 或 Kubernetes 鉴权环境变量缺失 | 使用镜像/模板默认值并开启。 |
+| Docker 或 Kubernetes 鉴权环境变量显式设置 | 显式 `true` 或 `false` 优先。 |
+
+应用尚未携带身份的升级场景，应先显式保持 Client 开关关闭，分发凭据并确认 Client 可以登录，再把可运行
+时刷新的开关应用到每个服务端成员。一个集群内有效值不一致不是受支持的最终发布状态。Release note 和
+升级文档必须明确新的默认值、凭据前置条件和显式关闭迁移路径。
+
+现有开关就是兼容机制。本次变更不增加第二个 legacy auth 开关，不强制重写已有配置文件，也不改变相互
+独立的 Admin 或 Console 鉴权默认值。
+
 ## 9. 废弃 V3 API 门禁
 
 以下少量待移除的废弃 v3 API 默认关闭：

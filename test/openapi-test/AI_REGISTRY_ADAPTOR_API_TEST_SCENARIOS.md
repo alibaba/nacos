@@ -26,6 +26,14 @@ The contract source is the ARD revision pinned by the Nacos AI Registry
 Adaptor specification. Coverage targets response compatibility, protocol error
 handling, and routing across the adaptor and main-server web contexts.
 
+Live requests to the independent adaptor port use a dedicated external-request
+helper. The helper rejects Nacos `Authorization` headers before sending a
+request, and `AuthScopeGuardITCase` verifies both that boundary and anonymous
+well-known catalog access in the auth-enabled migration profile. The live ARD
+fixture grants its anonymous identity exact read visibility to each private AI
+resource, so the external protocol is tested without forwarding an
+administrator or Client credential.
+
 ## Status Legend
 
 | Status | Meaning |
@@ -38,7 +46,7 @@ handling, and routing across the adaptor and main-server web contexts.
 
 | API surface / test class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Covered | Verifies `items`, integral relevance scores, URI-valued `source`, optional trust identity, pagination, ISO date/instant list filters, standard nested and extension field paths, and the Search/List/Explore shapes pinned by the vendored OpenAPI. The live standalone scenario publishes Agent, Skill, Prompt, and MCP resources through the main-server Admin APIs and recalls them from the separate ARD port through the shared index; MCP uses its canonical name as the shared Search identity and retains the compatible ID only in metadata. Agent cases verify one logical identifier, deterministic pure-A2A versus multi-protocol defaults, latest-Version representation eligibility, A2A/Nacos media-type filtering through `artifactKinds`, and representation-aware type facets without duplicating one Agent before totals or pagination. |
+| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Contract and component coverage remains active. The live standalone shared-index method is retained but disabled as `DAUTH-F03` because private canonical projections are incomplete after the out-of-scope product fix is rolled back. |
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
-| `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Covered | Validates generated identifiers against the vendored official JSON Schema, keeps the host identifier metadata intact, verifies that a namespace catalog containing more than 100 resources is not truncated, and confirms that the deployed catalog exposes shared-index resources while the well-known catalog advertises the independent adaptor. |
-| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Covered | Verifies complete Skill ZIP generation and exact Agent artifact resolution. Agent cases cover native A2A Agent Card and schema-limited Nacos Agent representations, required digest/representation parameters, disabled or missing Agent, offline or missing Version, digest mismatch, unavailable representation, and propagated unexpected persistence failures. The live scenario follows absolute Version/digest URLs returned by ARD and verifies their bodies on the independent port. It also proves that the adaptor root context owns the artifact route while the main server at `/nacos` alone owns `/v3/client/ai/skills`. |
+| `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Schema, large-catalog, and well-known component coverage remains active; live shared-index catalog projection is part of the `DAUTH-F03` disabled method. |
+| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Artifact resolution, errors, and web-context isolation remain covered by component tests; the live absolute Version/digest cross-context assertion is part of the `DAUTH-F03` disabled method. |

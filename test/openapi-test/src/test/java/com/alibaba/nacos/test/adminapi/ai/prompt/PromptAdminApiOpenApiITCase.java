@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     returns HTTP 400.</li>
  * </ul>
  *
- * <p>The standalone IT profile keeps authorization disabled, so authenticated owner, scope, and
- * grant-based visibility filtering is covered by focused Prompt service tests instead.
+ * <p>The auth-enabled migration profile runs this functional workflow as the global administrator.
+ * Cross-identity owner, scope, and grant-based visibility filtering remains in the focused authorization matrix.
  *
  * @author xiweng.yy
  */

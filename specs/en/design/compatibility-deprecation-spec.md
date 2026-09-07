@@ -150,6 +150,33 @@ to `config_info_gray`, are treated as removed compatibility behavior. Operators
 that upgrade from versions before 3.0 must complete the affected data migration
 before upgrading when they used the default namespace or beta gray release.
 
+### 8.1 Client API Authentication Default In Nacos 3.3
+
+Nacos 3.3 changes Client API authentication from disabled by default to enabled
+by default. This is a default-value change, not an API deprecation or removal.
+The compatibility rules are:
+
+| Deployment state | Effective Client auth behavior |
+| --- | --- |
+| `nacos.core.auth.enabled=false` is explicitly present | Remains disabled. |
+| `nacos.core.auth.enabled=true` is explicitly present | Remains enabled. |
+| The property is absent | Uses the Nacos 3.3 default and is enabled. |
+| A new distribution configuration template is used | Enabled by the template. |
+| An older manually maintained file containing `false` is reused | Remains disabled. |
+| A Docker or Kubernetes auth environment value is absent | Uses the image/template default and is enabled. |
+| A Docker or Kubernetes auth environment value is explicit | The explicit `true` or `false` wins. |
+
+Operators upgrading applications that do not yet carry credentials should keep
+the Client switch explicitly disabled, distribute credentials, verify client
+login, and then enable the runtime-refreshable switch on every server member.
+Mixed effective values within one cluster are not a supported final rollout
+state. Release notes and upgrade documentation must call out the new default,
+the credential prerequisites, and the explicit-disable migration path.
+
+The existing switch is the compatibility mechanism. This change does not add a
+second legacy-auth switch, does not force-rewrite an existing configuration
+file, and does not change the independent Admin or Console auth defaults.
+
 ## 9. Deprecated V3 API Gate
 
 A small set of deprecated v3 APIs pending removal is disabled by default:

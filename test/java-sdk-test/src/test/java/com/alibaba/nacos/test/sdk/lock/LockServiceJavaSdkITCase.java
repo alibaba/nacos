@@ -22,6 +22,13 @@ import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,12 +50,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Error handling: unsupported lock type is returned as a controlled
  *     {@link NacosException} instead of an uncontrolled client runtime failure; missing lock key
  *     is also mapped to a controlled server error.</li>
+ *     <li>Directed recovery: a real standalone replacement clears a long connection-scoped lease;
+ *     both original clients reconnect and preserve mutex compete, release, and reacquire
+ *     behavior.</li>
  * </ul>
  *
  * @author xiweng.yy
  */
 public class LockServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
+    private static final long EXPIRING_LOCK_LEASE_MILLIS = 5000L;
+
+    private static final long RESTART_LOCK_LEASE_MILLIS = 180000L;
+
+    private static final long RECONNECT_TIMEOUT_MILLIS = 120000L;
+
+    private static final String RECONNECT_ENABLED_PROPERTY = "nacos.lock.reconnect.enabled";
+
+    private static final String RECONNECT_CONTROL_DIR_PROPERTY =
+            "nacos.lock.reconnect.control.dir";
+
     @Test
     public void testAcquireCompeteReleaseAndReacquireLock() throws Exception {
         LockService owner = createLockService();
@@ -82,7 +103,8 @@ public class LockServiceJavaSdkITCase extends JavaSdkBaseITCase {
         LockService owner = createLockService();
         LockService contender = createLockService();
         LockInstance lock = new LockInstance("java-sdk-it-lock-expire-"
-                + randomServiceName("lock"), 500L, LockConstants.NACOS_LOCK_TYPE);
+                + randomServiceName("lock"), EXPIRING_LOCK_LEASE_MILLIS,
+                LockConstants.NACOS_LOCK_TYPE);
         addCleanup(() -> owner.unLock(lock));
         addCleanup(() -> contender.unLock(lock));
         
@@ -91,6 +113,46 @@ public class LockServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("expired lock should be acquirable by another client",
                 () -> contender.lock(lock));
         assertTrue(contender.unLock(lock));
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = RECONNECT_ENABLED_PROPERTY, matches = "true")
+    public void shouldReconnectOriginalClientsAndResetConnectionScopedLockAfterRealServerRestart()
+            throws Exception {
+        Path controlDirectory = reconnectControlDirectory();
+        Path ready = resetMarker(controlDirectory, "client-ready");
+        Path serverStopped = resetMarker(controlDirectory, "server-stopped");
+        Path downObserved = resetMarker(controlDirectory, "client-observed-down");
+        Path serverRestarted = resetMarker(controlDirectory, "server-restarted");
+
+        LockService owner = createLockService();
+        LockService contender = createLockService();
+        LockInstance held = new LockInstance("java-sdk-it-lock-restart-"
+                + randomServiceName("lock"), RESTART_LOCK_LEASE_MILLIS,
+                LockConstants.NACOS_LOCK_TYPE);
+        LockInstance downProbe = newLockInstance("restart-down-probe",
+                LockConstants.NACOS_LOCK_TYPE);
+        addCleanup(() -> owner.remoteReleaseLock(downProbe));
+        addCleanup(() -> contender.remoteReleaseLock(held));
+        addCleanup(() -> owner.remoteReleaseLock(held));
+
+        assertTrue(owner.remoteTryLock(held));
+        assertFalse(contender.remoteTryLock(held));
+        writeMarker(ready, held.getKey());
+
+        waitForMarker(serverStopped, "external harness should stop the standalone server");
+        waitUntil("a remote lock operation should observe the stopped server",
+                RECONNECT_TIMEOUT_MILLIS, () -> remoteLockUnavailable(owner, downProbe));
+        writeMarker(downObserved, held.getKey());
+        waitForMarker(serverRestarted, "external harness should restart the standalone server");
+
+        waitUntil("the original contender should reconnect and acquire the reset lock",
+                RECONNECT_TIMEOUT_MILLIS, () -> remoteTryLock(contender, held));
+        assertFalse(owner.remoteTryLock(held),
+                "the other original client must still observe the restored mutex");
+        assertTrue(contender.remoteReleaseLock(held));
+        assertTrue(owner.remoteTryLock(held));
+        assertTrue(owner.remoteReleaseLock(held));
     }
     
     @Test
@@ -107,5 +169,47 @@ public class LockServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private LockInstance newLockInstance(String scenario, String lockType) {
         return new LockInstance("java-sdk-it-lock-" + scenario + "-" + randomServiceName("lock"),
                 30000L, lockType);
+    }
+
+    private boolean remoteLockUnavailable(LockService service, LockInstance lock) {
+        try {
+            service.remoteTryLock(lock);
+            return false;
+        } catch (NacosException expected) {
+            return true;
+        }
+    }
+
+    private boolean remoteTryLock(LockService service, LockInstance lock) {
+        try {
+            return service.remoteTryLock(lock);
+        } catch (NacosException transientFailure) {
+            return false;
+        }
+    }
+
+    private Path reconnectControlDirectory() throws Exception {
+        String value = System.getProperty(RECONNECT_CONTROL_DIR_PROPERTY, "");
+        if (value.isBlank()) {
+            throw new IllegalStateException("Missing required restart IT property: "
+                    + RECONNECT_CONTROL_DIR_PROPERTY);
+        }
+        Path result = Paths.get(value);
+        Files.createDirectories(result);
+        return result;
+    }
+
+    private Path resetMarker(Path controlDirectory, String name) throws Exception {
+        Path result = controlDirectory.resolve(name);
+        Files.deleteIfExists(result);
+        return result;
+    }
+
+    private void waitForMarker(Path marker, String reason) throws Exception {
+        waitUntil(reason, RECONNECT_TIMEOUT_MILLIS, () -> Files.isRegularFile(marker));
+    }
+
+    private void writeMarker(Path marker, String value) throws Exception {
+        Files.write(marker, Collections.singletonList(value), StandardCharsets.UTF_8);
     }
 }

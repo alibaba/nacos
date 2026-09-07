@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *     {@code RESOURCE_NOT_FOUND} instead of an internal error.</li>
  * </ul>
  *
- * <p>The default standalone IT profile runs without auth bootstrap, so this class validates the public API
- * contract and resource lookup integration, but not the auth-enabled owner/global-admin management rule.</p>
+ * <p>The auth-enabled migration profile runs this workflow as the global administrator. Direct owner,
+ * non-owner, and no-permission management cases are covered by the focused authorization matrix.</p>
  *
  * @author Zhengcy05
  */

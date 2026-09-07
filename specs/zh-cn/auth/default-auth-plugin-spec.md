@@ -33,17 +33,22 @@ Java 客户端为默认插件暴露的用户名/密码和 token 流程提供
 
 ## 鉴权框架配置
 
-| 配置 | 目的 |
-|------|------|
-| `nacos.core.auth.enabled` | 启用通用鉴权系统和 Open API 鉴权。 |
-| `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 |
-| `nacos.core.auth.console.enabled` | 启用 Console API 鉴权和默认登录行为。 |
-| `nacos.plugin.auth.type` | 启动时选择鉴权插件，默认 `nacos`；`nacos.core.auth.system.type` 是历史 alias。 |
-| `nacos.core.auth.server.identity.key` | 服务端之间调用的身份 key。 |
-| `nacos.core.auth.server.identity.value` | 服务端之间调用的身份 value。 |
+| 配置 | 目的 | Nacos 3.3 起默认值 |
+|------|------|--------------------|
+| `nacos.core.auth.enabled` | 启用通用鉴权系统和 Open API、Java SDK、gRPC 请求鉴权。 | `true` |
+| `nacos.core.auth.admin.enabled` | 启用 Admin API 鉴权。 | `true` |
+| `nacos.core.auth.console.enabled` | 启用 Console API 鉴权和默认登录行为。 | `true` |
+| `nacos.plugin.auth.type` | 启动时选择鉴权插件；`nacos.core.auth.system.type` 是历史 alias。 | `nacos` |
+| `nacos.core.auth.server.identity.key` | 服务端之间调用的身份 key。 | 无共享默认值 |
+| `nacos.core.auth.server.identity.value` | 服务端之间调用的身份 value。 | 无共享默认值 |
 
 这些配置负责鉴权模块、API 范围、启动期插件选择和服务端身份，不属于 `auth:nacos` 插件
 自身的配置项。插件选择需要重启生效，服务端身份值必须由部署环境独立配置。
+
+显式配置的鉴权范围值优先于默认值。特别是，应用分发身份期间仍可以使用
+`nacos.core.auth.enabled=false` 保持兼容。开启使用默认插件的鉴权范围需要部署环境独立的 token
+secret；开启 Client 鉴权还要求服务端之间调用使用的 identity key/value 非空。发行包启动脚本可以生成
+或迁移这些值，embedded 和自定义部署必须显式提供。
 
 ## 统一管理的插件配置
 
@@ -327,6 +332,11 @@ DELETE /v3/auth/visibility
 
 旧端点或兼容端点可以为已有客户端保留，但新的文档和新的开发应以 v3 鉴权 API 以及本文档
 定义的插件契约为准。
+
+Nacos 3.3 只修改 Client API 鉴权的默认值。缺失 `nacos.core.auth.enabled` 的配置和新的发行包模板
+都会开启 Client 鉴权。已有配置显式包含 `nacos.core.auth.enabled=false` 时继续关闭，显式环境变量或
+部署工具值仍然优先。运维人员可以在显式关闭期间先分发 Client 凭据，再把可运行时刷新的开关应用到
+每个集群成员。
 
 统一管理表中的历史静态 alias 继续兼容。新的发行版模板使用 canonical key，并在注释中
 标明历史 key。canonical token 密钥缺失或为空时，启动脚本会把合法的历史密钥迁移到

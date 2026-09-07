@@ -71,6 +71,7 @@ public abstract class AgentClientOpenApiBaseITCase extends AiAdminApiBaseITCase 
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         postFormOk(ADMIN_AGENT_PATH + "/force-publish",
                 agentForm(agentVersionCommand(null, agentName, version)));
+        grantClientReadVisibility("agent", agentName);
     }
     
     protected String randomHttpClientId() {

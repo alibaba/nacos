@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +48,14 @@ class ApplicationPropertiesConsistencyTest {
         // Then
         assertEquals(expected, actual,
             "Bootstrap application.properties must follow distribution/conf");
+    }
+    
+    @Test
+    void shouldPackageEnabledAuthScopeDefaults() throws IOException {
+        Path repositoryRoot = findRepositoryRoot(Path.of(System.getProperty("user.dir")));
+        assertAuthScopeDefaults(repositoryRoot.resolve("distribution/conf/application.properties"));
+        assertAuthScopeDefaults(
+            repositoryRoot.resolve("bootstrap/src/main/resources/application.properties"));
     }
     
     @Test
@@ -82,5 +91,17 @@ class ApplicationPropertiesConsistencyTest {
     
     private static String readUtf8(Path path) throws IOException {
         return Files.readString(path, StandardCharsets.UTF_8).replace("\r\n", "\n");
+    }
+    
+    private static void assertAuthScopeDefaults(Path path) throws IOException {
+        Properties properties = new Properties();
+        try (java.io.Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            properties.load(reader);
+        }
+        assertEquals("true", properties.getProperty("nacos.core.auth.enabled"), path.toString());
+        assertEquals("true", properties.getProperty("nacos.core.auth.admin.enabled"),
+            path.toString());
+        assertEquals("true", properties.getProperty("nacos.core.auth.console.enabled"),
+            path.toString());
     }
 }

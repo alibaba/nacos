@@ -103,8 +103,13 @@ Core 启动会从配置好的 application 配置资源加载 `application.proper
 - 重新加载会通过 `NotifyCenter` 发布 `ServerConfigChangeEvent`。
 - 继承 `AbstractDynamicConfig` 的组件必须订阅 `ServerConfigChangeEvent`，从 `EnvUtil` 重新读取值，
   并在 reload 失败时保留上一份有效值。
+- 属性缺失时，配置对象、插件激活策略和条件 Bean 必须一致使用所属领域规范定义的默认值。例如 Nacos
+  3.3 鉴权规范把缺失的 `nacos.core.auth.enabled` 定义为开启，同时显式 `false` 继续生效。
 - 动态服务端配置只应覆盖明确可安全刷新的运行时参数。不得静默改变资源身份、存储 schema、公开
   API 形态或插件类型归属。
+
+文件监听和 `ServerConfigChangeEvent` 投递是节点本地机制。鉴权范围开关等要求集群有效值一致的动态配置，
+必须由部署或运维控制面应用并验证到每个成员。
 
 ## 6. 自定义环境插件
 

@@ -1,0 +1,60 @@
+# This workflow exercises destructive restart and multi-node scenarios outside the required PR IT.
+
+name: Default Auth Reliability Integration Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Reliability suite to execute
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - standalone
+          - cluster
+  schedule:
+    # Monday 02:00 Asia/Shanghai.
+    - cron: '0 18 * * 0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reliability-test:
+    name: Auth-on restart and cluster reliability
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
+    timeout-minutes: 120
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build release distribution
+        run: mvn -B '-Prelease-nacos,!dev' -Dmaven.test.skip=true clean install
+
+      - name: Run default-auth reliability suite
+        shell: bash
+        env:
+          SELECTED_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'all' }}
+        run: bash test/scripts/default-auth-reliability-it.sh "$SELECTED_SUITE"
+
+      - name: Upload reliability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: default-auth-reliability-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/default-auth-reliability
+          if-no-files-found: warn
+          retention-days: 14

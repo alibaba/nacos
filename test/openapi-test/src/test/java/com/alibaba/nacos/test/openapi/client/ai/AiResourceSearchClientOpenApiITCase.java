@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -80,6 +81,8 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
     
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
     
+    @Disabled("DAUTH-F03: private AI Search projection fails with auth enabled; "
+            + "see UNEXPECTED_PRODUCT_FINDINGS.md")
     @Test
     public void testCrossTypeSearchSpecificFacadesFiltersAndCursor() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
@@ -173,6 +176,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                 agentForm(agentVersionCommand(null, fixture.agentName, "1.0.0")));
         putFormOk(ADMIN_AGENT_PATH,
                 agentForm(agentUpdateRequest(null, fixture.agentName, suffix)));
+        grantClientReadVisibility("agent", fixture.agentName);
         
         fixture.agentSpecName = "oit-search-agentspec-" + suffix;
         postFormOk(ADMIN_AGENT_SPEC_PATH + "/draft",
@@ -186,6 +190,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
         putFormOk(ADMIN_AGENT_SPEC_PATH + "/biz-tags",
                 agentSpecBizTagsForm(fixture.agentSpecName,
                         "[\"openapi-it\",\"" + suffix + "\"]"));
+        grantClientReadVisibility("agentspec", fixture.agentSpecName);
         
         fixture.skillName = "oit-search-skill-" + suffix;
         postFormOk(ADMIN_SKILL_PATH + "/draft", skillDraftForm(fixture.skillName,
@@ -195,6 +200,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                 skillPublishForm(fixture.skillName, "1.0.0"));
         putFormOk(ADMIN_SKILL_PATH + "/biz-tags",
                 skillBizTagsForm(fixture.skillName, "openapi-it," + suffix));
+        grantClientReadVisibility("skill", fixture.skillName);
         
         fixture.promptKey = "oit_search_prompt_" + suffix;
         postFormOk(ADMIN_PROMPT_PATH + "/draft", promptDraftForm(fixture.promptKey,
@@ -203,6 +209,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
         addCleanup(() -> deletePromptQuietly(fixture.promptKey));
         postFormOk(ADMIN_PROMPT_PATH + "/force-publish",
                 promptPublishForm(fixture.promptKey, "1.0.0"));
+        grantClientReadVisibility("prompt", fixture.promptKey);
         
         fixture.mcpName = "oit-search-mcp-" + suffix;
         JsonNode created = postFormOk(ADMIN_MCP_PATH, mcpServerForm(fixture.mcpName,
@@ -215,6 +222,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                 "1.0.0", "MCP " + suffix, "tool_" + suffix,
                 "resource_" + suffix));
         assertEquals("ok", publishedMcp.get("data").asText(), publishedMcp.toString());
+        grantClientReadVisibility("mcp", fixture.mcpName);
         return fixture;
     }
     

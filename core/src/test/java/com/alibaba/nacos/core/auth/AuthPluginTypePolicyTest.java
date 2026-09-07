@@ -72,6 +72,19 @@ class AuthPluginTypePolicyTest {
     }
     
     @Test
+    void testClientAuthActivationDefaultAndExplicitOverride() {
+        configuration.removeProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED);
+        policy.initialize(configuration);
+        assertTrue(policy.isActive(configuration));
+        
+        configuration.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "false");
+        assertFalse(policy.isActive(configuration));
+        
+        configuration.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "true");
+        assertTrue(policy.isActive(configuration));
+    }
+    
+    @Test
     void testDefaultSelectionWithoutConfiguredType() {
         policy.initialize(configuration);
         assertTrue(policy.isPluginEnabledByDefault("nacos", configuration));
@@ -124,6 +137,10 @@ class AuthPluginTypePolicyTest {
         
         void setProperty(String key, String value) {
             properties.put(key, value);
+        }
+        
+        void removeProperty(String key) {
+            properties.remove(key);
         }
         
         @Override

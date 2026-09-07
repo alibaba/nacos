@@ -142,7 +142,7 @@ public class InstanceDeregisterOpenApiITCase extends OpenApiBaseITCase {
         Query query = baseInstanceQuery(serviceName, ip, port).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
         HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(INSTANCE_PATH),
-                Header.EMPTY, query, Collections.emptyMap(), String.class);
+                requestHeader(url(INSTANCE_PATH)), query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "register HTTP status should be 2xx, body=" + restResult.getData());
         JsonNode root = JacksonUtils.toObj(restResult.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), root.get("code").asInt(), restResult.getData());
@@ -158,7 +158,7 @@ public class InstanceDeregisterOpenApiITCase extends OpenApiBaseITCase {
     
     private Result<String> deregister(Query query) throws Exception {
         HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
-                Header.EMPTY, query, String.class);
+                requestHeader(url(INSTANCE_PATH)), query, String.class);
         assertTrue(restResult.ok(), "deregister HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
         });
@@ -169,7 +169,7 @@ public class InstanceDeregisterOpenApiITCase extends OpenApiBaseITCase {
         Query query = baseInstanceQuery(serviceName, ip, port).addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
         HttpRestResult<String> restResult = nacosRestTemplate.delete(url(INSTANCE_PATH),
-                Header.EMPTY, query, String.class);
+                requestHeader(url(INSTANCE_PATH)), query, String.class);
         if (!restResult.ok()) {
             logger().warn("deregister instance non-OK: code={} body={}", restResult.getCode(),
                     restResult.getData());
@@ -223,7 +223,7 @@ public class InstanceDeregisterOpenApiITCase extends OpenApiBaseITCase {
                 .addParam("clusterName", clusterName);
         addIfNotBlank(query, "groupName", groupName);
         HttpRestResult<String> restResult = nacosRestTemplate.get(url(INSTANCE_LIST_PATH),
-                Header.EMPTY, query, String.class);
+                requestHeader(url(INSTANCE_LIST_PATH)), query, String.class);
         assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
         });

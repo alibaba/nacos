@@ -60,6 +60,20 @@ V3 HTTP APIs should declare `@Secured` unless the endpoint is explicitly:
 Admin APIs should use `ApiType.ADMIN_API`. Console APIs should use
 `ApiType.CONSOLE_API`. Open APIs should use `ApiType.OPEN_API`.
 
+### 3.1 Default Scope Behavior
+
+Starting with Nacos 3.3, Client/Open API, Admin API, and Console API
+authentication all default to enabled. An absent
+`nacos.core.auth.enabled` property therefore protects Client HTTP APIs and the
+corresponding Java SDK and gRPC requests. An explicit `false` remains the
+supported compatibility override.
+
+HTTP filters, conditional beans, plugin activation policies, and configuration
+objects must use the same missing-property default. Changing the Client scope
+must not implicitly change the Admin or Console scope. Public and bootstrap
+exceptions remain governed by the explicit rules below rather than by the
+scope default.
+
 ## 4. Public And Bootstrap Endpoints
 
 Endpoints may omit `@Secured` only when they are intentionally public,

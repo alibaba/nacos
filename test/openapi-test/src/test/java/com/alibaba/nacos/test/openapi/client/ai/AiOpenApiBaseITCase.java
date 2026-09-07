@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.test.openapi.client.ai;
 
-import com.alibaba.nacos.test.openapi.OpenApiBaseITCase;
+import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 
 /**
  * Shared helpers for AI client OpenAPI integration tests.
  *
  * @author xiweng.yy
  */
-public abstract class AiOpenApiBaseITCase extends OpenApiBaseITCase {
-    
-    protected static final String DEFAULT_NAMESPACE = "public";
+public abstract class AiOpenApiBaseITCase extends AiAdminApiBaseITCase {
 }

@@ -115,12 +115,13 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertEquals("18000", config.get("token.expire.seconds").asText(), config.toString());
         assertEquals("false", config.get("token.cache.enable").asText(), config.toString());
         assertEquals("true", config.get("caching.enabled").asText(), config.toString());
-        assertEquals("false", config.get("anonymous.ai.enabled").asText(), config.toString());
+        assertEquals(Boolean.toString(EXPECTED_ANONYMOUS_AI_ENABLED),
+                config.get("anonymous.ai.enabled").asText(), config.toString());
 
         JsonNode metas = detail.get("configValueMetas");
         assertEquals("STATIC", metas.get("token.secret.key").get("source").asText(), metas.toString());
-        assertEquals("DEFAULT", metas.get("anonymous.ai.enabled").get("source").asText(),
-                metas.toString());
+        assertEquals(EXPECTED_ANONYMOUS_AI_CONFIG_SOURCE,
+                metas.get("anonymous.ai.enabled").get("source").asText(), metas.toString());
     }
 
     @Test

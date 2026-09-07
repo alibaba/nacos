@@ -23,14 +23,10 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -63,8 +59,8 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
     @Test
     public void testDownloadSkillByLatestVersionAndLabel() throws Exception {
         String skillName = randomSkillName("skill");
-        publishSkill(skillName, "1.0.0", null, "Use the v1 skill body.", "guide v1");
         addCleanup(() -> deleteSkill(skillName));
+        publishSkill(skillName, "1.0.0", null, "Use the v1 skill body.", "guide v1");
         publishSkill(skillName, "2.0.0", "1.0.0", "Use the v2 skill body.", "guide v2");
         updateLabels(skillName, "{\"stable\":\"1.0.0\"}");
         
@@ -100,8 +96,8 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
     @Test
     public void testDownloadSkillUnknownVersionAndLabelReturnNotFoundResultBody() throws Exception {
         String skillName = randomSkillName("missing");
-        publishSkill(skillName, "1.0.0", null, "Only one online skill body.", "guide");
         addCleanup(() -> deleteSkill(skillName));
+        publishSkill(skillName, "1.0.0", null, "Only one online skill body.", "guide");
         
         assertError(getRaw(SKILL_CLIENT_PATH,
                 Query.newInstance().addParam("name", skillName).addParam("version", "9.9.9")),
@@ -130,6 +126,7 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
         form.put("version", version);
         JsonNode published = postFormOk(SKILL_ADMIN_PATH + "/force-publish", form);
         assertEquals("ok", published.get("data").asText(), published.toString());
+        grantClientReadVisibility("skill", skillName);
     }
     
     private void updateLabels(String skillName, String labels) throws Exception {
@@ -197,29 +194,6 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
         assertTrue(skillMd.contains("version: " + version), skillMd);
         assertTrue(skillMd.contains(body), skillMd);
         assertEquals(guideContent, entries.get(skillName + "/references/guide.md"));
-    }
-    
-    private Map<String, String> unzipTextEntries(byte[] body) throws Exception {
-        Map<String, String> result = new LinkedHashMap<>();
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(body))) {
-            ZipEntry entry;
-            while (null != (entry = zis.getNextEntry())) {
-                if (!entry.isDirectory()) {
-                    result.put(entry.getName(), new String(readEntry(zis), StandardCharsets.UTF_8));
-                }
-            }
-        }
-        return result;
-    }
-    
-    private byte[] readEntry(ZipInputStream zis) throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int len;
-        while ((len = zis.read(buffer)) != -1) {
-            output.write(buffer, 0, len);
-        }
-        return output.toByteArray();
     }
     
     private String randomSkillName(String scenario) {

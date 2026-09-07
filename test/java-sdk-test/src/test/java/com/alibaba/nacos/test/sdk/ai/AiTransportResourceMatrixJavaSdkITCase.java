@@ -193,6 +193,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
                 true);
         addCleanup(() -> maintainer.prompt().deletePrompt(Constants.DEFAULT_NAMESPACE_ID,
                 promptKey));
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "prompt", promptKey);
 
         Prompt prompt = service.getPromptByVersion(promptKey, VERSION);
         assertEquals(promptKey, prompt.getPromptKey(), prompt.toString());
@@ -217,6 +218,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
                 true);
         addCleanup(() -> maintainer.skill().deleteSkill(Constants.DEFAULT_NAMESPACE_ID,
                 skillName));
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "skill", skillName);
 
         assertTrue(service.downloadSkillZipByVersion(skillName, VERSION).length > 0);
         AbstractNacosSkillListener listener = new AbstractNacosSkillListener() {
@@ -244,6 +246,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
                 true);
         addCleanup(() -> maintainer.agentSpec().deleteAgentSpec(
                 Constants.DEFAULT_NAMESPACE_ID, specName));
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "agentspec", specName);
 
         AbstractNacosAgentSpecListener listener = new AbstractNacosAgentSpecListener() {
             @Override
@@ -303,7 +306,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private AiMaintainerService createAiMaintainerService() throws NacosException {
-        Properties properties = sdkProperties();
+        Properties properties = maintainerProperties();
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties);
     }

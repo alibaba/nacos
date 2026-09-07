@@ -127,9 +127,42 @@ API ITs must keep data isolated and repeatable:
   the test restores the previous state;
 - use bounded retries only for asynchronous server effects.
 
-The standalone test environment normally disables auth. Auth-enabled scenarios
-must add token handling deliberately and isolate assumptions from auth-disabled
-API contract tests.
+### 5.1 Default-Auth Runtime Baseline
+
+For the Nacos 3.3 line, the standard required standalone API IT runs with
+Client, Admin, and Console auth enabled by the packaged defaults. The workflow
+must not rewrite those scope switches or disable the default authorization
+cache. It may configure deployment-specific token secret and server identity
+values before startup.
+
+The standard identities are:
+
+- a non-admin Client identity with the read/write permissions needed by Client
+  API functional scenarios;
+- a read-only Client identity for action-boundary scenarios;
+- an authenticated identity without authority;
+- a global administrator for Admin, Console, Auth API, and test-fixture setup;
+- explicit anonymous and invalid-credential request modes.
+
+Functional API scenarios use an identity appropriate for their audience and
+still assert their complete business result, boundary behavior, and controlled
+errors. Authorization checks are an additional layer and must not replace the
+functional assertions. Public, bootstrap-only, and deliberately anonymous
+endpoints use an explicit anonymous request mode rather than inheriting an
+empty-header default. A request sent to an external adaptor port must not
+inherit Nacos credentials.
+
+Every protected controller operation must be present in an auditable inventory
+and classified as directly authorization-tested, covered by a reviewed
+equivalent authorization tuple/parser group, or explicitly public/excluded by
+spec. Default-auth user, role, permission, and visibility APIs, custom resource
+parsers, anonymous behavior, multipart/raw requests, and security-regression
+paths require direct operation-level coverage. Permission updates are observed
+with bounded retries while the default authorization cache remains enabled.
+
+HTTP functional, Auth API, and URI-security cases belong to
+`test/openapi-test`. A separate auth-only Maven module or workflow may exist
+during migration, but it is not part of the final standard test topology.
 
 ## 6. API Deletion And Deprecation
 

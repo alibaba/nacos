@@ -36,6 +36,14 @@
         <nacos.agent.it.server.publication.capacity>100</nacos.agent.it.server.publication.capacity>
         <nacos.agent.it.server.watch.capacity>300</nacos.agent.it.server.watch.capacity>
         <nacos.agent.it.server.http.watch.waiter.capacity>0</nacos.agent.it.server.http.watch.waiter.capacity>
+        <nacos.test.auth.enabled>false</nacos.test.auth.enabled>
+        <nacos.test.auth.admin.username>nacos</nacos.test.auth.admin.username>
+        <nacos.test.auth.client.username>nacos_it_client_rw</nacos.test.auth.client.username>
+        <nacos.test.auth.readonly.username>nacos_it_client_readonly</nacos.test.auth.readonly.username>
+        <nacos.test.auth.no-permission.username>nacos_it_client_no_permission</nacos.test.auth.no-permission.username>
+        <nacos.test.auth.anonymous.username>__nacos_anonymous__</nacos.test.auth.anonymous.username>
+        <nacos.test.auth.anonymous-ai.enabled>false</nacos.test.auth.anonymous-ai.enabled>
+        <nacos.test.auth.anonymous-ai.source>DEFAULT</nacos.test.auth.anonymous-ai.source>
     </properties>
 
     <dependencies>
@@ -131,6 +139,14 @@
                                 <nacos.port>8848</nacos.port>
                                 <nacos.console.port>8080</nacos.console.port>
                                 <nacos.ai.registry.port>9080</nacos.ai.registry.port>
+                                <nacos.test.auth.enabled>${nacos.test.auth.enabled}</nacos.test.auth.enabled>
+                                <nacos.test.auth.admin.username>${nacos.test.auth.admin.username}</nacos.test.auth.admin.username>
+                                <nacos.test.auth.client.username>${nacos.test.auth.client.username}</nacos.test.auth.client.username>
+                                <nacos.test.auth.readonly.username>${nacos.test.auth.readonly.username}</nacos.test.auth.readonly.username>
+                                <nacos.test.auth.no-permission.username>${nacos.test.auth.no-permission.username}</nacos.test.auth.no-permission.username>
+                                <nacos.test.auth.anonymous.username>${nacos.test.auth.anonymous.username}</nacos.test.auth.anonymous.username>
+                                <nacos.test.auth.anonymous-ai.enabled>${nacos.test.auth.anonymous-ai.enabled}</nacos.test.auth.anonymous-ai.enabled>
+                                <nacos.test.auth.anonymous-ai.source>${nacos.test.auth.anonymous-ai.source}</nacos.test.auth.anonymous-ai.source>
                                 <nacos.agent.it.server.publication.capacity>${nacos.agent.it.server.publication.capacity}</nacos.agent.it.server.publication.capacity>
                                 <nacos.agent.it.server.watch.capacity>${nacos.agent.it.server.watch.capacity}</nacos.agent.it.server.watch.capacity>
                                 <nacos.agent.it.server.http.watch.waiter.capacity>${nacos.agent.it.server.http.watch.waiter.capacity}</nacos.agent.it.server.http.watch.waiter.capacity>

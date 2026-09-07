@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.auth;
+package com.alibaba.nacos.test.openapi.auth;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -100,6 +100,23 @@ public class DefaultAuthApiITCase extends AuthITCase {
         assertEquals(200, bootstrap.status(), bootstrap.body());
         JsonNode bootstrapResult = JacksonUtils.toObj(bootstrap.body());
         assertEquals(409, bootstrapResult.get("code").asInt(), bootstrap.body());
+    }
+
+    @Test
+    void testAuthenticatedUserMayUpdateOwnPasswordOnly() throws Exception {
+        TestIdentity identity = createIdentityWithoutPermission("auth-self-password");
+        TestIdentity other = createIdentityWithoutPermission("auth-other-password");
+        String newPassword = "AuthSelf-" + randomSuffix() + "-A1!";
+
+        Response ownUpdate = putForm(SERVER_BASE_URL, USER_PATH, identity.token(),
+                params("username", identity.username(), "newPassword", newPassword));
+        assertEquals("update user ok!", assertSuccess(ownUpdate).get("data").asText());
+        assertFalse(awaitLogin(identity.username(), newPassword).isBlank());
+
+        Response otherUpdate = putForm(SERVER_BASE_URL, USER_PATH, other.token(),
+                params("username", identity.username(), "newPassword", "MustNotApply123!"));
+        assertEquals(403, otherUpdate.status(), otherUpdate.body());
+        assertFalse(awaitLogin(identity.username(), newPassword).isBlank());
     }
 
     @Test

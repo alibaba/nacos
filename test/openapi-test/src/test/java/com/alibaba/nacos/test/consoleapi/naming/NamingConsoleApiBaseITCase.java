@@ -153,8 +153,8 @@ public abstract class NamingConsoleApiBaseITCase extends ConsoleApiBaseITCase {
         addIfNotBlank(query, "healthy", healthy);
         addIfNotBlank(query, "enabled", enabled);
         query.addParam("ephemeral", "false");
-        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(ADMIN_INSTANCE_PATH), Header.EMPTY,
-                query, Collections.emptyMap(), String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url(ADMIN_INSTANCE_PATH),
+                requestHeader(url(ADMIN_INSTANCE_PATH)), query, Collections.emptyMap(), String.class);
         assertTrue(restResult.ok(), "HTTP status should be 2xx, code=" + restResult.getCode() + ", body="
                 + restResult.getData() + ", message=" + restResult.getMessage());
         JsonNode root = JacksonUtils.toObj(restResult.getData());

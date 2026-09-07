@@ -49,6 +49,9 @@ public abstract class MaintainerSdkBaseITCase {
             "/nacos");
 
     protected static final String SERVER_ADDR = NACOS_HOST + ":" + NACOS_PORT;
+
+    protected static final boolean AUTH_ENABLED = Boolean.parseBoolean(
+            System.getProperty("nacos.test.auth.enabled", "false"));
     
     private final Deque<CleanupAction> cleanupActions = new ArrayDeque<>();
     
@@ -64,15 +67,35 @@ public abstract class MaintainerSdkBaseITCase {
     }
     
     protected ConfigMaintainerService createConfigMaintainerService() throws NacosException {
+        return createConfigMaintainerService(maintainerProperties());
+    }
+
+    protected ConfigMaintainerService createConfigMaintainerService(AuthIdentity identity)
+            throws NacosException {
+        return createConfigMaintainerService(maintainerProperties(identity));
+    }
+
+    protected ConfigMaintainerService createConfigMaintainerService(Properties properties)
+            throws NacosException {
         ConfigMaintainerService service =
-                NacosMaintainerFactory.createConfigMaintainerService(maintainerProperties());
+                NacosMaintainerFactory.createConfigMaintainerService(properties);
         shutdownActions.addFirst(service::shutdown);
         return service;
     }
 
     protected NamingMaintainerService createNamingMaintainerService() throws NacosException {
+        return createNamingMaintainerService(maintainerProperties());
+    }
+
+    protected NamingMaintainerService createNamingMaintainerService(AuthIdentity identity)
+            throws NacosException {
+        return createNamingMaintainerService(maintainerProperties(identity));
+    }
+
+    protected NamingMaintainerService createNamingMaintainerService(Properties properties)
+            throws NacosException {
         NamingMaintainerService service =
-                NamingMaintainerFactory.createNamingMaintainerService(maintainerProperties());
+                NamingMaintainerFactory.createNamingMaintainerService(properties);
         shutdownActions.addFirst(service::shutdown);
         return service;
     }
@@ -80,11 +103,32 @@ public abstract class MaintainerSdkBaseITCase {
     protected AiMaintainerService createAiMaintainerService() throws NacosException {
         return AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
     }
+
+    protected AiMaintainerService createAiMaintainerService(AuthIdentity identity)
+            throws NacosException {
+        return AiMaintainerFactory.createAiMaintainerService(maintainerProperties(identity));
+    }
     
     protected Properties maintainerProperties() {
+        return maintainerProperties(AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS);
+    }
+
+    protected Properties maintainerProperties(AuthIdentity identity) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, SERVER_ADDR);
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, NACOS_CONTEXT_PATH);
+        if (AuthIdentity.ANONYMOUS != identity) {
+            properties.setProperty(PropertyKeyConst.USERNAME,
+                    requiredProperty(identity.usernameProperty));
+            properties.setProperty(PropertyKeyConst.PASSWORD,
+                    requiredProperty(identity.passwordProperty));
+        }
+        return properties;
+    }
+
+    protected Properties invalidCredentialProperties() {
+        Properties properties = maintainerProperties(AuthIdentity.ADMIN);
+        properties.setProperty(PropertyKeyConst.PASSWORD, "invalid-" + UUID.randomUUID());
         return properties;
     }
     
@@ -131,6 +175,19 @@ public abstract class MaintainerSdkBaseITCase {
     private String randomSuffix() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
+
+    private String requiredProperty(String propertyName) {
+        String result = System.getProperty(propertyName, "");
+        if (result.isBlank()) {
+            String environmentName = propertyName.toUpperCase(Locale.ROOT)
+                    .replace('.', '_').replace('-', '_');
+            result = System.getenv().getOrDefault(environmentName, "");
+        }
+        if (result.isBlank()) {
+            throw new IllegalStateException("Required test property is blank: " + propertyName);
+        }
+        return result;
+    }
     
     private Exception runActions(Deque<CleanupAction> actions, Exception failure) {
         Exception result = failure;
@@ -169,5 +226,25 @@ public abstract class MaintainerSdkBaseITCase {
     protected interface CheckedCondition {
         
         boolean evaluate() throws Exception;
+    }
+
+    protected enum AuthIdentity {
+        ANONYMOUS(null, null),
+        ADMIN("nacos.test.auth.admin.username", "nacos.test.auth.admin.password"),
+        CLIENT_READ_WRITE("nacos.test.auth.client.username",
+                "nacos.test.auth.client.password"),
+        CLIENT_READ_ONLY("nacos.test.auth.readonly.username",
+                "nacos.test.auth.readonly.password"),
+        CLIENT_NO_PERMISSION("nacos.test.auth.no-permission.username",
+                "nacos.test.auth.no-permission.password");
+
+        private final String usernameProperty;
+
+        private final String passwordProperty;
+
+        AuthIdentity(String usernameProperty, String passwordProperty) {
+            this.usernameProperty = usernameProperty;
+            this.passwordProperty = passwordProperty;
+        }
     }
 }

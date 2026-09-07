@@ -430,6 +430,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
         addCleanup(() -> deleteAgentDefinitionQuietly(namespaceId, agentName));
         postFormOk(ADMIN_AGENT_PATH + "/force-publish",
                 agentForm(agentVersionCommand(namespaceId, agentName, VERSION)));
+        grantClientReadVisibility(namespaceId, "agent", agentName);
     }
 
     private JsonNode discover(String namespaceId, String agentName) throws Exception {

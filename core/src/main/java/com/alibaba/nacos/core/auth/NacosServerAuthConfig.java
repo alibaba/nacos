@@ -114,7 +114,7 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     protected void getConfigFromEnv() {
         try {
             authEnabled =
-                EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
+                EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, true);
             nacosAuthSystemType = AuthPluginTypeResolver.resolve();
             serverIdentityKey =
                 EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
