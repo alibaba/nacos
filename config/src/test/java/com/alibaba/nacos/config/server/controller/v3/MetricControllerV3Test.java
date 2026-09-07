@@ -77,6 +77,7 @@ class MetricControllerV3Test {
     
     @BeforeEach
     void setUp() {
+        System.setProperty("nacos.core.auth.enabled", "false");
         System.setProperty("nacos.core.auth.admin.enabled", "false");
         EnvUtil.setEnvironment(new StandardEnvironment());
         metricsControllerV3 = new MetricsControllerV3(memberManager, connectionManager);
@@ -85,6 +86,7 @@ class MetricControllerV3Test {
     
     @AfterEach
     void tearDown() {
+        System.clearProperty("nacos.core.auth.enabled");
         System.clearProperty("nacos.core.auth.admin.enabled");
     }
     

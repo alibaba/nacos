@@ -72,6 +72,7 @@ class ConsoleMaintainerClientAuthPluginTest {
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "false");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
         EnvUtil.setEnvironment(environment);
         authPlugin = new ConsoleMaintainerClientAuthPlugin();

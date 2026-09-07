@@ -72,6 +72,7 @@ class RemoteServerConnectorTest {
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.core.auth.enabled", "false");
         environment.setProperty("nacos.core.auth.admin.enabled", "false");
         EnvUtil.setEnvironment(environment);
         remoteServerConnector = new RemoteServerConnector(memberManager, clusterHandler);
