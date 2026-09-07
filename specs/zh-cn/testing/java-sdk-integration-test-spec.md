@@ -221,6 +221,11 @@ MCP Storage 路由或生命周期托管发生变化时，Java SDK IT 至少覆�
 无 Version Runtime Service、显式 Transport List、MCP Version Range、Client HTTP 对齐和
 心跳续约在独立设计批准前不属于该矩阵。
 
+历史对账和切流行为由显式 Phase Gate 的 SDK 测试类在独立迁移工作流中运行。稳定 Client 与
+Maintainer SDK 功能测试类从单一终态 Server 开始，不能把切流前 Conflict 作为成功结果的另一种
+分支。Adapter 等价性仍属于稳定功能套件；除非 Adapter 行为本身发生变化，否则无需为同一次
+Server 侧迁移转换重复执行。
+
 ## 11. 历史 A2A 升级与集群场景
 
 历史 A2A 迁移变化时，Java SDK IT 使用真实 `A2aService`、`AiService`、Naming、gRPC/HTTP RAD、
@@ -244,3 +249,6 @@ Watch、Reconnect 和 Redo Client 补充 OpenAPI `M-ST-01..10` 矩阵。特别�
 
 每个测试使用明确有界 Deadline 和公开或稳定 Wire 行为，不假设 LB Sticky、固定 Config Leader、
 固定 Naming Responsibility Member 或固定 Task 执行顺序。
+
+历史 A2A Restart 与滚动切流 Client 遵守相同的独立迁移工作流边界，不在同一个 Job 中追加到普通
+SDK 功能套件之后执行。

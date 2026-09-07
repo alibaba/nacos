@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: omitted and explicit {@code createDraft=false} keep historical
  *     direct-online behavior, while {@code createDraft=true} creates a non-serving lifecycle
- *     draft once managed cutover is available.</li>
+ *     draft in the stable managed state.</li>
  *     <li>Expected capability: exact/latest query, current-value polling subscription, and REF
  *     Runtime Endpoint register/query/idempotent replacement/deregister use HTTP only.</li>
  *     <li>Boundary/error handling: duplicate release, missing MCP, invalid release content,
@@ -118,23 +118,16 @@ class McpHttpClientJavaSdkITCase extends JavaSdkBaseITCase {
         assertTrue(containsEndpoint(service.getMcpServer(explicitName, VERSION), directPort));
 
         String draftName = randomServiceName("mcp-http-draft");
-        try {
-            String draftId = service.releaseMcpServer(stdioServer(draftName, VERSION),
-                    toolSpecification(draftName), resourceSpecification(draftName), null, true);
-            assertNotNull(draftId);
-            addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, draftName,
-                    null, null));
-            McpServerVersionDetail draft = maintainer.getMcpServerVersion(draftName, VERSION);
-            assertEquals(STATUS_DRAFT, draft.getStatus(), draft.toString());
-            NacosException notServing = assertThrows(NacosException.class,
-                    () -> service.getMcpServer(draftName, VERSION));
-            assertEquals(NacosException.NOT_FOUND, notServing.getErrCode(),
-                    notServing.toString());
-        } catch (NacosException exception) {
-            assertEquals(NacosException.CONFLICT, exception.getErrCode(), exception.toString());
-            assertTrue(exception.getMessage().contains("LIFECYCLE_MANAGED cutover"),
-                    exception.toString());
-        }
+        String draftId = service.releaseMcpServer(stdioServer(draftName, VERSION),
+                toolSpecification(draftName), resourceSpecification(draftName), null, true);
+        assertNotNull(draftId);
+        addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, draftName,
+                null, null));
+        McpServerVersionDetail draft = maintainer.getMcpServerVersion(draftName, VERSION);
+        assertEquals(STATUS_DRAFT, draft.getStatus(), draft.toString());
+        NacosException notServing = assertThrows(NacosException.class,
+                () -> service.getMcpServer(draftName, VERSION));
+        assertEquals(NacosException.NOT_FOUND, notServing.getErrCode(), notServing.toString());
     }
 
     @Test

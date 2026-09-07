@@ -275,6 +275,14 @@ Versionless Runtime Services, explicit transport lists, MCP Version ranges,
 Client HTTP parity, and heartbeat renewal remain outside this matrix until
 their separate designs are approved.
 
+Historical reconciliation and cutover behavior runs in explicitly phase-gated
+SDK classes under the dedicated migration workflow. Stable Client and
+Maintainer SDK functional classes start from one terminal server state and must
+not turn a pre-cutover conflict into an alternative successful test outcome.
+Adapter parity remains part of the stable functional suite; it need not
+duplicate a server-side migration transition unless adapter behavior itself is
+under change.
+
 ## 11. Historical A2A Upgrade And Cluster Scenarios
 
 When historical A2A migration changes, Java SDK IT complements the OpenAPI
@@ -301,3 +309,7 @@ Directed three-member tests cover this cluster matrix:
 Every test uses explicit bounded deadlines and public or stable wire behavior.
 The suite does not assume load-balancer stickiness, one Config leader, one
 Naming responsibility member, or fixed task execution order.
+
+Historical A2A restart and rolling-cutover clients follow the same dedicated
+migration-workflow boundary and do not run after the ordinary SDK functional
+suite in the same job.

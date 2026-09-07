@@ -212,40 +212,36 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
                 mcpServerSpecification(mcpName, version, "lifecycle draft"));
     }
 
-    protected void assertMcpLifecycleAuthorityBoundary(String basePath, String mcpName,
+    protected void assertMcpLifecycleManagedOperations(String basePath, String mcpName,
             String version) throws Exception {
         Query listQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("mcpName", mcpName).addParam("status", "ONLINE")
                 .addParam("pageNo", "1").addParam("pageSize", "10");
-        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/versions", listQuery));
-        assertMcpLifecycleAbsentOrCutover(getRaw(basePath + "/version",
+        assertMcpLifecycleResourceAbsent(getRaw(basePath + "/versions", listQuery));
+        assertMcpLifecycleResourceAbsent(getRaw(basePath + "/version",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/draft",
+        assertMcpLifecycleResourceAbsent(putRaw(basePath + "/draft",
                 mcpLifecycleDraftQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(deleteRaw(basePath + "/draft",
+        assertMcpLifecycleResourceAbsent(deleteRaw(basePath + "/draft",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/submit",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/submit",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/publish",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/publish",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/force-publish",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/force-publish",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/redraft",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/redraft",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/online",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/online",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(postRaw(basePath + "/offline",
+        assertMcpLifecycleResourceAbsent(postRaw(basePath + "/offline",
                 mcpLifecycleVersionQuery(mcpName, version)));
-        assertMcpLifecycleAbsentOrCutover(putRaw(basePath + "/labels",
+        assertMcpLifecycleResourceAbsent(putRaw(basePath + "/labels",
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                         .addParam("mcpName", mcpName).addParam("labels", "{}")));
 
         HttpResponse createResponse = postRaw(basePath + "/draft",
                 mcpLifecycleDraftQuery(mcpName, version));
-        if (409 == createResponse.code()) {
-            assertMcpLifecycleCutoverConflict(createResponse);
-            return;
-        }
         assertEquals(200, createResponse.code(), createResponse.body());
         JsonNode created = JacksonUtils.toObj(createResponse.body());
         assertEquals(0, created.path("code").asInt(), created.toString());
@@ -268,15 +264,42 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertEquals(0, deleted.path("code").asInt(), deleted.toString());
     }
 
-    private void assertMcpLifecycleAbsentOrCutover(HttpResponse response) throws Exception {
-        if (409 == response.code()) {
-            assertMcpLifecycleCutoverConflict(response);
-            return;
-        }
+    protected void assertMcpLifecycleCutoverGate(String basePath, String mcpName,
+            String version) throws Exception {
+        Query listQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("mcpName", mcpName).addParam("status", "ONLINE")
+                .addParam("pageNo", "1").addParam("pageSize", "10");
+        assertMcpLifecycleCutoverConflict(getRaw(basePath + "/versions", listQuery));
+        assertMcpLifecycleCutoverConflict(getRaw(basePath + "/version",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(putRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/submit",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/force-publish",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/redraft",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/online",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(postRaw(basePath + "/offline",
+                mcpLifecycleVersionQuery(mcpName, version)));
+        assertMcpLifecycleCutoverConflict(putRaw(basePath + "/labels",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("labels", "{}")));
+    }
+
+    private void assertMcpLifecycleResourceAbsent(HttpResponse response) throws Exception {
         assertError(response, 404, ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
     }
 
-    private void assertMcpLifecycleCutoverConflict(HttpResponse response) throws Exception {
+    protected void assertMcpLifecycleCutoverConflict(HttpResponse response) throws Exception {
         assertError(response, 409, ErrorCode.RESOURCE_CONFLICT,
                 "unavailable before LIFECYCLE_MANAGED cutover");
     }

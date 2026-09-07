@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     name filters; delete removes the server.</li>
  *     <li>Boundary/validation: omitted namespaceId defaults to public; detail/delete accept either mcpId or mcpName;
  *     list defaults search to accurate; invalid search, missing identity, missing serverSpecification, missing
- *     version and invalid custom ID are rejected with HTTP 400. Standard lifecycle routes require name/version,
- *     reject nested mcpId, and remain non-mutating until the permanent managed cutover. The legacy import endpoints
+ *     version and invalid custom ID are rejected with HTTP 400. Standard lifecycle routes require name/version and
+ *     reject nested mcpId. The legacy import endpoints
  *     return HTTP 410 by default, remain available behind the shared compatibility switch through Nacos 3.3.x, and
  *     are planned for removal in 3.4.0. MCP runtime tool import has a separate scenario class because its
  *     outbound-network policy is independent from MCP resource CRUD.
@@ -155,7 +155,7 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
     }
 
     @Test
-    public void testStandardLifecycleApiIdentityAndCutoverGate() throws Exception {
+    public void testStandardLifecycleApiIdentityAndManagedOperations() throws Exception {
         String mcpName = randomAiName("mcp-lifecycle");
         String version = "1.0.0";
         assertError(getRaw(CONSOLE_MCP_PATH + "/versions", Query.newInstance()
@@ -170,7 +170,7 @@ public class McpConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertError(postRaw(CONSOLE_MCP_PATH + "/draft", nestedId), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "does not accept serverSpecification.id");
 
-        assertMcpLifecycleAuthorityBoundary(CONSOLE_MCP_PATH, mcpName, version);
+        assertMcpLifecycleManagedOperations(CONSOLE_MCP_PATH, mcpName, version);
     }
 
 }

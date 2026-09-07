@@ -287,6 +287,13 @@ may seed documented legacy fixtures through test setup, but must not use direct
 database-row assertions as the success contract. Every asynchronous condition
 uses bounded polling rather than a fixed sleep.
 
+Migration-state and cutover scenarios must use explicitly phase-gated test
+classes and a dedicated migration workflow. Stable functional API classes run
+against one terminal state and must not accept either a pre-cutover conflict or
+a post-cutover success according to background-task timing. A migration
+workflow may rerun a stable cross-resource isolation control, but it does not
+own the ordinary functional suite or its authentication matrix.
+
 ## 12. Historical A2A Upgrade Migration Scenarios
 
 When the historical A2A upgrade state machine, reconciliation, or Runtime
@@ -312,3 +319,6 @@ HTTP portions and records scenarios that require the Java SDK or a directed
 cluster fixture. Tests may seed documented historical Config through setup, but
 success is asserted through public APIs, durable restart behavior, and bounded
 polling rather than direct row inspection or fixed sleep.
+
+These historical A2A scenarios follow the same dedicated-workflow boundary as
+MCP migration and must not be appended to the stable functional API job.

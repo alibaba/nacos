@@ -1,0 +1,480 @@
+# Historical migration scenarios are intentionally isolated from the stable functional IT.
+
+name: AI Migration Integration Test
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  RAD_SERVER_PUBLICATION_CAPACITY: '3'
+  RAD_SERVER_WATCH_CAPACITY: '3'
+  RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY: '3'
+  RAD_CLIENT_PUBLICATION_CAPACITY: '3'
+  RAD_CLIENT_SUBSCRIPTION_CAPACITY: '3'
+
+jobs:
+  mcp-migration-test:
+    name: Historical MCP Migration Integration Test
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+
+      - name: Start MCP Server In Syncing Mode
+        run: |
+          PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
+          SERVER_HOME=$(cd "$(dirname "$PROP_FILE")/.." && pwd)
+          sed 's|^nacos.plugin.auth.nacos.token.secret.key=.*|nacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=migrationKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=migrationValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          {
+            echo "nacos.ai.mcp.resource.reconciliation.enabled=false"
+            echo "nacos.ai.resource.search.index.reconcile.interval-seconds=1"
+          } >> "$PROP_FILE"
+          echo "MCP_MIGRATION_NACOS_HOME=$SERVER_HOME" >> "$GITHUB_ENV"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+
+      - name: Wait for MCP Syncing Server
+        run: |
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 1; done'; then
+            echo "MCP SYNCING server failed to start" >&2
+            tail -300 "$MCP_MIGRATION_NACOS_HOME/logs/startup.log" || true
+            tail -300 "$MCP_MIGRATION_NACOS_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify MCP Syncing OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -DskipTests=false \
+            -Dit.test=McpMigrationAdminApiOpenApiITCase \
+            -Dnacos.mcp.migration.phase=syncing
+
+      - name: Verify MCP Syncing Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=McpUpgradeMigrationJavaSdkITCase \
+            -Dnacos.mcp.migration.phase=syncing
+
+      - name: Restart Server With MCP Reconciliation
+        run: |
+          PROP_FILE="$MCP_MIGRATION_NACOS_HOME/conf/application.properties"
+          bash "$MCP_MIGRATION_NACOS_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null 2>&1; do sleep 1; done'; then
+            echo "MCP SYNCING server did not stop" >&2
+            exit 1
+          fi
+          sed 's|^nacos.ai.mcp.resource.reconciliation.enabled=false$|nacos.ai.mcp.resource.reconciliation.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          echo "nacos.ai.mcp.resource.reconciliation.interval-seconds=1" >> "$PROP_FILE"
+          bash "$MCP_MIGRATION_NACOS_HOME/bin/startup.sh" -m standalone
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 1; done'; then
+            echo "MCP managed server failed to start" >&2
+            exit 1
+          fi
+          if ! timeout 180s bash -c 'until grep -R -q "Persisted permanent MCP LIFECYCLE_MANAGED marker" "${MCP_MIGRATION_NACOS_HOME}/logs" 2>/dev/null; do sleep 1; done'; then
+            echo "MCP migration did not reach LIFECYCLE_MANAGED" >&2
+            tail -500 "$MCP_MIGRATION_NACOS_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify MCP Managed OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -DskipTests=false \
+            -Dit.test=McpMigrationAdminApiOpenApiITCase \
+            -Dnacos.mcp.migration.phase=managed
+
+      - name: Verify MCP Managed Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=McpUpgradeMigrationJavaSdkITCase \
+            -Dnacos.mcp.migration.phase=managed
+
+      - name: Upload MCP Migration Reports And Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-migration-test-reports-and-logs
+          path: |
+            test/openapi-test/target/failsafe-reports/
+            test/java-sdk-test/target/failsafe-reports/
+            distribution/target/nacos-server-*/nacos/logs/
+          if-no-files-found: warn
+
+      - name: Stop MCP Migration Server
+        if: always()
+        run: |
+          if [ -n "${MCP_MIGRATION_NACOS_HOME:-}" ]; then
+            bash "$MCP_MIGRATION_NACOS_HOME/bin/shutdown.sh" || true
+          fi
+
+  a2a-migration-test:
+    name: Historical A2A Migration Integration Test
+    runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+
+      - name: Start Canonical A2A Fixture Server
+        run: |
+          PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
+          SERVER_HOME=$(cd "$(dirname "$PROP_FILE")/.." && pwd)
+          sed 's|^nacos.plugin.auth.nacos.token.secret.key=.*|nacos.plugin.auth.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=migrationKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=migrationValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.publication.max-publications-per-client=.*|nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.watch.max-per-client=.*|nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed -E "s|^#?nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=.*|nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          echo "nacos.ai.mcp.resource.reconciliation.enabled=false" >> "$PROP_FILE"
+          echo "A2A_MIGRATION_NACOS_HOME=$SERVER_HOME" >> "$GITHUB_ENV"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+
+      - name: Wait for Canonical A2A Fixture Server
+        run: |
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 1; done'; then
+            echo "Canonical A2A fixture server failed to start" >&2
+            tail -300 "$A2A_MIGRATION_NACOS_HOME/logs/startup.log" || true
+            tail -300 "$A2A_MIGRATION_NACOS_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 90s bash -c 'until curl --silent --fail http://127.0.0.1:9080/.well-known/ai-catalog.json >/dev/null; do sleep 1; done'; then
+            echo "ARD adaptor failed to start" >&2
+            exit 1
+          fi
+      - name: Restart Server In Historical A2A Migration Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+
+          # Freeze the post-cutover shadow policy before AUTO starts. The marker must match the
+          # local policy so this node is eligible to reconcile historical definitions.
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"migration-it-u5","legacyNamingShadow":true,"storageProvider":"nacos_config","startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
+            --data-urlencode "content=$MARKER" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+
+          # Keep the dedicated SYNCING matrix from racing the automatic cutover. A persistent
+          # historical Runtime service without a canonical mirror keeps only the Runtime gate
+          # open, so Definition reconciliation and confirmed-orphan cleanup continue normally.
+          # The later cutover scenario removes this instance before installing its Config hold.
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/client/ns/instance" \
+            --data-urlencode "serviceName=migrationcutoverblocker::0.0.1" \
+            --data-urlencode "groupName=agent-endpoints" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "ip=127.0.0.1" \
+            --data-urlencode "port=65530" \
+            --data-urlencode "ephemeral=false"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Canonical-mode server did not stop"
+            exit 1
+          fi
+
+          # This dedicated workflow owns the migration restart; the functional workflow
+          # remains on the default CANONICAL behavior.
+          echo "nacos.ai.a2a.compatibility.mode=AUTO" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=true" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.reconciliation.interval-seconds=1" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.reconciliation.page-size=2" >> "$PROP_FILE"
+          # Bound takeover time when the previous process exits after Config storage has
+          # already become unavailable and therefore cannot release its migration lease.
+          echo "nacos.ai.a2a.migration.lease-duration-seconds=10" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "AUTO migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart"
+            exit 1
+          fi
+
+      - name: Run Historical A2A Migration OpenAPI IT
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase \
+            -Dnacos.a2a.migration.cutover.phase=syncing
+
+      - name: Run Historical A2A Migration Java SDK IT
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase \
+            -Dnacos.a2a.migration.syncing.enabled=true \
+            -Dnacos.agent.it.server.publication.capacity="${RAD_SERVER_PUBLICATION_CAPACITY}" \
+            -Dnacos.agent.it.client.publication.capacity="${RAD_CLIENT_PUBLICATION_CAPACITY}"
+
+      - name: Verify AI Resource Isolation During Historical A2A Migration
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
+      - name: Install Historical A2A Cutover Blocker
+        run: |
+          # Release the SYNCING-only Runtime gate now that the migration matrix is complete.
+          curl -fsS -G -X DELETE \
+            "http://127.0.0.1:8848/nacos/v3/client/ns/instance" \
+            --data-urlencode "serviceName=migrationcutoverblocker::0.0.1" \
+            --data-urlencode "groupName=agent-endpoints" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "ip=127.0.0.1" \
+            --data-urlencode "port=65530" \
+            --data-urlencode "ephemeral=false"
+
+          # One malformed historical source keeps the matching-policy restart in SYNCING until
+          # the U5 OpenAPI fixture has created every definition needed by the cutover matrix.
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.cutover.blocker" \
+            --data-urlencode "groupName=agent" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content={" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+
+          # Simulate an uncleanly terminated reconciliation owner. The restarted process must
+          # take over this expired lease instead of waiting for the production default lease.
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          EXPIRES_AT=$((NOW_MILLIS + 10000))
+          LEASE=$(printf '{"schemaVersion":1,"owner":"terminated-process-it","expiresAt":%s}' "$EXPIRES_AT")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.reconciliation.lease.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
+            --data-urlencode "content=$LEASE" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+
+      - name: Restart Server With Frozen A2A Cutover Policy
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "SYNCING migration server did not stop"
+            exit 1
+          fi
+
+          echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=true" >> "$PROP_FILE"
+          # OpenAPI and Java SDK exchange an explicit hold, so the scheduled check can be
+          # frequent without racing Maven process startup.
+          echo "nacos.ai.a2a.migration.quiescing-check-interval-seconds=10" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.quiescing-timeout-seconds=300" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Matching-policy migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart for cutover"
+            exit 1
+          fi
+
+      - name: Verify Historical A2A Quiescing OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable \
+            -Dnacos.a2a.migration.cutover.phase=prepare
+
+      - name: Verify Historical A2A Cutover Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover \
+            -Dnacos.a2a.migration.cutover.enabled=true \
+            -Dnacos.a2a.migration.cutover.shadow-enabled=true
+
+      - name: Verify Historical A2A Terminal OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent \
+            -Dnacos.a2a.migration.cutover.phase=verify
+
+      - name: Verify AI Resource Isolation After Shadow-Enabled Cutover
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
+      - name: Restart Terminal A2A Server With Explicit Legacy Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Terminal migration server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=LEGACY" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Terminal server configured with LEGACY failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify Terminal Marker Overrides Explicit Legacy Mode
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy \
+            -Dnacos.a2a.migration.terminal-rollback.enabled=true
+
+      - name: Reset Test Fixture For Shadow-Disabled A2A Cutover
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+
+          # This direct internal-marker rewrite is an isolated CI fixture reset, not a
+          # supported operator downgrade. The product transition API remains irreversible.
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.cutover.blocker" \
+            --data-urlencode "groupName=agent" \
+            --data-urlencode "namespaceId=public" \
+            --data-urlencode "content={" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+          NOW_MILLIS=$(($(date +%s) * 1000))
+          MARKER=$(printf '{"schemaVersion":1,"state":"SYNCING","generation":"migration-it-u6-shadow-off","legacyNamingShadow":false,"storageProvider":"nacos_config","startedAt":%s,"updatedAt":%s,"completedAt":null}' "$NOW_MILLIS" "$NOW_MILLIS")
+          curl -fsS -X POST "http://127.0.0.1:8848/nacos/v3/admin/cs/config" \
+            --data-urlencode "dataId=nacos.ai.a2a.migration.v1" \
+            --data-urlencode "groupName=nacos_internal" \
+            --data-urlencode "namespaceId=_nacos_internal_" \
+            --data-urlencode "content=$MARKER" \
+            --data-urlencode "type=json" \
+            --data-urlencode "tag="
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-enabled terminal server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=AUTO" >> "$PROP_FILE"
+          echo "nacos.ai.a2a.migration.legacy-naming-shadow-enabled=false" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled migration server failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+          if ! timeout 60s bash -c 'until curl -fsS localhost:9080/.well-known/ai-catalog.json > /dev/null; do sleep 2; done'; then
+            echo "ARD adaptor failed to restart for shadow-disabled cutover"
+            exit 1
+          fi
+
+      - name: Verify Shadow-Disabled Historical A2A Quiescing OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable \
+            -Dnacos.a2a.migration.cutover.phase=prepare
+
+      - name: Verify Shadow-Disabled Historical A2A Cutover Java SDK
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepGrpcHttpWatchAndEndpointAvailableThroughPermanentCutover \
+            -Dnacos.a2a.migration.cutover.enabled=true \
+            -Dnacos.a2a.migration.cutover.shadow-enabled=false
+
+      - name: Verify Shadow-Disabled Historical A2A Terminal OpenAPI
+        run: |
+          mvn -B -pl test/openapi-test clean verify -Pintegration-test \
+            -Dit.test=A2aMigrationAdminApiOpenApiITCase#testTerminalCanonicalMarkerAndCrossSurfaceProjectionArePermanent \
+            -Dnacos.a2a.migration.cutover.phase=verify
+
+      - name: Verify AI Resource Isolation After Shadow-Disabled Cutover
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+
+      - name: Restart Shadow-Disabled Terminal Server With Explicit Legacy Mode
+        run: |
+          SERVER_HOME=$(ls -d distribution/target/nacos-server-*/nacos)
+          PROP_FILE="$SERVER_HOME/conf/application.properties"
+          bash "$SERVER_HOME/bin/shutdown.sh" || true
+          if ! timeout 60s bash -c 'until ! curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled terminal server did not stop"
+            exit 1
+          fi
+          echo "nacos.ai.a2a.compatibility.mode=LEGACY" >> "$PROP_FILE"
+          bash "$SERVER_HOME/bin/startup.sh" -m standalone
+          if ! timeout 60s bash -c 'until curl -fsS localhost:8080 > /dev/null; do sleep 2; done'; then
+            echo "Shadow-disabled terminal server configured with LEGACY failed to start"
+            tail -300 "$SERVER_HOME/logs/startup.log" || true
+            tail -300 "$SERVER_HOME/logs/nacos.log" || true
+            exit 1
+          fi
+
+      - name: Verify Shadow-Disabled Terminal Marker Overrides Legacy Mode
+        run: |
+          mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
+            -DskipTests=false \
+            -Dit.test=A2aUpgradeMigrationJavaSdkITCase#shouldKeepTerminalCanonicalAuthorityWhenCurrentServerIsConfiguredLegacy \
+            -Dnacos.a2a.migration.terminal-rollback.enabled=true
+
+      - name: Upload A2A Migration Reports And Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2a-migration-test-reports-and-logs
+          path: |
+            test/openapi-test/target/failsafe-reports/
+            test/java-sdk-test/target/failsafe-reports/
+            distribution/target/nacos-server-*/nacos/logs/
+          if-no-files-found: warn
+
+      - name: Stop A2A Migration Server
+        if: always()
+        run: |
+          if [ -n "${A2A_MIGRATION_NACOS_HOME:-}" ]; then
+            bash "$A2A_MIGRATION_NACOS_HOME/bin/shutdown.sh" || true
+          fi

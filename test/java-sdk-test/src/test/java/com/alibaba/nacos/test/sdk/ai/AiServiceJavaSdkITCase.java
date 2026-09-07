@@ -225,24 +225,17 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 aiService.getMcpServer(onlineName).getVersionDetail().getVersion());
 
         String draftName = randomServiceName("mcp-grpc-draft");
-        try {
-            String draftId = aiService.releaseMcpServer(buildMcpServer(draftName, "1.0.0"),
-                    buildMcpToolSpecification(draftName),
-                    buildMcpResourceSpecification(draftName), null, true);
-            assertNotNull(draftId);
-            addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, draftName,
-                    null, null));
-            McpServerVersionDetail draft = maintainer.getMcpServerVersion(draftName, "1.0.0");
-            assertEquals("draft", draft.getStatus(), draft.toString());
-            NacosException notServing = assertThrows(NacosException.class,
-                    () -> aiService.getMcpServer(draftName, "1.0.0"));
-            assertEquals(NacosException.NOT_FOUND, notServing.getErrCode(),
-                    notServing.toString());
-        } catch (NacosException exception) {
-            assertEquals(NacosException.CONFLICT, exception.getErrCode(), exception.toString());
-            assertTrue(exception.getMessage().contains("LIFECYCLE_MANAGED cutover"),
-                    exception.toString());
-        }
+        String draftId = aiService.releaseMcpServer(buildMcpServer(draftName, "1.0.0"),
+                buildMcpToolSpecification(draftName), buildMcpResourceSpecification(draftName),
+                null, true);
+        assertNotNull(draftId);
+        addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, draftName,
+                null, null));
+        McpServerVersionDetail draft = maintainer.getMcpServerVersion(draftName, "1.0.0");
+        assertEquals("draft", draft.getStatus(), draft.toString());
+        NacosException notServing = assertThrows(NacosException.class,
+                () -> aiService.getMcpServer(draftName, "1.0.0"));
+        assertEquals(NacosException.NOT_FOUND, notServing.getErrCode(), notServing.toString());
     }
 
     @Test

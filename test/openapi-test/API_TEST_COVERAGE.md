@@ -81,13 +81,20 @@ than replaces the functional scenario rows. The live
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
-The auth-enabled migration workflow now runs the complete OpenAPI suite with
+The unified default-auth functional workflow now runs the complete OpenAPI suite with
 the production authorization cache enabled. Client routes use the restricted
 `ClientReadWrite` identity, while Admin, Console, and Auth routes use the
 administrator identity. Public endpoints and the independent ARD port remain
 explicitly anonymous. Private AI fixtures are made visible through resource-
 exact grants or are published by the client identity and observed as owner;
 the functional assertions and row counts are unchanged.
+
+Historical A2A and MCP reconciliation/cutover scenarios are intentionally excluded
+from that functional workflow. They run in `.github/workflows/migration-it.yml`
+through explicitly phase-gated test classes and are documented in
+`A2A_MIGRATION_API_TEST_SCENARIOS.md` and
+`MCP_MIGRATION_API_TEST_SCENARIOS.md`. Migration-only rows do not change the
+stable API-surface coverage totals above.
 
 The post-rollback default-auth run on 2026-09-04 discovered 431 tests: 423
 passed, 0 failed, and 8 were skipped. Three skips are explicitly linked to
@@ -257,18 +264,16 @@ newer draft exists after a published version, an omitted `version` resolves the
 latest published version, while the draft remains queryable by its explicit
 version.
 
-The Admin and Console MCP scenarios also remain the wire-contract regression
-coverage for the compatibility router while management authority is `SYNCING`.
-They exercise all twelve standard lifecycle routes at their public HTTP
-boundary: name-only identity and exact-Version validation, nested legacy ID
-rejection, case-insensitive status input, and the controlled pre-cutover
-conflict envelope. If background reconciliation has already completed the
-one-way cutover, the same scenario accepts only controlled absent-resource
-responses and verifies one real draft create/delete pair, including the
-resource status, owner, scope, labels, working pointers, and online count
-returned in the lifecycle detail. The test does not
-publish the `LIFECYCLE_MANAGED` marker into the shared standalone process.
-Focused component tests instead cover the
+The stable Admin and Console MCP scenarios exercise all twelve standard
+lifecycle routes at their public HTTP boundary after `LIFECYCLE_MANAGED`:
+name-only identity and exact-Version validation, nested legacy ID rejection,
+case-insensitive status input, controlled absent-resource responses, and one
+real draft create/delete pair including resource status, owner, scope, labels,
+working pointers, and online count. They do not accept a `SYNCING` conflict as
+an alternative result. `McpMigrationAdminApiOpenApiITCase`, enabled only by the
+dedicated migration workflow, owns the compatibility-router 409 gate,
+historical fixture reconciliation, and post-cutover projection. Focused
+component tests cover the
 zero-difference, all-member capability, and Search-projection gates; permanent
 marker retry/observation; per-request authority pinning; lifecycle
 create/read/update/delete and state-transition success paths; storage-first

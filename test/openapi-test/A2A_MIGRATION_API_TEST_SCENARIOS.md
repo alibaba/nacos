@@ -18,8 +18,8 @@
 
 This document freezes the public HTTP and standalone-server test plan for the
 [Historical A2A Upgrade Migration Spec](../../specs/en/ai/a2a-upgrade-migration-spec.md).
-It is intentionally separate from the current API-surface coverage totals until
-the corresponding migration implementation and executable tests land.
+It is intentionally separate from the current API-surface coverage totals and
+runs only in the dedicated `.github/workflows/migration-it.yml` workflow.
 
 ## Rules
 

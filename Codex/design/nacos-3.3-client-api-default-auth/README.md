@@ -38,7 +38,7 @@
 | 阶段 3：鉴权插件与安全场景合并 | 已完成（有登记缺口） | 旧 Auth IT 已迁入 OpenAPI；Auth API 4/4 Covered；386 个 `@Secured` method 均登记并与源码强校验。回滚越界产品修复后，完整 OpenAPI IT 发现 431 项：423 通过、0 失败、8 跳过，其中 3 项精确关联 `DAUTH-F01/F03`。 |
 | 阶段 4：Java Client SDK 默认鉴权验证 | 已完成（有登记缺口） | 功能矩阵默认使用普通读写身份。默认与 Jackson 3 各发现 101 项：81 通过、0 失败、20 跳过；其中 8 项精确关联 `DAUTH-F04/F05`，其余为环境定向场景。 |
 | 阶段 5：Maintainer SDK 默认鉴权验证 | 已完成（有登记缺口） | Core/Config/Naming/AI/Agent/MCP 功能在管理员身份下验证。默认与 Jackson 3 各发现 46 项：44 通过、0 失败、2 跳过；其中 1 项关联 `DAUTH-F04`，1 项由可靠性套件实际执行并通过。 |
-| 阶段 6：生产默认值与主 CI 最终切换 | 已完成 | 模板、Java 回退、插件策略和 Prometheus 条件统一缺省为 true；旧 Auth IT 已迁移并删除；统一工作流在一个默认鉴权环境中覆盖 OpenAPI、两套 Java SDK 和两套 Maintainer SDK；发行包默认值及动态 false/true 兼容均已验证。 |
+| 阶段 6：生产默认值与主 CI 最终切换 | 已完成 | 模板、Java 回退、插件策略和 Prometheus 条件统一缺省为 true；旧 Auth IT 已迁移并删除；统一功能工作流在一个默认鉴权环境中覆盖 OpenAPI、两套 Java SDK 和两套 Maintainer SDK；A2A/MCP 历史迁移另由独立 workflow 承载；发行包默认值及动态 false/true 兼容均已验证。 |
 | 阶段 7：部署生态与升级兼容 | 审计完成，待外部 PR | 已按各仓库最新默认分支固定准确路径、三态/凭据契约、在途 PR 冲突和独立测试门禁；详见 [Stage 7 部署生态交接](STAGE7_ECOSYSTEM_HANDOFF.md)。 |
 | 阶段 8：默认鉴权深度可靠性 | 已完成（有登记缺口） | Config、Naming、Lock、Maintainer、Jackson 3 standalone 重启和三节点安全矩阵、rolling restart、peer restart 通过；Agent standalone restart 与固定节点变更精确禁用为 `DAUTH-F05`，报告为 `passed-with-disabled`。 |
 
@@ -397,7 +397,7 @@ Redo 或重新认证问题。
 2. `mvn -B clean install -Prelease-nacos -DskipTests=true` 构建发行包。
 3. 定位打包后的 `application.properties`。
 4. 断言 Client、Admin、Console 鉴权默认值为 `true`，默认鉴权缓存为 `true`。
-5. 只写入测试 token secret、server identity、ARD/容量/对账加速等测试专用配置。
+5. 只写入测试 token secret、server identity、ARD/容量及稳定态 readiness 加速等测试专用配置。
 6. 启动 standalone server，等待公开 liveness/readiness 和必要的外部适配器端口。
 7. 调用一次性管理员初始化端点，创建 `Admin`；重复初始化必须失败。
 8. 通过 Auth API 创建普通测试用户、角色和权限，并用有界轮询等待缓存收敛。
@@ -434,6 +434,21 @@ Redo 或重新认证问题。
 - 三个 Maven 模块分别保存报告，阶段名包含 HTTP、Client SDK、Maintainer SDK 和 adapter 类型。
 - Auth Scope Guard 失败时立即停止后续业务测试，避免产生大量误导性失败。
 - 测试创建的用户、角色、权限和业务资源使用稳定前缀与随机后缀，并在失败路径清理。
+
+### 8.4 功能 IT 与迁移 IT 的边界
+
+- `.github/workflows/it-new.yml` 只验证默认鉴权开启后的稳定功能：OpenAPI、Java Client SDK、
+  Maintainer SDK、两种 JSON adapter、鉴权矩阵和显式 Client auth 关闭/恢复兼容性。
+- MCP 功能用例只接受稳定 `LIFECYCLE_MANAGED` 结果。主流程可以等待全新空实例达到稳定态，
+  但不预置历史资源、不验证 `SYNCING` 门禁，也不执行历史数据对账断言。
+- `.github/workflows/migration-it.yml` 单独承载可随升级窗口一起移除的迁移能力。MCP Job 使用同一
+  持久化实例执行 `SYNCING -> LIFECYCLE_MANAGED` 两阶段；A2A Job 执行历史定义、Runtime Shadow、
+  Quiescing、终态 Marker 和回退边界。
+- 迁移 Job 显式关闭三类鉴权，使失败只归因于迁移状态机；默认鉴权与权限组合由功能 Job 完整负责。
+- 迁移类必须通过 system property 显式启用，普通 Failsafe discovery 只能将其识别为条件跳过，
+  不能在后台任务竞争下同时接受切流前和切流后两种结果。
+- A2A/MCP 迁移测试类、场景文档和 `migration-it.yml` 共享同一删除边界；项目停止支持对应平滑升级后，
+  可以整体移除而不影响稳定功能覆盖。
 
 ## 9. 分阶段实施计划
 
@@ -748,6 +763,20 @@ mvn spotless:check
   仍为 403；恢复 true 后匿名 Client 为 403、合法普通用户为 200，配置文件最终恢复 true；
 - GitHub develop 分支当前只要求 `license/cla` status check，原 Auth IT 并非 Required check；统一工作流
   保留稳定的 `Integration Test` 名称，因此删除旧工作流不会移除现有分支保护依赖。
+
+**迁移测试拆分记录（2026-09-07）**：
+
+- 从 `it-new.yml` 删除历史 A2A 多次重启和切流链，修复功能 Job 清理后仍访问已停止服务端的生命周期
+  耦合；新增 `migration-it.yml`，以独立 MCP/A2A Job 保留原迁移覆盖和失败归因。
+- 新增 `McpMigrationAdminApiOpenApiITCase` 与 `McpUpgradeMigrationJavaSdkITCase`，分别在显式
+  `syncing`、`managed` Phase 下验证历史权威、生命周期门禁、数据对账、Client/Maintainer SDK 投影和
+  清理；普通 MCP OpenAPI/Java SDK/Maintainer SDK 类只验证稳定功能，不再接受双态结果。
+- 迁移 workflow 显式关闭鉴权，主功能 workflow 继续按发行包默认值开启 Client/Admin/Console 鉴权；
+  两者的测试目的、状态准备、报告和可移除边界互不耦合。
+- 本地使用同一 Derby 数据目录完成 MCP `syncing -> managed` 重启验证：两个 Phase 的 OpenAPI 与
+  Java SDK 场景各 1 项通过、1 项按 Phase 条件跳过；稳定态 MCP OpenAPI 11 项、Java SDK 4 项、
+  Maintainer SDK 2 项全部通过。工作流 YAML 解析、三个 IT 模块 Spotless 以及主 CI 等价的 61 模块
+  compile/RAT/Checkstyle/SpotBugs/Spotless 检查均通过。
 
 ### 阶段 7：部署生态与升级兼容
 

@@ -36,11 +36,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: an omitted or false {@code createDraft} keeps historical
  *     direct-online release, exact/latest queries return the same Version, and true creates a
- *     lifecycle draft after managed cutover.</li>
+ *     lifecycle draft in the stable managed state.</li>
  *     <li>Boundary/validation: namespace defaulting, optional Tools/Resources/Endpoint content,
  *     strict boolean parsing, required Server name/Version, and name consistency are covered.</li>
  *     <li>Exception/error handling: duplicate release, missing query target, malformed JSON,
- *     and pre-cutover draft release return controlled error envelopes.</li>
+ *     and malformed JSON return controlled error envelopes.</li>
  * </ul>
  *
  * @author Nacos
@@ -73,21 +73,16 @@ public class McpPublishClientOpenApiITCase extends McpClientOpenApiBaseITCase {
                 "lifecycle draft", "tool_draft", "resource_draft");
         draftRelease.put("createDraft", "true");
         HttpResponse draftResponse = postFormRaw(MCP_CLIENT_PATH, draftRelease);
-        if (409 == draftResponse.code()) {
-            assertError(draftResponse, 409, ErrorCode.RESOURCE_CONFLICT,
-                    "LIFECYCLE_MANAGED cutover");
-        } else {
-            assertEquals(200, draftResponse.code(), draftResponse.body());
-            JsonNode root = JacksonUtils.toObj(draftResponse.body());
-            assertSuccess(root);
-            String draftId = root.get("data").asText();
-            addCleanup(() -> deleteMcpServerQuietly(draftName, draftId));
-            assertError(getMcp(null, Query.newInstance().addParam("mcpName", draftName)), 404,
-                    ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
-            JsonNode draft = getJsonOk(ADMIN_MCP_PATH + "/version",
-                    mcpLifecycleVersionQuery(draftName, "1.0.0")).get("data");
-            assertEquals("draft", draft.get("status").asText(), draft.toString());
-        }
+        assertEquals(200, draftResponse.code(), draftResponse.body());
+        JsonNode root = JacksonUtils.toObj(draftResponse.body());
+        assertSuccess(root);
+        String draftId = root.get("data").asText();
+        addCleanup(() -> deleteMcpServerQuietly(draftName, draftId));
+        assertError(getMcp(null, Query.newInstance().addParam("mcpName", draftName)), 404,
+                ErrorCode.MCP_SERVER_NOT_FOUND, "not found");
+        JsonNode draft = getJsonOk(ADMIN_MCP_PATH + "/version",
+                mcpLifecycleVersionQuery(draftName, "1.0.0")).get("data");
+        assertEquals("draft", draft.get("status").asText(), draft.toString());
     }
 
     @Test

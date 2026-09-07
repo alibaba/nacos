@@ -16,6 +16,10 @@
 
 # Historical A2A Migration Java SDK IT Scenarios
 
+These temporary directed scenarios run only in
+`.github/workflows/migration-it.yml`; the default-auth functional workflow does
+not restart the server in historical migration modes.
+
 This document freezes the real-client, Runtime, redo, Watch, and cluster test
 plan for the
 [Historical A2A Upgrade Migration Spec](../../specs/en/ai/a2a-upgrade-migration-spec.md).

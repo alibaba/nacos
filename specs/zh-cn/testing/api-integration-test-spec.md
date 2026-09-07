@@ -227,6 +227,10 @@ Agent HTTP Batch-long-poll Watch Binding 发生变化时，OpenAPI IT 至少覆�
 迁移测试只把公开行为和重启后的耐久结果作为断言契约。测试准备可以写入文档化的历史 Fixture，
 但不能用直接数据库 row 断言作为成功标准。所有异步条件都使用有界轮询，不使用固定 sleep。
 
+迁移状态和切流场景必须由显式 Phase Gate 的测试类及独立迁移工作流承载。稳定功能 API 测试类只在
+一个终态下运行，不能根据后台任务时机同时接受切流前 Conflict 和切流后 Success。迁移工作流可以复跑
+稳定的跨资源隔离 Control，但不承载普通功能全量套件或其鉴权矩阵。
+
 ## 12. 历史 A2A 升级迁移场景
 
 历史 A2A 升级状态机、对账或 Runtime 双物化发生变化时，OpenAPI IT 必须按
@@ -248,3 +252,5 @@ Agent HTTP Batch-long-poll Watch Binding 发生变化时，OpenAPI IT 至少覆�
 `test/openapi-test/A2A_MIGRATION_API_TEST_SCENARIOS.md` 分配可执行 HTTP 场景，并记录必须使用
 Java SDK 或定向集群 Fixture 的场景。测试准备可以写入文档化的历史 Config，但成功契约只使用公开
 API、重启后的耐久行为和有界轮询，不直接检查 Row，也不以固定 Sleep 作为成功条件。
+
+历史 A2A 场景遵循与 MCP 迁移相同的独立工作流边界，不能追加在稳定功能 API Job 之后执行。
