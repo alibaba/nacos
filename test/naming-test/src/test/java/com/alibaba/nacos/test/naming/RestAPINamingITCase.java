@@ -17,6 +17,8 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,8 +28,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URL;
 
@@ -191,6 +195,36 @@ class RestAPINamingITCase extends NamingBase {
     }
     
     @Test
+    void updateClusterValidatesHttpHealthCheckerTargetAndHeaders() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> createResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class, HttpMethod.POST);
+        assertTrue(createResponse.getStatusCode().is2xxSuccessful());
+        try {
+            ResponseEntity<String> response = updateCluster(serviceName,
+                    httpHealthChecker("/health?group=readiness", "X-Health-Mode:ready"));
+            assertTrue(response.getStatusCode().is2xxSuccessful(),
+                    "Unexpected response: " + response.getStatusCodeValue() + " " + response.getBody());
+            assertEquals("ok", response.getBody());
+
+            response = updateCluster(serviceName, httpHealthChecker("http://example.com/health", ""));
+            assertEquals(400, response.getStatusCodeValue());
+            assertTrue(response.getBody().contains("invalid HTTP request target or header"));
+
+            response = updateCluster(serviceName, httpHealthChecker("/health", "X-Test:value\nInjected"));
+            assertEquals(400, response.getStatusCodeValue());
+            assertTrue(response.getBody().contains("invalid HTTP request target or header"));
+
+            response = updateCluster(serviceName, "{");
+            assertEquals(400, response.getStatusCodeValue());
+            assertTrue(response.getBody().contains("not valid JSON"));
+        } finally {
+            namingServiceDelete(serviceName);
+        }
+    }
+
+    @Test
     @Disabled
     void testInvalidNamespace() {
         
@@ -217,4 +251,21 @@ class RestAPINamingITCase extends NamingBase {
         assertEquals("ok", response.getBody());
     }
     
+    private ResponseEntity<String> updateCluster(String serviceName, String healthChecker) {
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(base.toString() + NamingBase.NAMING_CONTROLLER_PATH + "/cluster")
+                .queryParams(Params.newParams().appendParam("serviceName", serviceName)
+                        .appendParam("clusterName", "DEFAULT").appendParam("checkPort", "8848")
+                        .appendParam("useInstancePort4Check", "true")
+                        .appendParam("healthChecker", healthChecker).done());
+        return restTemplate.exchange(builder.build().encode().toUri(), HttpMethod.PUT, HttpEntity.EMPTY, String.class);
+    }
+
+    private String httpHealthChecker(String requestTarget, String headers) {
+        Http checker = new Http();
+        checker.setPath(requestTarget);
+        checker.setHeaders(headers);
+        return HealthCheckerFactory.serialize(checker);
+    }
+
 }

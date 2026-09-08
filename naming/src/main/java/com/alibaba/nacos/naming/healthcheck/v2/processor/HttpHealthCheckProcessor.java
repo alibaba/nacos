@@ -27,18 +27,20 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTargetUtil;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
@@ -53,16 +55,22 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     public static final String TYPE = HealthCheckType.HTTP.name();
     
-    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager
-            .getProcessorNacosAsyncRestTemplate();
-    
     private final HealthCheckCommonV2 healthCheckCommon;
     
     private final SwitchDomain switchDomain;
     
+    private final NacosAsyncRestTemplate asyncRestTemplate;
+
+    @Autowired
     public HttpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon, SwitchDomain switchDomain) {
+        this(healthCheckCommon, switchDomain, HttpClientManager.getProcessorNacosAsyncRestTemplate());
+    }
+
+    HttpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon, SwitchDomain switchDomain,
+            NacosAsyncRestTemplate asyncRestTemplate) {
         this.healthCheckCommon = healthCheckCommon;
         this.switchDomain = switchDomain;
+        this.asyncRestTemplate = asyncRestTemplate;
     }
     
     @Override
@@ -70,6 +78,20 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
                 .getInstancePublishInfo(service);
         if (null == instance) {
+            return;
+        }
+        if (!(metadata.getHealthChecker() instanceof Http)) {
+            return;
+        }
+        Http healthChecker = (Http) metadata.getHealthChecker();
+        if (!HealthCheckTargetUtil.isValidHttpHealthChecker(healthChecker)) {
+            return;
+        }
+        int ckPort = metadata.isUseInstancePortForCheck() ? instance.getPort() : metadata.getHealthyCheckPort();
+        URI target;
+        try {
+            target = HealthCheckTargetUtil.buildHttpTarget(instance.getIp(), ckPort, healthChecker.getPath());
+        } catch (URISyntaxException e) {
             return;
         }
         try {
@@ -82,15 +104,11 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
                 return;
             }
             
-            Http healthChecker = (Http) metadata.getHealthChecker();
-            int ckPort = metadata.isUseInstancePortForCheck() ? instance.getPort() : metadata.getHealthyCheckPort();
-            URL host = new URL(HTTP_PREFIX + instance.getIp() + ":" + ckPort);
-            URL target = new URL(host, healthChecker.getPath());
             Map<String, String> customHeaders = healthChecker.getCustomHeaders();
             Header header = Header.newInstance();
             header.addAll(customHeaders);
             
-            ASYNC_REST_TEMPLATE.get(target.toString(), header, Query.EMPTY, String.class,
+            asyncRestTemplate.get(target.toString(), header, Query.EMPTY, String.class,
                     new HttpHealthCheckCallback(instance, task, service));
             MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
         } catch (Throwable e) {

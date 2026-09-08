@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ClusterOperator;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTargetUtil;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -72,8 +74,7 @@ public class ClusterController {
         clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
         clusterMetadata.setUseInstancePortForCheck(
                 ConvertUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
-        AbstractHealthChecker healthChecker = HealthCheckerFactory
-                .deserialize(WebUtils.required(request, "healthChecker"));
+        AbstractHealthChecker healthChecker = validateHealthChecker(WebUtils.required(request, "healthChecker"));
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(
@@ -82,6 +83,25 @@ public class ClusterController {
         return "ok";
     }
     
+    private AbstractHealthChecker validateHealthChecker(String healthChecker) {
+        try {
+            AbstractHealthChecker checker = HealthCheckerFactory.deserialize(healthChecker);
+            if (checker == null) {
+                throw new IllegalArgumentException("Parameter 'healthChecker' must not be null");
+            }
+            if (checker instanceof Http
+                    && !HealthCheckTargetUtil.isValidHttpHealthChecker((Http) checker)) {
+                throw new IllegalArgumentException(
+                        "Parameter 'healthChecker' contains an invalid HTTP request target or header");
+            }
+            return checker;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Parameter 'healthChecker' is not valid JSON", e);
+        }
+    }
+
     private ClusterOperator judgeClusterOperator() {
         return clusterOperatorV2;
     }
