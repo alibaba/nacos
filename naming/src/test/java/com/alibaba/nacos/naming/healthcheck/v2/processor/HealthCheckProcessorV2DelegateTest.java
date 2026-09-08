@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class HealthCheckProcessorV2DelegateTest {
@@ -125,8 +127,7 @@ class HealthCheckProcessorV2DelegateTest {
         healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
         
         verify(activeHealthCheckProcessor).process(healthCheckTaskV2, service, clusterMetadata);
-        verify(healthCheckCommonV2, never()).checkFailNow(healthCheckTaskV2, service,
-            HealthCheckProcessorV2Delegate.INVALID_ADDRESS_MESSAGE);
+        verifyNoInteractions(healthCheckCommonV2);
     }
     
     @Test
@@ -137,8 +138,48 @@ class HealthCheckProcessorV2DelegateTest {
         
         verify(activeHealthCheckProcessor, never()).process(healthCheckTaskV2, service,
             clusterMetadata);
-        verify(healthCheckCommonV2).checkFailNow(healthCheckTaskV2, service,
-            HealthCheckProcessorV2Delegate.INVALID_ADDRESS_MESSAGE);
+        verifyNoInteractions(healthCheckCommonV2);
+    }
+    
+    @Test
+    void testProcessInvalidHttpRequestTargetWithoutChangingHealthState() {
+        Http checker = new Http();
+        checker.setPath("http://example.com/health");
+        when(activeHealthCheckProcessor.getType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthChecker()).thenReturn(checker);
+        when(healthCheckTaskV2.getClient()).thenReturn(client);
+        when(client.getInstancePublishInfo(service)).thenReturn(instance);
+        when(instance.getIp()).thenReturn("127.0.0.1");
+        healthCheckProcessorV2Delegate.addProcessor(
+            Collections.singletonList(activeHealthCheckProcessor));
+        
+        healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(activeHealthCheckProcessor, never()).process(healthCheckTaskV2, service,
+            clusterMetadata);
+        verifyNoInteractions(healthCheckCommonV2);
+    }
+    
+    @Test
+    void testProcessInvalidHttpHeaderWithoutChangingHealthState() {
+        Http checker = new Http();
+        checker.setPath("/health");
+        checker.setHeaders("X-Test:value\nInjected");
+        when(activeHealthCheckProcessor.getType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthChecker()).thenReturn(checker);
+        when(healthCheckTaskV2.getClient()).thenReturn(client);
+        when(client.getInstancePublishInfo(service)).thenReturn(instance);
+        when(instance.getIp()).thenReturn("127.0.0.1");
+        healthCheckProcessorV2Delegate.addProcessor(
+            Collections.singletonList(activeHealthCheckProcessor));
+        
+        healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(activeHealthCheckProcessor, never()).process(healthCheckTaskV2, service,
+            clusterMetadata);
+        verifyNoInteractions(healthCheckCommonV2);
     }
     
     @Test

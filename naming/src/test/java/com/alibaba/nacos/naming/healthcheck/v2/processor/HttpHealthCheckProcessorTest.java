@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -41,6 +42,7 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,6 +98,12 @@ class HttpHealthCheckProcessorTest {
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service))
             .thenReturn(healthCheckInstancePublishInfo);
+        Http healthChecker = new Http();
+        healthChecker.setPath("/health");
+        when(clusterMetadata.getHealthChecker()).thenReturn(healthChecker);
+        when(clusterMetadata.isUseInstancePortForCheck()).thenReturn(true);
+        when(healthCheckInstancePublishInfo.getIp()).thenReturn("127.0.0.1");
+        when(healthCheckInstancePublishInfo.getPort()).thenReturn(8080);
         httpHealthCheckProcessor = new HttpHealthCheckProcessor(healthCheckCommon, switchDomain);
     }
     
@@ -127,6 +138,11 @@ class HttpHealthCheckProcessorTest {
     @Test
     void testProcessHandlesHealthCheckerFailure() {
         when(healthCheckInstancePublishInfo.tryStartCheck()).thenReturn(true);
+        Http healthChecker = mock(Http.class);
+        when(healthChecker.getPath()).thenReturn("/health");
+        when(healthChecker.getCustomHeaders()).thenReturn(Collections.emptyMap())
+            .thenThrow(new IllegalStateException("broken"));
+        when(clusterMetadata.getHealthChecker()).thenReturn(healthChecker);
         
         httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
         
@@ -136,6 +152,31 @@ class HttpHealthCheckProcessorTest {
             startsWith("http:error:"));
         verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
             healthCheckTaskV2, switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testProcessSkipsInvalidRequestTargetWithoutChangingHealthState() {
+        Http healthChecker = new Http();
+        healthChecker.setPath("http://example.com/health");
+        when(clusterMetadata.getHealthChecker()).thenReturn(healthChecker);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckInstancePublishInfo, never()).tryStartCheck();
+        verifyNoInteractions(healthCheckCommon);
+    }
+    
+    @Test
+    void testProcessSkipsInvalidHeaderWithoutChangingHealthState() {
+        Http healthChecker = new Http();
+        healthChecker.setPath("/health");
+        healthChecker.setHeaders("X-Test:value\nInjected");
+        when(clusterMetadata.getHealthChecker()).thenReturn(healthChecker);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckInstancePublishInfo, never()).tryStartCheck();
+        verifyNoInteractions(healthCheckCommon);
     }
     
     @Test

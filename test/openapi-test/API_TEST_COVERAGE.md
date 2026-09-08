@@ -67,6 +67,13 @@ rows. Effective coverage counts `Covered` rows as `1.0` and `Partial` rows as
 | Auth API | 4 | 4 | 0 | 0 | 100.00% | 100.00% |
 | Total | 85 | 71 | 14 | 0 | 83.53% | 91.76% |
 
+The covered Naming cluster metadata rows include Admin and Console validation
+for built-in HTTP health-check request targets: relative paths and queries are
+accepted, scheme/authority/fragment inputs are rejected with HTTP 400, and
+invalid or request-framing headers are rejected with HTTP 400. Rejected
+updates leave the previously persisted cluster metadata unchanged.
+This strengthens existing rows and does not change the row totals.
+
 `AuthScopeGuardITCase` and the method-level authorization inventory are
 cross-cutting migration guards and are deliberately excluded from the
 API-surface row totals above. When

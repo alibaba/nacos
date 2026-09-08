@@ -18,8 +18,13 @@ package com.alibaba.nacos.naming.model.form;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -114,6 +119,67 @@ class NamingFormTest {
         metadataForm.validate();
         
         assertEquals("metadata", metadataForm.getMetadata());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"/health", "health/ready?group=readiness", "?ready=true"})
+    void testUpdateClusterFormAcceptsValidHttpRequestTarget(String requestTarget)
+        throws NacosApiException {
+        UpdateClusterForm form = createUpdateClusterForm();
+        form.setHealthChecker(httpHealthChecker(requestTarget));
+        
+        form.validate();
+        
+        assertEquals(httpHealthChecker(requestTarget), form.getHealthChecker());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"http://example.com/health", "//example.com/health",
+        "///example.com/health", "http:health", "/health#fragment", "/health%2",
+        "/health path", "/health\\path"})
+    void testUpdateClusterFormRejectsInvalidHttpRequestTarget(String requestTarget) {
+        UpdateClusterForm form = createUpdateClusterForm();
+        form.setHealthChecker(httpHealthChecker(requestTarget));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        
+        assertEquals(400, exception.getErrCode());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"Bad Name:value", "X-Test:value\nInjected",
+        "Content-Length:5", "Transfer-Encoding:chunked"})
+    void testUpdateClusterFormRejectsInvalidHttpHeaders(String headers) {
+        UpdateClusterForm form = createUpdateClusterForm();
+        form.setHealthChecker(httpHealthChecker("/health", headers));
+        
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        
+        assertEquals(400, exception.getErrCode());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+    }
+    
+    @Test
+    void testUpdateClusterFormRejectsMalformedHealthCheckerJson() {
+        UpdateClusterForm form = createUpdateClusterForm();
+        form.setHealthChecker("{");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        
+        assertEquals(400, exception.getErrCode());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+    }
+    
+    @Test
+    void testUpdateClusterFormRejectsNullHealthCheckerJson() {
+        UpdateClusterForm form = createUpdateClusterForm();
+        form.setHealthChecker("null");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        
+        assertEquals(400, exception.getErrCode());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
     }
     
     @Test
@@ -278,6 +344,17 @@ class NamingFormTest {
         form.setUseInstancePort4Check(true);
         form.setHealthChecker("{}");
         return form;
+    }
+    
+    private String httpHealthChecker(String requestTarget) {
+        return httpHealthChecker(requestTarget, "");
+    }
+    
+    private String httpHealthChecker(String requestTarget, String headers) {
+        Http checker = new Http();
+        checker.setPath(requestTarget);
+        checker.setHeaders(headers);
+        return HealthCheckerFactory.serialize(checker);
     }
     
     private UpdateSwitchForm createUpdateSwitchForm(String entry, String value, boolean debug) {

@@ -79,7 +79,16 @@ fail-open 兜底放行条件；一旦放行，gate 在进程生命周期内必�
 
 主动健康检查使用的实例地址必须是纯 host，不能在实例 IP 字段中携带用户信息、端口、路径、查询参数
 或 fragment。processor 在发起网络请求前必须进行运行时校验；地址解析失败或包含额外 URL 组成部分时，
-本次检查必须按失败处理且不得向该地址发起网络请求。IPv6 地址中的语法分隔符不属于额外 URL 组成部分。
+本次检查必须直接跳过，不得向该地址发起网络请求，不得改变实例健康状态，也不得阻塞其他服务的检查。
+IPv6 地址中的语法分隔符不属于额外 URL 组成部分。
+
+内置 HTTP checker 的 `path` 是基于实例 host 和实际检查端口解析的相对 URI 引用，可以包含 path 和
+query，但不得定义 scheme、authority、userinfo、host、port 或 fragment。Cluster 元数据更新 API 必须
+校验 custom header：header name 必须只包含合法 HTTP token 字符，实际发送的 value 除水平制表符外不得
+包含控制字符，且不得配置请求分帧头 `Content-Length` 和 `Transfer-Encoding`。其他合法 header（包括
+`Host` 和 `Authorization`）保持支持，且不会改变连接目标。Cluster 元数据更新 API 必须在持久化前拒绝
+非法的内置 HTTP checker；HTTP processor 在运行期必须复用相同校验，使已有非法元数据在未开始检查且
+不改变实例健康状态的情况下被跳过。扩展 checker 自有字段的校验仍由扩展提供方负责。
 
 ### 3.2 手动健康更新
 

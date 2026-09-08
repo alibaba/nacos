@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     <li>Expected capability: update persists cluster health-check port, checker type, instance-port policy, and
  *     metadata, verified through service detail's cluster map after an instance makes the cluster visible.</li>
  *     <li>Boundary/validation: omitted namespace/group default to public and DEFAULT_GROUP; serviceName, clusterName,
- *     checkPort, useInstancePort4Check, and healthChecker are required.</li>
+ *     checkPort, useInstancePort4Check, and healthChecker are required. HTTP checker paths accept queries but reject
+ *     origin-overriding URI components and unsafe headers before metadata is written.</li>
  *     <li>Exception/error handling: missing required fields and a non-existent owning service return controlled
  *     failures instead of HTTP 500.</li>
  * </ul>
@@ -68,6 +69,49 @@ public class ServiceClusterConsoleApiOpenApiITCase extends NamingConsoleApiBaseI
         assertFalse(cluster.get("useInstancePortForCheck").asBoolean(), cluster.toString());
         assertEquals("TCP", cluster.get("healthChecker").get("type").asText(), cluster.toString());
         assertEquals("it", cluster.get("metadata").get("owner").asText(), cluster.toString());
+    }
+    
+    @Test
+    public void testHttpCheckerRequestTargetValidationAndNoMetadataWrite() throws Exception {
+        String serviceName = randomServiceName("http_target");
+        String ip = "10.23.2.2";
+        int port = 20502;
+        String validChecker = "{\"type\":\"HTTP\",\"path\":\"/health/ready?group=readiness\","
+                + "\"headers\":\"\",\"expectedResponseCode\":200}";
+        
+        registerPersistentInstanceForSetup(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, ip, port,
+                TEST_CLUSTER, "{\"scene\":\"http-target\"}", "1.0", "true", "true");
+        addCleanup(() -> deleteServiceQuietly(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE));
+        addCleanup(() -> removePersistentInstanceQuietly(serviceName, DEFAULT_GROUP,
+                DEFAULT_NAMESPACE, ip, port, TEST_CLUSTER));
+        waitUntilInstanceVisible(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, TEST_CLUSTER, ip, port);
+        putFormOk(CONSOLE_SERVICE_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP,
+                DEFAULT_NAMESPACE, TEST_CLUSTER, "18893", "false", validChecker,
+                "{\"guard\":\"baseline\"}"));
+        JsonNode cluster = waitUntilClusterMetadata(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE,
+                TEST_CLUSTER, "guard", "baseline");
+        assertEquals("/health/ready?group=readiness",
+                cluster.path("healthChecker").path("path").asText(), cluster.toString());
+        
+        String invalidChecker = "{\"type\":\"HTTP\",\"path\":"
+                + "\"http://127.0.0.1:54321/probe\",\"headers\":\"\","
+                + "\"expectedResponseCode\":200}";
+        assertError(putRaw(CONSOLE_SERVICE_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP,
+                DEFAULT_NAMESPACE, TEST_CLUSTER, "18894", "false", invalidChecker,
+                "{\"guard\":\"rejected\"}")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "healthChecker");
+        String invalidHeaderChecker = "{\"type\":\"HTTP\",\"path\":\"/health\","
+                + "\"headers\":\"Content-Length:5\",\"expectedResponseCode\":200}";
+        assertError(putRaw(CONSOLE_SERVICE_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP,
+                DEFAULT_NAMESPACE, TEST_CLUSTER, "18894", "false", invalidHeaderChecker,
+                "{\"guard\":\"rejected\"}")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "healthChecker");
+        
+        cluster = waitUntilClusterMetadata(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE,
+                TEST_CLUSTER, "guard", "baseline");
+        assertEquals(18893, cluster.path("healthyCheckPort").asInt(), cluster.toString());
+        assertEquals("/health/ready?group=readiness",
+                cluster.path("healthChecker").path("path").asText(), cluster.toString());
     }
 
     @Test

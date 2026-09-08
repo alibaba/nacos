@@ -82,7 +82,7 @@ API layer and resource/version descriptors remain available for retry.
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | `ServiceConsoleApiOpenApiITCase` | `GET,PUT,POST,DELETE /v3/console/ns/service`<br>`GET /v3/console/ns/service/list`<br>`GET /v3/console/ns/service/selector/types`<br>`GET /v3/console/ns/service/subscribers` | Covered | Creates, queries, updates, lists, and deletes services; verifies selector type list, empty subscriber page shape, namespace/group defaults, duplicate create, invalid service/group/page fields, and absent service errors. |
-| `ServiceClusterConsoleApiOpenApiITCase` | `PUT /v3/console/ns/service/cluster` | Covered | Creates service cluster metadata, verifies cluster-specific service detail/list behavior, updates health checker/protect threshold style fields, and validates missing service/cluster fields plus absent service behavior. |
+| `ServiceClusterConsoleApiOpenApiITCase` | `PUT /v3/console/ns/service/cluster` | Covered | Creates service cluster metadata, verifies cluster-specific service detail/list behavior, validates missing fields and absent services, accepts HTTP relative path/query targets, rejects origin-overriding targets and unsafe headers, and verifies rejected metadata is not written. |
 | `InstanceConsoleApiOpenApiITCase` | `PUT,DELETE /v3/console/ns/instance`<br>`GET /v3/console/ns/instance/list` | Covered | Registers setup service/instance, updates instance metadata/weight/enabled fields, lists instance state, deletes the instance, and validates missing IP/port/service, invalid port/weight, absent service, and controlled not-found behavior. |
 
 ## AI Registry And Copilot

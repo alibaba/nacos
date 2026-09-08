@@ -39,6 +39,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,7 +72,13 @@ class HealthCheckTaskV2Test {
     private Service service;
     
     @Mock
+    private Service anotherService;
+    
+    @Mock
     private InstancePublishInfo instancePublishInfo;
+    
+    @Mock
+    private InstancePublishInfo anotherInstancePublishInfo;
     
     @Mock
     private HealthCheckProcessorV2Delegate processorDelegate;
@@ -154,6 +161,25 @@ class HealthCheckTaskV2Test {
         healthCheckTaskV2.doHealthCheck();
         
         verify(processorDelegate).process(eq(healthCheckTaskV2), eq(service), any());
+    }
+    
+    @Test
+    void testDoHealthCheckContinuesWithRemainingServices() {
+        when(ipPortBasedClient.getAllPublishedService())
+            .thenReturn(Arrays.asList(service, anotherService));
+        when(service.getGroupedServiceName()).thenReturn("group@@service");
+        when(anotherService.getGroupedServiceName()).thenReturn("group@@another-service");
+        when(switchDomain.isHealthCheckEnabled("group@@service")).thenReturn(true);
+        when(switchDomain.isHealthCheckEnabled("group@@another-service")).thenReturn(true);
+        when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(instancePublishInfo);
+        when(ipPortBasedClient.getInstancePublishInfo(anotherService))
+            .thenReturn(anotherInstancePublishInfo);
+        healthCheckTaskV2.setCancelled(true);
+        
+        healthCheckTaskV2.doHealthCheck();
+        
+        verify(processorDelegate).process(eq(healthCheckTaskV2), eq(service), any());
+        verify(processorDelegate).process(eq(healthCheckTaskV2), eq(anotherService), any());
     }
     
     @Test

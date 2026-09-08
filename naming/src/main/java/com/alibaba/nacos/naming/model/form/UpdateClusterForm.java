@@ -19,8 +19,12 @@ package com.alibaba.nacos.naming.model.form;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTargetUtil;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -70,7 +74,31 @@ public class UpdateClusterForm implements NacosForm {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                 "Required parameter 'healthChecker' type String is not present");
         }
+        validateHealthChecker();
         fillDefaultValue();
+    }
+    
+    private void validateHealthChecker() throws NacosApiException {
+        try {
+            AbstractHealthChecker checker = HealthCheckerFactory.deserialize(healthChecker);
+            if (checker == null) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Parameter 'healthChecker' must not be null");
+            }
+            if (checker instanceof Http && !HealthCheckTargetUtil
+                .isValidHttpHealthChecker((Http) checker)) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Parameter 'healthChecker' contains an invalid HTTP request target or header");
+            }
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                "Parameter 'healthChecker' is not valid JSON");
+        }
     }
     
     private void fillDefaultValue() {

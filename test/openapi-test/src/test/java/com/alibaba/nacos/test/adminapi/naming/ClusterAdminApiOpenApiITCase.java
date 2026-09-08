@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *     metadata, verified through service detail's cluster map after an instance has made the cluster visible in service
  *     storage.</li>
  *     <li>Boundary/validation: omitted namespace/group default to public and DEFAULT_GROUP; serviceName, clusterName,
- *     checkPort, useInstancePort4Check, and healthChecker are required.</li>
+ *     checkPort, useInstancePort4Check, and healthChecker are required. HTTP checker paths accept queries but reject
+ *     scheme, authority, fragment, invalid header, and request-framing header inputs before metadata is written.</li>
  *     <li>Exception/error handling: missing required fields and a non-existent owning service return controlled
  *     failures instead of HTTP 500.</li>
  * </ul>
@@ -68,6 +69,51 @@ public class ClusterAdminApiOpenApiITCase extends NamingAdminApiBaseITCase {
         assertFalse(cluster.get("useInstancePortForCheck").asBoolean(), cluster.toString());
         assertEquals("TCP", cluster.get("healthChecker").get("type").asText(), cluster.toString());
         assertEquals("it", cluster.get("metadata").get("owner").asText(), cluster.toString());
+    }
+    
+    @Test
+    public void testHttpCheckerRequestTargetValidationAndNoMetadataWrite() throws Exception {
+        String serviceName = randomServiceName("http-target");
+        String ip = "10.13.2.2";
+        int port = 19502;
+        String validChecker = "{\"type\":\"HTTP\",\"path\":\"/health/ready?group=readiness\","
+                + "\"headers\":\"\",\"expectedResponseCode\":200}";
+        
+        registerInstance(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, ip, port, TEST_CLUSTER,
+                "{\"scene\":\"http-target\"}", "1.0", "true", "true", "true");
+        addCleanup(() -> deleteServiceQuietly(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE));
+        addCleanup(() -> deregisterInstanceQuietly(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, ip,
+                port, TEST_CLUSTER));
+        waitUntilInstanceVisible(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE, TEST_CLUSTER, ip, port);
+        putFormOk(ADMIN_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE,
+                TEST_CLUSTER, "18891", "false", validChecker, "{\"guard\":\"baseline\"}"));
+        JsonNode cluster = waitUntilClusterMetadata(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE,
+                TEST_CLUSTER, "guard", "baseline");
+        assertEquals("/health/ready?group=readiness",
+                cluster.path("healthChecker").path("path").asText(), cluster.toString());
+        
+        String[] invalidTargets = {"http://127.0.0.1:54321/probe", "//127.0.0.1:54321/probe",
+                "/health#fragment"};
+        for (String invalidTarget : invalidTargets) {
+            String invalidChecker = "{\"type\":\"HTTP\",\"path\":\"" + invalidTarget
+                    + "\",\"headers\":\"\",\"expectedResponseCode\":200}";
+            assertError(putRaw(ADMIN_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP,
+                    DEFAULT_NAMESPACE, TEST_CLUSTER, "18892", "false", invalidChecker,
+                    "{\"guard\":\"rejected\"}")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "healthChecker");
+        }
+        String invalidHeaderChecker = "{\"type\":\"HTTP\",\"path\":\"/health\","
+                + "\"headers\":\"X\\r\\nInjected:value\",\"expectedResponseCode\":200}";
+        assertError(putRaw(ADMIN_CLUSTER_PATH, clusterQuery(serviceName, DEFAULT_GROUP,
+                DEFAULT_NAMESPACE, TEST_CLUSTER, "18892", "false", invalidHeaderChecker,
+                "{\"guard\":\"rejected\"}")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "healthChecker");
+        
+        cluster = waitUntilClusterMetadata(serviceName, DEFAULT_GROUP, DEFAULT_NAMESPACE,
+                TEST_CLUSTER, "guard", "baseline");
+        assertEquals(18891, cluster.path("healthyCheckPort").asInt(), cluster.toString());
+        assertEquals("/health/ready?group=readiness",
+                cluster.path("healthChecker").path("path").asText(), cluster.toString());
     }
     
     @Test
