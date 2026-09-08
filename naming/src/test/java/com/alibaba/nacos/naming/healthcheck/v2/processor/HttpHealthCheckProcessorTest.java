@@ -18,6 +18,10 @@ package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -29,6 +33,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -49,6 +54,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
@@ -89,6 +95,9 @@ class HttpHealthCheckProcessorTest {
     @Mock
     private ConnectException connectException;
     
+    @Mock
+    private NacosAsyncRestTemplate asyncRestTemplate;
+    
     private HttpHealthCheckProcessor httpHealthCheckProcessor;
     
     @BeforeEach
@@ -104,7 +113,13 @@ class HttpHealthCheckProcessorTest {
         when(clusterMetadata.isUseInstancePortForCheck()).thenReturn(true);
         when(healthCheckInstancePublishInfo.getIp()).thenReturn("127.0.0.1");
         when(healthCheckInstancePublishInfo.getPort()).thenReturn(8080);
-        httpHealthCheckProcessor = new HttpHealthCheckProcessor(healthCheckCommon, switchDomain);
+        httpHealthCheckProcessor = new HttpHealthCheckProcessor(healthCheckCommon, switchDomain,
+            asyncRestTemplate);
+    }
+    
+    @Test
+    void testDefaultConstructor() {
+        assertNotNull(new HttpHealthCheckProcessor(healthCheckCommon, switchDomain));
     }
     
     @Test
@@ -122,6 +137,16 @@ class HttpHealthCheckProcessorTest {
         httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
         
         verify(healthCheckTaskV2).getClient();
+    }
+    
+    @Test
+    void testProcessReturnsWhenHealthCheckerTypeIsUnexpected() {
+        when(clusterMetadata.getHealthChecker()).thenReturn(null);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckInstancePublishInfo, never()).tryStartCheck();
+        verifyNoInteractions(healthCheckCommon);
     }
     
     @Test
@@ -152,6 +177,34 @@ class HttpHealthCheckProcessorTest {
             startsWith("http:error:"));
         verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
             healthCheckTaskV2, switchDomain.getHttpHealthParams());
+    }
+    
+    @Test
+    void testProcessSendsValidRequestUsingClusterCheckPort() {
+        Http healthChecker = new Http();
+        healthChecker.setPath("/health?ready=true");
+        healthChecker.setHeaders("X-Health-Mode:ready");
+        when(clusterMetadata.getHealthChecker()).thenReturn(healthChecker);
+        when(clusterMetadata.isUseInstancePortForCheck()).thenReturn(false);
+        when(clusterMetadata.getHealthyCheckPort()).thenReturn(9090);
+        when(healthCheckInstancePublishInfo.tryStartCheck()).thenReturn(true);
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        ArgumentCaptor<Header> headerCaptor = ArgumentCaptor.forClass(Header.class);
+        verify(asyncRestTemplate).get(eq("http://127.0.0.1:9090/health?ready=true"),
+            headerCaptor.capture(), eq(Query.EMPTY), eq(String.class), any(Callback.class));
+        assertEquals("ready", headerCaptor.getValue().getValue("X-Health-Mode"));
+    }
+    
+    @Test
+    void testProcessSkipsInvalidInstanceAddressWithoutChangingHealthState() {
+        when(healthCheckInstancePublishInfo.getIp()).thenReturn("host:8080");
+        
+        httpHealthCheckProcessor.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(healthCheckInstancePublishInfo, never()).tryStartCheck();
+        verifyNoInteractions(healthCheckCommon);
     }
     
     @Test

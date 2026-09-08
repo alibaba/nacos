@@ -41,7 +41,7 @@ class HealthCheckTargetUtilTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "host:3306", "host/path", "host?query=true",
         "host#fragment", "user@host", "host\\path", "host%3Fquery=true",
-        "[::1]:3306", "[::1]suffix",
+        "[::1]:3306", "[::1]suffix", "::1]", "[]",
         "rogue-mysql:3306?allowLoadLocalInfile=true#", "host\nquery=true"})
     void testInvalidAddress(String address) {
         assertFalse(HealthCheckTargetUtil.isValidAddress(address));
@@ -50,6 +50,11 @@ class HealthCheckTargetUtilTest {
     @Test
     void testNullAddress() {
         assertFalse(HealthCheckTargetUtil.isValidAddress(null));
+    }
+    
+    @Test
+    void testAddressWithIsoControlCharacter() {
+        assertFalse(HealthCheckTargetUtil.isValidAddress("host" + (char) 0 + "name"));
     }
     
     @ParameterizedTest
@@ -75,7 +80,8 @@ class HealthCheckTargetUtilTest {
     }
     
     @ParameterizedTest
-    @ValueSource(strings = {"", "Host:example.com", "Authorization:Bearer token",
+    @ValueSource(strings = {"", ":value", "0:value", "Host:example.com",
+        "Authorization:Bearer token",
         "X-Trace-Id:abc-123|X-Health-Mode:ready", "X-Tab:value\twith-tab"})
     void testValidHttpHealthCheckerHeaders(String headers) {
         Http checker = new Http();
@@ -87,12 +93,21 @@ class HealthCheckTargetUtilTest {
     
     @ParameterizedTest
     @ValueSource(strings = {"Bad Name:value", "X-Test:value\nInjected",
-        "X\r\nInjected:value", "X-Test:value\u0000suffix", "Content-Length:5",
-        "Transfer-Encoding:chunked"})
+        "X\r\nInjected:value", "[:value", "{:value", "X-Test:value\u0000suffix",
+        "Content-Length:5", "Transfer-Encoding:chunked"})
     void testInvalidHttpHealthCheckerHeaders(String headers) {
         Http checker = new Http();
         checker.setPath("/health");
         checker.setHeaders(headers);
+        
+        assertFalse(HealthCheckTargetUtil.isValidHttpHealthChecker(checker));
+    }
+    
+    @Test
+    void testInvalidHttpHealthCheckerHeaderWithDeleteCharacter() {
+        Http checker = new Http();
+        checker.setPath("/health");
+        checker.setHeaders("X-Test:value" + (char) 0x7F + "suffix");
         
         assertFalse(HealthCheckTargetUtil.isValidHttpHealthChecker(checker));
     }

@@ -94,6 +94,7 @@ class HealthCheckProcessorV2DelegateTest {
     void testAddProcessor() throws NoSuchFieldException, IllegalAccessException {
         List<HealthCheckProcessorV2> list = new ArrayList<>();
         list.add(new TcpHealthCheckProcessor(null, null));
+        list.add(activeHealthCheckProcessor);
         healthCheckProcessorV2Delegate.addProcessor(list);
         
         Class<HealthCheckProcessorV2Delegate> healthCheckProcessorV2DelegateClass =
@@ -180,6 +181,40 @@ class HealthCheckProcessorV2DelegateTest {
         verify(activeHealthCheckProcessor, never()).process(healthCheckTaskV2, service,
             clusterMetadata);
         verifyNoInteractions(healthCheckCommonV2);
+    }
+    
+    @Test
+    void testProcessValidHttpHealthChecker() {
+        Http checker = new Http();
+        checker.setPath("/health?ready=true");
+        when(activeHealthCheckProcessor.getType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthChecker()).thenReturn(checker);
+        when(healthCheckTaskV2.getClient()).thenReturn(client);
+        when(client.getInstancePublishInfo(service)).thenReturn(instance);
+        when(instance.getIp()).thenReturn("127.0.0.1");
+        healthCheckProcessorV2Delegate.addProcessor(
+            Collections.singletonList(activeHealthCheckProcessor));
+        
+        healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(activeHealthCheckProcessor).process(healthCheckTaskV2, service, clusterMetadata);
+    }
+    
+    @Test
+    void testProcessHttpHealthCheckerWithUnexpectedMetadataType() {
+        when(activeHealthCheckProcessor.getType()).thenReturn(HealthCheckType.HTTP.name());
+        when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.HTTP.name());
+        when(healthCheckTaskV2.getClient()).thenReturn(client);
+        when(client.getInstancePublishInfo(service)).thenReturn(instance);
+        when(instance.getIp()).thenReturn("127.0.0.1");
+        healthCheckProcessorV2Delegate.addProcessor(
+            Collections.singletonList(activeHealthCheckProcessor));
+        
+        healthCheckProcessorV2Delegate.process(healthCheckTaskV2, service, clusterMetadata);
+        
+        verify(activeHealthCheckProcessor, never()).process(healthCheckTaskV2, service,
+            clusterMetadata);
     }
     
     @Test
