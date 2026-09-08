@@ -214,6 +214,22 @@ public class McpCompatibilityOperationService implements McpOperationService {
         return managed().updateMcpServerLabels(namespaceId, mcpName, labels);
     }
     
+    /**
+     * Enable or disable one standard MCP Resource after the managed cutover.
+     */
+    public void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        managed().updateMcpServerStatus(namespaceId, mcpName, enabled);
+    }
+    
+    /**
+     * Update one standard MCP Resource visibility scope after the managed cutover.
+     */
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        managed().updateMcpServerScope(namespaceId, mcpName, scope);
+    }
+    
     private McpOperationService current() throws NacosException {
         McpCompatibilityMode mode = modeResolver.resolve();
         if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {

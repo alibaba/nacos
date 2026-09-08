@@ -73,7 +73,7 @@ describe('MCP Console lifecycle API', () => {
     expect(mockClient.delete).toHaveBeenLastCalledWith(`${BASE}/draft`, { params: identity });
   });
 
-  it('uses form-encoded draft and label routes', async () => {
+  it('uses form-encoded draft, label, and resource routes', async () => {
     const draft = {
       namespaceId: 'public',
       mcpName: 'demo',
@@ -94,6 +94,18 @@ describe('MCP Console lifecycle API', () => {
       namespaceId: 'public',
       mcpName: 'demo',
       labels: '{"stable":"1.0.0"}',
+    });
+    await mcpApi.updateStatus({ namespaceId: 'public', mcpName: 'demo', enabled: false });
+    expectForm('put', '/status', {
+      namespaceId: 'public',
+      mcpName: 'demo',
+      enabled: 'false',
+    });
+    await mcpApi.updateScope({ namespaceId: 'public', mcpName: 'demo', scope: 'PRIVATE' });
+    expectForm('put', '/scope', {
+      namespaceId: 'public',
+      mcpName: 'demo',
+      scope: 'PRIVATE',
     });
   });
 

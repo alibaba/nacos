@@ -486,6 +486,44 @@ public class McpLifecycleOperationService implements McpOperationService {
         return result;
     }
     
+    /**
+     * Enable or disable one MCP Server Resource without changing Version states.
+     *
+     * <p>The compatibility serving Manifest is retained when online Versions exist and its
+     * enabled flag is converged from the Resource status.</p>
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param enabled whether the Resource should be enabled
+     * @throws NacosException when the Resource is absent, not writable, or convergence fails
+     */
+    public void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
+        resourceManager.metaEnableDisable(lifecycle.resource.getNamespaceId(), lifecycle.resource,
+            enabled);
+        AiResource refreshed = resourceManager.requireMeta(lifecycle.resource.getNamespaceId(),
+            lifecycle.resource.getName(), RESOURCE_TYPE);
+        convergeServing(refreshed);
+        scheduleIndex(refreshed.getNamespaceId(), refreshed.getName());
+    }
+    
+    /**
+     * Update one MCP Server Resource visibility scope without changing Version states.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param scope visibility scope, either {@code PUBLIC} or {@code PRIVATE}
+     * @throws NacosException when the Resource is absent, not writable, or persistence fails
+     */
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        LifecycleResource lifecycle = requireWritableLifecycleResource(namespaceId, mcpName);
+        resourceManager.doUpdateScope(lifecycle.resource.getNamespaceId(),
+            lifecycle.resource.getName(), RESOURCE_TYPE, scope);
+        scheduleIndex(lifecycle.resource.getNamespaceId(), lifecycle.resource.getName());
+    }
+    
     @Override
     public Page<McpServerBasicInfo> listMcpServerWithPage(String namespaceId, String mcpName,
         String search, int pageNo, int pageSize) throws NacosException {
@@ -515,6 +553,9 @@ public class McpLifecycleOperationService implements McpOperationService {
         resourceManager.ensureReadableOrNotFound(resource,
             "MCP server not found: " + resource.getName());
         LifecycleResource lifecycle = requireLifecycleResource(resource);
+        if (lifecycle.versions.isEmpty() && StringUtils.isBlank(version)) {
+            return buildEmptyMcpServerDetail(lifecycle);
+        }
         AiResourceVersion selected = resolveVersion(lifecycle, version);
         return buildMcpServerDetail(lifecycle, selected);
     }
@@ -558,6 +599,17 @@ public class McpLifecycleOperationService implements McpOperationService {
         if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(loaded.server.getProtocol())) {
             endpointOperationService.injectEndpoint(result);
         }
+        return result;
+    }
+    
+    private McpServerDetailInfo buildEmptyMcpServerDetail(LifecycleResource lifecycle) {
+        McpServerDetailInfo result = new McpServerDetailInfo();
+        result.setId(lifecycle.mcpId);
+        result.setNamespaceId(lifecycle.resource.getNamespaceId());
+        result.setName(lifecycle.resource.getName());
+        result.setDescription(lifecycle.resource.getDesc());
+        result.setEnabled(isResourceEnabled(lifecycle.resource));
+        result.setAllVersions(Collections.emptyList());
         return result;
     }
     
@@ -1187,6 +1239,16 @@ public class McpLifecycleOperationService implements McpOperationService {
     }
     
     private McpServerBasicInfo toBasicInfo(LifecycleResource lifecycle) throws NacosException {
+        if (lifecycle.versions.isEmpty()) {
+            McpServerVersionInfo result = new McpServerVersionInfo();
+            result.setId(lifecycle.mcpId);
+            result.setNamespaceId(lifecycle.resource.getNamespaceId());
+            result.setName(lifecycle.resource.getName());
+            result.setDescription(lifecycle.resource.getDesc());
+            result.setEnabled(isResourceEnabled(lifecycle.resource));
+            result.setVersions(Collections.emptyList());
+            return result;
+        }
         AiResourceVersion selected = resolveVersion(lifecycle, null);
         LoadedVersion loaded = loadVersion(lifecycle, selected);
         McpServerVersionInfo result = new McpServerVersionInfo();
@@ -1243,6 +1305,7 @@ public class McpLifecycleOperationService implements McpOperationService {
         result.setEditingVersion(versionInfo.getEditingVersion());
         result.setReviewingVersion(versionInfo.getReviewingVersion());
         result.setOnlineCount(versionInfo.getOnlineCnt());
+        result.setWritable(VisibilityHelper.canWriteResource(lifecycle.resource));
         LoadedVersion loaded = loadVersion(lifecycle, row);
         McpServerBasicInfo server = new McpServerBasicInfo();
         BeanUtils.copyProperties(loaded.server, server);

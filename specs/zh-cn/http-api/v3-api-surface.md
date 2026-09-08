@@ -77,11 +77,11 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
-| `/v3/admin/ai/*` | 101 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
+| `/v3/admin/ai/*` | 103 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | 控制台集群和命名空间操作。 |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | 控制台配置和历史操作。 |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | 控制台服务和实例操作。 |
-| `/v3/console/ai/*` | 79 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
+| `/v3/console/ai/*` | 81 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
 | `/v3/console/copilot/*` | 6 | GET, POST | 配置和 SSE Copilot 操作。 |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | 默认鉴权插件中的用户登录和管理。 |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | 默认鉴权插件中的角色管理。 |
@@ -248,20 +248,23 @@ Admin 使用 `/v3/admin/ai/mcp`；Console 使用 `/v3/console/ai/mcp`，作为�
 | `/online` | POST | 将 Offline Version 上线并设为 latest。 |
 | `/offline` | POST | 将 Online Version 下线，并在需要时修复 latest。 |
 | `/labels` | PUT | 更新自定义 Label，忽略客户端提供的 `latest`。 |
+| `/status` | PUT | 启用或禁用 MCP Resource，不改变 Version 状态。 |
+| `/scope` | PUT | 在 `PUBLIC` 与 `PRIVATE` 之间修改 MCP Resource 可见范围。 |
 
 所有路径都使用 Form/Query 参数。通用身份字段是可选的 `namespaceId`（默认 `public`）、
-必填 `mcpName`，以及除 `/versions` 和 `/labels` 外必填的精确 `version`。`/versions`
+必填 `mcpName`，以及除 `/versions`、`/labels`、`/status` 和 `/scope` 外必填的精确 `version`。`/versions`
 还接受可选 `status` 以及受限的 `pageNo`、`pageSize`。
 
 `POST` 和 `PUT /draft` 还接受必填 JSON `serverSpecification`，以及可选 JSON
 `toolSpecification`、`resourceSpecification`、`endpointSpecification`。外层
 `mcpName` 和 `version` 是 Canonical Identity；`serverSpecification` 中重复出现的名称或
 Version 必须一致，并拒绝 `serverSpecification.id`。`/labels` 接受 JSON String Map；空输入
-表示清空自定义 Label，同时保留服务端管理的 Label。
+表示清空自定义 Label，同时保留服务端管理的 Label。`/status` 要求 Boolean `enabled`；
+`/scope` 要求不区分大小写的 `PUBLIC` 或 `PRIVATE`。
 
 Version 列表返回 `Page<McpServerVersionSummary>`。精确读取和 Draft 写入返回
 `McpServerVersionDetail`，其中包含生命周期 Metadata 和 Server/Tools/Resources 内容，但不包含
-内部 MCP ID。Detail 还会投影生命周期管理客户端所需的 Resource Status、Owner、Scope、Labels、
+内部 MCP ID。Detail 还会投影生命周期管理客户端所需的 Resource Status、Owner、Scope、Writable Flag、Labels、
 Editing/Reviewing 指针和 Online Version 数量。生命周期命令返回转换后的 Summary，删除 Draft 返回空 Success Result，替换 Label
 返回最终生效的 Label Map。
 

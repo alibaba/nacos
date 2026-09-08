@@ -250,6 +250,7 @@ export interface McpServerVersionDetail extends McpServerVersionSummary {
   editingVersion?: string;
   reviewingVersion?: string;
   onlineCount?: number;
+  writable?: boolean;
 }
 
 export interface McpVersionIdentity {

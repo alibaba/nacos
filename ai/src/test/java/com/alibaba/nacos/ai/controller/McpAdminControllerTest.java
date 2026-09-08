@@ -421,11 +421,37 @@ class McpAdminControllerTest {
         assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
             Constants.MCP_ADMIN_PATH + "/labels").param("mcpName", "nacos-mcp-server"))
             .andReturn().getResponse().getStatus());
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/status").param("mcpName", "nacos-mcp-server")
+            .param("enabled", "false")).andReturn().getResponse().getStatus());
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/scope").param("mcpName", "nacos-mcp-server")
+            .param("scope", "private")).andReturn().getResponse().getStatus());
         
         verify(lifecycleOperationService).deleteMcpServerDraft(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "1.0.0");
         verify(lifecycleOperationService).updateMcpServerLabels(
             AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", Map.of());
+        verify(lifecycleOperationService).updateMcpServerStatus(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", false);
+        verify(lifecycleOperationService).updateMcpServerScope(
+            AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "nacos-mcp-server", "private");
+    }
+    
+    @Test
+    void resourceUpdatesValidateRequiredValues() throws Throwable {
+        MockHttpServletRequestBuilder missingEnabled = MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/status").param("mcpName", "nacos-mcp-server");
+        assertServletException(NacosApiException.class,
+            () -> mockMvc.perform(missingEnabled).andReturn(),
+            "ErrCode:400, ErrMsg:Required parameter 'enabled' type Boolean is not present");
+        
+        MockHttpServletRequestBuilder invalidScope = MockMvcRequestBuilders.put(
+            Constants.MCP_ADMIN_PATH + "/scope").param("mcpName", "nacos-mcp-server")
+            .param("scope", "team");
+        assertServletException(NacosApiException.class,
+            () -> mockMvc.perform(invalidScope).andReturn(),
+            "ErrCode:400, ErrMsg:Parameter 'scope' must be PUBLIC or PRIVATE");
     }
     
     @Test

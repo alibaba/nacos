@@ -239,6 +239,22 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertMcpLifecycleResourceAbsent(putRaw(basePath + "/labels",
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                         .addParam("mcpName", mcpName).addParam("labels", "{}")));
+        assertMcpLifecycleResourceAbsent(putRaw(basePath + "/status",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("enabled", "false")));
+        assertMcpLifecycleResourceAbsent(putRaw(basePath + "/scope",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("scope", "PRIVATE")));
+        assertError(putRaw(basePath + "/status", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)), 400,
+                ErrorCode.PARAMETER_MISSING, "enabled");
+        assertError(putRaw(basePath + "/scope", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)), 400,
+                ErrorCode.PARAMETER_MISSING, "scope");
+        assertError(putRaw(basePath + "/scope", Query.newInstance()
+                .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("mcpName", mcpName)
+                .addParam("scope", "TEAM")), 400, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "PUBLIC or PRIVATE");
 
         HttpResponse createResponse = postRaw(basePath + "/draft",
                 mcpLifecycleDraftQuery(mcpName, version));
@@ -253,15 +269,50 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertTrue(detail.hasNonNull("resourceStatus"), created.toString());
         assertTrue(detail.hasNonNull("owner"), created.toString());
         assertTrue(detail.hasNonNull("scope"), created.toString());
+        assertTrue(detail.path("writable").asBoolean(), created.toString());
         assertTrue(detail.path("labels").isObject(), created.toString());
         assertEquals(version, detail.path("editingVersion").asText(), created.toString());
         assertTrue(detail.path("reviewingVersion").isMissingNode()
                 || detail.path("reviewingVersion").isNull(), created.toString());
         assertEquals(0, detail.path("onlineCount").asInt(), created.toString());
         addCleanup(() -> deleteQuietly(basePath, mcpIdentityQuery(mcpName, null, null)));
+
+        JsonNode disabled = putFormOk(basePath + "/status", Map.of(
+                "namespaceId", DEFAULT_NAMESPACE, "mcpName", mcpName, "enabled", "false"));
+        assertEquals("ok", disabled.path("data").asText(), disabled.toString());
+        JsonNode disabledDetail = getJsonOk(basePath + "/version",
+                mcpLifecycleVersionQuery(mcpName, version)).path("data");
+        assertEquals("disable", disabledDetail.path("resourceStatus").asText(),
+                disabledDetail.toString());
+        JsonNode compatibilityDetail = getJsonOk(basePath,
+                mcpIdentityQuery(mcpName, null, version)).path("data");
+        assertFalse(compatibilityDetail.path("enabled").asBoolean(), compatibilityDetail.toString());
+        putFormOk(basePath + "/status", Map.of(
+                "namespaceId", DEFAULT_NAMESPACE, "mcpName", mcpName, "enabled", "true"));
+        putFormOk(basePath + "/scope", Map.of(
+                "namespaceId", DEFAULT_NAMESPACE, "mcpName", mcpName, "scope", "private"));
+        JsonNode privateDetail = getJsonOk(basePath + "/version",
+                mcpLifecycleVersionQuery(mcpName, version)).path("data");
+        assertEquals("PRIVATE", privateDetail.path("scope").asText(), privateDetail.toString());
+        putFormOk(basePath + "/scope", Map.of(
+                "namespaceId", DEFAULT_NAMESPACE, "mcpName", mcpName, "scope", "PUBLIC"));
+
         JsonNode deleted = JacksonUtils.toObj(deleteRaw(basePath + "/draft",
                 mcpLifecycleVersionQuery(mcpName, version)).body());
         assertEquals(0, deleted.path("code").asInt(), deleted.toString());
+        JsonNode emptyDetail = getJsonOk(basePath, mcpIdentityQuery(mcpName, null, null))
+                .path("data");
+        assertEquals(mcpName, emptyDetail.path("name").asText(), emptyDetail.toString());
+        assertEquals(0, emptyDetail.path("allVersions").size(), emptyDetail.toString());
+        HttpResponse recreateResponse = postRaw(basePath + "/draft",
+                mcpLifecycleDraftQuery(mcpName, version));
+        assertEquals(200, recreateResponse.code(), recreateResponse.body());
+        JsonNode recreated = JacksonUtils.toObj(recreateResponse.body());
+        assertEquals(version, recreated.path("data").path("version").asText(),
+                recreated.toString());
+        JsonNode redeleted = JacksonUtils.toObj(deleteRaw(basePath + "/draft",
+                mcpLifecycleVersionQuery(mcpName, version)).body());
+        assertEquals(0, redeleted.path("code").asInt(), redeleted.toString());
     }
 
     protected void assertMcpLifecycleCutoverGate(String basePath, String mcpName,
@@ -293,6 +344,12 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         assertMcpLifecycleCutoverConflict(putRaw(basePath + "/labels",
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
                         .addParam("mcpName", mcpName).addParam("labels", "{}")));
+        assertMcpLifecycleCutoverConflict(putRaw(basePath + "/status",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("enabled", "false")));
+        assertMcpLifecycleCutoverConflict(putRaw(basePath + "/scope",
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                        .addParam("mcpName", mcpName).addParam("scope", "PRIVATE")));
     }
 
     private void assertMcpLifecycleResourceAbsent(HttpResponse response) throws Exception {

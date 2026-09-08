@@ -215,8 +215,8 @@ export default function NewMcpServerPage() {
     }
 
     if (isVersion) {
-      const oldVersion = data.versionDetail?.version || data.version || '1.0.0';
-      setVersion(nextMcpVersion(oldVersion));
+      const oldVersion = data.versionDetail?.version || data.version;
+      setVersion(oldVersion ? nextMcpVersion(oldVersion) : '1.0.0');
     }
   }, [isVersion]);
 

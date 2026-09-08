@@ -217,7 +217,11 @@ public class McpProxyTest {
             mcpProxy.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(labels,
             mcpProxy.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels));
+        mcpProxy.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false);
+        mcpProxy.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE");
         verify(mcpHandler).deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
+        verify(mcpHandler).updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false);
+        verify(mcpHandler).updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE");
     }
     
     @Test

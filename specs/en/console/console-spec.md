@@ -141,6 +141,13 @@ Console owns the browser entry and static asset serving behavior:
 Console guide and announcement content are UI presentation data. They are not
 canonical Core server state and must not be used as domain configuration.
 
+Lifecycle-managed AI Resource detail pages should share the same status and
+Version presentation primitives. MCP, Skill, and Prompt must not independently
+reimplement enabled/disabled, public/private, latest, draft, reviewing, pending,
+or rejected visual states. On MCP detail, a new draft is created from the selected
+online Version; the generic new-Version entry is shown only for a retained MCP
+Resource that has no Version after its sole initial draft was deleted.
+
 ## 6. Handler And Proxy Boundary
 
 Console controllers must delegate through proxy and handler interfaces rather

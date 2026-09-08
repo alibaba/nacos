@@ -46,6 +46,21 @@ describe('MCP Console lifecycle source contract', () => {
     expect(detail).not.toContain("t('mcp.capabilities')");
     expect(detail).not.toContain("t('mcp.copyConfig')");
     expect(detail).not.toContain('mcp.remoteServerConfig.frontEndpointConfigList.map');
+    expect(detail).toContain('<AiResourceStatusControls');
+    expect(detail).toContain('<AiVersionSelectOption');
+    expect(detail).toContain('<CreateDraftFromVersionButton');
+    expect(detail).toContain("currentStatus === 'online'");
+    expect(detail).toContain("t('mcp.createDraftFrom')");
+    expect(detail).toContain('versionOptions.length === 0');
+    expect(detail).toContain("t('mcp.newVersion')");
+    expect(api).toContain("client.put(`${BASE}/status`");
+    expect(api).toContain("client.put(`${BASE}/scope`");
+    const skillDetail = read('console-ui-next/src/pages/skillDetail/index.tsx');
+    const promptDetail = read('console-ui-next/src/pages/promptDetail/index.tsx');
+    expect(skillDetail).toContain('<AiVersionSelectOption');
+    expect(skillDetail).toContain('<CreateDraftFromVersionButton');
+    expect(promptDetail).toContain('<AiVersionSelectOption');
+    expect(promptDetail).toContain('<CreateDraftFromVersionButton');
   });
 
   it('leaves the legacy UI on its direct-online create and update contract', () => {

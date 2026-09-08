@@ -126,7 +126,7 @@ public interface McpMaintainerService {
     
     /**
      * Blur search first 100 Mcp Servers in Nacos with mcp name pattern.
-     * 
+     *
      * @param namespaceId namespaceId
      * @param mcpName  mcpName pattern, if empty string or null, will list all Mcp Servers.
      * @param pageNo   the page number of mcp Servers
@@ -1004,5 +1004,58 @@ public interface McpMaintainerService {
     default Map<String, String> updateMcpServerLabels(McpServerLabelsUpdateRequest request)
         throws NacosException {
         return updateMcpServerLabels(Constants.DEFAULT_NAMESPACE_ID, request);
+    }
+    
+    /**
+     * Update the enabled status of one MCP Server resource.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param enabled whether the resource is enabled
+     * @return {@code true} when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    boolean updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException;
+    
+    /**
+     * Update the enabled status of one MCP Server resource in the default namespace.
+     *
+     * @param mcpName canonical MCP name
+     * @param enabled whether the resource is enabled
+     * @return {@code true} when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default boolean updateMcpServerStatus(String mcpName, boolean enabled)
+        throws NacosException {
+        return updateMcpServerStatus(Constants.DEFAULT_NAMESPACE_ID, mcpName, enabled);
+    }
+    
+    /**
+     * Update the visibility scope of one MCP Server resource.
+     *
+     * @param namespaceId namespace identifier
+     * @param mcpName canonical MCP name
+     * @param scope resource scope, either {@code PUBLIC} or {@code PRIVATE}
+     * @return {@code true} when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    boolean updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException;
+    
+    /**
+     * Update the visibility scope of one MCP Server resource in the default namespace.
+     *
+     * @param mcpName canonical MCP name
+     * @param scope resource scope, either {@code PUBLIC} or {@code PRIVATE}
+     * @return {@code true} when the update succeeds
+     * @throws NacosException when the request fails
+     */
+    @Since("3.3.0")
+    default boolean updateMcpServerScope(String mcpName, String scope) throws NacosException {
+        return updateMcpServerScope(Constants.DEFAULT_NAMESPACE_ID, mcpName, scope);
     }
 }

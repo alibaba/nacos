@@ -452,7 +452,9 @@
       "reviewing": "Reviewing",
       "reviewed": "Reviewed",
       "online": "Online",
-      "offline": "Offline"
+      "offline": "Offline",
+      "pendingPublish": "Pending Publish",
+      "rejected": "Rejected"
     },
     "lifecycleAction": {
       "editDraft": "Edit Draft",
@@ -461,8 +463,8 @@
       "publish": "Publish",
       "forcePublish": "Force Publish",
       "redraft": "Return to Draft",
-      "online": "Bring Online",
-      "offline": "Take Offline",
+      "online": "Version Online",
+      "offline": "Version Offline",
       "deleteDraft": "Delete Draft"
     },
     "lifecycleActionSuccess": "Version state updated",
@@ -475,6 +477,12 @@
     "draftCreateSuccess": "MCP Server draft created",
     "draftUpdateSuccess": "MCP Server draft updated",
     "deleteDraftSuccess": "Draft deleted",
+    "createDraftFrom": "Create draft from this version",
+    "draftExistsTip": "An editing or reviewing version already exists",
+    "scopePublic": "Public",
+    "scopePrivate": "Private",
+    "scopeUpdateSuccess": "Visibility scope updated",
+    "serverDisabledWarning": "This MCP Server is disabled. Version operations do not enable the resource automatically.",
     "onlyDraftEditable": "Only a draft version can be edited",
     "governance": "Resource Governance",
     "visibilityAuthorization": "Visibility Authorization",

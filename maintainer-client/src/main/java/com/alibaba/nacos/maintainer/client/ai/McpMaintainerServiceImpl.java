@@ -254,6 +254,24 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
         return result.getData();
     }
     
+    @Override
+    public boolean updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
+        params.put("enabled", String.valueOf(enabled));
+        return executeResourceUpdate(ROOT_PATH + "/status", namespaceId, mcpName, params);
+    }
+    
+    @Override
+    public boolean updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        namespaceId = resolveMcpNamespace(namespaceId);
+        Map<String, String> params = lifecycleIdentityParams(namespaceId, mcpName);
+        params.put("scope", scope);
+        return executeResourceUpdate(ROOT_PATH + "/scope", namespaceId, mcpName, params);
+    }
+    
     private Page<McpServerBasicInfo> queryServerPage(String namespaceId, String mcpName, int pageNo,
         int pageSize,
         String search) throws NacosException {
@@ -316,6 +334,16 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             new NacosTypeReference<Result<McpServerVersionSummary>>() {
             });
         return result.getData();
+    }
+    
+    private boolean executeResourceUpdate(String path, String namespaceId, String mcpName,
+        Map<String, String> params) throws NacosException {
+        HttpRestResult<String> restResult = executeLifecycleRequest(HttpMethod.PUT, path,
+            namespaceId, mcpName, params);
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     private HttpRestResult<String> executeLifecycleRequest(String method, String path,

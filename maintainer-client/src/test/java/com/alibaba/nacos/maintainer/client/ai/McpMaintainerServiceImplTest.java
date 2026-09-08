@@ -194,6 +194,21 @@ class McpMaintainerServiceImplTest {
     }
     
     @Test
+    void testResourceStatusAndScopeUsePutFormRequests() throws NacosException {
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(response("ok"), response("ok"));
+        
+        assertEquals(true, service.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false));
+        assertEquals(true, service.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE"));
+        
+        List<HttpRequest> requests = captureRequests(2);
+        assertRequest(requests.get(0), HttpMethod.PUT, rootPath() + "/status");
+        assertEquals("false", requests.get(0).getParamValues().get("enabled"));
+        assertRequest(requests.get(1), HttpMethod.PUT, rootPath() + "/scope");
+        assertEquals("PRIVATE", requests.get(1).getParamValues().get("scope"));
+    }
+    
+    @Test
     void testOptionalLifecycleParametersMayBeOmitted() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(Collections.emptyMap()), response(detail()));
@@ -226,7 +241,8 @@ class McpMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
             response(page), response(detail()), response(detail()), response(detail()),
             response(null), response(summary()), response(summary()), response(summary()),
-            response(summary()), response(summary()), response(summary()), response(labels));
+            response(summary()), response(summary()), response(summary()), response(labels),
+            response("ok"), response("ok"));
         McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         labelsRequest.setMcpName(MCP_NAME);
         labelsRequest.setLabels(labels);
@@ -243,8 +259,10 @@ class McpMaintainerServiceImplTest {
         service.onlineMcpServerVersion(versionCommand());
         service.offlineMcpServerVersion(versionCommand());
         assertEquals(labels, service.updateMcpServerLabels(labelsRequest));
+        assertEquals(true, service.updateMcpServerStatus(MCP_NAME, false));
+        assertEquals(true, service.updateMcpServerScope(MCP_NAME, "PRIVATE"));
         
-        for (HttpRequest request : captureRequests(12)) {
+        for (HttpRequest request : captureRequests(14)) {
             assertEquals(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID,
                 request.getParamValues().get("namespaceId"));
         }

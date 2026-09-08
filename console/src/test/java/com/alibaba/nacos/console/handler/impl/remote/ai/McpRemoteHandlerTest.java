@@ -191,6 +191,8 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
             mcpRemoteHandler.offlineMcpServerVersion("ns", "name", "1.0.0"));
         assertEquals(labels,
             mcpRemoteHandler.updateMcpServerLabels("ns", "name", labels));
+        mcpRemoteHandler.updateMcpServerStatus("ns", "name", false);
+        mcpRemoteHandler.updateMcpServerScope("ns", "name", "PRIVATE");
         
         ArgumentCaptor<McpServerDraftRequest> draftCaptor =
             ArgumentCaptor.forClass(McpServerDraftRequest.class);
@@ -206,6 +208,8 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
             ArgumentCaptor.forClass(McpServerLabelsUpdateRequest.class);
         verify(mcpMaintainerService).updateMcpServerLabels(eq("ns"), labelsCaptor.capture());
         assertEquals(labels, labelsCaptor.getValue().getLabels());
+        verify(mcpMaintainerService).updateMcpServerStatus("ns", "name", false);
+        verify(mcpMaintainerService).updateMcpServerScope("ns", "name", "PRIVATE");
     }
     
     @Test

@@ -79,11 +79,11 @@ guide, not as a final OpenAPI export.
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 101 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 103 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
-| `/v3/console/ai/*` | 79 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
+| `/v3/console/ai/*` | 81 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
 | `/v3/console/copilot/*` | 6 | GET, POST | Config plus SSE copilot operations. |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | User login and management in default auth plugin. |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | Role management in default auth plugin. |
@@ -271,10 +271,12 @@ over the same relative lifecycle contract:
 | `/online` | POST | Bring an offline Version online and make it latest. |
 | `/offline` | POST | Take an online Version offline and repair latest when needed. |
 | `/labels` | PUT | Update custom labels while ignoring a client-provided `latest`. |
+| `/status` | PUT | Enable or disable the MCP Resource without changing Version states. |
+| `/scope` | PUT | Change the MCP Resource visibility between `PUBLIC` and `PRIVATE`. |
 
 All routes use form/query parameters. The common identity fields are
 `namespaceId` (optional, default `public`), required `mcpName`, and, except for
-`/versions` and `/labels`, required exact `version`. `/versions` additionally
+`/versions`, `/labels`, `/status`, and `/scope`, required exact `version`. `/versions` additionally
 accepts optional `status` plus bounded `pageNo` and `pageSize`.
 
 `POST` and `PUT /draft` additionally accept required JSON
@@ -283,12 +285,13 @@ accepts optional `status` plus bounded `pageNo` and `pageSize`.
 `version` are canonical. Repeated name or Version fields in
 `serverSpecification` must match them, and `serverSpecification.id` is
 rejected. `/labels` accepts a JSON string map; blank input clears custom labels
-while preserving server-managed labels.
+while preserving server-managed labels. `/status` requires boolean `enabled`;
+`/scope` requires a case-insensitive `PUBLIC` or `PRIVATE` value.
 
 Version list results use `Page<McpServerVersionSummary>`. Exact reads and
 draft writes return `McpServerVersionDetail`, including lifecycle metadata
 and Server/Tools/Resources content without the internal MCP ID. The detail also
-projects the resource status, owner, scope, labels, editing/reviewing pointers,
+projects the resource status, owner, scope, writable flag, labels, editing/reviewing pointers,
 and online Version count needed by lifecycle-aware management clients. Lifecycle
 commands return the resulting summary, draft deletion returns an empty success
 result, and label replacement returns the effective label map.

@@ -56,8 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: default-public and explicit-namespace draft creation, exact and
  *     bounded Version reads, full draft replacement, no-Pipeline submit, force-publish,
- *     offline/online, custom labels, draft deletion, and resource cleanup work through the
- *     Maintainer SDK.</li>
+ *     offline/online, resource enablement and scope, custom labels, draft deletion, and resource
+ *     cleanup work through the Maintainer SDK.</li>
  *     <li>Compatibility: STDIO content and a Direct remote endpoint remain readable through the
  *     historical MCP detail API after lifecycle publication, while lifecycle reads do not expose
  *     the internal MCP ID.</li>
@@ -72,26 +72,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SuppressWarnings("deprecation")
 class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
-    
+
     private static final String INITIAL_VERSION = "1.0.0";
-    
+
     private static final String SECOND_VERSION = "1.1.0";
-    
+
     private static final String STATUS_DRAFT = "draft";
-    
+
     private static final String STATUS_ONLINE = "online";
-    
+
     private static final String STATUS_OFFLINE = "offline";
-    
+
     @Test
     void shouldManageStdioLifecycleInDefaultNamespace() throws Exception {
         McpMaintainerService mcpService = createAiMaintainerService().mcp();
         String mcpName = randomMaintainerName("mcp-lc-default");
-        
+
         NacosException missing = assertThrows(NacosException.class,
             () -> mcpService.getMcpServerVersion(mcpName, INITIAL_VERSION));
         assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
-        
+
         McpServerDraftRequest request = draftRequest(mcpName, INITIAL_VERSION,
             AiConstants.Mcp.MCP_PROTOCOL_STDIO, "Initial STDIO lifecycle draft");
         request.setToolSpecification(toolSpecification(mcpName));
@@ -104,40 +104,52 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         assertNull(created.getServerSpecification().getId());
         assertNotNull(created.getToolSpecification());
         assertNotNull(created.getResourceSpecification());
-        
+        assertTrue(created.isWritable());
+
+        assertTrue(mcpService.updateMcpServerStatus(mcpName, false));
+        McpServerVersionDetail disabled = mcpService.getMcpServerVersion(mcpName,
+            INITIAL_VERSION);
+        assertEquals("disable", disabled.getResourceStatus());
+        assertFalse(mcpService.getMcpServerDetail(mcpName, INITIAL_VERSION).isEnabled());
+        assertTrue(mcpService.updateMcpServerStatus(mcpName, true));
+        assertTrue(mcpService.updateMcpServerScope(mcpName, "PRIVATE"));
+        assertEquals("PRIVATE", mcpService.getMcpServerVersion(mcpName,
+            INITIAL_VERSION).getScope());
+        assertTrue(mcpService.updateMcpServerScope(mcpName, "PUBLIC"));
+
         request.getServerSpecification().setDescription("Updated STDIO lifecycle draft");
         McpServerVersionDetail updated = mcpService.updateMcpServer(request);
         assertLifecycleDetail(updated, Constants.DEFAULT_NAMESPACE_ID, mcpName, INITIAL_VERSION,
             STATUS_DRAFT, "Updated STDIO lifecycle draft");
         assertContainsVersion(mcpService.listMcpServerVersions(mcpName, STATUS_DRAFT, 1, 10),
             INITIAL_VERSION, STATUS_DRAFT);
-        
+
         McpServerVersionSummary online =
             mcpService.submitMcpServerVersion(versionCommand(mcpName, INITIAL_VERSION));
         assertEquals(STATUS_ONLINE, online.getStatus());
         assertEquals(Boolean.TRUE, online.getLatest());
-        
+
         McpServerDetailInfo compatibilityDetail =
             mcpService.getMcpServerDetail(mcpName, INITIAL_VERSION);
         assertEquals(mcpName, compatibilityDetail.getName());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, compatibilityDetail.getProtocol());
         assertNotNull(compatibilityDetail.getToolSpec());
         assertNotNull(compatibilityDetail.getResourceSpec());
-        
+
         McpServerLabelsUpdateRequest labelsRequest = new McpServerLabelsUpdateRequest();
         labelsRequest.setMcpName(mcpName);
         labelsRequest.setLabels(Collections.singletonMap("stable", INITIAL_VERSION));
         Map<String, String> labels = mcpService.updateMcpServerLabels(labelsRequest);
         assertEquals(INITIAL_VERSION, labels.get("latest"));
         assertEquals(INITIAL_VERSION, labels.get("stable"));
-        
+
         McpServerVersionSummary offline =
             mcpService.offlineMcpServerVersion(versionCommand(mcpName, INITIAL_VERSION));
         assertEquals(STATUS_OFFLINE, offline.getStatus());
         McpServerVersionSummary onlineAgain =
             mcpService.onlineMcpServerVersion(versionCommand(mcpName, INITIAL_VERSION));
         assertEquals(STATUS_ONLINE, onlineAgain.getStatus());
-        
+
         McpServerDraftRequest secondDraft = draftRequest(mcpName, SECOND_VERSION,
             AiConstants.Mcp.MCP_PROTOCOL_STDIO, "Deletable STDIO lifecycle draft");
         assertEquals(STATUS_DRAFT, mcpService.createMcpServer(secondDraft).getStatus());
@@ -149,13 +161,13 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         NacosException deletedDraft = assertThrows(NacosException.class,
             () -> mcpService.getMcpServerVersion(mcpName, SECOND_VERSION));
         assertEquals(NacosException.NOT_FOUND, deletedDraft.getErrCode());
-        
+
         assertTrue(mcpService.deleteMcpServer(mcpName));
         NacosException deleted = assertThrows(NacosException.class,
             () -> mcpService.getMcpServerVersion(mcpName, INITIAL_VERSION));
         assertEquals(NacosException.NOT_FOUND, deleted.getErrCode());
     }
-    
+
     @Test
     void shouldPublishDirectEndpointInExplicitNamespace() throws Exception {
         McpMaintainerService mcpService = createAiMaintainerService().mcp();
@@ -167,12 +179,12 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         remoteConfig.setExportPath("/mcp");
         request.getServerSpecification().setRemoteServerConfig(remoteConfig);
         request.setEndpointSpecification(directEndpoint());
-        
+
         McpServerVersionDetail created = mcpService.createMcpServer(namespaceId, request);
         addCleanup(() -> mcpService.deleteMcpServer(namespaceId, mcpName, null, null));
         assertLifecycleDetail(created, namespaceId, mcpName, INITIAL_VERSION, STATUS_DRAFT,
             "Direct lifecycle draft");
-        
+
         McpServerVersionSummary online = mcpService.forcePublishMcpServerVersion(namespaceId,
             versionCommand(mcpName, INITIAL_VERSION));
         assertEquals(STATUS_ONLINE, online.getStatus());
@@ -186,13 +198,13 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         assertEquals("127.0.0.1", endpoint.getAddress());
         assertEquals(19090, endpoint.getPort());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, endpoint.getProtocol());
-        
+
         assertTrue(mcpService.deleteMcpServer(namespaceId, mcpName, null, null));
         NacosException deleted = assertThrows(NacosException.class,
             () -> mcpService.getMcpServerVersion(namespaceId, mcpName, INITIAL_VERSION));
         assertEquals(NacosException.NOT_FOUND, deleted.getErrCode());
     }
-    
+
     private McpServerDraftRequest draftRequest(String mcpName, String version,
         String protocol, String description) {
         McpServerBasicInfo server = new McpServerBasicInfo();
@@ -206,7 +218,7 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         result.setServerSpecification(server);
         return result;
     }
-    
+
     private McpToolSpecification toolSpecification(String mcpName) {
         McpTool tool = new McpTool();
         tool.setName("tool_" + mcpName.replace('-', '_'));
@@ -216,7 +228,7 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         result.setTools(Collections.singletonList(tool));
         return result;
     }
-    
+
     private McpResourceSpecification resourceSpecification(String mcpName) {
         Map<String, Object> resource = new HashMap<>();
         resource.put("uri", "nacos://" + mcpName + "/resource");
@@ -225,7 +237,7 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         result.setResources(Collections.singletonList(resource));
         return result;
     }
-    
+
     private McpEndpointSpec directEndpoint() {
         McpEndpointSpec result = new McpEndpointSpec();
         result.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
@@ -236,14 +248,14 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         result.setData(data);
         return result;
     }
-    
+
     private McpServerVersionCommand versionCommand(String mcpName, String version) {
         McpServerVersionCommand result = new McpServerVersionCommand();
         result.setMcpName(mcpName);
         result.setVersion(version);
         return result;
     }
-    
+
     private void assertLifecycleDetail(McpServerVersionDetail detail, String namespaceId,
         String mcpName, String version, String status, String description) {
         assertNotNull(detail);
@@ -255,7 +267,7 @@ class McpMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         assertEquals(mcpName, detail.getServerSpecification().getName());
         assertEquals(description, detail.getServerSpecification().getDescription());
     }
-    
+
     private void assertContainsVersion(Page<McpServerVersionSummary> page, String version,
         String status) {
         assertNotNull(page);

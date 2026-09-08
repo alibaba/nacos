@@ -58,6 +58,8 @@ public class McpServerVersionDetail extends McpServerVersionSummary {
     
     private Integer onlineCount;
     
+    private boolean writable;
+    
     public String getNamespaceId() {
         return namespaceId;
     }
@@ -152,5 +154,13 @@ public class McpServerVersionDetail extends McpServerVersionSummary {
     
     public void setOnlineCount(Integer onlineCount) {
         this.onlineCount = onlineCount;
+    }
+    
+    public boolean isWritable() {
+        return writable;
+    }
+    
+    public void setWritable(boolean writable) {
+        this.writable = writable;
     }
 }

@@ -214,7 +214,8 @@ class AiMaintainerServiceDefaultMethodsTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(
             httpResult(page), httpResult(detail), httpResult(detail), httpResult(detail),
             httpResult(null), httpResult(summary), httpResult(summary), httpResult(summary),
-            httpResult(summary), httpResult(summary), httpResult(summary), httpResult(labels));
+            httpResult(summary), httpResult(summary), httpResult(summary), httpResult(labels),
+            httpResult("ok"), httpResult("ok"));
         McpServerDraftRequest draftRequest = new McpServerDraftRequest();
         McpServerBasicInfo server = new McpServerBasicInfo();
         server.setName("testMcp");
@@ -249,6 +250,8 @@ class AiMaintainerServiceDefaultMethodsTest {
             aiMaintainerService.offlineMcpServerVersion("public", command).getVersion());
         assertEquals(labels,
             aiMaintainerService.updateMcpServerLabels("public", labelsRequest));
+        assertTrue(aiMaintainerService.updateMcpServerStatus("public", "testMcp", false));
+        assertTrue(aiMaintainerService.updateMcpServerScope("public", "testMcp", "PRIVATE"));
     }
     
     private HttpRestResult<String> httpResult(Object data) {

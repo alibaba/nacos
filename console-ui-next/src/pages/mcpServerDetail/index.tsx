@@ -30,7 +30,6 @@ import {
   ShieldAlert,
   Tags,
   Trash2,
-  UserRound,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,6 +70,9 @@ import {
 } from '@/components/ui/dialog';
 import { McpToolList } from '@/components/ai/mcp/McpToolList';
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
+import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
+import { AiVersionSelectOption } from '@/components/ai/AiVersionSelectOption';
+import { CreateDraftFromVersionButton } from '@/components/ai/CreateDraftFromVersionButton';
 import {
   VersionLifecycleActionBar,
   VersionLifecycleActionDivider,
@@ -127,7 +129,7 @@ export default function McpServerDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
-  const { globalAdmin } = useAuthStore();
+  const { globalAdmin, username } = useAuthStore();
 
   const mcpName = searchParams.get('mcpName') || '';
   const namespaceId = searchParams.get('namespaceId') || currentNamespace || 'public';
@@ -154,6 +156,8 @@ export default function McpServerDetailPage() {
   const [labelsText, setLabelsText] = useState('{}');
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const [enableToggling, setEnableToggling] = useState(false);
+  const [scopeToggling, setScopeToggling] = useState(false);
 
   const loadExactVersion = useCallback(async (version: string) => {
     if (!mcpName || !version) return;
@@ -190,6 +194,10 @@ export default function McpServerDetailPage() {
       if (selected) {
         setSelectedVersion(selected);
         await loadExactVersion(selected);
+      } else {
+        setSelectedVersion('');
+        setLifecycleDetail(null);
+        await fetchMcpDetail(namespaceId, mcpName);
       }
     } catch (error) {
       const syncing = isMcpLifecycleUnavailable(error);
@@ -277,8 +285,11 @@ export default function McpServerDetailPage() {
           toast.success(t('mcp.deleteDraftSuccess'));
           setConfirmAction(null);
           const remaining = versionSummaries.filter((item) => item.version !== selectedVersion);
+          setVersionSummaries(remaining);
           if (remaining.length === 0) {
-            navigate('/mcpServerManagement');
+            setSelectedVersion('');
+            setLifecycleDetail(null);
+            await fetchMcpDetail(namespaceId, mcpName);
           } else {
             await loadLifecycle(remaining[0].version);
           }
@@ -330,6 +341,32 @@ export default function McpServerDetailPage() {
     }
   };
 
+  const handleToggleEnable = async (enabled: boolean) => {
+    setEnableToggling(true);
+    try {
+      await mcpApi.updateStatus({ namespaceId, mcpName, enabled });
+      toast.success(t(enabled ? 'mcp.enableSuccess' : 'mcp.disableSuccess'));
+      if (selectedVersion) await loadExactVersion(selectedVersion);
+    } finally {
+      setEnableToggling(false);
+    }
+  };
+
+  const handleToggleScope = async (isPublic: boolean) => {
+    setScopeToggling(true);
+    try {
+      await mcpApi.updateScope({
+        namespaceId,
+        mcpName,
+        scope: isPublic ? 'PUBLIC' : 'PRIVATE',
+      });
+      toast.success(t('mcp.scopeUpdateSuccess'));
+      if (selectedVersion) await loadExactVersion(selectedVersion);
+    } finally {
+      setScopeToggling(false);
+    }
+  };
+
   // Loading skeleton
   if (detailLoading && !currentMcp) {
     return (
@@ -378,7 +415,7 @@ export default function McpServerDetailPage() {
   const backendEndpoints = mcp.backendEndpoints || [];
   const frontendEndpoints = mcp.frontendEndpoints || [];
   const legacyVersions = mcp.allVersions || [];
-  const versionOptions = lifecycleAvailable
+  const versionOptions: McpServerVersionSummary[] = lifecycleAvailable
     ? versionSummaries
     : legacyVersions.map((item) => ({
         version: item.version,
@@ -392,6 +429,11 @@ export default function McpServerDetailPage() {
   const lifecycleActions = currentStatus
     ? getMcpVersionActions(currentStatus, currentPipelineInfo, globalAdmin)
     : [];
+  const canWriteResource = lifecycleDetail?.writable ?? false;
+  const canManageVisibility = globalAdmin || lifecycleDetail?.owner === username;
+  const resourceEnabled = lifecycleDetail
+    ? lifecycleDetail.resourceStatus !== 'disable'
+    : mcp.enabled;
   const actionLabel = (action: McpVersionAction) => {
     if (action === 'submit'
       && (currentStatus === 'reviewed' || currentPipelineInfo?.status === 'REJECTED')) {
@@ -461,12 +503,19 @@ export default function McpServerDetailPage() {
                   <SelectContent>
                     {versionOptions.map((v) => (
                       <SelectItem key={v.version} value={v.version}>
-                        v{v.version} · {t(`mcp.versionStatus.${v.status}`)}
-                        {v.latest && (
-                          <Badge className="ml-2 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1 py-0 border-0">
-                            {t('mcp.latestVersion')}
-                          </Badge>
-                        )}
+                        <AiVersionSelectOption
+                          version={v.version}
+                          status={v.status}
+                          latest={v.latest}
+                          publishPipelineInfo={v.publishPipelineInfo}
+                          labels={{
+                            latest: t('mcp.latestVersion'),
+                            draft: t('mcp.versionStatus.draft'),
+                            reviewing: t('mcp.versionStatus.reviewing'),
+                            pendingPublish: t('mcp.versionStatus.pendingPublish'),
+                            rejected: t('mcp.versionStatus.rejected'),
+                          }}
+                        />
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -476,19 +525,6 @@ export default function McpServerDetailPage() {
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setVersionSheetOpen(true)}>
                 <History className="mr-1 h-3 w-3" />
                 {t('mcp.versionHistory')}
-              </Button>
-
-              <Separator orientation="vertical" className="h-5" />
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleNewVersion}
-                disabled={!lifecycleAvailable}
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                {t('mcp.newVersion')}
               </Button>
             </div>
           </div>
@@ -526,27 +562,29 @@ export default function McpServerDetailPage() {
                 {/* Version */}
                 {(mcp.versionDetail?.version || mcp.version) && (
                   <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
-                    v{mcp.versionDetail?.version || mcp.version}
+                    {mcp.versionDetail?.version || mcp.version}
                   </span>
                 )}
-                {(lifecycleDetail?.latest || mcp.versionDetail?.is_latest) && (
-                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1.5 py-0 border-0">
-                    Latest
-                  </Badge>
-                )}
               </div>
-              <div className="flex flex-wrap items-center gap-2 mt-1.5 mb-2">
-                <Badge variant="outline" className="text-[10px]">
-                  {lifecycleDetail?.resourceStatus === 'disable' || !mcp.enabled
-                    ? t('mcp.disabled')
-                    : t('mcp.enabled')}
-                </Badge>
-                {currentStatus && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    {t(`mcp.versionStatus.${currentStatus}`)}
-                  </Badge>
-                )}
-              </div>
+              <AiResourceStatusControls
+                enabled={resourceEnabled}
+                scope={lifecycleDetail?.scope}
+                enabledLabel={t('mcp.enabled')}
+                disabledLabel={t('mcp.disabled')}
+                publicLabel={t('mcp.scopePublic')}
+                privateLabel={t('mcp.scopePrivate')}
+                enableDisabled={enableToggling || !canWriteResource}
+                scopeDisabled={scopeToggling || !canWriteResource}
+                onEnabledChange={handleToggleEnable}
+                onScopeChange={handleToggleScope}
+                visibilityLabel={canManageVisibility
+                  ? t('common.visibilityAuthorization.entry')
+                  : undefined}
+                visibilityTooltip={t('common.visibilityAuthorization.title')}
+                onVisibilityClick={canManageVisibility
+                  ? () => setVisibilityOpen(true)
+                  : undefined}
+              />
               {mcp.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                   {mcp.description}
@@ -554,8 +592,15 @@ export default function McpServerDetailPage() {
               )}
 
               {/* Version lifecycle action buttons */}
-              {lifecycleAvailable && lifecycleActions.length > 0 && (
-                <VersionLifecycleActionBar>
+              {lifecycleAvailable && canWriteResource
+                && currentStatus && lifecycleActions.length > 0 && (
+                <VersionLifecycleActionBar warning={!resourceEnabled ? (
+                    <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mb-2">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      {t('mcp.serverDisabledWarning')}
+                    </p>
+                  ) : undefined}
+                >
                   {lifecycleActions.filter((action) => action !== 'forcePublish').map((action) => (
                     <Fragment key={action}>
                       {currentStatus === 'draft' && action === 'submit' && (
@@ -581,6 +626,35 @@ export default function McpServerDetailPage() {
                   )}
                   {lifecycleActions.includes('forcePublish')
                     && renderLifecycleAction('forcePublish')}
+                  {currentStatus === 'online' && (() => {
+                    const hasWorkingVersion = !!(
+                      lifecycleDetail?.editingVersion || lifecycleDetail?.reviewingVersion
+                    );
+                    return (
+                      <CreateDraftFromVersionButton
+                        label={t('mcp.createDraftFrom')}
+                        blocked={hasWorkingVersion}
+                        blockedMessage={t('mcp.draftExistsTip')}
+                        disabled={actionLoading}
+                        divider
+                        onClick={handleNewVersion}
+                      />
+                    );
+                  })()}
+                </VersionLifecycleActionBar>
+              )}
+
+              {lifecycleAvailable && versionOptions.length === 0 && (
+                <VersionLifecycleActionBar>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs gap-1.5"
+                    disabled={actionLoading}
+                    onClick={handleNewVersion}
+                  >
+                    <Plus className="h-3 w-3" />
+                    {t('mcp.newVersion')}
+                  </Button>
                 </VersionLifecycleActionBar>
               )}
             </div>
@@ -912,70 +986,76 @@ export default function McpServerDetailPage() {
             </Card>
           )}
 
+          {lifecycleAvailable && lifecycleDetail && (
+            <>
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    {t('mcp.governance')}
+                  </h2>
+                </div>
+                <CardContent className="p-4 space-y-1">
+                  <InfoCell label={t('mcp.owner')} value={lifecycleDetail.owner || '-'} compact />
+                  <InfoCell label={t('mcp.scope')} value={lifecycleDetail.scope || '-'} compact />
+                  <InfoCell
+                    label={t('mcp.editingVersion')}
+                    value={lifecycleDetail.editingVersion || '-'}
+                    compact
+                  />
+                  <InfoCell
+                    label={t('mcp.reviewingVersion')}
+                    value={lifecycleDetail.reviewingVersion || '-'}
+                    compact
+                  />
+                  <InfoCell
+                    label={t('mcp.onlineCount')}
+                    value={String(lifecycleDetail.onlineCount ?? 0)}
+                    compact
+                  />
+                  <InfoCell
+                    label={t('mcp.latestVersion')}
+                    value={lifecycleDetail.labels?.latest || '-'}
+                    compact
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tags className="h-4 w-4 text-muted-foreground" />
+                    {t('mcp.customLabels')}
+                  </h2>
+                </div>
+                <CardContent className="p-4 space-y-3">
+                  <Textarea
+                    value={labelsText}
+                    onChange={(event) => setLabelsText(event.target.value)}
+                    disabled={!canWriteResource}
+                    rows={5}
+                    className="font-mono text-xs"
+                    placeholder='{"stable":"1.0.0"}'
+                  />
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={updateLabels}
+                    disabled={labelsLoading || !canWriteResource}
+                  >
+                    {labelsLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    {t('common.save')}
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('mcp.latestLabelManaged')}
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
         </div>
       </div>
-
-      {lifecycleAvailable && lifecycleDetail && (
-        <Card className="overflow-hidden py-0 gap-0">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b bg-muted/30">
-            <h2 className="text-sm font-semibold flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              {t('mcp.governance')}
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => setVisibilityOpen(true)}>
-              <UserRound className="mr-1.5 h-3.5 w-3.5" />
-              {t('mcp.visibilityAuthorization')}
-            </Button>
-          </div>
-          <CardContent className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <InfoCell label={t('mcp.owner')} value={lifecycleDetail.owner || '-'} compact />
-              <InfoCell label={t('mcp.scope')} value={lifecycleDetail.scope || '-'} compact />
-              <InfoCell
-                label={t('mcp.editingVersion')}
-                value={lifecycleDetail.editingVersion || '-'}
-                compact
-              />
-              <InfoCell
-                label={t('mcp.reviewingVersion')}
-                value={lifecycleDetail.reviewingVersion || '-'}
-                compact
-              />
-              <InfoCell
-                label={t('mcp.onlineCount')}
-                value={String(lifecycleDetail.onlineCount ?? 0)}
-                compact
-              />
-              <InfoCell
-                label={t('mcp.latestVersion')}
-                value={lifecycleDetail.labels?.latest || '-'}
-                compact
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium flex items-center gap-1.5">
-                  <Tags className="h-3.5 w-3.5" />
-                  {t('mcp.customLabels')}
-                </p>
-                <Button size="sm" className="h-7 text-xs" onClick={updateLabels}
-                  disabled={labelsLoading}>
-                  {labelsLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  {t('common.save')}
-                </Button>
-              </div>
-              <Textarea
-                value={labelsText}
-                onChange={(event) => setLabelsText(event.target.value)}
-                rows={6}
-                className="font-mono text-xs"
-                placeholder='{"stable":"1.0.0"}'
-              />
-              <p className="text-[11px] text-muted-foreground">{t('mcp.latestLabelManaged')}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ===== Version History Sheet ===== */}
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>

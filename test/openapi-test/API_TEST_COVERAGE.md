@@ -268,12 +268,13 @@ newer draft exists after a published version, an omitted `version` resolves the
 latest published version, while the draft remains queryable by its explicit
 version.
 
-The stable Admin and Console MCP scenarios exercise all twelve standard
+The stable Admin and Console MCP scenarios exercise all fourteen standard
 lifecycle routes at their public HTTP boundary after `LIFECYCLE_MANAGED`:
 name-only identity and exact-Version validation, nested legacy ID rejection,
-case-insensitive status input, controlled absent-resource responses, and one
-real draft create/delete pair including resource status, owner, scope, labels,
-working pointers, and online count. They do not accept a `SYNCING` conflict as
+case-insensitive lifecycle and scope input, controlled absent-resource responses,
+resource enable/disable and scope updates, and one real draft create/delete/recreate
+cycle including resource status, owner, scope, writable, labels, working pointers,
+online count, and the retained zero-Version management detail. They do not accept a `SYNCING` conflict as
 an alternative result. `McpMigrationAdminApiOpenApiITCase`, enabled only by the
 dedicated migration workflow, owns the compatibility-router 409 gate,
 historical fixture reconciliation, and post-cutover projection. Focused

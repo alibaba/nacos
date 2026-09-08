@@ -222,8 +222,12 @@ class McpCompatibilityOperationServiceTest {
         assertEquals(summary,
             service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
         assertEquals(labels, service.updateMcpServerLabels(NAMESPACE_ID, MCP_NAME, labels));
+        service.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false);
+        service.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE");
         
         verify(lifecycleService).deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, "1.0.0");
+        verify(lifecycleService).updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false);
+        verify(lifecycleService).updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE");
         verifyNoInteractions(legacyService);
     }
     
@@ -233,6 +237,10 @@ class McpCompatibilityOperationServiceTest {
         
         assertThrows(NacosApiException.class,
             () -> service.getMcpServerVersion(NAMESPACE_ID, MCP_NAME, "1.0.0"));
+        assertThrows(NacosApiException.class,
+            () -> service.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false));
+        assertThrows(NacosApiException.class,
+            () -> service.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, "PRIVATE"));
         
         verifyNoInteractions(legacyService, lifecycleService);
     }

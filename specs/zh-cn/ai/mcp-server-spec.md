@@ -280,7 +280,7 @@ MCP gRPC Publication 继续使用 Connection 维度 Redo。Publication 在首次
 ### 6.1 标准管理生命周期
 
 MCP 使用通用 Draft、Submit、Review、Publish、Force Publish、Redraft、Online、Offline、
-Label 和 Delete 规则。通过标准生命周期 API 发布的内容不可变；修改内容需要创建新 Version
+Label、Resource 启停、可见范围和 Delete 规则。通过标准生命周期 API 发布的内容不可变；修改内容需要创建新 Version
 或经过允许的 Redraft 状态转换。
 
 Admin 前缀为 `/v3/admin/ai/mcp`，Console 在 `/v3/console/ai/mcp` 下镜像相同的
@@ -294,8 +294,15 @@ Form/Query Admin Route，不引入第二套 JSON Body HTTP 契约。
 发布兼容窗口内，两套内置 Console 前端承担不同角色。旧 `console-ui` 继续使用历史
 Direct-online Create/Update Route。`console-ui-next` 只通过标准生命周期 Route 创建或替换 Draft，
 并针对选中的精确 Version 暴露合法的 Submit、Publish、Force-publish、Redraft、Online、Offline、
-Draft Delete、Label 和 Visibility 操作。在达到 `LIFECYCLE_MANAGED` 前，新 UI 可以保留历史读取
+Draft Delete、Label、Resource 启停、公开/私有 Scope 和 Visibility 操作。启停与 Scope 控件以及
+Version Selector 复用 Skill、Prompt 使用的共享 AI Resource Detail 展示，不定义 MCP 专属状态样式。
+在达到 `LIFECYCLE_MANAGED` 前，新 UI 可以保留历史读取
 用于诊断，但必须禁用生命周期 Mutation，且不得回退到历史 Write。
+
+当选中的 Version 为 Online 时，新 UI 提供“基于此版本创建草稿”，不在已有任意 Version 时展示
+通用“新建版本”操作。删除首个且唯一的 Draft 后保留空 MCP Resource，使管理 Detail 仍然可达；
+仅在该零 Version 状态下展示“新建版本”，用于重新创建首个 Draft。Client Serving Query 在新
+Version 发布前仍返回无可服务 Version。
 
 `console-ui-next` 的选中 Version Detail 展示可复制的 MCP Client 配置，不复制内部
 Server/Tools/Resources Definition。远程 Server 使用与兼容 UI 相同的 Frontend-first Endpoint
@@ -329,6 +336,11 @@ Version Summary 和精确 Version Detail 暴露 Version Row 中可选的 `publis
 无法作出该判断。`console-ui-next` 只在当前 Pipeline 结果为 `REJECTED` 时向全局管理员展示
 Force-publish，不把它作为普通 Draft 的默认操作。Redraft 后标记为 `historical` 的拒绝结果不能
 再授权该 Draft 的 Force-publish。
+
+精确 Version Detail 还暴露服务端计算的 `writable` 标记。Resource Status 和 Scope 更新必须具备
+该写权限，只操作 `ai_resource` Metadata，不改变任何 Version 状态，并调度普通的异步 Search
+投影刷新。禁用 Resource 时收敛兼容 Serving Manifest 的 Enable 投影，但不删除 Online Version；
+重新启用时基于同一组 Online Version 恢复 Serving。
 
 ### 6.2 历史 Direct-Online Facade
 

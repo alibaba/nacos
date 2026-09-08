@@ -233,6 +233,22 @@ public class McpProxy {
     }
     
     /**
+     * Enable or disable one MCP Server Resource.
+     */
+    public void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        mcpHandler.updateMcpServerStatus(namespaceId, mcpName, enabled);
+    }
+    
+    /**
+     * Update one MCP Server Resource visibility scope.
+     */
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        mcpHandler.updateMcpServerScope(namespaceId, mcpName, scope);
+    }
+    
+    /**
      * Validate MCP server import request.
      *
      * @param namespaceId namespace id for mcp servers

@@ -24,6 +24,8 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpImportForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerDraftForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerLabelsForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerScopeForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpServerStatusForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpServerVersionListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
@@ -421,6 +423,33 @@ public class ConsoleMcpController {
         Map<String, String> labels = McpRequestUtil.parseMcpServerLabels(form.getLabels());
         return Result.success(mcpProxy.updateMcpServerLabels(form.getNamespaceId(),
             form.getMcpName(), labels));
+    }
+    
+    /**
+     * Enable or disable one MCP Server Resource without changing Version states.
+     */
+    @Since("3.3.0")
+    @PutMapping("/status")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateMcpServerStatus(McpServerStatusForm form)
+        throws NacosException {
+        form.validate();
+        mcpProxy.updateMcpServerStatus(form.getNamespaceId(), form.getMcpName(),
+            form.getEnabled());
+        return Result.success("ok");
+    }
+    
+    /**
+     * Update one MCP Server Resource visibility scope.
+     */
+    @Since("3.3.0")
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateMcpServerScope(McpServerScopeForm form)
+        throws NacosException {
+        form.validate();
+        mcpProxy.updateMcpServerScope(form.getNamespaceId(), form.getMcpName(), form.getScope());
+        return Result.success("ok");
     }
     
     /**

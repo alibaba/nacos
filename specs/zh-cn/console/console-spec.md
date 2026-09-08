@@ -117,6 +117,11 @@ Console 负责浏览器入口和静态资源服务行为：
 
 Console guide 和 announcement 内容属于 UI 展示数据，不是标准 Core 服务端状态，也不得作为领域配置使用。
 
+生命周期托管的 AI Resource Detail Page 应共享相同的状态和 Version 展示组件。MCP、Skill 和 Prompt
+不得分别重复实现启用/禁用、公开/私有、最新、草稿、审核中、待发布或审核拒绝等视觉状态。MCP Detail
+从选中的 Online Version 创建新 Draft；只有保留的 MCP Resource 在唯一首个 Draft 删除后不存在任何
+Version 时，才展示通用“新建版本”入口。
+
 ## 6. Handler 与 Proxy 边界
 
 Console Controller 必须通过 proxy 和 handler interface 进行委托，不应把 UI Controller 直接耦合到

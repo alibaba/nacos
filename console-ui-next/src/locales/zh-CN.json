@@ -452,7 +452,9 @@
       "reviewing": "审核中",
       "reviewed": "审核完成",
       "online": "已上线",
-      "offline": "已下线"
+      "offline": "已下线",
+      "pendingPublish": "待发布",
+      "rejected": "审核未通过"
     },
     "lifecycleAction": {
       "editDraft": "编辑草稿",
@@ -461,8 +463,8 @@
       "publish": "发布",
       "forcePublish": "强制发布",
       "redraft": "退回草稿",
-      "online": "上线",
-      "offline": "下线",
+      "online": "版本上线",
+      "offline": "版本下线",
       "deleteDraft": "删除草稿"
     },
     "lifecycleActionSuccess": "版本状态更新成功",
@@ -475,6 +477,12 @@
     "draftCreateSuccess": "MCP Server 草稿创建成功",
     "draftUpdateSuccess": "MCP Server 草稿更新成功",
     "deleteDraftSuccess": "草稿删除成功",
+    "createDraftFrom": "基于此版本创建草稿",
+    "draftExistsTip": "已存在编辑中或审核中的版本",
+    "scopePublic": "公开",
+    "scopePrivate": "私有",
+    "scopeUpdateSuccess": "可见范围更新成功",
+    "serverDisabledWarning": "MCP Server 当前已禁用，版本操作不会自动启用资源。",
     "onlyDraftEditable": "只有草稿状态的版本可以编辑",
     "governance": "资源治理",
     "visibilityAuthorization": "可见性授权",

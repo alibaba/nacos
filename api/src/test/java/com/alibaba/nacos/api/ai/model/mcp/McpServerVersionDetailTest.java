@@ -23,6 +23,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpServerVersionDetailTest {
     
@@ -51,6 +52,7 @@ class McpServerVersionDetailTest {
         detail.setEditingVersion("1.1.0");
         detail.setReviewingVersion("1.2.0");
         detail.setOnlineCount(1);
+        detail.setWritable(true);
         
         assertEquals("public", detail.getNamespaceId());
         assertEquals("weather", detail.getMcpName());
@@ -72,5 +74,6 @@ class McpServerVersionDetailTest {
         assertEquals("1.1.0", detail.getEditingVersion());
         assertEquals("1.2.0", detail.getReviewingVersion());
         assertEquals(1, detail.getOnlineCount());
+        assertTrue(detail.isWritable());
     }
 }

@@ -332,7 +332,7 @@ heartbeat, and redo.
 ### 6.1 Standard Management Lifecycle
 
 MCP uses the common draft, submit, review, publish, force-publish, redraft,
-online, offline, label, and delete rules. Published content is immutable through
+online, offline, label, resource enablement, visibility-scope, and delete rules. Published content is immutable through
 standard lifecycle APIs; changing it creates a new Version or follows the
 allowed redraft transition.
 
@@ -353,9 +353,17 @@ roles during this release window. The legacy `console-ui` remains on the
 historical direct-online create and update routes. `console-ui-next` creates or
 replaces drafts only through the standard lifecycle routes and exposes the
 valid submit, publish, force-publish, redraft, online, offline, draft-delete,
-label, and Visibility actions for the selected exact Version. Before
+label, Resource enable/disable, public/private scope, and Visibility actions for the selected
+exact Version. The enable and scope controls and Version selector reuse the shared AI Resource
+detail presentation used by Skill and Prompt rather than defining MCP-only status styles. Before
 `LIFECYCLE_MANAGED`, the next UI may retain historical reads for diagnosis but
 must disable lifecycle mutations and must not fall back to a historical write.
+
+When the selected Version is online, the next UI offers creation of a new draft based on that
+exact Version. It does not expose a generic new-Version action while any Version exists. Deleting
+the first and only draft retains the empty MCP Resource so management detail remains reachable;
+in that zero-Version state only, the UI exposes a new-Version action that creates the replacement
+first draft. Client serving queries still report no serving Version until one is published.
 
 The selected Version detail in `console-ui-next` presents copyable MCP Client
 configuration instead of copying the internal Server/Tools/Resources
@@ -403,6 +411,12 @@ because both outcomes are `reviewed`. `console-ui-next` presents force-publish
 only to a global administrator after the current Pipeline result is
 `REJECTED`, and never as an ordinary draft action. A rejection marked
 `historical` after redraft cannot authorize force-publishing that draft.
+
+Exact Version detail also exposes a server-derived `writable` flag. Resource status and scope
+updates require that write authority, operate only on `ai_resource` metadata, leave every Version
+state unchanged, and schedule the ordinary asynchronous Search projection refresh. Disabling a
+Resource converges the compatibility Serving Manifest's enabled projection without deleting its
+online Versions; re-enabling restores serving from the same online set.
 
 ### 6.2 Historical Direct-Online Facades
 

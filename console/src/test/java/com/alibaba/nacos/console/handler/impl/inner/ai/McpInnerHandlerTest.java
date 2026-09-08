@@ -188,7 +188,11 @@ class McpInnerHandlerTest {
         assertEquals(summary,
             mcpInnerHandler.offlineMcpServerVersion("ns", "test", "1.0.0"));
         assertEquals(labels, mcpInnerHandler.updateMcpServerLabels("ns", "test", labels));
+        mcpInnerHandler.updateMcpServerStatus("ns", "test", false);
+        mcpInnerHandler.updateMcpServerScope("ns", "test", "PRIVATE");
         verify(lifecycleOperationService).deleteMcpServerDraft("ns", "test", "1.0.0");
+        verify(lifecycleOperationService).updateMcpServerStatus("ns", "test", false);
+        verify(lifecycleOperationService).updateMcpServerScope("ns", "test", "PRIVATE");
     }
     
     @Test

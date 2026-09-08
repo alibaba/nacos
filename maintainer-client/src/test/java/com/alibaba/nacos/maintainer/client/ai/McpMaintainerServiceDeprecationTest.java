@@ -49,7 +49,7 @@ class McpMaintainerServiceDeprecationTest {
         "listMcpServerVersions", "getMcpServerVersion", "deleteMcpServerDraft",
         "submitMcpServerVersion", "publishMcpServerVersion", "forcePublishMcpServerVersion",
         "redraftMcpServerVersion", "onlineMcpServerVersion", "offlineMcpServerVersion",
-        "updateMcpServerLabels"));
+        "updateMcpServerLabels", "updateMcpServerStatus", "updateMcpServerScope"));
     
     @Test
     void legacyMethodsWithCanonicalReplacementsShouldBeDeprecated() {
@@ -77,7 +77,7 @@ class McpMaintainerServiceDeprecationTest {
         }
         assertEquals(21, deprecatedMethodCount);
         assertEquals(9, retainedMethodCount);
-        assertEquals(24, canonicalMethodCount);
+        assertEquals(28, canonicalMethodCount);
     }
     
     @Test

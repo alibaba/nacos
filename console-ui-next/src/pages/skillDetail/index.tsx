@@ -26,7 +26,6 @@ import {
   Plus,
   Sparkles,
   AlertTriangle,
-  AlertCircle,
   Loader2,
   ShieldAlert,
   MessageSquare,
@@ -87,6 +86,8 @@ import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
+import { AiVersionSelectOption } from '@/components/ai/AiVersionSelectOption';
+import { CreateDraftFromVersionButton } from '@/components/ai/CreateDraftFromVersionButton';
 import {
   VersionLifecycleActionBar,
   VersionLifecycleActionDivider,
@@ -790,41 +791,23 @@ export default function SkillDetailPage() {
                     <SelectValue placeholder={t('skill.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {versionOptions.map((version) => {
-                      const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
-                      const isVersionPendingPublish = (version.status === 'reviewed' && vPipeline?.status !== 'REJECTED') || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
-                      const isVersionRejected = version.status === 'reviewed' && vPipeline?.status === 'REJECTED';
-                      return (
+                    {versionOptions.map((version) => (
                       <SelectItem key={version.version} value={version.version}>
-                        <span className="flex items-center gap-2">
-                          <span>{version.version}</span>
-                          {latestVersion === version.version && (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1 py-0 border-0">
-                              {t('skill.latestVersion')}
-                            </Badge>
-                          )}
-                          {version.status === 'draft' && (
-                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 text-[10px] px-1 py-0 border-0">
-                              {t('skill.versionStatus.draft')}
-                            </Badge>
-                          )}
-                          {isVersionRejected && (
-                            <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0">
-                              {t('skill.versionStatus.rejected')}
-                            </Badge>
-                          )}
-                          {!isVersionRejected && (version.status === 'reviewing' || version.status === 'reviewed') && (
-                            <Badge className={isVersionPendingPublish
-                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
-                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
-                            }>
-                              {t(isVersionPendingPublish ? 'skill.versionStatus.pendingPublish' : 'skill.versionStatus.reviewing')}
-                            </Badge>
-                          )}
-                        </span>
+                        <AiVersionSelectOption
+                          version={version.version}
+                          status={version.status}
+                          latest={latestVersion === version.version}
+                          publishPipelineInfo={version.publishPipelineInfo}
+                          labels={{
+                            latest: t('skill.latestVersion'),
+                            draft: t('skill.versionStatus.draft'),
+                            reviewing: t('skill.versionStatus.reviewing'),
+                            pendingPublish: t('skill.versionStatus.pendingPublish'),
+                            rejected: t('skill.versionStatus.rejected'),
+                          }}
+                        />
                       </SelectItem>
-                      );
-                    })}
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -1117,31 +1100,15 @@ export default function SkillDetailPage() {
                   {/* Create new draft (when viewing online/offline version) */}
                   {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') && (() => {
                     const hasDraft = !!(detail.editingVersion || detail.reviewingVersion);
-                    const btn = (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1.5"
-                        disabled={actionLoading || hasDraft}
+                    return (
+                      <CreateDraftFromVersionButton
+                        label={t('skill.createDraftFrom')}
+                        blocked={hasDraft}
+                        blockedMessage={t('skill.draftExistsTip')}
+                        disabled={actionLoading}
                         onClick={() => handleCreateDraft(selectedVersion)}
-                      >
-                        <Plus className="h-3 w-3" />
-                        {t('skill.createDraftFrom')}
-                      </Button>
+                      />
                     );
-                    return hasDraft ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span>{btn}</span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
-                          <span className="flex items-center gap-1.5">
-                            <AlertCircle className="h-3 w-3 shrink-0" />
-                            {t('skill.draftExistsTip')}
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : btn;
                   })()}
                 </VersionLifecycleActionBar>
               )}

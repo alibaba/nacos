@@ -44,7 +44,6 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -78,6 +77,8 @@ import { parsePipelineInfo } from '@/types/skill';
 import { PromptVersionTimeline } from '@/pages/promptManagement/components/PromptVersionTimeline';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
+import { AiVersionSelectOption } from '@/components/ai/AiVersionSelectOption';
+import { CreateDraftFromVersionButton } from '@/components/ai/CreateDraftFromVersionButton';
 import {
   VersionLifecycleActionBar,
   VersionLifecycleActionDivider,
@@ -723,41 +724,23 @@ export default function PromptDetailPage() {
                     <SelectValue placeholder={t('prompt.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {meta.versionDetails.map((v) => {
-                      const vPipeline = parsePipelineInfo(v.publishPipelineInfo);
-                      const isVersionPendingPublish = (v.status === 'reviewed' && vPipeline?.status !== 'REJECTED') || (v.status === 'reviewing' && vPipeline?.status === 'APPROVED');
-                      const isVersionRejected = v.status === 'reviewed' && vPipeline?.status === 'REJECTED';
-                      return (
+                    {meta.versionDetails.map((v) => (
                       <SelectItem key={v.version} value={v.version}>
-                        <span className="flex items-center gap-2">
-                          <span>{v.version}</span>
-                          {meta.labels?.latest === v.version && (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1 py-0 border-0">
-                              {t('prompt.latestVersion')}
-                            </Badge>
-                          )}
-                          {v.status === 'draft' && (
-                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 text-[10px] px-1 py-0 border-0">
-                              {t('prompt.versionStatus.draft')}
-                            </Badge>
-                          )}
-                          {isVersionRejected && (
-                            <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] px-1 py-0 border-0">
-                              {t('prompt.versionStatus.rejected')}
-                            </Badge>
-                          )}
-                          {!isVersionRejected && (v.status === 'reviewing' || v.status === 'reviewed') && (
-                            <Badge className={isVersionPendingPublish
-                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
-                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
-                            }>
-                              {t(isVersionPendingPublish ? 'prompt.versionStatus.pendingPublish' : 'prompt.versionStatus.reviewing')}
-                            </Badge>
-                          )}
-                        </span>
+                        <AiVersionSelectOption
+                          version={v.version}
+                          status={v.status}
+                          latest={meta.labels?.latest === v.version}
+                          publishPipelineInfo={v.publishPipelineInfo}
+                          labels={{
+                            latest: t('prompt.latestVersion'),
+                            draft: t('prompt.versionStatus.draft'),
+                            reviewing: t('prompt.versionStatus.reviewing'),
+                            pendingPublish: t('prompt.versionStatus.pendingPublish'),
+                            rejected: t('prompt.versionStatus.rejected'),
+                          }}
+                        />
                       </SelectItem>
-                    );
-                    })}
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -967,23 +950,15 @@ export default function PromptDetailPage() {
 
                     {/* Create draft from (online/offline) */}
                     {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') && (() => {
-                      const btn = (
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" disabled={hasDraft || actionLoading} onClick={() => handleCreateDraft(selectedVersion)}>
-                          <Plus className="h-3 w-3" />
-                          {t('prompt.createDraftFrom')}
-                        </Button>
+                      return (
+                        <CreateDraftFromVersionButton
+                          label={t('prompt.createDraftFrom')}
+                          blocked={hasDraft}
+                          blockedMessage={t('prompt.draftExistsTip')}
+                          disabled={actionLoading}
+                          onClick={() => handleCreateDraft(selectedVersion)}
+                        />
                       );
-                      return hasDraft ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild><span>{btn}</span></TooltipTrigger>
-                          <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
-                            <span className="flex items-center gap-1.5">
-                              <AlertCircle className="h-3 w-3 shrink-0" />
-                              {t('prompt.draftExistsTip')}
-                            </span>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : btn;
                     })()}
                 </VersionLifecycleActionBar>
               )}

@@ -191,6 +191,18 @@ public interface McpHandler {
         Map<String, String> labels) throws NacosException;
     
     /**
+     * Enable or disable one MCP Server Resource.
+     */
+    void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException;
+    
+    /**
+     * Update one MCP Server Resource visibility scope.
+     */
+    void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException;
+    
+    /**
      * Validate MCP server import request.
      *
      * @param namespaceId namespace id for mcp servers

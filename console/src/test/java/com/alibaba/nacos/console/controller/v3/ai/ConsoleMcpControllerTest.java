@@ -219,9 +219,33 @@ class ConsoleMcpControllerTest {
         assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
             "/v3/console/ai/mcp/labels").param("namespaceId", "nacos-default-mcp")
             .param("mcpName", "test")).andReturn().getResponse().getStatus());
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/status").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test").param("enabled", "false"))
+            .andReturn().getResponse().getStatus());
+        assertEquals(200, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/scope").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test").param("scope", "private"))
+            .andReturn().getResponse().getStatus());
         
         verify(mcpProxy).deleteMcpServerDraft("nacos-default-mcp", "test", "1.0.0");
         verify(mcpProxy).updateMcpServerLabels("nacos-default-mcp", "test", Map.of());
+        verify(mcpProxy).updateMcpServerStatus("nacos-default-mcp", "test", false);
+        verify(mcpProxy).updateMcpServerScope("nacos-default-mcp", "test", "private");
+    }
+    
+    @Test
+    void testStandardResourceUpdatesValidateRequiredValues() throws Exception {
+        assertEquals(400, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/status").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test")).andReturn().getResponse().getStatus());
+        assertEquals(400, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/scope").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test")).andReturn().getResponse().getStatus());
+        assertEquals(400, mockMvc.perform(MockMvcRequestBuilders.put(
+            "/v3/console/ai/mcp/scope").param("namespaceId", "nacos-default-mcp")
+            .param("mcpName", "test").param("scope", "team"))
+            .andReturn().getResponse().getStatus());
     }
     
     @Test

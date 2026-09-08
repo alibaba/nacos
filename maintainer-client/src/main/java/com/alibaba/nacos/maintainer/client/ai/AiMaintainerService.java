@@ -235,6 +235,20 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return mcp().updateMcpServerLabels(namespaceId, request);
     }
     
+    @Since("3.3.0")
+    @Override
+    default boolean updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        return mcp().updateMcpServerStatus(namespaceId, mcpName, enabled);
+    }
+    
+    @Since("3.3.0")
+    @Override
+    default boolean updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        return mcp().updateMcpServerScope(namespaceId, mcpName, scope);
+    }
+    
     @Since("3.2.0")
     @Override
     default boolean registerAgent(AgentCard agentCard, String namespaceId, String registrationType)

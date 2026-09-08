@@ -904,6 +904,63 @@ class McpLifecycleOperationServiceTest {
     }
     
     @Test
+    void testStandardResourceStatusAndScopeUseLifecycleMeta() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "online"), null, null, null);
+        
+        service.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, false);
+        
+        assertEquals(AiResourceConstants.META_STATUS_DISABLE, resource.get().getStatus());
+        assertFalse(manifest.get().isEnabled());
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE,
+            versions.get(VERSION_ONE).getStatus());
+        
+        service.updateMcpServerScope(NAMESPACE_ID, MCP_NAME, VisibilityConstants.SCOPE_PRIVATE);
+        
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, resource.get().getScope());
+        McpServerVersionDetail privateDetail = service.getMcpServerVersion(NAMESPACE_ID,
+            MCP_NAME, VERSION_ONE);
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, privateDetail.getScope());
+        
+        service.updateMcpServerStatus(NAMESPACE_ID, MCP_NAME, true);
+        
+        assertEquals(AiResourceConstants.META_STATUS_ENABLE, resource.get().getStatus());
+        assertTrue(manifest.get().isEnabled());
+        verify(indexMaintenanceService, times(4)).schedule(NAMESPACE_ID,
+            AiResourceConstants.RESOURCE_TYPE_MCP, MCP_NAME);
+    }
+    
+    @Test
+    void testDeletingOnlyDraftRetainsResourceAndAllowsFirstVersionRecreation()
+        throws Exception {
+        service.createMcpServerDraft(NAMESPACE_ID, server(VERSION_ONE, "first draft"), null,
+            null, null);
+        
+        service.deleteMcpServerDraft(NAMESPACE_ID, MCP_NAME, VERSION_ONE);
+        
+        assertNotNull(resource.get());
+        assertTrue(versions.isEmpty());
+        Page<McpServerBasicInfo> page = service.listMcpServerWithPage(NAMESPACE_ID, MCP_NAME,
+            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
+        assertEquals(1, page.getTotalCount());
+        assertEquals(MCP_NAME, page.getPageItems().get(0).getName());
+        assertNull(page.getPageItems().get(0).getVersionDetail());
+        McpServerDetailInfo emptyDetail = service.getMcpServerDetail(NAMESPACE_ID, null,
+            MCP_NAME, null);
+        assertEquals(MCP_NAME, emptyDetail.getName());
+        assertTrue(emptyDetail.getAllVersions().isEmpty());
+        assertThrows(NacosException.class, () -> service.getMcpServerDetail(NAMESPACE_ID, null,
+            MCP_NAME, VERSION_ONE));
+        assertThrows(NacosException.class,
+            () -> service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null));
+        
+        McpServerVersionDetail recreated = service.createMcpServerDraft(NAMESPACE_ID,
+            server(VERSION_ONE, "recreated draft"), null, null, null);
+        
+        assertEquals(VERSION_ONE, recreated.getVersion());
+        assertEquals(AiResourceConstants.VERSION_STATUS_DRAFT, recreated.getStatus());
+    }
+    
+    @Test
     void testStandardDraftCreateUsesExistingResourceAndRejectsDuplicateVersion()
         throws Exception {
         service.createMcpServerDraft(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null,
@@ -1319,6 +1376,15 @@ class McpLifecycleOperationServiceTest {
                 current.setExt(update.getExt());
                 current.setVersionInfo(update.getVersionInfo());
                 current.setMetaVersion(expected + 1);
+                return true;
+            });
+        when(resourcePersistService.updateScope(anyString(), anyString(), anyString(), anyString()))
+            .thenAnswer(invocation -> {
+                AiResource current = resource.get();
+                if (current == null) {
+                    return false;
+                }
+                current.setScope(invocation.getArgument(3));
                 return true;
             });
         when(resourcePersistService.delete(anyString(), anyString(), anyString()))

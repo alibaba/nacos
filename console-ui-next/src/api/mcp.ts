@@ -115,6 +115,26 @@ export const mcpApi = {
       headers: FORM_HEADERS,
     }) as ApiResult<Record<string, string>>,
 
+  /** Enable or disable one lifecycle-managed MCP server resource. */
+  updateStatus: (data: {
+    namespaceId?: string;
+    mcpName: string;
+    enabled: boolean;
+  }): ApiResult<string> =>
+    client.put(`${BASE}/status`, toMcpFormParams(data), {
+      headers: FORM_HEADERS,
+    }) as ApiResult<string>,
+
+  /** Update one lifecycle-managed MCP server resource scope. */
+  updateScope: (data: {
+    namespaceId?: string;
+    mcpName: string;
+    scope: 'PUBLIC' | 'PRIVATE';
+  }): ApiResult<string> =>
+    client.put(`${BASE}/scope`, toMcpFormParams(data), {
+      headers: FORM_HEADERS,
+    }) as ApiResult<string>,
+
   /** Import tools from an external MCP server endpoint */
   importToolsFromMcp: (params: {
     transportType: string;

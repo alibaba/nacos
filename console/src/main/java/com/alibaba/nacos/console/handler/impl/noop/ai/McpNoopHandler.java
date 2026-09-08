@@ -170,6 +170,18 @@ public class McpNoopHandler implements McpHandler {
         throw disabled();
     }
     
+    @Override
+    public void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
+        throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
+    public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
+        throws NacosException {
+        throw disabled();
+    }
+    
     @Deprecated
     @Override
     public McpServerImportValidationResult validateImport(String namespaceId,
