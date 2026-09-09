@@ -497,6 +497,7 @@
     "labelsUpdateSuccess": "Version labels updated",
     "versionHistory": "Version History",
     "totalVersions": "{{count}} versions in total",
+    "noVersions": "No versions",
     "currentVersion": "Current",
     "toolCount": "{{count}} tools",
     "expandAll": "Expand All",

@@ -497,6 +497,7 @@
     "labelsUpdateSuccess": "版本标签更新成功",
     "versionHistory": "版本历史",
     "totalVersions": "共 {{count}} 个版本",
+    "noVersions": "暂无版本",
     "currentVersion": "当前版本",
     "toolCount": "{{count}} 个工具",
     "expandAll": "展开全部",

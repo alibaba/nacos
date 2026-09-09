@@ -11,6 +11,7 @@ import {
   ExternalLink,
   FilePenLine,
   Globe,
+  History,
   Layers3,
   Pencil,
   Plus,
@@ -25,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { agentApi } from '@/api/agent';
 import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
+import { AiVersionSelectOption } from '@/components/ai/AiVersionSelectOption';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import {
   VersionLifecycleActionBar,
@@ -43,6 +45,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentStore } from '@/stores/agent-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -151,6 +160,7 @@ export default function AgentDetailPage() {
   } = useAgentStore();
   const [selectedVersion, setSelectedVersion] = useState(requestedVersion);
   const [selectedProtocol, setSelectedProtocol] = useState('');
+  const [versionSheetOpen, setVersionSheetOpen] = useState(false);
   const [versionStatus, setVersionStatus] = useState<AgentVersionStatus | 'ALL'>('ALL');
   const [versionPageNo, setVersionPageNo] = useState(1);
   const [actionLoading, setActionLoading] = useState(false);
@@ -393,56 +403,32 @@ export default function AgentDetailPage() {
               {t('agent.backToList')}
             </Button>
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-                <SelectTrigger className="h-7 w-[160px] bg-background/80 text-xs">
-                  <SelectValue placeholder={t('agent.selectVersion')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(versionPage?.pageItems || []).map((version) => {
-                    const pipelineInfo = parsePipelineInfo(version.publishPipelineInfo);
-                    const pendingPublish = (version.status === 'reviewed'
-                      && pipelineInfo?.status !== 'REJECTED')
-                      || (version.status === 'reviewing'
-                        && pipelineInfo?.status === 'APPROVED');
-                    const rejected = version.status === 'reviewed'
-                      && pipelineInfo?.status === 'REJECTED';
-                    return (
+              {selectedVersion && (
+                <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                  <SelectTrigger className="h-7 w-[160px] bg-background/80 text-xs">
+                    <SelectValue placeholder={t('agent.selectVersion')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(versionPage?.pageItems || []).map((version) => (
                       <SelectItem key={version.version} value={version.version}>
-                        <span className="flex items-center gap-2">
-                          <span>{version.version}</span>
-                          {latestVersion === version.version && (
-                            <Badge className="border-0 bg-emerald-100 px-1 py-0 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                              {t('agent.latestBadge')}
-                            </Badge>
-                          )}
-                          {version.status === 'draft' && (
-                            <Badge className="border-0 bg-amber-100 px-1 py-0 text-[10px] text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                              {t('agent.statusDraft')}
-                            </Badge>
-                          )}
-                          {rejected && (
-                            <Badge className="border-0 bg-red-100 px-1 py-0 text-[10px] text-red-700 dark:bg-red-950/50 dark:text-red-300">
-                              {t('agent.statusRejected')}
-                            </Badge>
-                          )}
-                          {!rejected
-                            && (version.status === 'reviewing'
-                              || version.status === 'reviewed') && (
-                            <Badge className={pendingPublish
-                              ? 'border-0 bg-teal-100 px-1 py-0 text-[10px] text-teal-700 dark:bg-teal-950/50 dark:text-teal-300'
-                              : 'border-0 bg-blue-100 px-1 py-0 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'}
-                            >
-                              {t(pendingPublish
-                                ? 'agent.statusPendingPublish'
-                                : 'agent.statusReviewing')}
-                            </Badge>
-                          )}
-                        </span>
+                        <AiVersionSelectOption
+                          version={version.version}
+                          status={version.status}
+                          latest={latestVersion === version.version}
+                          publishPipelineInfo={version.publishPipelineInfo}
+                          labels={{
+                            latest: t('agent.latestBadge'),
+                            draft: t('agent.statusDraft'),
+                            reviewing: t('agent.statusReviewing'),
+                            pendingPublish: t('agent.statusPendingPublish'),
+                            rejected: t('agent.statusRejected'),
+                          }}
+                        />
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -452,16 +438,15 @@ export default function AgentDetailPage() {
                 <Pencil className="mr-1.5 h-3.5 w-3.5" />
                 {t('agent.editMetadata')}
               </Button>
-              {currentOverview?.versionPage.totalCount === 0 && (
-                <Button
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={() => editPath('draft-create')}
-                >
-                  <FilePenLine className="mr-1.5 h-3.5 w-3.5" />
-                  {t('agent.createDraft')}
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setVersionSheetOpen(true)}
+              >
+                <History className="mr-1 h-3 w-3" />
+                {t('agent.versionHistory')}
+              </Button>
             </div>
           </div>
           <div className="flex items-start gap-4">
@@ -573,6 +558,18 @@ export default function AgentDetailPage() {
                       {t('agent.createDraftFrom')}
                     </Button>
                   )}
+                </VersionLifecycleActionBar>
+              )}
+              {!currentVersion && currentOverview.versionPage.totalCount === 0 && (
+                <VersionLifecycleActionBar>
+                  <Button
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => editPath('draft-create')}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {t('agent.createDraft')}
+                  </Button>
                 </VersionLifecycleActionBar>
               )}
             </div>
@@ -800,11 +797,35 @@ export default function AgentDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="py-0 gap-0 overflow-hidden">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold">{t('agent.versionHistory')}</h2>
-            </div>
-            <CardContent className="p-5 space-y-3">
+        </div>
+      </div>
+
+      <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
+        <SheetContent className="flex flex-col p-0 sm:max-w-md">
+          <SheetHeader className="shrink-0 border-b px-6 pb-4 pt-6">
+            <SheetTitle className="flex items-center gap-2">
+              <History className="h-4.5 w-4.5 text-violet-500" />
+              {t('agent.versionHistory')}
+            </SheetTitle>
+            <SheetDescription>
+              {t('agent.totalVersions', {
+                count: versionPage?.totalCount ?? currentOverview.versionPage.totalCount,
+              })}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            {currentOverview.versionPage.totalCount === 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mb-3 w-full"
+                onClick={() => editPath('draft-create')}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                {t('agent.createDraft')}
+              </Button>
+            )}
+            {currentOverview.versionPage.totalCount > 0 && (
               <Select
                 value={versionStatus}
                 onValueChange={(value) => {
@@ -812,7 +833,7 @@ export default function AgentDetailPage() {
                   setVersionPageNo(1);
                 }}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mb-3"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">{t('common.all')}</SelectItem>
                   {VERSION_STATUSES.map((status) => (
@@ -822,48 +843,69 @@ export default function AgentDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            <div className="space-y-2">
               {(versionPage?.pageItems || []).map((version: AgentVersionSummary) => (
                 <button
                   key={version.version}
-                  className="w-full rounded-lg border p-3 text-left hover:bg-muted/40"
-                  onClick={() => setSelectedVersion(version.version)}
+                  className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/40 ${
+                    version.version === selectedVersion
+                      ? 'border-violet-500/40 bg-violet-500/5'
+                      : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedVersion(version.version);
+                    setVersionSheetOpen(false);
+                  }}
                 >
                   <div className="flex justify-between gap-2">
-                    <span className="font-mono text-sm">{version.version}</span>
+                    <span className="font-mono text-sm font-medium">{version.version}</span>
                     <Badge variant="outline">
                       {versionStatusLabel(t, version.status)}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+                    {version.author && <span>{version.author}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(version.updateTime)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {version.changeDescription || '-'}
                   </p>
                 </button>
               ))}
-              {(versionPage?.pagesAvailable || 0) > 1 && (
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={versionPageNo <= 1}
-                    onClick={() => setVersionPageNo((value) => value - 1)}
-                  >
-                    {t('common.previous')}
-                  </Button>
-                  <span className="text-xs">{versionPageNo}/{versionPage?.pagesAvailable}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={versionPageNo >= (versionPage?.pagesAvailable || 1)}
-                    onClick={() => setVersionPageNo((value) => value + 1)}
-                  >
-                    {t('common.next')}
-                  </Button>
-                </div>
+              {(versionPage?.pageItems || []).length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  {t('agent.noVersions')}
+                </p>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+            {(versionPage?.pagesAvailable || 0) > 1 && (
+              <div className="mt-3 flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={versionPageNo <= 1}
+                  onClick={() => setVersionPageNo((value) => value - 1)}
+                >
+                  {t('common.previous')}
+                </Button>
+                <span className="text-xs">{versionPageNo}/{versionPage?.pagesAvailable}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={versionPageNo >= (versionPage?.pagesAvailable || 1)}
+                  onClick={() => setVersionPageNo((value) => value + 1)}
+                >
+                  {t('common.next')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
       <VisibilityAuthorizationDialog
         open={visibilityDialogOpen}
         namespaceId={namespaceId}
