@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ModuleAuthorizationITCase extends AuthITCase {
 
-    private static final int EXPECTED_SECURED_OPERATION_COUNT = 386;
+    private static final int EXPECTED_SECURED_OPERATION_COUNT = 390;
 
     private static final String OPERATION_COVERAGE_MANIFEST =
             "test/openapi-test/AUTHORIZATION_OPERATION_COVERAGE.md";
@@ -87,7 +87,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("ConsoleCopilotController", 4),
             Map.entry("ConsoleHistoryController", 4),
             Map.entry("ConsoleInstanceController", 3),
-            Map.entry("ConsoleMcpController", 20),
+            Map.entry("ConsoleMcpController", 22),
             Map.entry("ConsoleNamespaceController", 6),
             Map.entry("ConsolePipelineController", 4),
             Map.entry("ConsolePluginController", 5),
@@ -100,7 +100,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("InstanceControllerV3", 8),
             Map.entry("InstanceOpenApiController", 3),
             Map.entry("ListenerControllerV3", 1),
-            Map.entry("McpAdminController", 17),
+            Map.entry("McpAdminController", 19),
             Map.entry("McpClientController", 6),
             Map.entry("MetricsControllerV3", 2),
             Map.entry("NacosClusterControllerV3", 4),
