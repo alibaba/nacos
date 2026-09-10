@@ -106,6 +106,12 @@ JRaft 是当前使用的多 group CP 运行时。
 
 ### JRaft 传输鉴权
 
+Nacos 使用 JRaft gRPC transport，不依赖可选的 Bolt transport 或 SOFA Hessian。
+Nacos RPC factory 必须在该依赖集合下正常创建 client 和 server，并共享注册的 Protobuf parser
+与响应 marshaller。Server 创建保留 JRaft 1.4.1 的 endpoint 绑定规则：endpoint IP 非空白时
+绑定指定地址，空白时绑定通配地址。现有 `jraft.grpc.max_inbound_message_size.bytes` 配置和
+configuration helper 必须在 server 启动前继续生效。
+
 JRaft 原生 gRPC 是服务端间 inner transport。新版本 JRaft client 始终通过 gRPC
 `CallCredentials` 携带配置的 Nacos server identity，服务端始终在分发给 JRaft processor 前通过
 `ServerInterceptor` 校验。

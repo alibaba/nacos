@@ -122,6 +122,14 @@ contracts unless a domain API explicitly defines them.
 
 ### JRaft Transport Authentication
 
+Nacos uses the JRaft gRPC transport without the optional Bolt transport or SOFA
+Hessian dependency. The Nacos RPC factory must construct both clients and servers
+on that classpath, sharing registered Protobuf parsers and response marshallers.
+Server creation preserves JRaft 1.4.1 endpoint binding: a non-blank endpoint IP
+selects the listen address, while a blank IP uses a wildcard address. The existing
+`jraft.grpc.max_inbound_message_size.bytes` property and configuration helper
+remain effective before server startup.
+
 JRaft native gRPC is an inner server-to-server transport. New JRaft clients
 always attach the configured Nacos server identity through gRPC
 `CallCredentials`, and the server always validates it in a
