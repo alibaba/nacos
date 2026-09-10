@@ -151,21 +151,23 @@ The complete implemented scenario matrix is maintained in
 3. Decide whether the deprecated `NamingMaintainService` still warrants new IT
    before its removal window.
 
-## AI Resource Interface Compatibility (3.3)
+## AI Resource Interface Compatibility (3.3 phase 1)
+
+This increment is separate from the historical surface denominator. The scope
+is interface delegation and resource transport; A2A-to-RAD conversion is deferred.
+See [AI_API_COMPATIBILITY.md](AI_API_COMPATIBILITY.md) for the executable old-API
+fixture and exact released dependency resolution.
 
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| AiService resource accessors and legacy delegates | Stable accessors, old/new core validation, shared MCP state and cross-entry cancellation, A2A query interoperability | Partial | AiServiceJavaSdkITCase adds accessor identity and all-five-resource validation parity, legacy MCP release to mcp() query/cancel, and agent() legacy query. AiTransportResourceMatrixJavaSdkITCase uses resource accessors while retaining its existing transport expectations. Old bytecode and exhaustive cross-entry lifecycle verification remain pending. |
-| AgentService via agent() | Existing native Agent methods compile and preserve public behavior | Partial | Existing AgentDiscoveryServiceJavaSdkITCase, AgentPublishJavaSdkITCase, migration and auth callers use agent(); no protocol, publication, or listener semantics changed. |
+| AiService resource accessors and legacy delegates | Stable delegates, old/new validation and default dispatch, shared state, cross-entry cancellation and shutdown | Covered | AiServiceJavaSdkITCase verifies all-five-resource validation parity, MCP cross-entry state and A2A query parity. Resource matrix adds Prompt/Skill/AgentSpec recovery from absence, unchanged-content suppression, cross-entry cancellation, resubscription and repeated shutdown under grpc/http/auto. |
+| AgentService via agent() | Native Search/Discover/Watch/publication/publish and old A2A remain usable through the new owner | Partial | Existing AgentPublish and directed AgentDiscovery regressions verify publishing, namespace isolation, HTTP/gRPC result parity, independent publishers, pre-registration, replacement/deregistration, shutdown and legacy A2A interoperation. Existing DAUTH-F05 Watch/restart exclusions remain; migration-state/cluster harnesses were not executed in this phase. |
+| Five resource transport overrides | Inheritance, opposite mixed modes, effective HTTP-only resources, strict configuration, connection-only read fallback and shared recovery | Partial | Resource matrix verifies three global modes, opposite overrides, native HTTP with unreachable gRPC, old A2A's original runtime error and continued native HTTP use, public factory errors and polling lifecycle. Auth matrix verifies three modes with real identities. UT covers immutable modes, all invalid explicit values, independent AUTO budgets, forced gRPC/A2A pins, business-error priority and owner replay. Real shared Agent/MCP restart recovery retains the existing DAUTH-F05 gap. |
+| Released API bytecode and representative old SDK/server | Old third-party override/default resolution, old application with replacement SDK, both old/new SDK on current server, new SDK on a non-RAD server | Covered | Opt-in binary fixture compiles against nacos-api:3.2.4 only; isolated JVMs run the released nacos-client:3.2.4 dependency tree or the new SDK. Old-server evidence requires the separately supplied disposable 3.2.4 instance. Scope is old MCP/A2A operations, not every legacy version or native RAD. |
 
-This separate interface-evolution scope has 0 Covered / 2 Partial / 0 Pending rows: strict 0%,
-effective 50%. It is not added to the historical registry denominator, and representative existing
-coverage does not prove the later resource-transport or A2A-to-RAD changes.
-
-### Phase 1 resource transport implementation
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| Five resource transport overrides | Global inheritance, mixed HTTP/gRPC modes, HTTP-only Skill/AgentSpec, native HTTP with unreachable gRPC | Partial | Resource matrix adds opposite mixed modes and a closed alternate gRPC port; legacy A2A retains its NacosRuntimeException/SERVER_ERROR ability-check failure while native HTTP remains available. UT covers every invalid explicit value, immutable modes, independent AUTO probes and business-error priority. Real server execution and polling/compatibility evidence recorded in the phase validation report. |
-
-Transport increment: strict 0/1 = 0%; effective 0.5/1 = 50%, separate from the historical surface denominator.
+Phase 1 increment: 2 Covered / 2 Partial / 0 Pending; strict coverage
+`2 / 4 = 50%`; effective coverage `(2 + 2 * 0.5) / 4 = 75%`.
+These figures measure the four declared scenario groups, not code coverage or
+all AI capabilities. Existing domain-level Partial rows and known findings are
+not upgraded by this increment. Actual commands, adapter results, and skips
+are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.

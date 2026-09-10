@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
+import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
@@ -66,16 +67,25 @@ import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -143,6 +153,152 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         NacosRuntimeException child = assertThrows(NacosRuntimeException.class, () -> service.agent().getAgentCard(absent));
         assertEquals(legacy.getErrCode(), child.getErrCode());
         assertNotNull(service.agent().searchAgents(new AgentSearchRequest()));
+    }
+
+    @Test
+    void shouldRejectInvalidRequestedModesThroughPublicFactory() {
+        String[] keys = {AiConstants.AI_TRANSPORT_MODE, AiConstants.AI_MCP_TRANSPORT_MODE,
+            AiConstants.AI_AGENT_TRANSPORT_MODE, AiConstants.AI_PROMPT_TRANSPORT_MODE,
+            AiConstants.AI_SKILL_TRANSPORT_MODE, AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE};
+        for (String key : keys) {
+            Properties properties = sdkProperties();
+            for (String validKey : keys) {
+                properties.setProperty(validKey, "http");
+            }
+            properties.setProperty(key, "unsupported");
+            NacosException error = assertThrows(NacosException.class, () -> AiFactory.createAiService(properties));
+            assertEquals(NacosException.CLIENT_INVALID_PARAM, error.getErrCode(), key);
+            Throwable cause = error;
+            boolean propertyIdentified = false;
+            while (cause != null) {
+                propertyIdentified |= cause.toString().contains(key);
+                cause = cause.getCause();
+            }
+            assertTrue(propertyIdentified, key);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldSharePollingRecoveryAndCancellationAcrossEntrypoints(AgentTransportMode mode) throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode.getValue());
+        properties.setProperty(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
+        properties.setProperty(AiConstants.AI_SKILL_CACHE_UPDATE_INTERVAL, "100");
+        properties.setProperty(AiConstants.AI_AGENTSPEC_CACHE_UPDATE_INTERVAL, "100");
+        AiService service = createAiService(properties);
+        AiMaintainerService maintainer = createAiMaintainerService();
+        String prompt = randomServiceName("compat-prompt");
+        String skill = randomServiceName("compat-skill");
+        String spec = randomServiceName("compat-spec");
+        AtomicInteger callbacks = new AtomicInteger();
+        AtomicReference<NacosPromptEvent> promptEvent = new AtomicReference<>();
+        AtomicReference<NacosSkillEvent> skillEvent = new AtomicReference<>();
+        AtomicReference<NacosAgentSpecEvent> specEvent = new AtomicReference<>();
+        AbstractNacosPromptListener promptListener = new AbstractNacosPromptListener() {
+            @Override
+            public void onEvent(NacosPromptEvent event) {
+                callbacks.incrementAndGet();
+                promptEvent.set(event);
+            }
+        };
+        AbstractNacosSkillListener skillListener = new AbstractNacosSkillListener() {
+            @Override
+            public void onEvent(NacosSkillEvent event) {
+                callbacks.incrementAndGet();
+                skillEvent.set(event);
+            }
+        };
+        AbstractNacosAgentSpecListener specListener = new AbstractNacosAgentSpecListener() {
+            @Override
+            public void onEvent(NacosAgentSpecEvent event) {
+                callbacks.incrementAndGet();
+                specEvent.set(event);
+            }
+        };
+        addCleanup(() -> service.prompt().unsubscribePrompt(prompt, null, null, promptListener));
+        addCleanup(() -> service.skill().unsubscribeSkill(skill, null, null, skillListener));
+        addCleanup(() -> service.agentSpec().unsubscribeAgentSpec(spec, specListener));
+        assertNull(service.subscribePrompt(prompt, null, null, promptListener));
+        assertNull(service.subscribeSkill(skill, null, null, skillListener));
+        assertNull(service.subscribeAgentSpec(spec, specListener));
+        addCleanup(() -> maintainer.prompt().deletePrompt(Constants.DEFAULT_NAMESPACE_ID, prompt));
+        addCleanup(() -> maintainer.skill().deleteSkill(Constants.DEFAULT_NAMESPACE_ID, skill));
+        addCleanup(() -> maintainer.agentSpec().deleteAgentSpec(Constants.DEFAULT_NAMESPACE_ID, spec));
+        publishPollingFixtures(maintainer, prompt, skill, spec, VERSION, mode);
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "prompt", prompt);
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "skill", skill);
+        grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "agentspec", spec);
+        waitUntil("missing polling resources should recover through the new entrypoints", () ->
+            promptEvent.get() != null && promptEvent.get().getPrompt() != null
+                && skillEvent.get() != null && skillEvent.get().getZipBytes() != null
+                && specEvent.get() != null && specEvent.get().getAgentSpec() != null);
+        assertEquals(prompt, promptEvent.get().getPrompt().getPromptKey());
+        assertEquals(spec, specEvent.get().getAgentSpec().getName());
+        assertNotNull(skillEvent.get().getMd5());
+        assertTrue(skillEvent.get().getZipBytes().length > 0);
+        assertTrue(skillMarkdown(service.skill().downloadSkillZip(skill)).contains(skill));
+        assertTrue(skillMarkdown(skillEvent.get().getZipBytes()).contains(skill));
+        int unchanged = callbacks.get();
+        TimeUnit.MILLISECONDS.sleep(600);
+        assertEquals(unchanged, callbacks.get(), "unchanged MD5 polling must not repeat callbacks");
+
+        service.prompt().unsubscribePrompt(prompt, null, null, promptListener);
+        service.skill().unsubscribeSkill(skill, null, null, skillListener);
+        service.agentSpec().unsubscribeAgentSpec(spec, specListener);
+        publishPollingFixtures(maintainer, prompt, skill, spec, "2.0.0", mode);
+        AiService observer = createAiService(properties);
+        assertEquals("2.0.0", observer.prompt().getPrompt(prompt).getVersion());
+        assertTrue(observer.skill().downloadSkillZip(skill).length > 0);
+        assertEquals(spec, observer.agentSpec().loadAgentSpec(spec).getName());
+        TimeUnit.MILLISECONDS.sleep(600);
+        assertEquals(unchanged, callbacks.get(), "cross-entry cancellation must stop callbacks");
+
+        assertNotNull(service.prompt().subscribePrompt(prompt, null, null, promptListener));
+        assertNotNull(service.skill().subscribeSkill(skill, null, null, skillListener));
+        assertNotNull(service.agentSpec().subscribeAgentSpec(spec, specListener));
+        waitUntil("resubscribed caches must observe the new publication", () ->
+            "2.0.0".equals(promptEvent.get().getPrompt().getVersion())
+                && skillMarkdown(skillEvent.get().getZipBytes()).contains("2.0.0")
+                && specEvent.get().getAgentSpec().getDescription().contains("2.0.0"));
+        service.shutdown();
+        service.shutdown();
+        TimeUnit.MILLISECONDS.sleep(200);
+        int closed = callbacks.get();
+        publishPollingFixtures(maintainer, prompt, skill, spec, "3.0.0", mode);
+        assertEquals("3.0.0", observer.prompt().getPrompt(prompt).getVersion());
+        TimeUnit.MILLISECONDS.sleep(600);
+        assertEquals(closed, callbacks.get(), "shutdown must stop callbacks across both entrypoints");
+    }
+
+    private String skillMarkdown(byte[] archive) throws Exception {
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(archive))) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (entry.getName().equals("SKILL.md") || entry.getName().endsWith("/SKILL.md")) {
+                    return new String(zip.readAllBytes(), StandardCharsets.UTF_8);
+                }
+            }
+        }
+        throw new AssertionError("Skill archive must contain SKILL.md");
+    }
+
+    private void publishPollingFixtures(AiMaintainerService maintainer, String prompt, String skill,
+            String spec, String version, AgentTransportMode mode) throws Exception {
+        maintainer.prompt().createDraft(Constants.DEFAULT_NAMESPACE_ID, prompt, null, version,
+                "Prompt " + version, null, "polling compatibility", null, null);
+        maintainer.prompt().forcePublish(Constants.DEFAULT_NAMESPACE_ID, prompt, version, true);
+        String skillDocument = skillCard(skill, mode).replace("Skill transport matrix", "Skill polling " + version);
+        maintainer.skill().createDraft(Constants.DEFAULT_NAMESPACE_ID, skill, VERSION.equals(version) ? null : VERSION, version,
+                VERSION.equals(version) ? skillDocument : null, "compatibility");
+        if (!VERSION.equals(version)) {
+            maintainer.skill().updateDraft(Constants.DEFAULT_NAMESPACE_ID, skillDocument, true);
+        }
+        maintainer.skill().forcePublish(Constants.DEFAULT_NAMESPACE_ID, skill, version, true);
+        maintainer.agentSpec().createDraft(Constants.DEFAULT_NAMESPACE_ID, spec, null, version);
+        maintainer.agentSpec().updateDraft(Constants.DEFAULT_NAMESPACE_ID,
+                agentSpecCard(spec, mode).replace("AgentSpec transport matrix", "AgentSpec polling " + version), true);
+        maintainer.agentSpec().forcePublish(Constants.DEFAULT_NAMESPACE_ID, spec, version, true);
     }
 
     private void verifyMixedResources(AgentTransportMode global, AgentTransportMode override) throws Exception {

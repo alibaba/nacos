@@ -1,6 +1,22 @@
+<!--
+  Copyright 1999-2026 Alibaba Group Holding Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
 # 第一步：接口委托、资源 transport 与兼容测试
 
-状态：2026-09-10 实施中；C1/C2 接口委托和资源 transport 已落地，相关 UT 与 29 项 standalone IT 通过；C3 兼容组合验证继续执行。本文优先于本目录之前关于 A2A/RAD 完整切换的实施安排。
+状态：2026-09-10 第一步代码与兼容测试已落地，按三个本地 commit 交付。验证结果、既有 Disabled 和迁移/重启环境缺口见 [VALIDATION.md](VALIDATION.md)。本文优先于本目录之前关于 A2A/RAD 完整切换的实施安排。
 
 ## 1. 交付边界与验收结果
 
@@ -123,7 +139,7 @@ HTTP 成功的记录不能调用阻塞网络；共享状态锁内不执行新 HT
 | --- | --- | --- |
 | P01 | 已发布签名、返回值、异常、默认参数；getter 默认不支持；MCP createDraft 分派 | `api` 的 AiServiceDefaultMethodTest、A2aServiceDefaultMethodTest、Factory 替身 |
 | P02 | 官方单向委托、固定 delegate、参数校验与 DTO 行为相同 | NacosAiServiceTest；必要的 getter/default 分派测试 |
-| P03 | 五资源新旧入口互查、交叉注册/注销、订阅/取消，同一 listener 不重复 | 新紧凑 AiServiceInterfaceCompatibilityJavaSdkITCase；复用 AiServiceJavaSdkITCase fixture |
+| P03 | 五资源新旧入口互查、交叉注册/注销、订阅/取消，同一 listener 不重复 | 复用 AiServiceJavaSdkITCase 和 AiTransportResourceMatrixJavaSdkITCase；不额外拆重复 fixture |
 | P04 | 未发布 Agent 调用全迁移、AgentService 两组能力、AiService 不再继承新 Agent 接口 | 编译测试 + 现有 AgentDiscoveryService/AgentPublish IT 迁移 |
 | P05 | 全局继承、单键覆盖、有效大小写、全部非法显式值、构造冻结 | 配置解析 UT；Factory 负面 IT；不穷举 3^5 笛卡尔积 |
 | P06 | global=grpc：agent=http、mcp=grpc、prompt=http、skill=grpc、agentSpec=auto；反向组合 | 扩展 AiTransportResourceMatrixJavaSdkITCase；router UT 证明选中 binding |

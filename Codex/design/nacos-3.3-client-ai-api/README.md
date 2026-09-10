@@ -1,16 +1,32 @@
+<!--
+  Copyright 1999-2026 Alibaba Group Holding Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
 # Nacos 3.3 Client AI API 拆分与兼容设计
 
-状态：设计草案，尚未修改生产代码或测试。基线：2026-09-10 更新后的 `upstream/develop`，提交 `3623b19db6be69545d7a5af36705b92274d10390`。
+状态：第一步接口委托、资源 transport 和兼容测试已落地；后续 A2A/RAD 转换仍是设计草案。实际验证及缺口见 [VALIDATION.md](VALIDATION.md)。基线：2026-09-10 更新后的 `upstream/develop`，提交 `3623b19db6be69545d7a5af36705b92274d10390`。
 
 目标是在 3.3 发布前收敛 Client AI API：按资源获取子服务、按资源选择 transport、保留已发布的扁平 API，并让 Agent 承接旧 A2A。兼容验证方案见 [COMPATIBILITY_IT.md](COMPATIBILITY_IT.md)。
 
 **当前实施范围已收敛为第一步：接口委托、资源 transport、对应 UT/IT。旧 A2A 在所有服务器上继续使用现有 gRPC；不实现 A2A→RAD、HTTP 能力入口或新兼容能力位。** 详细范围、风险、测试门禁和 commit 划分以 [PHASE1_PLAN.md](PHASE1_PLAN.md) 为准。第 5 节及 A2A 专题文件保留为后续研究，不是第一步的实施要求。
 
-本次评审修订：getter 统一为 `mcp()`；无 RAD 的服务端只支持 Agent 中的旧 A2A API；HTTP 能力发现、失败分类与迁移阶段决策细化于 [A2A_ROUTING.md](A2A_ROUTING.md)。相应规范修订提案见 [中文](../../../specs/zh-cn/ai/client-ai-api-evolution-spec.md) / [English](../../../specs/en/ai/client-ai-api-evolution-spec.md)，均未表示已实现。
+本次评审修订：getter 统一为 `mcp()`；无 RAD 的服务端只支持 Agent 中的旧 A2A API；HTTP 能力发现、失败分类与迁移阶段决策细化于 [A2A_ROUTING.md](A2A_ROUTING.md)。相应规范修订提案见 [中文](../../../specs/zh-cn/ai/client-ai-api-evolution-spec.md) / [English](../../../specs/en/ai/client-ai-api-evolution-spec.md)；其中第一步已写入主规范，HTTP 能力发现与 A2A/RAD 转换仍未实现。
 
-## 1. 当前事实与改动边界
+## 1. 实施前的基线事实与改动边界
 
-| 当前代码事实 | 对本次设计的影响 |
+| 实施前代码事实 | 对本次设计的影响 |
 | --- | --- |
 | `AiService extends AgentDiscoveryService, A2aService`；MCP、Skill、AgentSpec、Prompt 方法直接声明在 `AiService` 中 | 必须补四个资源接口；不能假设已经存在 Client `McpService`、`SkillService` 等独立实现 |
 | `NacosAiService` 集中持有校验、缓存、Notifier、连接、publication manager | 只做委托所需的机械提取和调用转向，不重做资源业务逻辑或统一缓存框架 |

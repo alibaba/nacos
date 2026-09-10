@@ -1,3 +1,19 @@
+<!--
+  Copyright 1999-2026 Alibaba Group Holding Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
 # 第一步实施验证
 
 基线：`upstream/develop`，`3623b19db6be69545d7a5af36705b92274d10390`。
@@ -10,8 +26,8 @@
 - `mvn -B -pl api,client,test/java-sdk-test spotless:apply spotless:check`：通过。
 - `mvn -B -pl api,client test -Dtest=AiServiceDefaultMethodTest,A2aServiceDefaultMethodTest,AiFactoryTest,NacosAiServiceTest,NacosAiServiceAgentSpecPropertyTest -Dsurefire.failIfNoSpecifiedTests=false`：通过，Client 89 项（含 3 项属性测试）。
 - `mvn -B -pl test/java-sdk-test -am install ...`：依赖及 SDK IT test-compile 通过。包名通配符的 `-Dtest` 未匹配测试，不能算 UT 证据；UT 以以上明确类名的独立命令为准。
-- 首次 reactor 校验被既有 `test/naming-test` 两个运行日志触发 RAT；已保留到 `/tmp/nacos-ai-phase1/preexisting-logs` 后重跑通过，没有关闭 RAT。
-- standalone、旧字节码和 transport 组合执行结果继续补充。
+- 首次 reactor 校验被既有 `test/naming-test` 两个运行日志触发 RAT；已保留到 `/tmp/nacos-ai-phase1/preexisting-logs` 后重跑通过，没有关闭 RAT；收尾时已恢复这两个原有日志，保留临时备份。
+- standalone、旧字节码和 transport 组合结果见下文 C2/C3。
 
 ## C2：资源 transport
 
@@ -24,4 +40,55 @@
 - `AiServiceJavaSdkITCase` 15 项、`McpHttpClientJavaSdkITCase` 3 项、`AgentPublishJavaSdkITCase` 5 项、`AiTransportResourceMatrixJavaSdkITCase` 6 项全部通过（29 个不同测试）。矩阵验证三种全局 mode、两组反向资源 override、gRPC 不可达时原生 HTTP 可用及旧 A2A 原异常契约。
 - 真实环境暴露了旧测试断言误认为 A2A 断连返回 checked exception，已改为校验原 runtime exception；未改变旧异常契约。
 - 历史增量构建残留的 datasource/client-test SPI 通过 clean 重建清除；未改服务端代码。一个既有 MCP 缓存 UT 的固定 110ms 等待改为有界条件等待，避免调度抖动。
-- 原始日志与报告：`/tmp/nacos-ai-phase1/`。C3 继续旧字节码、旧 SDK/旧服务端和组合回归。
+- 原始日志与报告：`/tmp/nacos-ai-phase1/`。C3 的旧字节码、旧 SDK/旧服务端和组合回归见下文。
+
+## C3：实际兼容 fixture 与组合回归
+
+- 增加 opt-in `ai-api-compatibility` profile 和 `run-ai-api-compatibility.sh`；旧业务类与第三方 AiService 实现只对 `nacos-api:3.2.4` 编译，source/target 8，再直接加载旧 class 到新 API/SDK。测试捕获 UOE/501 契约和旧 override 分派。
+- 真实旧 SDK 使用独立、无父 POM 的 `nacos-client:3.2.4` 依赖树；避免当前 reactor 把 client-basic/auth 等替换成 3.3。保留 `legacy-dependency-tree.txt`、classpath 和各子进程 SDK code source。
+- 当前 standalone（默认鉴权开启）验证旧业务字节码 + 新 SDK、真实旧 SDK + 新服务端；另外下载官方 3.2.4 发布包，以隔离端口 HTTP 18588 / gRPC 19588 / Console 18180 验证新 SDK + 无 RAD 旧服务端。旧实例关闭鉴权，仅供此一次性 smoke。
+- 四个二进制/版本组合均通过；旧 MCP release/query/订阅和取消、旧 A2A Card/release/Endpoint 注册投影均有真实服务端断言。没有在 JUnit 中启动服务端。
+- 资源矩阵从 6 项扩至 10 项：新增公开 Factory 对六个非法显式 mode 的受控异常，及 grpc/http/auto 下 Prompt/Skill/AgentSpec 缺失恢复、MD5 不重复通知、ZIP 内容、新旧入口交叉取消、重订阅与重复 shutdown 后停止通知。
+- 轮询 fixture 的 Skill 后续版本按当前服务端契约显式指定 basedOnVersion，省略初始 skillCard，再 updateDraft；没有为测试改资源业务逻辑。
+
+| 验证批次 | 结果与范围 | 日志 |
+| --- | --- | --- |
+| 默认 JSON C2 基础 IT | 29 个不同用例全部通过；AiService 15、MCP HTTP 3、Agent 发布 5、初始资源矩阵 6 | `c2-it.log`（首次失败已定位为旧 A2A 异常类型断言）、`c2-matrix-it.log`（矩阵修正后 6/6） |
+| 默认 JSON C3 组合 | 22 项：21 通过、1 项既有 DAUTH-F05 禁用；二进制 4、轮询 3、鉴权 3、Agent 定向 12 | `c3-final-it.log` |
+| Jackson 3 完整定向组合 | 52 项：51 通过、1 项既有 DAUTH-F05 禁用，0 失败/错误；AiService 15、MCP HTTP 3、Agent 发布 5、二进制 4、矩阵 10、鉴权 3、Agent 定向 12 | `c3-jackson3-it.log` |
+| 兼容启动器最终调整 | 默认 JSON 5/5（含新增 Factory 边界），Jackson 3 二进制 4/4；子进程通过私有环境继承 IT 普通业务身份，新 SDK 使用指定 JSON adapter | `c3-final-fixture-default.log`、`c3-final-fixture-jackson3.log` |
+| 轮询用例最终并发检查 | 回调先更新计数再发布可见事件，消除测试等待条件与计数的竞态；默认 JSON 三种 mode 3/3 通过 | `c3-last-polling-it.log` |
+| API/client 最终静态检查 | compile、RAT、Checkstyle、SpotBugs、Spotless 全通过；SpotBugs 0 个问题 | `final-static-checks.log` |
+| 根模块文档许可证检查 | `mvn -B -N apache-rat:check` 通过，未关闭检查 | `root-rat.log` |
+
+### 验收项的实际覆盖边界
+
+| 计划项 | 结论 |
+| --- | --- |
+| P01–P04 | API/client UT、公开接口 IT、旧实现及旧调用者字节码通过；新 Agent 调用迁移完成，编译通过。 |
+| P05–P09 | 配置 UT、公开 Factory 错误、三总模式/两反向 override/不可达 gRPC 的原生 HTTP IT、资源 HTTP 退化及旧 A2A 原错误契约通过。 |
+| P10–P11 | 独立 AUTO 状态与 pin/首用探测/连接竞态 UT 通过；真实 STARTING→HTTP、三 transport 鉴权 IT 通过。连接可用 AUTO Watch 用例因已有 DAUTH-F05 禁用，不计通过。 |
+| P12 | Endpoint manager/共享 HTTP coordinator 的相关 UT 和普通 MCP/Agent publication/注销/关闭 IT 通过；真实 shared Agent/MCP 50404 重启 replay 所在既有方法受 DAUTH-F05 禁用，本轮未解除，保留缺口。 |
+| P13 | namespace、参数、旧/新入口共享状态和取消、polling 三资源恢复、重复 shutdown、普通 Naming 隔离对照通过；既有 Agent Watch 身份问题不在本轮修复。 |
+| P14 | 硬门禁通过：只对已发布 3.2.4 API 编译的第三方实现和旧业务 class 在新 SDK 上运行，无重新对新 API 编译。 |
+| P15 | 代表线通过：真实 3.2.4 SDK 与新 SDK 连接当前服务端，新 SDK 连接官方 3.2.4 服务端，范围限旧 MCP/A2A。 |
+| P16 | 当前 CANONICAL 服务端旧 A2A wire、exact version/multi-version legacy interoperability 和旧 SDK smoke 通过；专用 A2A/MCP migration-it.yml 的 SYNCING/QUIESCING/cutover、shadow、三节点与重启流程未运行，不能宣称这些环境重新验证通过。 |
+
+未改任何 `@Disabled`：本轮选中的既有跳过是
+`AgentDiscoveryServiceJavaSdkITCase.shouldUseGrpcForAutoWhenInitialConnectionIsAvailable`
+（DAUTH-F05）。完整鉴权套件的 DAUTH-F04 和其余 DAUTH-F05 不在本轮通过范围。
+此次是第一步定向验证，不是全仓 UT/全量 SDK IT 或完整迁移认证。
+
+### 可复现入口与报告
+
+- 执行方法和历史依赖边界：`test/java-sdk-test/AI_API_COMPATIBILITY.md`。
+- 本次命令均使用 JDK 17；API/client 编译仍遵守 Java 8 target，旧 fixture 也明确为 8。
+- 本次原始构建/IT 日志位于 `/tmp/nacos-ai-phase1/`；JUnit XML 与子进程日志在 `test/java-sdk-test/target/failsafe-reports/`，组合批次另行复制到临时报告目录以免后续定向运行覆盖。
+- 不提交凭证、服务端数据、下载的发布包或 target 产物。旧版本测试依赖是 opt-in，不影响正常 SDK IT 的依赖树。
+
+本次默认 JSON 的多批次结果合并去重，与 Jackson 3 对应相同的 52 个用例：
+51 项通过、1 项既有 Disabled。默认组合分批运行，不将重复执行计为新增覆盖。
+所有新增兼容/轮询用例均启用并通过，已有 migration/reliability 环境用例没有被改成假通过。
+
+收尾：已按 PID/目录核验后 SIGTERM 关闭本轮两个隔离服务端（33581 / 42300），
+HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本任务的服务端后台进程。

@@ -155,6 +155,49 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>ai-api-compatibility</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <execution>
+                                <id>copy-released-ai-sdk</id>
+                                <phase>process-test-classes</phase>
+                                <goals><goal>copy</goal></goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.alibaba.nacos</groupId>
+                                            <artifactId>nacos-api</artifactId>
+                                            <version>3.2.4</version>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.alibaba.nacos</groupId>
+                                            <artifactId>nacos-client</artifactId>
+                                            <version>3.2.4</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${project.build.directory}/compatibility-libs</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <nacos.ai.compatibility.enabled>true</nacos.ai.compatibility.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>

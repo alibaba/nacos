@@ -18,11 +18,11 @@
 
 | 项目 | 值 |
 | --- | --- |
-| 状态 | 评审草案；未实现，不替代当前已实现契约 |
+| 状态 | 第一步接口/transport 已实现并同步主规范；第 3、4 节仍为待实施草案 |
 | 更新 | 2026-09-10 |
 | 范围 | 子服务入口、资源 transport、A2A/RAD 能力发现与兼容决策 |
 
-本提案随设计一并提交规范变更，供评审定稿后合并入主规范。详细设计见
+本提案区分第一步已实现契约与后续兼容设计；后续条款不替代当前行为。详细设计见
 [API 设计](../../../Codex/design/nacos-3.3-client-ai-api/README.md)、
 [A2A 决策](../../../Codex/design/nacos-3.3-client-ai-api/A2A_ROUTING.md)和
 [IT 矩阵](../../../Codex/design/nacos-3.3-client-ai-api/COMPATIBILITY_IT.md)。

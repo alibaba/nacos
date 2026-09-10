@@ -1,6 +1,22 @@
+<!--
+  Copyright 1999-2026 Alibaba Group Holding Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
 # Client AI 新旧接口与 Transport 兼容 IT 设计
 
-基线与目标范围见 [README.md](README.md)，HTTP 探测与迁移决策见 [A2A_ROUTING.md](A2A_ROUTING.md)。Client MCP getter 统一为 `mcp()`。本文件是待实施的测试设计，没有新增/运行 IT；不能据此提高现有覆盖率。
+基线与目标范围见 [README.md](README.md)，HTTP 探测与迁移决策见 [A2A_ROUTING.md](A2A_ROUTING.md)。Client MCP getter 统一为 `mcp()`。本文件保留完整测试设计；第一步已经新增并执行部分用例，具体证据、覆盖边界和未执行项以 [VALIDATION.md](VALIDATION.md) 为准，不能将后续阶段的设计视为已通过。
 
 **当前仅实施第一步，验收范围以 [PHASE1_PLAN.md](PHASE1_PLAN.md) 的 P01–P16 为准。** 第 3、4 节是接口/transport 的主要基础；第 5 节只复用现有旧 A2A 语义回归，新 A2A→RAD 适配断言留后续；第 8 节 HTTP 能力发现全部留后续。不得用未来 A/D 矩阵阻塞第一步，也不得把第一步通过标成完整 A2A/RAD 切换完成。
 

@@ -18,12 +18,12 @@
 
 | Item | Value |
 | --- | --- |
-| Status | Review draft; not implemented and does not replace current implemented contracts |
+| Status | Phase-one interfaces/transports implemented in primary specs; sections 3 and 4 remain unimplemented proposals |
 | Updated | 2026-09-10 |
 | Scope | Resource facades, transport overrides, A2A/RAD capability discovery and routing |
 
-This proposal records specification amendments with the design for review before incorporation
-into the primary specifications. See the detailed [API design](../../../Codex/design/nacos-3.3-client-ai-api/README.md),
+This proposal separates implemented phase-one contracts from future compatibility amendments;
+unimplemented sections do not replace current behavior. See the detailed [API design](../../../Codex/design/nacos-3.3-client-ai-api/README.md),
 [A2A routing](../../../Codex/design/nacos-3.3-client-ai-api/A2A_ROUTING.md), and
 [IT matrix](../../../Codex/design/nacos-3.3-client-ai-api/COMPATIBILITY_IT.md).
 
