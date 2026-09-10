@@ -433,10 +433,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(customService, customName, PROTOCOL_A2A, 0);
     }
     
-    @Test
-    void shouldReplaceAndPartiallyDeregisterCompletePublications() throws Exception {
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldReplaceAndPartiallyDeregisterCompletePublications(AgentTransportMode mode)
+        throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
-        AiService service = createAiService();
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
         String agentName = randomServiceName("agent-publication");
         createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
             Collections.singletonList("java-sdk-it"), Arrays.asList(PROTOCOL_A2A, PROTOCOL_MCP),
@@ -482,21 +484,59 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         
         Endpoint mcp = endpoint(randomPort(), "/mcp", "mcp");
+        Endpoint secondMcp = endpoint(randomPort(), "/mcp-second", "mcp-second");
         service.agent().registerAgentEndpoints(
-            registration(agentName, PROTOCOL_MCP, Collections.singletonList(mcp)));
-        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 1);
+            registration(agentName, PROTOCOL_MCP, Arrays.asList(mcp, secondMcp)));
+        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
+
+        third.setPriority(7);
+        third.setWeight(2.5D);
+        AgentEndpointRegistration multiple =
+            registration(agentName, PROTOCOL_A2A, Arrays.asList(first, second, third));
+        multiple.setVersionRange("[1.0.0,2.0.0]");
+        String multipleSnapshot = JacksonUtils.toJson(multiple);
+        service.agent().registerAgentEndpoints(multiple);
+        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 3);
+
+        Endpoint unknown = endpoint(randomPort(), "/unknown", "unknown");
+        AgentEndpointDeregistration removal = deregistration(agentName, PROTOCOL_A2A,
+            Arrays.asList(sameNaturalKey, deregistrationEndpoint(unknown),
+                deregistrationEndpoint(first)));
+        String removalSnapshot = JacksonUtils.toJson(removal);
+        service.agent().deregisterAgentEndpoints(removal);
+        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
+        assertEquals(multipleSnapshot, JacksonUtils.toJson(multiple));
+        assertEquals(removalSnapshot, JacksonUtils.toJson(removal));
+        AgentDiscoveryResult remaining =
+            service.agent().discoverAgent(reference(agentName, null, null));
+        List<Endpoint> retained = sourceEndpoints(remaining, PROTOCOL_A2A, EndpointSource.RUNTIME);
+        assertEquals(1, retained.size());
+        AgentDiscoveryEndpoint actual = (AgentDiscoveryEndpoint) retained.get(0);
+        assertEquals(third.getUri(), actual.getUri());
+        assertEquals(third.getTransport(), actual.getTransport());
+        assertEquals(third.getPriority(), actual.getPriority());
+        assertEquals(third.getWeight(), actual.getWeight());
+        assertEquals(third.getMetadata(), actual.getMetadata());
+        assertEquals(1, actual.getBindings().size());
+        assertEquals(multiple.getRuntimeVersion(), actual.getBindings().get(0).getRuntimeVersion());
+        assertEquals(multiple.getVersionRange(), actual.getBindings().get(0).getVersionRange());
+        assertEquals(2, sourceEndpoints(remaining, PROTOCOL_MCP, EndpointSource.RUNTIME).size());
+
+        service.agent().deregisterAgentEndpoints(removal);
+        waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         service.agent().deregisterAgentEndpoints(
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(third))));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
-        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 1);
+        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
         
         service.agent().deregisterAgentEndpoints(
             deregistration(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(third))));
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_MCP,
-                Collections.singletonList(deregistrationEndpoint(mcp))));
+        AgentEndpointDeregistration allMcp = deregistration(agentName, PROTOCOL_MCP,
+            Arrays.asList(deregistrationEndpoint(secondMcp), deregistrationEndpoint(mcp)));
+        service.agent().deregisterAgentEndpoints(allMcp);
+        service.agent().deregisterAgentEndpoints(allMcp);
         waitForEndpointCount(service, agentName, PROTOCOL_MCP, 0);
     }
 

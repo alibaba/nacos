@@ -29,6 +29,8 @@ import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -138,20 +141,47 @@ class AgentEndpointPublicationManagerTest {
             eq(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL), any());
     }
     
-    @Test
-    void partialDeregisterRegistersCompleteRemainderByNaturalKey() throws NacosException {
+    @ParameterizedTest
+    @EnumSource(AgentTransportType.class)
+    void partialDeregisterRegistersCompleteRemainderByNaturalKey(AgentTransportType transport)
+        throws NacosException {
+        when(clientProxy.selectPublicationTransport()).thenReturn(transport);
         when(clientProxy.registerAgentEndpoints(any())).thenReturn(liveness(100));
-        manager.register(registration("a2a", endpoint("http://LOCALHOST/a"),
-            endpoint("http://two:80/b")));
+        Endpoint retained = endpoint("http://three:80/c");
+        retained.setPriority(7);
+        retained.setWeight(2.5D);
+        retained.setMetadata(Collections.singletonMap("region", "retained"));
+        AgentEndpointRegistrationBatch registration = registration("a2a",
+            endpoint("http://LOCALHOST/a"), endpoint("http://two:80/b"), retained);
+        registration.setVersionRange("[1.0.0,2.0.0]");
+        manager.register(registration);
         
-        manager.deregister(deregistration("a2a", endpoint("http://localhost:80/other")));
+        AgentEndpointDeregistrationBatch removal = deregistration("a2a",
+            endpoint("http://two:80/other?ignored=true"), endpoint("http://unknown:80/a"),
+            endpoint("http://localhost:80/other"));
+        manager.deregister(removal);
+        manager.deregister(removal);
         
         ArgumentCaptor<AgentEndpointRegistrationBatch> captor =
             ArgumentCaptor.forClass(AgentEndpointRegistrationBatch.class);
-        verify(clientProxy, times(2)).registerAgentEndpoints(captor.capture());
+        verify(clientProxy, times(2)).registerAgentEndpoints(captor.capture(), eq(transport));
         AgentEndpointRegistrationBatch remainder = captor.getAllValues().get(1);
+        assertEquals(registration.getNamespaceId(), remainder.getNamespaceId());
+        assertEquals(registration.getAgentName(), remainder.getAgentName());
+        assertEquals(registration.getProtocol(), remainder.getProtocol());
+        assertEquals(registration.getRuntimeVersion(), remainder.getRuntimeVersion());
+        assertEquals(registration.getVersionRange(), remainder.getVersionRange());
         assertEquals(1, remainder.getEndpoints().size());
-        assertEquals("http://two:80/b", remainder.getEndpoints().get(0).getUri());
+        Endpoint actual = remainder.getEndpoints().get(0);
+        assertEquals(retained.getUri(), actual.getUri());
+        assertEquals(retained.getTransport(), actual.getTransport());
+        assertEquals(retained.getPriority(), actual.getPriority());
+        assertEquals(retained.getWeight(), actual.getWeight());
+        assertEquals(retained.getMetadata(), actual.getMetadata());
+        assertEquals(3, registration.getEndpoints().size());
+        assertEquals(3, removal.getEndpoints().size());
+        verify(clientProxy).selectPublicationTransport();
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any(), any());
         verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any());
     }
     

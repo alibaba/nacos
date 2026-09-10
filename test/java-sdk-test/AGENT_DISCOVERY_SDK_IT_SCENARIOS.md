@@ -48,7 +48,7 @@ transport-neutral.
 | --- | --- |
 | `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration into the canonical Runtime Registry without Beta dual-write to the historical Naming service, Console Runtime Snapshot and legacy SERVICE query agreement, Version 2 pre-registration, omitted-selector multi-Version aggregation versus explicit-latest isolation, canonical Version publication, and legacy latest-subscription convergence. |
 | `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; namespace-free Search/Endpoint inputs bound by each Client; namespace-isolated publication/deregistration under grpc/http/auto. |
-| `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical natural-key partial deregistration, unknown/repeated no-op, final deregistration, and protocol isolation. |
+| `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical single-key and multi-key partial deregistration, retained Endpoint fields and Version bindings, mixed unknown keys, immutable inputs, final and multi-key whole deregistration, repeated no-op, and protocol isolation under grpc/http/auto. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
 | `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, one typed `UNAVAILABLE` event, recovery with a complete `SNAPSHOT`, unsubscribe, and post-unsubscribe suppression. |
 | `shouldWatchExistingAgentOnlyWhenCompleteFingerprintChanges` | Subscribe-existing current value, negotiated gRPC Hint followed by Discover, Runtime source-revision replacement event, and unchanged-fingerprint callback de-duplication. |
@@ -243,13 +243,15 @@ Endpoint, and replacement across an already-online Version.
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
 | Remove one natural key from a multi-Endpoint Batch | SDK sends one complete replacement registration containing only the remainder. | IT + UT |
+| Remove two natural keys from three Endpoints, with an unknown key mixed into the same request | One complete replacement retains only the third Endpoint, including URI, transport, priority, weight, metadata, runtimeVersion and versionRange; caller inputs remain unchanged. | IT under grpc/http/auto + UT under HTTP/gRPC |
+| Run register, replacement, partial removal, final removal and whole multi-key removal under grpc/http/auto | Every mode produces the same retained and empty Runtime pools; removing A2A entries preserves the independent MCP publication. | IT |
 | Remove the final natural key | SDK sends one whole-publication deregistration and removes local expected state. | IT + UT |
 | Deregister an unknown local publication or natural key | The call succeeds as a no-op and sends no remote mutation. | IT + UT |
 | Deregister the same key repeatedly | Every later call remains a no-op. | IT |
 | Deregistration URI differs only in path, query, or host spelling | Matching follows canonical host, effective port, and transport natural identity. | UT |
 | Deregistration attempts to include priority, weight, metadata, or health | The SDK rejects the request locally. | UT |
 | Deregister one protocol while another exists | The other protocol remains registered and discoverable. | IT |
-| Replacement registration fails after local removal | The reduced desired Batch remains available for a later reconnect redo. | UT |
+| Replacement registration has a retryable failure after local removal | The reduced desired Batch remains available for a later reconnect redo. | Deferred: generic replacement failure has UT, but the combined partial-deregistration/recovery path is not directly asserted; excluded from this review increment. |
 | Whole deregistration fails after the last local removal | A deregistration intent remains until completion or shutdown. | UT |
 
 ## Heartbeat, Retry, Reconnect, And Redo

@@ -120,3 +120,27 @@ HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本�
   `shouldSearchDiscoverAndIsolateNamespaces` 的三个 mode 在两种 JSON 下均实际通过。
 - 本轮修复作为第四个独立本地 commit 交付，未改写此前三个 commit，未推送或创建 PR。
 - 本轮隔离服务端 PID 48972 已正常关闭，HTTP/gRPC/Console/Registry 等六个测试端口均释放。
+
+## Review 加固：多项注销与 transport 矩阵
+
+- 只修改既有 PublicationManager UT、AgentDiscovery SDK IT 和测试文档，生产代码与接口不变。
+- UT 在 HTTP/gRPC 两种 owner 下注册三个 Endpoint，一次移除两个已知自然键并混入未知键；
+  验证只提交完整剩余 Batch、没有调用整份注销、没有重新选择 owner，重复注销不发额外请求。
+  保留项的 URI、transport、priority、weight、metadata 和 Batch 版本字段保持不变。
+- IT 将完整注册、幂等、覆盖、单项/多项部分注销、最后一项注销、批量全部注销和重复注销
+  参数化为 grpc/http/auto。多项场景验证 `[E1,E2,E3] - [E2,unknown,E1] = [E3]`，
+  输入 JSON 不变，保留项字段与 Runtime Version bindings 不变，另一 protocol 的两个 Endpoint
+  始终保留到它自己的批量注销。
+- `AgentEndpointPublicationManagerTest`：33 项全部通过，0 失败/错误/跳过。
+- 默认 JSON 与 Jackson 3 定向 IT：各 3 项全部通过，分别为 grpc/http/auto，均为 0 失败/错误/跳过。
+- client 与 test/java-sdk-test 的 Spotless apply/check、编译、RAT、Checkstyle 全通过。
+- 日志目录：`/tmp/nacos-ai-endpoint-tests/`，包括 `format.log`、`ut.log`、
+  `default-it.log` 和 `jackson3-it.log`；两种 adapter 的 XML 单独保存。
+- 可复现：JDK 17，`mvn -B -pl client test -Dtest=AgentEndpointPublicationManagerTest`；
+  SDK IT 使用 `-pl test/java-sdk-test -Pjava-sdk-integration-test -DskipTests=false
+  -Dit.test=AgentDiscoveryServiceJavaSdkITCase#shouldReplaceAndPartiallyDeregisterCompletePublications verify`，
+  Jackson 3 再启用 `jackson3-sdk-test`。本轮复用鉴权开启的隔离服务端 HTTP 18488 / Console 18080，
+  普通读写身份运行 Client，管理员只用于 fixture，凭证通过私有环境文件传入。
+- 按用户要求暂缓部分注销后的故障恢复加固，没有新增故障注入或修改既有 Disabled；
+  文档明确区分通用 replacement/redo UT 与尚未直接验证的部分注销故障恢复组合。
+- 本轮隔离服务端 PID 92467 已正常关闭，六个测试端口均已释放；作为第五个独立本地 commit 交付，不推送、不创建 PR。
