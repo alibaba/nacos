@@ -92,3 +92,31 @@
 
 收尾：已按 PID/目录核验后 SIGTERM 关闭本轮两个隔离服务端（33581 / 42300），
 HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本任务的服务端后台进程。
+
+## Review 修正：Client 入参移除 namespaceId
+
+- `searchAgents` 改用 `model.agent.AgentSearchQuery`；注册/注销分别改用
+  `AgentEndpointRegistration` 和 `AgentEndpointDeregistration`。三个输入类型均没有
+  namespace 字段或访问器，也不继承原传输模型，不保留带 namespace 的公开重载。
+- 仅 3.3 未发布的原生 Agent 输入签名改变，旧 A2A/3.2.x API 不变。
+- Client 委托入口复制输入并将实例 namespace 写入原有 Search/Endpoint 传输 DTO；
+  深拷贝、校验和 canonicalization 复用原实现。原 namespace 冲突校验随不再可设置的字段删除。
+- 没有修改服务端、Maintainer、HTTP/gRPC wire DTO 或内部 publication/redo 算法。
+  本次 IT 复用上轮已构建的 3.3 服务端，直接验证新 Client 与原协议互通。
+- API 契约/委托 UT：14 通过；Client 复制/委托 UT：101 通过。
+- wire 模型/校验 UT：32 通过；HTTP/gRPC Proxy 和 publication manager UT：65 通过。
+  两批共 212 个不同 UT 通过。整理测试 import 后，3 项 API 契约用例再次通过。
+- api/client 的 RAT、Checkstyle、SpotBugs、Spotless 通过；Java 8 target 编译和 SDK IT
+  test-compile 通过。安装的是 `release-nacos,!dev` SDK 制品。
+- 默认 JSON 定向 IT：24 项，23 通过、1 项条件跳过。通过项包括三模式 namespace 隔离、
+  注册/注销、输入 JSON 不变、搜索过滤/分页、参数边界、资源/鉴权矩阵和旧字节码兼容。
+  跳过的是 `newSdkRetainsOldWireOnDisposableOldServer`：本轮未启动 3.2.4 服务端，
+  上轮证据不计为本轮执行；当前服务端上的旧 SDK 与旧调用者兼容仍实际执行并通过。
+- 本轮日志位于 `/tmp/nacos-ai-namespace/`：`build-ut.log`、`wire-static.log`、
+  `default-it.log`、`jackson3-it.log`、`final-api-contract.log`；沿用已有 Disabled，
+  不扩大到专用 migration/restart/cluster 场景。
+
+- Jackson 3 运行同一组 24 项定向 IT：23 通过、1 项同样的旧服务端条件跳过，0 失败/错误。
+  `shouldSearchDiscoverAndIsolateNamespaces` 的三个 mode 在两种 JSON 下均实际通过。
+- 本轮修复作为第四个独立本地 commit 交付，未改写此前三个 commit，未推送或创建 PR。
+- 本轮隔离服务端 PID 48972 已正常关闭，HTTP/gRPC/Console/Registry 等六个测试端口均释放。

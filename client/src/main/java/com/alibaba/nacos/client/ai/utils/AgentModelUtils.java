@@ -22,16 +22,18 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
 import com.alibaba.nacos.api.ai.utils.RadModelValidator;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,13 +85,13 @@ public final class AgentModelUtils {
      * @return isolated validated request
      * @throws NacosException when the request is invalid
      */
-    public static AgentSearchRequest copySearchRequest(AgentSearchRequest source,
+    public static AgentSearchRequest copySearchRequest(AgentSearchQuery source,
         String namespaceId) throws NacosException {
         if (source == null) {
-            throw invalid("AgentSearchRequest must not be null.");
+            throw invalid("AgentSearchQuery must not be null.");
         }
         AgentSearchRequest result = new AgentSearchRequest();
-        result.setNamespaceId(bindNamespace(source.getNamespaceId(), namespaceId));
+        result.setNamespaceId(namespaceId);
         result.setAgentNameContains(source.getAgentNameContains());
         result.setTagsAll(copyList(source.getTagsAll()));
         result.setProtocolsAny(copyList(source.getProtocolsAny()));
@@ -139,12 +141,12 @@ public final class AgentModelUtils {
      * @throws NacosException when the batch is invalid
      */
     public static AgentEndpointRegistrationBatch copyRegistrationBatch(
-        AgentEndpointRegistrationBatch source, String namespaceId) throws NacosException {
+        AgentEndpointRegistration source, String namespaceId) throws NacosException {
         if (source == null) {
-            throw invalid("AgentEndpointRegistrationBatch must not be null.");
+            throw invalid("AgentEndpointRegistration must not be null.");
         }
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId(bindNamespace(source.getNamespaceId(), namespaceId));
+        result.setNamespaceId(namespaceId);
         result.setAgentName(source.getAgentName());
         result.setRuntimeVersion(source.getRuntimeVersion());
         result.setVersionRange(source.getVersionRange());
@@ -184,12 +186,12 @@ public final class AgentModelUtils {
      * @throws NacosException when the batch is invalid
      */
     public static AgentEndpointDeregistrationBatch copyDeregistrationBatch(
-        AgentEndpointDeregistrationBatch source, String namespaceId) throws NacosException {
+        AgentEndpointDeregistration source, String namespaceId) throws NacosException {
         if (source == null) {
-            throw invalid("AgentEndpointDeregistrationBatch must not be null.");
+            throw invalid("AgentEndpointDeregistration must not be null.");
         }
         AgentEndpointDeregistrationBatch result = new AgentEndpointDeregistrationBatch();
-        result.setNamespaceId(bindNamespace(source.getNamespaceId(), namespaceId));
+        result.setNamespaceId(namespaceId);
         result.setAgentName(source.getAgentName());
         result.setProtocol(source.getProtocol());
         result.setEndpoints(copyEndpoints(source.getEndpoints()));
@@ -212,17 +214,6 @@ public final class AgentModelUtils {
     public static AgentDiscoveryResult copyDiscoveryResult(AgentDiscoveryResult source) {
         return source == null ? null
             : JsonUtils.toObj(JsonUtils.toJson(source), AgentDiscoveryResult.class);
-    }
-    
-    private static String bindNamespace(String requestedNamespace, String namespaceId)
-        throws NacosException {
-        if (StringUtils.isBlank(requestedNamespace)) {
-            return namespaceId;
-        }
-        if (!namespaceId.equals(requestedNamespace)) {
-            throw invalid("Request namespace does not match the AiService namespace.");
-        }
-        return namespaceId;
     }
     
     private static AgentReference copyReference(AgentReference source) throws NacosException {

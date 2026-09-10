@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
@@ -219,7 +219,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             () -> VERSION_TWO.equals(grpcService.getAgentCard(CUTOVER_AGENT).getVersion()));
         assertEquals(VERSION_TWO,
             grpcService.agent().discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
-        AgentSearchRequest search = new AgentSearchRequest();
+        AgentSearchQuery search = new AgentSearchQuery();
         search.setAgentNameContains(CUTOVER_AGENT);
         waitUntil("terminal Agent should remain searchable", () -> grpcService.agent().searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())

@@ -46,9 +46,12 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -94,6 +97,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1007,7 +1011,7 @@ class NacosAiServiceTest {
         AgentDiscoveryResult discoveryResult = new AgentDiscoveryResult();
         when(agentTransportRouter.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(discoveryResult);
-        AgentSearchRequest search = new AgentSearchRequest();
+        AgentSearchQuery search = new AgentSearchQuery();
         AgentReference reference = new AgentReference();
         reference.setAgentName("agent-a");
         
@@ -1018,7 +1022,7 @@ class NacosAiServiceTest {
             ArgumentCaptor.forClass(AgentSearchRequest.class);
         verify(agentTransportRouter).searchAgents(searchCaptor.capture());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, searchCaptor.getValue().getNamespaceId());
-        assertNull(search.getNamespaceId());
+        assertNotSame(search, searchCaptor.getValue());
         ArgumentCaptor<AgentDiscoveryRequest> discoveryCaptor =
             ArgumentCaptor.forClass(AgentDiscoveryRequest.class);
         verify(agentTransportRouter).discoverAgent(discoveryCaptor.capture());
@@ -1055,13 +1059,13 @@ class NacosAiServiceTest {
     @Test
     void completeAgentEndpointOperationsBindNamespaceBeforeDelegating() throws Exception {
         injectMocks();
-        AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();
+        AgentEndpointRegistration registration = new AgentEndpointRegistration();
         registration.setAgentName("agent-a");
         registration.setRuntimeVersion("1.0.0");
         registration.setProtocol("a2a");
         registration.setEndpoints(Collections.emptyList());
-        AgentEndpointDeregistrationBatch deregistration =
-            new AgentEndpointDeregistrationBatch();
+        AgentEndpointDeregistration deregistration =
+            new AgentEndpointDeregistration();
         deregistration.setAgentName("agent-a");
         deregistration.setProtocol("a2a");
         deregistration.setEndpoints(Collections.emptyList());
@@ -1086,8 +1090,9 @@ class NacosAiServiceTest {
         verify(agentEndpointPublicationManager).deregister(deregistrationCaptor.capture());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID,
             deregistrationCaptor.getValue().getNamespaceId());
-        assertNull(registration.getNamespaceId());
-        assertNull(deregistration.getNamespaceId());
+        assertNotSame(registration.getEndpoints(), registrationCaptor.getValue().getEndpoints());
+        assertNotSame(deregistration.getEndpoints(),
+            deregistrationCaptor.getValue().getEndpoints());
     }
     
     @Test
@@ -1206,7 +1211,7 @@ class NacosAiServiceTest {
                 properties.setProperty(AiConstants.AI_TRANSPORT_MODE, override);
                 properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, global);
                 service.mcp().getMcpServer("mcp", "1.0.0");
-                service.agent().searchAgents(new AgentSearchRequest());
+                service.agent().searchAgents(new AgentSearchQuery());
                 service.prompt().getPrompt("prompt");
                 if ("grpc".equals(global)) {
                     verify(grpc).queryMcpServer("mcp", "1.0.0");

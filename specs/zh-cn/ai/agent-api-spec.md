@@ -100,13 +100,13 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 | 能力 | 方法 | 输入 | 返回 |
 |---|---|---|---|
-| Search | `searchAgents` | 不允许调用方控制 namespace 的 `AgentSearchRequest` | `Page<AgentCatalogEntry>` |
+| Search | `searchAgents` | 不含 namespace 字段的 `AgentSearchQuery` | `Page<AgentCatalogEntry>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | 过滤 Discover | `discoverAgent` | `AgentReference`、`AgentDiscoveryFilter` | `AgentDiscoveryResult` |
 | Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult`，目标尚不存在时为 `null` |
 | 取消 Watch 订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
-| 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
-| 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
+| 注册 | `registerAgentEndpoints` | `AgentEndpointRegistration` | `void` |
+| 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistration` | `void` |
 | 代码式发布 | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` 是传输无关的 SDK Watch。所选 Transport 与 Client/Server 都声明 Watch
@@ -177,6 +177,12 @@ Version；draft 后以相同 Request 改为 `autoSubmit=true` 必须继续 submi
 或调用方显式提供的首次元数据不等价时返回冲突。已推进 Version 上的
 `autoSubmit=false`、以及 `offline` Version 上的任一代码式发布均返回非法状态或冲突。Submit
 失败不得补偿删除已创建 draft。
+
+Client 的 Search、注册和注销入参分别使用 `model.agent` 下的 `AgentSearchQuery`、
+`AgentEndpointRegistration` 和 `AgentEndpointDeregistration`，三个对象均不暴露 namespace 字段或访问器。
+SDK 复制内容并注入实例绑定的 namespace，转换为现有传输 DTO；不修改输入集合/Endpoint。
+这些 3.3 未发布方法不保留接受带 namespace 传输 DTO 的公开重载。
+服务端 HTTP/gRPC DTO、鉴权、查询和注册行为保持不变。
 
 ### 2.2 传输矩阵
 

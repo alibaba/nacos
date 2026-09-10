@@ -108,13 +108,13 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 | Capability | Method | Input | Result |
 |---|---|---|---|
-| Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentCatalogEntry>` |
+| Search | `searchAgents` | `AgentSearchQuery` without a caller-controlled namespace | `Page<AgentCatalogEntry>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
 | Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
 | Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
-| Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
-| Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationBatch` | `void` |
+| Register | `registerAgentEndpoints` | `AgentEndpointRegistration` | `void` |
+| Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistration` | `void` |
 | Code-first publish | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
@@ -213,6 +213,13 @@ description, or explicitly supplied initial metadata is a conflict.
 `autoSubmit=false` against an advanced Version, and either mode against an
 `offline` Version, returns illegal state or conflict. A submit failure does not
 compensate by deleting the created draft.
+
+Client Search, registration and deregistration accept `model.agent.AgentSearchQuery`,
+`AgentEndpointRegistration` and `AgentEndpointDeregistration`. None exposes a namespace field
+or accessor. The SDK copies the inputs and injects its instance namespace into the existing
+transport DTOs, leaving caller collections/Endpoints unchanged. These unreleased 3.3 methods
+do not retain public overloads accepting namespace-bearing wire DTOs. Server HTTP/gRPC DTOs,
+authorization, query and registration semantics are unchanged.
 
 ### 2.2 Transport Matrix
 

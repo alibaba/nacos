@@ -49,10 +49,10 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
@@ -152,7 +152,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(NacosException.SERVER_ERROR, legacy.getErrCode(), legacy.toString());
         NacosRuntimeException child = assertThrows(NacosRuntimeException.class, () -> service.agent().getAgentCard(absent));
         assertEquals(legacy.getErrCode(), child.getErrCode());
-        assertNotNull(service.agent().searchAgents(new AgentSearchRequest()));
+        assertNotNull(service.agent().searchAgents(new AgentSearchQuery()));
     }
 
     @Test
@@ -339,7 +339,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, published.getStatus(),
                 published.toString());
         waitUntil(mode + " Agent should become searchable", () -> {
-            AgentSearchRequest search = new AgentSearchRequest();
+            AgentSearchQuery search = new AgentSearchQuery();
             search.setAgentNameContains(agentName);
             return service.agent().searchAgents(search).getPageItems().stream()
                     .anyMatch(each -> agentName.equals(each.getAgentName()));
@@ -357,7 +357,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION, service.agent().subscribeAgent(reference, listener).getVersion());
 
         Endpoint endpoint = endpoint(mode);
-        AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();
+        AgentEndpointRegistration registration = new AgentEndpointRegistration();
         registration.setAgentName(agentName);
         registration.setRuntimeVersion(VERSION);
         registration.setProtocol(PROTOCOL_A2A);
@@ -569,12 +569,12 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentEndpointDeregistrationBatch deregistration(String agentName,
+    private AgentEndpointDeregistration deregistration(String agentName,
             Endpoint endpoint) {
         Endpoint naturalKey = new Endpoint();
         naturalKey.setUri(endpoint.getUri());
         naturalKey.setTransport(endpoint.getTransport());
-        AgentEndpointDeregistrationBatch result = new AgentEndpointDeregistrationBatch();
+        AgentEndpointDeregistration result = new AgentEndpointDeregistration();
         result.setAgentName(agentName);
         result.setProtocol(PROTOCOL_A2A);
         result.setEndpoints(Collections.singletonList(naturalKey));

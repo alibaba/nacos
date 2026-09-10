@@ -49,10 +49,10 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.common.Constants;
@@ -70,6 +70,8 @@ import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.io.InputStream;
@@ -325,10 +327,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 .get("latest").asText(), updatedConsoleOverview.toString());
     }
     
-    @Test
-    void shouldSearchDiscoverAndIsolateNamespaces() throws Exception {
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldSearchDiscoverAndIsolateNamespaces(AgentTransportMode mode) throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
-        AiService defaultService = createAiService();
+        AiService defaultService = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
         String searchScope = randomServiceName("agent-search");
         String targetName = searchScope + "-target";
         String decoyName = searchScope + "-decoy";
@@ -340,53 +343,50 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Arrays.asList("java-sdk-it", "red"), Collections.singletonList(PROTOCOL_MCP), false);
         createPublishedAgent(maintainer, customNamespace, customName,
             Arrays.asList("java-sdk-it", "blue"), Collections.singletonList(PROTOCOL_A2A), false);
-        AiService customService = createAiService(customNamespace, null);
-        AgentSearchRequest currentSnapshot = new AgentSearchRequest();
+        AiService customService = createAiService(customNamespace, mode.getValue());
+        AgentSearchQuery currentSnapshot = new AgentSearchQuery();
         currentSnapshot.setAgentNameContains(targetName);
         assertNotNull(defaultService.agent().searchAgents(currentSnapshot));
-        AgentSearchRequest customSnapshot = new AgentSearchRequest();
+        AgentSearchQuery customSnapshot = new AgentSearchQuery();
         customSnapshot.setAgentNameContains(customName);
         assertNotNull(customService.agent().searchAgents(customSnapshot));
         waitForSearchTotal(defaultService, targetName, 1);
         waitForSearchTotal(defaultService, decoyName, 1);
         waitForSearchTotal(customService, customName, 1);
         
-        AgentSearchRequest request = new AgentSearchRequest();
+        AgentSearchQuery request = new AgentSearchQuery();
         request.setAgentNameContains(targetName);
         request.setTagsAll(Arrays.asList("java-sdk-it", "blue"));
         request.setProtocolsAny(Arrays.asList(PROTOCOL_MCP, PROTOCOL_A2A));
         request.setPageNo(1);
         request.setPageSize(1);
+        String requestSnapshot = JacksonUtils.toJson(request);
         Page<AgentCatalogEntry> page = defaultService.agent().searchAgents(request);
-        assertNull(request.getNamespaceId(), "the caller-owned Search request must not be changed");
+        assertEquals(requestSnapshot, JacksonUtils.toJson(request), "the caller-owned Search query must not be changed");
         assertEquals(1, page.getTotalCount());
         assertEquals(1, page.getPageItems().size());
         assertEquals(targetName, page.getPageItems().get(0).getAgentName());
         assertEquals(VERSION, page.getPageItems().get(0).getLatestVersion());
         
-        AgentSearchRequest defaultSearch = new AgentSearchRequest();
+        AgentSearchQuery defaultSearch = new AgentSearchQuery();
         defaultSearch.setAgentNameContains(searchScope);
         assertEquals(2, defaultService.agent().searchAgents(defaultSearch).getTotalCount());
-        AgentSearchRequest tagSearch = new AgentSearchRequest();
+        AgentSearchQuery tagSearch = new AgentSearchQuery();
         tagSearch.setAgentNameContains(searchScope);
         tagSearch.setTagsAll(Collections.singletonList("blue"));
         assertEquals(1, defaultService.agent().searchAgents(tagSearch).getTotalCount());
-        AgentSearchRequest protocolSearch = new AgentSearchRequest();
+        AgentSearchQuery protocolSearch = new AgentSearchQuery();
         protocolSearch.setAgentNameContains(searchScope);
         protocolSearch.setProtocolsAny(Collections.singletonList(PROTOCOL_A2A));
         assertEquals(1, defaultService.agent().searchAgents(protocolSearch).getTotalCount());
         
-        AgentSearchRequest emptySearch = new AgentSearchRequest();
+        AgentSearchQuery emptySearch = new AgentSearchQuery();
         emptySearch.setAgentNameContains("no-such-agent-" + targetName);
         assertEquals(0, defaultService.agent().searchAgents(emptySearch).getTotalCount());
-        AgentSearchRequest customSearch = new AgentSearchRequest();
+        AgentSearchQuery customSearch = new AgentSearchQuery();
         customSearch.setAgentNameContains(customName);
         assertEquals(1, customService.agent().searchAgents(customSearch).getTotalCount());
         assertEquals(0, defaultService.agent().searchAgents(customSearch).getTotalCount());
-        AgentSearchRequest explicitlyBoundSearch = new AgentSearchRequest();
-        explicitlyBoundSearch.setNamespaceId(customNamespace);
-        explicitlyBoundSearch.setAgentNameContains(customName);
-        assertEquals(1, customService.agent().searchAgents(explicitlyBoundSearch).getTotalCount());
         
         AgentReference latest = reference(targetName, null, null);
         AgentDiscoveryResult latestResult = defaultService.agent().discoverAgent(latest);
@@ -413,24 +413,23 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(1, sourceEndpoints(filtered, PROTOCOL_A2A, EndpointSource.DECLARED).size());
         assertTrue(sourceEndpoints(filtered, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
         
-        AgentSearchRequest mismatched = new AgentSearchRequest();
-        mismatched.setNamespaceId(customNamespace);
-        assertInvalid(() -> defaultService.agent().searchAgents(mismatched));
         
         Endpoint customEndpoint = endpoint(randomPort(), "/custom", "custom");
-        AgentEndpointRegistrationBatch customRegistration =
+        AgentEndpointRegistration customRegistration =
             registration(customName, PROTOCOL_A2A, Collections.singletonList(customEndpoint));
-        customRegistration.setNamespaceId(customNamespace);
+        String registrationSnapshot = JacksonUtils.toJson(customRegistration);
         customService.agent().registerAgentEndpoints(customRegistration);
+        assertEquals(registrationSnapshot, JacksonUtils.toJson(customRegistration));
         waitForEndpointCount(customService, customName, PROTOCOL_A2A, 1);
         NacosException isolated = assertThrows(NacosException.class,
             () -> defaultService.agent().discoverAgent(reference(customName, null, null)));
         assertEquals(NacosException.NOT_FOUND, isolated.getErrCode());
-        AgentEndpointDeregistrationBatch customDeregistration =
+        AgentEndpointDeregistration customDeregistration =
             deregistration(customName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(customEndpoint)));
-        customDeregistration.setNamespaceId(customNamespace);
+        String deregistrationSnapshot = JacksonUtils.toJson(customDeregistration);
         customService.agent().deregisterAgentEndpoints(customDeregistration);
+        assertEquals(deregistrationSnapshot, JacksonUtils.toJson(customDeregistration));
         waitForEndpointCount(customService, customName, PROTOCOL_A2A, 0);
     }
     
@@ -446,10 +445,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint first = endpoint(randomPort(), "/first", "one");
         Endpoint second = endpoint(randomPort(), "/second", "two");
         Endpoint third = endpoint(randomPort(), "/third", "three");
-        AgentEndpointRegistrationBatch initial =
+        AgentEndpointRegistration initial =
             registration(agentName, PROTOCOL_A2A, Arrays.asList(first, second));
+        String initialSnapshot = JacksonUtils.toJson(initial);
         service.agent().registerAgentEndpoints(initial);
-        assertNull(initial.getNamespaceId(),
+        assertEquals(initialSnapshot, JacksonUtils.toJson(initial),
             "the caller-owned registration Batch must not be changed");
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 2);
         
@@ -951,7 +951,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(0, callbackCount.get());
         
         Endpoint replacement = endpoint(randomPort(), "/replacement", "replacement");
-        AgentEndpointRegistrationBatch replacementBatch =
+        AgentEndpointRegistration replacementBatch =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement));
         service.agent().registerAgentEndpoints(replacementBatch);
         assertTrue(replacementCallback.await(WATCH_HINT_TIMEOUT_MILLIS,
@@ -1164,7 +1164,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(PROTOCOL_A2A), false);
 
         Endpoint versionOneEndpoint = endpoint(randomPort(), "/v1", "version-one");
-        AgentEndpointRegistrationBatch versionOneRegistration = registration(agentName, VERSION,
+        AgentEndpointRegistration versionOneRegistration = registration(agentName, VERSION,
             PROTOCOL_A2A, Collections.singletonList(versionOneEndpoint));
         versionOnePublisher.agent().registerAgentEndpoints(versionOneRegistration);
         addCleanup(() -> versionOnePublisher.agent().deregisterAgentEndpoints(
@@ -1202,7 +1202,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             .equals(runtimeSourceRevision(latestBeforeVersionTwoEndpoint)));
 
         Endpoint versionTwoEndpoint = endpoint(randomPort(), "/v2", "version-two");
-        AgentEndpointRegistrationBatch versionTwoRegistration = registration(agentName,
+        AgentEndpointRegistration versionTwoRegistration = registration(agentName,
             VERSION_2, PROTOCOL_A2A, Collections.singletonList(versionTwoEndpoint));
         versionTwoPublisher.agent().registerAgentEndpoints(versionTwoRegistration);
         addCleanup(() -> versionTwoPublisher.agent().deregisterAgentEndpoints(
@@ -1260,7 +1260,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
         Endpoint endpoint = endpoint(randomPort(), "/range", "range");
         
-        AgentEndpointRegistrationBatch firstRange = registration(agentName, VERSION_2,
+        AgentEndpointRegistration firstRange = registration(agentName, VERSION_2,
             PROTOCOL_A2A, Collections.singletonList(endpoint));
         firstRange.setVersionRange("[1.0.0,2.0.0]");
         service.agent().registerAgentEndpoints(firstRange);
@@ -1268,7 +1268,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(service, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
         
-        AgentEndpointRegistrationBatch secondRange = registration(agentName, VERSION_2,
+        AgentEndpointRegistration secondRange = registration(agentName, VERSION_2,
             PROTOCOL_A2A, Collections.singletonList(endpoint));
         secondRange.setVersionRange("[2.0.0,3.0.0]");
         service.agent().registerAgentEndpoints(secondRange);
@@ -1755,7 +1755,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForSearchTotal(grpcService, agentName, 1);
         waitForSearchTotal(httpService, agentName, 1);
         
-        AgentSearchRequest search = new AgentSearchRequest();
+        AgentSearchQuery search = new AgentSearchQuery();
         search.setAgentNameContains(agentName);
         assertEquals(1, grpcService.agent().searchAgents(search).getTotalCount());
         assertEquals(1, httpService.agent().searchAgents(search).getTotalCount());
@@ -1898,7 +1898,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             AgentTransportMode.GRPC.getValue());
         grpcProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
         AiService grpcService = createAiServiceWithoutReadiness(grpcProperties);
-        AgentSearchRequest search = new AgentSearchRequest();
+        AgentSearchQuery search = new AgentSearchQuery();
         search.setAgentNameContains(agentName);
         assertThrows(NacosException.class, () -> grpcService.agent().searchAgents(search));
         
@@ -1930,7 +1930,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         waitForSearchTotal(grpcService, stem, 3);
         waitForSearchTotal(httpService, stem, 3);
-        AgentSearchRequest combined = new AgentSearchRequest();
+        AgentSearchQuery combined = new AgentSearchQuery();
         combined.setAgentNameContains(stem);
         combined.setTagsAll(Arrays.asList("shared", "blue"));
         combined.setProtocolsAny(Arrays.asList(PROTOCOL_MCP, "jsonrpc"));
@@ -1943,7 +1943,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         List<String> expectedOrder = Arrays.asList(agentA, agentB, agentC);
         assertEquals(expectedOrder, searchNamesByPage(grpcService, stem));
         assertEquals(expectedOrder, searchNamesByPage(httpService, stem));
-        AgentSearchRequest wrongCase = new AgentSearchRequest();
+        AgentSearchQuery wrongCase = new AgentSearchQuery();
         wrongCase.setAgentNameContains(stem + "-b");
         assertEquals(0, grpcService.agent().searchAgents(wrongCase).getTotalCount());
         assertEquals(0, httpService.agent().searchAgents(wrongCase).getTotalCount());
@@ -1987,19 +1987,19 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AiService service = createAiService();
         assertInvalid(() -> service.agent().searchAgents(null));
         
-        AgentSearchRequest invalidPage = new AgentSearchRequest();
+        AgentSearchQuery invalidPage = new AgentSearchQuery();
         invalidPage.setPageNo(0);
         assertInvalid(() -> service.agent().searchAgents(invalidPage));
-        AgentSearchRequest invalidPageSize = new AgentSearchRequest();
+        AgentSearchQuery invalidPageSize = new AgentSearchQuery();
         invalidPageSize.setPageSize(0);
         assertInvalid(() -> service.agent().searchAgents(invalidPageSize));
-        AgentSearchRequest duplicateTags = new AgentSearchRequest();
+        AgentSearchQuery duplicateTags = new AgentSearchQuery();
         duplicateTags.setTagsAll(Arrays.asList("duplicate", "duplicate"));
         assertInvalid(() -> service.agent().searchAgents(duplicateTags));
-        AgentSearchRequest duplicateProtocols = new AgentSearchRequest();
+        AgentSearchQuery duplicateProtocols = new AgentSearchQuery();
         duplicateProtocols.setProtocolsAny(Arrays.asList(PROTOCOL_A2A, PROTOCOL_A2A));
         assertInvalid(() -> service.agent().searchAgents(duplicateProtocols));
-        AgentSearchRequest invalidProtocol = new AgentSearchRequest();
+        AgentSearchQuery invalidProtocol = new AgentSearchQuery();
         invalidProtocol.setProtocolsAny(Collections.singletonList("not a protocol"));
         assertInvalid(() -> service.agent().searchAgents(invalidProtocol));
         
@@ -2007,12 +2007,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference ambiguous = reference(randomServiceName("agent-invalid"), VERSION,
             LABEL_STABLE);
         assertInvalid(() -> service.agent().discoverAgent(ambiguous));
-        AgentSearchRequest mismatched = new AgentSearchRequest();
-        mismatched.setNamespaceId(randomServiceName("another-namespace"));
-        assertInvalid(() -> service.agent().searchAgents(mismatched));
         
         String agentName = randomServiceName("agent-invalid-publication");
-        AgentEndpointRegistrationBatch empty =
+        AgentEndpointRegistration empty =
             registration(agentName, PROTOCOL_A2A, Collections.<Endpoint>emptyList());
         assertInvalid(() -> service.agent().registerAgentEndpoints(empty));
         Endpoint duplicate = endpoint(randomPort(), "/duplicate", "duplicate");
@@ -2032,11 +2029,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         invalidTransport.setTransport("invalid transport");
         assertInvalid(() -> service.agent().registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(invalidTransport))));
-        AgentEndpointRegistrationBatch invalidVersion =
+        AgentEndpointRegistration invalidVersion =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(duplicate));
         invalidVersion.setRuntimeVersion("not-semver");
         assertInvalid(() -> service.agent().registerAgentEndpoints(invalidVersion));
-        AgentEndpointRegistrationBatch invalidRange =
+        AgentEndpointRegistration invalidRange =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(duplicate));
         invalidRange.setVersionRange("[2.0.0,1.0.0]");
         assertInvalid(() -> service.agent().registerAgentEndpoints(invalidRange));
@@ -2147,7 +2144,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Override
     protected AiService createAiService() throws Exception {
         AiService result = super.createAiService();
-        AgentSearchRequest readinessProbe = new AgentSearchRequest();
+        AgentSearchQuery readinessProbe = new AgentSearchQuery();
         readinessProbe.setAgentNameContains(randomServiceName("agent-readiness-probe"));
         waitUntil("RAD SDK client should connect to server and negotiate its ability", () -> {
             result.agent().searchAgents(readinessProbe);
@@ -2386,14 +2383,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
     
-    private AgentEndpointRegistrationBatch registration(String agentName, String protocol,
+    private AgentEndpointRegistration registration(String agentName, String protocol,
         List<Endpoint> endpoints) {
         return registration(agentName, VERSION, protocol, endpoints);
     }
     
-    private AgentEndpointRegistrationBatch registration(String agentName, String runtimeVersion,
+    private AgentEndpointRegistration registration(String agentName, String runtimeVersion,
         String protocol, List<Endpoint> endpoints) {
-        AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
+        AgentEndpointRegistration result = new AgentEndpointRegistration();
         result.setAgentName(agentName);
         result.setRuntimeVersion(runtimeVersion);
         result.setProtocol(protocol);
@@ -2401,9 +2398,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
     
-    private AgentEndpointDeregistrationBatch deregistration(String agentName, String protocol,
+    private AgentEndpointDeregistration deregistration(String agentName, String protocol,
         List<Endpoint> endpoints) {
-        AgentEndpointDeregistrationBatch result = new AgentEndpointDeregistrationBatch();
+        AgentEndpointDeregistration result = new AgentEndpointDeregistration();
         result.setAgentName(agentName);
         result.setProtocol(protocol);
         result.setEndpoints(endpoints);
@@ -2516,7 +2513,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private AgentCatalogEntry searchOne(AiService service, String agentName)
         throws NacosException {
-        AgentSearchRequest request = new AgentSearchRequest();
+        AgentSearchQuery request = new AgentSearchQuery();
         request.setAgentNameContains(agentName);
         Page<AgentCatalogEntry> result = service.agent().searchAgents(request);
         for (AgentCatalogEntry entry : result.getPageItems()) {
@@ -2543,7 +2540,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         throws Exception {
         waitUntilLong("Search should converge to " + expected + " Agents for " + nameContains,
             () -> {
-                AgentSearchRequest request = new AgentSearchRequest();
+                AgentSearchQuery request = new AgentSearchQuery();
                 request.setAgentNameContains(nameContains);
                 return service.agent().searchAgents(request).getTotalCount() == expected;
             });
@@ -2581,7 +2578,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         throws NacosException {
         List<String> result = new ArrayList<>();
         for (int pageNo = 1; pageNo <= 4; pageNo++) {
-            AgentSearchRequest request = new AgentSearchRequest();
+            AgentSearchQuery request = new AgentSearchQuery();
             request.setAgentNameContains(nameContains);
             request.setPageNo(pageNo);
             request.setPageSize(1);

@@ -108,7 +108,7 @@ The detailed operation, boundary, failure, and compound matrix is maintained in
 
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| Factory, namespace, and lifecycle | Default/custom namespace binding, caller isolation, invalid mismatch, inactive/active/repeated shutdown. | Covered | Default and custom service creation, omitted/explicit/mismatched namespace behavior, caller-owned request and Batch isolation, active HTTP publication cleanup, and repeated shutdown are covered in standalone IT; deterministic resource cleanup is also covered by unit tests. |
+| Factory, namespace, and lifecycle | Default/custom namespace binding, namespace-free inputs, caller isolation, inactive/active/repeated shutdown. | Covered | Default and custom service creation, namespace-free Search/Endpoint inputs with implicit instance binding across grpc/http/auto, caller-owned request and Batch isolation, active HTTP publication cleanup, and repeated shutdown are covered in standalone IT; deterministic resource cleanup is also covered by unit tests. |
 | Agent transport mode | Explicit GRPC/HTTP and AUTO, synchronous initial gRPC startup, never-connected STARTING fallback, operation routing, and publication ownership. | Partial | Stable IT verifies AUTO on an available negotiated gRPC connection, AUTO Search/subscription/Publication over HTTP when a deliberately unreachable gRPC port remains STARTING, explicit HTTP independence from gRPC startup, and explicit GRPC failure without HTTP fallback. Probe thresholds, business-error classification, read-only fallback, sticky mixed Publication ownership, and reconnect suspension are deterministic UT scenarios. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
 | Search | Default, literal name, tags-all, protocols-any, combined filters, pagination, empty result, validation, and transport parity. | Covered | Individual/default/combined/empty/paged searches, local null/page/duplicate/protocol boundaries, namespace isolation, and HTTP/gRPC parity are covered. |
 | Discover | Latest/exact/label resolution, unfiltered and combined filters, declared/runtime source shape, not found, validation, and transport parity. | Covered | Latest/exact/label and combined-filter results, full unfiltered interface shape, declared/runtime source projection, not-found mapping, ambiguous/null reference validation, and HTTP/gRPC parity are covered. |
@@ -171,3 +171,11 @@ These figures measure the four declared scenario groups, not code coverage or
 all AI capabilities. Existing domain-level Partial rows and known findings are
 not upgraded by this increment. Actual commands, adapter results, and skips
 are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
+
+## Client namespace input correction (3.3 review)
+
+| Public SDK surface | Required scenarios | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| Agent Search and Endpoint inputs | No namespace fields/accessors in public inputs; instance-bound search/register/deregister under HTTP, gRPC and AUTO; immutable inputs and existing validation | Covered | Public API contract tests reject namespace accessors and old wire-DTO overloads. The two-namespace lifecycle IT passes in grpc/http/auto with immutable Search/Endpoint inputs; default JSON and Jackson 3 both pass. Original wire serialization, HTTP/gRPC mapping, validation and authorization regressions pass. |
+
+Separate review increment: strict 1/1 = 100%; effective 1/1 = 100%. This single input-contract group does not change the historical domain denominator or the existing migration/reliability gaps.

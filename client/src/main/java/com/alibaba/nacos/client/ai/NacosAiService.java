@@ -54,9 +54,12 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
 import com.alibaba.nacos.api.ai.model.rad.AgentReference;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -890,7 +893,7 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
+        public Page<AgentCatalogEntry> searchAgents(AgentSearchQuery request)
             throws NacosException {
             AgentSearchRequest boundRequest =
                 AgentModelUtils.copySearchRequest(request, namespaceId);
@@ -919,7 +922,7 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public void registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+        public void registerAgentEndpoints(AgentEndpointRegistration batch)
             throws NacosException {
             AgentEndpointRegistrationBatch boundBatch =
                 AgentModelUtils.copyRegistrationBatch(batch, namespaceId);
@@ -927,7 +930,7 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public void deregisterAgentEndpoints(AgentEndpointDeregistrationBatch batch)
+        public void deregisterAgentEndpoints(AgentEndpointDeregistration batch)
             throws NacosException {
             AgentEndpointDeregistrationBatch boundBatch =
                 AgentModelUtils.copyDeregistrationBatch(batch, namespaceId);

@@ -112,3 +112,11 @@ These figures measure the four declared scenario groups, not code coverage or
 all AI capabilities. Existing domain-level Partial rows and known findings are
 not upgraded by this increment. Actual commands, adapter results, and skips
 are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
+
+## Client namespace input correction (3.3 review)
+
+| Public SDK surface | Required scenarios | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| Agent Search and Endpoint inputs | No namespace fields/accessors in public inputs; instance-bound search/register/deregister under HTTP, gRPC and AUTO; immutable inputs and existing validation | Covered | Public API contract tests reject namespace accessors and old wire-DTO overloads. The two-namespace lifecycle IT passes in grpc/http/auto with immutable Search/Endpoint inputs; default JSON and Jackson 3 both pass. Original wire serialization, HTTP/gRPC mapping, validation and authorization regressions pass. |
+
+Separate review increment: strict 1/1 = 100%; effective 1/1 = 100%. This single input-contract group does not change the historical domain denominator or the existing migration/reliability gaps.

@@ -184,3 +184,15 @@ HTTP 成功的记录不能调用阻塞网络；共享状态锁内不执行新 HT
 6. 提交 PR 前执行仓库要求的 compile/RAT/Checkstyle/SpotBugs/Spotless 等检查，保存相关 UT/Failsafe/独立 JVM 报告。验证通过后不无理由重复扩大测试。
 
 第一步完成意味着：五入口和旧签名可用、旧 A2A 固定原 gRPC、资源配置不串扰、HTTP-only 原生路径成立、Skill/AgentSpec 退化成功、共享 owner/监听/关闭不变、必要兼容门禁有证据。所有未来 capability、新 wire 和语义转换仍单独标为未实现。
+
+## 9. Review 修正：Client 入参不暴露 namespaceId
+
+Search/Endpoint 三类入参改为 `model.agent.AgentSearchQuery`、
+`AgentEndpointRegistration` 和 `AgentEndpointDeregistration`。不从带 namespace 的传输类继承，
+不保留旧传输类型的公开重载；它们属于 3.3 尚未发布的 Agent API，不影响 3.2.x A2A。
+Client 复制入参后，把实例 namespace 注入原有 `model.rad` 请求/Batch。
+HTTP/gRPC、服务端、Maintainer 以及内部 publication/redo 的模型和算法不变。
+
+验证：公开类型无 namespace JavaBean 属性；Search 列表及 Endpoint/metadata 防御复制；
+空入参及既有业务校验；三种 mode 下 default/custom namespace 的搜索、注册、注销隔离，
+以及原参数 JSON 不被修改。原同值/异值 namespace 入参测试由这些场景取代。
