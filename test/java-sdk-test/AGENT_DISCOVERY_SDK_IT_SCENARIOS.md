@@ -254,6 +254,8 @@ Endpoint, and replacement across an already-online Version.
 | Replacement registration has a retryable failure after local removal | The reduced desired Batch remains available for a later reconnect redo. | Deferred: generic replacement failure has UT, but the combined partial-deregistration/recovery path is not directly asserted; excluded from this review increment. |
 | Whole deregistration fails after the last local removal | A deregistration intent remains until completion or shutdown. | UT |
 
+The normal publication lifecycle IT explicitly sets the Client Endpoint watermark to 3 and is also verified against the CI server watermark of 3. It grows the other protocol only after the Agent partial removal releases capacity, so lifecycle assertions remain independent of capacity rejection.
+
 ## Heartbeat, Retry, Reconnect, And Redo
 
 | Scenario | Expected result | Coverage |

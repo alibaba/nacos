@@ -438,7 +438,10 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     void shouldReplaceAndPartiallyDeregisterCompletePublications(AgentTransportMode mode)
         throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
-        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode.getValue());
+        properties.setProperty(AiConstants.AI_AGENT_ENDPOINT_MAX_PUBLICATIONS, "3");
+        AiService service = createAiService(properties);
         String agentName = randomServiceName("agent-publication");
         createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
             Collections.singletonList("java-sdk-it"), Arrays.asList(PROTOCOL_A2A, PROTOCOL_MCP),
@@ -486,8 +489,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint mcp = endpoint(randomPort(), "/mcp", "mcp");
         Endpoint secondMcp = endpoint(randomPort(), "/mcp-second", "mcp-second");
         service.agent().registerAgentEndpoints(
-            registration(agentName, PROTOCOL_MCP, Arrays.asList(mcp, secondMcp)));
-        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
+            registration(agentName, PROTOCOL_MCP, Collections.singletonList(mcp)));
+        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 1);
 
         third.setPriority(7);
         third.setWeight(2.5D);
@@ -520,7 +523,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(1, actual.getBindings().size());
         assertEquals(multiple.getRuntimeVersion(), actual.getBindings().get(0).getRuntimeVersion());
         assertEquals(multiple.getVersionRange(), actual.getBindings().get(0).getVersionRange());
-        assertEquals(2, sourceEndpoints(remaining, PROTOCOL_MCP, EndpointSource.RUNTIME).size());
+        assertEquals(1, sourceEndpoints(remaining, PROTOCOL_MCP, EndpointSource.RUNTIME).size());
+
+        service.agent().registerAgentEndpoints(
+            registration(agentName, PROTOCOL_MCP, Arrays.asList(mcp, secondMcp)));
+        waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
 
         service.agent().deregisterAgentEndpoints(removal);
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);

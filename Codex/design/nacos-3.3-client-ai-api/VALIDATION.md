@@ -17,7 +17,7 @@
 # 第一步实施验证
 
 基线：`upstream/develop`，`3623b19db6be69545d7a5af36705b92274d10390`。
-分支：`codex/client-ai-resource-services`。只做本地 commit，不提交 PR。
+分支：`codex/client-ai-resource-services`。初始实施按要求仅做本地 commit；后续用户已明确要求提交 PR，提交前验证见文末。
 
 ## C1：接口和兼容委托
 
@@ -129,8 +129,8 @@ HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本�
   保留项的 URI、transport、priority、weight、metadata 和 Batch 版本字段保持不变。
 - IT 将完整注册、幂等、覆盖、单项/多项部分注销、最后一项注销、批量全部注销和重复注销
   参数化为 grpc/http/auto。多项场景验证 `[E1,E2,E3] - [E2,unknown,E1] = [E3]`，
-  输入 JSON 不变，保留项字段与 Runtime Version bindings 不变，另一 protocol 的两个 Endpoint
-  始终保留到它自己的批量注销。
+  输入 JSON 不变，保留项字段与 Runtime Version bindings 不变，另一 protocol 的 Endpoint
+  保留到它自己的批量注销。
 - `AgentEndpointPublicationManagerTest`：33 项全部通过，0 失败/错误/跳过。
 - 默认 JSON 与 Jackson 3 定向 IT：各 3 项全部通过，分别为 grpc/http/auto，均为 0 失败/错误/跳过。
 - client 与 test/java-sdk-test 的 Spotless apply/check、编译、RAT、Checkstyle 全通过。
@@ -144,3 +144,21 @@ HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本�
 - 按用户要求暂缓部分注销后的故障恢复加固，没有新增故障注入或修改既有 Disabled；
   文档明确区分通用 replacement/redo UT 与尚未直接验证的部分注销故障恢复组合。
 - 本轮隔离服务端 PID 92467 已正常关闭，六个测试端口均已释放；作为第五个独立本地 commit 交付，不推送、不创建 PR。
+
+## PR 提交前验证
+
+- 关联现有议题 #14804，目标分支为 `alibaba/nacos:develop`。
+- 五个实现和 review 提交已无冲突 rebase 到最新 `upstream/develop`
+  `88cf7477498c70f699407f5b37aff6f9367eca77`；新增上游内容仅为 UI 依赖更新。
+- 本机没有 `mvnd`，使用 JDK 17 和 Maven 运行 `.github/workflows/ci.yml`
+  的同等完整检查：
+  `mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e
+  -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn`。
+- 为避免既有运行日志触发 RAT，检查期间将 `test/naming-test/derby.log` 和
+  `test/naming-test/logs/access_log.2026-09-08.log` 原样保留到临时目录，结束后恢复；
+  未关闭任何静态检查。日志保存在 `/tmp/nacos-ai-pr-submit/full-static.log`。
+- 提交前对齐 CI 的 Endpoint 软水位 3：正常注销用例显式设置 Client 水位 3，
+  并调整另一 protocol 的扩容顺序，避免把正常注销流程误写成容量拒绝测试；服务端也以水位 3 定向复验。
+- 完整 CI 同等检查：61/61 模块通过，总耗时 12 分 16 秒；两份既有日志已按 SHA-256 核验后原样恢复。
+- 水位 3 定向复验：默认 JSON 与 Jackson 3 各 3/3 通过，0 失败/错误/跳过；SDK IT 编译、RAT、Checkstyle、Spotless 通过。
+- 本轮水位验证服务端 PID 23068 已关闭，六个端口均释放；生产代码不变，CI 水位适配作为独立测试提交。
