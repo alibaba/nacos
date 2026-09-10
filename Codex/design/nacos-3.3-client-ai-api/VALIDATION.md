@@ -162,3 +162,35 @@ HTTP/gRPC/Console 六个端口均已释放；原始报告保留，不再有本�
 - 完整 CI 同等检查：61/61 模块通过，总耗时 12 分 16 秒；两份既有日志已按 SHA-256 核验后原样恢复。
 - 水位 3 定向复验：默认 JSON 与 Jackson 3 各 3/3 通过，0 失败/错误/跳过；SDK IT 编译、RAT、Checkstyle、Spotless 通过。
 - 本轮水位验证服务端 PID 23068 已关闭，六个端口均释放；生产代码不变，CI 水位适配作为独立测试提交。
+
+
+## PR Codecov 覆盖率加固
+
+- PR #15839 在 `6db898306` 的 Codecov 反馈为增量覆盖率 46.63677%，119 行缺失或部分覆盖。
+  本轮仅补充 UT 和验证记录，未改生产代码、公开契约、IT 场景或覆盖率排除配置。
+- 在既有测试中补充所有 AiService 默认委托的参数、返回值、异常和 listener 透传，
+  MCP 默认重载及 draft 兼容行为；三个 namespace-free Client 输入补齐完整 JSON
+  round-trip、无 namespaceId、未设置字段省略和显式空列表保留。
+- 加固 MCP/Prompt 路由和连接错误分类：固定 transport 失败不跨协议重放、HTTP 失败不计探测成功、
+  业务错误优先于连接 cause、publication owner 不随新的 transport 选择而改变。
+- 补齐 NacosAiService 具体资源委托：Skill 新旧入口的初始订阅、参数边界、最后监听器注销；
+  MCP 查询异常、空初始结果，以及五类资源在初始读取返回前已经通知时不重复回调。
+  此处以同步受控回调覆盖调用顺序，不新增故障注入或恢复 IT。
+- 新增 68 个 UT invocation。最终同一 reactor 中 API AI 674/674 通过；Client AI
+  562 项中 561 通过、1 项既有 Disabled，0 失败/错误；共 1,235 通过、1 跳过。
+- JDK 17 / Java 8 target，最终命令（没有跳过静态检查）：
+  `mvn -B -pl api,client spotless:apply spotless:check
+  -Dtest='com.alibaba.nacos.api.ai.**,com.alibaba.nacos.client.ai.**'
+  test apache-rat:check checkstyle:check spotbugs:check`。
+  两个模块编译、Spotless、RAT、Checkstyle、SpotBugs 全部通过。
+- 本地 JaCoCo 与 `git diff --unified=0 $(git merge-base upstream/develop HEAD)` 的新增行交集：
+  整个 PR 的生产代码增量可执行行 **462/462（100%）**，这些行上的分支
+  **211/211（100%）**，没有漏行或部分覆盖行。
+  这是本地统计；PR 中 Codecov 的汇总由新提交的 CI 上传后重新计算。
+- Codecov 列出的八个文件，在本地均达到整文件行覆盖率 100%；有分支的
+  AiService、McpService、AiTransportExceptionUtils、McpTransportRouter 和 PromptTransportRouter
+  也均达到整文件分支覆盖率 100%。额外补充的 NacosAiService 整文件行覆盖率
+  338/338，PR 增量行 239/239；剩余 6 个未覆盖分支位于本 PR 未修改的代码行，未扩大测试范围。
+- 可核对证据保存在 `/tmp/nacos-ai-coverage/`：`codecov-before.md`、
+  `api-before.xml` / `client-before.xml`、`api-after.xml` / `client-after.xml`、
+  `patch_coverage.py`、`final-reactor.log`。本轮是 UT 加固，未重复运行已有 IT。

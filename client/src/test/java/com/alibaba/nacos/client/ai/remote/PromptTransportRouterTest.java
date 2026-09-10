@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 import io.grpc.Status;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,5 +116,20 @@ class PromptTransportRouterTest {
         assertSame(notModified,
             assertThrows(NacosException.class, () -> router.queryPrompt("p", null, null, "md5")));
         verify(shared).recordHttpSuccess(AgentGrpcTransport.Resource.PROMPT);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404, 500, -401})
+    void httpFailuresOtherThanNotModifiedDoNotCountAsSuccessfulProbe(int code) throws Exception {
+        PromptTransportRouter router =
+            new PromptTransportRouter(AgentTransportMode.AUTO, shared, http);
+        NacosException failure = new NacosException(code, "HTTP failed");
+        when(http.queryPrompt("p", "1.0.0", "stable", "md5")).thenThrow(failure);
+        
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> router.queryPrompt("p", "1.0.0", "stable", "md5")));
+        verify(shared, never()).recordHttpSuccess(AgentGrpcTransport.Resource.PROMPT);
+        verify(shared, never()).acquireProtocolNeutralClient();
+        verifyNoInteractions(grpc);
     }
 }

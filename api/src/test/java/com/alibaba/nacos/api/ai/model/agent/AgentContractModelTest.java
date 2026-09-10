@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -395,6 +396,94 @@ class AgentContractModelTest extends BasicRequestTest {
         assertTrue(AgentAdminRequestUtils.isBlank(""));
         assertTrue(AgentAdminRequestUtils.isBlank(" \t"));
         assertFalse(AgentAdminRequestUtils.isBlank(" value"));
+    }
+    
+    @Test
+    void testClientSearchQueryRoundTripWithoutNamespace() throws JsonProcessingException {
+        AgentSearchQuery query = new AgentSearchQuery();
+        query.setAgentNameContains("assistant");
+        query.setTagsAll(Arrays.asList("search", "docs"));
+        query.setProtocolsAny(Arrays.asList("a2a", "mcp"));
+        query.setPageNo(2);
+        query.setPageSize(10);
+        
+        AgentSearchQuery restored = roundTrip(query, AgentSearchQuery.class);
+        assertEquals("assistant", restored.getAgentNameContains());
+        assertEquals(Arrays.asList("search", "docs"), restored.getTagsAll());
+        assertEquals(Arrays.asList("a2a", "mcp"), restored.getProtocolsAny());
+        assertEquals(Integer.valueOf(2), restored.getPageNo());
+        assertEquals(Integer.valueOf(10), restored.getPageSize());
+        assertFalse(mapper.readTree(mapper.writeValueAsString(query)).has("namespaceId"));
+    }
+    
+    @Test
+    void testClientEndpointRegistrationRoundTripWithCompleteBatch() throws JsonProcessingException {
+        AgentEndpointRegistration registration = new AgentEndpointRegistration();
+        registration.setAgentName("Demo Agent");
+        registration.setRuntimeVersion("1.0.6");
+        registration.setVersionRange("[1.0.0,2.0.0)");
+        registration.setProtocol("a2a");
+        registration.setEndpoints(Arrays.asList(
+            newEndpoint("https://runtime.example.com:443/a2a", true),
+            newEndpoint("https://declared.example.com:443/a2a", null)));
+        
+        AgentEndpointRegistration restored =
+            roundTrip(registration, AgentEndpointRegistration.class);
+        assertEquals("Demo Agent", restored.getAgentName());
+        assertEquals("1.0.6", restored.getRuntimeVersion());
+        assertEquals("[1.0.0,2.0.0)", restored.getVersionRange());
+        assertEquals("a2a", restored.getProtocol());
+        assertEquals(2, restored.getEndpoints().size());
+        assertEndpoint(restored.getEndpoints().get(0), true);
+        assertEndpoint(restored.getEndpoints().get(1), null);
+        assertFalse(mapper.readTree(mapper.writeValueAsString(registration)).has("namespaceId"));
+    }
+    
+    @Test
+    void testClientEndpointDeregistrationRoundTripPreservesEveryNaturalKey()
+        throws JsonProcessingException {
+        AgentEndpointDeregistration deregistration = new AgentEndpointDeregistration();
+        deregistration.setAgentName("Demo Agent");
+        deregistration.setProtocol("a2a");
+        deregistration.setEndpoints(Arrays.asList(
+            newEndpoint("https://runtime.example.com:443/a2a", true),
+            newEndpoint("https://declared.example.com:443/a2a", null)));
+        
+        AgentEndpointDeregistration restored =
+            roundTrip(deregistration, AgentEndpointDeregistration.class);
+        assertEquals("Demo Agent", restored.getAgentName());
+        assertEquals("a2a", restored.getProtocol());
+        assertEquals(2, restored.getEndpoints().size());
+        assertEndpoint(restored.getEndpoints().get(0), true);
+        assertEndpoint(restored.getEndpoints().get(1), null);
+        assertFalse(mapper.readTree(mapper.writeValueAsString(deregistration)).has("namespaceId"));
+    }
+    
+    @Test
+    void testClientInputsOmitUnsetFieldsWithUnconfiguredMapper() throws JsonProcessingException {
+        ObjectMapper plainMapper = new ObjectMapper();
+        assertEquals("{}", plainMapper.writeValueAsString(new AgentSearchQuery()));
+        assertEquals("{}", plainMapper.writeValueAsString(new AgentEndpointRegistration()));
+        assertEquals("{}", plainMapper.writeValueAsString(new AgentEndpointDeregistration()));
+    }
+    
+    @Test
+    void testClientInputsPreserveExplicitEmptyLists() throws JsonProcessingException {
+        AgentSearchQuery query = new AgentSearchQuery();
+        query.setTagsAll(Collections.emptyList());
+        query.setProtocolsAny(Collections.emptyList());
+        AgentEndpointRegistration registration = new AgentEndpointRegistration();
+        registration.setEndpoints(Collections.emptyList());
+        AgentEndpointDeregistration deregistration = new AgentEndpointDeregistration();
+        deregistration.setEndpoints(Collections.emptyList());
+        
+        AgentSearchQuery restored = roundTrip(query, AgentSearchQuery.class);
+        assertEquals(Collections.emptyList(), restored.getTagsAll());
+        assertEquals(Collections.emptyList(), restored.getProtocolsAny());
+        assertEquals(Collections.emptyList(),
+            roundTrip(registration, AgentEndpointRegistration.class).getEndpoints());
+        assertEquals(Collections.emptyList(),
+            roundTrip(deregistration, AgentEndpointDeregistration.class).getEndpoints());
     }
     
     private Agent newAgent() {
