@@ -105,3 +105,9 @@ Generated and third-party code is excluded from formatting:
 - `**/consistency/entity/**` — Generated entity code
 - `**/istio/model/**` — Istio module
 - `**/common/packagescan/**` — Spring Framework ported code
+- `**/core/remote/thirdparty/clhm/**` — ConcurrentLinkedHashMap source copied from
+  SOFA Hessian 3.3.6 and maintained by Nacos. Spotless and Checkstyle exclude this
+  package to preserve upstream formatting and make source comparisons reliable.
+  JaCoCo excludes it from instrumentation and coverage reports.
+  Apache RAT and SpotBugs still check it. Nacos regression tests live in the parent
+  `core.remote` test package and remain subject to formatting and style checks.

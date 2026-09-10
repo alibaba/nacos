@@ -287,7 +287,7 @@
                     <inputEncoding>UTF-8</inputEncoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**
+                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**,**/core/remote/thirdparty/clhm/**
                     </excludes>
                 </configuration>
                 <executions>
@@ -318,6 +318,7 @@
                             <exclude>**/consistency/entity/**</exclude>
                             <exclude>**/istio/model/**</exclude>
                             <exclude>**/common/packagescan/**</exclude>
+                            <exclude>**/core/remote/thirdparty/clhm/**</exclude>
                             <exclude>**/nacos/test/**</exclude>
                             <exclude>**/protobuf/**</exclude>
                         </excludes>
@@ -421,6 +422,7 @@
                         <exclude>**/packagescan/classreading/**</exclude>
                         <exclude>**/packagescan/resource/**</exclude>
                         <exclude>**/packagescan/util/**</exclude>
+                        <exclude>**/core/remote/thirdparty/clhm/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

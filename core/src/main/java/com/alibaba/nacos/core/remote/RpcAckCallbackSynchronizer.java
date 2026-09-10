@@ -19,8 +19,8 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.core.remote.thirdparty.clhm.ConcurrentLinkedHashMap;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 
 import java.util.HashMap;
 import java.util.Map;

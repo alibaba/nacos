@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.remote.thirdparty.clhm.ConcurrentLinkedHashMap;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
@@ -130,5 +131,41 @@ class RpcAckCallbackSynchronizerTest {
         assertTrue(ctx.containsKey("reqToClear"));
         RpcAckCallbackSynchronizer.clearFuture(CONN_ID, "reqToClear");
         assertFalse(ctx.containsKey("reqToClear"));
+    }
+    
+    @Test
+    void testCapacityEvictionCompletesPendingAckFuture() throws Exception {
+        ConcurrentLinkedHashMap<String, Map<String, DefaultRequestFuture>> contexts =
+            (ConcurrentLinkedHashMap<String, Map<String, DefaultRequestFuture>>) RpcAckCallbackSynchronizer.CALLBACK_CONTEXT;
+        int originalCapacity = contexts.capacity();
+        String nextConnectionId = CONN_ID + "-next";
+        try {
+            contexts.setCapacity(1);
+            DefaultRequestFuture evicted = new DefaultRequestFuture(CONN_ID, "evicted");
+            RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "evicted", evicted);
+            DefaultRequestFuture retained = new DefaultRequestFuture(nextConnectionId, "retained");
+            RpcAckCallbackSynchronizer.syncCallback(nextConnectionId, "retained", retained);
+            
+            assertFalse(contexts.containsKey(CONN_ID));
+            assertTrue(evicted.isDone());
+            assertNull(evicted.get(1000L));
+            assertFalse(retained.isDone());
+            HealthCheckResponse response = new HealthCheckResponse();
+            response.setRequestId("retained");
+            RpcAckCallbackSynchronizer.ackNotify(nextConnectionId, response);
+            assertTrue(retained.get(1000L).isSuccess());
+        } finally {
+            contexts.setCapacity(originalCapacity);
+            RpcAckCallbackSynchronizer.clearContext(nextConnectionId);
+        }
+    }
+    
+    @Test
+    void testExplicitContextRemovalDoesNotFailPendingAckFuture() throws NacosException {
+        DefaultRequestFuture future = new DefaultRequestFuture(CONN_ID, "removed");
+        RpcAckCallbackSynchronizer.syncCallback(CONN_ID, "removed", future);
+        RpcAckCallbackSynchronizer.clearContext(CONN_ID);
+        assertFalse(RpcAckCallbackSynchronizer.CALLBACK_CONTEXT.containsKey(CONN_ID));
+        assertFalse(future.isDone());
     }
 }
