@@ -24,9 +24,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
-import io.grpc.Status;
-import io.grpc.StatusException;
-import io.grpc.StatusRuntimeException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
 /**
  * Routes protocol-neutral MCP Client operations and selects sticky Endpoint owners.
@@ -35,14 +33,17 @@ import io.grpc.StatusRuntimeException;
  */
 public class McpTransportRouter {
     
+    private final AgentTransportMode mode;
+    
     private final AgentGrpcTransport sharedGrpcTransport;
     
     private final McpGrpcTransport grpcTransport;
     
     private final McpHttpTransport httpTransport;
     
-    public McpTransportRouter(AgentGrpcTransport sharedGrpcTransport,
+    public McpTransportRouter(AgentTransportMode mode, AgentGrpcTransport sharedGrpcTransport,
         McpGrpcTransport grpcTransport, McpHttpTransport httpTransport) {
+        this.mode = mode;
         this.sharedGrpcTransport = sharedGrpcTransport;
         this.grpcTransport = grpcTransport;
         this.httpTransport = httpTransport;
@@ -63,7 +64,7 @@ public class McpTransportRouter {
             McpServerDetailInfo result = transport.queryMcpServer(mcpName, version);
             recordHttpSuccess(transport);
             return result;
-        } catch (NacosException e) {
+        } catch (NacosException | NacosRuntimeException e) {
             if (transport.getType() != AgentTransportType.GRPC || !canFallbackRead(e)) {
                 throw e;
             }
@@ -153,11 +154,11 @@ public class McpTransportRouter {
     }
     
     private McpTransport select() {
-        AgentTransportMode mode = sharedGrpcTransport.getMode();
         if (mode == AgentTransportMode.HTTP) {
             return httpTransport;
         }
-        if (mode == AgentTransportMode.GRPC || sharedGrpcTransport.isMcpAvailable()) {
+        if (mode == AgentTransportMode.GRPC
+            || sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)) {
             return grpcTransport;
         }
         return httpTransport;
@@ -169,32 +170,12 @@ public class McpTransportRouter {
     
     private void recordHttpSuccess(McpTransport transport) {
         if (transport.getType() == AgentTransportType.HTTP) {
-            sharedGrpcTransport.recordHttpSuccess();
+            sharedGrpcTransport.recordHttpSuccess(AgentGrpcTransport.Resource.MCP);
         }
     }
     
-    private boolean canFallbackRead(NacosException exception) {
-        if (sharedGrpcTransport.getMode() != AgentTransportMode.AUTO) {
-            return false;
-        }
-        int code = exception.getErrCode();
-        return !sharedGrpcTransport.isConnected()
-            || code == NacosException.CLIENT_DISCONNECT || code == NacosException.UN_REGISTER
-            || isGrpcUnavailable(exception);
-    }
-    
-    private boolean isGrpcUnavailable(Throwable throwable) {
-        Throwable current = throwable;
-        while (current != null) {
-            if (current instanceof StatusRuntimeException) {
-                return ((StatusRuntimeException) current).getStatus()
-                    .getCode() == Status.Code.UNAVAILABLE;
-            }
-            if (current instanceof StatusException) {
-                return ((StatusException) current).getStatus().getCode() == Status.Code.UNAVAILABLE;
-            }
-            current = current.getCause();
-        }
-        return false;
+    private boolean canFallbackRead(Exception exception) {
+        return mode == AgentTransportMode.AUTO
+            && AiTransportExceptionUtils.isConnectionFailure(exception);
     }
 }

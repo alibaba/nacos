@@ -180,6 +180,20 @@ AgentService extends A2aService, AgentDiscoveryService
 创建阶段失败。Transport 生命周期、AUTO 探测与操作 fallback 的具体规则由
 [Agent API 规范](../ai/agent-api-spec.md)定义。
 
+资源键 `nacosAiMcpTransportMode`、`nacosAiAgentTransportMode`、`nacosAiSkillTransportMode`、
+`nacosAiAgentSpecTransportMode`、`nacosAiPromptTransportMode` 继承 `nacosAiTransportMode`
+（默认 grpc）。创建生命周期对象前验证全部显式值，包括最终走 HTTP 的 Skill/AgentSpec 和已被
+全部覆盖的全局值；构造后冻结。Skill/AgentSpec 注入原 HTTP proxy；Prompt 查询与轮询使用同一
+薄路由，AUTO 按连接状态选路，不新增能力位。Agent 配置仅控制新 RAD，旧 A2A 固定原 gRPC。
+
+MCP、Agent、Prompt 分别记录 AUTO 的使用和 HTTP 成功。任一有效 GRPC 或旧 A2A 需求阻止暂停
+共享重连；仅所有已使用 AUTO 资源 HTTP 成功、初始失败达既有阈值时可暂停。未使用资源首次调用
+恢复完整初始探测预算，不改变已稳定资源；曾连接后的 UNHEALTHY 恢复不变。安全读回退必须有
+CLIENT_DISCONNECT、UN_REGISTER 或通用 transport 异常中的 gRPC UNAVAILABLE 证据；不能仅凭
+同时断连覆盖业务、授权、容量或未找到错误。写入结果不明和既有 publication owner 不跨 transport 重放。
+
+原能力检查的断连 runtime exception 保留公开类型、错误码和文案，仅补充 CLIENT_DISCONNECT cause 供安全读路由识别。
+
 `AgentDiscoveryService` 提供以下 namespace-bound 方法：
 
 | 能力 | 方法 | 契约 |

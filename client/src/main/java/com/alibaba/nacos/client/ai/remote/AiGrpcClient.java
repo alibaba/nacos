@@ -946,7 +946,9 @@ public class AiGrpcClient implements AiClientProxy {
                 String.format(
                     "Request Nacos server failed: connection is unavailable, unable to determine %s "
                         + "ability.",
-                    featureName));
+                    featureName),
+                new NacosException(NacosException.CLIENT_DISCONNECT,
+                    "AI gRPC connection is unavailable."));
         }
         AbilityStatus abilityStatus = rpcClient.getConnectionAbility(abilityKey);
         if (AbilityStatus.SUPPORTED == abilityStatus) {

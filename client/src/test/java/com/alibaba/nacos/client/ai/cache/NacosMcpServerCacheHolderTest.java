@@ -281,7 +281,11 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenReturn(mcpServerDetailInfo);
         cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
-        TimeUnit.MILLISECONDS.sleep(110);
+        long deadline = System.currentTimeMillis() + 1000;
+        while (cacheHolder.getMcpServer("test", "1.0.0") == null
+            && System.currentTimeMillis() < deadline) {
+            TimeUnit.MILLISECONDS.sleep(20);
+        }
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));
         cacheHolder.removeMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);

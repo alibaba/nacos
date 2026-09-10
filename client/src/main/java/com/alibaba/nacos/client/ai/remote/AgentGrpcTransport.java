@@ -34,10 +34,15 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.remote.client.InitialConnectionFailureListener;
 import org.slf4j.Logger;
 
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * gRPC implementation of the protocol-neutral Agent transport.
  *
- * <p>The transport owns shared gRPC connection startup and the Agent AUTO probe state while
+ * <p>The transport owns shared gRPC connection startup and independent resource AUTO probe state while
  * delegating wire requests to {@link AiGrpcClient}.</p>
  *
  * @author Nacos
@@ -46,7 +51,18 @@ public class AgentGrpcTransport implements AgentTransport {
     
     private static final Logger LOGGER = LogUtils.logger(AgentGrpcTransport.class);
     
-    private final AgentTransportMode mode;
+    /** AI resources sharing this connection and supporting both transports. */
+    public enum Resource {
+        AGENT, MCP, PROMPT
+    }
+    
+    private final Map<Resource, AgentTransportMode> modes = new EnumMap<>(Resource.class);
+    
+    private final Set<Resource> usedAutoResources = EnumSet.noneOf(Resource.class);
+    
+    private final Set<Resource> httpSucceededResources = EnumSet.noneOf(Resource.class);
+    
+    private final Set<Resource> httpStableResources = EnumSet.noneOf(Resource.class);
     
     private final AiGrpcClient clientProxy;
     
@@ -60,14 +76,17 @@ public class AgentGrpcTransport implements AgentTransport {
     
     private boolean requiredByNonAgentFeature;
     
-    private boolean agentHttpSucceeded;
+    private int probeFailureBaseline;
     
     private boolean autoHttpStable;
     
-    public AgentGrpcTransport(AgentTransportMode mode, AiGrpcClient clientProxy,
+    public AgentGrpcTransport(AgentTransportMode agentMode, AgentTransportMode mcpMode,
+        AgentTransportMode promptMode, AiGrpcClient clientProxy,
         NacosMcpServerCacheHolder mcpServerCacheHolder,
         NacosAgentCardCacheHolder agentCardCacheHolder) {
-        this.mode = mode;
+        modes.put(Resource.AGENT, agentMode);
+        modes.put(Resource.MCP, mcpMode);
+        modes.put(Resource.PROMPT, promptMode);
         this.clientProxy = clientProxy;
         this.mcpServerCacheHolder = mcpServerCacheHolder;
         this.agentCardCacheHolder = agentCardCacheHolder;
@@ -88,7 +107,8 @@ public class AgentGrpcTransport implements AgentTransport {
      * @throws NacosException when transport initialization fails
      */
     public synchronized void startConfiguredTransport() throws NacosException {
-        if (mode != AgentTransportMode.HTTP) {
+        if (modes.containsValue(AgentTransportMode.GRPC)
+            || modes.containsValue(AgentTransportMode.AUTO)) {
             startIfNecessary();
         }
     }
@@ -126,39 +146,54 @@ public class AgentGrpcTransport implements AgentTransport {
     }
     
     /**
-     * Check whether Agent AUTO may use the complete RAD v1 gRPC contract.
+     * Check the selected resource's connection and negotiated capability for AUTO.
      *
-     * @return {@code true} when gRPC is selected or connected with RAD v1 support
+     * @param resource resource selecting a transport
+     * @return whether gRPC is available for this resource
      */
-    public synchronized boolean isAvailable() {
+    public synchronized boolean isAvailable(Resource resource) {
+        AgentTransportMode mode = modes.get(resource);
         if (mode == AgentTransportMode.GRPC) {
             return true;
         }
-        return mode == AgentTransportMode.AUTO && !autoHttpStable && clientProxy.isEnable()
-            && clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1);
-    }
-    
-    /**
-     * Check whether AUTO may use the MCP gRPC contract.
-     *
-     * @return {@code true} when MCP gRPC is selected and negotiated
-     */
-    public synchronized boolean isMcpAvailable() {
-        if (mode == AgentTransportMode.GRPC) {
-            return true;
+        if (mode != AgentTransportMode.AUTO) {
+            return false;
         }
-        return mode == AgentTransportMode.AUTO && !autoHttpStable && clientProxy.isEnable()
-            && clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY);
+        useAutoResource(resource);
+        if (httpStableResources.contains(resource) || !clientProxy.isEnable()) {
+            return false;
+        }
+        switch (resource) {
+            case AGENT:
+                return clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1);
+            case MCP:
+                return clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY);
+            default:
+                // Prompt has no dedicated server ability bit.
+                return true;
+        }
+    }
+    
+    private void useAutoResource(Resource resource) {
+        if (usedAutoResources.add(resource) && autoHttpStable) {
+            // A previously unused resource gets its own full initial probe budget.
+            probeFailureBaseline = clientProxy.getInitialConnectionFailureCount();
+            autoHttpStable = false;
+            clientProxy.resumeInitialReconnect();
+        }
     }
     
     /**
-     * Record one successful Agent HTTP operation and settle AUTO when its probe is exhausted.
+     * Record successful HTTP use for one resource without settling other resources.
+     *
+     * @param resource resource whose HTTP operation succeeded
      */
-    public synchronized void recordHttpSuccess() {
-        if (mode != AgentTransportMode.AUTO || autoHttpStable) {
+    public synchronized void recordHttpSuccess(Resource resource) {
+        if (modes.get(resource) != AgentTransportMode.AUTO) {
             return;
         }
-        agentHttpSucceeded = true;
+        useAutoResource(resource);
+        httpSucceededResources.add(resource);
         settleAutoIfRequired(clientProxy.getInitialConnectionFailureCount());
     }
     
@@ -167,25 +202,19 @@ public class AgentGrpcTransport implements AgentTransport {
     }
     
     private void settleAutoIfRequired(int failureCount) {
-        if (mode != AgentTransportMode.AUTO || autoHttpStable || requiredByNonAgentFeature
-            || !agentHttpSucceeded || failureCount < autoFailureThreshold) {
+        if (autoHttpStable || requiredByNonAgentFeature
+            || modes.containsValue(AgentTransportMode.GRPC)
+            || usedAutoResources.isEmpty() || !httpSucceededResources.containsAll(usedAutoResources)
+            || failureCount - probeFailureBaseline < autoFailureThreshold) {
             return;
         }
         if (clientProxy.suspendInitialReconnect()) {
             autoHttpStable = true;
+            httpStableResources.addAll(usedAutoResources);
             LOGGER.info(
-                "Agent AUTO transport settled on HTTP after {} initial gRPC reconnect failures.",
-                failureCount);
+                "AI AUTO resources {} settled on HTTP after {} initial gRPC reconnect failures.",
+                usedAutoResources, failureCount);
         }
-    }
-    
-    /**
-     * Return the configured Agent transport mode.
-     *
-     * @return configured mode
-     */
-    public AgentTransportMode getMode() {
-        return mode;
     }
     
     /**

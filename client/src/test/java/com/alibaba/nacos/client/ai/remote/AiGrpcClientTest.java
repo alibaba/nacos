@@ -905,6 +905,17 @@ class AiGrpcClientTest {
         field.set(aiGrpcClient, agentCardCacheHolder);
     }
     
+    @Test
+    void disconnectedAbilityCheckPreservesLegacyErrorAndAddsRoutingEvidence() throws Exception {
+        injectMock();
+        com.alibaba.nacos.api.exception.runtime.NacosRuntimeException error = assertThrows(
+            com.alibaba.nacos.api.exception.runtime.NacosRuntimeException.class,
+            () -> aiGrpcClient.getAgentCard("agent", "", ""));
+        assertEquals(NacosException.SERVER_ERROR, error.getErrCode());
+        assertEquals(NacosException.CLIENT_DISCONNECT,
+            ((NacosException) error.getCause()).getErrCode());
+    }
+    
     private void injectMock() throws NoSuchFieldException, IllegalAccessException {
         Field field = AiGrpcClient.class.getDeclaredField("rpcClient");
         field.setAccessible(true);

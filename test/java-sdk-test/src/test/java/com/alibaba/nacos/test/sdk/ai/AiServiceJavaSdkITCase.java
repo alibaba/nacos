@@ -564,11 +564,9 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         assertNull(aiService.subscribeAgentCard(agentName, agentCardListener));
         assertNull(aiService.subscribePrompt(promptKey, null, null, promptListener));
-        assertServerNotImplemented(
-                () -> aiService.subscribeSkill(skillName, null, null, skillListener));
-        assertServerNotImplemented(() -> aiService.loadAgentSpec(agentSpecName));
-        assertServerNotImplemented(() -> aiService.subscribeAgentSpec(agentSpecName,
-                agentSpecListener));
+        assertNull(aiService.subscribeSkill(skillName, null, null, skillListener));
+        assertNull(aiService.loadAgentSpec(agentSpecName));
+        assertNull(aiService.subscribeAgentSpec(agentSpecName, agentSpecListener));
         assertThrows(NacosException.class, () -> aiService.downloadSkillZip(skillName));
     }
 
@@ -611,11 +609,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode(), exception.toString());
     }
 
-    private void assertServerNotImplemented(CheckedRunnable runnable) {
-        NacosException exception = assertThrows(NacosException.class, runnable::run);
-        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode(),
-                exception.toString());
-    }
+
 
     private McpServerBasicInfo buildMcpServer(String mcpName, String version) {
         McpServerBasicInfo result = new McpServerBasicInfo();

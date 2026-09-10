@@ -88,6 +88,7 @@ import com.alibaba.nacos.client.ai.remote.AgentTransportRouter;
 import com.alibaba.nacos.client.ai.remote.McpGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.McpHttpTransport;
 import com.alibaba.nacos.client.ai.remote.McpTransportRouter;
+import com.alibaba.nacos.client.ai.remote.PromptTransportRouter;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -178,35 +179,42 @@ public class NacosAiService implements AiService {
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
         AgentTransportMode transportMode = resolveAgentTransportMode(clientProperties);
+        AgentTransportMode agentMode = resolveResourceTransportMode(clientProperties,
+            AiConstants.AI_AGENT_TRANSPORT_MODE, transportMode);
+        AgentTransportMode mcpMode = resolveResourceTransportMode(clientProperties,
+            AiConstants.AI_MCP_TRANSPORT_MODE, transportMode);
+        AgentTransportMode promptMode = resolveResourceTransportMode(clientProperties,
+            AiConstants.AI_PROMPT_TRANSPORT_MODE, transportMode);
+        // Validate requested values even while these resources only support HTTP.
+        resolveResourceTransportMode(clientProperties, AiConstants.AI_SKILL_TRANSPORT_MODE,
+            transportMode);
+        resolveResourceTransportMode(clientProperties, AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE,
+            transportMode);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
-        this.grpcTransport = new AgentGrpcTransport(transportMode, grpcClient,
+        this.grpcTransport = new AgentGrpcTransport(agentMode, mcpMode, promptMode, grpcClient,
             mcpServerCacheHolder, agentCardCacheHolder);
         this.httpTransport = new AgentHttpTransport(httpProxy);
         McpGrpcTransport mcpGrpcTransport = new McpGrpcTransport(grpcTransport);
         McpHttpTransport mcpHttpTransport = new McpHttpTransport(httpProxy);
-        this.mcpTransportRouter = new McpTransportRouter(grpcTransport, mcpGrpcTransport,
+        this.mcpTransportRouter = new McpTransportRouter(mcpMode, grpcTransport, mcpGrpcTransport,
             mcpHttpTransport);
         this.mcpServerCacheHolder.setTransportRouter(mcpTransportRouter);
-        if (transportMode == AgentTransportMode.HTTP) {
-            LOGGER.info("Agent transport mode is HTTP; initial gRPC startup is disabled.");
-            this.aiClientProxy = this.httpProxy;
-        } else {
-            this.aiClientProxy = this.grpcTransport.requiredProxy();
-        }
+        this.aiClientProxy = new PromptTransportRouter(promptMode, grpcTransport, httpProxy);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
         this.agentSpecCacheHolder =
-            new NacosAgentSpecCacheHolder(this.aiClientProxy, clientProperties);
-        this.skillCacheHolder = new NacosSkillCacheHolder(this.aiClientProxy, clientProperties);
-        this.agentTransportRouter = new AgentTransportRouter(grpcTransport, httpTransport);
+            new NacosAgentSpecCacheHolder(this.httpProxy, clientProperties);
+        this.skillCacheHolder = new NacosSkillCacheHolder(this.httpProxy, clientProperties);
+        this.agentTransportRouter =
+            new AgentTransportRouter(agentMode, grpcTransport, httpTransport);
         this.agentDiscoveryCacheHolder =
             new NacosAgentDiscoveryCacheHolder(namespaceId, this.agentTransportRouter,
                 resolvePositiveCapacity(clientProperties,
                     AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
                     AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
-                new AgentWatchTransportRouter(transportMode, grpcClient, httpProxy,
+                new AgentWatchTransportRouter(agentMode, grpcClient, httpProxy,
                     AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
         this.httpPublicationCoordinator = new AiHttpPublicationCoordinator();
         this.agentEndpointPublicationManager =
@@ -231,14 +239,19 @@ public class NacosAiService implements AiService {
     
     static AgentTransportMode resolveAgentTransportMode(NacosClientProperties properties)
         throws NacosApiException {
-        String value = properties.getProperty(AiConstants.AI_TRANSPORT_MODE,
-            AiConstants.AI_TRANSPORT_MODE_GRPC);
+        return resolveResourceTransportMode(properties, AiConstants.AI_TRANSPORT_MODE,
+            AgentTransportMode.GRPC);
+    }
+    
+    static AgentTransportMode resolveResourceTransportMode(NacosClientProperties properties,
+        String key, AgentTransportMode defaultMode) throws NacosApiException {
+        String value = properties.getProperty(key, defaultMode.getValue());
         try {
             return AgentTransportMode.fromValue(value);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, e,
-                "Client property `" + AiConstants.AI_TRANSPORT_MODE
+                "Client property `" + key
                     + "` must be one of `grpc`, `http`, or `auto`.");
         }
     }

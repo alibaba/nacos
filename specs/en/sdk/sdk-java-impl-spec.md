@@ -206,6 +206,25 @@ value. The mode is frozen when `AiService` is created, and invalid values fail
 factory creation. The [Agent API Spec](../ai/agent-api-spec.md) defines the
 transport lifecycle, AUTO probe, and operation fallback rules.
 
+Resource overrides `nacosAiMcpTransportMode`, `nacosAiAgentTransportMode`,
+`nacosAiSkillTransportMode`, `nacosAiAgentSpecTransportMode`, and `nacosAiPromptTransportMode`
+inherit `nacosAiTransportMode` (default `grpc`). All explicit values, including ignored HTTP-only
+resource requests and a globally overridden default, are validated before lifecycle allocation.
+Modes are immutable per client. Skill/AgentSpec always use the existing HTTP proxy; Prompt direct
+reads and polling share one router (AUTO uses connection state, without a new capability bit).
+The Agent override governs native RAD only; legacy A2A always requires the shared gRPC client.
+
+MCP, Agent and Prompt retain independent AUTO use/success state. Any effective GRPC resource or
+legacy A2A demand pins reconnect. Initial reconnect may pause only after every used AUTO resource
+has succeeded over HTTP and the existing failure budget is reached. A previously unused resource
+resumes a full initial probe budget without changing other settled resources. Previously connected
+UNHEALTHY recovery is unchanged. Safe read fallback requires CLIENT_DISCONNECT, UN_REGISTER,
+or a generic transport exception wrapping gRPC UNAVAILABLE; a coincident disconnected state alone
+cannot override a business/auth/capacity/not-found error. Writes and publication owners do not replay
+across transports after an uncertain result.
+
+The existing disconnected ability-check runtime exception retains its public type/code/message and adds a CLIENT_DISCONNECT cause as read-routing evidence.
+
 `AgentDiscoveryService` provides these namespace-bound methods:
 
 | Capability | Methods | Contract |

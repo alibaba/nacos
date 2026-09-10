@@ -78,6 +78,31 @@ public class AiConstants {
     
     public static final String AI_TRANSPORT_MODE = "nacosAiTransportMode";
     
+    /**
+     * Transport override for MCP; inherits {@link #AI_TRANSPORT_MODE}.
+     */
+    public static final String AI_MCP_TRANSPORT_MODE = "nacosAiMcpTransportMode";
+    
+    /**
+     * Transport override for native Agent/RAD (legacy A2A always uses gRPC); inherits {@link #AI_TRANSPORT_MODE}.
+     */
+    public static final String AI_AGENT_TRANSPORT_MODE = "nacosAiAgentTransportMode";
+    
+    /**
+     * Transport override for Skill (currently uses HTTP for every mode); inherits {@link #AI_TRANSPORT_MODE}.
+     */
+    public static final String AI_SKILL_TRANSPORT_MODE = "nacosAiSkillTransportMode";
+    
+    /**
+     * Transport override for AgentSpec (currently uses HTTP for every mode); inherits {@link #AI_TRANSPORT_MODE}.
+     */
+    public static final String AI_AGENT_SPEC_TRANSPORT_MODE = "nacosAiAgentSpecTransportMode";
+    
+    /**
+     * Transport override for Prompt queries and polling; inherits {@link #AI_TRANSPORT_MODE}.
+     */
+    public static final String AI_PROMPT_TRANSPORT_MODE = "nacosAiPromptTransportMode";
+    
     public static final String AI_TRANSPORT_MODE_GRPC = "grpc";
     
     public static final String AI_TRANSPORT_MODE_HTTP = "http";

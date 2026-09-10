@@ -57,12 +57,12 @@ class AgentTransportRouterTest {
     
     @BeforeEach
     void setUp() {
-        router = new AgentTransportRouter(grpcTransport, httpTransport);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
     }
     
     @Test
     void explicitHttpRoutesEveryOperationToHttp() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.HTTP);
+        router = new AgentTransportRouter(AgentTransportMode.HTTP, grpcTransport, httpTransport);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         AgentVersionDetail version = new AgentVersionDetail();
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
@@ -83,7 +83,7 @@ class AgentTransportRouterTest {
         router.deregisterAgentEndpoints("public", "agent", "a2a");
         assertSame(liveness, router.heartbeatAgentEndpoints());
         
-        verify(grpcTransport, times(6)).recordHttpSuccess();
+        verify(grpcTransport, times(6)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         verify(httpTransport).deregisterAgentEndpoints("public", "agent", "a2a");
         verify(grpcTransport, never()).publishAgent(any());
     }
@@ -91,7 +91,7 @@ class AgentTransportRouterTest {
     @Test
     void explicitHttpReadFailuresAreReturnedWithoutCrossTransportRetry()
         throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.HTTP);
+        router = new AgentTransportRouter(AgentTransportMode.HTTP, grpcTransport, httpTransport);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         NacosException searchFailure =
             new NacosException(NacosException.SERVER_ERROR, "search failed");
@@ -112,7 +112,7 @@ class AgentTransportRouterTest {
     
     @Test
     void explicitGrpcNeverFallsBackToHttp() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.GRPC);
+        router = new AgentTransportRouter(AgentTransportMode.GRPC, grpcTransport, httpTransport);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         AgentVersionDetail version = new AgentVersionDetail();
         when(grpcTransport.publishAgent(any())).thenReturn(version);
@@ -129,8 +129,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoUsesAvailableGrpcAndReturnsItsReadResult() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
@@ -145,8 +145,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoUsesHttpBeforeGrpcBecomesAvailable() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(false);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(false);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
@@ -159,14 +159,13 @@ class AgentTransportRouterTest {
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
         assertSame(version, router.publishAgent(new AgentPublishRequest()));
         assertEquals(AgentTransportType.HTTP, router.selectPublicationTransport());
-        verify(grpcTransport, times(3)).recordHttpSuccess();
+        verify(grpcTransport, times(3)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
     
     @Test
     void autoRereadsThroughHttpAfterGrpcTransportFailure() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         when(grpcTransport.searchAgents(any())).thenThrow(
@@ -180,14 +179,13 @@ class AgentTransportRouterTest {
         
         assertSame(page, router.searchAgents(new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
-        verify(grpcTransport, times(2)).recordHttpSuccess();
+        verify(grpcTransport, times(2)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
     
     @Test
     void autoRecognizesOnlyConnectionFailuresForReadFallback() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
@@ -205,9 +203,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoFallsBackForNestedGrpcUnavailable() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
@@ -221,31 +218,30 @@ class AgentTransportRouterTest {
             assertSame(page, router.searchAgents(new AgentSearchRequest()));
         }
         
-        verify(grpcTransport, times(unavailableFailures.length)).recordHttpSuccess();
+        verify(grpcTransport, times(unavailableFailures.length))
+            .recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
     
     @Test
     void autoFallsBackWhenGrpcDisconnectsBetweenSelectionAndInvocation()
         throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(false);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         when(grpcTransport.searchAgents(any())).thenThrow(
-            new NacosException(NacosException.SERVER_ERROR, "connection unavailable"));
+            new NacosException(NacosException.CLIENT_DISCONNECT, "connection unavailable"));
         Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
         when(httpTransport.searchAgents(any())).thenReturn(page);
         
         assertSame(page, router.searchAgents(new AgentSearchRequest()));
-        verify(grpcTransport).recordHttpSuccess();
+        verify(grpcTransport).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
     
     @Test
     void autoDoesNotFallbackForGenericGrpcServerFailures() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         int[] serverErrors = {NacosException.SERVER_ERROR, NacosException.BAD_GATEWAY,
             NacosException.SERVER_NOT_IMPLEMENTED, NacosException.NO_HANDLER};
@@ -262,9 +258,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoDoesNotFallbackForNonUnavailableGrpcStatus() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         Throwable[] serverFailures = {Status.INTERNAL.asRuntimeException(),
             Status.INTERNAL.asException()};
@@ -281,9 +276,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoDoesNotFallbackOnBusinessFailure() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
-        when(grpcTransport.isConnected()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(grpcTransport.discoverAgent(any())).thenThrow(
             new NacosException(NacosException.INVALID_PARAM, "invalid"));
@@ -295,8 +289,8 @@ class AgentTransportRouterTest {
     
     @Test
     void autoWriteDoesNotCrossFallbackAfterGrpcSend() throws NacosException {
-        when(grpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(grpcTransport.isAvailable()).thenReturn(true);
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.publishAgent(any())).thenThrow(
             new NacosException(NacosException.SERVER_ERROR, "unknown result"));
         
@@ -328,6 +322,24 @@ class AgentTransportRouterTest {
         
         verify(grpcTransport).deregisterAgentEndpoints("public", "agent", "a2a");
         verify(httpTransport).deregisterAgentEndpoints("public", "agent", "a2a");
-        verify(grpcTransport, times(3)).recordHttpSuccess();
+        verify(grpcTransport, times(3)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
+    }
+    
+    @Test
+    void businessErrorsWinOverConcurrentDisconnectAndUnavailableCause() throws Exception {
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
+        when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
+        int[] codes = {401, NacosException.NO_RIGHT, NacosException.INVALID_PARAM,
+            NacosException.NOT_FOUND, NacosException.CONFLICT, NacosException.OVER_THRESHOLD,
+            NacosException.CLIENT_OVER_THRESHOLD, NacosException.SERVER_NOT_IMPLEMENTED};
+        for (int code : codes) {
+            NacosException failure = new NacosException(code, "business failure",
+                Status.UNAVAILABLE.asRuntimeException());
+            org.mockito.Mockito.doThrow(failure).when(grpcTransport).searchAgents(any());
+            assertSame(failure, assertThrows(NacosException.class,
+                () -> router.searchAgents(new AgentSearchRequest())));
+        }
+        verify(httpTransport, never()).searchAgents(any());
     }
 }

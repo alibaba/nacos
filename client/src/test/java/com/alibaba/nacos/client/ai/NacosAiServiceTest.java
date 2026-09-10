@@ -95,6 +95,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -1099,16 +1100,18 @@ class NacosAiServiceTest {
         int grpcClientIndex = grpcClientConstruction.constructed().size();
         try {
             aiService = new NacosAiService(properties);
-            // Verify aiClientProxy field is set to httpProxy
-            Field clientProxyField = NacosAiService.class.getDeclaredField("aiClientProxy");
-            clientProxyField.setAccessible(true);
-            Field httpProxyField = NacosAiService.class.getDeclaredField("httpProxy");
-            httpProxyField.setAccessible(true);
-            assertEquals(httpProxyField.get(aiService), clientProxyField.get(aiService));
-            verify(grpcClientConstruction.constructed().get(grpcClientIndex), never())
-                .start(any(), any());
-        } catch (NoSuchFieldException | IllegalAccessException ex) {
-            throw new RuntimeException(ex);
+            properties.setProperty(AiConstants.AI_PROMPT_TRANSPORT_MODE, "grpc");
+            aiService.prompt().getPrompt("http-prompt");
+            verify(httpProxyConstruction.constructed().get(grpcClientIndex))
+                .queryPrompt("http-prompt", null, null, null);
+            verify(grpcClientConstruction.constructed().get(grpcClientIndex), never()).start(any(),
+                any());
+            // Legacy A2A remains gRPC even when global/Agent are HTTP; getters remain inert.
+            aiService.agent().getAgentCard("a2a");
+            aiService.getAgentCard("a2a");
+            verify(grpcClientConstruction.constructed().get(grpcClientIndex)).start(any(), any());
+            verify(grpcClientConstruction.constructed().get(grpcClientIndex), Mockito.times(2))
+                .getAgentCard("a2a", "", "");
         } finally {
             if (aiService != null) {
                 aiService.shutdown();
@@ -1129,6 +1132,97 @@ class NacosAiServiceTest {
                 .start(any(), any());
         } finally {
             if (service != null) {
+                service.shutdown();
+            }
+        }
+    }
+    
+    @Test
+    void resourceOverridesInheritGlobalAndRejectEveryInvalidExplicitValue() throws Exception {
+        String[] keys = {AiConstants.AI_MCP_TRANSPORT_MODE, AiConstants.AI_AGENT_TRANSPORT_MODE,
+            AiConstants.AI_PROMPT_TRANSPORT_MODE, AiConstants.AI_SKILL_TRANSPORT_MODE,
+            AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE};
+        for (String key : keys) {
+            NacosClientProperties properties =
+                NacosClientProperties.PROTOTYPE.derive(new Properties());
+            assertEquals(AgentTransportMode.HTTP,
+                NacosAiService.resolveResourceTransportMode(properties, key,
+                    AgentTransportMode.HTTP));
+            for (AgentTransportMode mode : AgentTransportMode.values()) {
+                properties.setProperty(key, mode.getValue().toUpperCase(java.util.Locale.ROOT));
+                assertEquals(mode, NacosAiService.resolveResourceTransportMode(properties, key,
+                    AgentTransportMode.HTTP));
+            }
+            for (String value : new String[] {"", " ", " grpc ", "unknown"}) {
+                Properties invalid = new Properties();
+                invalid.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+                invalid.setProperty(key, value);
+                int count = grpcClientConstruction.constructed().size();
+                NacosApiException failure =
+                    assertThrows(NacosApiException.class, () -> new NacosAiService(invalid));
+                assertEquals(NacosException.INVALID_PARAM, failure.getErrCode());
+                assertTrue(failure.getErrMsg().contains(key));
+                assertEquals(count, grpcClientConstruction.constructed().size());
+            }
+        }
+        Properties invalidGlobal = new Properties();
+        invalidGlobal.setProperty(AiConstants.AI_TRANSPORT_MODE, "invalid");
+        for (String key : keys) {
+            invalidGlobal.setProperty(key, "http");
+        }
+        assertThrows(NacosApiException.class, () -> new NacosAiService(invalidGlobal));
+    }
+    
+    @Test
+    void onlyHttpCapableResourcesDoNotStartGrpcForRequestedGrpc() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, "http");
+        properties.setProperty(AiConstants.AI_SKILL_TRANSPORT_MODE, "grpc");
+        properties.setProperty(AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE, "grpc");
+        int count = grpcClientConstruction.constructed().size();
+        NacosAiService service = new NacosAiService(properties);
+        try {
+            verify(grpcClientConstruction.constructed().get(count), never()).start(any(), any());
+        } finally {
+            service.shutdown();
+        }
+    }
+    
+    @Test
+    void resourceOverridesChooseIndependentBindingsAndRemainFrozen() throws Exception {
+        for (String global : new String[] {"grpc", "http"}) {
+            String override = "grpc".equals(global) ? "http" : "grpc";
+            Properties properties = new Properties();
+            properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+            properties.setProperty(AiConstants.AI_TRANSPORT_MODE, global);
+            properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, override);
+            properties.setProperty(AiConstants.AI_PROMPT_TRANSPORT_MODE, override);
+            int index = grpcClientConstruction.constructed().size();
+            NacosAiService service = new NacosAiService(properties);
+            try {
+                AiGrpcClient grpc = grpcClientConstruction.constructed().get(index);
+                AiHttpClientProxy http = httpProxyConstruction.constructed().get(index);
+                properties.setProperty(AiConstants.AI_TRANSPORT_MODE, override);
+                properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, global);
+                service.mcp().getMcpServer("mcp", "1.0.0");
+                service.agent().searchAgents(new AgentSearchRequest());
+                service.prompt().getPrompt("prompt");
+                if ("grpc".equals(global)) {
+                    verify(grpc).queryMcpServer("mcp", "1.0.0");
+                    verify(http).searchAgents(any());
+                    verify(http).queryPrompt("prompt", null, null, null);
+                    verify(http, never()).queryMcpServer(any(), any());
+                    verify(grpc, never()).searchAgents(any());
+                } else {
+                    verify(http).queryMcpServer("mcp", "1.0.0");
+                    verify(grpc).searchAgents(any());
+                    verify(grpc).queryPrompt("prompt", null, null, null);
+                    verify(grpc, never()).queryMcpServer(any(), any());
+                    verify(http, never()).searchAgents(any());
+                }
+                verify(grpc).start(any(), any());
+            } finally {
                 service.shutdown();
             }
         }

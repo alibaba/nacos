@@ -57,7 +57,8 @@ class McpTransportRouterTest {
     
     @BeforeEach
     void setUp() {
-        router = new McpTransportRouter(sharedGrpcTransport, grpcTransport, httpTransport);
+        router = new McpTransportRouter(AgentTransportMode.AUTO, sharedGrpcTransport, grpcTransport,
+            httpTransport);
         lenient().when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         lenient().when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
     }
@@ -68,33 +69,35 @@ class McpTransportRouterTest {
         McpServerDetailInfo httpResult = new McpServerDetailInfo();
         when(grpcTransport.queryMcpServer("mcp", null)).thenReturn(grpcResult);
         when(httpTransport.queryMcpServer("mcp", null)).thenReturn(httpResult);
-        when(sharedGrpcTransport.getMode()).thenReturn(AgentTransportMode.GRPC);
+        router = new McpTransportRouter(AgentTransportMode.GRPC, sharedGrpcTransport, grpcTransport,
+            httpTransport);
         assertSame(grpcResult, router.queryMcpServer("mcp", null));
-        when(sharedGrpcTransport.getMode()).thenReturn(AgentTransportMode.HTTP);
+        router = new McpTransportRouter(AgentTransportMode.HTTP, sharedGrpcTransport, grpcTransport,
+            httpTransport);
         assertSame(httpResult, router.queryMcpServer("mcp", null));
-        verify(sharedGrpcTransport).recordHttpSuccess();
+        verify(sharedGrpcTransport).recordHttpSuccess(AgentGrpcTransport.Resource.MCP);
     }
     
     @Test
     void autoFallsBackForConnectionFailureOnly() throws Exception {
         McpServerDetailInfo expected = new McpServerDetailInfo();
-        when(sharedGrpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(sharedGrpcTransport.isMcpAvailable()).thenReturn(true);
-        when(sharedGrpcTransport.isConnected()).thenReturn(true);
+        router = new McpTransportRouter(AgentTransportMode.AUTO, sharedGrpcTransport, grpcTransport,
+            httpTransport);
+        when(sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)).thenReturn(true);
         when(grpcTransport.queryMcpServer("mcp", "1.0.0"))
             .thenThrow(new NacosException(NacosException.CLIENT_DISCONNECT, "disconnected"));
         when(httpTransport.queryMcpServer("mcp", "1.0.0")).thenReturn(expected);
         
         assertSame(expected, router.queryMcpServer("mcp", "1.0.0"));
-        verify(sharedGrpcTransport).recordHttpSuccess();
+        verify(sharedGrpcTransport).recordHttpSuccess(AgentGrpcTransport.Resource.MCP);
     }
     
     @Test
     void autoRecognizesGrpcUnavailableCause() throws Exception {
         McpServerDetailInfo expected = new McpServerDetailInfo();
-        when(sharedGrpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(sharedGrpcTransport.isMcpAvailable()).thenReturn(true);
-        when(sharedGrpcTransport.isConnected()).thenReturn(true);
+        router = new McpTransportRouter(AgentTransportMode.AUTO, sharedGrpcTransport, grpcTransport,
+            httpTransport);
+        when(sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)).thenReturn(true);
         NacosException unavailable = new NacosException(NacosException.SERVER_ERROR,
             "unavailable", Status.UNAVAILABLE.asRuntimeException());
         when(grpcTransport.queryMcpServer("mcp", null)).thenThrow(unavailable);
@@ -105,9 +108,9 @@ class McpTransportRouterTest {
     
     @Test
     void autoNeverFallsBackForBusinessFailureOrRelease() throws Exception {
-        when(sharedGrpcTransport.getMode()).thenReturn(AgentTransportMode.AUTO);
-        when(sharedGrpcTransport.isMcpAvailable()).thenReturn(true);
-        when(sharedGrpcTransport.isConnected()).thenReturn(true);
+        router = new McpTransportRouter(AgentTransportMode.AUTO, sharedGrpcTransport, grpcTransport,
+            httpTransport);
+        when(sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)).thenReturn(true);
         NacosException invalid = new NacosException(NacosException.INVALID_PARAM, "invalid");
         when(grpcTransport.queryMcpServer("mcp", null)).thenThrow(invalid);
         assertSame(invalid,
@@ -137,5 +140,38 @@ class McpTransportRouterTest {
         verify(grpcTransport, never()).registerMcpServerEndpoint(anyString(), anyString(), anyInt(),
             any());
         assertEquals(AgentTransportType.HTTP, httpTransport.getType());
+    }
+    
+    @Test
+    void businessErrorsWinOverConcurrentDisconnectAndUnavailableCause() throws Exception {
+        router = new McpTransportRouter(AgentTransportMode.AUTO, sharedGrpcTransport, grpcTransport,
+            httpTransport);
+        when(sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)).thenReturn(true);
+        
+        int[] codes = {401, NacosException.NO_RIGHT, NacosException.INVALID_PARAM,
+            NacosException.NOT_FOUND, NacosException.CONFLICT, NacosException.OVER_THRESHOLD,
+            NacosException.CLIENT_OVER_THRESHOLD, NacosException.SERVER_NOT_IMPLEMENTED};
+        for (int code : codes) {
+            NacosException failure = new NacosException(code, "business failure",
+                Status.UNAVAILABLE.asRuntimeException());
+            org.mockito.Mockito.doThrow(failure).when(grpcTransport).queryMcpServer("mcp", null);
+            assertSame(failure,
+                assertThrows(NacosException.class, () -> router.queryMcpServer("mcp", null)));
+        }
+        verify(httpTransport, never()).queryMcpServer("mcp", null);
+    }
+    
+    @Test
+    void autoFallsBackWhenConnectionDisappearsBeforeCapabilityCheck() throws Exception {
+        when(sharedGrpcTransport.isAvailable(AgentGrpcTransport.Resource.MCP)).thenReturn(true);
+        com.alibaba.nacos.api.exception.runtime.NacosRuntimeException failure =
+            new com.alibaba.nacos.api.exception.runtime.NacosRuntimeException(
+                NacosException.SERVER_ERROR,
+                "connection unavailable",
+                new NacosException(NacosException.CLIENT_DISCONNECT, "disconnected"));
+        when(grpcTransport.queryMcpServer("mcp", null)).thenThrow(failure);
+        McpServerDetailInfo expected = new McpServerDetailInfo();
+        when(httpTransport.queryMcpServer("mcp", null)).thenReturn(expected);
+        assertSame(expected, router.queryMcpServer("mcp", null));
     }
 }

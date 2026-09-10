@@ -85,7 +85,7 @@ class AgentGrpcTransportTest {
         grpc.startConfiguredTransport();
         grpc.startConfiguredTransport();
         verify(client).start(mcpServerCacheHolder, agentCardCacheHolder);
-        assertEquals(AgentTransportMode.GRPC, grpc.getMode());
+        assertTrue(grpc.isAvailable(AgentGrpcTransport.Resource.AGENT));
         assertEquals(AgentTransportType.GRPC, grpc.getType());
         when(client.isEnable()).thenReturn(true);
         assertTrue(grpc.isConnected());
@@ -109,14 +109,16 @@ class AgentGrpcTransportTest {
         AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
         when(client.isEnable()).thenReturn(true);
         when(client.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1)).thenReturn(true);
-        assertTrue(transport.isAvailable());
+        assertTrue(transport.isAvailable(AgentGrpcTransport.Resource.AGENT));
         
         when(client.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1)).thenReturn(false);
-        assertFalse(transport.isAvailable());
+        assertFalse(transport.isAvailable(AgentGrpcTransport.Resource.AGENT));
         when(client.isEnable()).thenReturn(false);
-        assertFalse(transport.isAvailable());
-        assertFalse(transport(AgentTransportMode.HTTP).isAvailable());
-        assertTrue(transport(AgentTransportMode.GRPC).isAvailable());
+        assertFalse(transport.isAvailable(AgentGrpcTransport.Resource.AGENT));
+        assertFalse(
+            transport(AgentTransportMode.HTTP).isAvailable(AgentGrpcTransport.Resource.AGENT));
+        assertTrue(
+            transport(AgentTransportMode.GRPC).isAvailable(AgentGrpcTransport.Resource.AGENT));
     }
     
     @Test
@@ -125,7 +127,7 @@ class AgentGrpcTransportTest {
         AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
         InitialConnectionFailureListener listener = capturedListener();
         
-        transport.recordHttpSuccess();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         listener.onFailure(1);
         verify(client, never()).suspendInitialReconnect();
         listener.onFailure(2);
@@ -133,9 +135,9 @@ class AgentGrpcTransportTest {
         assertTrue(transport.isAutoHttpStable());
         
         listener.onFailure(3);
-        transport.recordHttpSuccess();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         verify(client).suspendInitialReconnect();
-        assertFalse(transport.isAvailable());
+        assertFalse(transport.isAvailable(AgentGrpcTransport.Resource.AGENT));
     }
     
     @Test
@@ -146,7 +148,7 @@ class AgentGrpcTransportTest {
         capturedListener().onFailure(2);
         verify(client, never()).suspendInitialReconnect();
         
-        transport.recordHttpSuccess();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         verify(client).suspendInitialReconnect();
         assertTrue(transport.isAutoHttpStable());
     }
@@ -157,7 +159,7 @@ class AgentGrpcTransportTest {
         when(client.suspendInitialReconnect()).thenReturn(false);
         AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
         
-        transport.recordHttpSuccess();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         
         verify(client).suspendInitialReconnect();
         assertFalse(transport.isAutoHttpStable());
@@ -167,11 +169,11 @@ class AgentGrpcTransportTest {
     void explicitGrpcAndHttpNeverUseAutoSettlement() {
         AgentGrpcTransport grpc = transport(AgentTransportMode.GRPC);
         capturedListener().onFailure(100);
-        grpc.recordHttpSuccess();
+        grpc.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         
         AgentGrpcTransport http = transport(AgentTransportMode.HTTP);
         capturedListener().onFailure(100);
-        http.recordHttpSuccess();
+        http.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         verify(client, never()).suspendInitialReconnect();
     }
     
@@ -180,7 +182,7 @@ class AgentGrpcTransportTest {
         when(client.getInitialConnectionFailureCount()).thenReturn(2);
         AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
         transport.requireGrpcClient();
-        transport.recordHttpSuccess();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         capturedListener().onFailure(2);
         
         verify(client, never()).suspendInitialReconnect();
@@ -258,8 +260,67 @@ class AgentGrpcTransportTest {
         verify(client).deregisterAgentEndpoints("public", "agent", "a2a");
     }
     
+    @Test
+    void resourcesNegotiateIndependentlyAndPromptNeedsOnlyConnection() {
+        AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
+        when(client.isEnable()).thenReturn(true);
+        when(client.isAbilitySupportedByServer(AbilityKey.SERVER_RAD_V1)).thenReturn(false);
+        when(client.isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(true);
+        assertFalse(transport.isAvailable(AgentGrpcTransport.Resource.AGENT));
+        assertTrue(transport.isAvailable(AgentGrpcTransport.Resource.MCP));
+        assertTrue(transport.isAvailable(AgentGrpcTransport.Resource.PROMPT));
+    }
+    
+    @Test
+    void allUsedAutoResourcesMustSucceedBeforeSuspension() {
+        AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
+        transport.isAvailable(AgentGrpcTransport.Resource.AGENT);
+        transport.isAvailable(AgentGrpcTransport.Resource.MCP);
+        when(client.getInitialConnectionFailureCount()).thenReturn(2);
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
+        capturedListener().onFailure(3);
+        verify(client, never()).suspendInitialReconnect();
+        when(client.suspendInitialReconnect()).thenReturn(true);
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.MCP);
+        assertTrue(transport.isAutoHttpStable());
+        verify(client).suspendInitialReconnect();
+    }
+    
+    @Test
+    void unusedResourceResumesItsProbeWithoutChangingSettledResource() {
+        AgentGrpcTransport transport = transport(AgentTransportMode.AUTO);
+        when(client.getInitialConnectionFailureCount()).thenReturn(2);
+        when(client.suspendInitialReconnect()).thenReturn(true);
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
+        assertTrue(transport.isAutoHttpStable());
+        transport.isAvailable(AgentGrpcTransport.Resource.PROMPT);
+        verify(client).resumeInitialReconnect();
+        assertFalse(transport.isAutoHttpStable());
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.PROMPT);
+        verify(client).suspendInitialReconnect();
+        capturedListener().onFailure(3);
+        verify(client).suspendInitialReconnect();
+        capturedListener().onFailure(4);
+        verify(client, times(2)).suspendInitialReconnect();
+        assertTrue(transport.isAutoHttpStable());
+    }
+    
+    @Test
+    void explicitGrpcResourcePinsSharedProbeEvenWhenAnotherAutoSucceeds() throws Exception {
+        AgentGrpcTransport transport = new AgentGrpcTransport(AgentTransportMode.AUTO,
+            AgentTransportMode.GRPC, AgentTransportMode.HTTP, client, mcpServerCacheHolder,
+            agentCardCacheHolder);
+        transport.startConfiguredTransport();
+        transport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
+        capturedListener().onFailure(10);
+        verify(client).start(mcpServerCacheHolder, agentCardCacheHolder);
+        verify(client, never()).suspendInitialReconnect();
+        assertTrue(transport.isAvailable(AgentGrpcTransport.Resource.MCP));
+        assertFalse(transport.isAvailable(AgentGrpcTransport.Resource.PROMPT));
+    }
+    
     private AgentGrpcTransport transport(AgentTransportMode mode) {
-        AgentGrpcTransport result = new AgentGrpcTransport(mode, client,
+        AgentGrpcTransport result = new AgentGrpcTransport(mode, mode, mode, client,
             mcpServerCacheHolder,
             agentCardCacheHolder);
         return result;

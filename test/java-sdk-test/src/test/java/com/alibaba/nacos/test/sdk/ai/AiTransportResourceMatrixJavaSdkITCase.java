@@ -56,6 +56,7 @@ import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -76,8 +77,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Real standalone-server transport matrix for the five AI resource families exposed by
@@ -85,8 +86,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The Maintainer SDK is used only to prepare and remove Prompt, Skill, and AgentSpec
  * fixtures. Agent, MCP, and every asserted read/subscription operation use the public Java SDK.
- * The expected unsupported gRPC Skill/AgentSpec polling paths are asserted as controlled
- * {@link NacosException#SERVER_NOT_IMPLEMENTED} results.
+ * Skill/AgentSpec use their existing HTTP binding for every requested mode. Mixed resource
+ * overrides and legacy/new entry points share the same client and lifecycle.
  *
  * @author Nacos
  */
@@ -109,6 +110,55 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     void shouldKeepFiveAiResourcesCorrectInAutoMode() throws Exception {
         verifyResourceMatrix(AgentTransportMode.AUTO);
+    }
+
+    @Test
+    void shouldMixHttpAgentWithGrpcMcpAndHttpPrompt() throws Exception {
+        verifyMixedResources(AgentTransportMode.GRPC, AgentTransportMode.HTTP);
+    }
+
+    @Test
+    void shouldMixGrpcAgentWithHttpMcpAndGrpcPrompt() throws Exception {
+        verifyMixedResources(AgentTransportMode.HTTP, AgentTransportMode.GRPC);
+    }
+
+    @Test
+    void shouldKeepNativeHttpResourcesUsableWhenGrpcIsUnreachable() throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, "http");
+        // The standalone harness leaves this alternate gRPC port closed.
+        properties.setProperty("nacos.server.grpc.port.offset", "5000");
+        properties.setProperty(AiConstants.AI_SKILL_TRANSPORT_MODE, "grpc");
+        properties.setProperty(AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE, "grpc");
+        AiService service = createAiServiceWithoutReadiness(properties);
+        AiMaintainerService maintainer = createAiMaintainerService();
+        verifyAgent(service, maintainer, AgentTransportMode.HTTP);
+        verifyMcp(service, maintainer, AgentTransportMode.HTTP);
+        verifyPrompt(service, maintainer, AgentTransportMode.HTTP);
+        verifySkill(service, maintainer, AgentTransportMode.HTTP);
+        verifyAgentSpec(service, maintainer, AgentTransportMode.HTTP);
+        String absent = randomServiceName("http-only-a2a");
+        NacosRuntimeException legacy = assertThrows(NacosRuntimeException.class, () -> service.getAgentCard(absent));
+        assertEquals(NacosException.SERVER_ERROR, legacy.getErrCode(), legacy.toString());
+        NacosRuntimeException child = assertThrows(NacosRuntimeException.class, () -> service.agent().getAgentCard(absent));
+        assertEquals(legacy.getErrCode(), child.getErrCode());
+        assertNotNull(service.agent().searchAgents(new AgentSearchRequest()));
+    }
+
+    private void verifyMixedResources(AgentTransportMode global, AgentTransportMode override) throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, global.getValue());
+        properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, override.getValue());
+        properties.setProperty(AiConstants.AI_PROMPT_TRANSPORT_MODE, override.getValue());
+        properties.setProperty(AiConstants.AI_SKILL_TRANSPORT_MODE, "grpc");
+        properties.setProperty(AiConstants.AI_AGENT_SPEC_TRANSPORT_MODE, "auto");
+        AiService service = createAiService(properties);
+        AiMaintainerService maintainer = createAiMaintainerService();
+        verifyAgent(service, maintainer, override);
+        verifyMcp(service, maintainer, global);
+        verifyPrompt(service, maintainer, override);
+        verifySkill(service, maintainer, override);
+        verifyAgentSpec(service, maintainer, override);
     }
 
     private void verifyResourceMatrix(AgentTransportMode mode) throws Exception {
@@ -180,8 +230,8 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosMcpServerEvent event) {
             }
         };
-        addCleanup(() -> service.mcp().unsubscribeMcpServer(mcpName, VERSION, listener));
-        assertEquals(mcpId, service.mcp().subscribeMcpServer(mcpName, VERSION, listener).getId());
+        addCleanup(() -> service.unsubscribeMcpServer(mcpName, VERSION, listener));
+        assertEquals(mcpId, service.subscribeMcpServer(mcpName, VERSION, listener).getId());
     }
 
     private void verifyPrompt(AiService service, AiMaintainerService maintainer,
@@ -203,7 +253,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosPromptEvent event) {
             }
         };
-        addCleanup(() -> service.prompt().unsubscribePrompt(promptKey, VERSION, null, listener));
+        addCleanup(() -> service.unsubscribePrompt(promptKey, VERSION, null, listener));
         assertEquals(promptKey,
                 service.prompt().subscribePrompt(promptKey, VERSION, null, listener).getPromptKey());
     }
@@ -226,13 +276,9 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosSkillEvent event) {
             }
         };
-        if (mode == AgentTransportMode.HTTP) {
-            addCleanup(() -> service.skill().unsubscribeSkill(skillName, VERSION, null, listener));
-            assertTrue(service.skill().subscribeSkill(skillName, VERSION, null, listener).length > 0);
-        } else {
-            assertNotImplemented(
-                    () -> service.skill().subscribeSkill(skillName, VERSION, null, listener));
-        }
+        addCleanup(() -> service.unsubscribeSkill(skillName, VERSION, null, listener));
+        assertTrue(service.skill().subscribeSkill(skillName, VERSION, null, listener).length > 0);
+        assertTrue(service.downloadSkillZipByVersion(skillName, VERSION).length > 0);
     }
 
     private void verifyAgentSpec(AiService service, AiMaintainerService maintainer,
@@ -253,15 +299,11 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosAgentSpecEvent event) {
             }
         };
-        if (mode == AgentTransportMode.HTTP) {
-            AgentSpec spec = service.agentSpec().loadAgentSpec(specName);
-            assertEquals(specName, spec.getName(), spec.toString());
-            addCleanup(() -> service.agentSpec().unsubscribeAgentSpec(specName, listener));
-            assertEquals(specName, service.agentSpec().subscribeAgentSpec(specName, listener).getName());
-        } else {
-            assertNotImplemented(() -> service.agentSpec().loadAgentSpec(specName));
-            assertNotImplemented(() -> service.agentSpec().subscribeAgentSpec(specName, listener));
-        }
+        AgentSpec spec = service.agentSpec().loadAgentSpec(specName);
+        assertEquals(specName, spec.getName(), spec.toString());
+        addCleanup(() -> service.unsubscribeAgentSpec(specName, listener));
+        assertEquals(specName, service.agentSpec().subscribeAgentSpec(specName, listener).getName());
+        assertEquals(specName, service.loadAgentSpec(specName).getName());
     }
 
     private void verifyOrdinaryNaming(AgentTransportMode mode) throws Exception {
@@ -451,17 +493,5 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         spec.setDescription(description);
         spec.setContent(JacksonUtils.toJson(manifest));
         return JacksonUtils.toJson(spec);
-    }
-
-    private void assertNotImplemented(CheckedRunnable runnable) {
-        NacosException exception = assertThrows(NacosException.class, runnable::run);
-        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode(),
-                exception.toString());
-    }
-
-    @FunctionalInterface
-    private interface CheckedRunnable {
-
-        void run() throws Exception;
     }
 }

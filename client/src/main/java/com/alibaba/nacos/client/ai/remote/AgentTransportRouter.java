@@ -26,10 +26,8 @@ import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
-import io.grpc.Status;
-import io.grpc.StatusException;
-import io.grpc.StatusRuntimeException;
 
 /**
  * Routes protocol-neutral Agent operations without owning feature cache state.
@@ -38,12 +36,15 @@ import io.grpc.StatusRuntimeException;
  */
 public class AgentTransportRouter implements AgentClientProxy {
     
+    private final AgentTransportMode mode;
+    
     private final AgentGrpcTransport grpcTransport;
     
     private final AgentHttpTransport httpTransport;
     
-    public AgentTransportRouter(AgentGrpcTransport grpcTransport,
+    public AgentTransportRouter(AgentTransportMode mode, AgentGrpcTransport grpcTransport,
         AgentHttpTransport httpTransport) {
+        this.mode = mode;
         this.grpcTransport = grpcTransport;
         this.httpTransport = httpTransport;
     }
@@ -63,7 +64,7 @@ public class AgentTransportRouter implements AgentClientProxy {
         Page<AgentCatalogEntry> result;
         try {
             result = transport.searchAgents(request);
-        } catch (NacosException e) {
+        } catch (NacosException | NacosRuntimeException e) {
             if (transport.getType() != AgentTransportType.GRPC || !canFallbackRead(e)) {
                 throw e;
             }
@@ -81,7 +82,7 @@ public class AgentTransportRouter implements AgentClientProxy {
         AgentDiscoveryResult result;
         try {
             result = transport.discoverAgent(request);
-        } catch (NacosException e) {
+        } catch (NacosException | NacosRuntimeException e) {
             if (transport.getType() != AgentTransportType.GRPC || !canFallbackRead(e)) {
                 throw e;
             }
@@ -167,11 +168,11 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     private AgentTransport select() {
-        AgentTransportMode mode = grpcTransport.getMode();
         if (mode == AgentTransportMode.HTTP) {
             return httpTransport;
         }
-        if (mode == AgentTransportMode.GRPC || grpcTransport.isAvailable()) {
+        if (mode == AgentTransportMode.GRPC
+            || grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)) {
             return grpcTransport;
         }
         return httpTransport;
@@ -183,32 +184,12 @@ public class AgentTransportRouter implements AgentClientProxy {
     
     private void recordHttpSuccess(AgentTransport transport) {
         if (transport.getType() == AgentTransportType.HTTP) {
-            grpcTransport.recordHttpSuccess();
+            grpcTransport.recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
         }
     }
     
-    private boolean canFallbackRead(NacosException exception) {
-        if (grpcTransport.getMode() != AgentTransportMode.AUTO) {
-            return false;
-        }
-        int code = exception.getErrCode();
-        return !grpcTransport.isConnected()
-            || code == NacosException.CLIENT_DISCONNECT || code == NacosException.UN_REGISTER
-            || isGrpcUnavailable(exception);
-    }
-    
-    private boolean isGrpcUnavailable(Throwable throwable) {
-        Throwable current = throwable;
-        while (current != null) {
-            if (current instanceof StatusRuntimeException) {
-                return ((StatusRuntimeException) current).getStatus()
-                    .getCode() == Status.Code.UNAVAILABLE;
-            }
-            if (current instanceof StatusException) {
-                return ((StatusException) current).getStatus().getCode() == Status.Code.UNAVAILABLE;
-            }
-            current = current.getCause();
-        }
-        return false;
+    private boolean canFallbackRead(Exception exception) {
+        return mode == AgentTransportMode.AUTO
+            && AiTransportExceptionUtils.isConnectionFailure(exception);
     }
 }
