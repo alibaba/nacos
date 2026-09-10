@@ -21,9 +21,15 @@ export default defineConfig(({ command }) => ({
         'process.version': JSON.stringify(''),
       },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      {
+        // Monaco embeds DOMPurify, so the npm override alone does not patch its runtime.
+        // Route its sanitizer to the patched package (GHSA-55q2-fjhq-7xh7).
+        find: './dompurify/dompurify.js',
+        replacement: path.resolve(__dirname, './node_modules/dompurify/dist/purify.es.mjs'),
+      },
+    ],
   },
   server: {
     port: 8000,

@@ -25,6 +25,21 @@ This project uses `.npmrc` with `min-release-age=3` to ensure `npm install` does
 npm install
 ```
 
+### Monaco sanitizer dependency
+
+Monaco 0.55.1 embeds DOMPurify 3.2.7 in its ESM sources. The scoped npm override
+and the Vite alias must be kept together: the override updates the dependency
+tree, while the alias makes the editor use DOMPurify 3.4.13 in the browser.
+This addresses the DOMPurify advisories through
+[GHSA-55q2-fjhq-7xh7](https://github.com/cure53/DOMPurify/security/advisories/GHSA-55q2-fjhq-7xh7)
+without changing the Monaco version or editor options.
+
+Sanitizer upgrades can affect HTML in editor hovers. When updating this dependency,
+check ordinary Markdown formatting and links as well as unsafe HTML filtering.
+The build regression test verifies that Monaco's embedded sanitizer is excluded.
+Remove the override and alias together only after Monaco's browser bundle uses a
+patched sanitizer itself; upgrading only its declared npm dependency is insufficient.
+
 ## Local Development
 
 ```bash

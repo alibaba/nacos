@@ -39,6 +39,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
+    "dompurify": "3.4.13",
     "i18next": "^25.8.18",
     "js-yaml": "^4.1.1",
     "jszip": "^3.10.1",
@@ -78,5 +79,10 @@
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "$dompurify"
+    }
   }
 }
