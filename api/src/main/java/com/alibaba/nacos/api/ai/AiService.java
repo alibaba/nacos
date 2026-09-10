@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -31,29 +29,74 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.utils.StringUtils;
+import java.util.Collection;
 
 /**
- * Nacos AI client service interface.
+ * AI resource services and compatible legacy operation delegates.
  *
- * @author xiweng.yy
+ * @author Nacos
  */
-public interface AiService extends AgentDiscoveryService, A2aService {
+public interface AiService
+    extends McpService, A2aService, SkillService, AgentSpecService, PromptService {
     
     /**
-     * Publish one exact Agent Version from application code.
+     * Return the mcp resource service.
      *
-     * <p>The AiService namespace is used automatically. By default this creates a draft;
-     * {@link AgentPublishRequest#isAutoSubmit()} requests the ordinary submit pipeline and never
-     * force-publishes a Version.</p>
-     *
-     * @param request Agent definition publication request
-     * @return resulting exact Version detail
-     * @throws NacosException when validation, publication, or submit fails
+     * @return resource service sharing this AI client lifecycle
+     * @since 3.3.0
      */
-    @Since("3.3.0")
-    default AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
-        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
-            "Agent publication is not implemented by this AiService.");
+    default McpService mcp() {
+        throw new UnsupportedOperationException("McpService is not implemented by this AiService.");
+    }
+    
+    /**
+     * Return the skill resource service.
+     *
+     * @return resource service sharing this AI client lifecycle
+     * @since 3.3.0
+     */
+    default SkillService skill() {
+        throw new UnsupportedOperationException(
+            "SkillService is not implemented by this AiService.");
+    }
+    
+    /**
+     * Return the agentSpec resource service.
+     *
+     * @return resource service sharing this AI client lifecycle
+     * @since 3.3.0
+     */
+    default AgentSpecService agentSpec() {
+        throw new UnsupportedOperationException(
+            "AgentSpecService is not implemented by this AiService.");
+    }
+    
+    /**
+     * Return the prompt resource service.
+     *
+     * @return resource service sharing this AI client lifecycle
+     * @since 3.3.0
+     */
+    default PromptService prompt() {
+        throw new UnsupportedOperationException(
+            "PromptService is not implemented by this AiService.");
+    }
+    
+    /**
+     * Return the agent resource service.
+     *
+     * @return resource service sharing this AI client lifecycle
+     * @since 3.3.0
+     */
+    default AgentService agent() {
+        throw new UnsupportedOperationException(
+            "AgentService is not implemented by this AiService.");
     }
     
     /**
@@ -62,7 +105,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param mcpName name of mcp server
      * @return detail information of MCP server
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
     default McpServerDetailInfo getMcpServer(String mcpName) throws NacosException {
         return getMcpServer(mcpName, null);
@@ -75,9 +121,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param version version of MCP, if null, will get the latest published version
      * @return detail information of MCP server
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
+    default McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
+        return mcp().getMcpServer(mcpName, version);
+    }
     
     /**
      * Release new mcp server or release new version of exist mcp server request.
@@ -92,7 +143,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param toolSpecification   mcp server tool specification
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
     default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification)
@@ -111,7 +165,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param createDraft whether to create a lifecycle draft instead of direct-online release
      * @return internal MCP id
      * @throws NacosException when validation or release fails
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.3.0")
     default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification, boolean createDraft) throws NacosException {
@@ -126,7 +183,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param resourceSpecification mcp server resource specification
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.1")
     default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification,
@@ -149,11 +209,17 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param endpointSpecification mcp server endpoint specification, optional, if null, will create ref service auto.
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    String releaseMcpServer(McpServerBasicInfo serverSpecification,
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification,
-        McpEndpointSpec endpointSpecification) throws NacosException;
+        McpEndpointSpec endpointSpecification) throws NacosException {
+        return mcp().releaseMcpServer(serverSpecification, toolSpecification,
+            endpointSpecification);
+    }
     
     /**
      * Release new mcp server or release new version of exist mcp server request.
@@ -164,12 +230,18 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param endpointSpecification mcp server endpoint specification, optional, if null, will create ref service auto.
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.1")
-    String releaseMcpServer(McpServerBasicInfo serverSpecification,
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
-        throws NacosException;
+        throws NacosException {
+        return mcp().releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+            endpointSpecification);
+    }
     
     /**
      * Release one MCP Version with complete optional content and lifecycle-draft choice.
@@ -185,7 +257,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param createDraft whether to create a lifecycle draft instead of direct-online release
      * @return internal MCP id
      * @throws NacosException when validation or release fails
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.3.0")
     default String releaseMcpServer(McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification,
@@ -206,7 +281,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param address   address of endpoint
      * @param port      port of endpoint
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
     default void registerMcpServerEndpoint(String mcpName, String address, int port)
         throws NacosException {
@@ -221,10 +299,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param port      port of endpoint
      * @param version   version of mcp server
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
-        throws NacosException;
+    default void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
+        throws NacosException {
+        mcp().registerMcpServerEndpoint(mcpName, address, port, version);
+    }
     
     /**
      * Deregister an endpoint from target mcp server for any version.
@@ -238,10 +321,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param address   address of endpoint
      * @param port      port of endpoint
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    void deregisterMcpServerEndpoint(String mcpName, String address, int port)
-        throws NacosException;
+    default void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+        throws NacosException {
+        mcp().deregisterMcpServerEndpoint(mcpName, address, port);
+    }
     
     /**
      * Subscribe mcp server.
@@ -250,7 +338,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param mcpServerListener listener of mcp server, callback when mcp server is changed
      * @return The detail info of mcp server at current time
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
     default McpServerDetailInfo subscribeMcpServer(String mcpName,
         AbstractNacosMcpServerListener mcpServerListener)
@@ -266,10 +357,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param mcpServerListener listener of mcp server, callback when mcp server is changed
      * @return The detail info of mcp server at current time, nullable if agent card not found
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
-        AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    default McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
+        AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+        return mcp().subscribeMcpServer(mcpName, version, mcpServerListener);
+    }
     
     /**
      * Un-subscribe mcp server.
@@ -277,7 +373,10 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param mcpName           name of mcp server
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
     default void unsubscribeMcpServer(String mcpName,
         AbstractNacosMcpServerListener mcpServerListener)
@@ -292,11 +391,16 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param version           version of mcp server
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #mcp()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.0.3")
-    void unsubscribeMcpServer(String mcpName, String version,
+    default void unsubscribeMcpServer(String mcpName, String version,
         AbstractNacosMcpServerListener mcpServerListener)
-        throws NacosException;
+        throws NacosException {
+        mcp().unsubscribeMcpServer(mcpName, version, mcpServerListener);
+    }
     
     /**
      * Download skill as ZIP byte array by skill name. Defaults to latest version.
@@ -307,9 +411,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param skillName skill name (unique identifier)
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
+     * @deprecated Use {@link #skill()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    byte[] downloadSkillZip(String skillName) throws NacosException;
+    default byte[] downloadSkillZip(String skillName) throws NacosException {
+        return skill().downloadSkillZip(skillName);
+    }
     
     /**
      * Download skill as ZIP byte array by skill name and target version.
@@ -318,9 +427,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param version   target skill version, if null, will get latest version
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
+     * @deprecated Use {@link #skill()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException;
+    default byte[] downloadSkillZipByVersion(String skillName, String version)
+        throws NacosException {
+        return skill().downloadSkillZipByVersion(skillName, version);
+    }
     
     /**
      * Download skill as ZIP byte array by skill name and target label.
@@ -329,11 +444,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param label     target skill label (e.g. "latest", "stable")
      * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
+     * @deprecated Use {@link #skill()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
-    
-    // ==================== AgentSpec Management APIs ====================
+    default byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
+        return skill().downloadSkillZipByLabel(skillName, label);
+    }
     
     /**
      * Load agent spec by agent spec name.
@@ -346,9 +464,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param agentSpecName agent spec name (unique identifier)
      * @return complete AgentSpec object with all resources
      * @throws NacosException if agent spec not found or query error
+     * @deprecated Use {@link #agentSpec()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
+    default AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
+        return agentSpec().loadAgentSpec(agentSpecName);
+    }
     
     /**
      * Subscribe agent spec.
@@ -357,11 +480,16 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param agentSpecListener   listener of agent spec, callback when agent spec configuration is changed
      * @return The agent spec object at current time, nullable if agent spec not found
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agentSpec()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    AgentSpec subscribeAgentSpec(String agentSpecName,
+    default AgentSpec subscribeAgentSpec(String agentSpecName,
         AbstractNacosAgentSpecListener agentSpecListener)
-        throws NacosException;
+        throws NacosException {
+        return agentSpec().subscribeAgentSpec(agentSpecName, agentSpecListener);
+    }
     
     /**
      * Un-subscribe agent spec.
@@ -369,13 +497,16 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param agentSpecName       name of agent spec
      * @param agentSpecListener   listener of agent spec
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agentSpec()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    void unsubscribeAgentSpec(String agentSpecName,
+    default void unsubscribeAgentSpec(String agentSpecName,
         AbstractNacosAgentSpecListener agentSpecListener)
-        throws NacosException;
-    
-    // ==================== Prompt Management APIs ====================
+        throws NacosException {
+        agentSpec().unsubscribeAgentSpec(agentSpecName, agentSpecListener);
+    }
     
     /**
      * Get prompt by prompt key.
@@ -383,9 +514,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param promptKey prompt key (unique identifier)
      * @return prompt object with current version
      * @throws NacosException if prompt not found or query error
+     * @deprecated Use {@link #prompt()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    Prompt getPrompt(String promptKey) throws NacosException;
+    default Prompt getPrompt(String promptKey) throws NacosException {
+        return prompt().getPrompt(promptKey);
+    }
     
     /**
      * Get prompt by prompt key and target version.
@@ -394,9 +530,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param version target prompt version, if null, will get latest version
      * @return prompt object with target version
      * @throws NacosException if prompt not found or query error
+     * @deprecated Use {@link #prompt()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    Prompt getPromptByVersion(String promptKey, String version) throws NacosException;
+    default Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
+        return prompt().getPromptByVersion(promptKey, version);
+    }
     
     /**
      * Get prompt by prompt key and target label.
@@ -405,9 +546,14 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param label target prompt label
      * @return prompt object with target label
      * @throws NacosException if prompt not found or query error
+     * @deprecated Use {@link #prompt()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    Prompt getPromptByLabel(String promptKey, String label) throws NacosException;
+    default Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
+        return prompt().getPromptByLabel(promptKey, label);
+    }
     
     /**
      * Subscribe prompt changes.
@@ -418,10 +564,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param promptListener listener for prompt changes
      * @return current prompt object, may be null if prompt not found
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #prompt()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    Prompt subscribePrompt(String promptKey, String version, String label,
-        AbstractNacosPromptListener promptListener) throws NacosException;
+    default Prompt subscribePrompt(String promptKey, String version, String label,
+        AbstractNacosPromptListener promptListener) throws NacosException {
+        return prompt().subscribePrompt(promptKey, version, label, promptListener);
+    }
     
     /**
      * Un-subscribe prompt changes.
@@ -431,10 +582,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param label          target prompt label, optional
      * @param promptListener listener for prompt changes
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #prompt()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.0")
-    void unsubscribePrompt(String promptKey, String version, String label,
-        AbstractNacosPromptListener promptListener) throws NacosException;
+    default void unsubscribePrompt(String promptKey, String version, String label,
+        AbstractNacosPromptListener promptListener) throws NacosException {
+        prompt().unsubscribePrompt(promptKey, version, label, promptListener);
+    }
     
     /**
      * Subscribe skill changes.
@@ -445,10 +601,15 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param skillListener listener for skill changes
      * @return current skill ZIP bytes, may be {@code null} when the skill is not found
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #skill()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.2")
-    byte[] subscribeSkill(String skillName, String version, String label,
-        AbstractNacosSkillListener skillListener) throws NacosException;
+    default byte[] subscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException {
+        return skill().subscribeSkill(skillName, version, label, skillListener);
+    }
     
     /**
      * Un-subscribe skill changes.
@@ -459,10 +620,383 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      * @param skillListener listener previously registered via
      *                      {@link #subscribeSkill(String, String, String, AbstractNacosSkillListener)}
      * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #skill()} instead.
      */
+    @Deprecated
+    @Override
     @Since("3.2.2")
-    void unsubscribeSkill(String skillName, String version, String label,
-        AbstractNacosSkillListener skillListener) throws NacosException;
+    default void unsubscribeSkill(String skillName, String version, String label,
+        AbstractNacosSkillListener skillListener) throws NacosException {
+        skill().unsubscribeSkill(skillName, version, label, skillListener);
+    }
+    
+    /**
+     * Get agent card with nacos extension detail with latest version.
+     *
+     * @param agentName name of agent card
+     * @return agent card with nacos extension detail
+     * @throws NacosException if request parameter is invalid or agent card not found or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default AgentCardDetailInfo getAgentCard(String agentName) throws NacosException {
+        return getAgentCard(agentName, StringUtils.EMPTY);
+    }
+    
+    /**
+     * Get agent card with nacos extension detail with target version.
+     *
+     * @param agentName name of agent card
+     * @param version   target version, if null or empty, get latest version
+     * @return agent card with nacos extension detail
+     * @throws NacosException if request parameter is invalid or agent card not found or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default AgentCardDetailInfo getAgentCard(String agentName, String version)
+        throws NacosException {
+        return getAgentCard(agentName, version, StringUtils.EMPTY);
+    }
+    
+    /**
+     * Get agent card with nacos extension detail with target version.
+     *
+     * @param agentName        name of agent card
+     * @param version          target version, if null or empty, get latest version
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE} default is empty, means use agent card
+     *                         setting in nacos.
+     * @return agent card with nacos extension detail
+     * @throws NacosException if request parameter is invalid or agent card not found or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default AgentCardDetailInfo getAgentCard(String agentName, String version,
+        String registrationType)
+        throws NacosException {
+        return agent().getAgentCard(agentName, version, registrationType);
+    }
+    
+    /**
+     * Release new agent card or new version with default service type endpoint.
+     *
+     * <p>
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
+     * </p>
+     *
+     * @param agentCard agent card need to release
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void releaseAgentCard(AgentCard agentCard) throws NacosException {
+        releaseAgentCard(agentCard, AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE);
+    }
+    
+    /**
+     * Release new agent card or new version.
+     *
+     * <p>
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
+     * </p>
+     *
+     * @param agentCard        agent card need to release
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void releaseAgentCard(AgentCard agentCard, String registrationType)
+        throws NacosException {
+        releaseAgentCard(agentCard, registrationType, false);
+    }
+    
+    /**
+     * Release new agent card or new version.
+     *
+     * <p>
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
+     * </p>
+     *
+     * @param agentCard        agent card need to release
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @param setAsLatest      whether set new version as latest, default is false. This parameter is only effect when
+     *                         new version is released. If current agent card not exist, whatever this parameter is, it
+     *                         will be set as latest.
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
+        throws NacosException {
+        agent().releaseAgentCard(agentCard, registrationType, setAsLatest);
+    }
+    
+    /**
+     * Register endpoint to agent card.
+     *
+     * @param agentName name of agent
+     * @param version   version of this endpoint
+     * @param address   address for this endpoint
+     * @param port      port of this endpoint
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void registerAgentEndpoint(String agentName, String version, String address, int port)
+        throws NacosException {
+        registerAgentEndpoint(agentName, version, address, port,
+            AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+    }
+    
+    /**
+     * Register endpoint to agent card.
+     *
+     * @param agentName name of agent
+     * @param version   version of this endpoint
+     * @param address   address for this endpoint
+     * @param port      port of this endpoint
+     * @param transport supported transport, according to A2A protocol, it should be `JSONRPC`, `GRPC` and `HTTP+JSON`
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void registerAgentEndpoint(String agentName, String version, String address, int port,
+        String transport)
+        throws NacosException {
+        registerAgentEndpoint(agentName, version, address, port, transport, StringUtils.EMPTY);
+    }
+    
+    /**
+     * Register endpoint to agent card.
+     *
+     * @param agentName name of agent
+     * @param version   version of this endpoint
+     * @param address   address for this endpoint
+     * @param port      port of this endpoint
+     * @param transport supported transport, according to A2A protocol, it should be `JSONRPC`, `GRPC` and `HTTP+JSON`
+     * @param path      The path of endpoint request
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void registerAgentEndpoint(String agentName, String version, String address, int port,
+        String transport,
+        String path) throws NacosException {
+        registerAgentEndpoint(agentName, version, address, port, transport, path, false);
+    }
+    
+    /**
+     * Register endpoint to agent card.
+     *
+     * @param agentName  name of agent
+     * @param version    version of this endpoint
+     * @param address    address for this endpoint
+     * @param port       port of this endpoint
+     * @param transport  supported transport, according to A2A protocol, it should be `JSONRPC`, `GRPC` and `HTTP+JSON`
+     * @param path       The path of endpoint request
+     * @param supportTls whether support tls
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void registerAgentEndpoint(String agentName, String version, String address, int port,
+        String transport,
+        String path, boolean supportTls) throws NacosException {
+        AgentEndpoint agentEndpoint = new AgentEndpoint();
+        agentEndpoint.setAddress(address);
+        agentEndpoint.setPort(port);
+        agentEndpoint.setTransport(transport);
+        agentEndpoint.setPath(path);
+        agentEndpoint.setSupportTls(supportTls);
+        agentEndpoint.setVersion(version);
+        registerAgentEndpoint(agentName, agentEndpoint);
+    }
+    
+    /**
+     * Register endpoint to agent card.
+     *
+     * @param agentName name of agent
+     * @param endpoint  endpoint info
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+        throws NacosException {
+        agent().registerAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Batch register endpoints to agent card.
+     *
+     * <p>
+     * Conflict with {@link #registerAgentEndpoint(String, AgentEndpoint)}, this API will overwrite all endpoint
+     * registered by {@link #registerAgentEndpoint(String, AgentEndpoint)}.
+     * </p>
+     *
+     * @param agentName name of agent
+     * @param endpoints collection of endpoints
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @since 3.1.1
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.1")
+    default void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
+        throws NacosException {
+        agent().registerAgentEndpoint(agentName, endpoints);
+    }
+    
+    /**
+     * Deregister endpoint from agent card which registered by this client.
+     *
+     * <p>
+     * Only endpoint registered by this client can be deregistered. Other endpoint registered by other clients, call
+     * this API will no any effect.
+     * </p>
+     *
+     * @param agentName name of agent
+     * @param version   version of this endpoint
+     * @param address   address for this endpoint
+     * @param port      port of this endpoint
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void deregisterAgentEndpoint(String agentName, String version, String address, int port)
+        throws NacosException {
+        AgentEndpoint agentEndpoint = new AgentEndpoint();
+        agentEndpoint.setAddress(address);
+        agentEndpoint.setPort(port);
+        agentEndpoint.setVersion(version);
+        deregisterAgentEndpoint(agentName, agentEndpoint);
+    }
+    
+    /**
+     * Deregister endpoint from agent card which registered by this client.
+     *
+     * <p>
+     * Only endpoint registered by this client can be deregistered. Other endpoint registered by other clients, call
+     * this API will no any effect.
+     * </p>
+     *
+     * @param agentName name of agent
+     * @param endpoint  endpoint info
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+        throws NacosException {
+        agent().deregisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Subscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param agentCardListener the callback listener for agent card
+     * @return current agent card when subscribe success
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default AgentCardDetailInfo subscribeAgentCard(String agentName,
+        AbstractNacosAgentCardListener agentCardListener)
+        throws NacosException {
+        return subscribeAgentCard(agentName, StringUtils.EMPTY, agentCardListener);
+    }
+    
+    /**
+     * Subscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param version           version of agent, if empty or null, means subscribe latest version
+     * @param agentCardListener the callback listener for agent card
+     * @return current agent card when subscribe success, nullable if agent card not found
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
+        AbstractNacosAgentCardListener agentCardListener) throws NacosException {
+        return agent().subscribeAgentCard(agentName, version, agentCardListener);
+    }
+    
+    /**
+     * Unsubscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param agentCardListener the callback listener for agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void unsubscribeAgentCard(String agentName,
+        AbstractNacosAgentCardListener agentCardListener)
+        throws NacosException {
+        unsubscribeAgentCard(agentName, StringUtils.EMPTY, agentCardListener);
+    }
+    
+    /**
+     * Unsubscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param version           version of agent, if empty or null, means unsubscribe latest version
+     * @param agentCardListener the callback listener for agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     * @deprecated Use {@link #agent()} instead.
+     */
+    @Deprecated
+    @Override
+    @Since("3.1.0")
+    default void unsubscribeAgentCard(String agentName, String version,
+        AbstractNacosAgentCardListener agentCardListener)
+        throws NacosException {
+        agent().unsubscribeAgentCard(agentName, version, agentCardListener);
+    }
     
     /**
      * Shutdown the AI service and close resources.
@@ -471,5 +1005,4 @@ public interface AiService extends AgentDiscoveryService, A2aService {
      */
     @Since("3.0.3")
     void shutdown() throws NacosException;
-    
 }

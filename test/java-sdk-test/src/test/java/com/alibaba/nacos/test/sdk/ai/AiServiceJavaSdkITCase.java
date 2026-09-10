@@ -111,6 +111,26 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String MCP_ENDPOINT_SPEC_TRANSPORT_PROTOCOL = "transportProtocol";
 
     @Test
+    public void testResourceAccessorsReuseServicesAndValidateThroughBothEntrypoints() throws Exception {
+        AiService service = createAiService();
+        org.junit.jupiter.api.Assertions.assertSame(service.mcp(), service.mcp());
+        org.junit.jupiter.api.Assertions.assertSame(service.agent(), service.agent());
+        org.junit.jupiter.api.Assertions.assertSame(service.skill(), service.skill());
+        org.junit.jupiter.api.Assertions.assertSame(service.agentSpec(), service.agentSpec());
+        org.junit.jupiter.api.Assertions.assertSame(service.prompt(), service.prompt());
+        assertEquals(assertThrows(NacosException.class, () -> service.getMcpServer("")).getErrCode(),
+                assertThrows(NacosException.class, () -> service.mcp().getMcpServer("")).getErrCode());
+        assertEquals(assertThrows(NacosException.class, () -> service.getAgentCard("")).getErrCode(),
+                assertThrows(NacosException.class, () -> service.agent().getAgentCard("")).getErrCode());
+        assertEquals(assertThrows(NacosException.class, () -> service.downloadSkillZip("")).getErrCode(),
+                assertThrows(NacosException.class, () -> service.skill().downloadSkillZip("")).getErrCode());
+        assertEquals(assertThrows(NacosException.class, () -> service.loadAgentSpec("")).getErrCode(),
+                assertThrows(NacosException.class, () -> service.agentSpec().loadAgentSpec("")).getErrCode());
+        assertEquals(assertThrows(NacosException.class, () -> service.getPrompt("")).getErrCode(),
+                assertThrows(NacosException.class, () -> service.prompt().getPrompt("")).getErrCode());
+    }
+
+    @Test
     public void testReleaseQueryAndSubscribeMcpServer() throws Exception {
         AiService aiService = createAiService();
         ConfigService configService = createConfigService();
@@ -121,7 +141,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 buildMcpToolSpecification(mcpName), buildMcpResourceSpecification(mcpName));
         addCleanup(() -> cleanupMcpServer(configService, mcpId, version));
 
-        McpServerDetailInfo detail = aiService.getMcpServer(mcpName, version);
+        McpServerDetailInfo detail = aiService.mcp().getMcpServer(mcpName, version);
         assertEquals(mcpId, detail.getId(), detail.toString());
         assertEquals(mcpName, detail.getName(), detail.toString());
         assertEquals(version, detail.getVersionDetail().getVersion(), detail.toString());
@@ -135,7 +155,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 callback.set(event.getMcpServerDetailInfo());
             }
         };
-        addCleanup(() -> aiService.unsubscribeMcpServer(mcpName, version, listener));
+        addCleanup(() -> aiService.mcp().unsubscribeMcpServer(mcpName, version, listener));
         McpServerDetailInfo subscribed = aiService.subscribeMcpServer(mcpName, version, listener);
         assertEquals(mcpId, subscribed.getId(), subscribed.toString());
         waitUntil("subscribe should invoke listener with current MCP detail",
@@ -317,7 +337,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
-        AgentCardDetailInfo detail = aiService.getAgentCard(agentName, version,
+        AgentCardDetailInfo detail = aiService.agent().getAgentCard(agentName, version,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
         assertEquals(agentName, detail.getName(), detail.toString());
         assertEquals(version, detail.getVersion(), detail.toString());

@@ -82,7 +82,7 @@ Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对
   不传 namespace；
 - 提供 Agent Search、带或不带 Filter 的 Discover、Watch 与取消 Watch，以及运行时
   Endpoint Register 和 Deregister；
-- 通过 `AiService.publishAgent` 提供可选的代码式 Agent 定义发布，默认只创建 draft，并可通过
+- 通过 `AiService.agent().publishAgent` 提供可选的代码式 Agent 定义发布，默认只创建 draft，并可通过
   `autoSubmit` 执行普通 submit Pipeline；
 - 在不修改调用方对象的前提下，把绑定的 namespace 注入传输请求；
 - 按客户端恢复规范在 reconnect 后恢复 Watch 和 Endpoint 发布意图。

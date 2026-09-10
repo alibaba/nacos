@@ -103,7 +103,7 @@ The user-facing interface is named `AgentDiscoveryService`; the RAD acronym is
 not required in application code. During A2A compatibility:
 
 ```text
-AiService extends AgentDiscoveryService, A2aService
+AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 ```
 
 | Capability | Method | Input | Result |

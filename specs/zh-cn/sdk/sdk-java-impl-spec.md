@@ -155,27 +155,25 @@ context，而不是修改请求 payload 或让无关 SDK 调用失败。默认 N
 
 `getServicesOfServer` 的 selector overload 已废弃，仅作为兼容面保留。
 
-### 5.3 AiService、AgentDiscoveryService 和 A2aService
+### 5.3 AiService 资源子接口
 
-本节的 Agent/RAD 契约是目标契约，不是当前已经实现的 Java 方法清单。只有新的
-Agent/RAD 能力完成实现并经过协商后才生效；在此之前，现有 `AiService` 和
-`A2aService` 方法仍是生效的兼容面。
-
-目标继承关系为：
+`AiService` 提供 namespace-bound 的 `mcp()`、`agent()`、`skill()`、`agentSpec()` 和
+`prompt()`。getter 返回复用的子服务，与 facade 共享连接、缓存、监听及 `shutdown()` 生命周期。
 
 ```text
-AiService extends AgentDiscoveryService, A2aService
+AiService extends McpService, A2aService, SkillService, AgentSpecService, PromptService
+AgentService extends A2aService, AgentDiscoveryService
 ```
 
-增加该父接口时，不能让已经编译的第三方 `AiService` 实现立即发生 linkage failure。新增的
-继承方法使用兼容 default bridge，在实现未 override 时报告不支持；Nacos 官方实现 override
-完整目标接口面。
+已发布的扁平方法保留并标记 Deprecated，核心方法通过对应 getter 委托。便利 default 重载
+继续调用本对象核心 override。新增 getter 的 default 报告不支持，第三方旧实现无需实现新 getter
+即可保持原调用；官方实现覆盖所有 getter。MCP createDraft default 保留 false 分派到旧四参
+方法、未实现 true 时受控拒绝的行为；官方五参方法是到 mcp() 的纯桥接。
 
-`AiService` 直接提供 namespace-bound 的
-`publishAgent(AgentPublishRequest)`，返回 `AgentVersionDetail`。该新增方法使用同样的兼容
-default bridge；它不放入 `AgentDiscoveryService`，因为定义发布不是发现操作。官方实现复制
-Request、注入 SDK namespace，并按 `autoSubmit` 创建 draft 或执行普通 submit Pipeline，且不
-修改调用方对象。等价重试、冲突和状态收敛遵循 [Agent API 规范](../ai/agent-api-spec.md)。
+3.3 尚未发布的新 Agent 操作只通过 `agent()` 使用。`AgentService.publishAgent` 返回
+`AgentVersionDetail`，保留兼容 default；官方实现仍复制请求、注入 SDK namespace，并按
+`autoSubmit` 创建 draft 或普通 submit，不修改输入对象。参见 [Agent API 规范](../ai/agent-api-spec.md)。
+旧 A2A 方法始终保留现有 gRPC 路径，不因本次接口拆分切换为 RAD。
 
 `AgentTransportMode` 是 API 模块中的 Java 8 兼容枚举，公开 `GRPC`、`HTTP`、`AUTO`，并可通过
 `getValue()` 写入 `nacosAiTransportMode`。模式在 `AiService` 创建时冻结；非法值在 Factory

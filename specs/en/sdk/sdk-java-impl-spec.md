@@ -177,35 +177,28 @@ SDK instead of `ConfigService`.
 The selector overload of `getServicesOfServer` is deprecated and remains only as
 a compatibility surface.
 
-### 5.3 AiService, AgentDiscoveryService, And A2aService
+### 5.3 AiService Resource Interfaces
 
-The Agent/RAD contract in this subsection is a target contract, not an
-inventory of currently implemented Java methods. It becomes active only after
-the new Agent/RAD abilities are implemented and negotiated. Until then, the
-existing `AiService` and `A2aService` methods remain the active compatibility
-surface.
-
-The target inheritance is:
+`AiService` exposes namespace-bound `mcp()`, `agent()`, `skill()`, `agentSpec()` and `prompt()`.
+Each accessor reuses a resource service sharing the facade's connections, caches, listeners and
+`shutdown()` lifecycle.
 
 ```text
-AiService extends AgentDiscoveryService, A2aService
+AiService extends McpService, A2aService, SkillService, AgentSpecService, PromptService
+AgentService extends A2aService, AgentDiscoveryService
 ```
 
-Adding this parent must not make an already compiled third-party `AiService`
-implementation fail linkage immediately. Newly inherited methods use
-compatibility default bridges that report unsupported behavior until an
-implementation overrides them; the official Nacos implementation overrides the
-complete target surface.
+Released flat methods remain deprecated delegates. Core methods call the corresponding accessor;
+convenience defaults still dispatch to this object's legacy core overrides. New accessors default to
+unsupported, so third-party old implementations can retain their old behavior. The official client
+implements all accessors. The MCP createDraft default still dispatches false to the old four-argument
+method and rejects unimplemented true requests; the official five-argument override is a pure bridge.
 
-`AiService` directly provides the namespace-bound
-`publishAgent(AgentPublishRequest)` method and returns `AgentVersionDetail`.
-This new method uses the same compatibility default bridge. It does not belong
-to `AgentDiscoveryService`, because definition publication is not discovery.
-The official implementation copies the request, injects the SDK namespace, and
-creates a draft or runs the ordinary submit Pipeline according to
-`autoSubmit`, without mutating the caller's object. Equivalent retries,
-conflicts, and state convergence follow the
-[Agent API Spec](../ai/agent-api-spec.md).
+Unreleased 3.3 Agent operations are available only through `agent()`. `AgentService.publishAgent`
+returns `AgentVersionDetail` with a compatibility default. The official implementation copies input,
+injects the SDK namespace and creates a draft or performs ordinary submit according to `autoSubmit`,
+without mutating caller state. See the [Agent API Spec](../ai/agent-api-spec.md).
+Legacy A2A keeps its existing gRPC path; interface extraction does not switch it to RAD.
 
 `AgentTransportMode` is a Java 8-compatible API-module enum exposing `GRPC`,
 `HTTP`, and `AUTO`; `getValue()` supplies the `nacosAiTransportMode` property

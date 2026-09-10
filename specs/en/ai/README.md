@@ -39,6 +39,7 @@ behavior through the [HTTP API](../http-api/api-spec.md),
 - [Agent Storage Spec](agent-storage-spec.md)
 - [A2A Agent Binding And Compatibility Spec](a2a-agent-spec.md)
 - [Historical A2A Upgrade Migration Spec](a2a-upgrade-migration-spec.md)
+- [3.3 Client AI API Amendment Proposal (review draft, not implemented)](client-ai-api-evolution-spec.md)
 - [Shared JSON Schema Index](../../schemas/README.md)
 
 ## Resource Types

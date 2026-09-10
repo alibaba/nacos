@@ -988,7 +988,7 @@ class NacosAiServiceTest {
         when(agentTransportRouter.publishAgent(any(AgentPublishRequest.class)))
             .thenReturn(expected);
         
-        assertEquals(expected, nacosAiService.publishAgent(source));
+        assertEquals(expected, nacosAiService.agent().publishAgent(source));
         ArgumentCaptor<AgentPublishRequest> request =
             ArgumentCaptor.forClass(AgentPublishRequest.class);
         verify(agentTransportRouter).publishAgent(request.capture());
@@ -1010,8 +1010,8 @@ class NacosAiServiceTest {
         AgentReference reference = new AgentReference();
         reference.setAgentName("agent-a");
         
-        assertEquals(page, nacosAiService.searchAgents(search));
-        assertEquals(discoveryResult, nacosAiService.discoverAgent(reference));
+        assertEquals(page, nacosAiService.agent().searchAgents(search));
+        assertEquals(discoveryResult, nacosAiService.agent().discoverAgent(reference));
         
         ArgumentCaptor<AgentSearchRequest> searchCaptor =
             ArgumentCaptor.forClass(AgentSearchRequest.class);
@@ -1044,8 +1044,8 @@ class NacosAiServiceTest {
         when(agentDiscoveryCacheHolder.subscribe(reference, filter, listener))
             .thenReturn(expected);
         
-        assertEquals(expected, nacosAiService.subscribeAgent(reference, filter, listener));
-        nacosAiService.unsubscribeAgent(reference, filter, listener);
+        assertEquals(expected, nacosAiService.agent().subscribeAgent(reference, filter, listener));
+        nacosAiService.agent().unsubscribeAgent(reference, filter, listener);
         
         verify(agentDiscoveryCacheHolder).subscribe(reference, filter, listener);
         verify(agentDiscoveryCacheHolder).unsubscribe(reference, filter, listener);
@@ -1066,14 +1066,14 @@ class NacosAiServiceTest {
         deregistration.setEndpoints(Collections.emptyList());
         
         assertThrows(NacosException.class,
-            () -> nacosAiService.registerAgentEndpoints(registration));
+            () -> nacosAiService.agent().registerAgentEndpoints(registration));
         assertThrows(NacosException.class,
-            () -> nacosAiService.deregisterAgentEndpoints(deregistration));
+            () -> nacosAiService.agent().deregisterAgentEndpoints(deregistration));
         
         registration.setEndpoints(Collections.singletonList(endpoint("http://host/a")));
         deregistration.setEndpoints(Collections.singletonList(endpoint("http://host/a")));
-        nacosAiService.registerAgentEndpoints(registration);
-        nacosAiService.deregisterAgentEndpoints(deregistration);
+        nacosAiService.agent().registerAgentEndpoints(registration);
+        nacosAiService.agent().deregisterAgentEndpoints(deregistration);
         
         ArgumentCaptor<AgentEndpointRegistrationBatch> registrationCaptor =
             ArgumentCaptor.forClass(AgentEndpointRegistrationBatch.class);
@@ -1276,5 +1276,23 @@ class NacosAiServiceTest {
         result.setUri(uri);
         result.setTransport("jsonrpc");
         return result;
+    }
+    
+    @Test
+    void resourceDelegatesShareExistingStateAndLifecycle() throws Exception {
+        injectMocks();
+        org.junit.jupiter.api.Assertions.assertSame(nacosAiService.mcp(), nacosAiService.mcp());
+        org.junit.jupiter.api.Assertions.assertSame(nacosAiService.agent(), nacosAiService.agent());
+        org.junit.jupiter.api.Assertions.assertSame(nacosAiService.skill(), nacosAiService.skill());
+        org.junit.jupiter.api.Assertions.assertSame(nacosAiService.agentSpec(),
+            nacosAiService.agentSpec());
+        org.junit.jupiter.api.Assertions.assertSame(nacosAiService.prompt(),
+            nacosAiService.prompt());
+        nacosAiService.mcp().getMcpServer("mcp", "1.0.0");
+        nacosAiService.getMcpServer("mcp", "1.0.0");
+        verify(mcpTransportRouter, org.mockito.Mockito.times(2)).queryMcpServer("mcp", "1.0.0");
+        nacosAiService.agent().getAgentCard("agent");
+        nacosAiService.getAgentCard("agent");
+        verify(grpcClient, org.mockito.Mockito.times(2)).getAgentCard("agent", "", "");
     }
 }

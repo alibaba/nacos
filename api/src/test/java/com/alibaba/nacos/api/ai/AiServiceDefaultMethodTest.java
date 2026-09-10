@@ -150,7 +150,74 @@ class AiServiceDefaultMethodTest {
     @Test
     void publishAgentDefaultsToNotImplemented() {
         NacosException exception = assertThrows(NacosException.class,
-            () -> aiService.publishAgent(new AgentPublishRequest()));
+            () -> org.mockito.Mockito
+                .mock(AgentService.class, org.mockito.Mockito.CALLS_REAL_METHODS)
+                .publishAgent(new AgentPublishRequest()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+    }
+    
+    @Test
+    void resourceAccessorsDefaultToUnsupportedWithoutChangingLegacyOverrides() throws Exception {
+        assertThrows(UnsupportedOperationException.class, aiService::mcp);
+        assertThrows(UnsupportedOperationException.class, aiService::agent);
+        assertThrows(UnsupportedOperationException.class, aiService::skill);
+        assertThrows(UnsupportedOperationException.class, aiService::agentSpec);
+        assertThrows(UnsupportedOperationException.class, aiService::prompt);
+        aiService.getMcpServer("legacy");
+        assertTrue(invokeMark.get());
+    }
+    
+    @Test
+    void coreDefaultsDelegateToResourceServices() throws Exception {
+        McpService mcp = org.mockito.Mockito.mock(McpService.class);
+        AgentService agent = org.mockito.Mockito.mock(AgentService.class);
+        SkillService skill = org.mockito.Mockito.mock(SkillService.class);
+        AgentSpecService spec = org.mockito.Mockito.mock(AgentSpecService.class);
+        PromptService prompt = org.mockito.Mockito.mock(PromptService.class);
+        AiService facade = new AiService() {
+            
+            @Override
+            public McpService mcp() {
+                return mcp;
+            }
+            
+            @Override
+            public AgentService agent() {
+                return agent;
+            }
+            
+            @Override
+            public SkillService skill() {
+                return skill;
+            }
+            
+            @Override
+            public AgentSpecService agentSpec() {
+                return spec;
+            }
+            
+            @Override
+            public PromptService prompt() {
+                return prompt;
+            }
+            
+            @Override
+            public void shutdown() {
+            }
+        };
+        facade.getMcpServer("mcp");
+        facade.getAgentCard("agent");
+        facade.downloadSkillZip("skill");
+        facade.loadAgentSpec("spec");
+        facade.getPromptByLabel("prompt", "stable");
+        org.mockito.Mockito.verify(mcp).getMcpServer("mcp", null);
+        org.mockito.Mockito.verify(agent).getAgentCard("agent", "", "");
+        org.mockito.Mockito.verify(skill).downloadSkillZip("skill");
+        org.mockito.Mockito.verify(spec).loadAgentSpec("spec");
+        org.mockito.Mockito.verify(prompt).getPromptByLabel("prompt", "stable");
+        org.junit.jupiter.api.Assertions
+            .assertFalse(AgentDiscoveryService.class.isAssignableFrom(AiService.class));
+        assertTrue(AgentDiscoveryService.class.isAssignableFrom(AgentService.class));
+        assertTrue(A2aService.class.isAssignableFrom(AgentService.class));
     }
 }

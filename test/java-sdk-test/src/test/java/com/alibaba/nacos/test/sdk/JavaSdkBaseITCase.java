@@ -153,7 +153,7 @@ public abstract class JavaSdkBaseITCase {
         probe.setPageNo(1);
         probe.setPageSize(1);
         waitUntil("AI SDK client should connect to server", () -> {
-            service.searchAgents(probe);
+            service.agent().searchAgents(probe);
             return true;
         });
         return service;

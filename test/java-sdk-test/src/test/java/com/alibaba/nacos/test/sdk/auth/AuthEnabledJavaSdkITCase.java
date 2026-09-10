@@ -202,26 +202,26 @@ public class AuthEnabledJavaSdkITCase extends JavaSdkBaseITCase {
         assumeAuthEnabled();
 
         AiService readWrite = createAiService(aiProperties(AuthIdentity.CLIENT_READ_WRITE, mode));
-        assertNotNull(readWrite.searchAgents(searchRequest()));
+        assertNotNull(readWrite.agent().searchAgents(searchRequest()));
 
         AiService readOnly = createAiService(aiProperties(AuthIdentity.CLIENT_READ_ONLY, mode));
-        assertNotNull(readOnly.searchAgents(searchRequest()));
-        assertNoRight(() -> readOnly.registerAgentEndpoints(endpointBatch(mode, "readonly")));
+        assertNotNull(readOnly.agent().searchAgents(searchRequest()));
+        assertNoRight(() -> readOnly.agent().registerAgentEndpoints(endpointBatch(mode, "readonly")));
 
         AiService noPermission = createAiServiceWithoutReadiness(
                 aiProperties(AuthIdentity.CLIENT_NO_PERMISSION, mode));
-        assertNoRight(() -> noPermission.searchAgents(searchRequest()));
-        assertNoRight(() -> noPermission.registerAgentEndpoints(
+        assertNoRight(() -> noPermission.agent().searchAgents(searchRequest()));
+        assertNoRight(() -> noPermission.agent().registerAgentEndpoints(
                 endpointBatch(mode, "no-permission")));
 
         AiService invalid = createAiServiceWithoutReadiness(invalidAiProperties(mode));
-        assertNoRight(() -> invalid.searchAgents(searchRequest()));
-        assertNoRight(() -> invalid.registerAgentEndpoints(endpointBatch(mode, "invalid")));
+        assertNoRight(() -> invalid.agent().searchAgents(searchRequest()));
+        assertNoRight(() -> invalid.agent().registerAgentEndpoints(endpointBatch(mode, "invalid")));
 
         AiService anonymous = createAiServiceWithoutReadiness(
                 aiProperties(AuthIdentity.ANONYMOUS, mode));
-        assertNoRight(() -> anonymous.searchAgents(searchRequest()));
-        assertNoRight(() -> anonymous.registerAgentEndpoints(endpointBatch(mode, "anonymous")));
+        assertNoRight(() -> anonymous.agent().searchAgents(searchRequest()));
+        assertNoRight(() -> anonymous.agent().registerAgentEndpoints(endpointBatch(mode, "anonymous")));
     }
 
     private Properties aiProperties(AuthIdentity identity, AgentTransportMode mode) {

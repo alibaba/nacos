@@ -177,12 +177,12 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference reference = reference(CUTOVER_AGENT, VERSION_ONE);
         RecordingListener grpcListener = new RecordingListener();
         RecordingListener httpListener = new RecordingListener();
-        assertTrue(containsRuntimeEndpoint(grpcService.subscribeAgent(reference, grpcListener),
+        assertTrue(containsRuntimeEndpoint(grpcService.agent().subscribeAgent(reference, grpcListener),
             uri(initial)));
-        assertTrue(containsRuntimeEndpoint(httpService.subscribeAgent(reference, httpListener),
+        assertTrue(containsRuntimeEndpoint(httpService.agent().subscribeAgent(reference, httpListener),
             uri(initial)));
-        addCleanup(() -> grpcService.unsubscribeAgent(reference, grpcListener));
-        addCleanup(() -> httpService.unsubscribeAgent(reference, httpListener));
+        addCleanup(() -> grpcService.agent().unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> httpService.agent().unsubscribeAgent(reference, httpListener));
 
         AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
             "/quiescing-replacement");
@@ -218,11 +218,10 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("terminal legacy facade should publish canonical Version 2",
             () -> VERSION_TWO.equals(grpcService.getAgentCard(CUTOVER_AGENT).getVersion()));
         assertEquals(VERSION_TWO,
-            grpcService.discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
+            grpcService.agent().discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
         AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(CUTOVER_AGENT);
-        waitUntil("terminal Agent should remain searchable", () -> grpcService
-            .searchAgents(search).getPageItems().stream()
+        waitUntil("terminal Agent should remain searchable", () -> grpcService.agent().searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
                 && VERSION_TWO.equals(each.getLatestVersion())));
     }
@@ -242,7 +241,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
         assertEquals(VERSION_ONE, service.getAgentCard(agentName).getVersion());
         assertEquals(VERSION_ONE,
-            service.discoverAgent(reference(agentName, VERSION_ONE)).getVersion());
+            service.agent().discoverAgent(reference(agentName, VERSION_ONE)).getVersion());
         AgentEndpoint endpoint = endpoint(VERSION_ONE, randomPort(), "/terminal-legacy-mode");
         awaitTerminalLayout(service, namingService, agentName, endpoint, shadowEnabled);
         addCleanup(() -> service.deregisterAgentEndpoint(agentName, endpoint));
@@ -470,12 +469,12 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference reference = reference(agentName, VERSION_ONE);
         RecordingListener grpcListener = new RecordingListener();
         RecordingListener httpListener = new RecordingListener();
-        assertTrue(containsRuntimeEndpoint(readerA.subscribeAgent(reference, grpcListener),
+        assertTrue(containsRuntimeEndpoint(readerA.agent().subscribeAgent(reference, grpcListener),
             uri(initial)));
         assertTrue(containsRuntimeEndpoint(
-            loadBalancedReader.subscribeAgent(reference, httpListener), uri(initial)));
-        addCleanup(() -> readerA.unsubscribeAgent(reference, grpcListener));
-        addCleanup(() -> loadBalancedReader.unsubscribeAgent(reference, httpListener));
+            loadBalancedReader.agent().subscribeAgent(reference, httpListener), uri(initial)));
+        addCleanup(() -> readerA.agent().unsubscribeAgent(reference, grpcListener));
+        addCleanup(() -> loadBalancedReader.agent().unsubscribeAgent(reference, httpListener));
         writeMarker(ready, agentName);
 
         waitForMarker(nodeCUpgraded,
@@ -536,7 +535,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String version, int expected) throws Exception {
         waitUntil("both migration Runtime layouts should contain " + expected + " Endpoints",
             () -> historicalInstances(namingService, agentName, version).size() == expected
-                && runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                && runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
                     .size() == expected);
     }
 
@@ -548,7 +547,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
                 + instance.getMetadata().get("__nacos.agent.endpoint.path__"));
         }
         List<String> canonical = new ArrayList<String>();
-        for (Endpoint endpoint : runtimeEndpoints(service.discoverAgent(
+        for (Endpoint endpoint : runtimeEndpoints(service.agent().discoverAgent(
             reference(agentName, version)))) {
             canonical.add(endpoint.getUri());
         }
@@ -602,7 +601,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         List<NamingService> namingServices, String agentName, String version, int expected)
         throws NacosException {
         for (AiService service : services) {
-            if (runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+            if (runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
                 .size() != expected) {
                 return false;
             }
@@ -629,7 +628,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("all cluster members should expose Runtime Endpoint " + expectedUri,
             () -> {
                 for (AiService service : services) {
-                    if (!containsRuntimeEndpoint(service.discoverAgent(
+                    if (!containsRuntimeEndpoint(service.agent().discoverAgent(
                         reference(agentName, version)), expectedUri)) {
                         return false;
                     }
@@ -643,7 +642,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("all cluster members should expose " + expected + " Runtime Endpoints",
             () -> {
                 for (AiService service : services) {
-                    if (runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+                    if (runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
                         .size() != expected) {
                         return false;
                     }
@@ -656,7 +655,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String version, String expectedUri) throws Exception {
         for (AiService service : services) {
             assertEquals(version, service.getAgentCard(agentName).getVersion());
-            AgentDiscoveryResult discovered = service.discoverAgent(
+            AgentDiscoveryResult discovered = service.agent().discoverAgent(
                 reference(agentName, version));
             assertEquals(version, discovered.getVersion());
             assertTrue(containsRuntimeEndpoint(discovered, expectedUri),
@@ -739,14 +738,14 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private void awaitRuntimeEndpoint(AiService service, String agentName, String version,
         String endpointUri) throws Exception {
         waitUntil("Runtime Endpoint should become discoverable during cutover",
-            () -> containsRuntimeEndpoint(service.discoverAgent(reference(agentName, version)),
+            () -> containsRuntimeEndpoint(service.agent().discoverAgent(reference(agentName, version)),
                 endpointUri));
     }
 
     private void awaitRuntimeEndpointCount(AiService service, String agentName, String version,
         int expected) throws Exception {
         waitUntil("Runtime Endpoint count should converge to " + expected,
-            () -> runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+            () -> runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
                 .size() == expected);
     }
 
@@ -779,7 +778,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         NamingService namingService, String agentName, String version, int expectedRuntime,
         int expectedHistorical) throws Exception {
         waitUntilLong("Runtime and historical Endpoint counts should converge",
-            () -> runtimeEndpoints(service.discoverAgent(reference(agentName, version)))
+            () -> runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
                 .size() == expectedRuntime
                 && historicalInstances(namingService, agentName, version)
                     .size() == expectedHistorical);
@@ -788,7 +787,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private List<String> runtimeUris(AiService service, String agentName, String version)
         throws NacosException {
         List<String> result = new ArrayList<String>();
-        for (Endpoint endpoint : runtimeEndpoints(service.discoverAgent(
+        for (Endpoint endpoint : runtimeEndpoints(service.agent().discoverAgent(
             reference(agentName, version)))) {
             result.add(endpoint.getUri());
         }

@@ -95,7 +95,7 @@ HTTP 状态与 `Result.code` 使用通用 v3 异常映射；gRPC Response 暴露
 兼容期内：
 
 ```text
-AiService extends AgentDiscoveryService, A2aService
+AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 ```
 
 | 能力 | 方法 | 输入 | 返回 |

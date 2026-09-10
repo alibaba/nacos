@@ -16,6 +16,19 @@
 
 package com.alibaba.nacos.client.ai;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
+import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosAgentSpecCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
+import net.jqwik.api.lifecycle.BeforeProperty;
+import net.jqwik.api.lifecycle.AfterProperty;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -52,6 +65,38 @@ class NacosAiServiceAgentSpecPropertyTest {
             }
         };
     
+    private NacosAiService service;
+    
+    private final List<AutoCloseable> constructions = new ArrayList<>();
+    
+    @BeforeProperty
+    void setUp() throws NacosException {
+        constructions.add(Mockito.mockConstruction(AiGrpcClient.class));
+        constructions.add(Mockito.mockConstruction(AiHttpClientProxy.class));
+        constructions.add(Mockito.mockConstruction(NacosMcpServerCacheHolder.class));
+        constructions.add(Mockito.mockConstruction(NacosAgentCardCacheHolder.class));
+        constructions.add(Mockito.mockConstruction(NacosPromptCacheHolder.class));
+        constructions.add(Mockito.mockConstruction(NacosAgentSpecCacheHolder.class));
+        constructions.add(Mockito.mockConstruction(NacosSkillCacheHolder.class));
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        service = new NacosAiService(properties);
+    }
+    
+    @AfterProperty
+    void tearDown() throws Exception {
+        try {
+            if (service != null) {
+                service.shutdown();
+            }
+        } finally {
+            for (int i = constructions.size() - 1; i >= 0; i--) {
+                constructions.get(i).close();
+            }
+            constructions.clear();
+        }
+    }
+    
     @Provide
     Arbitrary<String> blankStrings() {
         return Arbitraries.oneOf(
@@ -67,8 +112,6 @@ class NacosAiServiceAgentSpecPropertyTest {
      */
     @Property
     void loadAgentSpecThrowsForBlankName(@ForAll("blankStrings") String blankName) {
-        NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
-        
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> service.loadAgentSpec(blankName));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
@@ -81,8 +124,6 @@ class NacosAiServiceAgentSpecPropertyTest {
      */
     @Property
     void subscribeAgentSpecThrowsForBlankName(@ForAll("blankStrings") String blankName) {
-        NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
-        
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> service.subscribeAgentSpec(blankName, DUMMY_LISTENER));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
@@ -95,8 +136,6 @@ class NacosAiServiceAgentSpecPropertyTest {
      */
     @Property
     void unsubscribeAgentSpecThrowsForBlankName(@ForAll("blankStrings") String blankName) {
-        NacosAiService service = Mockito.mock(NacosAiService.class, Mockito.CALLS_REAL_METHODS);
-        
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> service.unsubscribeAgentSpec(blankName, DUMMY_LISTENER));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());

@@ -129,26 +129,26 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> maintainer.agent().deleteAgent(Constants.DEFAULT_NAMESPACE_ID,
                 agentName));
 
-        AgentVersionDetail published = service.publishAgent(agentRequest(agentName, mode));
+        AgentVersionDetail published = service.agent().publishAgent(agentRequest(agentName, mode));
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, published.getStatus(),
                 published.toString());
         waitUntil(mode + " Agent should become searchable", () -> {
             AgentSearchRequest search = new AgentSearchRequest();
             search.setAgentNameContains(agentName);
-            return service.searchAgents(search).getPageItems().stream()
+            return service.agent().searchAgents(search).getPageItems().stream()
                     .anyMatch(each -> agentName.equals(each.getAgentName()));
         });
 
         AgentReference reference = reference(agentName);
-        AgentDiscoveryResult discovered = service.discoverAgent(reference);
+        AgentDiscoveryResult discovered = service.agent().discoverAgent(reference);
         assertEquals(VERSION, discovered.getVersion(), discovered.toString());
         AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
             @Override
             public void onEvent(NacosAgentDiscoveryEvent event) {
             }
         };
-        addCleanup(() -> service.unsubscribeAgent(reference, listener));
-        assertEquals(VERSION, service.subscribeAgent(reference, listener).getVersion());
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, listener));
+        assertEquals(VERSION, service.agent().subscribeAgent(reference, listener).getVersion());
 
         Endpoint endpoint = endpoint(mode);
         AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();
@@ -156,11 +156,11 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         registration.setRuntimeVersion(VERSION);
         registration.setProtocol(PROTOCOL_A2A);
         registration.setEndpoints(Collections.singletonList(endpoint));
-        service.registerAgentEndpoints(registration);
-        addCleanup(() -> service.deregisterAgentEndpoints(
+        service.agent().registerAgentEndpoints(registration);
+        addCleanup(() -> service.agent().deregisterAgentEndpoints(
                 deregistration(agentName, endpoint)));
         waitUntil(mode + " Agent Endpoint should become discoverable",
-                () -> containsRuntimeEndpoint(service.discoverAgent(reference),
+                () -> containsRuntimeEndpoint(service.agent().discoverAgent(reference),
                         endpoint.getUri()));
     }
 
@@ -168,11 +168,11 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             AgentTransportMode mode) throws Exception {
         String mcpName = randomServiceName("transport-" + mode.getValue() + "-mcp");
         McpServerBasicInfo server = mcpServer(mcpName);
-        String mcpId = service.releaseMcpServer(server, mcpTools(mcpName));
+        String mcpId = service.mcp().releaseMcpServer(server, mcpTools(mcpName));
         addCleanup(() -> maintainer.mcp().deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID,
                 mcpName, mcpId, VERSION));
 
-        McpServerDetailInfo detail = service.getMcpServer(mcpName, VERSION);
+        McpServerDetailInfo detail = service.mcp().getMcpServer(mcpName, VERSION);
         assertEquals(mcpId, detail.getId(), detail.toString());
         assertEquals(VERSION, detail.getVersionDetail().getVersion(), detail.toString());
         AbstractNacosMcpServerListener listener = new AbstractNacosMcpServerListener() {
@@ -180,8 +180,8 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosMcpServerEvent event) {
             }
         };
-        addCleanup(() -> service.unsubscribeMcpServer(mcpName, VERSION, listener));
-        assertEquals(mcpId, service.subscribeMcpServer(mcpName, VERSION, listener).getId());
+        addCleanup(() -> service.mcp().unsubscribeMcpServer(mcpName, VERSION, listener));
+        assertEquals(mcpId, service.mcp().subscribeMcpServer(mcpName, VERSION, listener).getId());
     }
 
     private void verifyPrompt(AiService service, AiMaintainerService maintainer,
@@ -195,7 +195,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
                 promptKey));
         grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "prompt", promptKey);
 
-        Prompt prompt = service.getPromptByVersion(promptKey, VERSION);
+        Prompt prompt = service.prompt().getPromptByVersion(promptKey, VERSION);
         assertEquals(promptKey, prompt.getPromptKey(), prompt.toString());
         assertEquals(VERSION, prompt.getVersion(), prompt.toString());
         AbstractNacosPromptListener listener = new AbstractNacosPromptListener() {
@@ -203,9 +203,9 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             public void onEvent(NacosPromptEvent event) {
             }
         };
-        addCleanup(() -> service.unsubscribePrompt(promptKey, VERSION, null, listener));
+        addCleanup(() -> service.prompt().unsubscribePrompt(promptKey, VERSION, null, listener));
         assertEquals(promptKey,
-                service.subscribePrompt(promptKey, VERSION, null, listener).getPromptKey());
+                service.prompt().subscribePrompt(promptKey, VERSION, null, listener).getPromptKey());
     }
 
     private void verifySkill(AiService service, AiMaintainerService maintainer,
@@ -220,18 +220,18 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
                 skillName));
         grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "skill", skillName);
 
-        assertTrue(service.downloadSkillZipByVersion(skillName, VERSION).length > 0);
+        assertTrue(service.skill().downloadSkillZipByVersion(skillName, VERSION).length > 0);
         AbstractNacosSkillListener listener = new AbstractNacosSkillListener() {
             @Override
             public void onEvent(NacosSkillEvent event) {
             }
         };
         if (mode == AgentTransportMode.HTTP) {
-            addCleanup(() -> service.unsubscribeSkill(skillName, VERSION, null, listener));
-            assertTrue(service.subscribeSkill(skillName, VERSION, null, listener).length > 0);
+            addCleanup(() -> service.skill().unsubscribeSkill(skillName, VERSION, null, listener));
+            assertTrue(service.skill().subscribeSkill(skillName, VERSION, null, listener).length > 0);
         } else {
             assertNotImplemented(
-                    () -> service.subscribeSkill(skillName, VERSION, null, listener));
+                    () -> service.skill().subscribeSkill(skillName, VERSION, null, listener));
         }
     }
 
@@ -254,13 +254,13 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
             }
         };
         if (mode == AgentTransportMode.HTTP) {
-            AgentSpec spec = service.loadAgentSpec(specName);
+            AgentSpec spec = service.agentSpec().loadAgentSpec(specName);
             assertEquals(specName, spec.getName(), spec.toString());
-            addCleanup(() -> service.unsubscribeAgentSpec(specName, listener));
-            assertEquals(specName, service.subscribeAgentSpec(specName, listener).getName());
+            addCleanup(() -> service.agentSpec().unsubscribeAgentSpec(specName, listener));
+            assertEquals(specName, service.agentSpec().subscribeAgentSpec(specName, listener).getName());
         } else {
-            assertNotImplemented(() -> service.loadAgentSpec(specName));
-            assertNotImplemented(() -> service.subscribeAgentSpec(specName, listener));
+            assertNotImplemented(() -> service.agentSpec().loadAgentSpec(specName));
+            assertNotImplemented(() -> service.agentSpec().subscribeAgentSpec(specName, listener));
         }
     }
 

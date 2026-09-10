@@ -39,6 +39,7 @@ AI Registry 规范定义 Nacos 3.x 的 AI 资源模型。它扩展
 - [Agent 存储规范](agent-storage-spec.md)
 - [A2A Agent Binding 与兼容规范](a2a-agent-spec.md)
 - [历史 A2A 升级迁移规范](a2a-upgrade-migration-spec.md)
+- [3.3 Client AI API 修订提案（评审草案，未实现）](client-ai-api-evolution-spec.md)
 - [共享 JSON Schema 索引](../../schemas/README.md)
 
 ## 资源类型

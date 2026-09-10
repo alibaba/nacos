@@ -123,7 +123,7 @@ The complete implemented scenario matrix is maintained in
 
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `AiService.publishAgent` | Draft-only and auto-submit publication, resume, equivalent retry, conflicts, direct and inherited Version evolution, namespace/caller isolation, HTTP/gRPC parity, Endpoint independence, and cross-surface A2A visibility. | Covered | `AgentPublishJavaSdkITCase` verifies draft/resume/online convergence, exact retry and conflict behavior, invalid state mapping, direct and inherited Versions, default/custom namespaces, HTTP/gRPC parity, Endpoint independence and pre-registration, and canonical Admin/Console/RAD plus legacy A2A projections. Caller isolation, ability negotiation, and submit-result ambiguity are covered by focused unit tests. |
+| `AiService.agent().publishAgent` | Draft-only and auto-submit publication, resume, equivalent retry, conflicts, direct and inherited Version evolution, namespace/caller isolation, HTTP/gRPC parity, Endpoint independence, and cross-surface A2A visibility. | Covered | `AgentPublishJavaSdkITCase` verifies draft/resume/online convergence, exact retry and conflict behavior, invalid state mapping, direct and inherited Versions, default/custom namespaces, HTTP/gRPC parity, Endpoint independence and pre-registration, and canonical Admin/Console/RAD plus legacy A2A projections. Caller isolation, ability negotiation, and submit-result ambiguity are covered by focused unit tests. |
 
 ## LockService
 
@@ -150,3 +150,14 @@ The complete implemented scenario matrix is maintained in
    Maintainer fixture.
 3. Decide whether the deprecated `NamingMaintainService` still warrants new IT
    before its removal window.
+
+## AI Resource Interface Compatibility (3.3)
+
+| Public SDK surface | Required scenarios | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| AiService resource accessors and legacy delegates | Stable accessors, old/new core validation, shared MCP state and cross-entry cancellation, A2A query interoperability | Partial | AiServiceJavaSdkITCase adds accessor identity and all-five-resource validation parity, legacy MCP release to mcp() query/cancel, and agent() legacy query. AiTransportResourceMatrixJavaSdkITCase uses resource accessors while retaining its existing transport expectations. Old bytecode and exhaustive cross-entry lifecycle verification remain pending. |
+| AgentService via agent() | Existing native Agent methods compile and preserve public behavior | Partial | Existing AgentDiscoveryServiceJavaSdkITCase, AgentPublishJavaSdkITCase, migration and auth callers use agent(); no protocol, publication, or listener semantics changed. |
+
+This separate interface-evolution scope has 0 Covered / 2 Partial / 0 Pending rows: strict 0%,
+effective 50%. It is not added to the historical registry denominator, and representative existing
+coverage does not prove the later resource-transport or A2A-to-RAD changes.

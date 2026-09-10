@@ -88,24 +88,24 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         String callerSnapshot = JacksonUtils.toJson(request);
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
-        AgentVersionDetail draft = service.publishAgent(request);
+        AgentVersionDetail draft = service.agent().publishAgent(request);
         assertEquals("draft", draft.getStatus(), draft.toString());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, draft.getNamespaceId(), draft.toString());
         assertEquals(callerSnapshot, JacksonUtils.toJson(request),
                 "the SDK must not mutate the caller-owned request");
-        assertEquals(draft.getContentDigest(), service.publishAgent(request).getContentDigest());
-        assertNotFound(() -> service.discoverAgent(reference(agentName, null)));
+        assertEquals(draft.getContentDigest(), service.agent().publishAgent(request).getContentDigest());
+        assertNotFound(() -> service.agent().discoverAgent(reference(agentName, null)));
         assertNotFound(() -> service.getAgentCard(agentName));
 
         request.setAutoSubmit(true);
-        AgentVersionDetail online = service.publishAgent(request);
+        AgentVersionDetail online = service.agent().publishAgent(request);
         assertEquals("online", online.getStatus(), online.toString());
         assertEquals(draft.getContentDigest(), online.getContentDigest(), online.toString());
-        assertEquals("online", service.publishAgent(request).getStatus());
+        assertEquals("online", service.agent().publishAgent(request).getStatus());
         assertEquals(online.getContentDigest(), maintainer.getAgentVersion(
                 Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_ONE).getContentDigest());
 
-        AgentDiscoveryResult discovery = service.discoverAgent(reference(agentName, null));
+        AgentDiscoveryResult discovery = service.agent().discoverAgent(reference(agentName, null));
         assertEquals(VERSION_ONE, discovery.getVersion(), discovery.toString());
         assertEquals(online.getContentDigest(), discovery.getContentDigest(),
                 discovery.toString());
@@ -124,14 +124,14 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         AgentPublishRequest draftOnlyRetry = initialRequest(agentName, VERSION_ONE,
                 "initial", false);
         assertError(NacosException.CONFLICT,
-                () -> service.publishAgent(draftOnlyRetry));
+                () -> service.agent().publishAgent(draftOnlyRetry));
         AgentPublishRequest contentConflict = initialRequest(agentName, VERSION_ONE,
                 "different-content", true);
-        assertError(NacosException.CONFLICT, () -> service.publishAgent(contentConflict));
+        assertError(NacosException.CONFLICT, () -> service.agent().publishAgent(contentConflict));
         AgentPublishRequest metadataConflict = initialRequest(agentName, VERSION_ONE,
                 "initial", true);
         metadataConflict.setDescription("different initial metadata");
-        assertError(NacosException.CONFLICT, () -> service.publishAgent(metadataConflict));
+        assertError(NacosException.CONFLICT, () -> service.agent().publishAgent(metadataConflict));
     }
 
     @Test
@@ -147,18 +147,18 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
 
         AgentPublishRequest grpcRequest = initialRequest(grpcAgent, VERSION_ONE,
                 "grpc", true);
-        AgentVersionDetail grpcPublished = grpc.publishAgent(grpcRequest);
+        AgentVersionDetail grpcPublished = grpc.agent().publishAgent(grpcRequest);
         assertEquals("online", grpcPublished.getStatus(), grpcPublished.toString());
-        assertEquals(VERSION_ONE, http.discoverAgent(reference(grpcAgent, null)).getVersion());
-        assertEquals(grpcPublished.getContentDigest(), http.publishAgent(grpcRequest)
+        assertEquals(VERSION_ONE, http.agent().discoverAgent(reference(grpcAgent, null)).getVersion());
+        assertEquals(grpcPublished.getContentDigest(), http.agent().publishAgent(grpcRequest)
                 .getContentDigest());
 
         AgentPublishRequest httpRequest = initialRequest(httpAgent, VERSION_ONE,
                 "http", true);
-        AgentVersionDetail httpPublished = http.publishAgent(httpRequest);
+        AgentVersionDetail httpPublished = http.agent().publishAgent(httpRequest);
         assertEquals("online", httpPublished.getStatus(), httpPublished.toString());
-        assertEquals(VERSION_ONE, grpc.discoverAgent(reference(httpAgent, null)).getVersion());
-        assertEquals(httpPublished.getContentDigest(), grpc.publishAgent(httpRequest)
+        assertEquals(VERSION_ONE, grpc.agent().discoverAgent(reference(httpAgent, null)).getVersion());
+        assertEquals(httpPublished.getContentDigest(), grpc.agent().publishAgent(httpRequest)
                 .getContentDigest());
 
         String namespaceId = randomServiceName("agent-publish-namespace");
@@ -167,10 +167,10 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> maintainer.deleteAgent(namespaceId, customAgent));
         AgentPublishRequest customRequest = initialRequest(customAgent, VERSION_ONE,
                 "custom", true);
-        AgentVersionDetail customPublished = custom.publishAgent(customRequest);
+        AgentVersionDetail customPublished = custom.agent().publishAgent(customRequest);
         assertEquals(namespaceId, customPublished.getNamespaceId(), customPublished.toString());
-        assertEquals(VERSION_ONE, custom.discoverAgent(reference(customAgent, null)).getVersion());
-        assertNotFound(() -> grpc.discoverAgent(reference(customAgent, null)));
+        assertEquals(VERSION_ONE, custom.agent().discoverAgent(reference(customAgent, null)).getVersion());
+        assertNotFound(() -> grpc.agent().discoverAgent(reference(customAgent, null)));
     }
 
     @Test
@@ -182,47 +182,47 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         String agentName = randomServiceName("agent-publish-versions");
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
-        AgentVersionDetail first = grpc.publishAgent(
+        AgentVersionDetail first = grpc.agent().publishAgent(
                 initialRequest(agentName, VERSION_ONE, "one", true));
         AgentPublishRequest secondRequest = versionRequest(agentName, VERSION_TWO,
                 "two", true);
-        AgentVersionDetail second = http.publishAgent(secondRequest);
+        AgentVersionDetail second = http.agent().publishAgent(secondRequest);
         assertFalse(first.getContentDigest().equals(second.getContentDigest()));
 
         AgentPublishRequest inherited = inheritedRequest(agentName, VERSION_THREE,
                 VERSION_TWO, true);
-        AgentVersionDetail third = grpc.publishAgent(inherited);
+        AgentVersionDetail third = grpc.agent().publishAgent(inherited);
         assertEquals(second.getContentDigest(), third.getContentDigest(), third.toString());
-        assertEquals(VERSION_THREE, http.discoverAgent(reference(agentName, null)).getVersion());
+        assertEquals(VERSION_THREE, http.agent().discoverAgent(reference(agentName, null)).getVersion());
 
         AgentPublishRequest both = inheritedRequest(agentName, VERSION_FOUR, VERSION_TWO, false);
         both.setCallInterfaces(Collections.singletonList(callInterface(agentName,
                 VERSION_FOUR, "both")));
-        assertError(NacosException.INVALID_PARAM, () -> grpc.publishAgent(both));
+        assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(both));
 
         AgentPublishRequest neither = new AgentPublishRequest();
         neither.setAgentName(agentName);
         neither.setVersion(VERSION_FOUR);
-        assertError(NacosException.INVALID_PARAM, () -> grpc.publishAgent(neither));
+        assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(neither));
 
         AgentPublishRequest firstInheritance = inheritedRequest(
                 randomServiceName("agent-publish-first-inherit"), VERSION_ONE,
                 VERSION_TWO, false);
-        assertError(NacosException.INVALID_PARAM, () -> grpc.publishAgent(firstInheritance));
+        assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(firstInheritance));
 
         AgentPublishRequest changedAuthor = versionRequest(agentName, VERSION_TWO,
                 "two", true);
         changedAuthor.setAuthor("different-author");
-        assertError(NacosException.CONFLICT, () -> grpc.publishAgent(changedAuthor));
+        assertError(NacosException.CONFLICT, () -> grpc.agent().publishAgent(changedAuthor));
 
         AgentPublishRequest falseAgainstOnline = versionRequest(agentName, VERSION_TWO,
                 "two", false);
         assertError(NacosException.CONFLICT,
-                () -> grpc.publishAgent(falseAgainstOnline));
+                () -> grpc.agent().publishAgent(falseAgainstOnline));
 
         maintainer.offline(Constants.DEFAULT_NAMESPACE_ID,
                 versionCommand(agentName, VERSION_TWO));
-        assertError(NacosException.INVALID_PARAM, () -> http.publishAgent(secondRequest));
+        assertError(NacosException.INVALID_PARAM, () -> http.agent().publishAgent(secondRequest));
     }
 
     @Test
@@ -239,12 +239,12 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> service.deregisterAgentEndpoint(agentName, secondEndpoint));
 
         assertNotFound(() -> service.getAgentCard(agentName));
-        service.publishAgent(initialRequest(agentName, VERSION_ONE, "one", true));
+        service.agent().publishAgent(initialRequest(agentName, VERSION_ONE, "one", true));
         waitUntil("Version 1 pre-registered Endpoint should become visible", () ->
                 containsLegacyEndpoint(service.getAgentCard(agentName, VERSION_ONE,
                         AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), firstEndpoint));
 
-        service.publishAgent(versionRequest(agentName, VERSION_TWO, "two", true));
+        service.agent().publishAgent(versionRequest(agentName, VERSION_TWO, "two", true));
         waitUntil("Version 2 pre-registered Endpoint should become visible", () ->
                 containsLegacyEndpoint(service.getAgentCard(agentName, VERSION_TWO,
                         AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE), secondEndpoint));
@@ -263,7 +263,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         VersionListener exactOne = new VersionListener(VERSION_ONE);
         assertNull(observer.subscribeAgentCard(agentName, VERSION_ONE, exactOne));
         addCleanup(() -> observer.unsubscribeAgentCard(agentName, VERSION_ONE, exactOne));
-        publisher.publishAgent(initialRequest(agentName, VERSION_ONE, "one", true));
+        publisher.agent().publishAgent(initialRequest(agentName, VERSION_ONE, "one", true));
         assertTrue(exactOne.latch.await(POLLING_TIMEOUT_SECONDS, TimeUnit.SECONDS),
                 "an exact subscription must receive a Version that is also latest");
 
@@ -271,7 +271,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION_ONE,
                 observer.subscribeAgentCard(agentName, latestTwo).getVersion());
         addCleanup(() -> observer.unsubscribeAgentCard(agentName, latestTwo));
-        publisher.publishAgent(versionRequest(agentName, VERSION_TWO, "two", true));
+        publisher.agent().publishAgent(versionRequest(agentName, VERSION_TWO, "two", true));
         assertTrue(latestTwo.latch.await(POLLING_TIMEOUT_SECONDS, TimeUnit.SECONDS),
                 "latest subscription must move to Version 2");
 
@@ -280,7 +280,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION_TWO,
                 observer.subscribeAgentCard(agentName, latestThree).getVersion());
         addCleanup(() -> observer.unsubscribeAgentCard(agentName, latestThree));
-        publisher.publishAgent(versionRequest(agentName, VERSION_THREE, "three", true));
+        publisher.agent().publishAgent(versionRequest(agentName, VERSION_THREE, "three", true));
         assertTrue(latestThree.latch.await(POLLING_TIMEOUT_SECONDS, TimeUnit.SECONDS),
                 "latest subscription must move to Version 3");
 
@@ -299,7 +299,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION_TWO,
                 observer.subscribeAgentCard(agentName, resubscribed).getVersion());
         addCleanup(() -> observer.unsubscribeAgentCard(agentName, resubscribed));
-        publisher.publishAgent(versionRequest(agentName, VERSION_FOUR, "four", true));
+        publisher.agent().publishAgent(versionRequest(agentName, VERSION_FOUR, "four", true));
         assertTrue(resubscribed.latch.await(POLLING_TIMEOUT_SECONDS, TimeUnit.SECONDS),
                 "a cache-hit resubscribe must restart polling");
         assertNotNull(resubscribed.card.get());

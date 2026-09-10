@@ -102,7 +102,7 @@ The target Client SDK must:
 - expose Agent Search, Discover with and without a Filter, Watch and cancel,
   and runtime Endpoint Register and Deregister;
 - expose optional code-first Agent definition publication through
-  `AiService.publishAgent`, creating only a draft by default and optionally
+  `AiService.agent().publishAgent`, creating only a draft by default and optionally
   running the ordinary submit Pipeline through `autoSubmit`;
 - inject the bound namespace into a transport request without mutating a
   caller-owned object; and
