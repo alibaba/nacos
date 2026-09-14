@@ -64,6 +64,12 @@ public class AgentRemoteHandler implements AgentHandler {
     }
     
     @Override
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        agentService().updateScope(namespaceId, agentName, scope);
+    }
+    
+    @Override
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         agentService().deleteAgent(namespaceId, agentName);
     }

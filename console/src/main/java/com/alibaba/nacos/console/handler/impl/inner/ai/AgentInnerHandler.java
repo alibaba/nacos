@@ -67,6 +67,12 @@ public class AgentInnerHandler implements AgentHandler {
     }
     
     @Override
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        agentOperationService.updateScope(namespaceId, agentName, scope);
+    }
+    
+    @Override
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         agentOperationService.deleteAgent(namespaceId, agentName);
     }

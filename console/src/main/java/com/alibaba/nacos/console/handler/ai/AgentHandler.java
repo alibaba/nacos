@@ -47,6 +47,11 @@ public interface AgentHandler {
     Agent updateAgent(String namespaceId, AgentUpdateRequest request) throws NacosException;
     
     /**
+     * Update one Agent Resource visibility scope.
+     */
+    void updateScope(String namespaceId, String agentName, String scope) throws NacosException;
+    
+    /**
      * Delete one Agent definition.
      */
     void deleteAgent(String namespaceId, String agentName) throws NacosException;
