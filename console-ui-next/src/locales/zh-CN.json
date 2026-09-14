@@ -257,6 +257,8 @@
     "compare": "对比",
     "rollback": "回滚",
     "rollbackConfirm": "确定要回滚到此版本吗？",
+    "rollbackConfirmInsert": "该版本是此配置的首次发布，不存在更早的历史状态可供恢复，因此回滚将直接永久删除该配置。",
+    "rollbackConfirmDelete": "确认删除配置",
     "rollbackInsertWarn": "回滚将删除此配置",
     "rollbackUpdateWarn": "回滚将恢复到此版本内容",
     "rollbackDeleteWarn": "回滚将重新发布此配置",

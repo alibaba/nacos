@@ -257,6 +257,8 @@
     "compare": "Compare",
     "rollback": "Rollback",
     "rollbackConfirm": "Are you sure you want to rollback to this version?",
+    "rollbackConfirmInsert": "This version was the first publish of this configuration. There is no earlier state to restore, so rolling back will permanently delete the configuration instead.",
+    "rollbackConfirmDelete": "Confirm Delete Configuration",
     "rollbackInsertWarn": "Rollback will delete this configuration",
     "rollbackUpdateWarn": "Rollback will restore to this version",
     "rollbackDeleteWarn": "Rollback will re-publish this configuration",
