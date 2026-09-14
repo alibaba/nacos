@@ -93,6 +93,11 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("OpenAPI Agent updated", summary.get("displayName").asText(),
                 summary.toString());
         assertEquals("updated", summary.get("tags").get(1).asText(), summary.toString());
+        assertEquals(updated.get("provider"), summary.get("provider"), summary.toString());
+        assertEquals(updated.get("iconUrl"), summary.get("iconUrl"), summary.toString());
+        assertFalse(summary.has("extensions"), summary.toString());
+        assertFalse(summary.has("callInterfaces"), summary.toString());
+        assertTrue(updated.has("extensions"), updated.toString());
 
         JsonNode versions = getJsonOk(ADMIN_AGENT_VERSIONS_PATH,
                 Query.newInstance().addParam("agentName", agentName)
@@ -101,6 +106,12 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEmptyPageShape(versions);
         assertEquals(1, versions.get("totalCount").asInt(), versions.toString());
         assertVersionSummary(versions.get("pageItems").get(0), version, "draft");
+        JsonNode versionSummary = versions.get("pageItems").get(0);
+        assertFalse(versionSummary.has("namespaceId"), versionSummary.toString());
+        assertFalse(versionSummary.has("agentName"), versionSummary.toString());
+        assertFalse(versionSummary.has("callInterfaces"), versionSummary.toString());
+        assertEquals(createdDraft.get("contentDigest"), versionSummary.get("contentDigest"));
+        assertEquals(createdDraft.get("author"), versionSummary.get("author"));
 
         JsonNode versionDetail = getJsonOk(ADMIN_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, version)).get("data");
@@ -211,6 +222,10 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
             String version, String marker) {
         assertNotNull(overview, "overview");
         JsonNode agent = overview.get("agent");
+        assertFalse(agent.has("versionCatalog"), agent.toString());
+        assertFalse(agent.get("versionInfo").has("onlineCnt"), agent.toString());
+        assertFalse(agent.get("versionInfo").has("latestVersion"), agent.toString());
+        assertTrue(agent.get("versionInfo").has("labels"), agent.toString());
         assertEquals(namespaceId, agent.get("namespaceId").asText(), overview.toString());
         assertEquals(agentName, agent.get("agentName").asText(), overview.toString());
         assertEquals("OpenAPI Agent " + marker, agent.get("displayName").asText(),
@@ -220,7 +235,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("PRIVATE", agent.get("scope").asText(), overview.toString());
         assertEquals(version, agent.get("versionInfo").get("editingVersion").asText(),
                 overview.toString());
-        assertEquals(0, agent.get("versionInfo").get("onlineCnt").asInt(), overview.toString());
+        assertEquals(0, agent.get("versionInfo").get("onlineVersions").size(), overview.toString());
         assertTrue(agent.get("metaVersion").asLong() >= 1L, overview.toString());
 
         JsonNode versionPage = overview.get("versionPage");

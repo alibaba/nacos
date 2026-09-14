@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -27,15 +27,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -151,7 +151,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    public AgentVersionDetail publishAgent(AgentPublishClientRequest request)
+        throws NacosException {
         Map<String, String> form = new HashMap<String, String>();
         form.put("namespaceId", namespaceId);
         form.put("agentName", request.getAgentName());
@@ -193,7 +194,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     }
     
     @Override
-    public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(AgentSearchRequest request)
         throws NacosException {
         List<QueryParameter> parameters = new ArrayList<QueryParameter>();
         addParameter(parameters, "namespaceId", request.getNamespaceId());
@@ -204,8 +205,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         addParameter(parameters, "pageSize", request.getPageSize());
         String response = requestAgentApi(AGENT_SEARCH_PATH, AgentHttpMethod.GET, parameters,
             Collections.<String, String>emptyMap(), buildAgentResource(null));
-        Result<Page<AgentCatalogEntry>> result = JsonUtils.toObj(response,
-            new NacosTypeReference<Result<Page<AgentCatalogEntry>>>() {
+        Result<Page<AgentSummary>> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<Page<AgentSummary>>>() {
             });
         return requireSuccess(result);
     }

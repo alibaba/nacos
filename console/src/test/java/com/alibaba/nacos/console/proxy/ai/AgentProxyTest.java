@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -67,11 +66,11 @@ class AgentProxyTest {
     @Test
     void shouldDelegateEveryOperationAndBuildRuntimeView() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent agent = new Agent();
-        AgentUpdateRequest updateRequest = new AgentUpdateRequest();
-        AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
-        AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
-        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
+        AgentSummary agent = new AgentSummary();
+        AgentUpdateAdminRequest updateRequest = new AgentUpdateAdminRequest();
+        AgentDraftCreateAdminRequest createRequest = new AgentDraftCreateAdminRequest();
+        AgentDraftUpdateAdminRequest draftUpdateRequest = new AgentDraftUpdateAdminRequest();
+        AgentLabelsUpdateAdminRequest labelsRequest = new AgentLabelsUpdateAdminRequest();
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();

@@ -18,17 +18,17 @@ package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
@@ -194,10 +194,10 @@ class AgentGrpcTransportTest {
     @SuppressWarnings("unchecked")
     void agentOperationsDelegateToGrpcClient() throws NacosException {
         AgentGrpcTransport transport = transport(AgentTransportMode.GRPC);
-        AgentPublishRequest publishRequest = new AgentPublishRequest();
+        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
         AgentVersionDetail version = new AgentVersionDetail();
         AgentSearchRequest searchRequest = new AgentSearchRequest();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryRequest discoveryRequest = new AgentDiscoveryRequest();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
@@ -222,11 +222,11 @@ class AgentGrpcTransportTest {
     void requiredProxyAcquiresGrpcForEveryLegacyOperation() throws NacosException {
         AgentGrpcTransport transport = transport(AgentTransportMode.HTTP);
         AiClientProxy proxy = transport.requiredProxy();
-        AgentPublishRequest publishRequest = new AgentPublishRequest();
+        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
         publishRequest.setAgentName("agent");
         publishRequest.setVersion("1.0.0");
         publishRequest.setCallInterfaces(
-            Collections.singletonList(new AgentCallInterface()));
+            Collections.singletonList(new AgentDefinitionCallInterface()));
         AgentVersionDetail version = new AgentVersionDetail();
         Page page = new Page();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();

@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -53,7 +53,7 @@ public final class AgentArtifactBuilder {
         if (version == null || version.getCallInterfaces() == null) {
             return null;
         }
-        for (AgentCallInterface callInterface : version.getCallInterfaces()) {
+        for (AgentDefinitionCallInterface callInterface : version.getCallInterfaces()) {
             if (callInterface == null || !A2A_PROTOCOL.equalsIgnoreCase(
                 callInterface.getProtocol())) {
                 continue;

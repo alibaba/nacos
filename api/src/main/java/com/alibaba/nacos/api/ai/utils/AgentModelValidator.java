@@ -17,16 +17,13 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -47,7 +44,7 @@ import java.util.Set;
  *
  * <p>This validator checks the structural, capacity, and cross-field invariants that cannot be
  * represented by individual value objects. The 16 KiB serialized UTF-8 JSON limit for
- * {@link Agent#getExtensions()} is intentionally not checked here because the API module does not
+ * {@link AgentSummary#getExtensions()} is intentionally not checked here because the API module does not
  * own the JSON serialization layer. Bindings and server write paths must enforce that byte limit
  * after serialization.</p>
  *
@@ -92,12 +89,12 @@ public final class AgentModelValidator {
      * @param agent Agent resource
      * @throws IllegalArgumentException when the resource is invalid
      */
-    public static void validateAgent(Agent agent) {
+    public static void validateAgent(AgentSummary agent) {
         requireNonNull(agent, "agent");
         validateAgentFields(agent.getNamespaceId(), agent.getAgentName(), agent.getDisplayName(),
             agent.getDescription(), agent.getIconUrl(), agent.getProvider(), agent.getTags(),
             agent.getStatus(), agent.getOwner(), agent.getScope(), agent.getVersionInfo(),
-            agent.getVersionCatalog(), agent.getMetaVersion(), agent.getCreateTime(),
+            agent.getMetaVersion(), agent.getCreateTime(),
             agent.getUpdateTime());
         validateExtensions(agent.getExtensions());
     }
@@ -113,7 +110,7 @@ public final class AgentModelValidator {
         validateAgentFields(summary.getNamespaceId(), summary.getAgentName(),
             summary.getDisplayName(), summary.getDescription(), summary.getIconUrl(),
             summary.getProvider(), summary.getTags(), summary.getStatus(), summary.getOwner(),
-            summary.getScope(), summary.getVersionInfo(), summary.getVersionCatalog(),
+            summary.getScope(), summary.getVersionInfo(),
             summary.getMetaVersion(), summary.getCreateTime(), summary.getUpdateTime());
     }
     
@@ -201,7 +198,7 @@ public final class AgentModelValidator {
      * @throws IllegalArgumentException when the CallInterface is invalid
      */
     public static void validateCallInterface(String namespaceId, String agentName,
-        AgentCallInterface callInterface) {
+        AgentDefinitionCallInterface callInterface) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         requireNonNull(callInterface, "callInterface");
@@ -226,7 +223,7 @@ public final class AgentModelValidator {
      * @param callInterface CallInterface to validate
      * @throws IllegalArgumentException when the CallInterface is invalid
      */
-    public static void validateCallInterface(AgentCallInterface callInterface) {
+    public static void validateCallInterface(AgentDefinitionCallInterface callInterface) {
         validateCallInterface("validation", "validation", callInterface);
     }
     
@@ -236,9 +233,9 @@ public final class AgentModelValidator {
      * @param catalog Agent Version catalog
      * @throws IllegalArgumentException when the catalog is invalid
      */
-    public static void validateVersionCatalog(AgentVersionCatalog catalog) {
+    public static void validateVersionCatalog(AgentVersionInfo catalog) {
         requireNonNull(catalog, "versionCatalog");
-        List<AgentVersionCatalogEntry> versions = catalog.getOnlineVersions();
+        List<AgentVersionSummary> versions = catalog.getOnlineVersions();
         requireNonNull(versions, "versionCatalog.onlineVersions");
         if (versions.isEmpty()) {
             if (catalog.getLatestVersion() != null) {
@@ -252,7 +249,7 @@ public final class AgentModelValidator {
         Set<String> versionValues = new HashSet<String>();
         Set<String> labelValues = new HashSet<String>();
         boolean latestFound = false;
-        for (AgentVersionCatalogEntry entry : versions) {
+        for (AgentVersionSummary entry : versions) {
             requireNonNull(entry, "versionCatalog entry");
             AgentVersion version = AgentVersion.parse(entry.getVersion());
             if (!versionValues.add(version.getValue())) {
@@ -300,7 +297,7 @@ public final class AgentModelValidator {
     private static void validateAgentFields(String namespaceId, String agentName,
         String displayName, String description, String iconUrl, AgentProvider provider,
         List<String> tags, String status, String owner, String scope,
-        AgentVersionInfo versionInfo, AgentVersionCatalog versionCatalog, Long metaVersion,
+        AgentVersionInfo versionInfo, Long metaVersion,
         Long createTime, Long updateTime) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
@@ -315,8 +312,8 @@ public final class AgentModelValidator {
         validateRequiredLength(owner, MAX_OWNER_LENGTH, "owner");
         validateScope(scope);
         validateVersionInfo(versionInfo);
-        validateVersionCatalog(versionCatalog);
-        validateVersionInfoCatalogConsistency(versionInfo, versionCatalog);
+        validateVersionCatalog(versionInfo);
+        validateVersionState(versionInfo);
         validateEpochMillis(metaVersion, "metaVersion");
         validateEpochMillis(createTime, "createTime");
         validateEpochMillis(updateTime, "updateTime");
@@ -392,10 +389,6 @@ public final class AgentModelValidator {
         if (versionInfo.getReviewingVersion() != null) {
             AgentValidationUtils.validateVersion(versionInfo.getReviewingVersion());
         }
-        Integer onlineCount = versionInfo.getOnlineCnt();
-        if (onlineCount == null || onlineCount < 0) {
-            throw new IllegalArgumentException("onlineCnt must be a non-negative integer");
-        }
         Map<String, String> labels = versionInfo.getLabels();
         requireNonNull(labels, "versionInfo.labels");
         for (Map.Entry<String, String> entry : labels.entrySet()) {
@@ -404,13 +397,8 @@ public final class AgentModelValidator {
         }
     }
     
-    private static void validateVersionInfoCatalogConsistency(AgentVersionInfo versionInfo,
-        AgentVersionCatalog catalog) {
-        List<AgentVersionCatalogEntry> onlineVersions = catalog.getOnlineVersions();
-        if (versionInfo.getOnlineCnt() != onlineVersions.size()) {
-            throw new IllegalArgumentException(
-                "onlineCnt must equal the number of onlineVersions entries");
-        }
+    private static void validateVersionState(AgentVersionInfo versionInfo) {
+        List<AgentVersionSummary> onlineVersions = versionInfo.getOnlineVersions();
         String editingVersion = versionInfo.getEditingVersion();
         String reviewingVersion = versionInfo.getReviewingVersion();
         if (editingVersion != null && editingVersion.equals(reviewingVersion)) {
@@ -418,7 +406,7 @@ public final class AgentModelValidator {
                 "editingVersion and reviewingVersion must identify different Versions");
         }
         Set<String> onlineVersionValues = new HashSet<String>();
-        for (AgentVersionCatalogEntry entry : onlineVersions) {
+        for (AgentVersionSummary entry : onlineVersions) {
             onlineVersionValues.add(entry.getVersion());
         }
         if (onlineVersionValues.contains(editingVersion)
@@ -433,17 +421,7 @@ public final class AgentModelValidator {
                     "Labels must not identify editing or reviewing Versions");
             }
         }
-        String latestLabelVersion = versionInfo.getLabels().get("latest");
-        if (catalog.getLatestVersion() == null) {
-            if (latestLabelVersion != null) {
-                throw new IllegalArgumentException(
-                    "latest label must be absent when no online Version exists");
-            }
-        } else if (!catalog.getLatestVersion().equals(latestLabelVersion)) {
-            throw new IllegalArgumentException(
-                "latest label and versionCatalog.latestVersion must match");
-        }
-        for (AgentVersionCatalogEntry entry : onlineVersions) {
+        for (AgentVersionSummary entry : onlineVersions) {
             for (String label : entry.getLabels()) {
                 if (!entry.getVersion().equals(versionInfo.getLabels().get(label))) {
                     throw new IllegalArgumentException(
@@ -457,7 +435,7 @@ public final class AgentModelValidator {
                 continue;
             }
             boolean presentInCatalog = false;
-            for (AgentVersionCatalogEntry entry : onlineVersions) {
+            for (AgentVersionSummary entry : onlineVersions) {
                 if (entry.getVersion().equals(label.getValue())
                     && entry.getLabels().contains(label.getKey())) {
                     presentInCatalog = true;
@@ -498,14 +476,14 @@ public final class AgentModelValidator {
     }
     
     private static void validateCallInterfaces(String namespaceId, String agentName,
-        List<AgentCallInterface> callInterfaces) {
+        List<AgentDefinitionCallInterface> callInterfaces) {
         requireNonNull(callInterfaces, "callInterfaces");
         if (callInterfaces.isEmpty() || callInterfaces.size() > MAX_CALL_INTERFACES) {
             throw new IllegalArgumentException(
                 "callInterfaces must contain 1 to " + MAX_CALL_INTERFACES + " items");
         }
         Set<String> protocols = new HashSet<String>();
-        for (AgentCallInterface callInterface : callInterfaces) {
+        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
             validateCallInterface(namespaceId, agentName, callInterface);
             if (!protocols.add(callInterface.getProtocol())) {
                 throw new IllegalArgumentException(

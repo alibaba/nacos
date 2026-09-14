@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -60,7 +60,7 @@ class AgentVersionContentSerializerTest {
         AgentVersionContent decoded = AgentVersionContentSerializer.deserialize(encoded.getBytes());
         assertEquals(AgentVersionContent.KIND, decoded.getKind());
         assertEquals(AgentVersionContent.SCHEMA_VERSION, decoded.getSchemaVersion());
-        AgentCallInterface callInterface = decoded.getCallInterfaces().get(0);
+        AgentDefinitionCallInterface callInterface = decoded.getCallInterfaces().get(0);
         assertEquals(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
             callInterface.getEndpointSourceOrder());
         Endpoint endpoint = callInterface.getDeclaredEndpoints().get(0);
@@ -74,7 +74,7 @@ class AgentVersionContentSerializerTest {
     @Test
     void testEndpointDefaultsAndMetadataOrderDoNotChangeEncoding() {
         AgentVersionContent normalized = createGoldenContent();
-        AgentCallInterface normalizedInterface = normalized.getCallInterfaces().get(0);
+        AgentDefinitionCallInterface normalizedInterface = normalized.getCallInterfaces().get(0);
         Endpoint endpoint = normalizedInterface.getDeclaredEndpoints().get(0);
         endpoint.setUri("https://example.com:443/a2a?b=2&a=1");
         endpoint.setPriority(0);
@@ -117,16 +117,18 @@ class AgentVersionContentSerializerTest {
     
     @Test
     void testBusinessArrayOrderChangesDigest() {
-        AgentCallInterface a2a = createCallInterface("a2a", "http://a.example/rpc");
-        AgentCallInterface grpc = createCallInterface("grpc", "http://g.example/rpc");
+        AgentDefinitionCallInterface a2a = createCallInterface("a2a", "http://a.example/rpc");
+        AgentDefinitionCallInterface grpc = createCallInterface("grpc", "http://g.example/rpc");
         AgentVersionContent first = new AgentVersionContent(Arrays.asList(a2a, grpc));
         AgentVersionContent second = new AgentVersionContent(Arrays.asList(grpc, a2a));
         assertNotEquals(AgentVersionContentSerializer.serialize(first).getContentDigest(),
             AgentVersionContentSerializer.serialize(second).getContentDigest());
         
-        AgentCallInterface firstEndpoints = createCallInterface("a2a", "http://a.example/rpc");
+        AgentDefinitionCallInterface firstEndpoints =
+            createCallInterface("a2a", "http://a.example/rpc");
         firstEndpoints.getDeclaredEndpoints().add(createEndpoint("http://b.example/rpc"));
-        AgentCallInterface secondEndpoints = createCallInterface("a2a", "http://b.example/rpc");
+        AgentDefinitionCallInterface secondEndpoints =
+            createCallInterface("a2a", "http://b.example/rpc");
         secondEndpoints.getDeclaredEndpoints().add(createEndpoint("http://a.example/rpc"));
         assertNotEquals(AgentVersionContentSerializer
             .serialize(new AgentVersionContent(Collections.singletonList(firstEndpoints)))
@@ -135,10 +137,10 @@ class AgentVersionContentSerializerTest {
                 .serialize(new AgentVersionContent(Collections.singletonList(secondEndpoints)))
                 .getContentDigest());
         
-        AgentCallInterface runtimeFirst = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface runtimeFirst = createCallInterface("a2a", null);
         runtimeFirst.setEndpointSourceOrder(
             Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
-        AgentCallInterface declaredFirst = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface declaredFirst = createCallInterface("a2a", null);
         declaredFirst.setEndpointSourceOrder(
             Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME));
         assertNotEquals(AgentVersionContentSerializer
@@ -151,8 +153,8 @@ class AgentVersionContentSerializerTest {
     
     @Test
     void testAbsentAndEmptyDeclaredEndpointsHaveSameEncoding() {
-        AgentCallInterface absent = createCallInterface("a2a", null);
-        AgentCallInterface empty = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface absent = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface empty = createCallInterface("a2a", null);
         empty.setDeclaredEndpoints(Collections.<Endpoint>emptyList());
         
         AgentVersionContentSerializer.SerializedContent first = AgentVersionContentSerializer
@@ -165,8 +167,8 @@ class AgentVersionContentSerializerTest {
     
     @Test
     void testAbsentAndEmptyEndpointMetadataHaveSameEncoding() {
-        AgentCallInterface absent = createCallInterface("a2a", "http://example.com/rpc");
-        AgentCallInterface empty = createCallInterface("a2a", "http://example.com/rpc");
+        AgentDefinitionCallInterface absent = createCallInterface("a2a", "http://example.com/rpc");
+        AgentDefinitionCallInterface empty = createCallInterface("a2a", "http://example.com/rpc");
         empty.getDeclaredEndpoints().get(0).setMetadata(Collections.<String, String>emptyMap());
         
         AgentVersionContentSerializer.SerializedContent first = AgentVersionContentSerializer
@@ -205,26 +207,28 @@ class AgentVersionContentSerializerTest {
         invalid = createGoldenContent();
         invalid.setCallInterfaces(null);
         assertEncodingRejected(invalid);
-        invalid = new AgentVersionContent(Collections.<AgentCallInterface>emptyList());
+        invalid = new AgentVersionContent(Collections.<AgentDefinitionCallInterface>emptyList());
         assertEncodingRejected(invalid);
-        invalid = new AgentVersionContent(Collections.<AgentCallInterface>singletonList(null));
+        invalid =
+            new AgentVersionContent(Collections.<AgentDefinitionCallInterface>singletonList(null));
         assertEncodingRejected(invalid);
         
-        List<AgentCallInterface> tooMany = new ArrayList<AgentCallInterface>();
+        List<AgentDefinitionCallInterface> tooMany = new ArrayList<AgentDefinitionCallInterface>();
         for (int i = 0; i < 17; i++) {
             tooMany.add(createCallInterface("p" + i, null));
         }
         AgentVersionContentSerializer.serialize(
-            new AgentVersionContent(new ArrayList<AgentCallInterface>(tooMany.subList(0, 16))));
+            new AgentVersionContent(
+                new ArrayList<AgentDefinitionCallInterface>(tooMany.subList(0, 16))));
         assertThrows(IllegalArgumentException.class,
             () -> AgentVersionContentSerializer.serialize(new AgentVersionContent(tooMany)));
         
-        AgentCallInterface duplicate = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface duplicate = createCallInterface("a2a", null);
         invalid = new AgentVersionContent(
             Arrays.asList(createCallInterface("a2a", null), duplicate));
         assertEncodingRejected(invalid);
         
-        AgentCallInterface boundedEndpoints = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface boundedEndpoints = createCallInterface("a2a", null);
         List<Endpoint> endpoints = new ArrayList<Endpoint>();
         for (int i = 0; i < 64; i++) {
             endpoints.add(createEndpoint("http://e" + i + ".example.com/rpc"));
@@ -251,7 +255,7 @@ class AgentVersionContentSerializerTest {
     
     @Test
     void testContentSizeBoundaryUsesPersistedUtf8Bytes() {
-        AgentCallInterface callInterface = createCallInterface("a2a", null);
+        AgentDefinitionCallInterface callInterface = createCallInterface("a2a", null);
         callInterface.setNativeDescriptor("");
         AgentVersionContent content =
             new AgentVersionContent(Collections.singletonList(callInterface));
@@ -334,7 +338,7 @@ class AgentVersionContentSerializerTest {
     }
     
     private AgentVersionContent createGoldenContent() {
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -359,8 +363,8 @@ class AgentVersionContentSerializerTest {
         return new AgentVersionContent(Collections.singletonList(callInterface));
     }
     
-    private AgentCallInterface createCallInterface(String protocol, String endpointUri) {
-        AgentCallInterface result = new AgentCallInterface();
+    private AgentDefinitionCallInterface createCallInterface(String protocol, String endpointUri) {
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol(protocol);
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(Collections.singletonMap("name", protocol));

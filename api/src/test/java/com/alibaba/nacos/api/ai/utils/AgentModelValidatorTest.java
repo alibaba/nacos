@@ -17,16 +17,13 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -79,14 +76,14 @@ class AgentModelValidatorTest {
         overview.setVersionPage(newValidVersionSummaryPage());
         assertDoesNotThrow(() -> AgentModelValidator.validateOverview(overview));
         
-        Agent agent = newValidAgent();
+        AgentSummary agent = newValidAgent();
         agent.setProvider(null);
         agent.setTags(null);
         agent.setExtensions(null);
         agent.getVersionInfo().getLabels().put("candidate", "2.0.0");
         assertDoesNotThrow(() -> AgentModelValidator.validateAgent(agent));
         
-        AgentCallInterface callInterface = newValidCallInterface();
+        AgentDefinitionCallInterface callInterface = newValidCallInterface();
         callInterface.setDeclaredEndpoints(null);
         assertDoesNotThrow(() -> AgentModelValidator.validateCallInterface(callInterface));
         
@@ -107,20 +104,19 @@ class AgentModelValidatorTest {
     
     @Test
     void testEmptyVersionCatalogRules() {
-        AgentVersionCatalog emptyCatalog = new AgentVersionCatalog();
-        emptyCatalog.setOnlineVersions(Collections.<AgentVersionCatalogEntry>emptyList());
+        AgentVersionInfo emptyCatalog = new AgentVersionInfo();
+        emptyCatalog.setOnlineVersions(Collections.<AgentVersionSummary>emptyList());
         assertDoesNotThrow(() -> AgentModelValidator.validateVersionCatalog(emptyCatalog));
         
-        emptyCatalog.setLatestVersion("1.0.0");
+        emptyCatalog.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "1.0.0")));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionCatalog(emptyCatalog));
         
-        Agent agent = newValidAgent();
-        agent.getVersionInfo().setOnlineCnt(0);
+        AgentSummary agent = newValidAgent();
         agent.getVersionInfo().setLabels(Collections.<String, String>emptyMap());
-        agent.setVersionCatalog(new AgentVersionCatalog());
-        agent.getVersionCatalog().setOnlineVersions(
-            Collections.<AgentVersionCatalogEntry>emptyList());
+        agent.getVersionInfo().setOnlineVersions(
+            Collections.<AgentVersionSummary>emptyList());
         assertDoesNotThrow(() -> AgentModelValidator.validateAgent(agent));
         
         agent.getVersionInfo().setLabels(
@@ -131,31 +127,32 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInvalidVersionCatalogEntries() {
-        AgentVersionCatalog duplicateVersions = newValidAgent().getVersionCatalog();
+        AgentVersionInfo duplicateVersions = newValidAgent().getVersionInfo();
         duplicateVersions.setOnlineVersions(Arrays.asList(
             duplicateVersions.getOnlineVersions().get(0),
             duplicateVersions.getOnlineVersions().get(0)));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionCatalog(duplicateVersions));
         
-        AgentVersionCatalog missingLatest = newValidAgent().getVersionCatalog();
-        missingLatest.setLatestVersion("2.0.0");
+        AgentVersionInfo missingLatest = newValidAgent().getVersionInfo();
+        missingLatest.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "2.0.0")));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionCatalog(missingLatest));
         
-        AgentVersionCatalog duplicateLabels = newValidAgent().getVersionCatalog();
+        AgentVersionInfo duplicateLabels = newValidAgent().getVersionInfo();
         duplicateLabels.getOnlineVersions().get(0)
             .setLabels(Arrays.asList("stable", "stable"));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionCatalog(duplicateLabels));
         
-        AgentVersionCatalog emptyProtocols = newValidAgent().getVersionCatalog();
+        AgentVersionInfo emptyProtocols = newValidAgent().getVersionInfo();
         emptyProtocols.getOnlineVersions().get(0)
             .setProtocols(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionCatalog(emptyProtocols));
         
-        AgentVersionCatalog duplicateProtocols = newValidAgent().getVersionCatalog();
+        AgentVersionInfo duplicateProtocols = newValidAgent().getVersionInfo();
         duplicateProtocols.getOnlineVersions().get(0)
             .setProtocols(Arrays.asList("a2a", "a2a"));
         assertThrows(IllegalArgumentException.class,
@@ -178,17 +175,17 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInvalidAgentCollectionsAndLifecycleCounts() {
-        Agent oversizedTags = newValidAgent();
+        AgentSummary oversizedTags = newValidAgent();
         oversizedTags.setTags(Collections.nCopies(33, "tag"));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(oversizedTags));
         
-        Agent duplicateTags = newValidAgent();
+        AgentSummary duplicateTags = newValidAgent();
         duplicateTags.setTags(Arrays.asList("demo", "demo"));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(duplicateTags));
         
-        Agent oversizedExtensions = newValidAgent();
+        AgentSummary oversizedExtensions = newValidAgent();
         Map<String, Object> extensions = new LinkedHashMap<String, Object>();
         for (int i = 0; i < 33; i++) {
             extensions.put("example.com/key-" + i, i);
@@ -197,20 +194,20 @@ class AgentModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(oversizedExtensions));
         
-        Agent missingOnlineCount = newValidAgent();
-        missingOnlineCount.getVersionInfo().setOnlineCnt(null);
+        AgentSummary missingOnlineCount = newValidAgent();
+        missingOnlineCount.getVersionInfo().setOnlineVersions(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(missingOnlineCount));
         
-        Agent inconsistentOnlineCount = newValidAgent();
-        inconsistentOnlineCount.getVersionInfo().setOnlineCnt(0);
+        AgentSummary inconsistentOnlineCount = newValidAgent();
+        inconsistentOnlineCount.getVersionInfo().setOnlineVersions(Collections.emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(inconsistentOnlineCount));
     }
     
     @Test
     void testAcceptsUserDefinedTagPrefixes() {
-        Agent agent = newValidAgent();
+        AgentSummary agent = newValidAgent();
         agent.setTags(Collections.singletonList("__nacos.agent.internal"));
         
         assertDoesNotThrow(() -> AgentModelValidator.validateAgent(agent));
@@ -218,12 +215,12 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsUnsupportedVisibilityScope() {
-        Agent lowercaseScope = newValidAgent();
+        AgentSummary lowercaseScope = newValidAgent();
         lowercaseScope.setScope("public");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(lowercaseScope));
         
-        Agent customScope = newValidAgent();
+        AgentSummary customScope = newValidAgent();
         customScope.setScope("TEAM");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(customScope));
@@ -231,12 +228,12 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInconsistentCatalogLabels() {
-        Agent catalogLabelMismatch = newValidAgent();
+        AgentSummary catalogLabelMismatch = newValidAgent();
         catalogLabelMismatch.getVersionInfo().getLabels().put("stable", "2.0.0");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(catalogLabelMismatch));
         
-        Agent catalogMissingOnlineLabel = newValidAgent();
+        AgentSummary catalogMissingOnlineLabel = newValidAgent();
         catalogMissingOnlineLabel.getVersionInfo().getLabels().put("canary", "1.0.0");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(catalogMissingOnlineLabel));
@@ -245,22 +242,22 @@ class AgentModelValidatorTest {
     @Test
     void testRejectsInvalidCallInterfaceCollections() {
         AgentVersionDetail noCallInterface = newValidVersionDetail();
-        noCallInterface.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
+        noCallInterface.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionDetail(noCallInterface));
         
-        AgentCallInterface noEndpointSource = newValidCallInterface();
+        AgentDefinitionCallInterface noEndpointSource = newValidCallInterface();
         noEndpointSource.setEndpointSourceOrder(Collections.<EndpointSource>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(noEndpointSource));
         
-        AgentCallInterface duplicateEndpointSource = newValidCallInterface();
+        AgentDefinitionCallInterface duplicateEndpointSource = newValidCallInterface();
         duplicateEndpointSource.setEndpointSourceOrder(
             Arrays.asList(EndpointSource.RUNTIME, EndpointSource.RUNTIME));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(duplicateEndpointSource));
         
-        AgentCallInterface tooManyEndpoints = newValidCallInterface();
+        AgentDefinitionCallInterface tooManyEndpoints = newValidCallInterface();
         tooManyEndpoints.setDeclaredEndpoints(
             Collections.nCopies(65, newDeclaredEndpoint("https://agent.example.com/a2a")));
         assertThrows(IllegalArgumentException.class,
@@ -305,27 +302,27 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInvalidUrisAndLengths() {
-        Agent emptyIconUrl = newValidAgent();
+        AgentSummary emptyIconUrl = newValidAgent();
         emptyIconUrl.setIconUrl("");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(emptyIconUrl));
         
-        Agent relativeIconUrl = newValidAgent();
+        AgentSummary relativeIconUrl = newValidAgent();
         relativeIconUrl.setIconUrl("icons/agent.png");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(relativeIconUrl));
         
-        Agent malformedProviderUrl = newValidAgent();
+        AgentSummary malformedProviderUrl = newValidAgent();
         malformedProviderUrl.getProvider().setUrl("https://[");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(malformedProviderUrl));
         
-        Agent emptyOwner = newValidAgent();
+        AgentSummary emptyOwner = newValidAgent();
         emptyOwner.setOwner("");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(emptyOwner));
         
-        Agent oversizedDisplayName = newValidAgent();
+        AgentSummary oversizedDisplayName = newValidAgent();
         oversizedDisplayName.setDisplayName(repeated('a', 129));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(oversizedDisplayName));
@@ -333,7 +330,7 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsLatestVersionCatalogMismatch() {
-        Agent agent = newValidAgent();
+        AgentSummary agent = newValidAgent();
         agent.getVersionInfo().getLabels().put("latest", "1.1.0");
         
         assertThrows(IllegalArgumentException.class,
@@ -382,7 +379,7 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsMissingRequiredWrapperValues() {
-        Agent agent = newValidAgent();
+        AgentSummary agent = newValidAgent();
         agent.setMetaVersion(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(agent));
@@ -400,12 +397,12 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInvalidStatusValues() {
-        Agent missingResourceStatus = newValidAgent();
+        AgentSummary missingResourceStatus = newValidAgent();
         missingResourceStatus.setStatus(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(missingResourceStatus));
         
-        Agent invalidResourceStatus = newValidAgent();
+        AgentSummary invalidResourceStatus = newValidAgent();
         invalidResourceStatus.setStatus("ENABLE");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(invalidResourceStatus));
@@ -423,18 +420,18 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsInconsistentLifecyclePointersAndLabels() {
-        Agent sameWorkingVersion = newValidAgent();
+        AgentSummary sameWorkingVersion = newValidAgent();
         sameWorkingVersion.getVersionInfo().setEditingVersion("2.0.0");
         sameWorkingVersion.getVersionInfo().setReviewingVersion("2.0.0");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(sameWorkingVersion));
         
-        Agent workingVersionOnline = newValidAgent();
+        AgentSummary workingVersionOnline = newValidAgent();
         workingVersionOnline.getVersionInfo().setEditingVersion("1.0.0");
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateAgent(workingVersionOnline));
         
-        Agent labelTargetsReviewing = newValidAgent();
+        AgentSummary labelTargetsReviewing = newValidAgent();
         labelTargetsReviewing.getVersionInfo().setReviewingVersion("2.0.0");
         labelTargetsReviewing.getVersionInfo().getLabels().put("candidate", "2.0.0");
         assertThrows(IllegalArgumentException.class,
@@ -444,7 +441,7 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsMissingNativeDescriptorAfterBinding() {
-        AgentCallInterface callInterface = newValidCallInterface();
+        AgentDefinitionCallInterface callInterface = newValidCallInterface();
         callInterface.setNativeDescriptor(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(callInterface));
@@ -460,27 +457,27 @@ class AgentModelValidatorTest {
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
     }
     
-    private Agent newValidAgent() {
+    private AgentSummary newValidAgent() {
         AgentProvider provider = new AgentProvider();
         provider.setName("Nacos");
         provider.setUrl("https://nacos.io");
         
         AgentVersionInfo versionInfo = new AgentVersionInfo();
-        versionInfo.setOnlineCnt(1);
         Map<String, String> labels = new LinkedHashMap<String, String>();
         labels.put("latest", "1.0.0");
         labels.put("stable", "1.0.0");
         versionInfo.setLabels(labels);
         
-        AgentVersionCatalogEntry catalogEntry = new AgentVersionCatalogEntry();
+        AgentVersionSummary catalogEntry = new AgentVersionSummary();
         catalogEntry.setVersion("1.0.0");
         catalogEntry.setLabels(Collections.singletonList("stable"));
         catalogEntry.setProtocols(Collections.singletonList("a2a"));
-        AgentVersionCatalog catalog = new AgentVersionCatalog();
-        catalog.setLatestVersion("1.0.0");
+        AgentVersionInfo catalog = new AgentVersionInfo();
+        catalog.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "1.0.0")));
         catalog.setOnlineVersions(Collections.singletonList(catalogEntry));
         
-        Agent agent = new Agent();
+        AgentSummary agent = new AgentSummary();
         agent.setNamespaceId("public");
         agent.setAgentName("Demo Agent");
         agent.setDisplayName("Demo Agent 展示名");
@@ -493,7 +490,7 @@ class AgentModelValidatorTest {
         agent.setOwner("nacos");
         agent.setScope("PUBLIC");
         agent.setVersionInfo(versionInfo);
-        agent.setVersionCatalog(catalog);
+        agent.getVersionInfo().setOnlineVersions(catalog.getOnlineVersions());
         agent.setMetaVersion(1L);
         agent.setCreateTime(1L);
         agent.setUpdateTime(2L);
@@ -506,7 +503,7 @@ class AgentModelValidatorTest {
         detail.setAgentName("Demo Agent");
         detail.setVersion("1.0.0");
         detail.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
-        detail.setCallInterfaces(new ArrayList<AgentCallInterface>(
+        detail.setCallInterfaces(new ArrayList<AgentDefinitionCallInterface>(
             Collections.singletonList(newValidCallInterface())));
         detail.setAuthor("nacos");
         detail.setChangeDescription("Initial online version");
@@ -538,7 +535,7 @@ class AgentModelValidatorTest {
     }
     
     private AgentSummary newValidAgentSummary() {
-        Agent agent = newValidAgent();
+        AgentSummary agent = newValidAgent();
         AgentSummary summary = new AgentSummary();
         summary.setNamespaceId(agent.getNamespaceId());
         summary.setAgentName(agent.getAgentName());
@@ -551,15 +548,15 @@ class AgentModelValidatorTest {
         summary.setOwner(agent.getOwner());
         summary.setScope(agent.getScope());
         summary.setVersionInfo(agent.getVersionInfo());
-        summary.setVersionCatalog(agent.getVersionCatalog());
+        summary.getVersionInfo().setOnlineVersions(agent.getVersionInfo().getOnlineVersions());
         summary.setMetaVersion(agent.getMetaVersion());
         summary.setCreateTime(agent.getCreateTime());
         summary.setUpdateTime(agent.getUpdateTime());
         return summary;
     }
     
-    private AgentCallInterface newValidCallInterface() {
-        AgentCallInterface callInterface = new AgentCallInterface();
+    private AgentDefinitionCallInterface newValidCallInterface() {
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0.0");
         callInterface.setDescriptorMediaType("application/json");

@@ -202,7 +202,7 @@
         }
       }
     },
-    "AgentCatalogVersion": {
+    "AgentVersionSummary": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -232,13 +232,41 @@
         }
       }
     },
-    "AgentCatalogEntry": {
+    "AgentVersionInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "labels",
+        "onlineVersions"
+      ],
+      "properties": {
+        "labels": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/Label"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/AgentVersion"
+          },
+          "required": [
+            "latest"
+          ]
+        },
+        "onlineVersions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/AgentVersionSummary"
+          }
+        }
+      }
+    },
+    "AgentSummary": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "agentName",
-        "latestVersion",
-        "versions"
+        "versionInfo"
       ],
       "properties": {
         "agentName": {
@@ -270,15 +298,8 @@
             "$ref": "#/$defs/Tag"
           }
         },
-        "latestVersion": {
-          "$ref": "#/$defs/AgentVersion"
-        },
-        "versions": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/AgentCatalogVersion"
-          }
+        "versionInfo": {
+          "$ref": "#/$defs/AgentVersionInfo"
         }
       }
     },
@@ -360,7 +381,7 @@
           "type": "array",
           "maxItems": 100,
           "items": {
-            "$ref": "#/$defs/AgentCatalogEntry"
+            "$ref": "#/$defs/AgentSummary"
           }
         }
       }

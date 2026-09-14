@@ -400,3 +400,9 @@ exclude Runtime state.
   detail, audit, or authenticated API shapes should be supported.
 - Define operational guidance for running the adaptor behind gateways and
   service meshes.
+
+## Endpoint Consolidation Acceptance Addendum (Review Draft, Not Implemented)
+
+Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors. Do not export runtime, health, or management observation fields.
+
+This is the next-change proposal, not an implementation claim for current Java/schemas. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. This update records planned coverage, not passed tests.

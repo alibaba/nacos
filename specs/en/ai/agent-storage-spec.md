@@ -747,3 +747,9 @@ The optional shadow represents only historical exact-Version A2A publication
 requests. It is not a second RAD fact source and does not support general RAD
 Version ranges. This temporary dual-materialization implementation is targeted
 for removal in Nacos 4.0 without changing the canonical Runtime layout.
+
+## Endpoint Consolidation Acceptance Addendum (Review Draft, Not Implemented)
+
+AgentVersionContent may reuse unified CallInterface/EndpointSet/Endpoint members while storing only complete definitions, declared addresses, and source configuration. BETA format compatibility is out of scope. Map reported healthy to current Naming contribution health without changing subsequent liveness. Exclude runtime, health, observations, and response revision from version bytes. Verify new-format read-back, byte digests, migration verification, and definition independence from runtime changes.
+
+This is the next-change proposal, not an implementation claim for current Java/schemas. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. This update records planned coverage, not passed tests.

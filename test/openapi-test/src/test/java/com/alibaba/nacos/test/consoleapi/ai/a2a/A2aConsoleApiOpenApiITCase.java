@@ -127,7 +127,7 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
             assertEquals("PUBLIC", canonicalOverview.get("agent").get("scope").asText(),
                     canonicalOverview.toString());
             assertEquals(1,
-                    canonicalOverview.get("agent").get("versionInfo").get("onlineCnt").asInt(),
+                    canonicalOverview.get("agent").get("versionInfo").get("onlineVersions").size(),
                     canonicalOverview.toString());
             JsonNode canonicalVersion = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
                     agentVersionIdentityQuery(null, agentName, version)).get("data");
@@ -365,7 +365,7 @@ public class A2aConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 overview.toString());
         assertEquals("enable", agent.get("status").asText(), overview.toString());
         assertEquals("PUBLIC", agent.get("scope").asText(), overview.toString());
-        assertEquals(1, agent.get("versionInfo").get("onlineCnt").asInt(),
+        assertEquals(1, agent.get("versionInfo").get("onlineVersions").size(),
                 overview.toString());
         assertEquals(version, agent.get("versionInfo").get("labels").get("latest").asText(),
                 overview.toString());

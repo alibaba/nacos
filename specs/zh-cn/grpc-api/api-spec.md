@@ -249,7 +249,7 @@ Payload 清单。
 
 | 目标 Request type | 目标 Response type | 方向 | 契约 |
 | --- | --- | --- | --- |
-| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentSummary`。 |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | 代码式创建 Agent draft，并按 `autoSubmit` 可选执行普通 submit。 |
 | `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | 安装一个已鉴权且归属当前 Connection 的 Watch，返回不透明 `watchKey`、已观测 fingerprint 和刷新决策，绝不返回 Discover Snapshot。 |

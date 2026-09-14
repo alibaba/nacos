@@ -16,24 +16,24 @@
 
 package com.alibaba.nacos.client.ai.utils;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -63,17 +63,17 @@ class AgentModelUtilsTest {
     
     @Test
     void copyPublishRequestDeepCopiesAndValidates() throws NacosException {
-        AgentPublishRequest source = new AgentPublishRequest();
+        AgentPublishClientRequest source = new AgentPublishClientRequest();
         source.setAgentName("agent-a");
         source.setVersion("1.0.0");
-        source.setCallInterfaces(new ArrayList<AgentCallInterface>(
-            Collections.singletonList(new AgentCallInterface())));
+        source.setCallInterfaces(new ArrayList<AgentDefinitionCallInterface>(
+            Collections.singletonList(new AgentDefinitionCallInterface())));
         source.setTags(new ArrayList<String>(Collections.singletonList("assistant")));
         source.setExtensions(new HashMap<String, Object>(
             Collections.<String, Object>singletonMap("region", "east")));
         source.setAutoSubmit(true);
         
-        AgentPublishRequest result = AgentModelUtils.copyPublishRequest(source);
+        AgentPublishClientRequest result = AgentModelUtils.copyPublishRequest(source);
         assertNotSame(source, result);
         assertNotSame(source.getCallInterfaces(), result.getCallInterfaces());
         assertNotSame(source.getTags(), result.getTags());
@@ -89,7 +89,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copyPublishRequestMapsCopyFailure() {
-        AgentPublishRequest source = new AgentPublishRequest();
+        AgentPublishClientRequest source = new AgentPublishClientRequest();
         try (MockedStatic<JsonUtils> json = Mockito.mockStatic(JsonUtils.class)) {
             json.when(() -> JsonUtils.toJson(source)).thenThrow(new IllegalStateException("boom"));
             assertEquals(NacosException.INVALID_PARAM,
@@ -100,7 +100,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copySearchRequestBindsNamespaceAndCopiesCollections() throws NacosException {
-        AgentSearchQuery source = new AgentSearchQuery();
+        AgentSearchClientRequest source = new AgentSearchClientRequest();
         source.setTagsAll(new ArrayList<String>(Arrays.asList("one", "two")));
         source.setProtocolsAny(new ArrayList<String>(Collections.singletonList("a2a")));
         source.setAgentNameContains("agent");
@@ -122,7 +122,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copySearchRequestBindsInstanceNamespaceAndRejectsInvalidInput() throws NacosException {
-        AgentSearchQuery source = new AgentSearchQuery();
+        AgentSearchClientRequest source = new AgentSearchClientRequest();
         assertEquals("tenant",
             AgentModelUtils.copySearchRequest(source, "tenant").getNamespaceId());
         
@@ -181,7 +181,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copyRegistrationBatchCanonicalizesAndIsolatesEndpoints() throws NacosException {
-        AgentEndpointRegistration source = registration();
+        AgentEndpointRegistrationClientRequest source = registration();
         Endpoint endpoint = source.getEndpoints().get(0);
         endpoint.setUri("HTTP://LOCALHOST/path");
         Map<String, String> metadata = new HashMap<String, String>();
@@ -216,7 +216,7 @@ class AgentModelUtilsTest {
         assertThrows(NacosException.class,
             () -> AgentModelUtils.copyRegistrationBatch(null, "public"));
         
-        AgentEndpointRegistration source = registration();
+        AgentEndpointRegistrationClientRequest source = registration();
         source.setEndpoints(null);
         assertThrows(NacosException.class,
             () -> AgentModelUtils.copyRegistrationBatch(source, "public"));
@@ -232,7 +232,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copyDeregistrationBatchCopiesAndValidatesEndpoints() throws NacosException {
-        AgentEndpointDeregistration source = deregistration();
+        AgentEndpointDeregistrationClientRequest source = deregistration();
         AgentEndpointDeregistrationBatch result =
             AgentModelUtils.copyDeregistrationBatch(source, "public");
         
@@ -251,7 +251,7 @@ class AgentModelUtilsTest {
     
     @Test
     void copyDeregistrationBatchHandlesNullCollectionsAndItems() {
-        AgentEndpointDeregistration source = deregistration();
+        AgentEndpointDeregistrationClientRequest source = deregistration();
         source.setEndpoints(null);
         assertThrows(NacosException.class,
             () -> AgentModelUtils.copyDeregistrationBatch(source, "public"));
@@ -308,8 +308,9 @@ class AgentModelUtilsTest {
         return result;
     }
     
-    private AgentEndpointRegistration registration() {
-        AgentEndpointRegistration result = new AgentEndpointRegistration();
+    private AgentEndpointRegistrationClientRequest registration() {
+        AgentEndpointRegistrationClientRequest result =
+            new AgentEndpointRegistrationClientRequest();
         result.setAgentName("agent-a");
         result.setRuntimeVersion("1.0.0");
         result.setProtocol("a2a");
@@ -318,8 +319,9 @@ class AgentModelUtilsTest {
         return result;
     }
     
-    private AgentEndpointDeregistration deregistration() {
-        AgentEndpointDeregistration result = new AgentEndpointDeregistration();
+    private AgentEndpointDeregistrationClientRequest deregistration() {
+        AgentEndpointDeregistrationClientRequest result =
+            new AgentEndpointDeregistrationClientRequest();
         result.setAgentName("agent-a");
         result.setProtocol("a2a");
         result.setEndpoints(new ArrayList<Endpoint>(

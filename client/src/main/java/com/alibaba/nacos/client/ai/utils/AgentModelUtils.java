@@ -17,17 +17,17 @@
 package com.alibaba.nacos.client.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
 import com.alibaba.nacos.api.ai.utils.RadModelValidator;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -56,14 +56,14 @@ public final class AgentModelUtils {
      * @return isolated validated request
      * @throws NacosException when the request is invalid
      */
-    public static AgentPublishRequest copyPublishRequest(AgentPublishRequest source)
+    public static AgentPublishClientRequest copyPublishRequest(AgentPublishClientRequest source)
         throws NacosException {
         if (source == null) {
             throw invalid("AgentPublishRequest must not be null.");
         }
-        final AgentPublishRequest result;
+        final AgentPublishClientRequest result;
         try {
-            result = JsonUtils.toObj(JsonUtils.toJson(source), AgentPublishRequest.class);
+            result = JsonUtils.toObj(JsonUtils.toJson(source), AgentPublishClientRequest.class);
         } catch (RuntimeException e) {
             throw invalid("AgentPublishRequest cannot be copied: " + e.getMessage());
         }
@@ -85,7 +85,7 @@ public final class AgentModelUtils {
      * @return isolated validated request
      * @throws NacosException when the request is invalid
      */
-    public static AgentSearchRequest copySearchRequest(AgentSearchQuery source,
+    public static AgentSearchRequest copySearchRequest(AgentSearchClientRequest source,
         String namespaceId) throws NacosException {
         if (source == null) {
             throw invalid("AgentSearchQuery must not be null.");
@@ -141,7 +141,7 @@ public final class AgentModelUtils {
      * @throws NacosException when the batch is invalid
      */
     public static AgentEndpointRegistrationBatch copyRegistrationBatch(
-        AgentEndpointRegistration source, String namespaceId) throws NacosException {
+        AgentEndpointRegistrationClientRequest source, String namespaceId) throws NacosException {
         if (source == null) {
             throw invalid("AgentEndpointRegistration must not be null.");
         }
@@ -186,7 +186,7 @@ public final class AgentModelUtils {
      * @throws NacosException when the batch is invalid
      */
     public static AgentEndpointDeregistrationBatch copyDeregistrationBatch(
-        AgentEndpointDeregistration source, String namespaceId) throws NacosException {
+        AgentEndpointDeregistrationClientRequest source, String namespaceId) throws NacosException {
         if (source == null) {
             throw invalid("AgentEndpointDeregistration must not be null.");
         }

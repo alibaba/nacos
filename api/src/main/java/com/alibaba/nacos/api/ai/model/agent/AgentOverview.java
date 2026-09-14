@@ -31,15 +31,15 @@ public class AgentOverview implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
-    private Agent agent;
+    private AgentSummary agent;
     
     private Page<AgentVersionSummary> versionPage;
     
-    public Agent getAgent() {
+    public AgentSummary getAgent() {
         return agent;
     }
     
-    public void setAgent(Agent agent) {
+    public void setAgent(AgentSummary agent) {
         this.agent = agent;
     }
     

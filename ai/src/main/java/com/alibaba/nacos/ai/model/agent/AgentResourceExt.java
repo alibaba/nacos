@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.model.agent;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 
 import java.util.Map;
 
@@ -40,7 +40,7 @@ public class AgentResourceExt {
     
     private Map<String, Object> extensions;
     
-    private AgentVersionCatalog versionCatalog;
+    private AgentVersionInfo versionCatalog;
     
     public Integer getSchemaVersion() {
         return schemaVersion;
@@ -82,11 +82,11 @@ public class AgentResourceExt {
         this.extensions = extensions;
     }
     
-    public AgentVersionCatalog getVersionCatalog() {
+    public AgentVersionInfo getVersionCatalog() {
         return versionCatalog;
     }
     
-    public void setVersionCatalog(AgentVersionCatalog versionCatalog) {
+    public void setVersionCatalog(AgentVersionInfo versionCatalog) {
         this.versionCatalog = versionCatalog;
     }
 }

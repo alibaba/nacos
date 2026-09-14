@@ -17,11 +17,11 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.Test;
@@ -65,7 +65,7 @@ class AgentAdminFormsTest {
         assertEquals("initial draft", form.getChangeDescription());
         assertNull(form.getBasedOnVersion());
         
-        AgentDraftCreateRequest request = form.toRequest();
+        AgentDraftCreateAdminRequest request = form.toRequest();
         assertEquals(AGENT_NAME, request.getAgentName());
         assertEquals(VERSION, request.getVersion());
         assertEquals("Nacos", request.getProvider().getName());
@@ -95,7 +95,7 @@ class AgentAdminFormsTest {
         assertEquals("[]", form.getCallInterfaces());
         assertEquals("updated", form.getChangeDescription());
         
-        AgentDraftUpdateRequest request = form.toRequest();
+        AgentDraftUpdateAdminRequest request = form.toRequest();
         assertEquals(AGENT_NAME, request.getAgentName());
         assertEquals(VERSION, request.getVersion());
         assertEquals(0, request.getCallInterfaces().size());
@@ -110,7 +110,7 @@ class AgentAdminFormsTest {
         
         assertEquals("{\"stable\":\"1.0.0\"}", form.getLabels());
         
-        AgentLabelsUpdateRequest request = form.toRequest();
+        AgentLabelsUpdateAdminRequest request = form.toRequest();
         assertEquals(VERSION, request.getLabels().get("stable"));
     }
     
@@ -134,7 +134,7 @@ class AgentAdminFormsTest {
         assertEquals("{\"region\":\"east\"}", form.getExtensions());
         assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE, form.getStatus());
         
-        AgentUpdateRequest request = form.toRequest();
+        AgentUpdateAdminRequest request = form.toRequest();
         assertEquals("Demo", request.getDisplayName());
         assertEquals("Nacos", request.getProvider().getName());
         assertEquals("assistant", request.getTags().get(0));

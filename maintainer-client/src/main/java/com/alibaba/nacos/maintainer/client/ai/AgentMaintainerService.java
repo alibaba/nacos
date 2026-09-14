@@ -17,14 +17,13 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -71,7 +70,8 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    Agent updateAgent(String namespaceId, AgentUpdateRequest request) throws NacosException;
+    AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
+        throws NacosException;
     
     /**
      * Update Agent metadata in the default namespace.
@@ -81,7 +81,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default Agent updateAgent(AgentUpdateRequest request) throws NacosException {
+    default AgentSummary updateAgent(AgentUpdateAdminRequest request) throws NacosException {
         return updateAgent(Constants.DEFAULT_NAMESPACE_ID, request);
     }
     
@@ -242,7 +242,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
+    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
         throws NacosException;
     
     /**
@@ -253,7 +253,8 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionDetail createDraft(AgentDraftCreateRequest request) throws NacosException {
+    default AgentVersionDetail createDraft(AgentDraftCreateAdminRequest request)
+        throws NacosException {
         return createDraft(Constants.DEFAULT_NAMESPACE_ID, request);
     }
     
@@ -266,7 +267,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
+    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
         throws NacosException;
     
     /**
@@ -277,7 +278,8 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionDetail updateDraft(AgentDraftUpdateRequest request) throws NacosException {
+    default AgentVersionDetail updateDraft(AgentDraftUpdateAdminRequest request)
+        throws NacosException {
         return updateDraft(Constants.DEFAULT_NAMESPACE_ID, request);
     }
     
@@ -313,7 +315,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary submit(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary submit(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -324,7 +326,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary submit(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary submit(AgentVersionAdminRequest command) throws NacosException {
         return submit(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -337,7 +339,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary publish(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary publish(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -348,7 +350,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary publish(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary publish(AgentVersionAdminRequest command) throws NacosException {
         return publish(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -361,7 +363,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary forcePublish(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary forcePublish(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -372,7 +374,8 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary forcePublish(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary forcePublish(AgentVersionAdminRequest command)
+        throws NacosException {
         return forcePublish(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -385,7 +388,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary redraft(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary redraft(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -396,7 +399,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary redraft(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary redraft(AgentVersionAdminRequest command) throws NacosException {
         return redraft(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -409,7 +412,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary online(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary online(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -420,7 +423,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary online(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary online(AgentVersionAdminRequest command) throws NacosException {
         return online(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -433,7 +436,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    AgentVersionSummary offline(String namespaceId, AgentVersionCommand command)
+    AgentVersionSummary offline(String namespaceId, AgentVersionAdminRequest command)
         throws NacosException;
     
     /**
@@ -444,7 +447,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default AgentVersionSummary offline(AgentVersionCommand command) throws NacosException {
+    default AgentVersionSummary offline(AgentVersionAdminRequest command) throws NacosException {
         return offline(Constants.DEFAULT_NAMESPACE_ID, command);
     }
     
@@ -457,7 +460,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
         throws NacosException;
     
     /**
@@ -468,7 +471,7 @@ public interface AgentMaintainerService {
      * @throws NacosException when the request fails
      */
     @Since("3.3.0")
-    default Agent updateLabels(AgentLabelsUpdateRequest request) throws NacosException {
+    default AgentSummary updateLabels(AgentLabelsUpdateAdminRequest request) throws NacosException {
         return updateLabels(Constants.DEFAULT_NAMESPACE_ID, request);
     }
 }

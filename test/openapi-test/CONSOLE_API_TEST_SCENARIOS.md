@@ -125,3 +125,11 @@ The console API IT set was validated with:
 
 The full console IT verification ran 75 tests with no failures.
 The Agent Console API verification ran 2 tests with no failures.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent Console 消费相同 AgentSummary/versionInfo 新结构，保持版本详情与 Runtime 查询分开；固定地址/运行地址模型本轮不变。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

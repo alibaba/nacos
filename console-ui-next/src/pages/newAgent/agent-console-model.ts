@@ -18,7 +18,7 @@ import type {
   AgentCallInterface,
   AgentDraftCreateData,
   AgentDraftUpdateData,
-  AgentMetadata,
+  AgentSummary,
   AgentMetadataUpdateData,
   AgentVersionStatus,
   NamingServiceRef,
@@ -653,7 +653,7 @@ export function buildMetadataUpdateData(
 
 export function buildAgentStatusUpdateData(
   namespaceId: string,
-  agent: AgentMetadata,
+  agent: AgentSummary,
   enabled: boolean,
 ): AgentMetadataUpdateData {
   return buildMetadataUpdateData(namespaceId, metadataToEditorValues({
@@ -662,7 +662,7 @@ export function buildAgentStatusUpdateData(
   }));
 }
 
-export function metadataToEditorValues(agent: AgentMetadata): AgentEditorValues {
+export function metadataToEditorValues(agent: AgentSummary): AgentEditorValues {
   return {
     agentName: agent.agentName,
     version: '',

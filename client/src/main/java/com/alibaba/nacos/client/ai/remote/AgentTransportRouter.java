@@ -17,14 +17,14 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
@@ -50,7 +50,8 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    public AgentVersionDetail publishAgent(AgentPublishClientRequest request)
+        throws NacosException {
         AgentTransport transport = select();
         AgentVersionDetail result = transport.publishAgent(request);
         recordHttpSuccess(transport);
@@ -58,10 +59,10 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     @Override
-    public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(AgentSearchRequest request)
         throws NacosException {
         AgentTransport transport = select();
-        Page<AgentCatalogEntry> result;
+        Page<AgentSummary> result;
         try {
             result = transport.searchAgents(request);
         } catch (NacosException | NacosRuntimeException e) {

@@ -16,34 +16,27 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
+import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 /**
- * Bounded Agent summary for management lists.
+ * Agent metadata shared by management and discovery catalog views.
+ *
+ * <p>Management queries include namespace, governance and lifecycle metadata; list queries omit
+ * extensions. Discovery catalog queries include only public metadata and online version facts.
+ * Fields outside the query projection remain absent.</p>
  *
  * @author Nacos
+ * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentSummary implements Serializable {
+public class AgentSummary extends AbstractAgentMetadata {
     
     private static final long serialVersionUID = 1L;
     
     private String namespaceId;
-    
-    private String agentName;
-    
-    private String displayName;
-    
-    private String description;
-    
-    private String iconUrl;
-    
-    private AgentProvider provider;
-    
-    private List<String> tags;
     
     private String status;
     
@@ -53,7 +46,7 @@ public class AgentSummary implements Serializable {
     
     private AgentVersionInfo versionInfo;
     
-    private AgentVersionCatalog versionCatalog;
+    private Map<String, Object> extensions;
     
     private Long metaVersion;
     
@@ -67,54 +60,6 @@ public class AgentSummary implements Serializable {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
-    }
-    
-    public String getAgentName() {
-        return agentName;
-    }
-    
-    public void setAgentName(String agentName) {
-        this.agentName = agentName;
-    }
-    
-    public String getDisplayName() {
-        return displayName;
-    }
-    
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public String getIconUrl() {
-        return iconUrl;
-    }
-    
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
-    }
-    
-    public AgentProvider getProvider() {
-        return provider;
-    }
-    
-    public void setProvider(AgentProvider provider) {
-        this.provider = provider;
-    }
-    
-    public List<String> getTags() {
-        return tags;
-    }
-    
-    public void setTags(List<String> tags) {
-        this.tags = tags;
     }
     
     public String getStatus() {
@@ -149,12 +94,12 @@ public class AgentSummary implements Serializable {
         this.versionInfo = versionInfo;
     }
     
-    public AgentVersionCatalog getVersionCatalog() {
-        return versionCatalog;
+    public Map<String, Object> getExtensions() {
+        return extensions;
     }
     
-    public void setVersionCatalog(AgentVersionCatalog versionCatalog) {
-        this.versionCatalog = versionCatalog;
+    public void setExtensions(Map<String, Object> extensions) {
+        this.extensions = extensions;
     }
     
     public Long getMetaVersion() {

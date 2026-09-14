@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
@@ -41,7 +41,7 @@ public interface AgentClientProxy {
      * @return resulting exact Version detail
      * @throws NacosException when the transport request fails
      */
-    AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException;
+    AgentVersionDetail publishAgent(AgentPublishClientRequest request) throws NacosException;
     
     /**
      * Search visible Agent catalog entries.
@@ -50,7 +50,7 @@ public interface AgentClientProxy {
      * @return Agent catalog page
      * @throws NacosException when the transport request fails
      */
-    Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request) throws NacosException;
+    Page<AgentSummary> searchAgents(AgentSearchRequest request) throws NacosException;
     
     /**
      * Discover one Agent Version and its Endpoint sets.

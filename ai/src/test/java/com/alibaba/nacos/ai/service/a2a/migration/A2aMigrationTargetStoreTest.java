@@ -34,8 +34,8 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -389,7 +389,7 @@ class A2aMigrationTargetStoreTest {
     void shouldRejectIncompleteDefinitionsAndPersistenceFailures() throws NacosException {
         assertThrows(IllegalArgumentException.class,
             () -> targetStore.reconcile(null, () -> true));
-        Agent incomplete = agent();
+        AgentSummary incomplete = agent();
         assertThrows(IllegalArgumentException.class, () -> targetStore.reconcile(
             new A2aMigrationDefinition(incomplete, Collections.emptyList(), "1.0.0"),
             () -> true));
@@ -576,8 +576,8 @@ class A2aMigrationTargetStoreTest {
         return new A2aMigrationDefinition(agent(), details, latest);
     }
     
-    private Agent agent() {
-        Agent result = new Agent();
+    private AgentSummary agent() {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(AGENT_NAME);
         result.setDescription("Research");
@@ -595,7 +595,7 @@ class A2aMigrationTargetStoreTest {
     }
     
     private AgentVersionContent content(String version, String protocolVersion) {
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion(protocolVersion);
         callInterface.setDescriptorMediaType("application/json");

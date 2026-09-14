@@ -18,8 +18,8 @@ package com.alibaba.nacos.ai.service.agent.metadata;
 
 import com.alibaba.nacos.ai.model.agent.AgentResourceExt;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -220,7 +220,8 @@ class AgentResourceExtSerializerTest {
         assertEncodeRejected(resourceExt);
         
         resourceExt = createFullResourceExt();
-        resourceExt.getVersionCatalog().setLatestVersion("3.0.0");
+        resourceExt.getVersionCatalog().setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "3.0.0")));
         assertEncodeRejected(resourceExt);
         
         resourceExt = createFullResourceExt();
@@ -351,8 +352,8 @@ class AgentResourceExtSerializerTest {
     private AgentResourceExt createMinimalResourceExt() {
         AgentResourceExt result = new AgentResourceExt();
         result.setSchemaVersion(AgentResourceExt.SCHEMA_VERSION);
-        AgentVersionCatalog catalog = new AgentVersionCatalog();
-        catalog.setOnlineVersions(new ArrayList<AgentVersionCatalogEntry>());
+        AgentVersionInfo catalog = new AgentVersionInfo();
+        catalog.setOnlineVersions(new ArrayList<AgentVersionSummary>());
         result.setVersionCatalog(catalog);
         return result;
     }
@@ -370,9 +371,10 @@ class AgentResourceExtSerializerTest {
         extensions.put("example.com/modes", Arrays.asList("chat", "task"));
         result.setExtensions(extensions);
         
-        AgentVersionCatalog catalog = new AgentVersionCatalog();
-        catalog.setLatestVersion("2.0.0");
-        catalog.setOnlineVersions(new ArrayList<AgentVersionCatalogEntry>(
+        AgentVersionInfo catalog = new AgentVersionInfo();
+        catalog.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "2.0.0")));
+        catalog.setOnlineVersions(new ArrayList<AgentVersionSummary>(
             Arrays.asList(createCatalogEntry("2.0.0", Collections.singletonList("stable"),
                 Arrays.asList("a2a", "grpc")),
                 createCatalogEntry("1.0.0-RC1", Collections.singletonList("preview"),
@@ -381,22 +383,22 @@ class AgentResourceExtSerializerTest {
         return result;
     }
     
-    private AgentVersionCatalogEntry createCatalogEntry(String version, List<String> labels,
+    private AgentVersionSummary createCatalogEntry(String version, List<String> labels,
         List<String> protocols) {
-        AgentVersionCatalogEntry result = new AgentVersionCatalogEntry();
+        AgentVersionSummary result = new AgentVersionSummary();
         result.setVersion(version);
         result.setLabels(new ArrayList<String>(labels));
         result.setProtocols(new ArrayList<String>(protocols));
         return result;
     }
     
-    private void assertCatalogEquals(AgentVersionCatalog expected,
-        AgentVersionCatalog actual) {
+    private void assertCatalogEquals(AgentVersionInfo expected,
+        AgentVersionInfo actual) {
         assertEquals(expected.getLatestVersion(), actual.getLatestVersion());
         assertEquals(expected.getOnlineVersions().size(), actual.getOnlineVersions().size());
         for (int i = 0; i < expected.getOnlineVersions().size(); i++) {
-            AgentVersionCatalogEntry expectedEntry = expected.getOnlineVersions().get(i);
-            AgentVersionCatalogEntry actualEntry = actual.getOnlineVersions().get(i);
+            AgentVersionSummary expectedEntry = expected.getOnlineVersions().get(i);
+            AgentVersionSummary actualEntry = actual.getOnlineVersions().get(i);
             assertEquals(expectedEntry.getVersion(), actualEntry.getVersion());
             assertEquals(expectedEntry.getLabels(), actualEntry.getLabels());
             assertEquals(expectedEntry.getProtocols(), actualEntry.getProtocols());

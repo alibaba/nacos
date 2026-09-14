@@ -63,3 +63,15 @@ Current in-scope maintained surfaces: 11.
 
 - Strict coverage: 9 / 11 = 81.8%
 - Effective coverage: (9 + 2 * 0.5) / 11 = 90.9%
+
+## Agent model consolidation
+
+Agent Admin requests now carry the AdminRequest suffix. The default-namespace lifecycle verifies inherited metadata and version-summary fields, using concrete summary instances without namespace, agentName or callInterfaces. Existing custom-namespace, copied-draft, update and lifecycle/error coverage is retained.
+
+### Agent 元数据模型合并（2026-09-14）
+
+AgentSummary 合并详情/列表类型；验证详情保留 extensions、列表省略 extensions；versionInfo 保存完整标签及 onlineVersions，单版本条目复用 AgentVersionSummary，metadata/lifecycle 行为保持。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

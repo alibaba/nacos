@@ -32,25 +32,22 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
 import com.alibaba.nacos.api.ai.utils.RadModelValidator;
@@ -72,6 +69,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -150,7 +148,7 @@ public class AgentDiscoveryApplicationService {
      * @return stable Agent catalog page
      * @throws NacosException when a visible stored Agent summary is invalid
      */
-    public Page<AgentCatalogEntry> search(AgentSearchRequest request) throws NacosException {
+    public Page<AgentSummary> search(AgentSearchRequest request) throws NacosException {
         RadModelValidator.validate(request);
         int pageNo = request.getPageNo() == null ? DEFAULT_PAGE_NO : request.getPageNo();
         int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
@@ -160,17 +158,17 @@ public class AgentDiscoveryApplicationService {
         return searchScan(request, pageNo, pageSize);
     }
     
-    private Page<AgentCatalogEntry> searchScan(AgentSearchRequest request, int pageNo,
+    private Page<AgentSummary> searchScan(AgentSearchRequest request, int pageNo,
         int pageSize) throws NacosException {
         QueryCondition condition = resourceManager.buildQueryCondition(request.getNamespaceId(),
             Constants.Agent.RESOURCE_TYPE_AGENT, null, null, VisibilityConstants.ACTION_READ);
         if (condition.isAlwaysEmpty()) {
-            Page<AgentCatalogEntry> empty = AiResourceManager.buildEmptyPage(pageNo);
+            Page<AgentSummary> empty = AiResourceManager.buildEmptyPage(pageNo);
             RadModelValidator.validateCatalogPage(empty);
             return empty;
         }
         
-        List<AgentCatalogEntry> matches = new ArrayList<AgentCatalogEntry>();
+        List<AgentSummary> matches = new ArrayList<AgentSummary>();
         int scanPage = 1;
         Page<AgentSummary> source;
         do {
@@ -182,14 +180,14 @@ public class AgentDiscoveryApplicationService {
             }
             scanPage++;
         } while (scanPage <= source.getPagesAvailable());
-        Collections.sort(matches, Comparator.comparing(AgentCatalogEntry::getAgentName));
+        Collections.sort(matches, Comparator.comparing(AgentSummary::getAgentName));
         
-        Page<AgentCatalogEntry> result = page(matches, pageNo, pageSize);
+        Page<AgentSummary> result = page(matches, pageNo, pageSize);
         RadModelValidator.validateCatalogPage(result);
         return result;
     }
     
-    private Page<AgentCatalogEntry> searchIndex(AgentSearchRequest request, int pageNo,
+    private Page<AgentSummary> searchIndex(AgentSearchRequest request, int pageNo,
         int pageSize) throws NacosException {
         if (searchService == null) {
             throw new NacosException(SERVICE_UNAVAILABLE_STATUS,
@@ -206,12 +204,12 @@ public class AgentDiscoveryApplicationService {
             throw serverError("Agent Search result count exceeds the supported page contract.",
                 null);
         }
-        List<AgentCatalogEntry> items = new ArrayList<AgentCatalogEntry>(
+        List<AgentSummary> items = new ArrayList<AgentSummary>(
             source.getItems().size());
         for (AiResourceSearchResult item : source.getItems()) {
             items.add(toCatalogEntry(toIndexedSummary(item)));
         }
-        Page<AgentCatalogEntry> result = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> result = new Page<AgentSummary>();
         result.setPageNumber(source.getPageNumber());
         result.setTotalCount((int) source.getTotalCount());
         result.setPagesAvailable(source.getPagesAvailable());
@@ -240,8 +238,27 @@ public class AgentDiscoveryApplicationService {
     private AgentSummary toIndexedSummary(AiResourceSearchResult source) throws NacosException {
         try {
             Map<String, Object> metadata = source.getMetadata();
-            AgentVersionCatalog catalog = convertMetadata(metadata.get("versionCatalog"),
-                AgentVersionCatalog.class);
+            AgentVersionInfo catalog = convertMetadata(metadata.get("versionCatalog"),
+                AgentVersionInfo.class);
+            if (catalog != null) {
+                Map<?, ?> storedCatalog =
+                    convertMetadata(metadata.get("versionCatalog"), Map.class);
+                Map<String, String> labels = new LinkedHashMap<String, String>();
+                Object latest = storedCatalog.get("latestVersion");
+                if (latest instanceof String) {
+                    labels.put("latest", (String) latest);
+                }
+                if (catalog.getOnlineVersions() != null) {
+                    for (AgentVersionSummary version : catalog.getOnlineVersions()) {
+                        if (version.getLabels() != null) {
+                            for (String label : version.getLabels()) {
+                                labels.put(label, version.getVersion());
+                            }
+                        }
+                    }
+                }
+                catalog.setLabels(labels);
+            }
             if (catalog == null) {
                 throw new IllegalArgumentException("versionCatalog is missing");
             }
@@ -258,7 +275,7 @@ public class AgentDiscoveryApplicationService {
                 result.setTags(source.getTags().isEmpty() ? null
                     : new ArrayList<String>(source.getTags()));
             }
-            result.setVersionCatalog(catalog);
+            result.setVersionInfo(catalog);
             return result;
         } catch (RuntimeException e) {
             throw serverError("Indexed Agent catalog is invalid: " + source.getResourceName(),
@@ -285,7 +302,7 @@ public class AgentDiscoveryApplicationService {
         RadModelValidator.validate(request);
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
-        Agent agent = operationService.getAgent(namespaceId, reference.getAgentName());
+        AgentSummary agent = operationService.getAgent(namespaceId, reference.getAgentName());
         return buildDiscoveryResult(request, agent, false);
     }
     
@@ -306,12 +323,13 @@ public class AgentDiscoveryApplicationService {
         throws NacosException {
         RadModelValidator.validate(request);
         AgentReference reference = request.getReference();
-        Agent agent = persistenceService.getAgent(request.getNamespaceId(),
+        AgentSummary agent = persistenceService.getAgent(request.getNamespaceId(),
             reference.getAgentName());
         return buildDiscoveryResult(request, agent, true);
     }
     
-    private AgentDiscoveryResult buildDiscoveryResult(AgentDiscoveryRequest request, Agent agent,
+    private AgentDiscoveryResult buildDiscoveryResult(AgentDiscoveryRequest request,
+        AgentSummary agent,
         boolean currentRuntimeFacts) throws NacosException {
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
@@ -338,7 +356,7 @@ public class AgentDiscoveryApplicationService {
         if (!AiConstants.Agent.RESOURCE_STATUS_ENABLE.equals(summary.getStatus())) {
             return false;
         }
-        AgentVersionCatalog catalog = summary.getVersionCatalog();
+        AgentVersionInfo catalog = summary.getVersionInfo();
         if (catalog == null || catalog.getLatestVersion() == null
             || catalog.getOnlineVersions() == null || catalog.getOnlineVersions().isEmpty()) {
             return false;
@@ -355,13 +373,13 @@ public class AgentDiscoveryApplicationService {
         return matchesProtocols(catalog.getOnlineVersions(), request.getProtocolsAny());
     }
     
-    private boolean matchesProtocols(List<AgentVersionCatalogEntry> versions,
+    private boolean matchesProtocols(List<AgentVersionSummary> versions,
         List<String> requestedProtocols) {
         if (requestedProtocols == null) {
             return true;
         }
         Set<String> protocols = new HashSet<String>(requestedProtocols);
-        for (AgentVersionCatalogEntry version : versions) {
+        for (AgentVersionSummary version : versions) {
             for (String protocol : version.getProtocols()) {
                 if (protocols.contains(protocol)) {
                     return true;
@@ -371,8 +389,8 @@ public class AgentDiscoveryApplicationService {
         return false;
     }
     
-    private AgentCatalogEntry toCatalogEntry(AgentSummary summary) {
-        AgentCatalogEntry result = new AgentCatalogEntry();
+    private AgentSummary toCatalogEntry(AgentSummary summary) {
+        AgentSummary result = new AgentSummary();
         result.setAgentName(summary.getAgentName());
         result.setDisplayName(summary.getDisplayName());
         result.setDescription(summary.getDescription());
@@ -380,19 +398,28 @@ public class AgentDiscoveryApplicationService {
         result.setProvider(summary.getProvider());
         result.setTags(summary.getTags() == null || summary.getTags().isEmpty() ? null
             : copy(summary.getTags()));
-        result.setLatestVersion(summary.getVersionCatalog().getLatestVersion());
+        AgentVersionInfo versionInfo = new AgentVersionInfo();
+        Map<String, String> labels = new LinkedHashMap<String, String>();
+        labels.put("latest", summary.getVersionInfo().getLatestVersion());
+        versionInfo.setLabels(labels);
+        result.setVersionInfo(versionInfo);
         
-        List<AgentCatalogVersion> versions = new ArrayList<AgentCatalogVersion>();
-        for (AgentVersionCatalogEntry source : summary.getVersionCatalog().getOnlineVersions()) {
-            AgentCatalogVersion version = new AgentCatalogVersion();
+        List<AgentVersionSummary> versions = new ArrayList<AgentVersionSummary>();
+        for (AgentVersionSummary source : summary.getVersionInfo().getOnlineVersions()) {
+            AgentVersionSummary version = new AgentVersionSummary();
             version.setVersion(source.getVersion());
             version.setLabels(withoutLatest(source.getLabels()));
+            if (version.getLabels() != null) {
+                for (String label : version.getLabels()) {
+                    labels.put(label, version.getVersion());
+                }
+            }
             version.setProtocols(copy(source.getProtocols()));
             versions.add(version);
         }
         Collections.sort(versions,
             (left, right) -> AgentVersionComparator.compare(right.getVersion(), left.getVersion()));
-        result.setVersions(versions);
+        versionInfo.setOnlineVersions(versions);
         return result;
     }
     
@@ -409,23 +436,23 @@ public class AgentDiscoveryApplicationService {
         return source == null ? null : new ArrayList<T>(source);
     }
     
-    private Page<AgentCatalogEntry> page(List<AgentCatalogEntry> matches, int pageNo,
+    private Page<AgentSummary> page(List<AgentSummary> matches, int pageNo,
         int pageSize) {
         int totalCount = matches.size();
         long requestedOffset = (long) (pageNo - 1) * pageSize;
         int fromIndex = (int) Math.min(requestedOffset, totalCount);
         int toIndex = Math.min(fromIndex + pageSize, totalCount);
-        Page<AgentCatalogEntry> result = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> result = new Page<AgentSummary>();
         result.setPageNumber(pageNo);
         result.setTotalCount(totalCount);
         result.setPagesAvailable(
             totalCount == 0 ? 0 : (int) ((totalCount + (long) pageSize - 1) / pageSize));
-        result.setPageItems(new ArrayList<AgentCatalogEntry>(
+        result.setPageItems(new ArrayList<AgentSummary>(
             matches.subList(fromIndex, toIndex)));
         return result;
     }
     
-    private String resolveVersion(Agent agent, AgentReference reference)
+    private String resolveVersion(AgentSummary agent, AgentReference reference)
         throws NacosApiException {
         if (reference.getVersion() != null) {
             return reference.getVersion();
@@ -441,18 +468,18 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private List<String> resolveRuntimeVersions(Agent agent, AgentReference reference,
+    private List<String> resolveRuntimeVersions(AgentSummary agent, AgentReference reference,
         String definitionVersion) throws NacosApiException {
         if (reference.getVersion() != null || reference.getLabel() != null) {
             return Collections.singletonList(definitionVersion);
         }
-        AgentVersionCatalog catalog = agent.getVersionCatalog();
+        AgentVersionInfo catalog = agent.getVersionInfo();
         if (catalog == null || catalog.getOnlineVersions() == null
             || catalog.getOnlineVersions().isEmpty()) {
             throw notFound(reference.getAgentName());
         }
         List<String> result = new ArrayList<String>(catalog.getOnlineVersions().size());
-        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+        for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             result.add(entry.getVersion());
         }
         return result;
@@ -499,7 +526,7 @@ public class AgentDiscoveryApplicationService {
         AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
         List<AgentDiscoveryCallInterface> result =
             new ArrayList<AgentDiscoveryCallInterface>();
-        for (AgentCallInterface source : detail.getCallInterfaces()) {
+        for (AgentDefinitionCallInterface source : detail.getCallInterfaces()) {
             if (!matchesInterface(source, filter)) {
                 continue;
             }
@@ -517,7 +544,7 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private boolean matchesInterface(AgentCallInterface callInterface,
+    private boolean matchesInterface(AgentDefinitionCallInterface callInterface,
         AgentDiscoveryFilter filter) {
         if (filter == null) {
             return true;
@@ -532,7 +559,7 @@ public class AgentDiscoveryApplicationService {
     
     private List<EndpointSet> resolveEndpointSets(String namespaceId, String agentName,
         List<String> runtimeVersions, String contentDigest,
-        AgentCallInterface callInterface,
+        AgentDefinitionCallInterface callInterface,
         AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
         List<EndpointSet> result = new ArrayList<EndpointSet>();
         for (EndpointSource source : callInterface.getEndpointSourceOrder()) {

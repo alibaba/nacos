@@ -19,9 +19,9 @@ package com.alibaba.nacos.ai.service.agent;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -53,7 +53,7 @@ public class AgentPublishApplicationService {
      * @return resulting exact Version detail
      * @throws NacosException when validation, persistence, or submit fails
      */
-    public AgentVersionDetail publish(String namespaceId, AgentPublishRequest request)
+    public AgentVersionDetail publish(String namespaceId, AgentPublishClientRequest request)
         throws NacosException {
         if (request == null) {
             throw new IllegalArgumentException("Agent publish request must not be null");
@@ -63,7 +63,7 @@ public class AgentPublishApplicationService {
         AgentVersionDetail current = findEquivalent(namespaceId, request);
         if (current == null) {
             try {
-                current = operationService.createDraft(namespaceId, request);
+                current = operationService.createDraftFromPublication(namespaceId, request);
             } catch (NacosException createFailure) {
                 current = recoverEquivalent(namespaceId, request, createFailure);
             }
@@ -88,7 +88,7 @@ public class AgentPublishApplicationService {
             request.getAgentName(), request.getVersion()));
     }
     
-    private AgentVersionDetail findEquivalent(String namespaceId, AgentPublishRequest request)
+    private AgentVersionDetail findEquivalent(String namespaceId, AgentPublishClientRequest request)
         throws NacosException {
         final AgentVersionDetail existing;
         try {
@@ -105,7 +105,8 @@ public class AgentPublishApplicationService {
         return existing;
     }
     
-    private AgentVersionDetail recoverEquivalent(String namespaceId, AgentPublishRequest request,
+    private AgentVersionDetail recoverEquivalent(String namespaceId,
+        AgentPublishClientRequest request,
         NacosException originalFailure) throws NacosException {
         final AgentVersionDetail existing;
         try {
@@ -120,7 +121,7 @@ public class AgentPublishApplicationService {
         return existing;
     }
     
-    private void requireEquivalentContent(String namespaceId, AgentPublishRequest request,
+    private void requireEquivalentContent(String namespaceId, AgentPublishClientRequest request,
         AgentVersionDetail existing) throws NacosException {
         String requestedDigest;
         if (request.getCallInterfaces() != null) {
@@ -139,11 +140,11 @@ public class AgentPublishApplicationService {
     }
     
     private void requireEquivalentInitialMetadata(String namespaceId,
-        AgentPublishRequest request) throws NacosException {
+        AgentPublishClientRequest request) throws NacosException {
         if (!hasInitialMetadata(request)) {
             return;
         }
-        Agent existing = operationService.getAgent(namespaceId, request.getAgentName());
+        AgentSummary existing = operationService.getAgent(namespaceId, request.getAgentName());
         if (request.getDisplayName() != null
             && !Objects.equals(request.getDisplayName(), existing.getDisplayName())
             || request.getDescription() != null
@@ -160,7 +161,7 @@ public class AgentPublishApplicationService {
         }
     }
     
-    private boolean hasInitialMetadata(AgentPublishRequest request) {
+    private boolean hasInitialMetadata(AgentPublishClientRequest request) {
         return request.getDisplayName() != null || request.getDescription() != null
             || request.getIconUrl() != null || request.getProvider() != null
             || request.getTags() != null || request.getExtensions() != null;

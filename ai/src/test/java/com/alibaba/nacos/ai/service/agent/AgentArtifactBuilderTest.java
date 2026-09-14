@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +54,8 @@ class AgentArtifactBuilderTest {
     @Test
     void shouldBuildSchemaConstrainedNacosArtifact() {
         AgentVersionDetail version = version();
-        List<AgentCallInterface> interfaces = List.of(call("grpc", Map.of("service", "demo")));
+        List<AgentDefinitionCallInterface> interfaces =
+            List.of(call("grpc", Map.of("service", "demo")));
         version.setCallInterfaces(interfaces);
         
         Map<String, Object> result = AgentArtifactBuilder.buildNacosAgentArtifact(version);
@@ -78,8 +79,8 @@ class AgentArtifactBuilderTest {
         return result;
     }
     
-    private AgentCallInterface call(String protocol, Object descriptor) {
-        AgentCallInterface result = new AgentCallInterface();
+    private AgentDefinitionCallInterface call(String protocol, Object descriptor) {
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
         return result;

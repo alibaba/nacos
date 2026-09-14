@@ -177,7 +177,7 @@ export default function AgentDetailPage() {
       const labels = { ...(overview.agent.versionInfo?.labels || {}) };
       delete labels.latest;
       setLabelsText(JSON.stringify(labels, null, 2));
-      const fallback = overview.agent.versionCatalog?.latestVersion
+      const fallback = overview.agent.versionInfo?.labels?.latest
         || overview.agent.versionInfo?.editingVersion
         || overview.agent.versionInfo?.reviewingVersion
         || overview.versionPage.pageItems[0]?.version
@@ -377,10 +377,9 @@ export default function AgentDetailPage() {
     ? getVersionActions(currentVersion.status, currentPipelineInfo, globalAdmin)
     : [];
   const canManageVisibility = globalAdmin || Boolean(username && agent.owner === username);
-  const onlineVersionCount = agent.versionCatalog?.onlineVersions?.length
-    ?? agent.versionInfo?.onlineCnt
+  const onlineVersionCount = agent.versionInfo?.onlineVersions?.length
     ?? 0;
-  const latestVersion = agent.versionCatalog?.latestVersion;
+  const latestVersion = agent.versionInfo?.labels?.latest;
   const canCreateDraftFrom = currentVersion?.status === 'online'
     || currentVersion?.status === 'offline';
   const hasUnpublishedVersion = Boolean(
@@ -772,11 +771,11 @@ export default function AgentDetailPage() {
               </div>
               <Info
                 label={t('agent.latestVersion')}
-                value={agent.versionCatalog?.latestVersion || '-'}
+                value={agent.versionInfo?.labels?.latest || '-'}
               />
               <Info
                 label={t('agent.onlineVersions')}
-                value={String(agent.versionInfo?.onlineCnt || 0)}
+                value={String(agent.versionInfo?.onlineVersions?.length || 0)}
               />
             </CardContent>
           </Card>
@@ -860,9 +859,11 @@ export default function AgentDetailPage() {
                 >
                   <div className="flex justify-between gap-2">
                     <span className="font-mono text-sm font-medium">{version.version}</span>
-                    <Badge variant="outline">
-                      {versionStatusLabel(t, version.status)}
-                    </Badge>
+                    {version.status && (
+                      <Badge variant="outline">
+                        {versionStatusLabel(t, version.status)}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
                     {version.author && <span>{version.author}</span>}

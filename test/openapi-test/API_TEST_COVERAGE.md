@@ -345,3 +345,17 @@ bounds, default namespace, and successful empty results.
 | Console API | [CONSOLE_API_TEST_SCENARIOS.md](CONSOLE_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/consoleapi` |
 | Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth`, `src/test/java/com/alibaba/nacos/test/openapi/auth` |
 | AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry`, `src/test/java/com/alibaba/nacos/test/openapi/ard` |
+
+## Agent model consolidation
+
+Agent model consolidation strengthens the existing Agent Admin row with raw-JSON summary/detail boundary assertions in AgentAdminApiOpenApiITCase. The initial package-only consolidation preserved wire contracts. The resource/version consolidation below changes Search and management response shapes; Discover, Endpoint publication, definition publish and Watch retain their existing wire structures and regression suites. No HTTP surface is added or reclassified, so strict/effective coverage totals are unchanged.
+
+### Agent 元数据模型合并（2026-09-14）
+
+本轮 Agent 元数据合并更新 Search/Admin/Console 响应形状断言，复用既有 API surface 行，不增加覆盖率；执行结果见下方。
+
+本轮独立验证：28 项通过、2 项既有条件跳过，包含受影响的 A2A 管理互通场景。详情见 `Codex/design/nacos-3.3-client-ai-api/MODEL_VALIDATION.md` 的 2026-09-14 记录。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

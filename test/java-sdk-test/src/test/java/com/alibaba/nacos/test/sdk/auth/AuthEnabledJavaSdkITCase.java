@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -236,22 +236,22 @@ public class AuthEnabledJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentSearchQuery searchRequest() {
-        AgentSearchQuery result = new AgentSearchQuery();
+    private AgentSearchClientRequest searchRequest() {
+        AgentSearchClientRequest result = new AgentSearchClientRequest();
         result.setAgentNameContains(randomServiceName("auth-search"));
         result.setPageNo(1);
         result.setPageSize(1);
         return result;
     }
 
-    private AgentEndpointRegistration endpointBatch(AgentTransportMode mode,
+    private AgentEndpointRegistrationClientRequest endpointBatch(AgentTransportMode mode,
             String identity) {
         Endpoint endpoint = new Endpoint();
         endpoint.setUri("http://127.0.0.1:" + randomPort() + "/auth");
         endpoint.setTransport("HTTP");
         endpoint.setPriority(0);
         endpoint.setWeight(1D);
-        AgentEndpointRegistration result = new AgentEndpointRegistration();
+        AgentEndpointRegistrationClientRequest result = new AgentEndpointRegistrationClientRequest();
         result.setAgentName(randomServiceName("auth-" + mode.getValue() + '-' + identity));
         result.setRuntimeVersion(AI_RUNTIME_VERSION);
         result.setProtocol(AI_PROTOCOL);

@@ -90,7 +90,7 @@ Agent 的公开身份是 `(namespaceId, agentName)`。
 `[A-Za-z0-9][A-Za-z0-9._-]{0,63}`。两者均大小写敏感。
 
 `latest` 是保留 Label，用于解析 Agent 当前的 latest 版本。它不得出现在
-`AgentCatalogVersion.labels` 中。
+`AgentVersionSummary.labels` 中。
 
 ### 2.3 Agent 版本
 
@@ -143,7 +143,7 @@ Schema 只暴露以下六个根消息：
 | `AgentEndpointDeregistrationBatch` | `Deregister` 的 Publisher Client 期望状态命令 |
 
 语言 Binding 可以复用字段完全等价的本地类型。例如 Java 可以使用
-`Page<AgentCatalogEntry>` 实现 `AgentCatalogPage`，不必再引入一个分页类。
+`Page<AgentSummary>` 实现 `AgentCatalogPage`，不必再引入一个分页类。
 
 ### 3.2 通用 JSON 规则
 
@@ -172,36 +172,28 @@ Schema 只暴露以下六个根消息：
 
 `%`、`_` 等对底层查询语言具有特殊含义的字符必须作为普通字面量处理。
 
-### 3.4 `AgentCatalogPage`、`AgentCatalogEntry` 与 `AgentCatalogVersion`
+### 3.4 `AgentCatalogPage`、`AgentSummary` 与 `AgentVersionSummary`
 
-`AgentCatalogPage` 包含：
-
-```text
-totalCount / pageNumber / pagesAvailable / pageItems[]
-```
-
-每个 `pageItems[]` 是一个相对于请求命名空间的 `AgentCatalogEntry`：
+`AgentCatalogPage` 继续使用 `totalCount / pageNumber / pagesAvailable / pageItems[]`。
+每个条目使用 AgentSummary 的发现目录视图：
 
 ```text
-agentName / displayName? / description? / iconUrl? / provider?
-tags? / latestVersion
-versions[] AgentCatalogVersion {
-  version
-  labels[]?
-  protocols[]
+agentName / displayName? / description? / iconUrl? / provider? / tags?
+versionInfo {
+  labels { latest: version, customLabel?: version }
+  onlineVersions[] AgentVersionSummary { version, labels[]?, protocols[] }
 }
 ```
 
-规则：
-
-- `versions` 按 SemVer 降序列出全部在线版本。Version 不重复，`protocols` 至少包含
-  一个不重复的值。
-- 每个条目的在线版本数量没有产品级硬上限，列表不得被静默截断。Binding 的全局
-  响应大小限制仍然生效；超限时返回该 Binding 的标准响应过大错误。
-- 一个非保留 Label 最多指向一个 Version。`latest` 不得出现在 `labels` 中，且
-  `latestVersion` 必须匹配一个已列出的 `version`。
-- 条目不重复返回 `namespaceId`，也不返回协议描述、Endpoint、健康状态或管理字段。
-- Search 不承诺当前存在健康 Endpoint，当前可调用性由 Discover 判断。
+- onlineVersions 按 SemVer 降序完整列出全部在线版本，版本不重复；protocols 非空且不重复。
+- labels 映射只保留指向在线版本的标签，必须有 latest；单版本 labels[] 不含 latest。
+  两处标签是同一事实的查询投影，必须一致。没有标签的条目可省略 labels[]。
+- 不返回 namespaceId、管理字段、extensions、editingVersion、reviewingVersion、descriptor 或 Endpoint。
+  同一个 Java AgentSummary/AgentVersionInfo/AgentVersionSummary 类型按查询场景投影字段。
+- latest 从 versionInfo.labels["latest"] 读取，在线数量由 onlineVersions 长度给出；
+  不再返回顶层 latestVersion/versions 或独立 onlineCnt。
+- 在线版本数量没有产品级硬上限，不能静默截断；保留 Binding 的响应大小限制及对应错误。
+- Search 不承诺存在健康 Endpoint；发现选择器和 Endpoint 语义保持本规范后续章节的现状。
 
 ### 3.5 `AgentReference`
 
@@ -761,3 +753,13 @@ JSON Schema 只校验 Version Range 字符串的粗略语法，不能替代领�
 这是面向应用的 SDK 命令。SDK 从缓存 Batch 中删除该自然键，并发送完整的剩余
 Register 请求；剩余 Batch 为空时，Nacos Binding 按 `namespaceId`、`agentName` 和
 `protocol` 发送整份 Publication 注销。
+
+Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵循
+[Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
+该组织方式不重命名协议/schema 概念，不改变存储或发现语义。
+
+## 地址模型统一的验收补充（评审草案，尚未实施）
+
+Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健康值；bindings、管理状态、观测时间由 Nacos 维护，提交时忽略。DECLARED 的健康约束、RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
+
+本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。

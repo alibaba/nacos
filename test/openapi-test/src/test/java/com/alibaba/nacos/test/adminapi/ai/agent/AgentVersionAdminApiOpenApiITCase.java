@@ -243,9 +243,9 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode agent = getOverview(agentName).get("agent");
         assertEquals(expectedVersion, agent.get("versionInfo").get("labels").get("latest")
                 .asText(), agent.toString());
-        assertEquals(expectedVersion, agent.get("versionCatalog").get("latestVersion").asText(),
+        assertEquals(expectedVersion, agent.get("versionInfo").get("labels").get("latest").asText(),
                 agent.toString());
-        assertEquals(onlineCount, agent.get("versionInfo").get("onlineCnt").asInt(),
+        assertEquals(onlineCount, agent.get("versionInfo").get("onlineVersions").size(),
                 agent.toString());
     }
 
@@ -253,10 +253,10 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode agent = getOverview(agentName).get("agent");
         assertTrue(agent.get("versionInfo").get("labels").get("latest") == null,
                 agent.toString());
-        assertTrue(agent.get("versionCatalog").get("latestVersion") == null,
+        assertTrue(agent.get("versionInfo").get("labels").get("latest") == null,
                 agent.toString());
-        assertEquals(0, agent.get("versionInfo").get("onlineCnt").asInt(), agent.toString());
-        assertFalse(agent.get("versionCatalog").get("onlineVersions").elements().hasNext(),
+        assertEquals(0, agent.get("versionInfo").get("onlineVersions").size(), agent.toString());
+        assertFalse(agent.get("versionInfo").get("onlineVersions").elements().hasNext(),
                 agent.toString());
     }
 }

@@ -20,24 +20,25 @@ import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.model.Page;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -78,19 +79,19 @@ public final class RadModelValidator {
      * @param page Agent catalog page implemented with the shared Nacos Page type
      * @throws IllegalArgumentException when invalid
      */
-    public static void validateCatalogPage(Page<AgentCatalogEntry> page) {
+    public static void validateCatalogPage(Page<AgentSummary> page) {
         requireNonNull(page, "AgentCatalogPage");
         if (page.getTotalCount() < 0 || page.getPageNumber() < 1
             || page.getPagesAvailable() < 0) {
             throw invalid("Invalid Agent catalog page metadata");
         }
-        List<AgentCatalogEntry> items = page.getPageItems();
+        List<AgentSummary> items = page.getPageItems();
         requireNonNull(items, "pageItems");
         if (items.size() > MAX_PAGE_SIZE) {
             throw invalid("pageItems exceeds " + MAX_PAGE_SIZE + " items");
         }
         String previousAgentName = null;
-        for (AgentCatalogEntry item : items) {
+        for (AgentSummary item : items) {
             validate(item);
             if (previousAgentName != null
                 && previousAgentName.compareTo(item.getAgentName()) >= 0) {
@@ -130,8 +131,8 @@ public final class RadModelValidator {
      * @param entry catalog entry
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentCatalogEntry entry) {
-        requireNonNull(entry, "AgentCatalogEntry");
+    public static void validate(AgentSummary entry) {
+        requireNonNull(entry, "AgentSummary");
         AgentValidationUtils.validateAgentName(entry.getAgentName());
         validateOptionalLength(entry.getDisplayName(), 128, "displayName");
         validateOptionalLength(entry.getDescription(), 2048, "description");
@@ -140,14 +141,22 @@ public final class RadModelValidator {
         }
         validateProvider(entry.getProvider());
         validateTags(entry.getTags(), "tags");
-        AgentVersion latest = AgentVersion.parse(entry.getLatestVersion());
-        List<AgentCatalogVersion> versions = entry.getVersions();
-        requireNonEmpty(versions, "versions");
+        requireNonNull(entry.getVersionInfo(), "versionInfo");
+        if (entry.getNamespaceId() != null || entry.getStatus() != null || entry.getOwner() != null
+            || entry.getScope() != null || entry.getExtensions() != null
+            || entry.getMetaVersion() != null || entry.getCreateTime() != null
+            || entry.getUpdateTime() != null || entry.getVersionInfo().getEditingVersion() != null
+            || entry.getVersionInfo().getReviewingVersion() != null) {
+            throw invalid("Search must not expose management fields");
+        }
+        AgentVersion latest = AgentVersion.parse(entry.getVersionInfo().getLatestVersion());
+        List<AgentVersionSummary> versions = entry.getVersionInfo().getOnlineVersions();
+        requireNonEmpty(versions, "versionInfo.onlineVersions");
         Set<String> versionValues = new HashSet<String>();
         Set<String> labels = new HashSet<String>();
         AgentVersion previous = null;
         boolean containsLatest = false;
-        for (AgentCatalogVersion catalog : versions) {
+        for (AgentVersionSummary catalog : versions) {
             validate(catalog);
             AgentVersion current = AgentVersion.parse(catalog.getVersion());
             if (!versionValues.add(catalog.getVersion())) {
@@ -167,7 +176,31 @@ public final class RadModelValidator {
             }
         }
         if (!containsLatest) {
-            throw invalid("latestVersion must be present in versions");
+            throw invalid("versionInfo.labels.latest must be present in onlineVersions");
+        }
+        for (Map.Entry<String, String> label : entry.getVersionInfo().getLabels().entrySet()) {
+            AgentValidationUtils.validateLabel(label.getKey());
+            if (!versionValues.contains(label.getValue())) {
+                throw invalid("Search labels must target online versions");
+            }
+        }
+        for (AgentVersionSummary version : versions) {
+            List<String> versionLabels = version.getLabels();
+            for (Map.Entry<String, String> label : entry.getVersionInfo().getLabels().entrySet()) {
+                if (!"latest".equals(label.getKey())
+                    && version.getVersion().equals(label.getValue())
+                    && (versionLabels == null || !versionLabels.contains(label.getKey()))) {
+                    throw invalid("Search version label is missing from its summary");
+                }
+            }
+            if (versionLabels != null) {
+                for (String label : versionLabels) {
+                    if (!version.getVersion()
+                        .equals(entry.getVersionInfo().getLabels().get(label))) {
+                        throw invalid("Search version labels must match versionInfo.labels");
+                    }
+                }
+            }
         }
     }
     
@@ -177,8 +210,14 @@ public final class RadModelValidator {
      * @param catalog version catalog item
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentCatalogVersion catalog) {
-        requireNonNull(catalog, "AgentCatalogVersion");
+    public static void validate(AgentVersionSummary catalog) {
+        requireNonNull(catalog, "AgentVersionSummary");
+        if (catalog.getStatus() != null || catalog.getAuthor() != null
+            || catalog.getChangeDescription() != null || catalog.getPublishPipelineInfo() != null
+            || catalog.getContentDigest() != null || catalog.getCreateTime() != null
+            || catalog.getUpdateTime() != null) {
+            throw invalid("Search versions must not expose management fields");
+        }
         AgentValidationUtils.validateVersion(catalog.getVersion());
         if (catalog.getLabels() != null) {
             requireNonEmpty(catalog.getLabels(), "labels");

@@ -97,7 +97,7 @@ The public Agent identity is `(namespaceId, agentName)`.
 matches `[A-Za-z0-9][A-Za-z0-9._-]{0,63}`. Both are case-sensitive.
 
 `latest` is a reserved label that resolves to the Agent's current latest
-version. It MUST NOT appear in `AgentCatalogVersion.labels`.
+version. It MUST NOT appear in `AgentVersionSummary.labels`.
 
 ### 2.3 Agent Version
 
@@ -159,7 +159,7 @@ The schema exposes exactly six root messages:
 | `AgentEndpointDeregistrationBatch` | Publisher-client desired-state command for `Deregister` |
 
 A language binding may reuse an exactly equivalent native type. For example,
-Java may implement `AgentCatalogPage` as `Page<AgentCatalogEntry>` rather than
+Java may implement `AgentCatalogPage` as `Page<AgentSummary>` rather than
 introducing another page class.
 
 ### 3.2 Common JSON Rules
@@ -195,40 +195,33 @@ tags.
 Characters such as `%` and `_` that are special to a backing query language
 MUST be treated as literals.
 
-### 3.4 `AgentCatalogPage`, `AgentCatalogEntry`, And `AgentCatalogVersion`
+### 3.4 `AgentCatalogPage`, `AgentSummary`, And `AgentVersionSummary`
 
-`AgentCatalogPage` contains:
-
-```text
-totalCount / pageNumber / pagesAvailable / pageItems[]
-```
-
-Each `pageItems[]` entry is an `AgentCatalogEntry` relative to the request
-namespace:
+AgentCatalogPage retains totalCount, pageNumber, pagesAvailable and pageItems[]. Each entry
+uses the discovery-catalog projection of AgentSummary:
 
 ```text
-agentName / displayName? / description? / iconUrl? / provider?
-tags? / latestVersion
-versions[] AgentCatalogVersion {
-  version
-  labels[]?
-  protocols[]
+agentName / displayName? / description? / iconUrl? / provider? / tags?
+versionInfo {
+  labels { latest: version, customLabel?: version }
+  onlineVersions[] AgentVersionSummary { version, labels[]?, protocols[] }
 }
 ```
 
-Rules:
-
-- `versions` lists every online version in descending SemVer order. Versions do
-  not repeat, and `protocols` contains at least one unique value.
-- There is no product-level hard limit on the number of online versions in an
-  entry. The list MUST NOT be silently truncated. A binding's global response
-  size limit still applies and produces its standard oversized-response error.
-- A non-reserved label points to at most one version. `latest` MUST NOT appear
-  in `labels`, and `latestVersion` MUST match one listed `version`.
-- The entry does not repeat `namespaceId` and does not return protocol
-  descriptors, endpoints, health, or management fields.
-- Search does not promise a currently healthy endpoint. Discover determines
-  current callability.
+- onlineVersions lists every online version in descending SemVer order without duplicates;
+  protocols is nonempty and unique.
+- The label map contains only online targets and requires latest. Per-version labels exclude
+  latest and may be omitted when absent. Both label representations are consistent projections
+  of the same facts.
+- Omit namespaceId, management fields, extensions, editingVersion, reviewingVersion, descriptors
+  and endpoints. Shared Java AgentSummary/AgentVersionInfo/AgentVersionSummary types are populated
+  according to the query's field boundary.
+- Read latest from versionInfo.labels["latest"] and the count from onlineVersions.length;
+  top-level latestVersion/versions and a separate onlineCnt are no longer returned.
+- The complete online list has no product-level hard limit and must not be silently truncated;
+  binding response-size limits and errors remain applicable.
+- Search does not promise a healthy endpoint. Discovery selection and endpoint behavior retain
+  the rules in the following sections.
 
 ### 3.5 `AgentReference`
 
@@ -892,3 +885,13 @@ This is the application-facing SDK command. The SDK removes the natural key
 from its cached batch and sends the complete remaining Register request. If
 the remaining batch is empty, the Nacos binding sends a whole-publication
 deregistration for `namespaceId`, `agentName`, and `protocol`.
+
+Java binding: the shared Agent/RAD package, abstract field bases and concrete model boundaries
+follow [Agent API Spec — Java model binding](./agent-api-spec.md#java-model-binding).
+This organization does not rename protocol/schema concepts or change storage and discovery semantics.
+
+## Endpoint Consolidation Acceptance Addendum (Review Draft, Not Implemented)
+
+Runtime registration and complete replacement will accept reported healthy instead of forbidding it. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Preserve DECLARED health restrictions, required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
+
+This is the next-change proposal, not an implementation claim for current Java/schemas. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. This update records planned coverage, not passed tests.

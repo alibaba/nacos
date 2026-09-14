@@ -229,12 +229,12 @@ The existing disconnected ability-check runtime exception retains its public typ
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
-| Search | `searchAgents` | Accept `AgentSearchQuery` and return `Page<AgentCatalogEntry>`. |
+| Search | `searchAgents` | Accept `AgentSearchClientRequest` and return `Page<AgentSummary>`. |
 | Discover | `discoverAgent` overloads | Accept `AgentReference`, with an optional `AgentDiscoveryFilter`, and return one complete `AgentDiscoveryResult`. |
 | Watch | `subscribeAgent` overloads | Accept the same reference, optional Filter, and listener; return the current complete result and later deliver complete replacement results. |
 | Cancel Watch | `unsubscribeAgent` overloads | Remove the Watch identified by the same reference, Filter, and listener identity. |
-| Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistration` and retain it as redo intent. |
-| Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `AgentEndpointDeregistration` owned by this SDK publisher. |
+| Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationClientRequest` and retain it as redo intent. |
+| Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `AgentEndpointDeregistrationClientRequest` owned by this SDK publisher. |
 
 Watch does not add another public subscribe method. Existing source and binary
 compatibility are preserved. `NacosAgentDiscoveryEvent` adds an event type and
@@ -260,8 +260,12 @@ supplied, isolate exceptions, and use a bounded shared executor otherwise.
 This Agent-only layering does not alter Prompt, Skill, MCP, AgentSpec, or legacy
 A2A transport ownership.
 
-Public Search/Endpoint inputs use `AgentSearchQuery`, `AgentEndpointRegistration` and
-`AgentEndpointDeregistration`. They expose no namespace field or accessor and do not inherit
+The concrete Agent/RAD model and abstract-base organization follows the
+[Agent API Java model binding](../ai/agent-api-spec.md#java-model-binding).
+SDK signatures use concrete Client requests; namespace-bearing RAD requests are sibling types.
+
+Public Search/Endpoint inputs use `AgentSearchClientRequest`, `AgentEndpointRegistrationClientRequest` and
+`AgentEndpointDeregistrationClientRequest`. They expose no namespace field or accessor and do not inherit
 namespace-bearing transport models. The proxy copies caller content and injects the SDK
 namespace into the existing internal transport DTO without mutating the input.
 Target Watch, cache, and redo behavior follows the

@@ -20,8 +20,8 @@ import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -67,19 +67,19 @@ public class A2aCanonicalDefinitionConverter {
      * @return canonical protocol-neutral definition
      * @throws NacosException when the card or registration type is invalid
      */
-    public AgentDraftCreateRequest convert(String namespaceId, AgentCard source,
+    public AgentDraftCreateAdminRequest convert(String namespaceId, AgentCard source,
         String registrationType, boolean includeMetadata) throws NacosException {
         String normalizedType = normalizeRegistrationType(registrationType, null);
         AgentCard card = copyAgentCard(source);
         AgentRequestUtil.validateAgentCard(card);
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol(A2A_PROTOCOL);
         callInterface.setProtocolVersion(card.getProtocolVersion());
         callInterface.setDescriptorMediaType(JSON_MEDIA_TYPE);
         callInterface.setNativeDescriptor(toNativeDescriptor(card));
         callInterface.setEndpointSourceOrder(sourceOrder(normalizedType));
         callInterface.setDeclaredEndpoints(declaredEndpoints(namespaceId, card));
-        AgentDraftCreateRequest result = new AgentDraftCreateRequest();
+        AgentDraftCreateAdminRequest result = new AgentDraftCreateAdminRequest();
         result.setAgentName(card.getName());
         result.setVersion(card.getVersion());
         result.setCallInterfaces(Collections.singletonList(callInterface));

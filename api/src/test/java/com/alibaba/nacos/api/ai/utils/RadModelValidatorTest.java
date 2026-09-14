@@ -16,22 +16,24 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import java.util.LinkedHashMap;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogVersion;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +64,27 @@ class RadModelValidatorTest {
     }
     
     @Test
+    void shouldRejectManagementFieldsAndOfflineLabelsInSearchSummary() {
+        AgentSummary entry = newValidCatalogEntry();
+        entry.setNamespaceId("public");
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
+        entry.setNamespaceId(null);
+        entry.setExtensions(Collections.singletonMap("private", "value"));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
+        entry.setExtensions(null);
+        entry.getVersionInfo().setEditingVersion("3.0.0");
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
+        entry.getVersionInfo().setEditingVersion(null);
+        entry.getVersionInfo().getLabels().put("archived", "0.9.0");
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
+        entry.getVersionInfo().getLabels().remove("archived");
+        entry.getVersionInfo().getOnlineVersions().get(0).setStatus("online");
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
+        entry.getVersionInfo().getOnlineVersions().get(0).setStatus(null);
+        RadModelValidator.validate(entry);
+    }
+    
+    @Test
     void shouldRejectReferenceWithVersionAndLabel() {
         AgentDiscoveryRequest request = newValidDiscoveryRequest();
         request.getReference().setVersion("1.1.0");
@@ -85,11 +108,11 @@ class RadModelValidatorTest {
         filter.setProtocols(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(filter));
         
-        AgentCatalogVersion catalog = newValidVersionCatalog("1.1.0", "stable");
+        AgentVersionSummary catalog = newValidVersionCatalog("1.1.0", "stable");
         catalog.setLabels(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(catalog));
         
-        AgentCatalogVersion missingProtocols = newValidVersionCatalog("1.1.0", "stable");
+        AgentVersionSummary missingProtocols = newValidVersionCatalog("1.1.0", "stable");
         missingProtocols.setProtocols(null);
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(missingProtocols));
@@ -97,16 +120,17 @@ class RadModelValidatorTest {
     
     @Test
     void shouldRejectCatalogWhoseLatestVersionIsAbsent() {
-        AgentCatalogEntry entry = newValidCatalogEntry();
-        entry.setLatestVersion("2.0.0");
+        AgentSummary entry = newValidCatalogEntry();
+        entry.getVersionInfo().setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "2.0.0")));
         
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
     }
     
     @Test
     void shouldRejectCatalogThatIsNotSemverDescending() {
-        AgentCatalogEntry entry = newValidCatalogEntry();
-        Collections.reverse(entry.getVersions());
+        AgentSummary entry = newValidCatalogEntry();
+        Collections.reverse(entry.getVersionInfo().getOnlineVersions());
         
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(entry));
     }
@@ -157,12 +181,12 @@ class RadModelValidatorTest {
     
     @Test
     void shouldRejectUnsortedOrDuplicateCatalogPageItems() {
-        Page<AgentCatalogEntry> unsortedPage = newValidCatalogPage();
+        Page<AgentSummary> unsortedPage = newValidCatalogPage();
         Collections.reverse(unsortedPage.getPageItems());
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validateCatalogPage(unsortedPage));
         
-        Page<AgentCatalogEntry> duplicatePage = newValidCatalogPage();
+        Page<AgentSummary> duplicatePage = newValidCatalogPage();
         duplicatePage.getPageItems().get(1)
             .setAgentName(duplicatePage.getPageItems().get(0).getAgentName());
         assertThrows(IllegalArgumentException.class,
@@ -207,13 +231,13 @@ class RadModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(invalidPageSize));
         
-        Page<AgentCatalogEntry> invalidMetadata = newValidCatalogPage();
+        Page<AgentSummary> invalidMetadata = newValidCatalogPage();
         invalidMetadata.setTotalCount(-1);
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validateCatalogPage(invalidMetadata));
         
-        Page<AgentCatalogEntry> oversizedPage = newValidCatalogPage();
-        oversizedPage.setPageItems(new ArrayList<AgentCatalogEntry>(
+        Page<AgentSummary> oversizedPage = newValidCatalogPage();
+        oversizedPage.setPageItems(new ArrayList<AgentSummary>(
             Collections.nCopies(101, newValidCatalogEntry())));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validateCatalogPage(oversizedPage));
@@ -221,13 +245,14 @@ class RadModelValidatorTest {
     
     @Test
     void shouldRejectDuplicateCatalogVersionsAndLabels() {
-        AgentCatalogEntry duplicateVersion = newValidCatalogEntry();
-        duplicateVersion.getVersions().get(1).setVersion("1.1.0");
+        AgentSummary duplicateVersion = newValidCatalogEntry();
+        duplicateVersion.getVersionInfo().getOnlineVersions().get(1).setVersion("1.1.0");
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(duplicateVersion));
         
-        AgentCatalogEntry duplicateLabel = newValidCatalogEntry();
-        duplicateLabel.getVersions().get(1).setLabels(Collections.singletonList("stable"));
+        AgentSummary duplicateLabel = newValidCatalogEntry();
+        duplicateLabel.getVersionInfo().getOnlineVersions().get(1)
+            .setLabels(Collections.singletonList("stable"));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(duplicateLabel));
     }
@@ -364,34 +389,34 @@ class RadModelValidatorTest {
         filter.setTransports(null);
         assertDoesNotThrow(() -> RadModelValidator.validate(filter));
         
-        AgentCatalogEntry catalogEntry = newValidCatalogEntry();
+        AgentSummary catalogEntry = newValidCatalogEntry();
         catalogEntry.setProvider(null);
         assertDoesNotThrow(() -> RadModelValidator.validate(catalogEntry));
     }
     
     @Test
     void shouldRejectInvalidCatalogTextAndUris() {
-        AgentCatalogEntry relativeIcon = newValidCatalogEntry();
+        AgentSummary relativeIcon = newValidCatalogEntry();
         relativeIcon.setIconUrl("icons/agent.png");
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(relativeIcon));
         
-        AgentCatalogEntry malformedIcon = newValidCatalogEntry();
+        AgentSummary malformedIcon = newValidCatalogEntry();
         malformedIcon.setIconUrl("https://[");
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(malformedIcon));
         
-        AgentCatalogEntry oversizedDisplayName = newValidCatalogEntry();
+        AgentSummary oversizedDisplayName = newValidCatalogEntry();
         oversizedDisplayName.setDisplayName(repeat('a', 129));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(oversizedDisplayName));
         
-        AgentCatalogEntry missingProviderName = newValidCatalogEntry();
+        AgentSummary missingProviderName = newValidCatalogEntry();
         missingProviderName.getProvider().setName(null);
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(missingProviderName));
         
-        AgentCatalogEntry emptyProviderName = newValidCatalogEntry();
+        AgentSummary emptyProviderName = newValidCatalogEntry();
         emptyProviderName.getProvider().setName("");
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(emptyProviderName));
@@ -404,7 +429,7 @@ class RadModelValidatorTest {
     
     @Test
     void shouldRejectInvalidCollectionShapesAndNullModels() {
-        Page<AgentCatalogEntry> missingItems = newValidCatalogPage();
+        Page<AgentSummary> missingItems = newValidCatalogPage();
         missingItems.setPageItems(null);
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validateCatalogPage(missingItems));
@@ -454,43 +479,52 @@ class RadModelValidatorTest {
         return request;
     }
     
-    private AgentCatalogEntry newValidCatalogEntry() {
+    private AgentSummary newValidCatalogEntry() {
         AgentProvider provider = new AgentProvider();
         provider.setName("Nacos");
         provider.setUrl("https://nacos.io");
         
-        AgentCatalogEntry entry = new AgentCatalogEntry();
+        AgentSummary entry = new AgentSummary();
+        entry.setVersionInfo(new AgentVersionInfo());
         entry.setAgentName("Demo Agent");
         entry.setDisplayName("Demo Agent 展示名");
         entry.setDescription("A complete RAD catalog entry.");
         entry.setIconUrl("https://example.com/icon.png");
         entry.setProvider(provider);
         entry.setTags(Arrays.asList("assistant", "demo"));
-        entry.setLatestVersion("1.1.0");
-        entry.setVersions(new ArrayList<AgentCatalogVersion>(Arrays.asList(
+        entry.getVersionInfo().setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "1.1.0")));
+        entry.getVersionInfo().setOnlineVersions(new ArrayList<AgentVersionSummary>(Arrays.asList(
             newValidVersionCatalog("1.1.0", "stable"),
             newValidVersionCatalog("1.0.0", "legacy"))));
+        for (AgentVersionSummary version : entry.getVersionInfo().getOnlineVersions()) {
+            if (version.getLabels() != null) {
+                for (String label : version.getLabels()) {
+                    entry.getVersionInfo().getLabels().put(label, version.getVersion());
+                }
+            }
+        }
         return entry;
     }
     
-    private AgentCatalogVersion newValidVersionCatalog(String version, String label) {
-        AgentCatalogVersion catalog = new AgentCatalogVersion();
+    private AgentVersionSummary newValidVersionCatalog(String version, String label) {
+        AgentVersionSummary catalog = new AgentVersionSummary();
         catalog.setVersion(version);
         catalog.setLabels(Collections.singletonList(label));
         catalog.setProtocols(Collections.singletonList("a2a"));
         return catalog;
     }
     
-    private Page<AgentCatalogEntry> newValidCatalogPage() {
-        AgentCatalogEntry first = newValidCatalogEntry();
+    private Page<AgentSummary> newValidCatalogPage() {
+        AgentSummary first = newValidCatalogEntry();
         first.setAgentName("Alpha Agent");
-        AgentCatalogEntry second = newValidCatalogEntry();
+        AgentSummary second = newValidCatalogEntry();
         second.setAgentName("Demo Agent");
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         page.setTotalCount(2);
         page.setPageNumber(1);
         page.setPagesAvailable(1);
-        page.setPageItems(new ArrayList<AgentCatalogEntry>(Arrays.asList(first, second)));
+        page.setPageItems(new ArrayList<AgentSummary>(Arrays.asList(first, second)));
         return page;
     }
     

@@ -405,3 +405,9 @@ Shadow 及其配置计划在 Nacos 4.0 删除。删除时不得改写已经标�
 `M-CL-01..10`。矩阵覆盖完整迁移、历史并发 Mutation、非法/冲突数据、Crash Recovery、跨接口读取、
 两套 Runtime Layout、Shadow On/Off、Reconnect/Redo、Quiescing 可用性、混合 Member 滚动升级、
 跨节点对账、Leader/Owner 重启、ACK/Marker 传播、负载均衡读取、回滚边界和全部无关资源回归。
+
+## 地址模型统一的验收补充（评审草案，尚未实施）
+
+本轮不改变迁移状态机或历史 A2A 公开模型，但转换器、Storage 读回、Runtime 比较器和 Search gate 依赖的地址模型将统一。必须用新结构验证正常 SYNCING/QUIESCING/终态和两种 shadow 策略，不能因不支持 BETA 升级而省略历史 A2A 迁移回归；故障恢复和集群注入按本轮约定延期。
+
+本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。

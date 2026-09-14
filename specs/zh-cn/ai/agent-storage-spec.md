@@ -624,3 +624,9 @@ Runtime 等价、重试、Connection 清理、切流、回滚和延期旧 Servic
 
 可选 Shadow 只表达历史精确 Version A2A Publication 请求，不是第二个 RAD 事实源，也不支持
 通用 RAD Version Range。这套临时双物化实现计划在 Nacos 4.0 删除，且不改变标准 Runtime Layout。
+
+## 地址模型统一的验收补充（评审草案，尚未实施）
+
+AgentVersionContent 容器可复用统一 CallInterface/EndpointSet/Endpoint，存储只保存完整定义、声明地址及来源配置；不考虑 BETA 旧格式兼容。注册 healthy 映射为当前 Naming contribution health，后续活性处理保持；Runtime/健康/观测/revision 不进入版本内容。验证新格式读回、实际 bytes 的 digest、迁移读回及运行变化不影响定义。
+
+本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。

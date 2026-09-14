@@ -179,3 +179,15 @@ are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
 | Agent Search and Endpoint inputs | No namespace fields/accessors in public inputs; instance-bound search/register/deregister under HTTP, gRPC and AUTO; immutable inputs and existing validation | Covered | Public API contract tests reject namespace accessors and old wire-DTO overloads. The two-namespace lifecycle IT passes in grpc/http/auto with immutable Search/Endpoint inputs; default JSON and Jackson 3 both pass. Original wire serialization, HTTP/gRPC mapping, validation and authorization regressions pass. |
 
 Separate review increment: strict 1/1 = 100%; effective 1/1 = 100%. This single input-contract group does not change the historical domain denominator or the existing migration/reliability gaps.
+
+## Agent model consolidation
+
+Agent model consolidation uses concrete namespace-free ClientRequest types; Search verifies inherited catalog metadata and shared version entries under grpc/http/auto. Draft publication retains idempotence, source validation and namespace binding. Abstract-base and fixed-JSON contracts are covered in API UTs.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent 模型合并验证沿用 AgentDiscoveryServiceJavaSdkITCase：新目录路径、跨 transport 返回一致、管理字段隔离，既有发现/订阅场景不变。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

@@ -17,16 +17,15 @@
 package com.alibaba.nacos.test.maintainer.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -37,6 +36,8 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -96,7 +97,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
             assertThrows(NacosException.class, () -> agentService.getAgent(agentName));
         assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
         
-        AgentDraftCreateRequest createRequest =
+        AgentDraftCreateAdminRequest createRequest =
             buildInitialDraftRequest(agentName, "Default namespace Agent", INITIAL_VERSION);
         AgentVersionDetail createdDraft = agentService.createDraft(createRequest);
         addCleanup(() -> agentService.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
@@ -123,6 +124,20 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
             agentService.listAgentVersions(agentName, AiConstants.Agent.VERSION_STATUS_DRAFT, 1,
                 10);
         assertContainsVersion(versions, INITIAL_VERSION);
+        AgentVersionSummary summary = versions.getPageItems().get(0);
+        assertEquals(AgentVersionSummary.class, summary.getClass());
+        assertEquals(createdDraft.getAuthor(), summary.getAuthor());
+        assertEquals(createdDraft.getContentDigest(), summary.getContentDigest());
+        assertEquals(createdDraft.getChangeDescription(), summary.getChangeDescription());
+        JsonNode summaryJson = JacksonUtils.toObj(JacksonUtils.toJson(summary));
+        assertFalse(summaryJson.has("namespaceId"));
+        assertFalse(summaryJson.has("agentName"));
+        assertFalse(summaryJson.has("callInterfaces"));
+        assertEquals(createRequest.getDisplayName(), created.getAgent().getDisplayName());
+        assertEquals(createRequest.getIconUrl(), created.getAgent().getIconUrl());
+        assertEquals(createRequest.getProvider().getName(), created.getAgent().getProvider().getName());
+        assertEquals(createRequest.getTags(), created.getAgent().getTags());
+
         AgentVersionDetail initial = agentService.getAgentVersion(agentName, INITIAL_VERSION);
         assertEquals(INITIAL_VERSION, initial.getVersion());
         assertEquals(PROTOCOL, initial.getCallInterfaces().get(0).getProtocol());
@@ -136,9 +151,9 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertNotNull(snapshot.getItems());
         assertTrue(snapshot.getItems().isEmpty());
         
-        AgentUpdateRequest updateRequest =
+        AgentUpdateAdminRequest updateRequest =
             buildUpdateRequest(agentName, "Default namespace Agent updated");
-        Agent updated = agentService.updateAgent(updateRequest);
+        AgentSummary updated = agentService.updateAgent(updateRequest);
         assertEquals("Default namespace Agent updated", updated.getDescription());
         assertEquals(initialOwner, updated.getOwner());
         assertEquals(initialScope, updated.getScope());
@@ -146,20 +161,33 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertContainsAgent(agentService.listAgents(agentName,
             "maintainer-sdk-it", initialScope, initialOwner, null, 1, 10), agentName);
         
-        AgentVersionCommand command = versionCommand(agentName, INITIAL_VERSION);
+        AgentVersionAdminRequest command = versionCommand(agentName, INITIAL_VERSION);
         AgentVersionSummary online = agentService.forcePublish(command);
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, online.getStatus());
         
-        AgentLabelsUpdateRequest labels = new AgentLabelsUpdateRequest();
+        AgentLabelsUpdateAdminRequest labels = new AgentLabelsUpdateAdminRequest();
         labels.setAgentName(agentName);
         labels.setLabels(Collections.singletonMap("stable", INITIAL_VERSION));
-        Agent labeled = agentService.updateLabels(labels);
+        AgentSummary labeled = agentService.updateLabels(labels);
         assertEquals(INITIAL_VERSION, labeled.getVersionInfo().getLabels().get("latest"));
         assertEquals(INITIAL_VERSION, labeled.getVersionInfo().getLabels().get("stable"));
+        assertEquals(1, labeled.getVersionInfo().getOnlineVersions().size());
+        AgentVersionSummary onlineSummary = labeled.getVersionInfo().getOnlineVersions().get(0);
+        assertEquals(INITIAL_VERSION, onlineSummary.getVersion());
+        assertEquals(Collections.singletonList("stable"), onlineSummary.getLabels());
+        assertEquals(Collections.singletonList(PROTOCOL), onlineSummary.getProtocols());
+        JsonNode labeledJson = JacksonUtils.toObj(JacksonUtils.toJson(labeled));
+        assertFalse(labeledJson.has("versionCatalog"));
+        assertFalse(labeledJson.get("versionInfo").has("onlineCnt"));
+        assertFalse(labeledJson.get("versionInfo").has("latestVersion"));
         
         AgentVersionSummary offline = agentService.offline(versionCommand(agentName,
             INITIAL_VERSION));
         assertEquals(AiConstants.Agent.VERSION_STATUS_OFFLINE, offline.getStatus());
+        AgentSummary withoutOnline = agentService.getAgent(agentName).getAgent();
+        assertTrue(withoutOnline.getVersionInfo().getOnlineVersions().isEmpty());
+        assertEquals(INITIAL_VERSION, withoutOnline.getVersionInfo().getLabels().get("stable"));
+        assertFalse(withoutOnline.getVersionInfo().getLabels().containsKey("latest"));
         AgentVersionSummary onlineAgain = agentService.online(versionCommand(agentName,
             INITIAL_VERSION));
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, onlineAgain.getStatus());
@@ -183,7 +211,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         createListFilterAgent(agentService, randomMaintainerName("agent-filter-name"), null);
         createListFilterAgent(agentService, targetName + "-tag",
             Collections.singletonList("other"));
-        Agent target = agentService.getAgent(targetName).getAgent();
+        AgentSummary target = agentService.getAgent(targetName).getAgent();
 
         Page<AgentSummary> page = agentService.listAgents(targetName, "maintainer-sdk-it",
             target.getScope(), target.getOwner(), "download_count", 1, 1);
@@ -203,7 +231,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         String namespaceId = randomMaintainerName("agent-namespace");
         String agentName = randomMaintainerName("agent-explicit");
         
-        AgentDraftCreateRequest createRequest =
+        AgentDraftCreateAdminRequest createRequest =
             buildInitialDraftRequest(agentName, "Explicit namespace Agent", INITIAL_VERSION);
         AgentVersionDetail initialDraft = agentService.createDraft(namespaceId, createRequest);
         addCleanup(() -> agentService.deleteAgent(namespaceId, agentName));
@@ -213,7 +241,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         
         agentService.forcePublish(namespaceId, versionCommand(agentName, INITIAL_VERSION));
         
-        AgentDraftCreateRequest copiedDraft = new AgentDraftCreateRequest();
+        AgentDraftCreateAdminRequest copiedDraft = new AgentDraftCreateAdminRequest();
         copiedDraft.setAgentName(agentName);
         copiedDraft.setVersion(SECOND_VERSION);
         copiedDraft.setBasedOnVersion(INITIAL_VERSION);
@@ -225,7 +253,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertEquals(AiConstants.Agent.VERSION_STATUS_DRAFT, createdDraft.getStatus());
         assertEquals(PROTOCOL, createdDraft.getCallInterfaces().get(0).getProtocol());
         
-        AgentDraftUpdateRequest updateDraft = new AgentDraftUpdateRequest();
+        AgentDraftUpdateAdminRequest updateDraft = new AgentDraftUpdateAdminRequest();
         updateDraft.setAgentName(agentName);
         updateDraft.setVersion(SECOND_VERSION);
         updateDraft.setCallInterfaces(Collections.singletonList(
@@ -248,7 +276,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
             () -> agentService.getAgentVersion(namespaceId, agentName, SECOND_VERSION));
         assertEquals(NacosException.NOT_FOUND, deletedDraft.getErrCode());
         
-        AgentDraftCreateRequest submittedDraft = new AgentDraftCreateRequest();
+        AgentDraftCreateAdminRequest submittedDraft = new AgentDraftCreateAdminRequest();
         submittedDraft.setAgentName(agentName);
         submittedDraft.setVersion(SECOND_VERSION);
         submittedDraft.setCallInterfaces(Collections.singletonList(
@@ -269,7 +297,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertNotNull(aiMaintainerService.agent());
         assertNotNull(aiMaintainerService.a2a());
         
-        AgentDraftCreateRequest invalidCreate =
+        AgentDraftCreateAdminRequest invalidCreate =
             buildInitialDraftRequest(null, "invalid", INITIAL_VERSION);
         NacosException invalid =
             assertThrows(NacosException.class, () -> aiMaintainerService.agent()
@@ -283,9 +311,9 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertEquals(NacosException.INVALID_PARAM, invalidRuntime.getErrCode());
     }
     
-    private AgentDraftCreateRequest buildInitialDraftRequest(String agentName, String description,
+    private AgentDraftCreateAdminRequest buildInitialDraftRequest(String agentName, String description,
         String version) {
-        AgentDraftCreateRequest result = new AgentDraftCreateRequest();
+        AgentDraftCreateAdminRequest result = new AgentDraftCreateAdminRequest();
         result.setAgentName(agentName);
         result.setDisplayName(agentName == null ? "invalid" : "Display " + agentName);
         result.setDescription(description);
@@ -308,15 +336,15 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         List<String> tags) throws NacosException {
         agentService.createDraft(
             buildInitialDraftRequest(agentName, "List filter Agent", INITIAL_VERSION));
-        AgentUpdateRequest request = buildUpdateRequest(agentName, "List filter Agent");
+        AgentUpdateAdminRequest request = buildUpdateRequest(agentName, "List filter Agent");
         request.setTags(tags == null ? Arrays.asList("maintainer-sdk-it", "filter") : tags);
         agentService.updateAgent(request);
         addCleanup(
             () -> agentService.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
     }
     
-    private AgentUpdateRequest buildUpdateRequest(String agentName, String description) {
-        AgentUpdateRequest result = new AgentUpdateRequest();
+    private AgentUpdateAdminRequest buildUpdateRequest(String agentName, String description) {
+        AgentUpdateAdminRequest result = new AgentUpdateAdminRequest();
         result.setAgentName(agentName);
         result.setDisplayName("Updated " + agentName);
         result.setDescription(description);
@@ -340,14 +368,14 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         return result;
     }
     
-    private AgentCallInterface buildCallInterface(String agentName, String revision) {
+    private AgentDefinitionCallInterface buildCallInterface(String agentName, String revision) {
         Map<String, Object> descriptor = new HashMap<String, Object>();
         descriptor.put("name", agentName);
         descriptor.put("revision", revision);
         descriptor.put("capabilities",
             Collections.<String, Object>singletonMap("streaming", Boolean.TRUE));
         
-        AgentCallInterface result = new AgentCallInterface();
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol(PROTOCOL);
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");
@@ -356,8 +384,8 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         return result;
     }
     
-    private AgentVersionCommand versionCommand(String agentName, String version) {
-        AgentVersionCommand result = new AgentVersionCommand();
+    private AgentVersionAdminRequest versionCommand(String agentName, String version) {
+        AgentVersionAdminRequest result = new AgentVersionAdminRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         return result;

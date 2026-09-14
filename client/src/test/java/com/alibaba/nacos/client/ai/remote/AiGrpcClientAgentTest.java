@@ -20,14 +20,14 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
@@ -125,8 +125,8 @@ class AiGrpcClientAgentTest {
     @Test
     void searchAndDiscoverUseTypedRequestsAndSecurityIdentity() throws Exception {
         support(AbilityKey.SERVER_RAD_V1);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        AgentCatalogEntry entry = new AgentCatalogEntry();
+        Page<AgentSummary> page = new Page<AgentSummary>();
+        AgentSummary entry = new AgentSummary();
         entry.setAgentName("agent-a");
         page.setPageItems(Collections.singletonList(entry));
         AgentSearchResponse searchResponse = new AgentSearchResponse();
@@ -214,7 +214,7 @@ class AiGrpcClientAgentTest {
     @Test
     void publishUsesTypedRequestAndRadAbility() throws Exception {
         support(AbilityKey.SERVER_RAD_V1);
-        AgentPublishRequest publication = new AgentPublishRequest();
+        AgentPublishClientRequest publication = new AgentPublishClientRequest();
         publication.setAgentName("agent-a");
         AgentVersionDetail expected = new AgentVersionDetail();
         AgentPublishRpcResponse response = new AgentPublishRpcResponse();
@@ -237,7 +237,7 @@ class AiGrpcClientAgentTest {
             .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
             assertThrows(NacosException.class,
-                () -> client.publishAgent(new AgentPublishRequest())).getErrCode());
+                () -> client.publishAgent(new AgentPublishClientRequest())).getErrCode());
     }
     
     @Test

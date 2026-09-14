@@ -16,6 +16,8 @@
 
 # Agent 管理与 Remote Agent Discovery（RAD）设计草案
 
+> 本文保留原始设计过程。当前公开资源/版本模型及 Search JSON 以 `specs/zh-cn/ai/client-ai-api-evolution-spec.md` §6.5、Agent 管理规范与 RAD 协议规范为准；旧 Agent/AgentCatalogEntry/AgentVersionCatalog 命名不再对应现行 Java 类型。
+
 > 状态：讨论草案，非正式规范。
 >
 > 历史说明：本文第 6～8 章保留 3.3.0-beta 落地过程与当时未实现的迁移边界。当前正式升级

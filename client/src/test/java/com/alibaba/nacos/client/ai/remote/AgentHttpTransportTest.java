@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.Test;
@@ -45,10 +45,10 @@ class AgentHttpTransportTest {
     @Test
     void agentOperationsDelegateToHttpClientProxy() throws NacosException {
         AgentHttpTransport transport = new AgentHttpTransport(clientProxy);
-        AgentPublishRequest publishRequest = new AgentPublishRequest();
+        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
         AgentVersionDetail version = new AgentVersionDetail();
         AgentSearchRequest searchRequest = new AgentSearchRequest();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryRequest discoveryRequest = new AgentDiscoveryRequest();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();

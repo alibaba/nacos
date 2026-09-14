@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -44,7 +43,8 @@ public interface AgentHandler {
     /**
      * Replace writable Agent metadata.
      */
-    Agent updateAgent(String namespaceId, AgentUpdateRequest request) throws NacosException;
+    AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
+        throws NacosException;
     
     /**
      * Delete one Agent definition.
@@ -79,13 +79,13 @@ public interface AgentHandler {
     /**
      * Create one initial or subsequent Agent draft.
      */
-    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
+    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
         throws NacosException;
     
     /**
      * Replace one exact Agent draft.
      */
-    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
+    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
         throws NacosException;
     
     /**
@@ -132,6 +132,6 @@ public interface AgentHandler {
     /**
      * Replace custom Agent labels.
      */
-    Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
         throws NacosException;
 }

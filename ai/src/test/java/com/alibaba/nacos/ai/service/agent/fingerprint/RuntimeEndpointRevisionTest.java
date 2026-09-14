@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.fingerprint;
 
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

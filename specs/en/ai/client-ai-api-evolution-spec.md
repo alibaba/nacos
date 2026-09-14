@@ -18,9 +18,9 @@
 
 | Item | Value |
 | --- | --- |
-| Status | Phase-one interfaces/transports implemented in primary specs; sections 3 and 4 remain unimplemented proposals |
-| Updated | 2026-09-10 |
-| Scope | Resource facades, transport overrides, A2A/RAD capability discovery and routing |
+| Status | Phase-one interfaces/transports implemented in primary specs; sections 3, 4 and 6 remain unimplemented proposals |
+| Updated | 2026-09-11 |
+| Scope | Resource facades, transport overrides, A2A/RAD capability discovery and routing, Agent/RAD Java model consolidation |
 
 This proposal separates implemented phase-one contracts from future compatibility amendments;
 unimplemented sections do not replace current behavior. See the detailed [API design](../../../Codex/design/nacos-3.3-client-ai-api/README.md),
@@ -183,3 +183,143 @@ Update SDK scenario/coverage records and validate default and Jackson 3 configur
 Later phases use the full A/D matrices for discovery, new A2A bindings and migration races.
 Discovery requires OpenAPI IT when implemented. Proposed scenarios remain Pending and do
 not increase implemented coverage.
+
+## 6. Agent / RAD Java Model Consolidation Proposal
+
+This section records the agreed contract implemented in the 2026-09-11 local trial: unified Agent
+models, RAD definitions as the baseline and an abstract field-sharing layer. See the
+[43-file inventory and M01–M15 validation plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_CONSOLIDATION.md).
+The requested scope permits Java model changes without preserving 3.3.0-BETA aliases.
+Released historical A2A contracts and existing wire/storage formats remain protected.
+
+### 6.1 Unified Models And Abstract Bases
+
+Move all current model.rad concrete models/enums into com.alibaba.nacos.api.ai.model.agent;
+do not retain two parallel Agent model packages. Put classes used only for field sharing in
+model.agent.base as public abstract classes named AbstractAgent…, with protected constructors.
+Move Agent/MCP-shared ClientLivenessInfo to the common AI model package; existing RPC envelopes
+remain in remote packages.
+
+The shared bases are:
+
+| Abstract class | Fields declared at this level | Reuse |
+| --- | --- | --- |
+| AbstractAgentMetadata | agentName/displayName/description/iconUrl/provider/tags | Management summary, RAD catalog entry, Admin metadata update; draft base extends it |
+| AbstractAgentCallInterface | protocol/protocolVersion/descriptorMediaType/nativeDescriptor | Definition and discovery interfaces are concrete siblings |
+| AbstractAgentSearchRequest | Five Search filter/pagination fields, no namespace | Client Search and complete RAD Search are concrete siblings |
+| AbstractAgentEndpointRequest | agentName/protocol/endpoints | Deregistration models and registration base; operation validation stays separate |
+| AbstractAgentEndpointRegistrationRequest | runtimeVersion/versionRange | Extends endpoint request base for Client registration and RAD RegistrationBatch |
+| AbstractAgentDraftRequest | extensions/version/callInterfaces/author/changeDescription/basedOnVersion | Extends metadata base for Admin draft creation and Client publication |
+
+Bases may reference stable value objects but not audience-specific Client/Admin requests.
+They do not create Maven modules or own authorization, namespace defaulting, lifecycle,
+transport, caching or redo. Concrete operations retain their validators; only identical shared
+constraints may reuse validation helpers. Field sharing must not relax contextual rules.
+
+Public SDK parameters/results, DTO members and collection elements must use concrete business
+types, not AbstractAgent… types or abstract element lists. Do not introduce JsonTypeInfo,
+discriminators or polymorphic construction factories. Deserializing a known concrete model must
+naturally bind its inherited properties. AgentSummary, AgentVersionSummary and Endpoint remain
+concrete because they have independent response/value-object meanings. Do not introduce generic
+identity, version or namespace bases merely to share one or two fields.
+
+### 6.2 Concrete Naming And Inheritance Direction
+
+The initial trial retained AgentCatalogVersion and removed AgentVersionCatalogEntry.
+Section 6.5 supersedes this binding with AgentVersionSummary; the remaining initial mappings are:
+Management/storage catalog containers reuse the RAD-named type without changing their JSON or
+validation rules. Rename the definition-side AgentCallInterface to AgentDefinitionCallInterface;
+it and AgentDiscoveryCallInterface extend AbstractAgentCallInterface independently. Do not make
+complete management details and discovery results extend one another.
+
+Proposed Client request names are AgentSearchClientRequest,
+AgentEndpointRegistrationClientRequest, AgentEndpointDeregistrationClientRequest and
+AgentPublishClientRequest. Proposed Admin names are AgentDraftCreateAdminRequest,
+AgentDraftUpdateAdminRequest, AgentUpdateAdminRequest, AgentLabelsUpdateAdminRequest and
+AgentVersionAdminRequest. Preserve RAD AgentSearchRequest, DiscoveryRequest and Endpoint Batch
+names. Do not mechanically create paired empty wrappers without an actual boundary.
+
+Client and RAD Search requests independently extend AbstractAgentSearchRequest; only the
+complete RAD request adds namespaceId. Registration/deregistration follow the same sibling
+pattern. SDK methods accept concrete ClientRequest types, copy business fields, and inject the
+instance namespace. They must not accept the abstract base or the complete RAD request instead.
+Client publish and Admin draft creation independently extend the common draft base rather than
+making Client depend on an Admin request. Maintainer namespace remains an explicit method
+argument. HTTP Forms retain their string parsing and binding responsibilities.
+
+### 6.3 Protocol, Domain And Validation Boundaries
+
+RAD supplies shared concepts and discovery contracts, not the entire management lifecycle.
+Admin operations may extend/compose shared objects without making all Admin APIs depend on
+complete RAD root messages or online discovery views. Protocol-first design does not require a
+separate Java class for every schema concept or rewriting existing versioned schemas.
+
+Preserve JSON fields/nesting, optional/default values, enum values, RPC envelope types, errors
+and Endpoint publication semantics. Management catalog labels require arrays, including empty
+arrays; RAD permits omission. Shared types retain contextual validation. Construct actual
+bounded management summaries rather than casting detail objects, and do not load AI Storage
+content for Version lists. Preserve current namespace fields in discovery/publication results;
+do not add JsonIgnore to shared models. Keep explicit storage projections, bytes, digests,
+sourceRevision, Watch fingerprints and defensive copying. No A2A/MCP/Skill business, migration,
+transport-routing, Watch or redo algorithm changes are part of this proposal.
+
+M15 adds structural checks for abstract bases, protected constructors, concrete API/DTO types,
+and concrete JSON deserialization without a discriminator. M01–M14 retain inherited-property,
+namespace, old-JSON, catalog, bounded-summary, storage-vector, default/Jackson 3 and real
+Client/Maintainer/OpenAPI scenarios. New items stay Pending until executed. Update coverage and
+scenario registries with implementation; do not expand live fault-injection scope. On adoption
+and implementation, update the Java binding mappings in both languages of the primary Java SDK
+implementation, Agent API, Agent Management and RAD specifications.
+
+### 6.4 Follow-up Review: Three-Level Discovery Models (Pending)
+
+Sections 6.1–6.3 describe the existing local trial. This section records the subsequently agreed
+simplification target; it does not change current wire or runtime behavior. Consolidated resource
+information uses AgentSummary, with version metadata organized as
+`AgentSummary.versionInfo: AgentVersionInfo → onlineVersions[]: AgentVersionSummary`.
+Each query retains its response-field restrictions, and user-constructed Client inputs remain
+namespace-free.
+
+The public discovery hierarchy is
+`AgentDiscoveryResult → callInterfaces[]: AgentCallInterface → endpoints[]: Endpoint`.
+Do not insert a versions[] or EndpointSet navigation level. Declared and runtime addresses share
+Endpoint, with a source property identifying DECLARED/RUNTIME. Separate query entry points do not
+justify separate public CallInterface or Endpoint types. Evaluate VersionDetail with declared
+addresses only first, and assess runtime retrieval separately. Do not require a new management
+aggregation query or include runtime addresses in version storage or contentDigest.
+
+The representation of source order, empty sources, sourceRevision and internal wire mappings
+remains to be designed; flattening the public structure must not silently discard these contracts.
+Before implementation, specify whether wire adapters retain the existing schemas or schemas change
+as well, and update the corresponding bilingual specifications and SDK/OpenAPI scenarios. The
+target is not yet the implemented HTTP/gRPC structure.
+
+The default Discover restriction to latest's protocol definitions, source order and declared
+addresses is recorded as MODEL-D01 in the
+[relationship review, section 12](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_RELATIONSHIPS.md).
+Coverage of all online versions' endpoints, descriptor ownership, deduplication and Watch
+dependencies will be addressed separately. Model simplification does not also change cross-version
+discovery algorithms or introduce extra result levels in anticipation of that follow-up.
+
+### 6.5 Current Step: Resource Summary And Version Metadata
+
+This section supersedes the initial resource/version type split described earlier in this chapter. Constraints for the other request and protocol models remain applicable.
+
+This step consolidates Agent/version metadata only; CallInterface, Endpoint and MODEL-D01 stay
+unchanged. Remove public Agent, AgentCatalogEntry, AgentVersionCatalog and AgentCatalogVersion.
+Use AgentSummary with optional extensions, AgentVersionInfo for the version collection, and
+AgentVersionSummary with protocols/labels for individual entries. AgentVersionDetail retains
+protocol content.
+
+Public JSON contains versionInfo with editingVersion, reviewingVersion, labels and onlineVersions.
+Derive latest from labels["latest"] and the online count from onlineVersions rather than keeping
+separate public facts. Search also returns AgentSummary, omitting namespace, management fields,
+extensions and editing/reviewing; its label map contains only online targets. List projections
+omit extensions while detail/update responses retain their previous extension behavior.
+
+Update the associated Search/Admin/Console JSON shapes and Java generics without BETA model
+aliases. Persistence retains explicit projections to the original version_info and ext.versionCatalog
+schema, including schemaVersion, field formats and version-content bytes. Validate stored-field
+consistency before assembling the new model. Discovery selection, addresses, Watch, A2A, transports
+and publication algorithms do not change. UT/IT must verify the new response shapes, field boundaries,
+complete labels, old-storage reads and derived catalog consistency; record fresh validation separately.

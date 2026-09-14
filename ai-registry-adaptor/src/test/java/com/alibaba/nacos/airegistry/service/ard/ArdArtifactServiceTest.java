@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -230,8 +230,8 @@ class ArdArtifactServiceTest {
         return result;
     }
     
-    private AgentCallInterface call(String protocol, Object descriptor) {
-        AgentCallInterface result = new AgentCallInterface();
+    private AgentDefinitionCallInterface call(String protocol, Object descriptor) {
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
         return result;

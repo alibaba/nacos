@@ -145,8 +145,7 @@ The Agent resource contains the following fields:
 | `status` | Yes | `enable` or `disable`. |
 | `owner` | Yes | Management owner. |
 | `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` in this version. |
-| `versionInfo` | Read-only | Shared editing, reviewing, online-count, and label summary. |
-| `versionCatalog` | Read-only | Compact catalog of online versions and protocols. |
+| `versionInfo` | Read-only | editingVersion, reviewingVersion, complete labels and onlineVersions[]. |
 | `metaVersion` | Read-only | Monotonic metadata revision shared with the AI Resource model. The initial Agent Admin API does not expose a conditional-write parameter. |
 | `createTime`, `updateTime` | Read-only | Audit timestamps. |
 
@@ -164,9 +163,12 @@ The following invariants apply:
   descriptor only when the Agent is first created. Later descriptor updates
   do not overwrite independently governed Agent metadata.
 
-`versionCatalog` contains `latestVersion` and `onlineVersions[]`. Each online
-entry contains only `version`, `labels[]`, and `protocols[]`. It is derived by
-the server and is not a client-writable fact.
+`versionInfo.onlineVersions[]` uses the catalog projection of AgentVersionSummary, containing
+version, labels[] and protocols[]. Resolve latest from labels["latest"] and derive the count from
+the online list. The complete label map may retain non-online targets; entries project online
+labels only. Public models no longer contain a parallel versionCatalog or a separate onlineCnt.
+Explicit converters preserve the internal version_info and ext.versionCatalog storage formats;
+do not replace them by serializing the public DTO directly.
 
 ## 4. Agent Version And Lifecycle
 
@@ -382,6 +384,105 @@ only by the [RAD Protocol Spec](rad-protocol-spec.md). In particular,
 `AgentDiscoveryResult` combines one online Version definition with permitted
 DECLARED and RUNTIME Endpoint sets; it is never stored as a fact.
 
+### 6.1 Converging Management Reads on RAD Models (Review Draft, Not Implemented)
+
+The implementation still follows the management read models above. This section
+records the next consolidation direction without changing the current schemas,
+storage, or runtime behavior: management reads reuse the RAD hierarchy
+`CallInterface → EndpointSet → Endpoint`, excluding the outer Agent/Version
+result from the layer count. EndpointSet remains; source does not move to Endpoint.
+
+- Exact Version definitions and Runtime state may remain separate API queries,
+  while sharing concrete Java models and containment from CallInterface onward.
+  Different entry points do not require different address containers.
+- VersionDetail reads populate DECLARED addresses; Runtime management reads
+  populate RUNTIME addresses. Operation-specific identity, version metadata, and
+  Console references remain outside this shared hierarchy; root responses need
+  not be merged.
+- Definitions must retain the complete endpointSourceOrder. Reading only the
+  DECLARED Set must not turn the configured policy into DECLARED-only. Runtime
+  addresses, response revisions, health, and management observations must not
+  enter persisted version content.
+- Management may include disabled addresses and query Runtime without a
+  definition. Rules for absent protocol descriptors, management state fields,
+  and management sourceRevision scope must therefore be settled before
+  implementation rather than assumed identical to Discover.
+- Model reuse does not change RAD source ordering, empty Sets, bindings, health,
+  or Watch contracts. Management-only fields must not leak into RAD responses.
+  Implementation requires coordinated management/API and Java Binding specs,
+  schemas, storage mappings, and integration tests.
+
+### 6.2 Candidate Consolidation Choices (Review Draft, Not Approved for Implementation)
+
+The following expands section 6.1. Existing normative text and schemas still
+describe the current implementation:
+
+- The updated scope does not require upgrading from 3.3 BETA or reading its old
+  storage format. Retain AgentVersionContent as an internal content envelope if
+  useful, reusing the unified CallInterface/EndpointSet/Endpoint members without
+  duplicating internal domain classes. Storage format may follow the new model.
+  Preserve the complete definition, declared addresses, source configuration,
+  and ordering; do not persist a filtered discovery response as the definition.
+  Response sourceRevision, runtime fields, and observations stay outside version
+  bytes. Digests still cover the actual persisted bytes.
+- The latest input direction accepts healthy on Runtime registration and complete
+  replacement. Nacos maintains bindings, management state, and observation times;
+  caller-supplied values are ignored. Definition and deregistration retain their
+  operation-specific validation; see section 6.3 for scope and new tests.
+  Write normalization removes managed fields, whereas read copies preserve them.
+- A unified Endpoint may replace the public SnapshotItem wrapper. Adapt the
+  Runtime mapper and legacy migration comparator while preserving the separate
+  contribution filtering and aggregation rules of management and discovery.
+  Observation time may move to EndpointSet; state may remain derived from
+  enabled/healthy. Field placement remains open.
+- Writable-field restrictions concern registration/definition API submissions;
+  Java setters do not automatically mutate server state. Internal references to
+  Snapshot types and export dependencies require adaptation, not retention of
+  the old public types for their own sake.
+- Prefer allowing management sourceRevision to be omitted in the first iteration
+  rather than adding a management comparison mechanism solely for consolidation.
+  If provided, define its address, binding, enabled/healthy inputs and exclude
+  Service observation time; a discovery revision does not cover all management JSON.
+  RAD field requirements and comparison rules remain unchanged.
+- Management revision above means the value of EndpointSet.sourceRevision when
+  reused in management results, not a new model. RuntimeEndpointSnapshot currently
+  has no such field; its presence and computation scope can be decided separately.
+- The Nacos Agent Artifact is another read/export endpoint for definition JSON.
+  Prefer aligning it with the unified definition structure, exporting declared
+  addresses and definition fields, with coordinated schema and test updates.
+  This scope does not retain a previous BETA export representation. Preserve the
+  native A2A AgentCard protocol representation.
+
+### 6.3 Endpoint Input and End-to-End Acceptance (Review Draft, Not Implemented)
+
+The confirmed direction consolidates the models, accepts writable healthy, and
+ignores caller changes to Nacos-managed fields. The proposed interpretation is
+current health reported on registration or complete replacement, defaulting to
+true, with subsequent Naming liveness unchanged; this is not a permanent health
+override. DECLARED has no health, and Nacos owns bindings, enabled/state, and
+observations. Ignore response revision on definition writes as a proposed
+convenience. Identity, URI, batch version, reserved metadata, and JSON type errors
+remain subject to their existing contracts.
+
+Before implementation, freeze the six entry-point fixtures and field placement
+using the [test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md).
+Its 16 acceptance groups cover raw HTTP, typed SDK/Maintainer results, both Console
+deployments and UI, Naming mapping, definition storage, legacy A2A, migration,
+index scheduling/projection, Artifact, Watch/revision, and packaged artifacts.
+Validate the new input behavior separately from type replacement.
+
+Excluding BETA storage upgrades does not exclude historical A2A migration. Run
+normal migration flows in an isolated environment; real failure recovery and
+cluster fault injection remain deferred. Keep existing private Search/Artifact
+failures visible and add nonempty public Agent INDEX/Artifact flows; empty
+results, SCAN, or entirely skipped tests do not establish acceptance.
+
+Changed definition bytes may change digests and derived references, but references
+must agree within the new system. Preserve unchanged RUNTIME revision encoding
+and golden vectors. Java and schemas have not implemented this draft, and coverage
+must not be raised before execution.
+
+
 ## 7. Capacity And Security
 
 The target management model enforces these limits before writing an Agent or
@@ -457,3 +558,7 @@ Agent and AgentSpec resources may reference each other through a general
 resource relation, but neither owns the other's lifecycle. This version does
 not add Agent-specific `sourceRef`, `defaultInterfaceId`, `interfaceId`,
 `descriptorDigest`, or random Endpoint identifiers.
+
+Java binding: the shared Agent/RAD package, abstract field bases and concrete model boundaries
+follow [Agent API Spec — Java model binding](./agent-api-spec.md#java-model-binding).
+This organization does not rename protocol/schema concepts or change storage and discovery semantics.

@@ -37,8 +37,8 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
@@ -279,7 +279,7 @@ public class A2aMigrationTargetStore {
             || definition.getVersions().isEmpty()) {
             throw new IllegalArgumentException("Complete migrated Agent definition is required");
         }
-        Agent sourceAgent = definition.getAgent();
+        AgentSummary sourceAgent = definition.getAgent();
         Map<String, List<String>> protocols = new LinkedHashMap<String, List<String>>();
         Map<String, AgentVersionDetail> versions =
             new LinkedHashMap<String, AgentVersionDetail>();
@@ -306,12 +306,11 @@ public class A2aMigrationTargetStore {
         labels.put(AiResourceConstants.LABEL_LATEST, definition.getLatestVersion());
         AgentVersionCatalogBuilder.Result derived = AgentVersionCatalogBuilder.build(protocols,
             labels);
-        Agent agent = copyAgent(sourceAgent);
+        AgentSummary agent = copyAgent(sourceAgent);
         AgentVersionInfo versionInfo = new AgentVersionInfo();
-        versionInfo.setOnlineCnt(versions.size());
+        versionInfo.setOnlineVersions(derived.getVersionCatalog().getOnlineVersions());
         versionInfo.setLabels(new HashMap<String, String>(derived.getLabels()));
         agent.setVersionInfo(versionInfo);
-        agent.setVersionCatalog(derived.getVersionCatalog());
         agent.setMetaVersion(1L);
         agent.setCreateTime(0L);
         agent.setUpdateTime(0L);
@@ -604,14 +603,14 @@ public class A2aMigrationTargetStore {
         return (int) Math.ceil((double) page.getTotalCount() / pageSize);
     }
     
-    private AiResource toResourceRow(Agent agent) {
+    private AiResource toResourceRow(AgentSummary agent) {
         AgentResourceExt ext = new AgentResourceExt();
         ext.setSchemaVersion(AgentResourceExt.SCHEMA_VERSION);
         ext.setDisplayName(agent.getDisplayName());
         ext.setIconUrl(agent.getIconUrl());
         ext.setProvider(agent.getProvider());
         ext.setExtensions(agent.getExtensions());
-        ext.setVersionCatalog(agent.getVersionCatalog());
+        ext.setVersionCatalog(agent.getVersionInfo());
         ResourceVersionInfo versionInfo = new ResourceVersionInfo();
         versionInfo.setOnlineCnt(agent.getVersionInfo().getOnlineCnt());
         versionInfo.setLabels(new HashMap<String, String>(agent.getVersionInfo().getLabels()));
@@ -645,8 +644,8 @@ public class A2aMigrationTargetStore {
         return result;
     }
     
-    private Agent copyAgent(Agent source) {
-        Agent result = new Agent();
+    private AgentSummary copyAgent(AgentSummary source) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(source.getNamespaceId());
         result.setAgentName(source.getAgentName());
         result.setDisplayName(source.getDisplayName());
@@ -662,12 +661,12 @@ public class A2aMigrationTargetStore {
         return result;
     }
     
-    private List<String> protocolNames(List<AgentCallInterface> callInterfaces) {
+    private List<String> protocolNames(List<AgentDefinitionCallInterface> callInterfaces) {
         if (callInterfaces == null) {
             throw new IllegalArgumentException("Migrated Agent Version content is required");
         }
         List<String> result = new ArrayList<String>(callInterfaces.size());
-        for (AgentCallInterface callInterface : callInterfaces) {
+        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
             result.add(callInterface.getProtocol());
         }
         return result;

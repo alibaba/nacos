@@ -47,7 +47,7 @@ transport-neutral.
 | IT method | Scenario groups |
 | --- | --- |
 | `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration into the canonical Runtime Registry without Beta dual-write to the historical Naming service, Console Runtime Snapshot and legacy SERVICE query agreement, Version 2 pre-registration, omitted-selector multi-Version aggregation versus explicit-latest isolation, canonical Version publication, and legacy latest-subscription convergence. |
-| `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; namespace-free Search/Endpoint inputs bound by each Client; namespace-isolated publication/deregistration under grpc/http/auto. |
+| `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; namespace-free Search/Endpoint inputs bound by each Client; namespace-isolated publication/deregistration under grpc/http/auto; inherited catalog metadata and the shared AgentVersionSummary preserve complete labels/protocols while excluding management-only fields. |
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical single-key and multi-key partial deregistration, retained Endpoint fields and Version bindings, mixed unknown keys, immutable inputs, final and multi-key whole deregistration, repeated no-op, and protocol isolation under grpc/http/auto. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
 | `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, one typed `UNAVAILABLE` event, recovery with a complete `SNAPSHOT`, unsubscribe, and post-unsubscribe suppression. |
@@ -319,3 +319,11 @@ failed targeted run rather than a sleeping normal CI test.
 | Public `getAll` / `selectOneHealthy` helper API shape | The design states local selection semantics but does not yet specify a stable Java type and method signature. It does not block Search, Discover, polling, or publication and is recorded rather than invented in this phase. |
 | Agent management-metadata change notification | `AgentDiscoveryResult` intentionally excludes display name, description, tags, provider, and other management metadata. Its polling fingerprint contains only resolved Version, Version `contentDigest`, and Endpoint `sourceRevision` values. A future requirement to subscribe to forced updates of published Agent metadata needs a Search/catalog subscription or an explicit RAD contract extension; it is not inferred by the current Discover subscription. |
 | Packet loss at individual frames and unknown gRPC write-result ambiguity | Covered with deterministic unit fault injection; a real single-node process restart is covered separately, while frame-level fault injection is not stable standalone IT. |
+
+### Agent 元数据模型合并（2026-09-14）
+
+Search 返回 Page<AgentSummary>，目录通过 versionInfo.onlineVersions 的 AgentVersionSummary 读取；latest 来自 versionInfo.labels。验证 grpc/http/auto 的字段一致、过滤与分页不变、Search 不泄漏 namespace/管理状态/非在线标签。CallInterface、Endpoint 和默认发现算法未纳入本轮。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

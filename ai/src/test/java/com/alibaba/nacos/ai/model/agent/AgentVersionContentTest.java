@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.model.agent;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class AgentVersionContentTest {
     
     @Test
     void testDefaultConstructorAndAccessors() {
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         AgentVersionContent content = new AgentVersionContent();
         assertNull(content.getKind());
         assertNull(content.getSchemaVersion());
@@ -48,7 +48,7 @@ class AgentVersionContentTest {
     
     @Test
     void testConvenienceConstructorSetsStorageEnvelope() {
-        List<AgentCallInterface> callInterfaces = Collections.singletonList(
+        List<AgentDefinitionCallInterface> callInterfaces = Collections.singletonList(
             createCallInterface());
         AgentVersionContent content = new AgentVersionContent(callInterfaces);
         
@@ -69,7 +69,7 @@ class AgentVersionContentTest {
         assertEquals(AgentVersionContent.KIND, restored.getKind());
         assertEquals(AgentVersionContent.SCHEMA_VERSION, restored.getSchemaVersion());
         assertEquals(1, restored.getCallInterfaces().size());
-        AgentCallInterface restoredInterface = restored.getCallInterfaces().get(0);
+        AgentDefinitionCallInterface restoredInterface = restored.getCallInterfaces().get(0);
         assertEquals("a2a", restoredInterface.getProtocol());
         assertEquals("application/json", restoredInterface.getDescriptorMediaType());
         assertEquals("descriptor", restoredInterface.getNativeDescriptor());
@@ -77,8 +77,8 @@ class AgentVersionContentTest {
             restoredInterface.getEndpointSourceOrder());
     }
     
-    private AgentCallInterface createCallInterface() {
-        AgentCallInterface result = new AgentCallInterface();
+    private AgentDefinitionCallInterface createCallInterface() {
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol("a2a");
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor("descriptor");

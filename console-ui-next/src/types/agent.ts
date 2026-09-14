@@ -16,22 +16,11 @@ export interface AgentProvider {
 export interface AgentVersionInfo {
   editingVersion?: string;
   reviewingVersion?: string;
-  onlineCnt?: number;
+  onlineVersions?: AgentVersionSummary[];
   labels?: Record<string, string>;
 }
 
-export interface AgentVersionCatalogEntry {
-  version: string;
-  labels?: string[];
-  protocols?: string[];
-}
-
-export interface AgentVersionCatalog {
-  latestVersion?: string;
-  onlineVersions?: AgentVersionCatalogEntry[];
-}
-
-export interface AgentMetadata {
+export interface AgentSummary {
   namespaceId: string;
   agentName: string;
   displayName?: string;
@@ -44,13 +33,10 @@ export interface AgentMetadata {
   owner?: string;
   scope?: AgentScope;
   versionInfo?: AgentVersionInfo;
-  versionCatalog?: AgentVersionCatalog;
   metaVersion?: number;
   createTime?: number;
   updateTime?: number;
 }
-
-export type AgentSummary = Omit<AgentMetadata, 'extensions'>;
 
 export interface AgentEndpoint {
   uri: string;
@@ -72,7 +58,9 @@ export interface AgentCallInterface {
 
 export interface AgentVersionSummary {
   version: string;
-  status: AgentVersionStatus;
+  labels?: string[];
+  protocols?: string[];
+  status?: AgentVersionStatus;
   publishPipelineInfo?: string;
   author?: string;
   changeDescription?: string;
@@ -82,6 +70,7 @@ export interface AgentVersionSummary {
 }
 
 export interface AgentVersionDetail extends AgentVersionSummary {
+  status: AgentVersionStatus;
   namespaceId: string;
   agentName: string;
   callInterfaces: AgentCallInterface[];
@@ -95,7 +84,7 @@ export interface AgentPage<T> {
 }
 
 export interface AgentOverview {
-  agent: AgentMetadata;
+  agent: AgentSummary;
   versionPage: AgentPage<AgentVersionSummary>;
 }
 

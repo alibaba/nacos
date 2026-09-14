@@ -16,23 +16,23 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -120,9 +120,9 @@ class AiHttpClientProxyAgentTest {
     
     @Test
     void searchPreservesRepeatedParametersAndClientIdentity() throws Exception {
-        AgentCatalogEntry entry = new AgentCatalogEntry();
+        AgentSummary entry = new AgentSummary();
         entry.setAgentName("agent-a");
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         page.setPageItems(Collections.singletonList(entry));
         doReturn(success(page)).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
@@ -134,7 +134,7 @@ class AiHttpClientProxyAgentTest {
         request.setPageNo(2);
         request.setPageSize(10);
         
-        Page<AgentCatalogEntry> result = proxy.searchAgents(request);
+        Page<AgentSummary> result = proxy.searchAgents(request);
         
         assertEquals("agent-a", result.getPageItems().get(0).getAgentName());
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -158,7 +158,7 @@ class AiHttpClientProxyAgentTest {
         expected.setVersion("1.0.0");
         doReturn(success(expected)).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
-        AgentPublishRequest request = new AgentPublishRequest();
+        AgentPublishClientRequest request = new AgentPublishClientRequest();
         request.setAgentName("agent-a");
         request.setDisplayName("Agent A");
         request.setDescription("description");
@@ -169,7 +169,7 @@ class AiHttpClientProxyAgentTest {
         request.setTags(Collections.singletonList("assistant"));
         request.setExtensions(Collections.<String, Object>singletonMap("region", "east"));
         request.setVersion("1.0.0");
-        request.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
+        request.setCallInterfaces(Collections.singletonList(new AgentDefinitionCallInterface()));
         request.setAuthor("alice");
         request.setChangeDescription("initial");
         request.setAutoSubmit(true);
@@ -227,7 +227,7 @@ class AiHttpClientProxyAgentTest {
     
     @Test
     void minimalSearchAndDiscoverOmitEveryOptionalParameter() throws Exception {
-        doReturn(success(new Page<AgentCatalogEntry>())).when(restTemplate)
+        doReturn(success(new Page<AgentSummary>())).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         AgentSearchRequest search = new AgentSearchRequest();
         search.setNamespaceId("public");

@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -55,7 +55,7 @@ class A2aCanonicalDefinitionConverterTest {
         card.setSupportedInterfaces(Arrays.asList(card.getSupportedInterfaces().get(0), duplicate,
             agentInterface("https://example.com:8443/stream", "JSONRPC", "0.3")));
         
-        AgentDraftCreateRequest result = converter.convert(NAMESPACE_ID, card, "url", true);
+        AgentDraftCreateAdminRequest result = converter.convert(NAMESPACE_ID, card, "url", true);
         
         assertEquals("research-agent", result.getAgentName());
         assertEquals("1.0.0", result.getVersion());
@@ -85,8 +85,9 @@ class A2aCanonicalDefinitionConverterTest {
         card.setPreferredTransport("HTTP+JSON");
         card.setProtocolVersion("0.3");
         
-        AgentDraftCreateRequest result = converter.convert(NAMESPACE_ID, card, " service ".trim(),
-            false);
+        AgentDraftCreateAdminRequest result =
+            converter.convert(NAMESPACE_ID, card, " service ".trim(),
+                false);
         
         assertEquals(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
             result.getCallInterfaces().get(0).getEndpointSourceOrder());

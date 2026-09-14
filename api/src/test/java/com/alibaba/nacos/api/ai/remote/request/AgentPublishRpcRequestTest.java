@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
@@ -33,7 +33,7 @@ class AgentPublishRpcRequestTest extends BasicRequestTest {
         AgentPublishRpcRequest request = new AgentPublishRpcRequest();
         request.setNamespaceId("team");
         assertNull(request.extractAgentName());
-        AgentPublishRequest publication = new AgentPublishRequest();
+        AgentPublishClientRequest publication = new AgentPublishClientRequest();
         publication.setAgentName("demo-agent");
         publication.setVersion("1.0.0");
         publication.setAutoSubmit(true);

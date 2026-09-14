@@ -18,12 +18,12 @@ package com.alibaba.nacos.ai.form.agent.client;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
@@ -200,7 +200,7 @@ class AgentClientFormsTest {
         form.setChangeDescription("initial");
         form.setAutoSubmit("true");
         
-        AgentPublishRequest request = form.toRequest();
+        AgentPublishClientRequest request = form.toRequest();
         assertEquals("demo-agent", request.getAgentName());
         assertEquals("Demo", request.getDisplayName());
         assertEquals("description", request.getDescription());
@@ -340,8 +340,8 @@ class AgentClientFormsTest {
     
     private AgentWatchBatchItem watchItem(String clientWatchId, String namespaceId,
         String agentName) {
-        com.alibaba.nacos.api.ai.model.rad.AgentReference reference =
-            new com.alibaba.nacos.api.ai.model.rad.AgentReference();
+        com.alibaba.nacos.api.ai.model.agent.AgentReference reference =
+            new com.alibaba.nacos.api.ai.model.agent.AgentReference();
         reference.setAgentName(agentName);
         AgentDiscoveryRequest discoveryRequest = new AgentDiscoveryRequest();
         discoveryRequest.setNamespaceId(namespaceId);

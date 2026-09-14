@@ -34,11 +34,12 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
@@ -145,7 +146,7 @@ public class AgentOperationService {
      * @return Agent resource
      * @throws NacosException when absent or unreadable
      */
-    public Agent getAgent(String namespaceId, String agentName) throws NacosException {
+    public AgentSummary getAgent(String namespaceId, String agentName) throws NacosException {
         AiResource meta = requireMeta(namespaceId, agentName);
         resourceManager.ensureReadableOrNotFound(meta, "Agent not found: " + agentName);
         return persistenceService.getAgent(namespaceId, agentName);
@@ -175,14 +176,14 @@ public class AgentOperationService {
      * @return updated Agent
      * @throws NacosException when the Agent is absent, not writable, or persistence fails
      */
-    public Agent updateAgent(Agent replacement) throws NacosException {
+    public AgentSummary updateAgent(AgentSummary replacement) throws NacosException {
         if (replacement == null) {
             throw new IllegalArgumentException("Agent replacement must not be null");
         }
         for (int i = 0; i < AiResourceConstants.MAX_WORKING_VERSION_RETRY; i++) {
             AiResource current =
                 requireWritableMeta(replacement.getNamespaceId(), replacement.getAgentName());
-            Agent result = persistenceService.tryUpdateAgent(replacement, current);
+            AgentSummary result = persistenceService.tryUpdateAgent(replacement, current);
             if (result != null) {
                 scheduleAgentIndexMaintenance(replacement.getNamespaceId(),
                     replacement.getAgentName(), AiResourceChangeOperation.UPDATE, false);
@@ -273,13 +274,36 @@ public class AgentOperationService {
      * @return verified draft detail
      * @throws NacosException when creation fails
      */
-    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
+    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
         throws NacosException {
         if (request == null) {
             throw new IllegalArgumentException("Agent draft request must not be null");
         }
         AgentValidationUtils.validateNamespaceId(namespaceId);
         request.validate();
+        return createValidatedDraft(namespaceId, request);
+    }
+    
+    /**
+     * Create a draft from an application publication using the same content workflow as Admin.
+     *
+     * @param namespaceId namespace identifier
+     * @param request client publication request
+     * @return verified draft detail
+     * @throws NacosException when creation fails
+     */
+    public AgentVersionDetail createDraftFromPublication(String namespaceId,
+        AgentPublishClientRequest request) throws NacosException {
+        if (request == null) {
+            throw new IllegalArgumentException("Agent draft request must not be null");
+        }
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        request.validate();
+        return createValidatedDraft(namespaceId, request);
+    }
+    
+    private AgentVersionDetail createValidatedDraft(String namespaceId,
+        AbstractAgentDraftRequest request) throws NacosException {
         String agentName = request.getAgentName();
         AgentVersionDetail draft = toDraft(request);
         AiResource meta = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
@@ -325,7 +349,7 @@ public class AgentOperationService {
      * @throws NacosException when the Agent already exists or persistence fails
      */
     public AgentVersionDetail registerLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateRequest request) throws NacosException {
+        AgentDraftCreateAdminRequest request) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -363,7 +387,7 @@ public class AgentOperationService {
      * @throws NacosException when persistence, authorization, or content validation fails
      */
     public AgentVersionDetail releaseLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        AgentDraftCreateAdminRequest request, boolean setAsLatest) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -414,7 +438,7 @@ public class AgentOperationService {
      * @throws NacosException when the Agent is absent, content differs, or persistence fails
      */
     public AgentVersionDetail updateLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        AgentDraftCreateAdminRequest request, boolean setAsLatest) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -515,7 +539,8 @@ public class AgentOperationService {
      * @throws NacosException when update fails
      */
     public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
-        List<AgentCallInterface> callInterfaces, String changeDescription) throws NacosException {
+        List<AgentDefinitionCallInterface> callInterfaces, String changeDescription)
+        throws NacosException {
         requireWritableMeta(namespaceId, agentName);
         AgentVersionDetail result = persistenceService.updateDraft(namespaceId, agentName, version,
             callInterfaces, changeDescription);
@@ -748,11 +773,13 @@ public class AgentOperationService {
      * @return updated Agent
      * @throws NacosException when a target Version is absent or in a working state
      */
-    public Agent updateLabels(String namespaceId, String agentName, Map<String, String> labels)
+    public AgentSummary updateLabels(String namespaceId, String agentName,
+        Map<String, String> labels)
         throws NacosException {
         requireWritableMeta(namespaceId, agentName);
-        Agent result = persistenceService.synchronizeDerivedState(namespaceId, agentName, null,
-            labels, null, null);
+        AgentSummary result =
+            persistenceService.synchronizeDerivedState(namespaceId, agentName, null,
+                labels, null, null);
         scheduleAgentIndexMaintenance(namespaceId, agentName,
             AiResourceChangeOperation.UPDATE, false);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, null,
@@ -782,7 +809,7 @@ public class AgentOperationService {
     }
     
     private AgentVersionDetail directOnlineExistingAgent(String namespaceId,
-        AgentDraftCreateRequest request, boolean setAsLatest, boolean clientOnlineNoOp)
+        AgentDraftCreateAdminRequest request, boolean setAsLatest, boolean clientOnlineNoOp)
         throws NacosException {
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -833,7 +860,7 @@ public class AgentOperationService {
     }
     
     private void validateDirectOnlineRequest(String namespaceId,
-        AgentDraftCreateRequest request) {
+        AgentDraftCreateAdminRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Agent direct-online request must not be null");
         }
@@ -846,7 +873,7 @@ public class AgentOperationService {
         }
     }
     
-    private AgentVersionDetail toOnlineVersion(AgentDraftCreateRequest request) {
+    private AgentVersionDetail toOnlineVersion(AgentDraftCreateAdminRequest request) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setVersion(request.getVersion());
         result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
@@ -860,7 +887,7 @@ public class AgentOperationService {
         if (version.getCallInterfaces() == null) {
             return false;
         }
-        for (AgentCallInterface callInterface : version.getCallInterfaces()) {
+        for (AgentDefinitionCallInterface callInterface : version.getCallInterfaces()) {
             if (callInterface != null && protocol.equals(callInterface.getProtocol())) {
                 return true;
             }
@@ -1018,7 +1045,7 @@ public class AgentOperationService {
             + AiConstants.Agent.VERSION_STATUS_ONLINE;
     }
     
-    private AgentVersionDetail toDraft(AgentDraftCreateRequest request) {
+    private AgentVersionDetail toDraft(AbstractAgentDraftRequest request) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setVersion(request.getVersion());
         result.setCallInterfaces(request.getCallInterfaces());
@@ -1027,8 +1054,8 @@ public class AgentOperationService {
         return result;
     }
     
-    private Agent toInitialAgent(String namespaceId, AgentDraftCreateRequest request) {
-        Agent result = new Agent();
+    private AgentSummary toInitialAgent(String namespaceId, AbstractAgentDraftRequest request) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(namespaceId);
         result.setAgentName(request.getAgentName());
         result.setDisplayName(request.getDisplayName());
@@ -1044,13 +1071,14 @@ public class AgentOperationService {
         return result;
     }
     
-    private Agent toInitialLegacyAgent(String namespaceId, AgentDraftCreateRequest request) {
-        Agent result = toInitialAgent(namespaceId, request);
+    private AgentSummary toInitialLegacyAgent(String namespaceId,
+        AgentDraftCreateAdminRequest request) {
+        AgentSummary result = toInitialAgent(namespaceId, request);
         result.setScope(VisibilityConstants.SCOPE_PUBLIC);
         return result;
     }
     
-    private void requireInitialDraftContent(AgentDraftCreateRequest request) {
+    private void requireInitialDraftContent(AbstractAgentDraftRequest request) {
         if (StringUtils.isNotBlank(request.getBasedOnVersion())
             || request.getCallInterfaces() == null) {
             throw new IllegalArgumentException(
@@ -1058,7 +1086,7 @@ public class AgentOperationService {
         }
     }
     
-    private boolean hasInitialAgentMetadata(AgentDraftCreateRequest request) {
+    private boolean hasInitialAgentMetadata(AbstractAgentDraftRequest request) {
         return request.getDisplayName() != null || request.getDescription() != null
             || request.getIconUrl() != null || request.getProvider() != null
             || request.getTags() != null || request.getExtensions() != null;

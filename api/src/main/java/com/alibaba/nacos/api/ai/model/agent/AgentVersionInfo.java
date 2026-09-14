@@ -17,12 +17,14 @@
 package com.alibaba.nacos.api.ai.model.agent;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.List;
 
 /**
- * Compact Agent version lifecycle and label information.
+ * Agent version lifecycle, complete label mapping and online version summaries.
  *
  * @author Nacos
  */
@@ -35,7 +37,7 @@ public class AgentVersionInfo implements Serializable {
     
     private String reviewingVersion;
     
-    private Integer onlineCnt;
+    private List<AgentVersionSummary> onlineVersions;
     
     private Map<String, String> labels;
     
@@ -55,12 +57,32 @@ public class AgentVersionInfo implements Serializable {
         this.reviewingVersion = reviewingVersion;
     }
     
-    public Integer getOnlineCnt() {
-        return onlineCnt;
+    public List<AgentVersionSummary> getOnlineVersions() {
+        return onlineVersions;
     }
     
-    public void setOnlineCnt(Integer onlineCnt) {
-        this.onlineCnt = onlineCnt;
+    public void setOnlineVersions(List<AgentVersionSummary> onlineVersions) {
+        this.onlineVersions = onlineVersions;
+    }
+    
+    /**
+     * Get the derived number of online versions, without adding a JSON property.
+     *
+     * @return online count, or null before online versions are materialized
+     */
+    @JsonIgnore
+    public Integer getOnlineCnt() {
+        return onlineVersions == null ? null : onlineVersions.size();
+    }
+    
+    /**
+     * Resolve the latest label without maintaining a separate catalog field.
+     *
+     * @return latest version, or null when no latest label exists
+     */
+    @JsonIgnore
+    public String getLatestVersion() {
+        return labels == null ? null : labels.get("latest");
     }
     
     public Map<String, String> getLabels() {

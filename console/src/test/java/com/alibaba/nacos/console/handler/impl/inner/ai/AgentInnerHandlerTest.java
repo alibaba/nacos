@@ -18,15 +18,14 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -77,15 +76,15 @@ class AgentInnerHandlerTest {
     @Test
     void shouldDelegateEveryOperationToLocalServices() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent persistedAgent = new Agent();
-        AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
-        List<AgentCallInterface> callInterfaces =
-            Collections.singletonList(new AgentCallInterface());
+        AgentSummary persistedAgent = new AgentSummary();
+        AgentDraftUpdateAdminRequest draftUpdateRequest = new AgentDraftUpdateAdminRequest();
+        List<AgentDefinitionCallInterface> callInterfaces =
+            Collections.singletonList(new AgentDefinitionCallInterface());
         draftUpdateRequest.setAgentName(AGENT_NAME);
         draftUpdateRequest.setVersion(VERSION);
         draftUpdateRequest.setCallInterfaces(callInterfaces);
         draftUpdateRequest.setChangeDescription("change");
-        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
+        AgentLabelsUpdateAdminRequest labelsRequest = new AgentLabelsUpdateAdminRequest();
         labelsRequest.setAgentName(AGENT_NAME);
         labelsRequest.setLabels(Collections.singletonMap("stable", VERSION));
         Page<AgentSummary> agentPage = new Page<>();
@@ -94,7 +93,8 @@ class AgentInnerHandlerTest {
         AgentVersionSummary versionSummary = new AgentVersionSummary();
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
         when(agentOperationService.getOverview(NAMESPACE_ID, AGENT_NAME)).thenReturn(overview);
-        when(agentOperationService.updateAgent(org.mockito.ArgumentMatchers.any(Agent.class)))
+        when(
+            agentOperationService.updateAgent(org.mockito.ArgumentMatchers.any(AgentSummary.class)))
             .thenReturn(persistedAgent);
         when(agentOperationService.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE", "owner",
             "download_count", 1, 10)).thenReturn(agentPage);
@@ -104,7 +104,7 @@ class AgentInnerHandlerTest {
             .thenReturn(versionDetail);
         when(runtimeRegistryService.getRuntimeEndpointSnapshot(NAMESPACE_ID, AGENT_NAME, "a2a",
             VERSION)).thenReturn(snapshot);
-        AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
+        AgentDraftCreateAdminRequest createRequest = new AgentDraftCreateAdminRequest();
         when(agentOperationService.createDraft(NAMESPACE_ID, createRequest))
             .thenReturn(versionDetail);
         when(agentOperationService.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION, callInterfaces,
@@ -125,7 +125,7 @@ class AgentInnerHandlerTest {
             labelsRequest.getLabels())).thenReturn(persistedAgent);
         
         assertSame(overview, handler.getAgent(NAMESPACE_ID, AGENT_NAME));
-        AgentUpdateRequest updateRequest = updateRequest();
+        AgentUpdateAdminRequest updateRequest = updateRequest();
         assertSame(persistedAgent, handler.updateAgent(NAMESPACE_ID, updateRequest));
         handler.deleteAgent(NAMESPACE_ID, AGENT_NAME);
         assertSame(agentPage, handler.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE",
@@ -146,15 +146,15 @@ class AgentInnerHandlerTest {
         assertSame(versionSummary, handler.offline(NAMESPACE_ID, AGENT_NAME, VERSION));
         assertSame(persistedAgent, handler.updateLabels(NAMESPACE_ID, labelsRequest));
         
-        ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        ArgumentCaptor<AgentSummary> agentCaptor = ArgumentCaptor.forClass(AgentSummary.class);
         verify(agentOperationService).updateAgent(agentCaptor.capture());
         assertMappedAgent(agentCaptor.getValue(), updateRequest);
         verify(agentOperationService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
         verify(agentOperationService).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
     }
     
-    private AgentUpdateRequest updateRequest() {
-        AgentUpdateRequest result = new AgentUpdateRequest();
+    private AgentUpdateAdminRequest updateRequest() {
+        AgentUpdateAdminRequest result = new AgentUpdateAdminRequest();
         result.setAgentName(AGENT_NAME);
         result.setDisplayName("display");
         result.setDescription("description");
@@ -168,7 +168,7 @@ class AgentInnerHandlerTest {
         return result;
     }
     
-    private void assertMappedAgent(Agent actual, AgentUpdateRequest expected) {
+    private void assertMappedAgent(AgentSummary actual, AgentUpdateAdminRequest expected) {
         assertEquals(NAMESPACE_ID, actual.getNamespaceId());
         assertEquals(expected.getAgentName(), actual.getAgentName());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());

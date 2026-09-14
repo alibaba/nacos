@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -64,9 +64,9 @@ public class AgentUpdateForm extends AgentAdminForm {
      * @return validated Agent update request
      * @throws NacosApiException when a JSON-valued field is invalid
      */
-    public AgentUpdateRequest toRequest() throws NacosApiException {
+    public AgentUpdateAdminRequest toRequest() throws NacosApiException {
         super.validate();
-        AgentUpdateRequest result = new AgentUpdateRequest();
+        AgentUpdateAdminRequest result = new AgentUpdateAdminRequest();
         result.setAgentName(getAgentName());
         result.setDisplayName(displayName);
         result.setDescription(description);

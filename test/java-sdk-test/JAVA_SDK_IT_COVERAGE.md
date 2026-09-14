@@ -37,6 +37,16 @@ HTTP API IT CI and should build this module without executing SDK IT cases.
 Destructive restart and cluster cases run through
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md).
 
+## Agent model consolidation regression
+
+Agent/RAD concrete models now use `model.agent`; public Client request types carry the
+`ClientRequest` suffix and remain namespace-free. Existing grpc/http/auto Search and Endpoint
+scenarios use these concrete inputs. `shouldSearchDiscoverAndIsolateNamespaces` additionally
+checks inherited catalog metadata, shared version entries, and absence of management-only fields.
+`AgentPublishJavaSdkITCase` exercises the sibling Client draft request through both transports.
+Model UTs verify flat JSON fixtures, abstract bases, separate definition/discovery fields, and
+Client/Admin validation. Fault recovery and cluster coverage statuses are unchanged.
+
 ## Authentication Baseline
 
 Authentication coverage is cross-cutting and does not add another public SDK
@@ -131,3 +141,13 @@ Separate review increment: strict 1/1 = 100%; effective 1/1 = 100%. This single 
 This increment excludes partial-deregistration fault injection, reconnect, server restart and cluster recovery at the user's request. Existing tests and Disabled markers remain unchanged outside the normal publication workflow. Broader Agent publication coverage remains Partial.
 
 Separate normal-publication review increment: strict `2 / 2 = 100%`; effective `2 / 2 = 100%`. These two scenario groups do not change historical SDK denominators or establish recovery coverage. Actual adapter runs and validation are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent 元数据合并：Search 的 AgentSummary/versionInfo/AgentVersionSummary 新路径及字段隔离纳入现有发现 IT，执行结果以本轮验证记录为准；不新增已覆盖行或提升覆盖状态。
+
+本轮独立验证：默认 SDK 58 项通过、10 项既有跳过；Jackson 3 定向 9 项通过。详见 `Codex/design/nacos-3.3-client-ai-api/MODEL_VALIDATION.md` 的 2026-09-14 记录。
+
+### Agent 地址模型统一：待实施验收计划（2026-09-14）
+
+下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。

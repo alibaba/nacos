@@ -49,7 +49,7 @@ HTTP API 遵循 Nacos v3 约定：
   service method。
 
 六个 RAD 根消息直接复用，不再创建一套领域模型。Java 可以用字段等价的
-`Page<AgentCatalogEntry>` 实现 `AgentCatalogPage`。`Result<T>`、gRPC wrapper、
+`Page<AgentSummary>` 实现 `AgentCatalogPage`。`Result<T>`、gRPC wrapper、
 `ClientLivenessInfo` 和 Console 专用视图属于 Binding 对象，不进入 RAD Schema。
 
 ### 1.1 Namespace 规则
@@ -100,14 +100,14 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 | 能力 | 方法 | 输入 | 返回 |
 |---|---|---|---|
-| Search | `searchAgents` | 不含 namespace 字段的 `AgentSearchQuery` | `Page<AgentCatalogEntry>` |
+| Search | `searchAgents` | 不含 namespace 字段的 `AgentSearchClientRequest` | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | 过滤 Discover | `discoverAgent` | `AgentReference`、`AgentDiscoveryFilter` | `AgentDiscoveryResult` |
 | Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult`，目标尚不存在时为 `null` |
 | 取消 Watch 订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
-| 注册 | `registerAgentEndpoints` | `AgentEndpointRegistration` | `void` |
-| 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistration` | `void` |
-| 代码式发布 | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
+| 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationClientRequest` | `void` |
+| 注销 | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationClientRequest` | `void` |
+| 代码式发布 | `publishAgent` | `AgentPublishClientRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` 是传输无关的 SDK Watch。所选 Transport 与 Client/Server 都声明 Watch
 能力时，SDK 安装 Server-aware Wire Intent；否则通过有界的本地 Discover 轮询保持兼容。
@@ -163,9 +163,10 @@ SDK 从 Heartbeat 与 Reconnect 的全部 Redo Cache 中移除被拒绝的 Publi
 这些自然键，再通过 Register 发送完整的剩余 Batch；没有 Endpoint 剩余时发送整份
 Publication 注销。现有 `A2aService.releaseAgentCard` 必须通过兼容 Adapter 保持可用。
 
-`publishAgent` 是 namespace-bound 的可选定义发布步骤。`AgentPublishRequest` 复用
-`AgentDraftCreateRequest` 的 Version 内容、`basedOnVersion`、作者、变更说明和首次 Agent
-元数据字段，并增加默认值为 `false` 的 `autoSubmit`。调用方不能提交 namespace；Proxy
+`publishAgent` 是 namespace-bound 的可选定义发布步骤。`AgentPublishClientRequest` 与
+`AgentDraftCreateAdminRequest` 是 `model.agent.base.AbstractAgentDraftRequest` 的并列子类，
+共享 Version 内容、`basedOnVersion`、作者、变更说明和首次 Agent 元数据字段；
+只有 Client 请求增加默认值为 `false` 的 `autoSubmit`。调用方不能提交 namespace；Proxy
 复制 Request 后使用 SDK namespace，且不得修改调用方对象。`autoSubmit=false` 只创建或
 返回等价 draft；`autoSubmit=true` 在创建 draft 后执行普通 submit Pipeline，并返回最终可观察到的
 `reviewing`、`reviewed` 或 `online` Version。该操作不是 force-publish，注册 Endpoint 也不会
@@ -178,11 +179,36 @@ Version；draft 后以相同 Request 改为 `autoSubmit=true` 必须继续 submi
 `autoSubmit=false`、以及 `offline` Version 上的任一代码式发布均返回非法状态或冲突。Submit
 失败不得补偿删除已创建 draft。
 
-Client 的 Search、注册和注销入参分别使用 `model.agent` 下的 `AgentSearchQuery`、
-`AgentEndpointRegistration` 和 `AgentEndpointDeregistration`，三个对象均不暴露 namespace 字段或访问器。
+Client 的 Search、注册和注销入参分别使用 `model.agent` 下的 `AgentSearchClientRequest`、
+`AgentEndpointRegistrationClientRequest` 和 `AgentEndpointDeregistrationClientRequest`，三个对象均不暴露 namespace 字段或访问器。
 SDK 复制内容并注入实例绑定的 namespace，转换为现有传输 DTO；不修改输入集合/Endpoint。
 这些 3.3 未发布方法不保留接受带 namespace 传输 DTO 的公开重载。
 服务端 HTTP/gRPC DTO、鉴权、查询和注册行为保持不变。
+
+
+### Java 模型绑定
+
+Agent 管理与 RAD 的具体 Java 模型统一放到 `com.alibaba.nacos.api.ai.model.agent`，
+移除原 `model.rad` 包，历史 `model.a2a` 保持不变。仅用于共享字段的类放到
+`model.agent.base`，声明为 public abstract class，并使用 protected 构造器。
+公开 SDK 参数、返回值、DTO 成员及集合元素继续使用具体类型，不增加类型判别字段或 JSON 嵌套。
+
+`AgentSearchClientRequest`、`AgentEndpointRegistrationClientRequest`、
+`AgentEndpointDeregistrationClientRequest` 不含 namespace；它们与对应 RAD 请求是共享抽象基类的
+并列子类，不能相互赋值。SDK 仍复制调用方内容并注入实例 namespace。
+Client 发布与 Admin 草稿创建也使用并列具体请求，原校验和生命周期规则保持不变。
+
+管控面 `AgentCallInterface` schema 对应 Java `AgentDefinitionCallInterface`，与发现侧
+`AgentDiscoveryCallInterface` 只共享协议描述字段。定义的来源顺序/声明地址不通过继承混入发现的
+endpointSets。资源统一为 AgentSummary，详情包含可选 extensions，列表省略 extensions。
+AgentVersionDetail 继续继承 AgentVersionSummary；版本列表不读取协议内容。
+管理与 Search 统一使用 versionInfo.labels/onlineVersions，条目复用 AgentVersionSummary。
+Search 省略所有管理字段及非在线标签；管理侧单版本 labels 保留显式空数组，Search 允许省略。
+本轮调整 Search/Admin/Console 的资源版本元数据 JSON；发现结果、RPC 信封类型、
+Endpoint、版本存储 bytes 和 canonical fingerprint 保持不变。
+Agent/MCP 共用的 `ClientLivenessInfo` 放到 `api.ai.model`。
+
+完整基类与请求清单见[模型收敛契约](./client-ai-api-evolution-spec.md)。
 
 ### 2.2 传输矩阵
 
@@ -243,10 +269,10 @@ Current-fact Discover 与 Fingerprint 比较。两种 Server Watch Binding 都�
 
 | Method | Path | 输入 | 返回 |
 |---|---|---|---|
-| GET | `/v3/client/ai/agents/search` | RAD Search query | `Result<Page<AgentCatalogEntry>>` |
+| GET | `/v3/client/ai/agents/search` | RAD Search query | `Result<Page<AgentSummary>>` |
 | GET | `/v3/client/ai/agents` | RAD Reference 和可选 Filter query | `Result<AgentDiscoveryResult>` |
 | POST | `/v3/client/ai/agents/watch` | Form：`generation + timeoutMillis + watches`，其中 `watches` 为 JSON 数组字符串 | `Result<AgentWatchBatchResponse>` |
-| POST | `/v3/client/ai/agents` | Form：`AgentPublishRequest`，复杂字段使用 JSON 字符串 | `Result<AgentVersionDetail>` |
+| POST | `/v3/client/ai/agents` | Form：`AgentPublishClientRequest`，复杂字段使用 JSON 字符串 | `Result<AgentVersionDetail>` |
 | POST | `/v3/client/ai/agents/endpoints` | Form：完整 `AgentEndpointRegistrationBatch`，其中 `endpoints` 为 JSON 字符串 | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form：`namespaceId + agentName + protocol` Publication Identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | 无 body | `Result<ClientLivenessInfo>` |
@@ -597,3 +623,9 @@ Nacos 4.0 兼容边界。兼容期内，旧 A2A Endpoint API 保持当前带 Ver
 Layout 和替换范围，不改写到新的无 Version Agent Naming Service；旧 Client 无法构造
 该 Service 要求的完整跨 Version Publisher Batch。历史数据迁移和混合版本滚动升级
 属于独立规范，不得从本 API-only 契约推断。
+
+## 地址模型统一的验收补充（评审草案，尚未实施）
+
+模型统一同时影响 Client 注册/发布、Admin/Maintainer、Console 与旧 A2A 内部转换。healthy 可写范围建议为 Runtime 注册/完整替换，缺省 true；输入中的 bindings、enabled/state 和观测时间忽略。HTTP、gRPC 与两种 SDK JSON adapter 必须一致；命名空间、鉴权、错误和查询/订阅行为保持。
+
+本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。

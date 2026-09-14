@@ -17,14 +17,14 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import io.grpc.Status;
@@ -65,7 +65,7 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.HTTP, grpcTransport, httpTransport);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         AgentVersionDetail version = new AgentVersionDetail();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         ClientLivenessInfo liveness = new ClientLivenessInfo();
         when(httpTransport.publishAgent(any())).thenReturn(version);
@@ -74,7 +74,7 @@ class AgentTransportRouterTest {
         when(httpTransport.registerAgentEndpoints(any())).thenReturn(liveness);
         when(httpTransport.heartbeatAgentEndpoints()).thenReturn(liveness);
         
-        assertSame(version, router.publishAgent(new AgentPublishRequest()));
+        assertSame(version, router.publishAgent(new AgentPublishClientRequest()));
         assertSame(page, router.searchAgents(new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
         assertEquals(AgentTransportType.HTTP, router.selectPublicationTransport());
@@ -119,7 +119,7 @@ class AgentTransportRouterTest {
         when(grpcTransport.searchAgents(any())).thenThrow(
             new NacosException(NacosException.SERVER_ERROR, "unavailable"));
         
-        assertSame(version, router.publishAgent(new AgentPublishRequest()));
+        assertSame(version, router.publishAgent(new AgentPublishClientRequest()));
         assertThrows(NacosException.class,
             () -> router.searchAgents(new AgentSearchRequest()));
         assertEquals(AgentTransportType.GRPC, router.selectPublicationTransport());
@@ -132,7 +132,7 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         when(grpcTransport.searchAgents(any())).thenReturn(page);
         when(grpcTransport.discoverAgent(any())).thenReturn(discovery);
@@ -148,7 +148,7 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(false);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         AgentVersionDetail version = new AgentVersionDetail();
         when(httpTransport.searchAgents(any())).thenReturn(page);
@@ -157,7 +157,7 @@ class AgentTransportRouterTest {
         
         assertSame(page, router.searchAgents(new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
-        assertSame(version, router.publishAgent(new AgentPublishRequest()));
+        assertSame(version, router.publishAgent(new AgentPublishClientRequest()));
         assertEquals(AgentTransportType.HTTP, router.selectPublicationTransport());
         verify(grpcTransport, times(3)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
@@ -172,7 +172,7 @@ class AgentTransportRouterTest {
             new NacosException(NacosException.CLIENT_DISCONNECT, "disconnected"));
         when(grpcTransport.discoverAgent(any())).thenThrow(
             new NacosException(NacosException.UN_REGISTER, "unregistered"));
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         when(httpTransport.searchAgents(any())).thenReturn(page);
         when(httpTransport.discoverAgent(any())).thenReturn(discovery);
@@ -188,7 +188,7 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         when(httpTransport.searchAgents(any())).thenReturn(page);
         int[] transportErrors = {NacosException.CLIENT_DISCONNECT, NacosException.UN_REGISTER};
         
@@ -207,7 +207,7 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         when(httpTransport.searchAgents(any())).thenReturn(page);
         Throwable[] unavailableFailures = {Status.UNAVAILABLE.asRuntimeException(),
             Status.UNAVAILABLE.asException()};
@@ -231,7 +231,7 @@ class AgentTransportRouterTest {
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         when(grpcTransport.searchAgents(any())).thenThrow(
             new NacosException(NacosException.CLIENT_DISCONNECT, "connection unavailable"));
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         when(httpTransport.searchAgents(any())).thenReturn(page);
         
         assertSame(page, router.searchAgents(new AgentSearchRequest()));
@@ -295,7 +295,7 @@ class AgentTransportRouterTest {
             new NacosException(NacosException.SERVER_ERROR, "unknown result"));
         
         assertThrows(NacosException.class,
-            () -> router.publishAgent(new AgentPublishRequest()));
+            () -> router.publishAgent(new AgentPublishClientRequest()));
         verify(httpTransport, never()).publishAgent(any());
     }
     

@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -58,7 +57,7 @@ public class AgentRemoteHandler implements AgentHandler {
     }
     
     @Override
-    public Agent updateAgent(String namespaceId, AgentUpdateRequest request)
+    public AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
         throws NacosException {
         return agentService().updateAgent(namespaceId, request);
     }
@@ -95,13 +94,13 @@ public class AgentRemoteHandler implements AgentHandler {
     }
     
     @Override
-    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
+    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
         throws NacosException {
         return agentService().createDraft(namespaceId, request);
     }
     
     @Override
-    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
+    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
         throws NacosException {
         return agentService().updateDraft(namespaceId, request);
     }
@@ -149,7 +148,7 @@ public class AgentRemoteHandler implements AgentHandler {
     }
     
     @Override
-    public Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
         throws NacosException {
         return agentService().updateLabels(namespaceId, request);
     }
@@ -158,8 +157,8 @@ public class AgentRemoteHandler implements AgentHandler {
         return clientHolder.getAiMaintainerService().agent();
     }
     
-    private AgentVersionCommand versionCommand(String agentName, String version) {
-        AgentVersionCommand result = new AgentVersionCommand();
+    private AgentVersionAdminRequest versionCommand(String agentName, String version) {
+        AgentVersionAdminRequest result = new AgentVersionAdminRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         return result;

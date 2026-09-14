@@ -34,9 +34,9 @@ import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -47,13 +47,13 @@ import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -152,7 +152,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(NacosException.SERVER_ERROR, legacy.getErrCode(), legacy.toString());
         NacosRuntimeException child = assertThrows(NacosRuntimeException.class, () -> service.agent().getAgentCard(absent));
         assertEquals(legacy.getErrCode(), child.getErrCode());
-        assertNotNull(service.agent().searchAgents(new AgentSearchQuery()));
+        assertNotNull(service.agent().searchAgents(new AgentSearchClientRequest()));
     }
 
     @Test
@@ -339,7 +339,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, published.getStatus(),
                 published.toString());
         waitUntil(mode + " Agent should become searchable", () -> {
-            AgentSearchQuery search = new AgentSearchQuery();
+            AgentSearchClientRequest search = new AgentSearchClientRequest();
             search.setAgentNameContains(agentName);
             return service.agent().searchAgents(search).getPageItems().stream()
                     .anyMatch(each -> agentName.equals(each.getAgentName()));
@@ -357,7 +357,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION, service.agent().subscribeAgent(reference, listener).getVersion());
 
         Endpoint endpoint = endpoint(mode);
-        AgentEndpointRegistration registration = new AgentEndpointRegistration();
+        AgentEndpointRegistrationClientRequest registration = new AgentEndpointRegistrationClientRequest();
         registration.setAgentName(agentName);
         registration.setRuntimeVersion(VERSION);
         registration.setProtocol(PROTOCOL_A2A);
@@ -509,7 +509,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         return AiMaintainerFactory.createAiMaintainerService(properties);
     }
 
-    private AgentPublishRequest agentRequest(String agentName, AgentTransportMode mode) {
+    private AgentPublishClientRequest agentRequest(String agentName, AgentTransportMode mode) {
         AgentInterface descriptorEndpoint = new AgentInterface();
         descriptorEndpoint.setUrl("https://example.com/" + agentName);
         descriptorEndpoint.setProtocolBinding("HTTP+JSON");
@@ -526,7 +526,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint declared = new Endpoint();
         declared.setUri(descriptorEndpoint.getUrl());
         declared.setTransport(descriptorEndpoint.getProtocolBinding());
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol(PROTOCOL_A2A);
         callInterface.setProtocolVersion("1.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -539,7 +539,7 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         AgentProvider provider = new AgentProvider();
         provider.setName("Nacos Java SDK IT");
         provider.setUrl("https://nacos.io");
-        AgentPublishRequest result = new AgentPublishRequest();
+        AgentPublishClientRequest result = new AgentPublishClientRequest();
         result.setAgentName(agentName);
         result.setDisplayName("Display " + agentName);
         result.setDescription("Agent transport matrix " + mode);
@@ -569,12 +569,12 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentEndpointDeregistration deregistration(String agentName,
+    private AgentEndpointDeregistrationClientRequest deregistration(String agentName,
             Endpoint endpoint) {
         Endpoint naturalKey = new Endpoint();
         naturalKey.setUri(endpoint.getUri());
         naturalKey.setTransport(endpoint.getTransport());
-        AgentEndpointDeregistration result = new AgentEndpointDeregistration();
+        AgentEndpointDeregistrationClientRequest result = new AgentEndpointDeregistrationClientRequest();
         result.setAgentName(agentName);
         result.setProtocol(PROTOCOL_A2A);
         result.setEndpoints(Collections.singletonList(naturalKey));

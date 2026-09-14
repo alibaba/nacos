@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.metadata;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ class AgentVersionCatalogBuilderTest {
         
         AgentVersionCatalogBuilder.Result result =
             AgentVersionCatalogBuilder.build(versions, labels);
-        AgentVersionCatalog catalog = result.getVersionCatalog();
+        AgentVersionInfo catalog = result.getVersionCatalog();
         
         assertEquals("1.0.0", catalog.getLatestVersion());
         assertEquals(Arrays.asList("2.0.0", "2.0.0-RC1", "1.0.0"),
@@ -123,7 +123,7 @@ class AgentVersionCatalogBuilderTest {
             () -> result.getLabels().put("stable", "1.0.0"));
         assertThrows(UnsupportedOperationException.class,
             () -> result.getVersionCatalog().getOnlineVersions().add(
-                new AgentVersionCatalogEntry()));
+                new AgentVersionSummary()));
         assertThrows(UnsupportedOperationException.class,
             () -> result.getVersionCatalog().getOnlineVersions().get(0)
                 .getProtocols().add("grpc"));
@@ -159,9 +159,9 @@ class AgentVersionCatalogBuilderTest {
                 Collections.singletonMap(version, protocols), Collections.emptyMap()));
     }
     
-    private List<String> catalogVersions(AgentVersionCatalog catalog) {
+    private List<String> catalogVersions(AgentVersionInfo catalog) {
         List<String> result = new ArrayList<String>();
-        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+        for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             result.add(entry.getVersion());
         }
         return result;

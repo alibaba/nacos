@@ -20,13 +20,27 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 
 /**
- * Shared validation helpers for Agent Admin request models.
+ * Shared validation helpers for Agent Admin and Client request models.
  *
  * @author Nacos
  */
 final class AgentAdminRequestUtils {
     
     private AgentAdminRequestUtils() {
+    }
+    
+    static void validateDraft(String agentName, String version, boolean directContent,
+        String basedOnVersion) {
+        validateIdentity(agentName);
+        validateVersion(version);
+        boolean copiedContent = !isBlank(basedOnVersion);
+        if (directContent == copiedContent) {
+            throw new IllegalArgumentException(
+                "Agent draft must contain either callInterfaces or basedOnVersion");
+        }
+        if (copiedContent) {
+            validateVersion(basedOnVersion);
+        }
     }
     
     static void validateIdentity(String agentName) {

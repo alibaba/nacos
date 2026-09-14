@@ -277,7 +277,7 @@ registrations, and negotiated abilities are present in the runtime.
 
 | Target request type | Target response type | Direction | Contract |
 | --- | --- | --- | --- |
-| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentSummary` values. |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit`. |
 | `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | Install one authorized connection-owned Watch and return an opaque `watchKey`, observed fingerprint, and refresh decision; never return a discovery snapshot. |

@@ -18,9 +18,9 @@
 
 | 项目 | 值 |
 | --- | --- |
-| 状态 | 第一步接口/transport 已实现并同步主规范；第 3、4 节仍为待实施草案 |
-| 更新 | 2026-09-10 |
-| 范围 | 子服务入口、资源 transport、A2A/RAD 能力发现与兼容决策 |
+| 状态 | 第一步接口/transport 已实现并同步主规范；第 3、4、6 节仍为待实施草案 |
+| 更新 | 2026-09-11 |
+| 范围 | 子服务入口、资源 transport、A2A/RAD 能力发现与兼容决策、Agent/RAD Java 模型收敛 |
 
 本提案区分第一步已实现契约与后续兼容设计；后续条款不替代当前行为。详细设计见
 [API 设计](../../../Codex/design/nacos-3.3-client-ai-api/README.md)、
@@ -153,3 +153,121 @@ HTTP API，不新增对应 OpenAPI 场景；更新 SDK 场景和覆盖表，使�
 
 后续再使用完整 A/D 矩阵验证能力发现、A2A 新 binding、迁移竞态等；HTTP 能力接口实施时补
 OpenAPI IT。所有新项在实施前保持 Pending，不修改已实现覆盖率。
+
+## 6. Agent / RAD Java 模型收敛提案
+
+本节记录已确认并在 2026-09-11 本地试改版实现的模型契约：统一 agent 包、RAD 定义优先和
+abstract 基础层。完整 43 文件清单、改造结论和 M01–M15 验证计划见
+[模型收敛设计](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_CONSOLIDATION.md)。
+用户确认本轮可以忽略 `3.3.0-BETA` 的 Java 模型兼容，不保留旧包别名或兼容壳。
+已发布旧 A2A 契约及现有 HTTP/gRPC、存储格式仍受保护。
+
+### 6.1 统一模型与抽象基础层
+
+将现有 `model.rad` 的全部具体模型/枚举迁入 `com.alibaba.nacos.api.ai.model.agent`，
+不保留两个并列的 Agent 模型包。只用于字段复用的底层模型放入 `model.agent.base`，使用
+`public abstract class AbstractAgent…`，构造器为 protected。
+跨 Agent/MCP 共用的 ClientLivenessInfo 移到 AI 公共 model 包，既有 RPC 信封仍在 remote 包。
+
+共享基础类及字段分配为：
+
+| 抽象类 | 自身声明的字段 | 复用关系 |
+| --- | --- | --- |
+| AbstractAgentMetadata | agentName/displayName/description/iconUrl/provider/tags | 管理摘要、RAD CatalogEntry、Admin 元数据更新；草稿基类继承它 |
+| AbstractAgentCallInterface | protocol/protocolVersion/descriptorMediaType/nativeDescriptor | 定义接口与 RAD 发现接口为并列具体子类 |
+| AbstractAgentSearchRequest | 五个 Search 条件及分页字段，无 namespace | Client Search 与完整 RAD Search 为并列具体子类 |
+| AbstractAgentEndpointRequest | agentName/protocol/endpoints | 注销具体请求与注册基类复用；不共享注册/注销的操作校验 |
+| AbstractAgentEndpointRegistrationRequest | runtimeVersion/versionRange | 继承 Endpoint 请求基类，供 Client 注册和 RAD RegistrationBatch 使用 |
+| AbstractAgentDraftRequest | extensions/version/callInterfaces/author/changeDescription/basedOnVersion | 继承元数据基类，供 Admin 草稿创建和 Client publish 使用 |
+
+公共基类可引用稳定值对象，不能依赖 Client/Admin 专用请求，不引入独立 Maven module。
+基类共享同义字段和访问方法，不拥有鉴权、namespace 默认、状态转换、transport、缓存、redo。
+具体操作继续调用原校验规则；相同公共校验可以复用，不因父类复用放宽上下文约束。
+
+公开 SDK 参数/返回值、DTO 成员与列表元素必须使用具体业务类型，不暴露 AbstractAgent…
+或抽象元素列表，不添加 JsonTypeInfo、类型判别字段或多态构造工厂。
+从固定 JSON 反序列化具体类型时，应自然绑定其所有继承属性。
+具有独立返回/值对象含义的 AgentSummary、AgentVersionSummary、Endpoint 保留具体类；
+不为每一两个相同字段再引入身份、版本、namespace 等通用基类。
+
+### 6.2 具体命名与继承方向
+
+初版试改按 RAD 概念保留 AgentCatalogVersion、删除 AgentVersionCatalogEntry；
+本次资源/版本整合以 §6.5 为准，统一使用 AgentVersionSummary。初版的其他合并为：
+管理/存储的目录容器也使用前者，同时保留各自的校验和 JSON 结构。
+定义侧 AgentCallInterface 拟命名 AgentDefinitionCallInterface，与 AgentDiscoveryCallInterface
+共同继承 AbstractAgentCallInterface；完整管理详情与发现结果不直接相互继承。
+
+Client 专用请求拟统一为 AgentSearchClientRequest、AgentEndpointRegistrationClientRequest、
+AgentEndpointDeregistrationClientRequest、AgentPublishClientRequest。
+Admin 专用请求拟统一为 AgentDraftCreateAdminRequest、AgentDraftUpdateAdminRequest、
+AgentUpdateAdminRequest、AgentLabelsUpdateAdminRequest、AgentVersionAdminRequest。
+RAD AgentSearchRequest、DiscoveryRequest、Endpoint Batch 等名称保留。
+不为没有独立边界的操作机械增加成对空包装类。
+
+Client 与 RAD Search 请求分别继承 AbstractAgentSearchRequest；只有完整 RAD 请求补 namespaceId。
+Endpoint 注册/注销采用同一并列关系。SDK 只接受具体 ClientRequest，复制业务内容后注入实例
+namespace；不能改为接收抽象基类或直接接受完整 RAD 请求。
+Client publish 与 Admin 草稿创建分别继承公共草稿基类，不让 Client 继承 Admin 专用请求。
+Maintainer 的 namespace 继续由显式方法参数给出，HTTP Form 独立承担字符串解析和参数绑定。
+
+### 6.3 协议、领域与验证边界
+
+RAD 是共享概念及发现契约的基准，不包含完整管理生命周期。Admin 状态操作可组合/继承公共
+对象，但不能把所有 Admin API 建立在完整 RAD 根请求或在线发现视图之上。
+协议优先不要求每个 Schema 概念都拥有独立 Java 类，也不意味着重写已有版本化 Schema。
+
+保持 JSON 属性、层级、可选/缺省值、枚举、RPC 信封类型、错误码和 Endpoint 发布语义。
+管理目录 labels 必须为数组（允许空），RAD 允许省略；公共类型不消除上下文校验。
+具体管理摘要仍按有界投影构造，不用实际详情实例强转；版本列表不额外读取 AI Storage。
+当前 Discover/publish 返回的 namespace 字段保持，不能通过共享模型的 JsonIgnore 隐藏。
+保留显式存储投影、字节、摘要、sourceRevision、Watch fingerprint 和深拷贝。
+本轮不改变 A2A/MCP/Skill 业务实现、迁移、transport 路由、Watch 或 redo 算法。
+
+新增 M15 验证 base 类型均为 abstract、构造受保护、公开 API/DTO 使用具体类型，以及具体模型
+无需多态 discriminator 就能反序列化。M01–M14 继续覆盖继承属性、namespace 隔离、旧 JSON、
+目录规则、有界摘要、存储向量、默认/Jackson 3、Client/Maintainer/OpenAPI 的真实场景。
+新增项在执行前保持 Pending，实施时同步场景/覆盖登记，不扩展真实故障注入范围。
+方案采纳与实现时同步双语 Java SDK 实现、Agent API、Agent 管理和 RAD 主规范的 Java 绑定映射。
+
+### 6.4 后续评审修订：三层发现模型（待实施）
+
+§6.1–6.3 记录已有本地试改，本节记录后续确认的模型简化目标，尚未改变现有 Wire 或运行行为。
+资源信息合并后统一使用 AgentSummary；版本元数据收敛为
+`AgentSummary.versionInfo: AgentVersionInfo → onlineVersions[]: AgentVersionSummary`。
+查询场景继续约束返回字段，Client 用户构造的入参仍不暴露 namespace。
+
+公共发现结果主干为 `AgentDiscoveryResult → callInterfaces[]: AgentCallInterface → endpoints[]: Endpoint`。
+不插入 versions[] 或 EndpointSet 导航层。固定与 Runtime 地址共用 Endpoint，由 source 属性
+表达 DECLARED/RUNTIME；不同查询入口不再产生不同的公开 CallInterface 或 Endpoint 类型。
+VersionDetail 先以只返回固定地址的方案评估，Runtime 获取方式另行评估；不强制增加管理聚合查询，
+也不将实时地址写入版本存储或 contentDigest。
+
+来源顺序、空来源及 sourceRevision 的字段承载和内部 Wire 映射仍待设计，不能因公开结构压平
+而丢失原契约信息。实施前明确是保留 Wire 适配还是同步修改 Schema，并更新相应双语规范与
+SDK/OpenAPI 场景；目前不将该目标描述成已实现的 HTTP/gRPC 结构。
+
+默认 Discover 受 latest 的协议定义、来源顺序和固定地址限制的问题记录为 MODEL-D01，
+详见[关系图 §12](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_RELATIONSHIPS.md)。
+后续再讨论全部在线版本 Endpoint 的覆盖、descriptor 归属、去重及 Watch 依赖；
+本次模型简化不顺带修改跨版本发现算法，也不通过新增结果层级预先解决该问题。
+
+### 6.5 本轮实施：资源摘要与版本信息合并
+
+本节是资源与版本元数据的现行合并规则，替代本章前面初版试改中对应的类型拆分；其他请求和协议模型的约束继续有效。
+
+本轮只实施 Agent/版本元数据的收敛，CallInterface、Endpoint 和 MODEL-D01 保持现状。
+删除公开 Agent、AgentCatalogEntry、AgentVersionCatalog、AgentCatalogVersion；资源统一为
+AgentSummary（包含可选 extensions），版本集合统一为 AgentVersionInfo，单版本条目复用
+AgentVersionSummary（增加 protocols、labels）。AgentVersionDetail 保留为包含协议内容的详情。
+
+公开 JSON 使用 versionInfo，其中包含 editingVersion、reviewingVersion、labels 和 onlineVersions。
+latest 从 labels["latest"] 派生，在线数量从 onlineVersions 派生，不再存放两套公共字段。
+Search 同样返回 AgentSummary，但省略 namespace、管理字段、extensions、editing/reviewing；
+其标签映射只包含在线版本指向。列表投影省略 extensions，详情/更新结果按原规则返回。
+
+本次调整对应的 Search/Admin/Console JSON 结构及 Java 泛型，不增加旧 BETA 公开模型壳。
+持久化仍使用原 version_info 和 ext.versionCatalog 的显式投影，保留原 schemaVersion、
+字段格式和版本内容 bytes；读取时校验旧字段一致性后组装新模型。发现选择器、地址、Watch、
+A2A、transport 及发布算法不变。UT/IT 必须验证新响应结构、字段边界、完整标签、旧存储读取
+及派生目录一致性；本次新增执行结果单独记录，不沿用上一轮验证结论。

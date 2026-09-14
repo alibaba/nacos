@@ -318,3 +318,9 @@ identifier、representation-specific URL、offline/digest 失效，以及 Artifa
   范围之外。
 - 跟踪 skills CLI 与 skills.sh 协议变化，包括是否支持更丰富的详情、审计或鉴权 API 形态。
 - 定义通过网关和服务网格运行适配器的运维指引。
+
+## 地址模型统一的验收补充（评审草案，尚未实施）
+
+Nacos Agent Artifact 随统一定义模型调整声明地址 JSON 结构，并同步 Schema/测试；原生 A2A AgentCard 协议表示保持。实际公开 Agent 的非空 Artifact HTTP 流程、exact version/digest 与 offline 错误必须验证；不得导出 Runtime、健康或管理观测字段。
+
+本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.storage;
 
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
@@ -152,7 +152,7 @@ public final class AgentVersionContentSerializer {
             throw new IllegalArgumentException("AgentVersionContent schemaVersion must be "
                 + AgentVersionContent.SCHEMA_VERSION);
         }
-        List<AgentCallInterface> callInterfaces = content.getCallInterfaces();
+        List<AgentDefinitionCallInterface> callInterfaces = content.getCallInterfaces();
         if (callInterfaces == null || callInterfaces.isEmpty()
             || callInterfaces.size() > MAX_CALL_INTERFACES) {
             throw new IllegalArgumentException(
@@ -160,7 +160,7 @@ public final class AgentVersionContentSerializer {
                     + " items");
         }
         Set<String> protocols = new HashSet<String>();
-        for (AgentCallInterface callInterface : callInterfaces) {
+        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
             AgentModelValidator.validateCallInterface(callInterface);
             if (!protocols.add(callInterface.getProtocol())) {
                 throw new IllegalArgumentException(
@@ -174,14 +174,15 @@ public final class AgentVersionContentSerializer {
         result.put("kind", AgentVersionContent.KIND);
         result.put("schemaVersion", AgentVersionContent.SCHEMA_VERSION);
         List<Map<String, Object>> callInterfaces = new ArrayList<Map<String, Object>>();
-        for (AgentCallInterface callInterface : content.getCallInterfaces()) {
+        for (AgentDefinitionCallInterface callInterface : content.getCallInterfaces()) {
             callInterfaces.add(toStorageProjection(callInterface));
         }
         result.put("callInterfaces", callInterfaces);
         return result;
     }
     
-    private static Map<String, Object> toStorageProjection(AgentCallInterface callInterface) {
+    private static Map<String, Object> toStorageProjection(
+        AgentDefinitionCallInterface callInterface) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("protocol", callInterface.getProtocol());
         if (callInterface.getProtocolVersion() != null) {

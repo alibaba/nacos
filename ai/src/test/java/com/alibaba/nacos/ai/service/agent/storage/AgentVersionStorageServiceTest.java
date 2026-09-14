@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.agent.storage;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -501,7 +501,7 @@ class AgentVersionStorageServiceTest {
     }
     
     private AgentVersionContent newContent() {
-        AgentCallInterface callInterface = new AgentCallInterface();
+        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setDescriptorMediaType("application/json");
         callInterface.setNativeDescriptor("descriptor");

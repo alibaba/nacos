@@ -134,8 +134,7 @@ Agent 资源包含以下字段：
 | `status` | 是 | `enable` 或 `disable`。 |
 | `owner` | 是 | 管理 owner。 |
 | `scope` | 是 | 共享可见性 scope；本版本为 `PUBLIC` 或 `PRIVATE`。 |
-| `versionInfo` | 只读 | 共享的 editing、reviewing、online count 和 label 摘要。 |
-| `versionCatalog` | 只读 | online Version 和 protocol 的紧凑目录。 |
+| `versionInfo` | 只读 | editingVersion、reviewingVersion、完整 labels 映射与 onlineVersions[]。 |
 | `metaVersion` | 只读 | 与 AI Resource 模型共享的单调元数据修订号；首版 Agent Admin API 不暴露条件写入参数。 |
 | `createTime`、`updateTime` | 只读 | 审计时间。 |
 
@@ -149,8 +148,10 @@ Agent 资源包含以下字段：
 - 协议 Adapter 只能在首次创建 Agent 时使用 native descriptor 初始化调用方未提供的
   目录字段。后续 descriptor 更新不得覆盖独立治理的 Agent 元数据。
 
-`versionCatalog` 包含 `latestVersion` 和 `onlineVersions[]`。每个 online 条目只包含
-`version`、`labels[]` 和 `protocols[]`。它由服务端派生，不是客户端可写事实。
+`versionInfo.onlineVersions[]` 使用 AgentVersionSummary 的目录视图，仅包含 version、labels[]、protocols[]。
+latest 来自 labels["latest"]，在线数量从列表派生。完整标签映射可以保留指向非在线版本的标签；
+目录条目仅投影在线标签。公开模型不再包含并列 versionCatalog 或独立 onlineCnt。
+底层 version_info 与 ext.versionCatalog 的存储格式仍由显式转换保持，不能直接序列化公共 DTO 替代。
 
 ## 4. Agent Version 与生命周期
 
@@ -298,8 +299,8 @@ descriptor 仍由 canonical content 完整表达。
 
 | 视图 | 包含 | 不包含 |
 | --- | --- | --- |
-| `AgentSummary` | 展示、治理和 Version Catalog 摘要。 | Descriptor、Endpoint、完整历史、extensions。 |
-| `AgentOverview` | 完整 Agent 和有界的 Version Summary page。 | Version payload 和 Runtime Endpoint。 |
+| `AgentSummary` | 展示、治理、统一 versionInfo；详情可带 extensions，列表省略它。 | Descriptor、Endpoint、完整历史。 |
+| `AgentOverview` | AgentSummary 详情投影和有界的 Version Summary page。 | Version payload 和 Runtime Endpoint。 |
 | `AgentVersionSummary` | Version、status、审核 Pipeline 结果、author、change description、digest 和时间。 | CallInterface payload。 |
 | `AgentVersionDetail` | 精确 Version 元数据和完整 CallInterface。 | Runtime Endpoint。 |
 | `RuntimeEndpointSnapshot` | 一个 Agent 和 protocol 的原始运行时快照，可按 Version 过滤。 | Descriptor、publisher identity、最终可发现性结论。 |
@@ -330,6 +331,68 @@ state = AVAILABLE | DISABLED | UNHEALTHY
 RAD Catalog、Discover 和 Watch 对象属于数据面视图，只由
 [RAD 协议规范](rad-protocol-spec.md)定义。特别是，`AgentDiscoveryResult` 将一个 online
 Version 定义与允许的 DECLARED 和 RUNTIME Endpoint set 组合，但不作为事实保存。
+
+### 6.1 管理读取向 RAD 模型收敛（评审草案，尚未实施）
+
+当前实现仍遵循上文的管理读取模型。本节记录下一轮模型整合方向，不提前修改现行 Schema、
+存储或运行行为：管理读取复用 RAD 的 `CallInterface → EndpointSet → Endpoint` 三层结构，
+层数不计外层 Agent/Version 结果。保留 EndpointSet，不将 source 下移到 Endpoint。
+
+- 精确 Version 定义与 Runtime 状态可以通过两个 API 分别查询，但从 CallInterface 开始共用
+  具体 Java 模型及相同包含关系；不因入口不同再使用另一套地址容器。
+- VersionDetail 读取只装载 DECLARED 地址；Runtime 管理读取只装载 RUNTIME 地址。
+  外层 Agent/Version 身份、版本元数据和 Console 专用引用按操作保留，不强制合并根响应。
+- 定义仍需完整保留 endpointSourceOrder；只读取 DECLARED Set 不能把来源配置误改为
+  DECLARED-only。Runtime 地址、返回 revision、健康状态和管理观测信息不得写入版本内容。
+- 管理可以返回禁用地址，也可在不存在定义时查询 Runtime；因此允许的协议描述缺省规则、
+  管理状态字段位置和管理 sourceRevision 作用域需在实施前明确，不能假定等同于 Discover。
+- 模型复用不改变 RAD 的来源顺序、空 Set、绑定、健康状态或 Watch 契约。管理专用字段不得
+  泄漏到 RAD 响应。实施需同步管理/API 与 Java Binding 规范、Schema、存储映射及相应 IT。
+
+### 6.2 模型收敛的候选处理方式（评审草案，尚未确认实施）
+
+以下为 §6.1 的展开建议，现有规范正文和 Schema 仍描述当前实现：
+
+- 最新范围不要求 3.3 BETA 升级或旧存储兼容。内部可保留 AgentVersionContent 内容容器，
+  成员直接复用统一 CallInterface/EndpointSet/Endpoint；格式随新模型调整，不另复制内部领域类。
+  保存完整定义、声明地址、来源配置与顺序，不能把经过 Filter 的发现结果直接当作定义存储。
+  响应 sourceRevision 和 runtime/观察字段不参与版本 bytes；摘要仍针对实际保存 bytes。
+- 最新输入方向：Runtime 注册/完整替换允许 healthy；bindings、管理状态和观测时间由 Nacos
+  维护，用户提交时忽略。定义与注销仍按各自操作校验；具体范围和新增测试见 §6.3。
+  输入归一化剔除维护字段，读取复制必须保留它们，不能混用两个方向。
+- SnapshotItem 的公开包装可由统一 Endpoint 承接，Runtime mapper 与 legacy migration
+  comparator 同步适配；管理与发现现有的贡献筛选、聚合规则分别保留。观察时间可考虑放到
+  EndpointSet；state 可保持由 enabled/healthy 派生，字段位置尚待确定。
+- 写入字段限制针对注册/定义 API 提交；Java 对象 setter 不会自动改变服务端状态。Snapshot
+  的内部引用与导出联动是实现适配，不是必须保留旧公开类型的设计理由。
+- 管理 sourceRevision 首轮建议允许省略，以免为模型统一增加新的管理比较机制。若提供，
+  需明确地址、bindings、enabled/healthy 等输入，排除 Service 观察时间；不能直接声称发现
+  revision 覆盖整个管理 JSON。RAD 的字段必选性与比较规则保持。
+- 上述管理 revision 指管理结果复用 EndpointSet.sourceRevision 后的取值规则，不是新增模型；
+  当前 RuntimeEndpointSnapshot 没有该字段，其是否提供与计算范围可单独确定。
+- Nacos Agent Artifact 是另一个定义 JSON 读取/导出入口，建议同步采用统一定义结构，只输出
+  声明地址及定义字段，并更新 Schema/测试；本轮不为 BETA 保留旧导出表示。原生 A2A
+  AgentCard 表示保持原协议结构。
+
+### 6.3 地址模型输入与全链路验收（评审草案，尚未实施）
+
+用户已确认模型统一方向及 healthy 可写、维护字段忽略。实施解释建议为：healthy 表示注册或
+完整替换时上报的当前健康值，缺省 true；不改变后续 Naming 活性管理，不增加永久健康开关。
+DECLARED 不包含健康，bindings、enabled/state 和观测值仍由 Nacos 维护。定义响应 revision
+建议在写入时忽略。非法身份、URI、批次版本、保留 metadata 或 JSON 类型仍受原契约约束。
+
+实施前按 [完整测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)
+固定六入口样例及字段位置，建立 16 组验收映射。范围包括原始 HTTP、SDK/Maintainer typed 结果、
+Console 两种部署和页面、Naming 映射、定义存储、旧 A2A、历史迁移、索引任务/投影、Artifact、
+Watch/revision 和正式构件。新输入行为独立于类型替换验证。
+
+不考虑 BETA 存储升级，不免除历史 A2A 迁移验证。迁移正常流程在专用隔离环境运行；真实故障
+恢复和集群注入继续延期。原私有 Search/Artifact 失败用例保持独立记录，补充公开 Agent 的非空
+实际 INDEX/Artifact 成功流程；不能以空结果、SCAN 或全 skipped 替代。
+
+新存储 bytes 导致定义 digest 及其派生引用变化可以接受，但新系统内引用必须一致；未改变的
+RUNTIME revision 编码和固定向量保持。当前 Schema 与 Java 未实施本节，覆盖率不提前提升。
+
 
 ## 7. 容量与安全
 
@@ -392,3 +455,7 @@ Runtime A2A 发布和注销投影由 [Agent 存储规范](agent-storage-spec.md)
 Agent 和 AgentSpec 可以通过通用资源关系互相引用，但不互相拥有生命周期。本版本不增加
 Agent 专用 `sourceRef`、`defaultInterfaceId`、`interfaceId`、`descriptorDigest` 或随机
 Endpoint 标识。
+
+Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵循
+[Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
+该组织方式不重命名协议/schema 概念，不改变存储或发现语义。

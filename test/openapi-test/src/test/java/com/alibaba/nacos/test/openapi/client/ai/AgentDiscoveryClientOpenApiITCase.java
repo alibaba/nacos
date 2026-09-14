@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,10 +73,10 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
         assertEquals(1, page.get("totalCount").asInt(), page.toString());
         JsonNode catalog = findCatalog(page, agentName);
         assertFalse(catalog.isMissingNode(), page.toString());
-        assertEquals(version, catalog.get("latestVersion").asText(), catalog.toString());
-        assertEquals(version, catalog.get("versions").get(0).get("version").asText(),
+        assertEquals(version, catalog.get("versionInfo").get("labels").get("latest").asText(), catalog.toString());
+        assertEquals(version, catalog.get("versionInfo").get("onlineVersions").get(0).get("version").asText(),
                 catalog.toString());
-        assertEquals("a2a", catalog.get("versions").get(0).get("protocols").get(0).asText(),
+        assertEquals("a2a", catalog.get("versionInfo").get("onlineVersions").get(0).get("protocols").get(0).asText(),
                 catalog.toString());
         
         JsonNode discovered = getJsonOk(AGENT_CLIENT_PATH,
@@ -134,7 +135,7 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
         publishAgent(agentName, versionOne);
         JsonNode versionOneCatalog = waitForCatalog(agentName, versionOne, 1);
         assertEquals(versionOne,
-                versionOneCatalog.get("versions").get(0).get("version").asText(),
+                versionOneCatalog.get("versionInfo").get("onlineVersions").get(0).get("version").asText(),
                 versionOneCatalog.toString());
         addCleanup(() -> deleteEndpointForm(versionOneClient, "AI",
                 endpointIdentity(agentName)));
@@ -154,10 +155,10 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
                 agentVersionCommand(null, agentName, versionTwo)));
         JsonNode versionTwoCatalog = waitForCatalog(agentName, versionTwo, 2);
         assertEquals(versionTwo,
-                versionTwoCatalog.get("versions").get(0).get("version").asText(),
+                versionTwoCatalog.get("versionInfo").get("onlineVersions").get(0).get("version").asText(),
                 versionTwoCatalog.toString());
         assertEquals(versionOne,
-                versionTwoCatalog.get("versions").get(1).get("version").asText(),
+                versionTwoCatalog.get("versionInfo").get("onlineVersions").get(1).get("version").asText(),
                 versionTwoCatalog.toString());
 
         JsonNode defaultBeforeVersionTwoEndpoint = waitForRuntimeEndpointCount(agentName,
@@ -206,7 +207,7 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
                         .get("sourceRevision").asText());
         JsonNode onlyVersionTwoCatalog = waitForCatalog(agentName, versionTwo, 1);
         assertEquals(versionTwo,
-                onlyVersionTwoCatalog.get("versions").get(0).get("version").asText(),
+                onlyVersionTwoCatalog.get("versionInfo").get("onlineVersions").get(0).get("version").asText(),
                 onlyVersionTwoCatalog.toString());
 
         postFormOk(ADMIN_AGENT_PATH + "/offline", agentForm(
@@ -274,9 +275,29 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
                 combined.toString());
     }
     
+    private void assertSearchSummary(JsonNode item) {
+        for (String field : Arrays.asList("versionCatalog", "latestVersion", "versions",
+                "namespaceId", "status", "owner", "scope", "extensions", "metaVersion")) {
+            assertFalse(item.has(field), "Search must omit " + field + ": " + item);
+        }
+        JsonNode info = item.get("versionInfo");
+        assertNotNull(info, item.toString());
+        assertFalse(info.has("onlineCnt"), info.toString());
+        assertFalse(info.has("latestVersion"), info.toString());
+        assertFalse(info.has("editingVersion"), info.toString());
+        assertFalse(info.has("reviewingVersion"), info.toString());
+        assertTrue(info.get("labels").has("latest"), info.toString());
+        for (JsonNode version : info.get("onlineVersions")) {
+            assertTrue(version.has("protocols"), version.toString());
+            assertFalse(version.has("status"), version.toString());
+            assertFalse(version.has("contentDigest"), version.toString());
+        }
+    }
+
     private JsonNode findCatalog(JsonNode page, String agentName) {
         for (JsonNode item : page.get("pageItems")) {
             if (agentName.equals(item.get("agentName").asText())) {
+                assertSearchSummary(item);
                 return item;
             }
         }
@@ -321,8 +342,8 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
                     .addParam("agentNameContains", agentName)).get("data");
             last = findCatalog(page, agentName);
             if (!last.isMissingNode()
-                    && expectedLatest.equals(last.path("latestVersion").asText())
-                    && last.path("versions").size() == expectedVersionCount) {
+                    && expectedLatest.equals(last.path("versionInfo").path("labels").path("latest").asText())
+                    && last.path("versionInfo").path("onlineVersions").size() == expectedVersionCount) {
                 return last;
             }
             TimeUnit.MILLISECONDS.sleep(200L);

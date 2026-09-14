@@ -18,13 +18,13 @@ package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +44,7 @@ class AgentDiscoveryServiceDefaultMethodTest {
     void compatibilityDefaultsReportNotImplemented() {
         AgentDiscoveryService service = new AgentDiscoveryService() {
         };
-        assertNotImplemented(() -> service.searchAgents(new AgentSearchQuery()));
+        assertNotImplemented(() -> service.searchAgents(new AgentSearchClientRequest()));
         assertNotImplemented(() -> service.discoverAgent(new AgentReference(),
             new AgentDiscoveryFilter()));
         assertNotImplemented(() -> service.subscribeAgent(new AgentReference(),
@@ -52,9 +52,9 @@ class AgentDiscoveryServiceDefaultMethodTest {
         assertNotImplemented(() -> service.unsubscribeAgent(new AgentReference(),
             new AgentDiscoveryFilter(), listener()));
         assertNotImplemented(() -> service.registerAgentEndpoints(
-            new AgentEndpointRegistration()));
+            new AgentEndpointRegistrationClientRequest()));
         assertNotImplemented(() -> service.deregisterAgentEndpoints(
-            new AgentEndpointDeregistration()));
+            new AgentEndpointDeregistrationClientRequest()));
     }
     
     @Test
@@ -104,9 +104,11 @@ class AgentDiscoveryServiceDefaultMethodTest {
     
     @Test
     void publicAgentInputsDoNotExposeNamespace() throws Exception {
-        Class<?>[] inputs = {AgentSearchQuery.class, AgentEndpointRegistration.class,
-            AgentEndpointDeregistration.class, AgentReference.class, AgentDiscoveryFilter.class,
-            AgentPublishRequest.class};
+        Class<?>[] inputs =
+            {AgentSearchClientRequest.class, AgentEndpointRegistrationClientRequest.class,
+                AgentEndpointDeregistrationClientRequest.class, AgentReference.class,
+                AgentDiscoveryFilter.class,
+                AgentPublishClientRequest.class};
         for (Class<?> input : inputs) {
             for (PropertyDescriptor property : Introspector.getBeanInfo(input)
                 .getPropertyDescriptors()) {
@@ -114,13 +116,13 @@ class AgentDiscoveryServiceDefaultMethodTest {
             }
         }
         assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
-            "searchAgents", com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest.class));
+            "searchAgents", com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest.class));
         assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
             "registerAgentEndpoints",
-            com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch.class));
+            com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch.class));
         assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
             "deregisterAgentEndpoints",
-            com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch.class));
+            com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch.class));
     }
     
     private void assertNotImplemented(ThrowingOperation operation) {

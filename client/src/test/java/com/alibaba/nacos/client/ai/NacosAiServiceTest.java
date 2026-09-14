@@ -37,8 +37,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -47,17 +47,17 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -997,18 +997,18 @@ class NacosAiServiceTest {
     @Test
     void publishAgentCopiesCallerRequestAndDelegates() throws Exception {
         injectMocks();
-        AgentPublishRequest source = new AgentPublishRequest();
+        AgentPublishClientRequest source = new AgentPublishClientRequest();
         source.setAgentName("agent-a");
         source.setVersion("1.0.0");
-        source.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
+        source.setCallInterfaces(Collections.singletonList(new AgentDefinitionCallInterface()));
         source.setTags(new ArrayList<String>(Collections.singletonList("assistant")));
         AgentVersionDetail expected = new AgentVersionDetail();
-        when(agentTransportRouter.publishAgent(any(AgentPublishRequest.class)))
+        when(agentTransportRouter.publishAgent(any(AgentPublishClientRequest.class)))
             .thenReturn(expected);
         
         assertEquals(expected, nacosAiService.agent().publishAgent(source));
-        ArgumentCaptor<AgentPublishRequest> request =
-            ArgumentCaptor.forClass(AgentPublishRequest.class);
+        ArgumentCaptor<AgentPublishClientRequest> request =
+            ArgumentCaptor.forClass(AgentPublishClientRequest.class);
         verify(agentTransportRouter).publishAgent(request.capture());
         assertNotNull(request.getValue());
         assertEquals("assistant", request.getValue().getTags().get(0));
@@ -1019,12 +1019,12 @@ class NacosAiServiceTest {
     @Test
     void agentSearchAndDiscoverBindNamespaceAndDelegate() throws Exception {
         injectMocks();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         when(agentTransportRouter.searchAgents(any(AgentSearchRequest.class))).thenReturn(page);
         AgentDiscoveryResult discoveryResult = new AgentDiscoveryResult();
         when(agentTransportRouter.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(discoveryResult);
-        AgentSearchQuery search = new AgentSearchQuery();
+        AgentSearchClientRequest search = new AgentSearchClientRequest();
         AgentReference reference = new AgentReference();
         reference.setAgentName("agent-a");
         
@@ -1072,13 +1072,14 @@ class NacosAiServiceTest {
     @Test
     void completeAgentEndpointOperationsBindNamespaceBeforeDelegating() throws Exception {
         injectMocks();
-        AgentEndpointRegistration registration = new AgentEndpointRegistration();
+        AgentEndpointRegistrationClientRequest registration =
+            new AgentEndpointRegistrationClientRequest();
         registration.setAgentName("agent-a");
         registration.setRuntimeVersion("1.0.0");
         registration.setProtocol("a2a");
         registration.setEndpoints(Collections.emptyList());
-        AgentEndpointDeregistration deregistration =
-            new AgentEndpointDeregistration();
+        AgentEndpointDeregistrationClientRequest deregistration =
+            new AgentEndpointDeregistrationClientRequest();
         deregistration.setAgentName("agent-a");
         deregistration.setProtocol("a2a");
         deregistration.setEndpoints(Collections.emptyList());
@@ -1224,7 +1225,7 @@ class NacosAiServiceTest {
                 properties.setProperty(AiConstants.AI_TRANSPORT_MODE, override);
                 properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, global);
                 service.mcp().getMcpServer("mcp", "1.0.0");
-                service.agent().searchAgents(new AgentSearchQuery());
+                service.agent().searchAgents(new AgentSearchClientRequest());
                 service.prompt().getPrompt("prompt");
                 if ("grpc".equals(global)) {
                     verify(grpc).queryMcpServer("mcp", "1.0.0");

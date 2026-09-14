@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -200,7 +200,7 @@ class AiServiceDefaultMethodTest {
     void publishAgentDefaultsToNotImplemented() {
         NacosException exception = assertThrows(NacosException.class,
             () -> mock(AgentService.class, CALLS_REAL_METHODS)
-                .publishAgent(new AgentPublishRequest()));
+                .publishAgent(new AgentPublishClientRequest()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
     }
     

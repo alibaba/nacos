@@ -21,11 +21,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentExtension;
 import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -62,14 +62,14 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldProjectMultiVersionA2aAndCustomDefinition() {
-        Agent agent = agent();
+        AgentSummary agent = agent();
         AgentVersionDetail latest = latest();
         AgentCard card = a2aCard();
-        AgentCallInterface a2a = callInterface("a2a", card);
+        AgentDefinitionCallInterface a2a = callInterface("a2a", card);
         Map<String, Object> customDescriptor = new LinkedHashMap<>();
         customDescriptor.put("z", "tail");
         customDescriptor.put("a", "head");
-        AgentCallInterface custom = callInterface("acme-rpc", customDescriptor);
+        AgentDefinitionCallInterface custom = callInterface("acme-rpc", customDescriptor);
         latest.setCallInterfaces(Arrays.asList(a2a, null, custom));
         
         AiResourceIndexProjection projection = projector.project(agent, latest);
@@ -113,7 +113,7 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldKeepNacosArtifactWhenA2aIsInvalidOrOnlyOldVersionSupportsIt() {
-        Agent agent = agent();
+        AgentSummary agent = agent();
         agent.setDisplayName(" ");
         agent.setTags(null);
         agent.setIconUrl(null);
@@ -139,12 +139,12 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldProjectPureA2aAgentWithoutInventingOtherProtocols() {
-        Agent agent = agent();
-        AgentVersionCatalogEntry latestEntry = new AgentVersionCatalogEntry();
+        AgentSummary agent = agent();
+        AgentVersionSummary latestEntry = new AgentVersionSummary();
         latestEntry.setVersion("2.0.0");
         latestEntry.setLabels(Arrays.asList("latest", "stable"));
         latestEntry.setProtocols(List.of("a2a"));
-        agent.getVersionCatalog().setOnlineVersions(List.of(latestEntry));
+        agent.getVersionInfo().setOnlineVersions(List.of(latestEntry));
         AgentVersionDetail latest = latest();
         latest.setCallInterfaces(List.of(callInterface("a2a", a2aCard())));
         
@@ -162,12 +162,13 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldSkipBrokenA2aAndDescriptorButContinueToValidContent() {
-        Agent agent = agent();
+        AgentSummary agent = agent();
         AgentVersionDetail latest = latest();
-        AgentCallInterface brokenA2a = callInterface("a2a", null);
-        AgentCallInterface validA2a = callInterface("A2A", a2aCard());
-        AgentCallInterface brokenCustom = callInterface("custom", new FailingDescriptor());
-        AgentCallInterface emptyCustom = callInterface("empty", null);
+        AgentDefinitionCallInterface brokenA2a = callInterface("a2a", null);
+        AgentDefinitionCallInterface validA2a = callInterface("A2A", a2aCard());
+        AgentDefinitionCallInterface brokenCustom =
+            callInterface("custom", new FailingDescriptor());
+        AgentDefinitionCallInterface emptyCustom = callInterface("empty", null);
         latest.setCallInterfaces(Arrays.asList(brokenA2a, validA2a, brokenCustom, emptyCustom));
         
         AiResourceIndexProjection projection = projector.project(agent, latest);
@@ -182,7 +183,7 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldBoundCustomDescriptorContent() {
-        Agent agent = agent();
+        AgentSummary agent = agent();
         AgentVersionDetail latest = latest();
         latest.setCallInterfaces(List.of(callInterface("custom",
             Collections.singletonMap("content", "x".repeat(1024 * 1024)))));
@@ -194,8 +195,8 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldHandleMissingCatalogEntriesAndCallInterfaces() {
-        Agent agent = agent();
-        agent.setVersionCatalog(null);
+        AgentSummary agent = agent();
+        agent.setVersionInfo(null);
         AgentVersionDetail latest = latest();
         latest.setCallInterfaces(null);
         AiResourceIndexProjection withoutCatalog = projector.project(agent, latest);
@@ -207,11 +208,11 @@ class AgentSearchIndexProjectorTest {
         assertEquals("nacos-agent", metadata.get("primaryArtifactKind"));
         assertTrue(withoutCatalog.getEnhancementContents().isEmpty());
         
-        AgentVersionCatalog catalog = catalog();
-        AgentVersionCatalogEntry withoutProtocols = new AgentVersionCatalogEntry();
+        AgentVersionInfo catalog = catalog();
+        AgentVersionSummary withoutProtocols = new AgentVersionSummary();
         withoutProtocols.setVersion("2.0.0");
         catalog.setOnlineVersions(Arrays.asList(null, withoutProtocols));
-        agent.setVersionCatalog(catalog);
+        agent.setVersionInfo(catalog);
         AiResourceIndexProjection withoutProtocolsProjection = projector.project(agent, latest);
         Map<String, Object> withoutProtocolsMetadata = JacksonUtils.toObj(
             withoutProtocolsProjection.getDocument().getMetadata(), MAP_TYPE);
@@ -220,7 +221,7 @@ class AgentSearchIndexProjectorTest {
     
     @Test
     void shouldUseStableFactsInsteadOfTimestampsForDigest() {
-        Agent firstAgent = agent();
+        AgentSummary firstAgent = agent();
         AgentVersionDetail firstLatest = latest();
         String first = projector.project(firstAgent, firstLatest).getDocument().getSourceDigest();
         firstAgent.setUpdateTime(9999L);
@@ -236,7 +237,7 @@ class AgentSearchIndexProjectorTest {
         firstAgent.setDescription("changed description");
         String changedMetadata = projector.project(firstAgent, firstLatest).getDocument()
             .getSourceDigest();
-        firstAgent.getVersionCatalog().getOnlineVersions().get(0).setLabels(List.of("stable"));
+        firstAgent.getVersionInfo().getOnlineVersions().get(0).setLabels(List.of("stable"));
         String changedCatalog = projector.project(firstAgent, firstLatest).getDocument()
             .getSourceDigest();
         
@@ -259,8 +260,22 @@ class AgentSearchIndexProjectorTest {
         }
     }
     
-    private Agent agent() {
-        Agent result = new Agent();
+    @Test
+    void shouldKeepIndexProjectionIndependentOfManagementOnlyVersionFields() {
+        AgentSummary original = agent();
+        AgentVersionDetail version = latest();
+        AiResourceSearchDocument before = projector.project(original, version).getDocument();
+        original.getVersionInfo().setEditingVersion("3.0.0");
+        original.getVersionInfo().getLabels().put("archived", "0.9.0");
+        original.getVersionInfo().getOnlineVersions().get(0).setAuthor("private-author");
+        AiResourceSearchDocument after = projector.project(original, version).getDocument();
+        assertEquals(before.getMetadata(), after.getMetadata());
+        assertEquals(before.getSourceDigest(), after.getSourceDigest());
+    }
+    
+    private AgentSummary agent() {
+        AgentSummary result = new AgentSummary();
+        result.setVersionInfo(new AgentVersionInfo());
         result.setNamespaceId("public");
         result.setAgentName("research-agent");
         result.setDisplayName("Research Agent");
@@ -274,19 +289,20 @@ class AgentSearchIndexProjectorTest {
         result.setStatus("enable");
         result.setOwner("alice");
         result.setScope("PUBLIC");
-        result.setVersionCatalog(catalog());
+        result.setVersionInfo(catalog());
         result.setUpdateTime(1000L);
         return result;
     }
     
-    private AgentVersionCatalog catalog() {
-        AgentVersionCatalog result = new AgentVersionCatalog();
-        result.setLatestVersion("2.0.0");
-        AgentVersionCatalogEntry latest = new AgentVersionCatalogEntry();
+    private AgentVersionInfo catalog() {
+        AgentVersionInfo result = new AgentVersionInfo();
+        result.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", "2.0.0")));
+        AgentVersionSummary latest = new AgentVersionSummary();
         latest.setVersion("2.0.0");
         latest.setLabels(List.of("latest"));
         latest.setProtocols(Arrays.asList("a2a", "acme-rpc", "a2a", null, ""));
-        AgentVersionCatalogEntry old = new AgentVersionCatalogEntry();
+        AgentVersionSummary old = new AgentVersionSummary();
         old.setVersion("1.0.0");
         old.setLabels(Collections.emptyList());
         old.setProtocols(List.of("a2a"));
@@ -337,8 +353,8 @@ class AgentSearchIndexProjectorTest {
         return result;
     }
     
-    private AgentCallInterface callInterface(String protocol, Object descriptor) {
-        AgentCallInterface result = new AgentCallInterface();
+    private AgentDefinitionCallInterface callInterface(String protocol, Object descriptor) {
+        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
         return result;

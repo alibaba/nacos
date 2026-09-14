@@ -17,17 +17,16 @@
 package com.alibaba.nacos.api.ai.model.agent;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.io.Serializable;
 import java.util.List;
 
 /**
  * Exact Agent version definition for management reads.
  *
  * @author Nacos
+ * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentVersionDetail implements Serializable {
+public class AgentVersionDetail extends AgentVersionSummary {
     
     private static final long serialVersionUID = 1L;
     
@@ -35,23 +34,7 @@ public class AgentVersionDetail implements Serializable {
     
     private String agentName;
     
-    private String version;
-    
-    private String status;
-    
-    private String publishPipelineInfo;
-    
-    private List<AgentCallInterface> callInterfaces;
-    
-    private String author;
-    
-    private String changeDescription;
-    
-    private String contentDigest;
-    
-    private Long createTime;
-    
-    private Long updateTime;
+    private List<AgentDefinitionCallInterface> callInterfaces;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -69,75 +52,11 @@ public class AgentVersionDetail implements Serializable {
         this.agentName = agentName;
     }
     
-    public String getVersion() {
-        return version;
-    }
-    
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    
-    public String getStatus() {
-        return status;
-    }
-    
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
-    public String getPublishPipelineInfo() {
-        return publishPipelineInfo;
-    }
-    
-    public void setPublishPipelineInfo(String publishPipelineInfo) {
-        this.publishPipelineInfo = publishPipelineInfo;
-    }
-    
-    public List<AgentCallInterface> getCallInterfaces() {
+    public List<AgentDefinitionCallInterface> getCallInterfaces() {
         return callInterfaces;
     }
     
-    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
+    public void setCallInterfaces(List<AgentDefinitionCallInterface> callInterfaces) {
         this.callInterfaces = callInterfaces;
-    }
-    
-    public String getAuthor() {
-        return author;
-    }
-    
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-    
-    public String getChangeDescription() {
-        return changeDescription;
-    }
-    
-    public void setChangeDescription(String changeDescription) {
-        this.changeDescription = changeDescription;
-    }
-    
-    public String getContentDigest() {
-        return contentDigest;
-    }
-    
-    public void setContentDigest(String contentDigest) {
-        this.contentDigest = contentDigest;
-    }
-    
-    public Long getCreateTime() {
-        return createTime;
-    }
-    
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-    
-    public Long getUpdateTime() {
-        return updateTime;
-    }
-    
-    public void setUpdateTime(Long updateTime) {
-        this.updateTime = updateTime;
     }
 }

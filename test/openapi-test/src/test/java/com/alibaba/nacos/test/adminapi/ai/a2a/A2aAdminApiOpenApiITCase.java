@@ -173,7 +173,7 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                     canonicalOverview.toString());
             assertEquals("PUBLIC", canonicalAgent.get("scope").asText(),
                     canonicalOverview.toString());
-            assertEquals(1, canonicalAgent.get("versionInfo").get("onlineCnt").asInt(),
+            assertEquals(1, canonicalAgent.get("versionInfo").get("onlineVersions").size(),
                     canonicalOverview.toString());
             assertEquals(firstVersion,
                     canonicalAgent.get("versionInfo").get("labels").get("latest").asText(),

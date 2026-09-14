@@ -198,12 +198,12 @@ CLIENT_DISCONNECT、UN_REGISTER 或通用 transport 异常中的 gRPC UNAVAILABL
 
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
-| Search | `searchAgents` | 接受 `AgentSearchQuery`，返回 `Page<AgentCatalogEntry>`。 |
+| Search | `searchAgents` | 接受 `AgentSearchClientRequest`，返回 `Page<AgentSummary>`。 |
 | Discover | `discoverAgent` 重载 | 接受 `AgentReference` 和可选 `AgentDiscoveryFilter`，返回一个完整 `AgentDiscoveryResult`。 |
 | Watch | `subscribeAgent` 重载 | 接受相同 Reference、可选 Filter 和 Listener；返回当前完整结果，后续传递完整替换结果。 |
 | 取消 Watch | `unsubscribeAgent` 重载 | 按相同 Reference、Filter 和 Listener identity 移除 Watch。 |
-| 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistration`，并保留为 redo 意图。 |
-| 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `AgentEndpointDeregistration`。 |
+| 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationClientRequest`，并保留为 redo 意图。 |
+| 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `AgentEndpointDeregistrationClientRequest`。 |
 
 Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进制兼容。
 `NacosAgentDiscoveryEvent` 增加 Event Type 与 Unavailable Error Getter，现有 Result
@@ -225,8 +225,12 @@ Listener Callback 在 Connection/HTTP I/O 外执行；有 Listener Executor 时�
 使用有界共享 Executor，并隔离异常。该 Agent-only 分层不改变 Prompt、Skill、MCP、
 AgentSpec 或旧 A2A 的 Transport Ownership。
 
-这些公开方法的 Search/Endpoint 入参分别是 `AgentSearchQuery`、`AgentEndpointRegistration`
-和 `AgentEndpointDeregistration`，不包含 `namespaceId` 字段或访问器，也不继承带 namespace 的
+Agent/RAD 具体模型与抽象基类组织遵循
+[Agent API Java 模型绑定](../ai/agent-api-spec.md#java-模型绑定)。
+SDK 签名使用具体 Client 请求，带 namespace 的 RAD 请求与其为并列类型。
+
+这些公开方法的 Search/Endpoint 入参分别是 `AgentSearchClientRequest`、`AgentEndpointRegistrationClientRequest`
+和 `AgentEndpointDeregistrationClientRequest`，不包含 `namespaceId` 字段或访问器，也不继承带 namespace 的
 传输模型。Proxy 复制调用方内容，将 SDK namespace 注入原有内部传输对象，不修改输入。目标 Watch、Cache 和 Redo 行为遵循
 [客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)和
 [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)。
