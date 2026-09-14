@@ -614,6 +614,7 @@
         <module>core</module>
         <module>naming</module>
         <module>address</module>
+        <module>dns</module>
         <module>test</module>
         <module>api</module>
         <module>client</module>
