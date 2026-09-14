@@ -84,7 +84,7 @@ liveness probe available, and verifies that requests to the independent ARD
 port cannot inherit a Nacos authorization header. The guard complements rather
 than replaces the functional scenario rows. The live
 [authorization operation registry](AUTHORIZATION_OPERATION_COVERAGE.md) maps all
-386 production `@Secured` methods in 56 Controllers to direct tests or reviewed
+392 production `@Secured` methods in 56 Controllers to direct tests or reviewed
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
