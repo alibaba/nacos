@@ -32,6 +32,8 @@ external Java clients against the standalone server.
 | Version evolution | Publish a subsequent direct-content Version and a `basedOnVersion` Version; reject first-Version inheritance and both/neither content sources. | Java SDK IT, OpenAPI IT |
 | Namespace and caller isolation | Default and custom namespaces are isolated; a request cannot supply namespace; SDK copying preserves every caller-owned field and nested value. | Java SDK IT plus proxy unit tests |
 | Transport parity | The same request and error categories work through explicitly selected gRPC and HTTP transports; unsupported negotiated ability fails locally before a remote request. | Java SDK IT plus proxy unit tests |
+| Default visibility and scope preservation | HTTP and gRPC publishers create PUBLIC resources; a separate READ-only consumer discovers without visibility grants. PRIVATE blocks discovery; PUBLIC restores discovery. Equivalent publish retries preserve PRIVATE. | `shouldDiscoverDefaultPublicAndPreservePrivateOnPublishRetry` |
+| Scope Watch invalidation | PUBLIC to PRIVATE must emit UNAVAILABLE without a discovery payload. The auth-enabled HTTP subscription currently fails to produce its initial snapshot, before the scope mutation. Restore after `DAUTH-F05` is resolved. | Partial: `shouldInvalidateWatchAfterScopeBecomesPrivate` retained with `@Disabled` |
 | Endpoint independence | Endpoint pre-registration before definition succeeds and does not create an Agent; definition-first and Endpoint-first workflows converge after publish. | Java SDK IT |
 
 ## Legacy A2aService First-Version Alignment
@@ -54,6 +56,6 @@ external Java clients against the standalone server.
 | Generic SDK publishes Version 1, registers runtime Endpoint, subscribes latest, publishes Version 2, and registers its Endpoint | Search, exact/latest Discover, polling subscription, legacy A2A query, and legacy subscription converge at each transition. |
 | HTTP publish plus gRPC discover, then gRPC publish plus HTTP discover | Definition state and error mapping are transport-equivalent and no Publisher heartbeat identity is required for persistent definition publication. |
 
-Server Watch/Push, local `getAll` or `selectOneHealthy` helpers, management
+Except for the documented scope-invalidation regression above, Server Watch/Push, local `getAll` or `selectOneHealthy` helpers, management
 metadata subscription, rolling upgrade, data migration, dual writes, and
 force-publish remain outside this phase.

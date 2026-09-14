@@ -51,6 +51,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
     @Test
+    public void testConsoleScopeRoundTrip() throws Exception {
+        String name = randomAiName("agent-console-scope");
+        postFormOk(CONSOLE_AGENT_PATH + "/draft",
+                agentForm(agentInitialDraftRequest(null, name, "1.0.0")));
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, name));
+        assertEquals("PUBLIC", getJsonOk(CONSOLE_AGENT_PATH, agentIdentityQuery(null, name))
+                .get("data").get("agent").get("scope").asText());
+        for (String scope : new String[] {"PRIVATE", "PUBLIC"}) {
+            putFormOk(CONSOLE_AGENT_PATH + "/scope", Query.newInstance()
+                    .addParam("agentName", name).addParam("scope", scope));
+            assertEquals(scope, getJsonOk(CONSOLE_AGENT_PATH, agentIdentityQuery(null, name))
+                    .get("data").get("agent").get("scope").asText());
+        }
+        assertError(putRaw(CONSOLE_AGENT_PATH + "/scope",
+                Query.newInstance().addParam("agentName", name).addParam("scope", "invalid")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "scope");
+    }
+
+    @Test
     public void testAllConsoleManagementPathsAndRuntimeNamingReference() throws Exception {
         String agentName = randomAiName("agent-console");
         String firstVersion = "1.0.0";
@@ -78,7 +97,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
         JsonNode page = getJsonOk(CONSOLE_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", agentName)
-                        .addParam("bizTag", "console").addParam("scope", "private")
+                        .addParam("bizTag", "console").addParam("scope", "public")
                         .addParam("owner", "nacos").addParam("orderBy", "download_count")
                         .addParam("pageNo", "1").addParam("pageSize", "10")).get("data");
         assertEmptyPageShape(page);

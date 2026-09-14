@@ -299,8 +299,10 @@ public class AgentOperationService {
                     throw new IllegalArgumentException(
                         "Agent directory metadata is only allowed when creating the first draft");
                 }
-                result = persistenceService.createInitialDraft(toInitialAgent(namespaceId, request),
-                    draft);
+                Agent initialAgent = toInitialAgent(namespaceId, request);
+                initialAgent.setOwner(meta.getOwner());
+                initialAgent.setScope(meta.getScope());
+                result = persistenceService.createInitialDraft(initialAgent, draft);
             } else {
                 result = persistenceService.createDraft(namespaceId, agentName, draft,
                     request.getBasedOnVersion());
@@ -956,6 +958,31 @@ public class AgentOperationService {
             LOGGER.warn("Failed to notify AI resource change for Agent {} in namespace {}",
                 agentName, namespaceId, e);
         }
+    }
+    
+    /**
+     * Update Agent visibility without changing Version or Runtime state.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName canonical Agent name
+     * @param scope PUBLIC or PRIVATE, case-insensitive
+     * @throws NacosException when validation, authorization, migration, or persistence fails
+     */
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        if (StringUtils.isBlank(scope)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "Required parameter 'scope' type String is not present");
+        }
+        if (!VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
+            && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "Parameter 'scope' must be PUBLIC or PRIVATE");
+        }
+        requireWritableMeta(namespaceId, agentName);
+        resourceManager.doUpdateScope(namespaceId, agentName, RESOURCE_TYPE, scope);
+        scheduleAgentIndexMaintenance(namespaceId, agentName, AiResourceChangeOperation.UPDATE,
+            false);
     }
     
     private AiResource requireMeta(String namespaceId, String agentName) throws NacosException {

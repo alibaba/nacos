@@ -58,6 +58,14 @@ public class AgentProxy {
         return agentHandler.updateAgent(namespaceId, request);
     }
     
+    /**
+     * Update one Agent Resource visibility scope.
+     */
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        agentHandler.updateScope(namespaceId, agentName, scope);
+    }
+    
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         agentHandler.deleteAgent(namespaceId, agentName);
     }

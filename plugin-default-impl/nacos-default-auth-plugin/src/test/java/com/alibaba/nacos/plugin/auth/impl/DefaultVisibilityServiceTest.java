@@ -91,6 +91,20 @@ class DefaultVisibilityServiceTest {
     }
     
     @Test
+    void testDefaultScopeByResourceTypeAcrossApiSurfaces() {
+        DefaultVisibilityService service = new DefaultVisibilityService();
+        for (String apiType : new String[] {"OPEN_API", "ADMIN_API", "CONSOLE_API", ""}) {
+            for (String type : new String[] {"agent", "mcp"}) {
+                assertEquals("PUBLIC", service.resolveDefaultScopeForCreate("user", apiType, type));
+            }
+            for (String type : new String[] {"skill", "prompt", "agentspec", "unknown", ""}) {
+                assertEquals("PRIVATE",
+                    service.resolveDefaultScopeForCreate("user", apiType, type));
+            }
+        }
+    }
+    
+    @Test
     @SuppressWarnings("unchecked")
     void validateVisibilityShouldAllowWhenAuthDisabled() {
         DefaultVisibilityService service = new DefaultVisibilityService();

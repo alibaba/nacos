@@ -79,11 +79,11 @@ guide, not as a final OpenAPI export.
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | Config CRUD, history, listener, capacity, metrics, ops. |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | Service, instance, client, cluster, health, ops. |
-| `/v3/admin/ai/*` | 103 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
+| `/v3/admin/ai/*` | 104 | GET, POST, PUT, DELETE | MCP, A2A, Agent, Prompt, Skill, AgentSpec, Pipeline. |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | Cluster and namespace console operations. |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | Config and history console operations. |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | Naming console service and instance operations. |
-| `/v3/console/ai/*` | 81 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
+| `/v3/console/ai/*` | 82 | GET, POST, PUT, DELETE | Console AI management, imports, lifecycle, pipelines. |
 | `/v3/console/copilot/*` | 6 | GET, POST | Config plus SSE copilot operations. |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | User login and management in default auth plugin. |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | Role management in default auth plugin. |
@@ -243,6 +243,7 @@ management contract.
 | `/online` | POST | Bring an offline Version online. |
 | `/offline` | POST | Take an online Version offline. |
 | `/labels` | PUT | Update custom Version labels. |
+| `/scope` | PUT | Change Agent Resource visibility between `PUBLIC` and `PRIVATE`, preserving Version and Runtime state. |
 
 The target does not add Client HTTP Watch or Endpoint-list GET APIs. Watch and
 push use the negotiated gRPC binding; runtime inspection uses the Admin or

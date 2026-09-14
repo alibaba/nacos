@@ -51,6 +51,13 @@ export const agentApi = {
   updateAgent: (data: AgentMetadataUpdateData): ApiResult<AgentMetadata> =>
     client.put(BASE, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<AgentMetadata>,
 
+  updateScope: (data: {
+    namespaceId?: string;
+    agentName: string;
+    scope: 'PUBLIC' | 'PRIVATE';
+  }): ApiResult<string> =>
+    client.put(`${BASE}/scope`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<string>,
+
   deleteAgent: (params: {
     namespaceId?: string;
     agentName: string;

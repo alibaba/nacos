@@ -100,6 +100,13 @@ public class DefaultVisibilityService implements VisibilityService {
     }
     
     @Override
+    public String resolveDefaultScopeForCreate(String identity, String apiType,
+        String resourceType) {
+        return "agent".equals(resourceType) || "mcp".equals(resourceType)
+            ? VisibilityConstants.SCOPE_PUBLIC : VisibilityConstants.SCOPE_PRIVATE;
+    }
+    
+    @Override
     public String getVisibilityServiceName() {
         return NAME;
     }

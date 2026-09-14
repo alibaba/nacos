@@ -75,6 +75,34 @@ class McpHttpClientJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String STATUS_DRAFT = "draft";
 
     @Test
+    void shouldShareMcpAcrossUsersWithBothTransports() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED);
+        McpMaintainerService maintainer = createMcpMaintainerService();
+        for (String transport : new String[] {"HTTP", "GRPC"}) {
+            Properties publisherProperties = sdkProperties();
+            publisherProperties.setProperty(AiConstants.AI_MCP_TRANSPORT_MODE, transport);
+            Properties readerProperties = sdkProperties(AuthIdentity.CLIENT_READ_ONLY);
+            readerProperties.setProperty(AiConstants.AI_MCP_TRANSPORT_MODE, transport);
+            AiService publisher = createAiService(publisherProperties);
+            AiService reader = createAiService(readerProperties);
+            String name = randomServiceName("mcp-scope-"
+                    + transport.toLowerCase(java.util.Locale.ROOT));
+            addCleanup(() -> maintainer.deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID,
+                    name, null, null));
+            publisher.releaseMcpServer(stdioServer(name, VERSION), toolSpecification(name),
+                    resourceSpecification(name));
+            assertEquals("PUBLIC", maintainer.getMcpServerVersion(name, VERSION).getScope());
+            assertEquals(name, reader.getMcpServer(name).getName());
+            assertTrue(maintainer.updateMcpServerScope(name, "PRIVATE"));
+            NacosException denied = assertThrows(NacosException.class,
+                    () -> reader.getMcpServer(name));
+            assertEquals(NacosException.NOT_FOUND, denied.getErrCode());
+            assertTrue(maintainer.updateMcpServerScope(name, "PUBLIC"));
+            assertEquals(name, reader.getMcpServer(name).getName());
+        }
+    }
+
+    @Test
     void shouldReleaseQuerySubscribeAndHonorDraftChoiceOverHttp() throws Exception {
         AiService service = createHttpAiService();
         McpMaintainerService maintainer = createMcpMaintainerService();

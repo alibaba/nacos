@@ -310,7 +310,8 @@ used by AI resources.
 
 Default behavior:
 
-- New resources default to `PRIVATE` unless the domain supplies another scope.
+- New `agent` and `mcp` resources default to `PUBLIC`; other resource types retain
+  the `PRIVATE` default. This is a creation default, never a publish-time scope reset.
 - Global administrators can read and write all visibility-aware resources.
 - A resource owner can read and write the resource.
 - `PUBLIC` resources can be read by non-owners.

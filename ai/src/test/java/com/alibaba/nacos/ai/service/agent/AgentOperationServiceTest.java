@@ -141,6 +141,63 @@ class AgentOperationServiceTest {
     }
     
     @Test
+    void testUpdateScopeReusesGuardAndNotifiesWithoutVersionStorageChange() throws Exception {
+        AiResource meta = meta(VERSION, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        service.updateScope(NAMESPACE_ID, AGENT_NAME, "private");
+        verify(migrationMutationGuard).checkMutable(meta);
+        visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
+        verify(resourceManager).doUpdateScope(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, "private");
+        verify(indexMaintenanceService).schedule(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME);
+        verify(resourceChangeNotifier).notifyChanged(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, AGENT_NAME, AiResourceChangeOperation.UPDATE,
+            false);
+        verifyNoInteractions(persistenceService);
+    }
+    
+    @Test
+    void testUpdateScopeRejectsInvalidInputBeforePersistence() {
+        for (String scope : new String[] {null, "", " ", "SHARED"}) {
+            assertThrows(NacosApiException.class,
+                () -> service.updateScope(NAMESPACE_ID, AGENT_NAME, scope));
+        }
+        verifyNoInteractions(resourceManager, persistenceService, indexMaintenanceService,
+            resourceChangeNotifier);
+    }
+    
+    @Test
+    void testUpdateScopeFailureDoesNotNotify() throws Exception {
+        AiResource meta = meta(VERSION, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        NacosException failure =
+            new NacosException(NacosException.SERVER_ERROR, "scope write failed");
+        doThrow(failure).when(resourceManager).doUpdateScope(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, "PRIVATE");
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> service.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE")));
+        verifyNoInteractions(indexMaintenanceService, resourceChangeNotifier, persistenceService);
+    }
+    
+    @Test
+    void testUpdateScopeKeepsMigrationGuard() throws Exception {
+        AiResource meta = meta(VERSION, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        NacosApiException failure = new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "migration");
+        doThrow(failure).when(migrationMutationGuard).checkMutable(meta);
+        assertSame(failure, assertThrows(NacosApiException.class,
+            () -> service.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE")));
+        verify(resourceManager, org.mockito.Mockito.never()).doUpdateScope(anyString(),
+            anyString(), anyString(), anyString());
+        verifyNoInteractions(indexMaintenanceService, resourceChangeNotifier, persistenceService);
+    }
+    
+    @Test
     void testReadOperationsDelegateWithoutChangingModels() throws NacosException {
         Agent storedAgent = new Agent();
         AiResource meta = meta(null, null);
@@ -257,6 +314,10 @@ class AgentOperationServiceTest {
         AgentDraftCreateRequest request = draftRequest();
         request.setDescription("first-create-only");
         AiResource meta = meta(VERSION, null);
+        meta.setOwner("original-owner");
+        meta.setScope("PRIVATE");
+        visibilityHelper.when(() -> VisibilityHelper.resolveDefaultScopeForCreate(
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn("PUBLIC");
         AgentVersionDetail expected = new AgentVersionDetail();
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
@@ -275,6 +336,11 @@ class AgentOperationServiceTest {
             any(AgentVersionDetail.class));
         verify(persistenceService, never()).createDraft(eq(NAMESPACE_ID), eq(AGENT_NAME),
             any(AgentVersionDetail.class), eq(null));
+        ArgumentCaptor<Agent> retryAgent = ArgumentCaptor.forClass(Agent.class);
+        verify(persistenceService).createInitialDraft(retryAgent.capture(),
+            any(AgentVersionDetail.class));
+        assertEquals("original-owner", retryAgent.getValue().getOwner());
+        assertEquals("PRIVATE", retryAgent.getValue().getScope());
     }
     
     @Test
