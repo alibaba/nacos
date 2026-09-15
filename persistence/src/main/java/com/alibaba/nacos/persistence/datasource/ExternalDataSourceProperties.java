@@ -18,7 +18,13 @@ package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
+import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
 import java.util.ArrayList;
@@ -32,6 +38,13 @@ import java.util.Objects;
  */
 public class ExternalDataSourceProperties {
     
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ExternalDataSourceProperties.class);
+    
+    /**
+     * Compatibility default driver, used only when neither the pool config nor the selected
+     * dialect plugin provides a driver class name.
+     */
     private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
     private static final String TEST_QUERY = "SELECT 1";
@@ -56,6 +69,7 @@ public class ExternalDataSourceProperties {
         Preconditions.checkArgument(Objects.nonNull(defaultPassword),
             "nacos.plugin.datasource.db.password[.index] "
                 + "(legacy db.password[.index]) is null");
+        String defaultDriverClassName = resolveDefaultDriverClassName(environment);
         for (int index = 0; index < num; index++) {
             String url = configResolver.resolveIndexed("url", index, false);
             Preconditions.checkArgument(Objects.nonNull(url),
@@ -66,7 +80,7 @@ public class ExternalDataSourceProperties {
             DataSourcePoolProperties poolProperties =
                 DataSourcePoolProperties.build(configResolver);
             if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+                poolProperties.setDriverClassName(defaultDriverClassName);
             }
             poolProperties.setJdbcUrl(url.trim());
             poolProperties.setUsername(user.trim());
@@ -81,6 +95,39 @@ public class ExternalDataSourceProperties {
         }
         Preconditions.checkArgument(!dataSources.isEmpty(), "no datasource available");
         return dataSources;
+    }
+    
+    /**
+     * Resolve the driver class used when {@code pool.config.driver-class-name} is blank.
+     *
+     * <p>The selected {@link DatabaseDialect} plugin is asked first, so that selecting a dialect via
+     * {@code nacos.plugin.datasource-dialect.type} is enough for the built-in datasource plugins.
+     * When the dialect cannot be resolved or does not provide a default driver, the MySQL
+     * compatibility default is kept.
+     *
+     * @param environment environment used to resolve the selected dialect
+     * @return default JDBC driver class name, never blank
+     */
+    String resolveDefaultDriverClassName(Environment environment) {
+        String dialectType =
+            DatasourcePlatformUtil.getDatasourcePlatform(environment, PersistenceConstant.MYSQL);
+        String driverClassName = null;
+        try {
+            DatabaseDialect dialect = DatabaseDialectManager.getInstance().getDialect(dialectType);
+            driverClassName = dialect.getDefaultDriverClassName();
+        } catch (IllegalStateException e) {
+            LOGGER.warn("[ExternalDataSourceProperties] Cannot resolve DatabaseDialect `{}` "
+                + "for default driver class name: {}", dialectType, e.getMessage());
+        }
+        if (StringUtils.isBlank(driverClassName)) {
+            LOGGER.info("[ExternalDataSourceProperties] DatabaseDialect `{}` provides no default "
+                + "driver class name, fallback to compatibility default `{}`", dialectType,
+                JDBC_DRIVER_NAME);
+            return JDBC_DRIVER_NAME;
+        }
+        LOGGER.info("[ExternalDataSourceProperties] Use default driver class name `{}` "
+            + "provided by DatabaseDialect `{}`", driverClassName, dialectType);
+        return driverClassName.trim();
     }
     
     interface Callback<D> {

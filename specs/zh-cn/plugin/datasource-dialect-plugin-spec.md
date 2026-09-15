@@ -65,7 +65,17 @@ dialect 和另一个数据库的 mapper 是无效行为。
 | `getPageLastNum(page, pageSize)` | 返回第二个分页参数。 |
 | `getReturnPrimaryKeys()` | 返回生成主键列。 |
 | `getFunction(functionName)` | 将逻辑函数名映射到方言 SQL 函数。 |
+| `getDefaultDriverClassName()` | 返回该方言默认的 JDBC 驱动类名；方言不提供时返回 `null`。默认实现返回 `null`。 |
 | `isDuplicateKeyException(throwable)` | 判定数据源抛出的异常是否为唯一键重复冲突。默认识别异常因果链中的 Spring `DuplicateKeyException`，方言可重写以实现驱动级别的判定。 |
+
+`getDefaultDriverClassName()` 让方言插件自己携带所属数据库的驱动知识，用户只需通过
+`nacos.plugin.datasource-dialect.type` 选择方言，外部数据源即可选出匹配的驱动。
+datasource 模块仅在 `nacos.plugin.datasource.db.pool.config.driver-class-name`
+为空时才会读取该值；显式配置的驱动类始终优先。当所选方言无法解析、已被禁用或返回
+`null`/空白时，datasource 模块保持 MySQL 驱动兼容默认值。内置的 `mysql`、`postgresql`、
+`oracle`、`derby` 方言分别提供 `com.mysql.cj.jdbc.Driver`、`org.postgresql.Driver`、
+`oracle.jdbc.OracleDriver` 和 `org.apache.derby.jdbc.EmbeddedDriver`。提供默认驱动类名
+并不意味着打包驱动 jar，部署时仍需将驱动放入 classpath 或 `${nacos.home}/plugins`。
 
 `isDuplicateKeyException(throwable)` 是 config 仓储判断插入失败是否为唯一键重复冲突的
 统一入口。默认实现会遍历异常因果链，当发现 Spring 的 `DuplicateKeyException` 时返回
@@ -170,7 +180,7 @@ datasource 配置 owner，不能把同一份凭据复制到所有方言。
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
 | `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` 或对应 kebab-case | Hikari 最小空闲连接数，默认 `2`。 |
-| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用 MySQL 驱动兼容默认值，不会根据方言自动推断，因此使用 `postgresql`、`oracle` 等非 MySQL 方言时必须显式配置。 |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用所选方言插件通过 `getDefaultDriverClassName()` 提供的默认值，方言未提供时回落到 MySQL 驱动兼容默认值。需要覆盖方言默认值，或所用方言插件不提供默认值时，显式配置该项。 |
 | `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` 或对应 kebab-case | 连接测试 SQL；为空时使用 `SELECT 1`。 |
 | `nacos.plugin.datasource.db.query-timeout` | JVM 参数 `QUERYTIMEOUT` | JDBC 查询超时，单位秒，默认 `3`。 |
 

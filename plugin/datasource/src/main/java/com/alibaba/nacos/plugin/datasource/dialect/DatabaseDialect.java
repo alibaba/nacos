@@ -100,6 +100,23 @@ public interface DatabaseDialect extends PluginConfigSpec {
     String getFunction(String functionName);
     
     /**
+     * Get the default JDBC driver class name for this dialect.
+     *
+     * <p>The datasource module uses this value when
+     * {@code nacos.plugin.datasource.db.pool.config.driver-class-name} is blank, so users who only
+     * select the dialect via {@code nacos.plugin.datasource-dialect.type} do not have to configure
+     * the driver separately. An explicitly configured driver class always takes precedence.
+     *
+     * <p>The default implementation returns {@code null}, which means the dialect does not provide a
+     * default driver and the datasource module falls back to its compatibility default.
+     *
+     * @return fully qualified JDBC driver class name, or {@code null} if not provided
+     */
+    default String getDefaultDriverClassName() {
+        return null;
+    }
+    
+    /**
      * Judge whether the given throwable represents a duplicate unique-key conflict for this dialect.
      *
      * <p>The default implementation walks the throwable cause chain and reports a duplicate when it
