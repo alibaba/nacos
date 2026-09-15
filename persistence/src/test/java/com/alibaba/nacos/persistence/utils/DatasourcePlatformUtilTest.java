@@ -67,4 +67,18 @@ class DatasourcePlatformUtilTest {
         
         assertEquals("derby", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
     }
+    
+    @Test
+    void testGetDatasourcePlatformFromGivenEnvironment() {
+        MockEnvironment given = new MockEnvironment();
+        assertEquals("mysql", DatasourcePlatformUtil.getDatasourcePlatform(given, "mysql"));
+        
+        given.setProperty("spring.sql.init.platform", " oracle ");
+        assertEquals("oracle", DatasourcePlatformUtil.getDatasourcePlatform(given, "mysql"));
+        
+        given.setProperty("nacos.plugin.datasource-dialect.type", " postgresql ");
+        assertEquals("postgresql", DatasourcePlatformUtil.getDatasourcePlatform(given, "mysql"));
+        
+        assertEquals("mysql", DatasourcePlatformUtil.getDatasourcePlatform(null, "mysql"));
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,16 @@
 package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
-import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunctionEnum;
+import org.junit.jupiter.api.Test;
 
-/**
- * MySQL database dialect.
- *
- * @author xiweng.yy
- */
-public class MysqlDatabaseDialect extends AbstractDatabaseDialect {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class DerbyDatabaseDialectTest {
     
-    static final String DEFAULT_DRIVER_CLASS_NAME = "com.mysql.cj.jdbc.Driver";
-    
-    @Override
-    public String getType() {
-        return DatabaseTypeConstant.MYSQL;
-    }
-    
-    @Override
-    public String getDefaultDriverClassName() {
-        return DEFAULT_DRIVER_CLASS_NAME;
-    }
-    
-    @Override
-    public String getFunction(String functionName) {
-        return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
+    @Test
+    void testGetDefaultDriverClassName() {
+        DerbyDatabaseDialect dialect = new DerbyDatabaseDialect();
+        assertEquals(DatabaseTypeConstant.DERBY, dialect.getType());
+        assertEquals("org.apache.derby.jdbc.EmbeddedDriver", dialect.getDefaultDriverClassName());
     }
 }
