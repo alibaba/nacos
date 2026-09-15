@@ -120,6 +120,29 @@ Implementation timeouts are operational defaults, not public API guarantees.
 Domain specs must not expose JRaft timeout values as user-visible correctness
 contracts unless a domain API explicitly defines them.
 
+### Raft Log Request Encoding
+
+Raft task data uses a two-byte request type prefix followed by the serialized
+Protobuf request. The first byte is `0x38` (field 7, varint); the second byte is
+`1` for `ReadRequest` or `2` for `WriteRequest`. Follower apply and log recovery
+must use this prefix to distinguish reads from writes. Missing or truncated
+prefixes, unknown request types, and malformed Protobuf data must fail with
+`ConsistencyException`; unknown types must not be treated as writes. Protobuf
+parse failures retain their cause, and debug diagnostics must not include the
+request payload.
+
+In Nacos 3.3, the untagged `GetRequest` / `Log` fallback and its conversion
+helpers are removed. The tagged format introduced in Nacos 2.1.0 remains
+supported. This is an internal Raft log contract, not a public Java SDK or
+HTTP API change.
+
+An existing data directory can still contain untagged entries from older
+releases, including Nacos 2.0.x, even after an intermediate upgrade. Before
+upgrading to a release without the fallback, operators must finish recovery
+and snapshot/log migration using a release that can read those entries.
+Changing the running version alone does not convert persisted logs. Direct
+replay of untagged entries is no longer supported and must fail explicitly.
+
 ### JRaft Transport Authentication
 
 Nacos uses the JRaft gRPC transport without the optional Bolt transport or SOFA
