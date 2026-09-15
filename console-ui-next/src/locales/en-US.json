@@ -257,6 +257,8 @@
     "compare": "Compare",
     "rollback": "Rollback",
     "rollbackConfirm": "Are you sure you want to rollback to this version?",
+    "rollbackConfirmInsert": "The selected record is an insert operation. Rolling back restores the state before this operation, when the configuration did not exist, so the current configuration will be deleted. Continue?",
+    "rollbackConfirmDelete": "Confirm Delete Configuration",
     "rollbackInsertWarn": "Rollback will delete this configuration",
     "rollbackUpdateWarn": "Rollback will restore to this version",
     "rollbackDeleteWarn": "Rollback will re-publish this configuration",
