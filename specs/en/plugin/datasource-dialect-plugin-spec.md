@@ -201,7 +201,7 @@ The stable datasource module settings are:
 | `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | JDBC URL for every index from `0` to `num - 1`. |
 | `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | Shared or per-index username. A missing index falls back to the shared value or index `0`. |
 | `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | Shared or per-index password, with the same fallback rule as `user`. This value is sensitive. |
-| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` or kebab-case equivalent | Hikari connection timeout in milliseconds; default `3000`. |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` or kebab-case equivalent | Hikari connection timeout in milliseconds; default `3000` for external datasources and `10000` for embedded Derby. |
 | `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` or kebab-case equivalent | Hikari validation timeout in milliseconds; default `10000`. |
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` or kebab-case equivalent | Hikari idle timeout in milliseconds; default `600000`. |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` or kebab-case equivalent | Hikari maximum pool size; default `20`. |
@@ -223,6 +223,11 @@ preserves existing Hikari pass-through properties while allowing canonical
 values to override matching legacy values. The supported implementation surface
 is the Hikari JavaBean configuration accepted by the bundled version; only the
 stable subset listed above is a long-term Nacos configuration contract.
+
+When no connection timeout is configured, embedded Derby uses a longer default
+to tolerate local filesystem latency during database creation. An explicit
+canonical or legacy connection timeout overrides the default for the selected
+storage mode.
 
 `nacos.plugin.datasource.log.enabled` remains a separate datasource logging
 switch. The embedded/external persistence mode is also outside dialect-private

@@ -165,7 +165,7 @@ datasource 配置 owner，不能把同一份凭据复制到所有方言。
 | `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | 从 `0` 到 `num - 1` 每个 index 的 JDBC URL。 |
 | `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | 共享或按 index 配置的用户名；缺少某个 index 时回退共享值或 index `0`。 |
 | `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | 共享或按 index 配置的密码，回退规则与 `user` 相同；该值属于敏感信息。 |
-| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒，默认 `3000`。 |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒；外部数据源默认 `3000`，嵌入式 Derby 默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` 或对应 kebab-case | Hikari 校验超时，单位毫秒，默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
@@ -183,6 +183,9 @@ source。索引项按 index 独立解析，因此迁移期间可以同时使用�
 Hikari datasource，从而保留已有 Hikari 属性透传能力，并让标准值覆盖同名旧值。当前实现可
 接受随附 Hikari 版本提供的 JavaBean 配置面，但只有上表明确列出的稳定子集属于 Nacos 长期
 配置契约。
+
+未配置连接超时时，嵌入式 Derby 使用更长的默认值，以容忍数据库创建期间的本地文件系统延迟。
+显式配置的标准 key 或历史 alias 会覆盖所选存储模式的默认值。
 
 `nacos.plugin.datasource.log.enabled` 仍是独立的数据源日志开关。embedded/external
 persistence 模式同样不属于方言私有配置。负责转换加密数据源凭据的 custom environment
