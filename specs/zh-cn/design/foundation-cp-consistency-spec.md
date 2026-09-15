@@ -104,6 +104,23 @@ JRaft 是当前使用的多 group CP 运行时。
 实现中的超时是运维默认值，不是公开 API 保证。除非领域 API 明确声明，领域规范不得把 JRaft
 超时值暴露为用户可见正确性契约。
 
+### Raft 日志请求编码
+
+Raft task data 使用两字节请求类型前缀，后接序列化的 Protobuf 请求。首字节为 `0x38`
+（field 7，varint），次字节 `1` 表示 `ReadRequest`，`2` 表示 `WriteRequest`。
+Follower apply 和日志恢复必须通过该前缀区分读写。前缀缺失或截断、未知请求类型及损坏的
+Protobuf 数据必须以 `ConsistencyException` 失败；未知类型不得当作写请求执行。
+Protobuf 解析失败必须保留异常原因，debug 诊断不得包含请求 payload。
+
+Nacos 3.3 移除无类型前缀的 `GetRequest` / `Log` 回退解析及转换辅助方法，继续支持
+Nacos 2.1.0 引入的带类型前缀格式。这是内部 Raft 日志契约，不属于公开 Java SDK 或
+HTTP API 变更。
+
+已有数据目录即使经历过中间版本升级，也可能保留旧版本（包括 Nacos 2.0.x）产生的无前缀
+日志。升级到移除回退解析的版本前，运维侧必须在能读取这些日志的版本中完成恢复及
+snapshot/log 迁移。仅升级运行版本不会转换已持久化日志。无前缀日志不再支持直接回放，
+必须显式失败。
+
 ### JRaft 传输鉴权
 
 Nacos 使用 JRaft gRPC transport，不依赖可选的 Bolt transport 或 SOFA Hessian。
