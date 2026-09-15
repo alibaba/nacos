@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent.base;
+package com.alibaba.nacos.api.ai.model.agent;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Shared protocol descriptor fields for definition and discovery views.
@@ -26,7 +27,7 @@ import java.io.Serializable;
  * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class AbstractAgentCallInterface implements Serializable {
+public class AgentCallInterface implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
@@ -38,11 +39,10 @@ public abstract class AbstractAgentCallInterface implements Serializable {
     
     private Object nativeDescriptor;
     
-    /**
-     * Initialize fields shared by concrete Agent models.
-     */
-    protected AbstractAgentCallInterface() {
-    }
+    /** Definition source preference; absent from discovery and raw runtime views. */
+    private List<EndpointSource> endpointSourceOrder;
+    
+    private List<EndpointSet> endpointSets;
     
     public String getProtocol() {
         return protocol;
@@ -74,5 +74,21 @@ public abstract class AbstractAgentCallInterface implements Serializable {
     
     public void setNativeDescriptor(Object nativeDescriptor) {
         this.nativeDescriptor = nativeDescriptor;
+    }
+    
+    public List<EndpointSource> getEndpointSourceOrder() {
+        return endpointSourceOrder;
+    }
+    
+    public void setEndpointSourceOrder(List<EndpointSource> endpointSourceOrder) {
+        this.endpointSourceOrder = endpointSourceOrder;
+    }
+    
+    public List<EndpointSet> getEndpointSets() {
+        return endpointSets;
+    }
+    
+    public void setEndpointSets(List<EndpointSet> endpointSets) {
+        this.endpointSets = endpointSets;
     }
 }

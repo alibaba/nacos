@@ -229,12 +229,12 @@ The existing disconnected ability-check runtime exception retains its public typ
 
 | Capability | Methods | Contract |
 | --- | --- | --- |
-| Search | `searchAgents` | Accept `AgentSearchClientRequest` and return `Page<AgentSummary>`. |
+| Search | `searchAgents` | Accept `AgentSearchRequest` and return `Page<AgentSummary>`. |
 | Discover | `discoverAgent` overloads | Accept `AgentReference`, with an optional `AgentDiscoveryFilter`, and return one complete `AgentDiscoveryResult`. |
 | Watch | `subscribeAgent` overloads | Accept the same reference, optional Filter, and listener; return the current complete result and later deliver complete replacement results. |
 | Cancel Watch | `unsubscribeAgent` overloads | Remove the Watch identified by the same reference, Filter, and listener identity. |
-| Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationClientRequest` and retain it as redo intent. |
-| Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `AgentEndpointDeregistrationClientRequest` owned by this SDK publisher. |
+| Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationBatch` and retain it as redo intent. |
+| Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `agentName, protocol, List<Endpoint>` owned by this SDK publisher. |
 
 Watch does not add another public subscribe method. Existing source and binary
 compatibility are preserved. `NacosAgentDiscoveryEvent` adds an event type and
@@ -262,13 +262,20 @@ A2A transport ownership.
 
 The concrete Agent/RAD model and abstract-base organization follows the
 [Agent API Java model binding](../ai/agent-api-spec.md#java-model-binding).
-SDK signatures use concrete Client requests; namespace-bearing RAD requests are sibling types.
+SDK signatures use concrete business models or parameters; namespace comes from the instance.
 
-Public Search/Endpoint inputs use `AgentSearchClientRequest`, `AgentEndpointRegistrationClientRequest` and
-`AgentEndpointDeregistrationClientRequest`. They expose no namespace field or accessor and do not inherit
-namespace-bearing transport models. The proxy copies caller content and injects the SDK
-namespace into the existing internal transport DTO without mutating the input.
-Target Watch, cache, and redo behavior follows the
+Search and complete registration use root-package `AgentSearchRequest` and
+`AgentEndpointRegistrationBatch`, containing business fields without namespace accessors.
+Partial deregistration uses
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`;
+there is no deregistration Java Request/Batch. The SDK defensively copies caller content
+and supplies its instance namespace through HTTP parameters or the RPC envelope to query
+and registration services. Publication keys and redo data retain namespace separately.
+Partial deregistration registers the complete nonempty remainder or deregisters the whole
+publication when empty, without mutating caller objects or collections. HTTP fields,
+authorization, replacement and error semantics remain unchanged. Search/Register RPC
+namespace is on the envelope rather than nested in the business request.
+No 3.3 BETA Java compatibility wrappers are retained; historical A2A contracts are unchanged.
 [Client Local Cache And Redo Spec](../client/client-local-cache-redo-spec.md)
 and the
 [Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md).

@@ -39,7 +39,7 @@ public class AgentDiscoveryResult implements Serializable {
     
     private String contentDigest;
     
-    private List<AgentDiscoveryCallInterface> callInterfaces;
+    private List<AgentCallInterface> callInterfaces;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -73,11 +73,11 @@ public class AgentDiscoveryResult implements Serializable {
         this.contentDigest = contentDigest;
     }
     
-    public List<AgentDiscoveryCallInterface> getCallInterfaces() {
+    public List<AgentCallInterface> getCallInterfaces() {
         return callInterfaces;
     }
     
-    public void setCallInterfaces(List<AgentDiscoveryCallInterface> callInterfaces) {
+    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
         this.callInterfaces = callInterfaces;
     }
 }

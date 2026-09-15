@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent;
+package com.alibaba.nacos.api.ai.model.agent.admin;
+
+import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
- * Complete replacement request for one exact Agent draft.
+ * Command identifying one exact Agent Version lifecycle target.
  *
  * @author Nacos
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentDraftUpdateAdminRequest implements Serializable {
+public class AgentVersionRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
@@ -35,19 +36,12 @@ public class AgentDraftUpdateAdminRequest implements Serializable {
     
     private String version;
     
-    private List<AgentDefinitionCallInterface> callInterfaces;
-    
-    private String changeDescription;
-    
     /**
-     * Validate the draft identity and content.
+     * Validate the exact Version identity.
      */
     public void validate() {
-        AgentAdminRequestUtils.validateIdentity(agentName);
-        AgentAdminRequestUtils.validateVersion(version);
-        if (callInterfaces == null) {
-            throw new IllegalArgumentException("callInterfaces must not be null");
-        }
+        AgentValidationUtils.validateAgentName(agentName);
+        AgentValidationUtils.validateVersion(version);
     }
     
     public String getAgentName() {
@@ -64,21 +58,5 @@ public class AgentDraftUpdateAdminRequest implements Serializable {
     
     public void setVersion(String version) {
         this.version = version;
-    }
-    
-    public List<AgentDefinitionCallInterface> getCallInterfaces() {
-        return callInterfaces;
-    }
-    
-    public void setCallInterfaces(List<AgentDefinitionCallInterface> callInterfaces) {
-        this.callInterfaces = callInterfaces;
-    }
-    
-    public String getChangeDescription() {
-        return changeDescription;
-    }
-    
-    public void setChangeDescription(String changeDescription) {
-        this.changeDescription = changeDescription;
     }
 }

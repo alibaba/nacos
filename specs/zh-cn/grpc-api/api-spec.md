@@ -293,3 +293,11 @@ Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gR
 9. 对于服务端间 payload，还应同步更新
    [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)，或拥有该集群请求语义的
    领域规范。
+
+
+### Agent Search/Register namespace 绑定
+
+`AgentSearchRpcRequest` 和 `AgentEndpointRegisterRpcRequest` 的 `namespaceId` 位于信封顶层；
+`searchRequest`/`registrationBatch` 不含 namespace。参数提取、namespace 校验、鉴权和业务服务
+使用同一信封值，缺省值按现有规则归一到 public。RPC 类型名不变；这是 3.3 发布前的布局调整，
+Client 与 Server 必须同步更新。Discover/Watch/Publish 及历史 A2A 信封结构保持不变。

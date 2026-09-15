@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
+
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -26,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentPublishClientRequestTest {
+class AgentPublishRequestTest {
     
     @Test
     void testAutoSubmitAndInheritedValidation() {
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName("demo-agent");
         request.setVersion("1.0.0");
-        request.setCallInterfaces(Collections.singletonList(new AgentDefinitionCallInterface()));
+        request.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
         assertFalse(request.isAutoSubmit());
         request.setAutoSubmit(true);
         assertTrue(request.isAutoSubmit());
@@ -42,13 +46,13 @@ class AgentPublishClientRequestTest {
     
     @Test
     void testPublicationKeepsDraftSourceValidation() {
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName("demo-agent");
         request.setVersion("2.0.0");
         assertThrows(IllegalArgumentException.class, request::validate);
         request.setBasedOnVersion("1.0.0");
         request.validate();
-        request.setCallInterfaces(Collections.singletonList(new AgentDefinitionCallInterface()));
+        request.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
         assertThrows(IllegalArgumentException.class, request::validate);
         request.setBasedOnVersion(null);
         request.validate();
@@ -65,10 +69,10 @@ class AgentPublishClientRequestTest {
             + "\"extensions\":{\"example.com/data\":{\"nested\":[1,2]}},"
             + "\"version\":\"2.0.0\",\"basedOnVersion\":\"1.0.0\","
             + "\"author\":\"author\",\"changeDescription\":\"copy\"}";
-        AgentDraftCreateAdminRequest admin =
-            mapper.readValue(content, AgentDraftCreateAdminRequest.class);
-        AgentPublishClientRequest client =
-            mapper.readValue(content, AgentPublishClientRequest.class);
+        AgentDraftCreateRequest admin =
+            mapper.readValue(content, AgentDraftCreateRequest.class);
+        AgentPublishRequest client =
+            mapper.readValue(content, AgentPublishRequest.class);
         admin.validate();
         client.validate();
         assertEquals(mapper.readTree(content), mapper.valueToTree(admin));

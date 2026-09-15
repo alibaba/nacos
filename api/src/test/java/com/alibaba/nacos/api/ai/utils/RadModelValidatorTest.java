@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import java.util.List;
 import java.util.LinkedHashMap;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -24,16 +25,15 @@ import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.Test;
 
@@ -53,14 +53,45 @@ class RadModelValidatorTest {
         "murmur3-x64-128-v1:0123456789abcdef0123456789abcdef";
     
     @Test
+    void shouldAcceptExplicitRegistrationHealth() {
+        AgentEndpointRegistrationBatch batch = newValidRegistrationBatch();
+        batch.getEndpoints().get(0).setHealthy(false);
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", batch));
+        batch.getEndpoints().get(0).setHealthy(true);
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", batch));
+    }
+    
+    @Test
+    void shouldRejectManagementOnlyFieldsInDiscoveryAtEveryLayer() {
+        AgentDiscoveryResult result = newValidDiscoveryResult();
+        AgentCallInterface callInterface = result.getCallInterfaces().get(0);
+        callInterface.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        callInterface.setEndpointSourceOrder(null);
+        EndpointSet runtime = callInterface.getEndpointSets().get(0);
+        runtime.setLastUpdatedTime(1L);
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        runtime.setLastUpdatedTime(null);
+        Endpoint endpoint = runtime.getEndpoints().get(0);
+        endpoint.setEnabled(true);
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        endpoint.setEnabled(null);
+        endpoint.setState(RuntimeEndpointState.AVAILABLE);
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        endpoint.setState(null);
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
+    }
+    
+    @Test
     void shouldAcceptCompleteRadModels() {
-        assertDoesNotThrow(() -> RadModelValidator.validate(newValidSearchRequest()));
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", newValidSearchRequest()));
         assertDoesNotThrow(() -> RadModelValidator.validate(newValidCatalogEntry()));
         assertDoesNotThrow(() -> RadModelValidator.validateCatalogPage(newValidCatalogPage()));
         assertDoesNotThrow(() -> RadModelValidator.validate(newValidDiscoveryRequest()));
         assertDoesNotThrow(() -> RadModelValidator.validate(newValidDiscoveryResult()));
-        assertDoesNotThrow(() -> RadModelValidator.validate(newValidRegistrationBatch()));
-        assertDoesNotThrow(() -> RadModelValidator.validate(newValidDeregistrationBatch()));
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", newValidRegistrationBatch()));
+        assertDoesNotThrow(() -> RadModelValidator.validateDeregistration("public", "Demo Agent",
+            "a2a", newValidDeregistrationEndpoints()));
     }
     
     @Test
@@ -89,7 +120,8 @@ class RadModelValidatorTest {
         AgentDiscoveryRequest request = newValidDiscoveryRequest();
         request.getReference().setVersion("1.1.0");
         
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(request));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate(request));
     }
     
     @Test
@@ -97,12 +129,12 @@ class RadModelValidatorTest {
         AgentSearchRequest searchRequest = newValidSearchRequest();
         searchRequest.setTagsAll(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(searchRequest));
+            () -> RadModelValidator.validate("public", searchRequest));
         
         AgentSearchRequest emptyProtocols = newValidSearchRequest();
         emptyProtocols.setProtocolsAny(Collections.<String>emptyList());
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(emptyProtocols));
+            () -> RadModelValidator.validate("public", emptyProtocols));
         
         AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
         filter.setProtocols(Collections.<String>emptyList());
@@ -158,7 +190,8 @@ class RadModelValidatorTest {
         AgentEndpointRegistrationBatch batch = newValidRegistrationBatch();
         batch.setVersionRange("[2.0.0,3.0.0)");
         
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(batch));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate("public", batch));
     }
     
     @Test
@@ -167,16 +200,16 @@ class RadModelValidatorTest {
         Endpoint duplicate = newEndpoint("https://RUNTIME.EXAMPLE.COM/another-path", null);
         batch.getEndpoints().add(duplicate);
         
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(batch));
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate("public", batch));
     }
     
     @Test
     void shouldRejectDeregistrationEndpointWithMetadata() {
-        AgentEndpointDeregistrationBatch batch = newValidDeregistrationBatch();
-        batch.getEndpoints().get(0).setMetadata(
-            Collections.singletonMap("zone", "cn-hangzhou-a"));
-        
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(batch));
+        List<Endpoint> endpoints = newValidDeregistrationEndpoints();
+        endpoints.get(0).setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validateDeregistration(
+            "public", "Demo Agent", "a2a", endpoints));
     }
     
     @Test
@@ -216,7 +249,7 @@ class RadModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(missingEffectiveValueResult));
         
-        assertDoesNotThrow(() -> RadModelValidator.validate(newValidRegistrationBatch()));
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", newValidRegistrationBatch()));
     }
     
     @Test
@@ -224,12 +257,12 @@ class RadModelValidatorTest {
         AgentSearchRequest invalidPageNo = newValidSearchRequest();
         invalidPageNo.setPageNo(0);
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(invalidPageNo));
+            () -> RadModelValidator.validate("public", invalidPageNo));
         
         AgentSearchRequest invalidPageSize = newValidSearchRequest();
         invalidPageSize.setPageSize(101);
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(invalidPageSize));
+            () -> RadModelValidator.validate("public", invalidPageSize));
         
         Page<AgentSummary> invalidMetadata = newValidCatalogPage();
         invalidMetadata.setTotalCount(-1);
@@ -266,7 +299,7 @@ class RadModelValidatorTest {
         
         AgentDiscoveryResult result = newValidDiscoveryResult();
         EndpointSet endpointSet = result.getCallInterfaces().get(0).getEndpointSets().get(0);
-        AgentDiscoveryCallInterface callInterface = result.getCallInterfaces().get(0);
+        AgentCallInterface callInterface = result.getCallInterfaces().get(0);
         assertDoesNotThrow(() -> RadModelValidator.validate(endpointSet));
         assertDoesNotThrow(() -> RadModelValidator.validate(callInterface));
     }
@@ -276,18 +309,18 @@ class RadModelValidatorTest {
         AgentEndpointRegistrationBatch batch = newValidRegistrationBatch();
         batch.setVersionRange(null);
         
-        assertDoesNotThrow(() -> RadModelValidator.validate(batch));
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", batch));
     }
     
     @Test
     void shouldRejectDuplicateDiscoveryProtocolsAndEndpointSources() {
         AgentDiscoveryResult duplicateProtocol = newValidDiscoveryResult();
-        AgentDiscoveryCallInterface callInterface = duplicateProtocol.getCallInterfaces().get(0);
+        AgentCallInterface callInterface = duplicateProtocol.getCallInterfaces().get(0);
         duplicateProtocol.setCallInterfaces(Arrays.asList(callInterface, callInterface));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(duplicateProtocol));
         
-        AgentDiscoveryCallInterface duplicateSource =
+        AgentCallInterface duplicateSource =
             newValidDiscoveryResult().getCallInterfaces().get(0);
         EndpointSet runtimeSet = duplicateSource.getEndpointSets().get(0);
         duplicateSource.setEndpointSets(Arrays.asList(runtimeSet, runtimeSet));
@@ -300,9 +333,9 @@ class RadModelValidatorTest {
         AgentDiscoveryResult sortedResult = newValidDiscoveryResult();
         EndpointSet sortedRuntimeSet = sortedResult.getCallInterfaces().get(0).getEndpointSets()
             .get(0);
-        AgentDiscoveryEndpoint first =
+        Endpoint first =
             newDiscoveryEndpoint("https://a.example.com:443/a2a", true, true);
-        AgentDiscoveryEndpoint second =
+        Endpoint second =
             newDiscoveryEndpoint("https://b.example.com:443/a2a", true, true);
         sortedRuntimeSet.setEndpoints(Arrays.asList(first, second));
         assertDoesNotThrow(() -> RadModelValidator.validate(sortedResult));
@@ -310,10 +343,10 @@ class RadModelValidatorTest {
         AgentDiscoveryResult unsortedResult = newValidDiscoveryResult();
         EndpointSet unsortedRuntimeSet = unsortedResult.getCallInterfaces().get(0)
             .getEndpointSets().get(0);
-        AgentDiscoveryEndpoint higherPriority =
+        Endpoint higherPriority =
             newDiscoveryEndpoint("https://a.example.com:443/a2a", true, true);
         higherPriority.setPriority(1);
-        AgentDiscoveryEndpoint lowerPriority =
+        Endpoint lowerPriority =
             newDiscoveryEndpoint("https://b.example.com:443/a2a", true, true);
         unsortedRuntimeSet.setEndpoints(Arrays.asList(higherPriority, lowerPriority));
         assertThrows(IllegalArgumentException.class,
@@ -383,7 +416,7 @@ class RadModelValidatorTest {
         AgentSearchRequest searchRequest = newValidSearchRequest();
         searchRequest.setTagsAll(null);
         searchRequest.setProtocolsAny(null);
-        assertDoesNotThrow(() -> RadModelValidator.validate(searchRequest));
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", searchRequest));
         
         AgentDiscoveryFilter filter = newValidDiscoveryRequest().getFilter();
         filter.setTransports(null);
@@ -424,7 +457,7 @@ class RadModelValidatorTest {
         AgentSearchRequest nonAsciiSearch = newValidSearchRequest();
         nonAsciiSearch.setAgentNameContains("Demo\nAgent");
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(nonAsciiSearch));
+            () -> RadModelValidator.validate("public", nonAsciiSearch));
     }
     
     @Test
@@ -440,9 +473,9 @@ class RadModelValidatorTest {
             () -> RadModelValidator.validate(missingCallInterfaces));
         
         AgentDiscoveryResult tooManyCallInterfaces = newValidDiscoveryResult();
-        AgentDiscoveryCallInterface callInterface =
+        AgentCallInterface callInterface =
             tooManyCallInterfaces.getCallInterfaces().get(0);
-        tooManyCallInterfaces.setCallInterfaces(new ArrayList<AgentDiscoveryCallInterface>(
+        tooManyCallInterfaces.setCallInterfaces(new ArrayList<AgentCallInterface>(
             Collections.nCopies(17, callInterface)));
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(tooManyCallInterfaces));
@@ -452,25 +485,24 @@ class RadModelValidatorTest {
         tooManyEndpoints.setEndpoints(new ArrayList<Endpoint>(
             Collections.nCopies(1001, endpoint)));
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(tooManyEndpoints));
+            () -> RadModelValidator.validate("public", tooManyEndpoints));
         
         AgentSearchRequest duplicateTags = newValidSearchRequest();
         duplicateTags.setTagsAll(Arrays.asList("demo", "demo"));
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(duplicateTags));
+            () -> RadModelValidator.validate("public", duplicateTags));
         
         AgentSearchRequest duplicateProtocols = newValidSearchRequest();
         duplicateProtocols.setProtocolsAny(Arrays.asList("a2a", "a2a"));
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(duplicateProtocols));
+            () -> RadModelValidator.validate("public", duplicateProtocols));
         
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate((AgentSearchRequest) null));
+            () -> RadModelValidator.validate("public", (AgentSearchRequest) null));
     }
     
     private AgentSearchRequest newValidSearchRequest() {
         AgentSearchRequest request = new AgentSearchRequest();
-        request.setNamespaceId("public");
         request.setAgentNameContains("Agent");
         request.setTagsAll(Arrays.asList("assistant", "demo"));
         request.setProtocolsAny(Collections.singletonList("a2a"));
@@ -560,7 +592,7 @@ class RadModelValidatorTest {
         declaredSet.setEndpoints(Collections.singletonList(
             newDiscoveryEndpoint("https://declared.example.com:443/a2a", null, false)));
         
-        AgentDiscoveryCallInterface callInterface = new AgentDiscoveryCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -578,7 +610,6 @@ class RadModelValidatorTest {
     
     private AgentEndpointRegistrationBatch newValidRegistrationBatch() {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId("public");
         batch.setAgentName("Demo Agent");
         batch.setRuntimeVersion("1.0.6");
         batch.setVersionRange("[1.0.0,2.0.0)");
@@ -588,17 +619,11 @@ class RadModelValidatorTest {
         return batch;
     }
     
-    private AgentEndpointDeregistrationBatch newValidDeregistrationBatch() {
+    private List<Endpoint> newValidDeregistrationEndpoints() {
         Endpoint key = new Endpoint();
         key.setUri("https://runtime.example.com/a2a");
         key.setTransport("JSON-RPC");
-        
-        AgentEndpointDeregistrationBatch batch = new AgentEndpointDeregistrationBatch();
-        batch.setNamespaceId("public");
-        batch.setAgentName("Demo Agent");
-        batch.setProtocol("a2a");
-        batch.setEndpoints(Collections.singletonList(key));
-        return batch;
+        return Collections.singletonList(key);
     }
     
     private Endpoint newEndpoint(String uri, Boolean healthy) {
@@ -612,10 +637,10 @@ class RadModelValidatorTest {
         return endpoint;
     }
     
-    private AgentDiscoveryEndpoint newDiscoveryEndpoint(String uri, Boolean healthy,
+    private Endpoint newDiscoveryEndpoint(String uri, Boolean healthy,
         boolean runtime) {
         Endpoint source = newEndpoint(uri, healthy);
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri(source.getUri());
         endpoint.setTransport(source.getTransport());
         endpoint.setPriority(source.getPriority());

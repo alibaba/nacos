@@ -238,7 +238,7 @@ Filter 的全部字段都是可选字段：
 
 上下文规则：
 
-- Register 不得提交 `healthy`。
+- Register 允许提交 `healthy`，缺省 true。提交的 bindings 和管理字段忽略，绑定以批次字段为准。
 - `DECLARED` Endpoint 不得包含 `healthy`。
 - `RUNTIME` 发现结果中的 Endpoint 必须包含 `healthy`。
 - Deregister 只提交 `uri` 和 `transport`，它们是公开对象中代表 Endpoint
@@ -247,7 +247,7 @@ Filter 的全部字段都是可选字段：
 
 运行时 Endpoint 不使用 `endpointId`。
 
-发现结果使用 `AgentDiscoveryEndpoint`，它在这些 Endpoint 字段上增加
+发现结果复用 `Endpoint`，包含
 `bindings[] { runtimeVersion, versionRange }`。`DECLARED` Endpoint 不包含该字段，
 每个 `RUNTIME` Endpoint 的该字段非空。它是使该 Endpoint 命中当前发现目标集合的
 enabled publisher binding 的有序去重并集；不会暴露 publisher 身份或存活时间。
@@ -284,7 +284,7 @@ Path、Query、Metadata、Priority 和 Weight 不参与身份。同一分组内�
 EndpointSet {
   source = DECLARED | RUNTIME
   sourceRevision
-  endpoints[] AgentDiscoveryEndpoint
+  endpoints[] Endpoint
 }
 ```
 
@@ -293,12 +293,12 @@ EndpointSet {
 `endpointSets[]`，应用 Filter 后保持剩余来源的相对顺序。已经声明但当前为空的来源
 仍以 `endpoints=[]` 和稳定的 `sourceRevision` 返回。
 
-### 3.10 `AgentDiscoveryCallInterface` 与 `AgentDiscoveryResult`
+### 3.10 `AgentCallInterface` 与 `AgentDiscoveryResult`
 
 ```text
 AgentDiscoveryResult
 ├── namespaceId / agentName / version / contentDigest
-└── callInterfaces[] AgentDiscoveryCallInterface
+└── callInterfaces[] AgentCallInterface
     ├── protocol / protocolVersion?
     ├── descriptorMediaType / nativeDescriptor
     └── endpointSets[]
@@ -306,9 +306,8 @@ AgentDiscoveryResult
         └── endpoints[]
 ```
 
-`AgentDiscoveryCallInterface` 是数据面投影视图，有意区别于
-[Agent 管理规范](./agent-management-spec.md)定义的管控面 `AgentCallInterface`：
-发现视图不包含管理字段和来源顺序字段，而是包含已经解析的 EndpointSet。
+`AgentCallInterface` 与[Agent 管理规范](./agent-management-spec.md)共用 Java 类型及包含关系。
+发现投影省略管理字段和来源顺序，包含解析后的 EndpointSet；Schema 约束按发现上下文定义。
 
 规则：
 
@@ -369,7 +368,8 @@ namespaceId / agentName / protocol
 endpoints[] { uri, transport }
 ```
 
-`AgentEndpointDeregistrationBatch` 继续作为面向应用的便利对象。Publisher Client
+`AgentEndpointDeregistrationBatch` 表示逻辑命令，不要求各语言 Binding 提供独立对象。
+Java SDK 使用 agentName、protocol、List<Endpoint> 三个参数，namespace 由实例提供。Publisher Client
 从本地缓存的 Registration Batch 中删除给定自然键，再注册完整的剩余 Batch。没有
 Endpoint 剩余时，注销 `(namespaceId, agentName, protocol)` 下该 Publisher 的整份
 Publication。Nacos Server 不针对该对象执行局部 read-merge-write。
@@ -758,8 +758,15 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 [Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
 该组织方式不重命名协议/schema 概念，不改变存储或发现语义。
 
-## 地址模型统一的验收补充（评审草案，尚未实施）
+## 地址模型统一的验收
 
 Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健康值；bindings、管理状态、观测时间由 Nacos 维护，提交时忽略。DECLARED 的健康约束、RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
 
-本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。
+统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+
+### Java 请求上下文映射
+
+完整逻辑 Search/Register 请求及 Schema 仍包含 namespaceId。Java 业务模型仅表示其业务字段；
+HTTP 参数或 gRPC 信封与业务模型组合后才是完整逻辑请求。Schema 验证须组合这两部分，
+保证存在且只有一个生效 namespace，不得因 Java 类删字段而放宽协议约束。

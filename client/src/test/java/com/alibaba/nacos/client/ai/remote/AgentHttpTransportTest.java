@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -45,7 +45,7 @@ class AgentHttpTransportTest {
     @Test
     void agentOperationsDelegateToHttpClientProxy() throws NacosException {
         AgentHttpTransport transport = new AgentHttpTransport(clientProxy);
-        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
+        AgentPublishRequest publishRequest = new AgentPublishRequest();
         AgentVersionDetail version = new AgentVersionDetail();
         AgentSearchRequest searchRequest = new AgentSearchRequest();
         Page<AgentSummary> page = new Page<AgentSummary>();
@@ -54,16 +54,16 @@ class AgentHttpTransportTest {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         ClientLivenessInfo liveness = new ClientLivenessInfo();
         when(clientProxy.publishAgent(publishRequest)).thenReturn(version);
-        when(clientProxy.searchAgents(searchRequest)).thenReturn(page);
+        when(clientProxy.searchAgents("public", searchRequest)).thenReturn(page);
         when(clientProxy.discoverAgent(discoveryRequest)).thenReturn(discovery);
-        when(clientProxy.registerAgentEndpoints(batch)).thenReturn(liveness);
+        when(clientProxy.registerAgentEndpoints("public", batch)).thenReturn(liveness);
         when(clientProxy.heartbeatAgentEndpoints()).thenReturn(liveness);
         
         assertEquals(AgentTransportType.HTTP, transport.getType());
         assertSame(version, transport.publishAgent(publishRequest));
-        assertSame(page, transport.searchAgents(searchRequest));
+        assertSame(page, transport.searchAgents("public", searchRequest));
         assertSame(discovery, transport.discoverAgent(discoveryRequest));
-        assertSame(liveness, transport.registerAgentEndpoints(batch));
+        assertSame(liveness, transport.registerAgentEndpoints("public", batch));
         transport.deregisterAgentEndpoints("public", "agent", "a2a");
         assertSame(liveness, transport.heartbeatAgentEndpoints());
         verify(clientProxy).deregisterAgentEndpoints("public", "agent", "a2a");

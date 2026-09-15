@@ -17,11 +17,11 @@
 package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -43,7 +43,7 @@ public interface AgentHandler {
     /**
      * Replace writable Agent metadata.
      */
-    AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
+    AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
         throws NacosException;
     
     /**
@@ -79,13 +79,13 @@ public interface AgentHandler {
     /**
      * Create one initial or subsequent Agent draft.
      */
-    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
+    AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
         throws NacosException;
     
     /**
      * Replace one exact Agent draft.
      */
-    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
+    AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
         throws NacosException;
     
     /**
@@ -132,6 +132,6 @@ public interface AgentHandler {
     /**
      * Replace custom Agent labels.
      */
-    AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
+    AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException;
 }

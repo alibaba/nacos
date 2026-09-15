@@ -66,7 +66,6 @@ public class AgentEndpointRegistrationForm implements NacosForm {
     public AgentEndpointRegistrationBatch toRequest() throws NacosApiException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId(namespaceId);
         result.setAgentName(agentName);
         result.setRuntimeVersion(runtimeVersion);
         result.setVersionRange(versionRange);
@@ -74,7 +73,7 @@ public class AgentEndpointRegistrationForm implements NacosForm {
         result.setEndpoints(AgentClientFormJsonParser.parseOptional("endpoints", endpoints,
             new NacosTypeReference<List<Endpoint>>() {
             }));
-        RadModelValidator.validate(result);
+        RadModelValidator.validate(namespaceId, result);
         return result;
     }
     

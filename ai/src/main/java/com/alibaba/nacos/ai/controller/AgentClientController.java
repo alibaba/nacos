@@ -29,7 +29,7 @@ import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.ai.service.agent.watch.AgentHttpWatchService;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -94,7 +94,7 @@ public class AgentClientController {
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.OPEN_API)
     public Result<AgentVersionDetail> publish(AgentPublishForm form) throws NacosException {
-        AgentPublishClientRequest request = form.toRequest();
+        AgentPublishRequest request = form.toRequest();
         return Result.success(publishService.publish(form.getNamespaceId(), request));
     }
     
@@ -109,8 +109,8 @@ public class AgentClientController {
             required = false) String clientId)
         throws NacosException {
         AgentSearchRequest request = form.toRequest();
-        clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
-        return Result.success(discoveryService.search(request));
+        clientLifecycleService.renewForQuery(clientId, form.getNamespaceId());
+        return Result.success(discoveryService.search(form.getNamespaceId(), request));
     }
     
     /**
@@ -158,7 +158,8 @@ public class AgentClientController {
             required = false) String requestModule)
         throws NacosException {
         AgentEndpointRegistrationBatch batch = form.toRequest();
-        return Result.success(clientLifecycleService.register(clientId, requestModule, batch));
+        return Result.success(
+            clientLifecycleService.register(clientId, requestModule, form.getNamespaceId(), batch));
     }
     
     /**

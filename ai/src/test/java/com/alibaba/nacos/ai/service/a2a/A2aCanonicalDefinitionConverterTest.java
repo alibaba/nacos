@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -55,7 +55,7 @@ class A2aCanonicalDefinitionConverterTest {
         card.setSupportedInterfaces(Arrays.asList(card.getSupportedInterfaces().get(0), duplicate,
             agentInterface("https://example.com:8443/stream", "JSONRPC", "0.3")));
         
-        AgentDraftCreateAdminRequest result = converter.convert(NAMESPACE_ID, card, "url", true);
+        AgentDraftCreateRequest result = converter.convert(NAMESPACE_ID, card, "url", true);
         
         assertEquals("research-agent", result.getAgentName());
         assertEquals("1.0.0", result.getVersion());
@@ -63,11 +63,14 @@ class A2aCanonicalDefinitionConverterTest {
         assertEquals("Example", result.getProvider().getName());
         assertEquals(Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME),
             result.getCallInterfaces().get(0).getEndpointSourceOrder());
-        assertEquals(2, result.getCallInterfaces().get(0).getDeclaredEndpoints().size());
+        assertEquals(2,
+            result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().size());
         assertEquals("https://example.com:443/a2a",
-            result.getCallInterfaces().get(0).getDeclaredEndpoints().get(0).getUri());
+            result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+                .getUri());
         assertEquals("HTTP+JSON",
-            result.getCallInterfaces().get(0).getDeclaredEndpoints().get(0).getTransport());
+            result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+                .getTransport());
         Map<?, ?> descriptor = (Map<?, ?>) result.getCallInterfaces().get(0)
             .getNativeDescriptor();
         assertEquals("Research", descriptor.get("description"));
@@ -85,14 +88,15 @@ class A2aCanonicalDefinitionConverterTest {
         card.setPreferredTransport("HTTP+JSON");
         card.setProtocolVersion("0.3");
         
-        AgentDraftCreateAdminRequest result =
+        AgentDraftCreateRequest result =
             converter.convert(NAMESPACE_ID, card, " service ".trim(),
                 false);
         
         assertEquals(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
             result.getCallInterfaces().get(0).getEndpointSourceOrder());
         assertEquals("https://example.com:443/a2a",
-            result.getCallInterfaces().get(0).getDeclaredEndpoints().get(0).getUri());
+            result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+                .getUri());
         assertNull(result.getDescription());
         assertNull(result.getProvider());
         assertNull(card.getSupportedInterfaces());

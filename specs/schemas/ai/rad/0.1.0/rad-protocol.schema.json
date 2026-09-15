@@ -481,6 +481,29 @@
         },
         "transport": {
           "$ref": "#/$defs/TransportToken"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "description": "Ignored on input. Nacos derives bindings from the enclosing runtimeVersion and versionRange."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Ignored on input. Maintained by Nacos."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "AVAILABLE",
+            "DISABLED",
+            "UNHEALTHY"
+          ],
+          "description": "Ignored on input. Maintained by Nacos."
         }
       }
     },
@@ -512,6 +535,34 @@
         },
         "metadata": {
           "$ref": "#/$defs/Metadata"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "description": "Ignored on input. Nacos derives bindings from the enclosing runtimeVersion and versionRange."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Ignored on input. Maintained by Nacos."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "AVAILABLE",
+            "DISABLED",
+            "UNHEALTHY"
+          ],
+          "description": "Ignored on input. Maintained by Nacos."
+        },
+        "healthy": {
+          "type": "boolean",
+          "default": true,
+          "description": "Health reported at registration or complete replacement. Subsequent Naming liveness rules still apply."
         }
       }
     },
@@ -664,37 +715,6 @@
         }
       ]
     },
-    "AgentDiscoveryCallInterface": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "protocol",
-        "descriptorMediaType",
-        "nativeDescriptor",
-        "endpointSets"
-      ],
-      "properties": {
-        "protocol": {
-          "$ref": "#/$defs/ProtocolToken"
-        },
-        "protocolVersion": {
-          "$ref": "#/$defs/ProtocolVersion"
-        },
-        "descriptorMediaType": {
-          "$ref": "#/$defs/MediaType"
-        },
-        "nativeDescriptor": {
-          "$ref": "#/$defs/NonNullJsonValue"
-        },
-        "endpointSets": {
-          "type": "array",
-          "maxItems": 2,
-          "items": {
-            "$ref": "#/$defs/EndpointSet"
-          }
-        }
-      }
-    },
     "AgentDiscoveryResult": {
       "type": "object",
       "additionalProperties": false,
@@ -722,7 +742,7 @@
           "type": "array",
           "maxItems": 16,
           "items": {
-            "$ref": "#/$defs/AgentDiscoveryCallInterface"
+            "$ref": "#/$defs/AgentCallInterface"
           }
         }
       }
@@ -791,6 +811,37 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/EndpointKey"
+          }
+        }
+      }
+    },
+    "AgentCallInterface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "descriptorMediaType",
+        "nativeDescriptor",
+        "endpointSets"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/ProtocolToken"
+        },
+        "protocolVersion": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "descriptorMediaType": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "nativeDescriptor": {
+          "$ref": "#/$defs/NonNullJsonValue"
+        },
+        "endpointSets": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/EndpointSet"
           }
         }
       }

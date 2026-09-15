@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -41,7 +41,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -307,7 +307,7 @@ public class A2aServerOperationService implements A2aOperationService {
         if (!AiConstants.Agent.VERSION_STATUS_ONLINE.equals(detail.getStatus())) {
             throw versionNotFound(agentName, targetVersion);
         }
-        AgentDefinitionCallInterface callInterface = requireA2aCallInterface(detail, agentName,
+        AgentCallInterface callInterface = requireA2aCallInterface(detail, agentName,
             targetVersion);
         String storedType = registrationType(callInterface);
         String queryType = StringUtils.isBlank(registrationType) ? storedType
@@ -326,7 +326,7 @@ public class A2aServerOperationService implements A2aOperationService {
     private String resolveInheritedRegistrationType(String namespaceId, String agentName,
         String version) throws NacosException {
         AgentSummary agent = getLegacyAgent(namespaceId, agentName);
-        AgentDefinitionCallInterface target = findA2aCallInterface(
+        AgentCallInterface target = findA2aCallInterface(
             getVersionIfA2a(namespaceId, agentName, version));
         if (target != null) {
             return registrationType(target);
@@ -351,22 +351,22 @@ public class A2aServerOperationService implements A2aOperationService {
         }
     }
     
-    private AgentDefinitionCallInterface requireA2aCallInterface(
+    private AgentCallInterface requireA2aCallInterface(
         com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail detail, String agentName,
         String version) throws NacosApiException {
-        AgentDefinitionCallInterface result = findA2aCallInterface(detail);
+        AgentCallInterface result = findA2aCallInterface(detail);
         if (result == null) {
             throw versionNotFound(agentName, version);
         }
         return result;
     }
     
-    private AgentDefinitionCallInterface findA2aCallInterface(
+    private AgentCallInterface findA2aCallInterface(
         com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail detail) {
         if (detail == null || detail.getCallInterfaces() == null) {
             return null;
         }
-        for (AgentDefinitionCallInterface callInterface : detail.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : detail.getCallInterfaces()) {
             if (callInterface != null && A2A_PROTOCOL.equals(callInterface.getProtocol())) {
                 return callInterface;
             }
@@ -374,7 +374,7 @@ public class A2aServerOperationService implements A2aOperationService {
         return null;
     }
     
-    private String registrationType(AgentDefinitionCallInterface callInterface) {
+    private String registrationType(AgentCallInterface callInterface) {
         return callInterface.getEndpointSourceOrder() != null
             && !callInterface.getEndpointSourceOrder().isEmpty()
             && EndpointSource.RUNTIME == callInterface.getEndpointSourceOrder().get(0)
@@ -382,11 +382,11 @@ public class A2aServerOperationService implements A2aOperationService {
                 : AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
     }
     
-    private AgentCardDetailInfo toLegacyCard(AgentDefinitionCallInterface callInterface,
+    private AgentCardDetailInfo toLegacyCard(AgentCallInterface callInterface,
         String agentName,
         String version, String storedType) throws NacosApiException {
         try {
-            AgentCard card = JacksonUtils.toObj(JacksonUtils.toJson(
+            AgentCard card = JsonUtils.toObj(JsonUtils.toJson(
                 callInterface.getNativeDescriptor()), AgentCard.class);
             AgentRequestUtil.validateAgentCard(card);
             if (!agentName.equals(card.getName()) || !version.equals(card.getVersion())) {
@@ -401,7 +401,7 @@ public class A2aServerOperationService implements A2aOperationService {
     }
     
     private void injectRuntimeEndpoints(AgentCardDetailInfo card,
-        AgentDefinitionCallInterface callInterface, String namespaceId) {
+        AgentCallInterface callInterface, String namespaceId) {
         String serviceName = RadServiceNameComposer.compose(card.getName(), A2A_PROTOCOL);
         Service service =
             Service.newService(namespaceId, Constants.Agent.AGENT_ENDPOINT_GROUP, serviceName);
@@ -518,7 +518,7 @@ public class A2aServerOperationService implements A2aOperationService {
         com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail latestDetail =
             agentOperationService.getVersion(summary.getNamespaceId(), summary.getAgentName(),
                 latest);
-        AgentDefinitionCallInterface latestA2a =
+        AgentCallInterface latestA2a =
             requireA2aCallInterface(latestDetail, summary.getAgentName(), latest);
         AgentCardDetailInfo latestCard = toLegacyCard(latestA2a, summary.getAgentName(), latest,
             registrationType(latestA2a));

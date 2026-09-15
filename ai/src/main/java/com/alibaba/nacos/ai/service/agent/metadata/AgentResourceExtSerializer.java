@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -84,7 +84,7 @@ public final class AgentResourceExtSerializer {
     public static String serialize(AgentResourceExt resourceExt) {
         validate(resourceExt);
         try {
-            return JacksonUtils.toJson(toStorageProjection(resourceExt));
+            return JsonUtils.toJson(toStorageProjection(resourceExt));
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize AgentResourceExt", e);
         }
@@ -100,8 +100,8 @@ public final class AgentResourceExtSerializer {
         validateJsonShape(json);
         final AgentResourceExt result;
         try {
-            result = JacksonUtils.toObj(json, AgentResourceExt.class);
-            Map<?, ?> root = JacksonUtils.toObj(json, Map.class);
+            result = JsonUtils.toObj(json, AgentResourceExt.class);
+            Map<?, ?> root = JsonUtils.toObj(json, Map.class);
             Map<?, ?> storedCatalog = (Map<?, ?>) root.get("versionCatalog");
             Map<String, String> labels = new LinkedHashMap<String, String>();
             if (storedCatalog.get("latestVersion") != null) {
@@ -175,7 +175,7 @@ public final class AgentResourceExtSerializer {
         }
         final byte[] bytes;
         try {
-            bytes = JacksonUtils.toJsonBytes(extensions);
+            bytes = JsonUtils.toJsonBytes(extensions);
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize Agent extensions", e);
         }
@@ -315,7 +315,7 @@ public final class AgentResourceExtSerializer {
         validateSingleJsonValue(json);
         final Map<?, ?> root;
         try {
-            root = JacksonUtils.toObj(json, Map.class);
+            root = JsonUtils.toObj(json, Map.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid AgentResourceExt", e);
         }

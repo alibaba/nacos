@@ -45,15 +45,18 @@ export interface AgentEndpoint {
   weight?: number;
   metadata?: Record<string, string>;
   healthy?: boolean;
+  bindings?: RuntimeVersionBinding[];
+  enabled?: boolean;
+  state?: RuntimeEndpointState;
 }
 
 export interface AgentCallInterface {
   protocol: string;
   protocolVersion?: string;
-  descriptorMediaType: string;
-  nativeDescriptor: unknown;
-  endpointSourceOrder: EndpointSource[];
-  declaredEndpoints?: AgentEndpoint[];
+  descriptorMediaType?: string;
+  nativeDescriptor?: unknown;
+  endpointSourceOrder?: EndpointSource[];
+  endpointSets?: EndpointSet[];
 }
 
 export interface AgentVersionSummary {
@@ -93,21 +96,18 @@ export interface RuntimeVersionBinding {
   versionRange: string;
 }
 
-export interface RuntimeEndpointSnapshotItem {
-  endpoint: AgentEndpoint;
-  bindings: RuntimeVersionBinding[];
-  state: RuntimeEndpointState;
-  enabled: boolean;
-  healthy: boolean;
-  lastUpdatedTime: number;
+export interface EndpointSet {
+  source: EndpointSource;
+  sourceRevision?: string;
+  endpoints: AgentEndpoint[];
+  lastUpdatedTime?: number;
 }
 
 export interface RuntimeEndpointSnapshot {
   namespaceId: string;
   agentName: string;
-  protocol: string;
   version?: string;
-  items: RuntimeEndpointSnapshotItem[];
+  callInterface: AgentCallInterface;
 }
 
 export interface NamingServiceRef {

@@ -16,16 +16,18 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -77,21 +79,25 @@ class AgentInnerHandlerTest {
     void shouldDelegateEveryOperationToLocalServices() throws Exception {
         AgentOverview overview = new AgentOverview();
         AgentSummary persistedAgent = new AgentSummary();
-        AgentDraftUpdateAdminRequest draftUpdateRequest = new AgentDraftUpdateAdminRequest();
-        List<AgentDefinitionCallInterface> callInterfaces =
-            Collections.singletonList(new AgentDefinitionCallInterface());
+        AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
+        List<AgentCallInterface> callInterfaces =
+            Collections.singletonList(new AgentCallInterface());
         draftUpdateRequest.setAgentName(AGENT_NAME);
         draftUpdateRequest.setVersion(VERSION);
         draftUpdateRequest.setCallInterfaces(callInterfaces);
         draftUpdateRequest.setChangeDescription("change");
-        AgentLabelsUpdateAdminRequest labelsRequest = new AgentLabelsUpdateAdminRequest();
+        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         labelsRequest.setAgentName(AGENT_NAME);
         labelsRequest.setLabels(Collections.singletonMap("stable", VERSION));
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();
-        AgentVersionSummary versionSummary = new AgentVersionSummary();
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
         when(agentOperationService.getOverview(NAMESPACE_ID, AGENT_NAME)).thenReturn(overview);
         when(
             agentOperationService.updateAgent(org.mockito.ArgumentMatchers.any(AgentSummary.class)))
@@ -104,11 +110,12 @@ class AgentInnerHandlerTest {
             .thenReturn(versionDetail);
         when(runtimeRegistryService.getRuntimeEndpointSnapshot(NAMESPACE_ID, AGENT_NAME, "a2a",
             VERSION)).thenReturn(snapshot);
-        AgentDraftCreateAdminRequest createRequest = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
         when(agentOperationService.createDraft(NAMESPACE_ID, createRequest))
             .thenReturn(versionDetail);
         when(agentOperationService.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION, callInterfaces,
             "change")).thenReturn(versionDetail);
+        AgentVersionSummary versionSummary = new AgentVersionSummary();
         when(agentOperationService.submit(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionSummary);
         when(agentOperationService.publish(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -125,7 +132,7 @@ class AgentInnerHandlerTest {
             labelsRequest.getLabels())).thenReturn(persistedAgent);
         
         assertSame(overview, handler.getAgent(NAMESPACE_ID, AGENT_NAME));
-        AgentUpdateAdminRequest updateRequest = updateRequest();
+        AgentUpdateRequest updateRequest = updateRequest();
         assertSame(persistedAgent, handler.updateAgent(NAMESPACE_ID, updateRequest));
         handler.deleteAgent(NAMESPACE_ID, AGENT_NAME);
         assertSame(agentPage, handler.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE",
@@ -153,8 +160,8 @@ class AgentInnerHandlerTest {
         verify(agentOperationService).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
     }
     
-    private AgentUpdateAdminRequest updateRequest() {
-        AgentUpdateAdminRequest result = new AgentUpdateAdminRequest();
+    private AgentUpdateRequest updateRequest() {
+        AgentUpdateRequest result = new AgentUpdateRequest();
         result.setAgentName(AGENT_NAME);
         result.setDisplayName("display");
         result.setDescription("description");
@@ -168,7 +175,7 @@ class AgentInnerHandlerTest {
         return result;
     }
     
-    private void assertMappedAgent(AgentSummary actual, AgentUpdateAdminRequest expected) {
+    private void assertMappedAgent(AgentSummary actual, AgentUpdateRequest expected) {
         assertEquals(NAMESPACE_ID, actual.getNamespaceId());
         assertEquals(expected.getAgentName(), actual.getAgentName());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());

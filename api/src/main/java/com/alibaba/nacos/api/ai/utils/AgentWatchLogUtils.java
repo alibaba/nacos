@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -139,7 +139,7 @@ public final class AgentWatchLogUtils {
             int endpointCount = 0;
             List<String> protocols = new ArrayList<String>();
             if (result.getCallInterfaces() != null) {
-                for (AgentDiscoveryCallInterface each : result.getCallInterfaces()) {
+                for (AgentCallInterface each : result.getCallInterfaces()) {
                     protocols.add(each.getProtocol());
                     if (each.getEndpointSets() != null) {
                         for (EndpointSet endpointSet : each.getEndpointSets()) {

@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -106,8 +105,9 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
         coordinator.register(this);
     }
     
-    synchronized void register(AgentEndpointRegistrationBatch batch) throws NacosException {
-        PublicationKey key = PublicationKey.of(batch);
+    synchronized void register(String namespaceId, AgentEndpointRegistrationBatch batch)
+        throws NacosException {
+        PublicationKey key = PublicationKey.of(namespaceId, batch);
         PublicationState previous = publications.get(key);
         AgentTransportType ownerTransport = previous == null
             ? transportRouter.selectPublicationTransport() : previous.ownerTransport;
@@ -124,8 +124,9 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
                 true);
         publications.put(key, desired);
         try {
-            ClientLivenessInfo liveness = transportRouter.registerAgentEndpoints(desired.batch,
-                desired.ownerTransport);
+            ClientLivenessInfo liveness =
+                transportRouter.registerAgentEndpoints(namespaceId, desired.batch,
+                    desired.ownerTransport);
             desired.dirty = false;
             desired.rollback = null;
             notifyCoordinator(desired.ownerTransport == AgentTransportType.HTTP
@@ -148,16 +149,18 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
         return state == null || state.batch == null ? 0 : state.batch.getEndpoints().size();
     }
     
-    synchronized void deregister(AgentEndpointDeregistrationBatch batch)
+    synchronized void deregister(String namespaceId, String agentName, String protocol,
+        List<Endpoint> endpoints)
         throws NacosException {
-        PublicationKey key = PublicationKey.of(batch);
+        PublicationKey key = new PublicationKey(namespaceId, agentName, protocol);
         PublicationState previous = publications.get(key);
         if (previous == null || previous.batch == null) {
             return;
         }
-        Set<EndpointNaturalKey> removals = naturalKeys(batch.getNamespaceId(),
-            batch.getAgentName(), batch.getProtocol(), batch.getEndpoints());
-        AgentEndpointRegistrationBatch remainder = removeEndpoints(previous.batch, removals);
+        Set<EndpointNaturalKey> removals = naturalKeys(namespaceId,
+            agentName, protocol, endpoints);
+        AgentEndpointRegistrationBatch remainder =
+            removeEndpoints(namespaceId, previous.batch, removals);
         if (remainder.getEndpoints().size() == previous.batch.getEndpoints().size()) {
             return;
         }
@@ -172,7 +175,7 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
                     key.protocol, desired.ownerTransport);
                 publications.remove(key);
             } else {
-                liveness = transportRouter.registerAgentEndpoints(desired.batch,
+                liveness = transportRouter.registerAgentEndpoints(namespaceId, desired.batch,
                     desired.ownerTransport);
                 desired.dirty = false;
                 desired.rollback = null;
@@ -212,9 +215,9 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
                 .getDetailErrCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode();
     }
     
-    synchronized void discardAfterRemoteCapacityRejection(
+    synchronized void discardAfterRemoteCapacityRejection(String namespaceId,
         AgentEndpointRegistrationBatch batch) {
-        publications.remove(PublicationKey.of(batch));
+        publications.remove(PublicationKey.of(namespaceId, batch));
         notifyCoordinator(null);
     }
     
@@ -227,13 +230,13 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
         return result;
     }
     
-    private AgentEndpointRegistrationBatch removeEndpoints(
+    private AgentEndpointRegistrationBatch removeEndpoints(String namespaceId,
         AgentEndpointRegistrationBatch current, Set<EndpointNaturalKey> removals) {
         AgentEndpointRegistrationBatch result =
             AgentModelUtils.copyRegistrationBatch(current);
         List<Endpoint> retained = new ArrayList<Endpoint>();
         for (Endpoint endpoint : current.getEndpoints()) {
-            EndpointNaturalKey key = EndpointNaturalKey.of(current.getNamespaceId(),
+            EndpointNaturalKey key = EndpointNaturalKey.of(namespaceId,
                 current.getAgentName(), current.getProtocol(), endpoint);
             if (!removals.contains(key)) {
                 retained.add(endpoint);
@@ -264,7 +267,8 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
                         key.protocol, state.ownerTransport);
                     publications.remove(key);
                 } else {
-                    liveness = transportRouter.registerAgentEndpoints(state.batch,
+                    liveness = transportRouter.registerAgentEndpoints(entry.getKey().namespaceId,
+                        state.batch,
                         state.ownerTransport);
                     state.dirty = false;
                     state.rollback = null;
@@ -385,13 +389,8 @@ class AgentEndpointPublicationManager implements Closeable, AiHttpPublicationPar
             this.protocol = protocol;
         }
         
-        private static PublicationKey of(AgentEndpointRegistrationBatch batch) {
-            return new PublicationKey(batch.getNamespaceId(), batch.getAgentName(),
-                batch.getProtocol());
-        }
-        
-        private static PublicationKey of(AgentEndpointDeregistrationBatch batch) {
-            return new PublicationKey(batch.getNamespaceId(), batch.getAgentName(),
+        private static PublicationKey of(String namespaceId, AgentEndpointRegistrationBatch batch) {
+            return new PublicationKey(namespaceId, batch.getAgentName(),
                 batch.getProtocol());
         }
         

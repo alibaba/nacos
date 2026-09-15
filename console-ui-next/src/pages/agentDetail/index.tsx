@@ -66,6 +66,7 @@ import {
   type AgentVersionAction,
   buildAgentStatusUpdateData,
   endpointSourceOrderLabelKey,
+  declaredEndpointsOf,
   formatProtocolLabel,
   getProtocols,
   getVersionActions,
@@ -618,7 +619,7 @@ export default function AgentDetailPage() {
                             />
                             <Info
                               label={t('agent.descriptorMediaType')}
-                              value={selectedInterface.descriptorMediaType}
+                              value={selectedInterface.descriptorMediaType || '-'}
                             />
                             <Info
                               label={t('agent.sourceOrder')}
@@ -635,17 +636,17 @@ export default function AgentDetailPage() {
                               </h3>
                               <span className="text-xs text-muted-foreground">
                                 {t('agent.declaredEndpointCount', {
-                                  count: selectedInterface.declaredEndpoints?.length || 0,
+                                  count: declaredEndpointsOf(selectedInterface).length,
                                 })}
                               </span>
                             </div>
-                            {(selectedInterface.declaredEndpoints || []).length === 0 ? (
+                            {declaredEndpointsOf(selectedInterface).length === 0 ? (
                               <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
                                 {t('agent.noDeclaredEndpoints')}
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                {selectedInterface.declaredEndpoints?.map((endpoint) => (
+                                {declaredEndpointsOf(selectedInterface).map((endpoint) => (
                                   <div
                                     key={`${endpoint.uri}@@${endpoint.transport}`}
                                     className="flex flex-col gap-1 rounded-lg border bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -708,24 +709,24 @@ export default function AgentDetailPage() {
                 )}
                 {runtimeLoading && !runtimeView ? (
                   <Skeleton className="h-24 w-full" />
-                ) : (runtimeView?.runtimeEndpointSnapshot.items || []).length === 0 ? (
+                ) : (runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints || []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('agent.noRuntimeEndpoints')}</p>
                 ) : (
                   <div className="space-y-2">
-                    {runtimeView?.runtimeEndpointSnapshot.items.map((item) => (
-                      <div key={`${item.endpoint.uri}@@${item.endpoint.transport}`} className="rounded-lg border p-3">
+                    {runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints.map((item) => (
+                      <div key={`${item.uri}@@${item.transport}`} className="rounded-lg border p-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-sm break-all">{item.endpoint.uri}</span>
+                          <span className="font-mono text-sm break-all">{item.uri}</span>
                           <Badge>{item.state}</Badge>
-                          <Badge variant="outline">{item.endpoint.transport}</Badge>
+                          <Badge variant="outline">{item.transport}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {item.bindings.map(
+                          {(item.bindings || []).map(
                             (binding) => `${binding.runtimeVersion} → ${binding.versionRange}`,
                           ).join(', ')}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatTime(item.lastUpdatedTime)}
+                          {formatTime(runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.lastUpdatedTime)}
                         </p>
                       </div>
                     ))}

@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 import com.alibaba.nacos.ai.service.a2a.A2aCanonicalDefinitionConverter;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -94,11 +94,11 @@ public class A2aHistoricalDefinitionReconciler {
         AgentValidationUtils.validateAgentName(agentName);
         AgentValidationUtils.validateVersion(latest);
         List<AgentVersionDetail> versions = new ArrayList<AgentVersionDetail>();
-        AgentDraftCreateAdminRequest latestRequest = null;
+        AgentDraftCreateRequest latestRequest = null;
         for (A2aHistoricalDefinitionSnapshot.VersionSnapshot source : snapshot.getVersions()
             .values()) {
             boolean latestVersion = latest.equals(source.getAgentCard().getVersion());
-            AgentDraftCreateAdminRequest request = definitionConverter.convert(namespaceId,
+            AgentDraftCreateRequest request = definitionConverter.convert(namespaceId,
                 source.getAgentCard(), source.getAgentCard().getRegistrationType(), latestVersion);
             AgentVersionDetail version = new AgentVersionDetail();
             version.setNamespaceId(namespaceId);

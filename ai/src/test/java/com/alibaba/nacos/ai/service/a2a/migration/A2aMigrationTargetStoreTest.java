@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
@@ -35,7 +36,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -595,7 +596,7 @@ class A2aMigrationTargetStoreTest {
     }
     
     private AgentVersionContent content(String version, String protocolVersion) {
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion(protocolVersion);
         callInterface.setDescriptorMediaType("application/json");
@@ -605,7 +606,11 @@ class A2aMigrationTargetStoreTest {
         Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com/" + version);
         endpoint.setTransport("HTTP+JSON");
-        callInterface.setDeclaredEndpoints(Collections.singletonList(endpoint));
+        
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(Collections.singletonList(endpoint));
+        callInterface.setEndpointSets(Collections.singletonList(declaredSet1));
         return new AgentVersionContent(Collections.singletonList(callInterface));
     }
     

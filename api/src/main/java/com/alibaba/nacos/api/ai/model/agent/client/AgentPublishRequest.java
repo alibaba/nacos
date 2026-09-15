@@ -14,19 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent;
+package com.alibaba.nacos.api.ai.model.agent.client;
 
-import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentEndpointRequest;
+import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Client natural-key removal intent applied to its desired Endpoint batch.
+ * Client definition publication; autoSubmit defaults to false and uses ordinary submit.
  *
  * @author Nacos
  * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentEndpointDeregistrationClientRequest extends AbstractAgentEndpointRequest {
+public class AgentPublishRequest extends AbstractAgentDraftRequest {
     
     private static final long serialVersionUID = 1L;
+    
+    private boolean autoSubmit;
+    
+    public boolean isAutoSubmit() {
+        return autoSubmit;
+    }
+    
+    public void setAutoSubmit(boolean autoSubmit) {
+        this.autoSubmit = autoSubmit;
+    }
+    
 }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 
 import java.net.IDN;
 import java.net.URI;
@@ -82,6 +83,21 @@ public final class EndpointCanonicalizer {
         result.setPriority(priority);
         result.setWeight(weight);
         result.setHealthy(endpoint.getHealthy());
+        result.setEnabled(endpoint.getEnabled());
+        result.setState(endpoint.getState());
+        if (endpoint.getBindings() != null) {
+            result.setBindings(new ArrayList<RuntimeVersionBinding>());
+            for (RuntimeVersionBinding binding : endpoint.getBindings()) {
+                if (binding == null) {
+                    result.getBindings().add(null);
+                } else {
+                    RuntimeVersionBinding copy = new RuntimeVersionBinding();
+                    copy.setRuntimeVersion(binding.getRuntimeVersion());
+                    copy.setVersionRange(binding.getVersionRange());
+                    result.getBindings().add(copy);
+                }
+            }
+        }
         if (endpoint.getMetadata() != null && !endpoint.getMetadata().isEmpty()) {
             Map<String, String> sorted = new TreeMap<String, String>(endpoint.getMetadata());
             result.setMetadata(new LinkedHashMap<String, String>(sorted));

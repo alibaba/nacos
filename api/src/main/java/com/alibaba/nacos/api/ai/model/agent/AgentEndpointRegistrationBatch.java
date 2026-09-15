@@ -16,27 +16,68 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentEndpointRegistrationRequest;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.io.Serializable;
+import java.util.List;
 
 /**
- * Complete RAD Endpoint registration batch with an effective namespace.
+ * Complete Agent Endpoint publication; the binding supplies the effective namespace.
  *
  * @author Nacos
  * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentEndpointRegistrationBatch extends AbstractAgentEndpointRegistrationRequest {
+public class AgentEndpointRegistrationBatch implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
-    private String namespaceId;
+    private String agentName;
     
-    public String getNamespaceId() {
-        return namespaceId;
+    private String protocol;
+    
+    private List<Endpoint> endpoints;
+    
+    private String runtimeVersion;
+    
+    private String versionRange;
+    
+    public String getAgentName() {
+        return agentName;
     }
     
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
+    public void setAgentName(String agentName) {
+        this.agentName = agentName;
+    }
+    
+    public String getProtocol() {
+        return protocol;
+    }
+    
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+    
+    public List<Endpoint> getEndpoints() {
+        return endpoints;
+    }
+    
+    public void setEndpoints(List<Endpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
+    
+    public String getRuntimeVersion() {
+        return runtimeVersion;
+    }
+    
+    public void setRuntimeVersion(String runtimeVersion) {
+        this.runtimeVersion = runtimeVersion;
+    }
+    
+    public String getVersionRange() {
+        return versionRange;
+    }
+    
+    public void setVersionRange(String versionRange) {
+        this.versionRange = versionRange;
     }
 }

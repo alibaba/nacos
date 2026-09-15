@@ -1,5 +1,9 @@
 # Agent 模型关系图与复杂度复核
 
+> 2026-09-15 请求模型后续核查：5 个 Admin、4 个 Client 请求的分包、命名、调用方和 base 复用建议，见 [请求分包核查](MODEL_REQUEST_PACKAGES.md)。该分包提案尚未实施。
+
+> 2026-09-15：地址主干已统一为 `AgentCallInterface → EndpointSet → Endpoint`，Agent 包模型现为 39 个。当前实现和验证分别见 [最新关系图](MODEL_ENDPOINT_PATHS.md)、[执行记录](MODEL_ENDPOINT_VALIDATION.md)；下文保留历史评审过程。
+
 > 2026-09-14：资源与版本摘要已按 [本次合并记录](MODEL_SUMMARY_MERGE.md) 继续收敛；下文原模型图是前一版快照，Interface/Endpoint 讨论仍保留。
 
 > CallInterface / Endpoint / EndpointSet 的当前六类入口统一图及细节，见 [入口关系梳理](MODEL_ENDPOINT_PATHS.md)。
@@ -454,3 +458,12 @@ resolveCallInterfaces、resolveEndpointSets；Watch 的 DefaultAgentProjectionPr
 跨版本 Endpoint 去重和 binding 信息，以及非 latest 版本变化时的 Watch 依赖和指纹。
 解决方式仍须服从 CallInterface → EndpointSet → Endpoint 的公共三层结构，不额外增加
 Version 导航层。显式 version/label 的选择行为也需回归验证。
+
+
+## 2026-09-15 请求模型补充
+
+请求层以 [当前请求整合方案](MODEL_REQUEST_PACKAGES.md#75-最终目标及验证差异) 为准：
+agent 根包保留共享 AgentSearchRequest、AgentEndpointRegistrationBatch，均不含 namespace；
+admin 包放五个管理 Request，client 包只放 AgentPublishRequest，类名不再重复 Admin/Client。
+base 仅保留 Metadata/Draft 两个 abstract 类；局部注销直接接收 agentName、protocol、List<Endpoint>。
+本页 CallInterface → EndpointSet → Endpoint 的包含关系保持不变。

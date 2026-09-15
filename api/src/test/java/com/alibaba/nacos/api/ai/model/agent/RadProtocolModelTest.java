@@ -40,7 +40,6 @@ class RadProtocolModelTest {
     @Test
     void shouldRoundTripSearchRequestAndCatalogPage() throws Exception {
         AgentSearchRequest request = new AgentSearchRequest();
-        request.setNamespaceId("public");
         request.setAgentNameContains("Order Agent");
         request.setTagsAll(Arrays.asList("commerce", "order"));
         request.setProtocolsAny(Collections.singletonList("a2a"));
@@ -50,7 +49,7 @@ class RadProtocolModelTest {
         AgentSearchRequest restoredRequest =
             objectMapper.readValue(objectMapper.writeValueAsBytes(request),
                 AgentSearchRequest.class);
-        assertEquals("public", restoredRequest.getNamespaceId());
+        assertFalse(objectMapper.valueToTree(restoredRequest).has("namespaceId"));
         assertEquals("Order Agent", restoredRequest.getAgentNameContains());
         assertEquals(Arrays.asList("commerce", "order"), restoredRequest.getTagsAll());
         assertEquals(Collections.singletonList("a2a"), restoredRequest.getProtocolsAny());
@@ -116,7 +115,7 @@ class RadProtocolModelTest {
         assertEquals(EndpointSource.RUNTIME,
             restoredRequest.getFilter().getEndpointSources().get(0));
         
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://10.0.0.8:8443/a2a");
         endpoint.setTransport("JSONRPC");
         endpoint.setPriority(0);
@@ -131,7 +130,7 @@ class RadProtocolModelTest {
         endpointSet.setSource(EndpointSource.RUNTIME);
         endpointSet.setSourceRevision("murmur3-x64-128-v1:0123456789abcdef0123456789abcdef");
         endpointSet.setEndpoints(Collections.singletonList(endpoint));
-        AgentDiscoveryCallInterface callInterface = new AgentDiscoveryCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -154,7 +153,7 @@ class RadProtocolModelTest {
         assertEquals("1.0.6", restoredResult.getVersion());
         assertEquals("a2a", restoredResult.getCallInterfaces().get(0).getProtocol());
         assertNotNull(restoredResult.getCallInterfaces().get(0).getNativeDescriptor());
-        AgentDiscoveryEndpoint restoredEndpoint =
+        Endpoint restoredEndpoint =
             restoredResult.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints()
                 .get(0);
         assertEquals(Boolean.FALSE, restoredEndpoint.getHealthy());
@@ -190,7 +189,6 @@ class RadProtocolModelTest {
         endpoint.setTransport("JSONRPC");
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-h"));
         AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();
-        registration.setNamespaceId("public");
         registration.setAgentName("Order Agent");
         registration.setRuntimeVersion("1.0.6");
         registration.setVersionRange("[1.0.0,2.0.0)");
@@ -207,22 +205,7 @@ class RadProtocolModelTest {
         assertEquals("1.0.6", restoredRegistration.getRuntimeVersion());
         assertNull(restoredRegistration.getEndpoints().get(0).getHealthy());
         
-        Endpoint endpointKey = new Endpoint();
-        endpointKey.setUri(endpoint.getUri());
-        endpointKey.setTransport(endpoint.getTransport());
-        AgentEndpointDeregistrationBatch deregistration = new AgentEndpointDeregistrationBatch();
-        deregistration.setNamespaceId("public");
-        deregistration.setAgentName("Order Agent");
-        deregistration.setProtocol("a2a");
-        deregistration.setEndpoints(Collections.singletonList(endpointKey));
-        
-        JsonNode deregistrationJson =
-            objectMapper.readTree(objectMapper.writeValueAsBytes(deregistration));
-        assertEquals(2, deregistrationJson.path("endpoints").get(0).size());
-        AgentEndpointDeregistrationBatch restoredDeregistration =
-            objectMapper.treeToValue(deregistrationJson,
-                AgentEndpointDeregistrationBatch.class);
-        assertEquals("JSONRPC", restoredDeregistration.getEndpoints().get(0).getTransport());
+        assertFalse(registrationJson.has("namespaceId"));
     }
     
     @Test
@@ -230,8 +213,8 @@ class RadProtocolModelTest {
         String json = "{\"protocol\":\"a2a\",\"descriptorMediaType\":\"application/json\","
             + "\"nativeDescriptor\":null,\"endpointSets\":[]}";
         
-        AgentDiscoveryCallInterface callInterface =
-            objectMapper.readValue(json, AgentDiscoveryCallInterface.class);
+        AgentCallInterface callInterface =
+            objectMapper.readValue(json, AgentCallInterface.class);
         assertNull(callInterface.getNativeDescriptor());
     }
 }

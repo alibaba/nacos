@@ -18,8 +18,8 @@ package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -163,7 +163,7 @@ class AgentDiscoveryCanonicalizerTest {
         AgentDiscoveryResult resultCopy =
             AgentDiscoveryCanonicalizer.canonicalizeResult(sourceResult);
         final String resultFingerprint = AgentDiscoveryCanonicalizer.fingerprint(resultCopy);
-        final AgentDiscoveryEndpoint sourceEndpoint = runtimeEndpoint(sourceResult);
+        final Endpoint sourceEndpoint = runtimeEndpoint(sourceResult);
         
         sourceRequest.getReference().setAgentName("ChangedAgent");
         filter.getProtocols().clear();
@@ -172,7 +172,7 @@ class AgentDiscoveryCanonicalizerTest {
         descriptor.put("name", "changed");
         runtimeEndpoint(sourceResult).getMetadata().put("zone", "west");
         runtimeEndpoint(sourceResult).getBindings().get(0).setRuntimeVersion("1.1.0");
-        sourceResult.setCallInterfaces(Collections.<AgentDiscoveryCallInterface>emptyList());
+        sourceResult.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         
         assertEquals("AgentA", requestCopy.getReference().getAgentName());
         assertEquals(Arrays.asList("a2a", "custom"), requestCopy.getFilter().getProtocols());
@@ -275,7 +275,7 @@ class AgentDiscoveryCanonicalizerTest {
     @Test
     void defaultsNegativeZeroUnicodeUriAndIpv6HaveDeterministicFrames() {
         AgentDiscoveryResult implicit = fullResult();
-        AgentDiscoveryEndpoint endpoint = runtimeEndpoint(implicit);
+        Endpoint endpoint = runtimeEndpoint(implicit);
         endpoint.setUri("HTTPS://[2001:0DB8:0:0:0:0:0:1]/路径");
         endpoint.setPriority(null);
         endpoint.setWeight(-0.0D);
@@ -284,7 +284,7 @@ class AgentDiscoveryCanonicalizerTest {
         descriptor(implicit).put("negativeZero", -0.0D);
         
         AgentDiscoveryResult explicit = fullResult();
-        AgentDiscoveryEndpoint explicitEndpoint = runtimeEndpoint(explicit);
+        Endpoint explicitEndpoint = runtimeEndpoint(explicit);
         explicitEndpoint.setUri("https://[2001:db8::1]:443/路径");
         explicitEndpoint.setPriority(0);
         explicitEndpoint.setWeight(0D);
@@ -319,7 +319,7 @@ class AgentDiscoveryCanonicalizerTest {
         result.setAgentName("AgentA");
         result.setVersion("1.0.0");
         result.setContentDigest(CONTENT_DIGEST);
-        result.setCallInterfaces(Collections.<AgentDiscoveryCallInterface>emptyList());
+        result.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         
         String frame = AgentDiscoveryCanonicalizer.canonicalResultJson(result);
         
@@ -368,8 +368,8 @@ class AgentDiscoveryCanonicalizerTest {
                 request("public", null, null, nullMetadataKey)));
         
         AgentDiscoveryResult oversizedSnapshot = baseResult();
-        List<AgentDiscoveryCallInterface> interfaces =
-            new ArrayList<AgentDiscoveryCallInterface>();
+        List<AgentCallInterface> interfaces =
+            new ArrayList<AgentCallInterface>();
         for (int i = 0; i < 17; i++) {
             interfaces.add(interfaceWithProtocol("protocol" + i));
         }
@@ -588,7 +588,7 @@ class AgentDiscoveryCanonicalizerTest {
     }
     
     private AgentDiscoveryResult fullResult() {
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com:443/agent");
         endpoint.setTransport("http");
         endpoint.setPriority(0);
@@ -605,7 +605,7 @@ class AgentDiscoveryCanonicalizerTest {
         endpointSet.setSourceRevision(RUNTIME_REVISION);
         endpointSet.setEndpoints(Collections.singletonList(endpoint));
         
-        AgentDiscoveryCallInterface callInterface = interfaceWithProtocol("a2a");
+        AgentCallInterface callInterface = interfaceWithProtocol("a2a");
         callInterface.setEndpointSets(Collections.singletonList(endpointSet));
         Map<String, Object> nativeDescriptor = new LinkedHashMap<String, Object>();
         nativeDescriptor.put("name", "Agent A");
@@ -620,9 +620,9 @@ class AgentDiscoveryCanonicalizerTest {
     
     private AgentDiscoveryResult twoInterfaceResult() {
         AgentDiscoveryResult result = fullResult();
-        AgentDiscoveryCallInterface custom = interfaceWithProtocol("custom");
+        AgentCallInterface custom = interfaceWithProtocol("custom");
         custom.setNativeDescriptor(Collections.<String, Object>singletonMap("name", "Custom"));
-        result.setCallInterfaces(new ArrayList<AgentDiscoveryCallInterface>(
+        result.setCallInterfaces(new ArrayList<AgentCallInterface>(
             Arrays.asList(result.getCallInterfaces().get(0), custom)));
         return result;
     }
@@ -632,7 +632,7 @@ class AgentDiscoveryCanonicalizerTest {
         EndpointSet declared = new EndpointSet();
         declared.setSource(EndpointSource.DECLARED);
         declared.setSourceRevision(CONTENT_DIGEST);
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://declared.example.com:443/agent");
         endpoint.setTransport("http");
         endpoint.setPriority(0);
@@ -644,8 +644,8 @@ class AgentDiscoveryCanonicalizerTest {
         return result;
     }
     
-    private AgentDiscoveryCallInterface interfaceWithProtocol(String protocol) {
-        AgentDiscoveryCallInterface result = new AgentDiscoveryCallInterface();
+    private AgentCallInterface interfaceWithProtocol(String protocol) {
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");
@@ -671,7 +671,7 @@ class AgentDiscoveryCanonicalizerTest {
         return (Map<String, Object>) descriptor;
     }
     
-    private AgentDiscoveryEndpoint runtimeEndpoint(AgentDiscoveryResult result) {
+    private Endpoint runtimeEndpoint(AgentDiscoveryResult result) {
         return result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0);
     }
 }

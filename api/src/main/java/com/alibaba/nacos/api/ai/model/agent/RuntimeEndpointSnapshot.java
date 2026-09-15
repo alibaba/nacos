@@ -19,7 +19,6 @@ package com.alibaba.nacos.api.ai.model.agent;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * Raw runtime endpoint management snapshot for an Agent protocol.
@@ -35,11 +34,9 @@ public class RuntimeEndpointSnapshot implements Serializable {
     
     private String agentName;
     
-    private String protocol;
-    
     private String version;
     
-    private List<RuntimeEndpointSnapshotItem> items;
+    private AgentCallInterface callInterface;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -57,14 +54,6 @@ public class RuntimeEndpointSnapshot implements Serializable {
         this.agentName = agentName;
     }
     
-    public String getProtocol() {
-        return protocol;
-    }
-    
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-    
     public String getVersion() {
         return version;
     }
@@ -73,11 +62,11 @@ public class RuntimeEndpointSnapshot implements Serializable {
         this.version = version;
     }
     
-    public List<RuntimeEndpointSnapshotItem> getItems() {
-        return items;
+    public AgentCallInterface getCallInterface() {
+        return callInterface;
     }
     
-    public void setItems(List<RuntimeEndpointSnapshotItem> items) {
-        this.items = items;
+    public void setCallInterface(AgentCallInterface callInterface) {
+        this.callInterface = callInterface;
     }
 }

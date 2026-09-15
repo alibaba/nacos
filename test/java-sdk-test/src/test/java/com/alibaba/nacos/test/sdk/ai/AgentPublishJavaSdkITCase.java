@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.sdk.ai;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -26,10 +27,10 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -84,7 +85,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         AgentMaintainerService maintainer = createAgentMaintainerService();
         AiService service = createAiService();
         String agentName = randomServiceName("agent-code-publish");
-        AgentPublishClientRequest request = initialRequest(agentName, VERSION_ONE, "initial", false);
+        AgentPublishRequest request = initialRequest(agentName, VERSION_ONE, "initial", false);
         String callerSnapshot = JacksonUtils.toJson(request);
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
 
@@ -113,7 +114,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
                 .filter(each -> EndpointSource.RUNTIME == each.getSource())
                 .allMatch(each -> each.getEndpoints().isEmpty()), discovery.toString());
         assertTrue(maintainer.getRuntimeEndpoints(Constants.DEFAULT_NAMESPACE_ID, agentName,
-                "a2a", VERSION_ONE).getItems().isEmpty());
+                "a2a", VERSION_ONE).getCallInterface().getEndpointSets().get(0).getEndpoints().isEmpty());
 
         AgentCardDetailInfo legacy = service.getAgentCard(agentName, VERSION_ONE,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
@@ -121,14 +122,14 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(VERSION_ONE, legacy.getVersion(), legacy.toString());
         assertEquals(2, legacy.getSupportedInterfaces().size(), legacy.toString());
 
-        AgentPublishClientRequest draftOnlyRetry = initialRequest(agentName, VERSION_ONE,
+        AgentPublishRequest draftOnlyRetry = initialRequest(agentName, VERSION_ONE,
                 "initial", false);
         assertError(NacosException.CONFLICT,
                 () -> service.agent().publishAgent(draftOnlyRetry));
-        AgentPublishClientRequest contentConflict = initialRequest(agentName, VERSION_ONE,
+        AgentPublishRequest contentConflict = initialRequest(agentName, VERSION_ONE,
                 "different-content", true);
         assertError(NacosException.CONFLICT, () -> service.agent().publishAgent(contentConflict));
-        AgentPublishClientRequest metadataConflict = initialRequest(agentName, VERSION_ONE,
+        AgentPublishRequest metadataConflict = initialRequest(agentName, VERSION_ONE,
                 "initial", true);
         metadataConflict.setDescription("different initial metadata");
         assertError(NacosException.CONFLICT, () -> service.agent().publishAgent(metadataConflict));
@@ -145,7 +146,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, grpcAgent));
         addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, httpAgent));
 
-        AgentPublishClientRequest grpcRequest = initialRequest(grpcAgent, VERSION_ONE,
+        AgentPublishRequest grpcRequest = initialRequest(grpcAgent, VERSION_ONE,
                 "grpc", true);
         AgentVersionDetail grpcPublished = grpc.agent().publishAgent(grpcRequest);
         assertEquals("online", grpcPublished.getStatus(), grpcPublished.toString());
@@ -153,7 +154,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(grpcPublished.getContentDigest(), http.agent().publishAgent(grpcRequest)
                 .getContentDigest());
 
-        AgentPublishClientRequest httpRequest = initialRequest(httpAgent, VERSION_ONE,
+        AgentPublishRequest httpRequest = initialRequest(httpAgent, VERSION_ONE,
                 "http", true);
         AgentVersionDetail httpPublished = http.agent().publishAgent(httpRequest);
         assertEquals("online", httpPublished.getStatus(), httpPublished.toString());
@@ -165,7 +166,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         String customAgent = randomServiceName("agent-publish-custom");
         AiService custom = createAiService(namespaceId, AiConstants.AI_TRANSPORT_MODE_HTTP);
         addCleanup(() -> maintainer.deleteAgent(namespaceId, customAgent));
-        AgentPublishClientRequest customRequest = initialRequest(customAgent, VERSION_ONE,
+        AgentPublishRequest customRequest = initialRequest(customAgent, VERSION_ONE,
                 "custom", true);
         AgentVersionDetail customPublished = custom.agent().publishAgent(customRequest);
         assertEquals(namespaceId, customPublished.getNamespaceId(), customPublished.toString());
@@ -184,38 +185,38 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
 
         AgentVersionDetail first = grpc.agent().publishAgent(
                 initialRequest(agentName, VERSION_ONE, "one", true));
-        AgentPublishClientRequest secondRequest = versionRequest(agentName, VERSION_TWO,
+        AgentPublishRequest secondRequest = versionRequest(agentName, VERSION_TWO,
                 "two", true);
         AgentVersionDetail second = http.agent().publishAgent(secondRequest);
         assertFalse(first.getContentDigest().equals(second.getContentDigest()));
 
-        AgentPublishClientRequest inherited = inheritedRequest(agentName, VERSION_THREE,
+        AgentPublishRequest inherited = inheritedRequest(agentName, VERSION_THREE,
                 VERSION_TWO, true);
         AgentVersionDetail third = grpc.agent().publishAgent(inherited);
         assertEquals(second.getContentDigest(), third.getContentDigest(), third.toString());
         assertEquals(VERSION_THREE, http.agent().discoverAgent(reference(agentName, null)).getVersion());
 
-        AgentPublishClientRequest both = inheritedRequest(agentName, VERSION_FOUR, VERSION_TWO, false);
+        AgentPublishRequest both = inheritedRequest(agentName, VERSION_FOUR, VERSION_TWO, false);
         both.setCallInterfaces(Collections.singletonList(callInterface(agentName,
                 VERSION_FOUR, "both")));
         assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(both));
 
-        AgentPublishClientRequest neither = new AgentPublishClientRequest();
+        AgentPublishRequest neither = new AgentPublishRequest();
         neither.setAgentName(agentName);
         neither.setVersion(VERSION_FOUR);
         assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(neither));
 
-        AgentPublishClientRequest firstInheritance = inheritedRequest(
+        AgentPublishRequest firstInheritance = inheritedRequest(
                 randomServiceName("agent-publish-first-inherit"), VERSION_ONE,
                 VERSION_TWO, false);
         assertError(NacosException.INVALID_PARAM, () -> grpc.agent().publishAgent(firstInheritance));
 
-        AgentPublishClientRequest changedAuthor = versionRequest(agentName, VERSION_TWO,
+        AgentPublishRequest changedAuthor = versionRequest(agentName, VERSION_TWO,
                 "two", true);
         changedAuthor.setAuthor("different-author");
         assertError(NacosException.CONFLICT, () -> grpc.agent().publishAgent(changedAuthor));
 
-        AgentPublishClientRequest falseAgainstOnline = versionRequest(agentName, VERSION_TWO,
+        AgentPublishRequest falseAgainstOnline = versionRequest(agentName, VERSION_TWO,
                 "two", false);
         assertError(NacosException.CONFLICT,
                 () -> grpc.agent().publishAgent(falseAgainstOnline));
@@ -305,9 +306,9 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         assertNotNull(resubscribed.card.get());
     }
 
-    private AgentPublishClientRequest initialRequest(String agentName, String version, String marker,
+    private AgentPublishRequest initialRequest(String agentName, String version, String marker,
             boolean autoSubmit) {
-        AgentPublishClientRequest result = versionRequest(agentName, version, marker, autoSubmit);
+        AgentPublishRequest result = versionRequest(agentName, version, marker, autoSubmit);
         result.setDisplayName("Display " + agentName);
         result.setDescription("Code-first Agent " + agentName);
         result.setIconUrl("https://example.com/" + agentName + "/icon.png");
@@ -320,9 +321,9 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentPublishClientRequest versionRequest(String agentName, String version, String marker,
+    private AgentPublishRequest versionRequest(String agentName, String version, String marker,
             boolean autoSubmit) {
-        AgentPublishClientRequest result = new AgentPublishClientRequest();
+        AgentPublishRequest result = new AgentPublishRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         result.setCallInterfaces(Collections.singletonList(
@@ -333,9 +334,9 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentPublishClientRequest inheritedRequest(String agentName, String version,
+    private AgentPublishRequest inheritedRequest(String agentName, String version,
             String basedOnVersion, boolean autoSubmit) {
-        AgentPublishClientRequest result = new AgentPublishClientRequest();
+        AgentPublishRequest result = new AgentPublishRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         result.setBasedOnVersion(basedOnVersion);
@@ -345,7 +346,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentDefinitionCallInterface callInterface(String agentName, String version, String marker) {
+    private AgentCallInterface callInterface(String agentName, String version, String marker) {
         AgentInterface jsonRpc = new AgentInterface();
         jsonRpc.setUrl("https://example.com/" + agentName + "/jsonrpc");
         jsonRpc.setProtocolBinding("HTTP+JSON");
@@ -369,14 +370,18 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint grpcEndpoint = new Endpoint();
         grpcEndpoint.setUri(grpc.getUrl());
         grpcEndpoint.setTransport(grpc.getProtocolBinding());
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol("a2a");
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class));
         result.setEndpointSourceOrder(Arrays.asList(EndpointSource.DECLARED,
                 EndpointSource.RUNTIME));
-        result.setDeclaredEndpoints(Arrays.asList(jsonRpcEndpoint, grpcEndpoint));
+
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(Arrays.asList(jsonRpcEndpoint, grpcEndpoint));
+        result.setEndpointSets(Collections.singletonList(declaredSet1));
         return result;
     }
 
@@ -408,8 +413,8 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentVersionAdminRequest versionCommand(String agentName, String version) {
-        AgentVersionAdminRequest result = new AgentVersionAdminRequest();
+    private AgentVersionRequest versionCommand(String agentName, String version) {
+        AgentVersionRequest result = new AgentVersionRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         return result;

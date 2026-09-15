@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -273,5 +275,51 @@ public final class AgentValidationUtils {
                 throw new IllegalArgumentException("Invalid " + fieldName + ": " + value);
             }
         }
+    }
+    
+    /**
+     * Validate a draft identity and its exclusive content source.
+     *
+     * @param agentName Agent name
+     * @param version exact version
+     * @param directContent whether call interfaces are supplied
+     * @param basedOnVersion optional source version
+     */
+    public static void validateDraft(String agentName, String version, boolean directContent,
+        String basedOnVersion) {
+        validateAgentName(agentName);
+        validateVersion(version);
+        boolean copiedContent = !isDraftSourceBlank(basedOnVersion);
+        if (directContent == copiedContent) {
+            throw new IllegalArgumentException(
+                "Agent draft must contain either callInterfaces or basedOnVersion");
+        }
+        if (copiedContent) {
+            validateVersion(basedOnVersion);
+        }
+    }
+    
+    /**
+     * Validate the writable Agent resource status.
+     *
+     * @param status requested status
+     */
+    public static void validateWritableStatus(String status) {
+        if (!AiConstants.Agent.RESOURCE_STATUS_ENABLE.equals(status)
+            && !AiConstants.Agent.RESOURCE_STATUS_DISABLE.equals(status)) {
+            throw new IllegalArgumentException("Invalid Agent resource status: " + status);
+        }
+    }
+    
+    private static boolean isDraftSourceBlank(String value) {
+        if (value == null) {
+            return true;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (!Character.isWhitespace(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Shared endpoint value used by declared and runtime Agent views.
@@ -41,7 +42,15 @@ public class Endpoint implements Serializable {
     
     private Map<String, String> metadata;
     
+    /** Registration health defaults to true; runtime reads return the current health. */
     private Boolean healthy;
+    
+    /** Nacos-maintained fields. Ignored when submitted in a write request. */
+    private List<RuntimeVersionBinding> bindings;
+    
+    private Boolean enabled;
+    
+    private RuntimeEndpointState state;
     
     public String getUri() {
         return uri;
@@ -91,4 +100,27 @@ public class Endpoint implements Serializable {
         this.healthy = healthy;
     }
     
+    public List<RuntimeVersionBinding> getBindings() {
+        return bindings;
+    }
+    
+    public void setBindings(List<RuntimeVersionBinding> bindings) {
+        this.bindings = bindings;
+    }
+    
+    public Boolean getEnabled() {
+        return enabled;
+    }
+    
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
+    }
+    
+    public RuntimeEndpointState getState() {
+        return state;
+    }
+    
+    public void setState(RuntimeEndpointState state) {
+        this.state = state;
+    }
 }

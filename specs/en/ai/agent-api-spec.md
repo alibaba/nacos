@@ -88,7 +88,7 @@ current `editingVersion` and remains in `draft` status. Lists are paged; a
 | HTTP registration cannot establish or retain its Client, or heartbeat cannot find the Client/publication | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND (50404)` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
 | Deregistration of a missing contribution | Success without change |
-| Valid runtime query with no instances | Success with `items=[]` |
+| Valid runtime query with no instances | Success with `callInterface.endpointSets[0].endpoints=[]` |
 | Discover filter matches no value | A typed empty result as defined by RAD, not `NOT_FOUND` |
 
 HTTP status and `Result.code` use the common v3 exception mapping. gRPC
@@ -108,14 +108,14 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 | Capability | Method | Input | Result |
 |---|---|---|---|
-| Search | `searchAgents` | `AgentSearchClientRequest` without a caller-controlled namespace | `Page<AgentSummary>` |
+| Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
 | Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
 | Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
-| Register | `registerAgentEndpoints` | `AgentEndpointRegistrationClientRequest` | `void` |
-| Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistrationClientRequest` | `void` |
-| Code-first publish | `publishAgent` | `AgentPublishClientRequest` | `AgentVersionDetail` |
+| Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
+| Deregister | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
+| Code-first publish | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
 and both peers advertise Watch, the SDK installs server-aware Wire Intent;
@@ -194,7 +194,7 @@ deregistration. Existing `A2aService.releaseAgentCard` remains functional
 through the compatibility adapter.
 
 `publishAgent` is an optional, namespace-bound definition-publication step.
-`AgentPublishClientRequest` and `AgentDraftCreateAdminRequest` are sibling subclasses of
+`AgentPublishRequest` and `AgentDraftCreateRequest` are sibling subclasses of
 `model.agent.base.AbstractAgentDraftRequest`, which holds Version content,
 `basedOnVersion`, author, change description, and initial Agent metadata fields.
 Only the Client request adds `autoSubmit`, whose default is `false`.
@@ -215,12 +215,18 @@ description, or explicitly supplied initial metadata is a conflict.
 `offline` Version, returns illegal state or conflict. A submit failure does not
 compensate by deleting the created draft.
 
-Client Search, registration and deregistration accept `model.agent.AgentSearchClientRequest`,
-`AgentEndpointRegistrationClientRequest` and `AgentEndpointDeregistrationClientRequest`. None exposes a namespace field
-or accessor. The SDK copies the inputs and injects its instance namespace into the existing
-transport DTOs, leaving caller collections/Endpoints unchanged. These unreleased 3.3 methods
-do not retain public overloads accepting namespace-bearing wire DTOs. Server HTTP/gRPC DTOs,
-authorization, query and registration semantics are unchanged.
+Search and complete registration use root-package `AgentSearchRequest` and
+`AgentEndpointRegistrationBatch`, containing business fields without namespace accessors.
+Partial deregistration uses
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`;
+there is no deregistration Java Request/Batch. The SDK defensively copies caller content
+and supplies its instance namespace through HTTP parameters or the RPC envelope to query
+and registration services. Publication keys and redo data retain namespace separately.
+Partial deregistration registers the complete nonempty remainder or deregisters the whole
+publication when empty, without mutating caller objects or collections. HTTP fields,
+authorization, replacement and error semantics remain unchanged. Search/Register RPC
+namespace is on the envelope rather than nested in the business request.
+No 3.3 BETA Java compatibility wrappers are retained; historical A2A contracts are unchanged.
 
 
 ### Java model binding
@@ -231,15 +237,22 @@ Shared field-only classes live in `model.agent.base` as public abstract classes 
 constructors. Public SDK parameters, return values, DTO members and collection elements use
 concrete types. No polymorphic discriminator or additional JSON nesting is introduced.
 
-`AgentSearchClientRequest`, `AgentEndpointRegistrationClientRequest` and
-`AgentEndpointDeregistrationClientRequest` are namespace-free siblings of the corresponding
-RAD requests, sharing an abstract base rather than inheriting each other. The SDK still makes
-defensive copies and injects its bound namespace. Client publication and Admin draft creation
-likewise use sibling concrete requests; their validation and lifecycle rules remain unchanged.
+Java models use `com.alibaba.nacos.api.ai.model.agent` as the root. Shared RAD models,
+Search and RegistrationBatch stay in that package. `agent.admin` contains
+`AgentDraftCreateRequest`, `AgentDraftUpdateRequest`, `AgentUpdateRequest`,
+`AgentLabelsUpdateRequest` and `AgentVersionRequest`; `agent.client` contains `AgentPublishRequest`.
+`agent.base` contains only `AbstractAgentMetadata` and `AbstractAgentDraftRequest`, both
+abstract with protected constructors. Metadata shares metadata fields and extensions;
+Draft shares version-definition fields and draft validation. Client publication and Admin
+draft creation are sibling concrete subclasses; public APIs use concrete types.
+Shared validation lives in `com.alibaba.nacos.api.ai.utils.AgentValidationUtils`, outside model.
+Forms perform HTTP string parsing. Admin models remain shared by the Maintainer SDK,
+Console and server; namespace comes from the Form or an explicit method argument.
+JSON conversion uses `JsonUtils`/`NacosTypeReference`.
 
-The management `AgentCallInterface` schema binds to Java `AgentDefinitionCallInterface`;
-`AgentDiscoveryCallInterface` is a separate concrete sibling sharing protocol descriptor fields.
-Definition source order/declared endpoints never become discovery endpoint sets through inheritance.
+Management and discovery bind to the same concrete AgentCallInterface, EndpointSet and Endpoint.
+Definition, raw runtime and discovery remain explicit projections with context-specific field constraints;
+no additional CallInterface base or Endpoint subclass is exposed.
 AgentSummary is the unified resource type; detail projections may include extensions and lists
 omit them. AgentVersionDetail still extends AgentVersionSummary and Version lists do not load
 protocol content. Management and Search use versionInfo.labels/onlineVersions with
@@ -334,8 +347,8 @@ Discover routing rules.
 | GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentSummary>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
 | POST | `/v3/client/ai/agents/watch` | Form: `generation + timeoutMillis + watches`, where `watches` is a JSON array string | `Result<AgentWatchBatchResponse>` |
-| POST | `/v3/client/ai/agents` | Form: `AgentPublishClientRequest`; complex fields are JSON strings | `Result<AgentVersionDetail>` |
-| POST | `/v3/client/ai/agents/endpoints` | Form: complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
+| POST | `/v3/client/ai/agents` | Form: `AgentPublishRequest`; complex fields are JSON strings | `Result<AgentVersionDetail>` |
+| POST | `/v3/client/ai/agents/endpoints` | Form: `namespaceId` plus complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form: `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
 
@@ -414,7 +427,7 @@ implements partial deregistration by updating its local expected batch and
 POSTing the complete remainder; it uses DELETE only when that remainder is
 empty. A direct HTTP caller likewise owns its complete desired batch. The
 three-field DELETE Form is a binding object, not a replacement for the
-application-facing `AgentEndpointDeregistrationBatch` RAD model.
+logical `AgentEndpointDeregistrationBatch` RAD command; the Java SDK exposes its three business parameters directly.
 
 Definition publication uses a dedicated Form rather than a JSON body.
 `provider`, `tags`, `extensions`, and `callInterfaces` are JSON strings; the
@@ -517,8 +530,8 @@ Disconnect removes that connection's contributions. Reconnect obtains a new
 connection id and redoes endpoints and the complete current Watch intent.
 
 The `RpcRequest` suffix distinguishes Nacos Payload wrappers from the
-transport-neutral RAD root messages. Search and Discover wrappers carry their
-corresponding RAD request. Register carries one
+transport-neutral RAD root messages. Search carries namespace on the envelope and a namespace-free business request.
+Discover continues carrying its complete RAD request. Register carries namespace on the envelope and one
 `AgentEndpointRegistrationBatch`. Deregister directly carries
 `namespaceId + agentName + protocol`; it does not introduce a separate
 identity object or accept partial Endpoint keys.
@@ -619,7 +632,7 @@ runtime endpoints into a Version descriptor.
 | Method | Path | Action | Result |
 |---|---|---|---|
 | GET | `/v3/admin/ai/agents` | Read Agent and first bounded Version-summary page | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | Update writable Agent fields through the shared AI Resource update flow | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | Update writable Agent fields through the shared AI Resource update flow | `Result<AgentSummary>` |
 | DELETE | `/v3/admin/ai/agents` | Delete Agent definition and Version content | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | Filter and page Agent summaries | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | Page Version summaries | `Result<Page<AgentVersionSummary>>` |
@@ -643,6 +656,11 @@ Forms do not. The following complex fields are JSON strings:
 - draft update: `callInterfaces`; and
 - label update: `labels`.
 
+The five typed requests in `model.agent.admin` are shared by the Maintainer SDK, Console
+and server. HTTP Forms parse strings and bind namespace separately; they do not replace
+SDK inputs. Complex values use `JsonUtils`/`NacosTypeReference`, while namespace comes
+from the Form or explicit SDK argument.
+
 Form size uses the shared Nacos HTTP form-size policy. The serialized
 AgentVersion content is still independently limited by the Agent Management
 contract.
@@ -652,7 +670,7 @@ Runtime query input is `namespaceId + agentName + protocol + version?`.
 Endpoint key for the protocol with all bindings; supplying it retains only
 matching bindings. The query does
 not apply `endpointSourceOrder`, does not require a definition to exist, and
-returns an empty item array when no instance exists.
+returns `callInterface.endpointSets[0].endpoints=[]` with a retained RUNTIME Set when no instance exists.
 
 There is no separate `createAgent` operation. `POST /draft` is the single
 creation entry:
@@ -691,7 +709,7 @@ delete independently owned runtime publications.
 | POST | `/v3/admin/ai/agents/redraft` | `reviewed -> draft` | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/online` | `offline -> online` | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/offline` | `online -> offline` | `Result<AgentVersionSummary>` |
-| PUT | `/v3/admin/ai/agents/labels` | Update custom labels; `latest` stays server-managed | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents/labels` | Update custom labels; `latest` stays server-managed | `Result<AgentSummary>` |
 
 Every action identifies `namespaceId + agentName + exact version`; an omitted
 version never means latest for a write. `force-publish` uses ordinary Agent
@@ -774,8 +792,8 @@ construct the complete cross-Version publisher batch required by that service.
 Historical data migration and mixed-version rolling-upgrade behavior are a
 separate specification and must not be inferred from this API-only contract.
 
-## Endpoint Consolidation Acceptance Addendum (Review Draft, Not Implemented)
+## Endpoint Consolidation Acceptance
 
 Consolidation affects Client registration/publication, Admin/Maintainer, Console, and internal legacy A2A conversion. The proposed writable healthy scope is Runtime registration/complete replacement, defaulting to true; ignore submitted bindings, enabled/state, and observations. HTTP, gRPC, and both SDK JSON adapters must agree while preserving namespace, authorization, error, query, and subscription behavior.
 
-This is the next-change proposal, not an implementation claim for current Java/schemas. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. This update records planned coverage, not passed tests.
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.

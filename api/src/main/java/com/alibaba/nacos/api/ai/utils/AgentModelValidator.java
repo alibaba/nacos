@@ -18,16 +18,16 @@ package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.model.Page;
@@ -198,7 +198,7 @@ public final class AgentModelValidator {
      * @throws IllegalArgumentException when the CallInterface is invalid
      */
     public static void validateCallInterface(String namespaceId, String agentName,
-        AgentDefinitionCallInterface callInterface) {
+        AgentCallInterface callInterface) {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         requireNonNull(callInterface, "callInterface");
@@ -210,8 +210,22 @@ public final class AgentModelValidator {
         AgentValidationUtils.validateNonNullJsonValue(callInterface.getNativeDescriptor(),
             "nativeDescriptor");
         validateEndpointSourceOrder(callInterface.getEndpointSourceOrder());
-        validateDeclaredEndpoints(namespaceId, agentName, callInterface.getProtocol(),
-            callInterface.getDeclaredEndpoints());
+        if (callInterface.getEndpointSets() != null) {
+            if (callInterface.getEndpointSets().size() > 1) {
+                throw new IllegalArgumentException(
+                    "Definition contains at most one DECLARED EndpointSet");
+            }
+            for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
+                requireNonNull(endpointSet, "endpointSet");
+                if (endpointSet.getSource() != EndpointSource.DECLARED) {
+                    throw new IllegalArgumentException(
+                        "Definition EndpointSet source must be DECLARED");
+                }
+                requireNonNull(endpointSet.getEndpoints(), "endpointSet.endpoints");
+                validateDeclaredEndpoints(namespaceId, agentName, callInterface.getProtocol(),
+                    endpointSet.getEndpoints());
+            }
+        }
     }
     
     /**
@@ -223,7 +237,7 @@ public final class AgentModelValidator {
      * @param callInterface CallInterface to validate
      * @throws IllegalArgumentException when the CallInterface is invalid
      */
-    public static void validateCallInterface(AgentDefinitionCallInterface callInterface) {
+    public static void validateCallInterface(AgentCallInterface callInterface) {
         validateCallInterface("validation", "validation", callInterface);
     }
     
@@ -276,21 +290,29 @@ public final class AgentModelValidator {
         requireNonNull(snapshot, "runtimeEndpointSnapshot");
         AgentValidationUtils.validateNamespaceId(snapshot.getNamespaceId());
         AgentValidationUtils.validateAgentName(snapshot.getAgentName());
-        AgentValidationUtils.validateProtocol(snapshot.getProtocol());
+        AgentCallInterface callInterface =
+            requireNonNull(snapshot.getCallInterface(), "callInterface");
+        AgentValidationUtils.validateProtocol(callInterface.getProtocol());
+        List<EndpointSet> sets = requireNonNull(callInterface.getEndpointSets(), "endpointSets");
+        if (sets.size() != 1 || sets.get(0) == null
+            || sets.get(0).getSource() != EndpointSource.RUNTIME) {
+            throw new IllegalArgumentException("Runtime snapshot requires one RUNTIME EndpointSet");
+        }
+        validateEpochMillis(sets.get(0).getLastUpdatedTime(), "lastUpdatedTime");
         AgentVersion selectedVersion = null;
         if (snapshot.getVersion() != null) {
             selectedVersion = AgentVersion.parse(snapshot.getVersion());
         }
         
-        List<RuntimeEndpointSnapshotItem> items = snapshot.getItems();
+        List<Endpoint> items = snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints();
         requireNonNull(items, "runtimeEndpointSnapshot.items");
         if (items.size() > MAX_RUNTIME_ENDPOINTS) {
             throw new IllegalArgumentException(
                 "runtimeEndpointSnapshot.items exceeds " + MAX_RUNTIME_ENDPOINTS + " items");
         }
         Set<EndpointNaturalKey> endpointKeys = new HashSet<EndpointNaturalKey>();
-        for (RuntimeEndpointSnapshotItem item : items) {
-            validateRuntimeEndpointSnapshotItem(snapshot, selectedVersion, item, endpointKeys);
+        for (Endpoint item : items) {
+            validateRuntimeEndpoint(snapshot, selectedVersion, item, endpointKeys);
         }
     }
     
@@ -476,14 +498,14 @@ public final class AgentModelValidator {
     }
     
     private static void validateCallInterfaces(String namespaceId, String agentName,
-        List<AgentDefinitionCallInterface> callInterfaces) {
+        List<AgentCallInterface> callInterfaces) {
         requireNonNull(callInterfaces, "callInterfaces");
         if (callInterfaces.isEmpty() || callInterfaces.size() > MAX_CALL_INTERFACES) {
             throw new IllegalArgumentException(
                 "callInterfaces must contain 1 to " + MAX_CALL_INTERFACES + " items");
         }
         Set<String> protocols = new HashSet<String>();
-        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
+        for (AgentCallInterface callInterface : callInterfaces) {
             validateCallInterface(namespaceId, agentName, callInterface);
             if (!protocols.add(callInterface.getProtocol())) {
                 throw new IllegalArgumentException(
@@ -526,13 +548,13 @@ public final class AgentModelValidator {
         }
     }
     
-    private static void validateRuntimeEndpointSnapshotItem(RuntimeEndpointSnapshot snapshot,
-        AgentVersion selectedVersion, RuntimeEndpointSnapshotItem item,
+    private static void validateRuntimeEndpoint(RuntimeEndpointSnapshot snapshot,
+        AgentVersion selectedVersion, Endpoint item,
         Set<EndpointNaturalKey> endpointKeys) {
         requireNonNull(item, "runtimeEndpointSnapshot item");
-        validateEndpoint(item.getEndpoint());
+        EndpointCanonicalizer.canonicalize(item);
         EndpointNaturalKey endpointKey = EndpointNaturalKey.of(snapshot.getNamespaceId(),
-            snapshot.getAgentName(), snapshot.getProtocol(), item.getEndpoint());
+            snapshot.getAgentName(), snapshot.getCallInterface().getProtocol(), item);
         if (!endpointKeys.add(endpointKey)) {
             throw new IllegalArgumentException("Duplicate runtime Endpoint: " + endpointKey);
         }
@@ -550,7 +572,6 @@ public final class AgentModelValidator {
         requireNonNull(item.getEnabled(), "runtime Endpoint enabled");
         requireNonNull(item.getHealthy(), "runtime Endpoint healthy");
         validateRuntimeEndpointState(item);
-        validateEpochMillis(item.getLastUpdatedTime(), "lastUpdatedTime");
     }
     
     private static void validateRuntimeVersionBinding(RuntimeVersionBinding binding,
@@ -575,7 +596,7 @@ public final class AgentModelValidator {
         }
     }
     
-    private static void validateRuntimeEndpointState(RuntimeEndpointSnapshotItem item) {
+    private static void validateRuntimeEndpointState(Endpoint item) {
         RuntimeEndpointState expected;
         if (!item.getEnabled()) {
             expected = RuntimeEndpointState.DISABLED;
@@ -594,7 +615,7 @@ public final class AgentModelValidator {
         requireNonNull(endpoint, "Endpoint");
         EndpointCanonicalizer.canonicalize(endpoint);
         if (endpoint.getHealthy() != null) {
-            throw new IllegalArgumentException("Management or declared Endpoint forbids healthy");
+            throw new IllegalArgumentException("Declared Endpoint forbids healthy");
         }
     }
     

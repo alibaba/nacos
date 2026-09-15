@@ -27,8 +27,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -114,14 +114,14 @@ class A2aServerOperationServiceTest {
         AgentCard card = card(VERSION);
         AgentInterface duplicate = interfaceOf("https://example.com/a2a", "HTTP+JSON", "0.3");
         card.setSupportedInterfaces(Arrays.asList(card.getSupportedInterfaces().get(0), duplicate));
-        ArgumentCaptor<AgentDraftCreateAdminRequest> requestCaptor =
-            ArgumentCaptor.forClass(AgentDraftCreateAdminRequest.class);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
         service.registerAgent(card, NAMESPACE_ID, null);
         
         verify(agentOperationService).registerLegacyOnlineVersion(eq(NAMESPACE_ID),
             requestCaptor.capture());
-        AgentDraftCreateAdminRequest request = requestCaptor.getValue();
+        AgentDraftCreateRequest request = requestCaptor.getValue();
         assertEquals(AGENT_NAME, request.getAgentName());
         assertEquals(VERSION, request.getVersion());
         assertNull(request.getDisplayName());
@@ -129,14 +129,14 @@ class A2aServerOperationServiceTest {
         assertEquals("https://example.com/icon.png", request.getIconUrl());
         assertEquals("Example Org", request.getProvider().getName());
         assertNull(request.getTags());
-        AgentDefinitionCallInterface callInterface = request.getCallInterfaces().get(0);
+        AgentCallInterface callInterface = request.getCallInterfaces().get(0);
         assertEquals("a2a", callInterface.getProtocol());
         assertEquals("0.3", callInterface.getProtocolVersion());
         assertEquals("application/json", callInterface.getDescriptorMediaType());
         assertInstanceOf(Map.class, callInterface.getNativeDescriptor());
         assertEquals(Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME),
             callInterface.getEndpointSourceOrder());
-        assertEquals(1, callInterface.getDeclaredEndpoints().size());
+        assertEquals(1, callInterface.getEndpointSets().get(0).getEndpoints().size());
         assertNull(card.getAdditionalInterfaces());
     }
     
@@ -144,8 +144,8 @@ class A2aServerOperationServiceTest {
     void testRegisterMapsAbsentProvider() throws NacosException {
         AgentCard card = card(VERSION);
         card.setProvider(null);
-        ArgumentCaptor<AgentDraftCreateAdminRequest> requestCaptor =
-            ArgumentCaptor.forClass(AgentDraftCreateAdminRequest.class);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
         service.registerAgent(card, NAMESPACE_ID, null);
         
@@ -156,8 +156,8 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testReleaseDefaultsToServiceAndPreservesSetAsLatest() throws NacosException {
-        ArgumentCaptor<AgentDraftCreateAdminRequest> requestCaptor =
-            ArgumentCaptor.forClass(AgentDraftCreateAdminRequest.class);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
         service.releaseAgent(card(VERSION), NAMESPACE_ID, "", true);
         
@@ -173,8 +173,8 @@ class A2aServerOperationServiceTest {
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, true));
-        ArgumentCaptor<AgentDraftCreateAdminRequest> requestCaptor =
-            ArgumentCaptor.forClass(AgentDraftCreateAdminRequest.class);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
         service.updateAgentCard(card(VERSION), NAMESPACE_ID, null, false);
         
@@ -204,8 +204,8 @@ class A2aServerOperationServiceTest {
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
                 ErrorCode.AGENT_VERSION_NOT_FOUND, "missing"));
-        ArgumentCaptor<AgentDraftCreateAdminRequest> requestCaptor =
-            ArgumentCaptor.forClass(AgentDraftCreateAdminRequest.class);
+        ArgumentCaptor<AgentDraftCreateRequest> requestCaptor =
+            ArgumentCaptor.forClass(AgentDraftCreateRequest.class);
         
         service.updateAgentCard(card(VERSION), NAMESPACE_ID, null, false);
         
@@ -670,7 +670,7 @@ class A2aServerOperationServiceTest {
         result.setAgentName(AGENT_NAME);
         result.setVersion(version);
         result.setStatus(status);
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol(includeA2a ? "a2a" : "custom");
         callInterface.setProtocolVersion("0.3");
         callInterface.setDescriptorMediaType("application/json");

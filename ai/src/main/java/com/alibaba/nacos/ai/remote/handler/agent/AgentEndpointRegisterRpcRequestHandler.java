@@ -60,9 +60,10 @@ public class AgentEndpointRegisterRpcRequestHandler
         try {
             AgentEndpointRegistrationBatch batch =
                 requireRequest(request.getRegistrationBatch(), "registrationBatch");
-            batch.setNamespaceId(NamespaceUtil.processNamespaceParameter(
-                batch.getNamespaceId()));
-            runtimeRegistryService.register(meta.getConnectionId(), batch);
+            request.setNamespaceId(NamespaceUtil.processNamespaceParameter(
+                request.getNamespaceId()));
+            runtimeRegistryService.register(meta.getConnectionId(), request.getNamespaceId(),
+                batch);
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);
         }

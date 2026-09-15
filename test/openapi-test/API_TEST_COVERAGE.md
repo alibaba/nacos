@@ -356,6 +356,16 @@ Agent model consolidation strengthens the existing Agent Admin row with raw-JSON
 
 本轮独立验证：28 项通过、2 项既有条件跳过，包含受影响的 A2A 管理互通场景。详情见 `Codex/design/nacos-3.3-client-ai-api/MODEL_VALIDATION.md` 的 2026-09-14 记录。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+本轮新增公开 INDEX/Artifact、直接 HTTP 健康输入/维护字段忽略，以及两种 Console 部署的非空统一模型成功流程。普通批次 56 通过、2 个原私有资源跳过；独立 Console 11 通过、3 个原错误映射断言失败。保留失败和 Disabled，不据此修改原统计口径。
+
+
+### 2026-09-15 请求整合回归
+
+Agent Client/Admin/Console 覆盖行的 HTTP 契约保持不变，本轮 Request 合并不增加新 HTTP surface；既有默认值、namespace 隔离、发布/运行地址、索引、A2A 迁移与 Artifact 场景全部纳入回归。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。

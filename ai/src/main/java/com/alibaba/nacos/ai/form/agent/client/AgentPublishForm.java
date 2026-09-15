@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.form.agent.client;
 
 import com.alibaba.nacos.ai.form.agent.admin.AbstractAgentDraftForm;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -50,8 +50,8 @@ public class AgentPublishForm extends AbstractAgentDraftForm {
      * @return validated Agent publication request
      * @throws NacosApiException when a JSON-valued Form field is invalid
      */
-    public AgentPublishClientRequest toRequest() throws NacosApiException {
-        AgentPublishClientRequest result = new AgentPublishClientRequest();
+    public AgentPublishRequest toRequest() throws NacosApiException {
+        AgentPublishRequest result = new AgentPublishRequest();
         fillRequest(result);
         result.validate();
         result.setAutoSubmit(parseAutoSubmit());

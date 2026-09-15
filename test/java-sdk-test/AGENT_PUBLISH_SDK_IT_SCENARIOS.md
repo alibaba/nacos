@@ -60,8 +60,12 @@ force-publish remain outside this phase.
 
 ## Agent model consolidation
 
-The publication request is AgentPublishClientRequest, a sibling of AgentDraftCreateAdminRequest through AbstractAgentDraftRequest. Existing HTTP/gRPC publication scenarios exercise shared inherited content, source validation, idempotence and submit semantics with the renamed input.
+The publication request is agent.client.AgentPublishRequest, a sibling of agent.admin.AgentDraftCreateRequest through AbstractAgentDraftRequest. Existing HTTP/gRPC publication scenarios exercise shared inherited content, source validation, idempotence and submit semantics with the renamed input.
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。

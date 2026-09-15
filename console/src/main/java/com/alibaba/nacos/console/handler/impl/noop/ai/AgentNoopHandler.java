@@ -17,11 +17,11 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -51,7 +51,7 @@ public class AgentNoopHandler implements AgentHandler {
     }
     
     @Override
-    public AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
+    public AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
         throws NacosException {
         throw disabled();
     }
@@ -87,13 +87,13 @@ public class AgentNoopHandler implements AgentHandler {
     }
     
     @Override
-    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
+    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
         throws NacosException {
         throw disabled();
     }
     
     @Override
-    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
+    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
         throws NacosException {
         throw disabled();
     }
@@ -141,7 +141,7 @@ public class AgentNoopHandler implements AgentHandler {
     }
     
     @Override
-    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
+    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException {
         throw disabled();
     }

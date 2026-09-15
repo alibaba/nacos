@@ -19,8 +19,7 @@ package com.alibaba.nacos.api.ai.utils;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -219,19 +218,19 @@ public final class AgentDiscoveryCanonicalizer {
             && filter.getMetadataSelector() == null;
     }
     
-    private static List<AgentDiscoveryCallInterface> copyCallInterfaces(
-        List<AgentDiscoveryCallInterface> source) {
+    private static List<AgentCallInterface> copyCallInterfaces(
+        List<AgentCallInterface> source) {
         if (source == null) {
             return null;
         }
-        List<AgentDiscoveryCallInterface> result =
-            new ArrayList<AgentDiscoveryCallInterface>(source.size());
-        for (AgentDiscoveryCallInterface each : source) {
+        List<AgentCallInterface> result =
+            new ArrayList<AgentCallInterface>(source.size());
+        for (AgentCallInterface each : source) {
             if (each == null) {
                 result.add(null);
                 continue;
             }
-            AgentDiscoveryCallInterface copy = new AgentDiscoveryCallInterface();
+            AgentCallInterface copy = new AgentCallInterface();
             copy.setProtocol(each.getProtocol());
             copy.setProtocolVersion(each.getProtocolVersion());
             copy.setDescriptorMediaType(each.getDescriptorMediaType());
@@ -261,20 +260,20 @@ public final class AgentDiscoveryCanonicalizer {
         return result;
     }
     
-    private static List<AgentDiscoveryEndpoint> copyEndpoints(
-        List<AgentDiscoveryEndpoint> source) {
+    private static List<Endpoint> copyEndpoints(
+        List<Endpoint> source) {
         if (source == null) {
             return null;
         }
-        List<AgentDiscoveryEndpoint> result =
-            new ArrayList<AgentDiscoveryEndpoint>(source.size());
-        for (AgentDiscoveryEndpoint each : source) {
+        List<Endpoint> result =
+            new ArrayList<Endpoint>(source.size());
+        for (Endpoint each : source) {
             if (each == null) {
                 result.add(null);
                 continue;
             }
             Endpoint canonical = EndpointCanonicalizer.canonicalize(each);
-            AgentDiscoveryEndpoint copy = new AgentDiscoveryEndpoint();
+            Endpoint copy = new Endpoint();
             copy.setUri(canonical.getUri());
             copy.setTransport(canonical.getTransport());
             copy.setPriority(canonical.getPriority());
@@ -423,9 +422,9 @@ public final class AgentDiscoveryCanonicalizer {
     }
     
     private static List<Object> callInterfaceFrames(
-        List<AgentDiscoveryCallInterface> callInterfaces) {
+        List<AgentCallInterface> callInterfaces) {
         List<Object> result = new ArrayList<Object>(callInterfaces.size());
-        for (AgentDiscoveryCallInterface callInterface : callInterfaces) {
+        for (AgentCallInterface callInterface : callInterfaces) {
             Map<String, Object> frame = new LinkedHashMap<String, Object>();
             frame.put("descriptorMediaType", callInterface.getDescriptorMediaType());
             frame.put("endpointSets", endpointSetFrames(callInterface.getEndpointSets()));
@@ -449,9 +448,9 @@ public final class AgentDiscoveryCanonicalizer {
         return result;
     }
     
-    private static List<Object> endpointFrames(List<AgentDiscoveryEndpoint> endpoints) {
+    private static List<Object> endpointFrames(List<Endpoint> endpoints) {
         List<Object> result = new ArrayList<Object>(endpoints.size());
-        for (AgentDiscoveryEndpoint endpoint : endpoints) {
+        for (Endpoint endpoint : endpoints) {
             Map<String, Object> frame = new LinkedHashMap<String, Object>();
             frame.put("bindings", bindingFrames(endpoint.getBindings()));
             frame.put("healthy", endpoint.getHealthy());

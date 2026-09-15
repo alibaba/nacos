@@ -71,7 +71,7 @@ transport-neutral.
 | `shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart` | Opt-in three-node rolling-cluster workflow: independent gRPC and HTTP subscriptions observe a Version published through another node while one node is stopped, retain omitted-selector rollout-safe Endpoint aggregation and exact-selector isolation, then converge again after the stopped node restarts and a later Version is published. |
 | `shouldConvergePinnedNodeDefinitionAndRuntimeChanges` | Opt-in two-node workflow with gRPC and HTTP subscribers pinned to node A. It publishes definition and Runtime changes first through A (A-A) and then through B (A-B), covers storage-changing Version publication and metadata-only online/offline transitions, and cross-checks every callback fingerprint against authoritative Discover on both nodes. |
 | `shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart` | Opt-in two-node peer-restart workflow. It establishes gRPC and HTTP subscriptions on node A, mutates through node B, stops and restarts B, then verifies that the existing A-side Watches receive later definition and Runtime changes without resubscription. The test treats the expected loss of CP quorum while one of two nodes is down as topology unavailability rather than a Watch failure. |
-| `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
+| `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, forbidden health in deregistration, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
 The same twenty-three stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
@@ -112,9 +112,9 @@ expected count.
 | --- | --- | --- |
 | Create `AiService` through `AiFactory` with no namespace | Agent operations bind to `public`. | IT |
 | Create services bound to `public` and a custom namespace | Search, Discover, subscriptions, and publications remain namespace-isolated. | IT + UT |
-| Request or Batch omits namespace | The SDK copies the value and injects its bound namespace without mutating caller input. | IT + UT |
-| Request or Batch carries the same namespace | The request succeeds and caller input remains unchanged. | UT |
-| Request or Batch carries another non-empty namespace | The SDK rejects it locally before transport invocation. | IT + UT |
+| Search/Registration business model has no namespace field or accessor | The SDK copies business values and passes its instance namespace in HTTP parameters/RPC envelopes; caller input remains unchanged. | IT + UT |
+| Reuse one Search/Registration object across two namespace-bound SDK instances with the same Agent/protocol | Search returns each namespace's tags; partial deregistration and whole removal affect only the selected instance's namespace. | IT + UT |
+| Registration redo and capacity rejection cleanup | Namespace stays in publication/redo keys after being removed from business models; discarding one namespace leaves the other intact. | UT |
 | Reuse caller lists, maps, references, filters, and endpoints after a call | SDK state and wire payload remain isolated from later caller mutations. | UT |
 | Shutdown with no subscription or publication | Polling, heartbeat, HTTP resources, and gRPC resources stop cleanly. | IT + UT |
 | Shutdown with active subscriptions and publications | The SDK cancels polling and heartbeat and best-effort deregisters every complete publication. | IT + UT |
@@ -324,6 +324,29 @@ failed targeted run rather than a sleeping normal CI test.
 
 Search 返回 Page<AgentSummary>，目录通过 versionInfo.onlineVersions 的 AgentVersionSummary 读取；latest 来自 versionInfo.labels。验证 grpc/http/auto 的字段一致、过滤与分页不变、Search 不泄漏 namespace/管理状态/非在线标签。CallInterface、Endpoint 和默认发现算法未纳入本轮。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### EP-03/06/07/15 加固（2026-09-15）
+
+`shouldReplaceAndPartiallyDeregisterCompletePublications` 在 GRPC、HTTP、AUTO 参数下保留三项中第三项的 weight/metadata/绑定及显式 `healthy=false`；注销前两项后，通过 Discover 和 Maintainer `getRuntimeEndpoints` 交叉读取剩余地址。Maintainer 返回非空统一三层模型及 `UNHEALTHY`/enabled/Set 观察时间，Discover 不泄漏管理状态。伪造 bindings/enabled/state 不覆盖批次及 Naming 状态；双 JSON adapter 验证同一 typed 结果。
+
+### EP-09 PUBLIC Agent Watch 回归（2026-09-15）
+
+`shouldWatchPublicAgentHealthAndPartialDeregistrationWithUnifiedModels` 通过历史 A2A 公开写入口准备 PUBLIC Agent，保持默认鉴权，分别在 GRPC/HTTP 和默认/Jackson 3 下订阅新 Agent 结果。注册三项后注销两项，核对剩余 healthy=false、绑定和同步 Discover fingerprint；仅将 healthy 改为 true 也须触发新完整结果；移除最后一项、取消订阅后不再回调。四种组合均通过。原有私有授权异步 Watch DAUTH-F05 Disabled 继续保留。
+
+
+## Request consolidation (2026-09-15)
+
+`searchAgents(AgentSearchRequest)` and `registerAgentEndpoints(AgentEndpointRegistrationBatch)`
+use shared concrete, namespace-free models. `deregisterAgentEndpoints(agentName, protocol,
+List<Endpoint>)` takes natural keys directly; nonempty remainder uses full registration,
+empty remainder uses whole-publication deregistration. The existing replacement, rollback,
+health, ownership, multi-publisher and transport cases now exercise these signatures.
+
+`shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespace` runs in GRPC/HTTP/AUTO:
+two namespaces contain the same Agent/protocol, share caller-owned input objects, then
+remove two of three endpoints and finally all endpoints in one namespace while asserting
+the other retains all three. Default/Jackson 3 runs use the same case. These are scenario
+contracts; fresh execution status is recorded in the design validation ledger.

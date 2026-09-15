@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.remote.handler.agent;
 
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentPublishRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentPublishRpcResponse;
 import com.alibaba.nacos.api.annotation.Since;
@@ -57,7 +57,7 @@ public class AgentPublishRpcRequestHandler
         throws NacosException {
         AgentPublishRpcResponse response = new AgentPublishRpcResponse();
         try {
-            AgentPublishClientRequest publishRequest = requireRequest(request.getPublishRequest());
+            AgentPublishRequest publishRequest = requireRequest(request.getPublishRequest());
             String namespaceId = NamespaceUtil.processNamespaceParameter(request.getNamespaceId());
             response.setVersionDetail(publishService.publish(namespaceId, publishRequest));
         } catch (Exception e) {
@@ -66,7 +66,7 @@ public class AgentPublishRpcRequestHandler
         return response;
     }
     
-    private AgentPublishClientRequest requireRequest(AgentPublishClientRequest request) {
+    private AgentPublishRequest requireRequest(AgentPublishRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("publishRequest must not be null");
         }

@@ -27,7 +27,7 @@ import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.ai.service.agent.watch.AgentHttpWatchService;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -81,7 +81,7 @@ class AgentClientControllerTest {
     @Test
     void testPublish() throws Exception {
         AgentPublishForm form = mock(AgentPublishForm.class);
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         AgentVersionDetail detail = new AgentVersionDetail();
         when(form.getNamespaceId()).thenReturn("team");
         when(form.toRequest()).thenReturn(request);
@@ -93,10 +93,10 @@ class AgentClientControllerTest {
     void testSearch() throws Exception {
         AgentSearchForm form = mock(AgentSearchForm.class);
         AgentSearchRequest request = new AgentSearchRequest();
-        request.setNamespaceId("team");
         Page<AgentSummary> page = new Page<AgentSummary>();
+        when(form.getNamespaceId()).thenReturn("team");
         when(form.toRequest()).thenReturn(request);
-        when(discoveryService.search(request)).thenReturn(page);
+        when(discoveryService.search("team", request)).thenReturn(page);
         
         assertSame(page, controller.search(form, "client").getData());
         verify(lifecycleService).renewForQuery("client", "team");
@@ -120,8 +120,9 @@ class AgentClientControllerTest {
         AgentEndpointRegistrationForm form = mock(AgentEndpointRegistrationForm.class);
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         ClientLivenessInfo liveness = new ClientLivenessInfo();
+        when(form.getNamespaceId()).thenReturn("team");
         when(form.toRequest()).thenReturn(batch);
-        when(lifecycleService.register("client", "AI", batch)).thenReturn(liveness);
+        when(lifecycleService.register("client", "AI", "team", batch)).thenReturn(liveness);
         
         assertSame(liveness, controller.registerEndpoints(form, "client", "AI").getData());
     }

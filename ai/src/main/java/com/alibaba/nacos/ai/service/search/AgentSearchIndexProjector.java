@@ -24,12 +24,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentExtension;
 import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -92,11 +91,11 @@ public class AgentSearchIndexProjector {
         result.setDisplayName(StringUtils.isBlank(agent.getDisplayName())
             ? agent.getAgentName() : agent.getDisplayName());
         result.setDescription(agent.getDescription());
-        result.setTags(JacksonUtils.toJson(nullToEmpty(agent.getTags())));
-        result.setCapabilities(JacksonUtils.toJson(capabilities(latest, a2aCard)));
-        result.setRepresentativeQueries(JacksonUtils.toJson(
+        result.setTags(JsonUtils.toJson(nullToEmpty(agent.getTags())));
+        result.setCapabilities(JsonUtils.toJson(capabilities(latest, a2aCard)));
+        result.setRepresentativeQueries(JsonUtils.toJson(
             representativeQueries(agent, a2aCard)));
-        result.setMetadata(JacksonUtils.toJson(metadata(agent, latest, protocols,
+        result.setMetadata(JsonUtils.toJson(metadata(agent, latest, protocols,
             latestProtocols, artifactKinds)));
         result.setSourceDigest(sourceDigest(agent, latest, artifactKinds));
         result.setStatus(AiResourceSearchConstants.STATUS_ENABLED);
@@ -176,7 +175,7 @@ public class AgentSearchIndexProjector {
             return Collections.emptyList();
         }
         Set<String> result = new LinkedHashSet<>();
-        for (AgentDefinitionCallInterface callInterface : latest.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
             if (callInterface != null) {
                 addIfNotBlank(result, callInterface.getProtocol());
             }
@@ -205,7 +204,7 @@ public class AgentSearchIndexProjector {
     private List<String> capabilities(AgentVersionDetail latest, AgentCard card) {
         Set<String> result = new LinkedHashSet<>();
         if (latest.getCallInterfaces() != null) {
-            for (AgentDefinitionCallInterface callInterface : latest.getCallInterfaces()) {
+            for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
                 if (callInterface != null) {
                     addIfNotBlank(result, callInterface.getProtocol());
                 }
@@ -277,7 +276,7 @@ public class AgentSearchIndexProjector {
             return result;
         }
         int index = 0;
-        for (AgentDefinitionCallInterface callInterface : latest.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : latest.getCallInterfaces()) {
             if (callInterface != null && !A2A_PROTOCOL.equalsIgnoreCase(
                 callInterface.getProtocol())) {
                 addContent(result, "agent-" + index + '-' + callInterface.getProtocol()

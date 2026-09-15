@@ -16,9 +16,12 @@
 
 # Agent 地址模型统一：设计结论与改造前测试方案
 
-日期：2026-09-14。基于 `codex/agent-model-consolidation` 当前未提交工作区。
-本轮只有设计、源码核查和测试规划，没有执行下面的新测试，也没有修改 Java/TypeScript/Schema。
-之前摘要合并的测试结果不能充当本轮地址模型统一的验收结果。
+设计日期：2026-09-14；实施更新：2026-09-15。分支 `codex/agent-model-consolidation`。
+前序包/摘要合并已保存为 `429f96c70`；本轮地址模型统一、测试和规范改动尚未提交。
+T1/T2 代码已落地，T3 的普通流程、正常迁移和页面验证已执行。实际结果见
+[地址模型阶段执行记录](MODEL_ENDPOINT_VALIDATION.md)。后续请求分包与 JsonUtils 调整后的完整复验见
+[请求整合验证记录](MODEL_REQUEST_VALIDATION.md)；既有远程 Console 错误码和鉴权缺口保留，
+下表仍是验收要求，不能将所有组无条件标为通过。
 
 本文收敛 [影响面核查](MODEL_ENDPOINT_IMPACT.md) 与 [六类入口图](MODEL_ENDPOINT_PATHS.md)。
 如果旧讨论中的“保留 BETA 存储格式”“注册禁止 healthy”“拒绝服务端维护字段”与本文不同，
@@ -47,7 +50,7 @@
 
 ### 1.2 字段位置建议，实施前固定样例
 
-这些是为了让测试可执行的最小实现建议，不表示 Java 已经修改：
+本轮已采用以下字段位置：
 
 - AgentCallInterface 保留协议四字段与 endpointSets；endpointSourceOrder 仅在定义上下文使用。
 - Endpoint 合并 bindings、enabled、state；healthy 只保留一份，不再嵌套 endpoint 对象。
@@ -135,7 +138,7 @@ Schema 验证要校验实际正反例实例，而不只检查 JSON 文件能解�
 
 ## 3. 全链路验收矩阵
 
-以下 16 组是本轮验收台账，**新模型的当前状态全部为 Pending**。已有测试名称表示复用基础，
+以下 16 组是本轮验收台账，实际状态以执行记录为准。已有测试名称表示复用基础，
 不是本轮已执行证据。实施时每组记录具体方法及参数、结果 XML、样例/日志路径；缺少实际执行不标 Covered。
 
 | ID | 链路与必须保持/新增的结果 | 已有测试落点 | 本轮新增重点 |
@@ -347,9 +350,9 @@ UT 为 api/ai/client/maintainer-client/console/ai-registry-adaptor 中所有受�
 
 实施时同时更新中英文 Agent management/API/storage、RAD、A2A migration 相关模型引用，
 以及管理、RAD、内部存储和 Artifact Schema。正常 A2A wire、索引业务语义、Watch 规则保持。
-本轮在对应规范加入评审草案与测试门槛，不提前把现行 Java/Schema 标成已经实现。
+本轮已同步更新 Java、Schema 和中英文规范；测试门槛与实际结果分别记录。
 
-以下登记文档链接到本文，本轮不提升原有 Covered/Partial/Pending 状态或覆盖率：
+以下登记文档链接到本文及执行记录；保留历史覆盖率口径，不以本轮测试数量替代原有覆盖统计：
 
 - OpenAPI：CLIENT/ADMIN/CONSOLE/AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS、
   A2A_MIGRATION_API_TEST_SCENARIOS、API_TEST_COVERAGE。

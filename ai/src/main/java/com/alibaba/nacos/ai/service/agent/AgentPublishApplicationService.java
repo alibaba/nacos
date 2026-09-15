@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -53,7 +53,7 @@ public class AgentPublishApplicationService {
      * @return resulting exact Version detail
      * @throws NacosException when validation, persistence, or submit fails
      */
-    public AgentVersionDetail publish(String namespaceId, AgentPublishClientRequest request)
+    public AgentVersionDetail publish(String namespaceId, AgentPublishRequest request)
         throws NacosException {
         if (request == null) {
             throw new IllegalArgumentException("Agent publish request must not be null");
@@ -88,7 +88,7 @@ public class AgentPublishApplicationService {
             request.getAgentName(), request.getVersion()));
     }
     
-    private AgentVersionDetail findEquivalent(String namespaceId, AgentPublishClientRequest request)
+    private AgentVersionDetail findEquivalent(String namespaceId, AgentPublishRequest request)
         throws NacosException {
         final AgentVersionDetail existing;
         try {
@@ -106,7 +106,7 @@ public class AgentPublishApplicationService {
     }
     
     private AgentVersionDetail recoverEquivalent(String namespaceId,
-        AgentPublishClientRequest request,
+        AgentPublishRequest request,
         NacosException originalFailure) throws NacosException {
         final AgentVersionDetail existing;
         try {
@@ -121,7 +121,7 @@ public class AgentPublishApplicationService {
         return existing;
     }
     
-    private void requireEquivalentContent(String namespaceId, AgentPublishClientRequest request,
+    private void requireEquivalentContent(String namespaceId, AgentPublishRequest request,
         AgentVersionDetail existing) throws NacosException {
         String requestedDigest;
         if (request.getCallInterfaces() != null) {
@@ -140,7 +140,7 @@ public class AgentPublishApplicationService {
     }
     
     private void requireEquivalentInitialMetadata(String namespaceId,
-        AgentPublishClientRequest request) throws NacosException {
+        AgentPublishRequest request) throws NacosException {
         if (!hasInitialMetadata(request)) {
             return;
         }
@@ -161,7 +161,7 @@ public class AgentPublishApplicationService {
         }
     }
     
-    private boolean hasInitialMetadata(AgentPublishClientRequest request) {
+    private boolean hasInitialMetadata(AgentPublishRequest request) {
         return request.getDisplayName() != null || request.getDescription() != null
             || request.getIconUrl() != null || request.getProvider() != null
             || request.getTags() != null || request.getExtensions() != null;

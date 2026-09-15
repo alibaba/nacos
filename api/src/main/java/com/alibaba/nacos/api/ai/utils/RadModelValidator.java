@@ -22,12 +22,10 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
@@ -104,12 +102,13 @@ public final class RadModelValidator {
     /**
      * Validate an Agent search request.
      *
+     * @param namespaceId effective namespace
      * @param request search request
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentSearchRequest request) {
+    public static void validate(String namespaceId, AgentSearchRequest request) {
         requireNonNull(request, "AgentSearchRequest");
-        AgentValidationUtils.validateNamespaceId(request.getNamespaceId());
+        AgentValidationUtils.validateNamespaceId(namespaceId);
         if (request.getAgentNameContains() != null) {
             validatePrintableAscii(request.getAgentNameContains(), 1, 64,
                 "agentNameContains", true);
@@ -304,7 +303,7 @@ public final class RadModelValidator {
      * @param callInterface discovered call interface
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentDiscoveryCallInterface callInterface) {
+    public static void validate(AgentCallInterface callInterface) {
         validateCallInterface(callInterface, "public", "validation", null);
     }
     
@@ -320,10 +319,10 @@ public final class RadModelValidator {
         AgentValidationUtils.validateAgentName(result.getAgentName());
         AgentValidationUtils.validateVersion(result.getVersion());
         AgentValidationUtils.validateContentDigest(result.getContentDigest());
-        List<AgentDiscoveryCallInterface> callInterfaces = result.getCallInterfaces();
+        List<AgentCallInterface> callInterfaces = result.getCallInterfaces();
         requireArray(callInterfaces, MAX_CALL_INTERFACES, "callInterfaces");
         Set<String> protocols = new HashSet<String>();
-        for (AgentDiscoveryCallInterface callInterface : callInterfaces) {
+        for (AgentCallInterface callInterface : callInterfaces) {
             validateCallInterface(callInterface, result.getNamespaceId(), result.getAgentName(),
                 result.getContentDigest());
             if (!protocols.add(callInterface.getProtocol())) {
@@ -335,12 +334,13 @@ public final class RadModelValidator {
     /**
      * Validate a runtime Endpoint registration batch.
      *
+     * @param namespaceId effective namespace
      * @param batch registration batch
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentEndpointRegistrationBatch batch) {
+    public static void validate(String namespaceId, AgentEndpointRegistrationBatch batch) {
         requireNonNull(batch, "AgentEndpointRegistrationBatch");
-        AgentValidationUtils.validateNamespaceId(batch.getNamespaceId());
+        AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(batch.getAgentName());
         AgentVersion runtimeVersion = AgentVersion.parse(batch.getRuntimeVersion());
         AgentValidationUtils.validateProtocol(batch.getProtocol());
@@ -351,29 +351,32 @@ public final class RadModelValidator {
             throw invalid("versionRange must contain runtimeVersion");
         }
         requireNonEmptyArray(batch.getEndpoints(), MAX_BATCH_ENDPOINTS, "endpoints");
-        validateEndpointBatch(batch.getEndpoints(), batch.getNamespaceId(), batch.getAgentName(),
-            batch.getProtocol(), EndpointHealthRule.FORBIDDEN, false, false);
+        validateEndpointBatch(batch.getEndpoints(), namespaceId, batch.getAgentName(),
+            batch.getProtocol(), EndpointHealthRule.OPTIONAL, false, false);
     }
     
     /**
      * Validate a runtime Endpoint deregistration batch.
      *
-     * @param batch deregistration batch
+     * @param namespaceId effective namespace
+     * @param agentName Agent name
+     * @param protocol Agent protocol
+     * @param endpoints natural keys to remove
      * @throws IllegalArgumentException when invalid
      */
-    public static void validate(AgentEndpointDeregistrationBatch batch) {
-        requireNonNull(batch, "AgentEndpointDeregistrationBatch");
-        AgentValidationUtils.validateNamespaceId(batch.getNamespaceId());
-        AgentValidationUtils.validateAgentName(batch.getAgentName());
-        AgentValidationUtils.validateProtocol(batch.getProtocol());
-        requireNonEmptyArray(batch.getEndpoints(), MAX_BATCH_ENDPOINTS, "endpoints");
-        validateEndpointBatch(batch.getEndpoints(), batch.getNamespaceId(), batch.getAgentName(),
-            batch.getProtocol(), EndpointHealthRule.FORBIDDEN, true, false);
+    public static void validateDeregistration(String namespaceId, String agentName,
+        String protocol, List<Endpoint> endpoints) {
+        AgentValidationUtils.validateNamespaceId(namespaceId);
+        AgentValidationUtils.validateAgentName(agentName);
+        AgentValidationUtils.validateProtocol(protocol);
+        requireNonEmptyArray(endpoints, MAX_BATCH_ENDPOINTS, "endpoints");
+        validateEndpointBatch(endpoints, namespaceId, agentName,
+            protocol, EndpointHealthRule.FORBIDDEN, true, false);
     }
     
-    private static void validateCallInterface(AgentDiscoveryCallInterface callInterface,
+    private static void validateCallInterface(AgentCallInterface callInterface,
         String namespaceId, String agentName, String contentDigest) {
-        requireNonNull(callInterface, "AgentDiscoveryCallInterface");
+        requireNonNull(callInterface, "AgentCallInterface");
         AgentValidationUtils.validateProtocol(callInterface.getProtocol());
         if (callInterface.getProtocolVersion() != null) {
             AgentValidationUtils.validateProtocolVersion(callInterface.getProtocolVersion());
@@ -381,6 +384,9 @@ public final class RadModelValidator {
         AgentValidationUtils.validateMediaType(callInterface.getDescriptorMediaType());
         AgentValidationUtils.validateNonNullJsonValue(callInterface.getNativeDescriptor(),
             "nativeDescriptor");
+        if (callInterface.getEndpointSourceOrder() != null) {
+            throw invalid("Discovery CallInterface must not contain endpointSourceOrder");
+        }
         requireArray(callInterface.getEndpointSets(), MAX_ENDPOINT_SOURCES, "endpointSets");
         Set<EndpointSource> sources = new HashSet<EndpointSource>();
         for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
@@ -397,6 +403,9 @@ public final class RadModelValidator {
         requireNonNull(endpointSet, "EndpointSet");
         EndpointSource source = requireNonNull(endpointSet.getSource(), "source");
         validateSourceRevision(endpointSet.getSourceRevision(), source, contentDigest);
+        if (endpointSet.getLastUpdatedTime() != null) {
+            throw invalid("Discovery EndpointSet must not contain lastUpdatedTime");
+        }
         int capacity = source == EndpointSource.DECLARED ? MAX_DECLARED_ENDPOINTS
             : MAX_RUNTIME_ENDPOINTS;
         requireArray(endpointSet.getEndpoints(), capacity, "endpoints");
@@ -404,7 +413,7 @@ public final class RadModelValidator {
             ? EndpointHealthRule.REQUIRED : EndpointHealthRule.FORBIDDEN;
         validateEndpointBatch(endpointSet.getEndpoints(), namespaceId, agentName, protocol,
             healthRule, false, true);
-        for (AgentDiscoveryEndpoint endpoint : endpointSet.getEndpoints()) {
+        for (Endpoint endpoint : endpointSet.getEndpoints()) {
             validateDiscoveryBindings(endpoint, source);
         }
         validateEndpointOrder(endpointSet.getEndpoints(), namespaceId, agentName, protocol);
@@ -426,7 +435,7 @@ public final class RadModelValidator {
         }
     }
     
-    private static void validateDiscoveryBindings(AgentDiscoveryEndpoint endpoint,
+    private static void validateDiscoveryBindings(Endpoint endpoint,
         EndpointSource source) {
         List<RuntimeVersionBinding> bindings = endpoint.getBindings();
         if (source == EndpointSource.DECLARED) {
@@ -473,6 +482,10 @@ public final class RadModelValidator {
             throw invalid("Endpoint must not contain healthy in this context");
         }
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
+        if (requireCanonicalOutput
+            && (endpoint.getEnabled() != null || endpoint.getState() != null)) {
+            throw invalid("Discovery Endpoint must not contain management state");
+        }
         if (requireCanonicalOutput
             && (!canonical.getUri().equals(endpoint.getUri()) || endpoint.getPriority() == null
                 || endpoint.getWeight() == null
@@ -658,6 +671,7 @@ public final class RadModelValidator {
     
     private enum EndpointHealthRule {
         REQUIRED,
+        OPTIONAL,
         FORBIDDEN
     }
 }

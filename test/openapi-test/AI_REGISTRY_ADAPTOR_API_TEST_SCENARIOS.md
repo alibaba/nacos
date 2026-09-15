@@ -51,6 +51,10 @@ administrator or Client credential.
 | `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Schema, large-catalog, and well-known component coverage remains active; live shared-index catalog projection is part of the `DAUTH-F03` disabled method. |
 | `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Artifact resolution, errors, and web-context isolation remain covered by component tests; the live absolute Version/digest cross-context assertion is part of the `DAUTH-F03` disabled method. |
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 统一地址模型新增场景（2026-09-15）
+
+`ArdAdaptorOpenApiITCase.testPublicAgentIndexAndUnifiedArtifacts`：旧 A2A 创建 PUBLIC Agent，再通过 Agent API 发布多协议新版本；ARD Search 返回非空 Nacos Agent 与原生 A2A 表示，实际 HTTP 下载验证 exact version/contentDigest、DECLARED Set/Endpoint 新结构，排除 runtime/健康/管理字段，下线后旧 Artifact URL 返回受控 404。原私有资源 DAUTH-F03 用例继续 Disabled。

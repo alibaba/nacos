@@ -35,7 +35,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
@@ -1114,7 +1114,7 @@ class AgentPersistenceServiceTest {
     void testUpdateDraftRejectsEmptyCallInterfacesBeforePersistence() {
         assertThrows(IllegalArgumentException.class,
             () -> service.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION,
-                Collections.<AgentDefinitionCallInterface>emptyList(), "Updated draft"));
+                Collections.<AgentCallInterface>emptyList(), "Updated draft"));
         
         verifyNoInteractions(resourcePersistService, versionPersistService, storageService);
     }
@@ -1523,7 +1523,7 @@ class AgentPersistenceServiceTest {
         AiResourceVersion invalidStatus = storedVersion();
         invalidStatus.setStatus("invalid");
         AgentVersionContent invalidContent =
-            new AgentVersionContent(Collections.<AgentDefinitionCallInterface>emptyList());
+            new AgentVersionContent(Collections.<AgentCallInterface>emptyList());
         when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
         when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
@@ -2563,7 +2563,7 @@ class AgentPersistenceServiceTest {
     }
     
     private AgentVersionContent contentWithProtocol(String protocol) {
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol(protocol);
         callInterface.setProtocolVersion("1.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -2807,7 +2807,7 @@ class AgentPersistenceServiceTest {
     }
     
     private AgentVersionDetail newInitialDraft() {
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("0.3");
         callInterface.setDescriptorMediaType("application/json");

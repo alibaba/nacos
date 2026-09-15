@@ -188,6 +188,14 @@ Agent model consolidation uses concrete namespace-free ClientRequest types; Sear
 
 Agent 模型合并验证沿用 AgentDiscoveryServiceJavaSdkITCase：新目录路径、跨 transport 返回一致、管理字段隔离，既有发现/订阅场景不变。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+
+### 2026-09-15 请求整合回归
+
+Agent Search/Register 使用 agent 根包共享模型，局部注销使用三参数；publish 使用 agent.client.AgentPublishRequest。新增同名 Agent 双 namespace 搜索、注册及 3 删 2 隔离场景，GRPC/HTTP/AUTO 和两种 JSON adapter 共用。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。

@@ -17,12 +17,12 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -61,7 +61,7 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public AgentSummary updateAgent(String namespaceId, AgentUpdateAdminRequest request)
+    public AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -154,7 +154,7 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
+    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -179,7 +179,7 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateAdminRequest request)
+    public AgentVersionDetail updateDraft(String namespaceId, AgentDraftUpdateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -204,43 +204,43 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public AgentVersionSummary submit(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary submit(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/submit");
     }
     
     @Override
-    public AgentVersionSummary publish(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary publish(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/publish");
     }
     
     @Override
-    public AgentVersionSummary forcePublish(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary forcePublish(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/force-publish");
     }
     
     @Override
-    public AgentVersionSummary redraft(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary redraft(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/redraft");
     }
     
     @Override
-    public AgentVersionSummary online(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary online(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/online");
     }
     
     @Override
-    public AgentVersionSummary offline(String namespaceId, AgentVersionAdminRequest command)
+    public AgentVersionSummary offline(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/offline");
     }
     
     @Override
-    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateAdminRequest request)
+    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -255,7 +255,7 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     private AgentVersionSummary executeVersionCommand(String namespaceId,
-        AgentVersionAdminRequest command, String path) throws NacosException {
+        AgentVersionRequest command, String path) throws NacosException {
         command = requireRequest(command);
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params =

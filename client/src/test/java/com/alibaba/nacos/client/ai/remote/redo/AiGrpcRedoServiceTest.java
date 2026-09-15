@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
@@ -174,12 +175,11 @@ class AiGrpcRedoServiceTest {
     @Test
     void completeAgentEndpointPublicationFollowsEveryRedoState() {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId("public");
         batch.setAgentName("agent-a");
         batch.setProtocol("a2a");
         
         assertNull(redoService.getAgentEndpointPublication("missing"));
-        redoService.cacheAgentEndpointPublication(batch);
+        redoService.cacheAgentEndpointPublication("public", batch);
         String key = AgentEndpointPublicationRedoData.keyOf("public", "agent-a", "a2a");
         
         assertEquals(batch, redoService.getAgentEndpointPublication(key));
@@ -211,16 +211,43 @@ class AiGrpcRedoServiceTest {
     @Test
     void discardCompleteAgentEndpointPublicationRemovesAnyIntent() {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId("public");
         batch.setAgentName("agent-a");
         batch.setProtocol("a2a");
         String key = AgentEndpointPublicationRedoData.keyOf("public", "agent-a", "a2a");
-        redoService.cacheAgentEndpointPublication(batch);
+        redoService.cacheAgentEndpointPublication("public", batch);
         redoService.agentEndpointPublicationRegistered(key);
         
         redoService.discardAgentEndpointPublication(key);
         
         assertNull(redoService.getAgentEndpointPublication(key));
         assertFalse(redoService.isAgentEndpointPublicationRegistered(key));
+    }
+    
+    @Test
+    void completePublicationRedoRetainsNamespaceOutsideSharedBatch() {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setAgentName("agent-a");
+        batch.setProtocol("a2a");
+        redoService.cacheAgentEndpointPublication("public", batch);
+        redoService.cacheAgentEndpointPublication("tenant-b", batch);
+        AgentEndpointPublicationRedoData publicData =
+            new AgentEndpointPublicationRedoData("public", batch);
+        assertNotEquals(publicData, new AgentEndpointPublicationRedoData("tenant-b", batch));
+        assertEquals(publicData, new AgentEndpointPublicationRedoData("public", batch));
+        String publicKey = AgentEndpointPublicationRedoData.keyOf("public", "agent-a", "a2a");
+        String tenantKey = AgentEndpointPublicationRedoData.keyOf("tenant-b", "agent-a", "a2a");
+        assertEquals(2, redoService.findAgentEndpointPublicationRedoData().size());
+        for (RedoData<AgentEndpointRegistrationBatch> data : redoService
+            .findAgentEndpointPublicationRedoData()) {
+            AgentEndpointPublicationRedoData publication = (AgentEndpointPublicationRedoData) data;
+            assertEquals(AgentEndpointPublicationRedoData.keyOf(publication.getNamespaceId(),
+                "agent-a", "a2a"), publication.getKey());
+        }
+        redoService.discardAgentEndpointPublication(tenantKey);
+        assertNull(redoService.getAgentEndpointPublication(tenantKey));
+        assertEquals(batch, redoService.getAgentEndpointPublication(publicKey));
+        AgentEndpointPublicationRedoData retained = (AgentEndpointPublicationRedoData) redoService
+            .findAgentEndpointPublicationRedoData().iterator().next();
+        assertEquals("public", retained.getNamespaceId());
     }
 }

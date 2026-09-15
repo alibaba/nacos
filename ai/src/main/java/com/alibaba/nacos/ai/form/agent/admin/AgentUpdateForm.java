@@ -17,9 +17,9 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 
 import java.io.Serial;
 import java.util.List;
@@ -64,9 +64,9 @@ public class AgentUpdateForm extends AgentAdminForm {
      * @return validated Agent update request
      * @throws NacosApiException when a JSON-valued field is invalid
      */
-    public AgentUpdateAdminRequest toRequest() throws NacosApiException {
+    public AgentUpdateRequest toRequest() throws NacosApiException {
         super.validate();
-        AgentUpdateAdminRequest result = new AgentUpdateAdminRequest();
+        AgentUpdateRequest result = new AgentUpdateRequest();
         result.setAgentName(getAgentName());
         result.setDisplayName(displayName);
         result.setDescription(description);
@@ -74,10 +74,10 @@ public class AgentUpdateForm extends AgentAdminForm {
         result.setProvider(AgentAdminFormJsonParser.parseOptional("provider", provider,
             AgentProvider.class));
         result.setTags(AgentAdminFormJsonParser.parseOptional("tags", tags,
-            new TypeReference<List<String>>() {
+            new NacosTypeReference<List<String>>() {
             }));
         result.setExtensions(AgentAdminFormJsonParser.parseOptional("extensions", extensions,
-            new TypeReference<Map<String, Object>>() {
+            new NacosTypeReference<Map<String, Object>>() {
             }));
         result.setStatus(status);
         result.validate();

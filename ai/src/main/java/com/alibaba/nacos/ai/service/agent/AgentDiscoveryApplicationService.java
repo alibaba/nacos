@@ -33,15 +33,13 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOper
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -55,9 +53,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.ObjectProvider;
@@ -99,8 +97,8 @@ public class AgentDiscoveryApplicationService {
     
     private static final String CACHE_KEY_SEPARATOR = "\u0000";
     
-    private static final TypeReference<List<String>> STRING_LIST_TYPE =
-        new TypeReference<List<String>>() {
+    private static final NacosTypeReference<List<String>> STRING_LIST_TYPE =
+        new NacosTypeReference<List<String>>() {
         };
     
     private final AgentOperationService operationService;
@@ -148,19 +146,21 @@ public class AgentDiscoveryApplicationService {
      * @return stable Agent catalog page
      * @throws NacosException when a visible stored Agent summary is invalid
      */
-    public Page<AgentSummary> search(AgentSearchRequest request) throws NacosException {
-        RadModelValidator.validate(request);
+    public Page<AgentSummary> search(String namespaceId, AgentSearchRequest request)
+        throws NacosException {
+        RadModelValidator.validate(namespaceId, request);
         int pageNo = request.getPageNo() == null ? DEFAULT_PAGE_NO : request.getPageNo();
         int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
         if (AgentSearchMode.INDEX == searchModeResolver.resolve()) {
-            return searchIndex(request, pageNo, pageSize);
+            return searchIndex(namespaceId, request, pageNo, pageSize);
         }
-        return searchScan(request, pageNo, pageSize);
+        return searchScan(namespaceId, request, pageNo, pageSize);
     }
     
-    private Page<AgentSummary> searchScan(AgentSearchRequest request, int pageNo,
+    private Page<AgentSummary> searchScan(String namespaceId, AgentSearchRequest request,
+        int pageNo,
         int pageSize) throws NacosException {
-        QueryCondition condition = resourceManager.buildQueryCondition(request.getNamespaceId(),
+        QueryCondition condition = resourceManager.buildQueryCondition(namespaceId,
             Constants.Agent.RESOURCE_TYPE_AGENT, null, null, VisibilityConstants.ACTION_READ);
         if (condition.isAlwaysEmpty()) {
             Page<AgentSummary> empty = AiResourceManager.buildEmptyPage(pageNo);
@@ -187,14 +187,15 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private Page<AgentSummary> searchIndex(AgentSearchRequest request, int pageNo,
+    private Page<AgentSummary> searchIndex(String namespaceId, AgentSearchRequest request,
+        int pageNo,
         int pageSize) throws NacosException {
         if (searchService == null) {
             throw new NacosException(SERVICE_UNAVAILABLE_STATUS,
                 "Agent Search index runtime is unavailable.");
         }
         Query query = new Query();
-        query.setNamespaceId(request.getNamespaceId());
+        query.setNamespaceId(namespaceId);
         query.setResourceTypes(Collections.singletonList(Constants.Agent.RESOURCE_TYPE_AGENT));
         query.setPageNumber(pageNo);
         query.setPageSize(pageSize);
@@ -284,11 +285,11 @@ public class AgentDiscoveryApplicationService {
     }
     
     private <T> T convertMetadata(Object value, Class<T> type) {
-        return value == null ? null : JacksonUtils.toObj(JacksonUtils.toJson(value), type);
+        return value == null ? null : JsonUtils.toObj(JsonUtils.toJson(value), type);
     }
     
-    private <T> T convertMetadata(Object value, TypeReference<T> type) {
-        return value == null ? null : JacksonUtils.toObj(JacksonUtils.toJson(value), type);
+    private <T> T convertMetadata(Object value, NacosTypeReference<T> type) {
+        return value == null ? null : JsonUtils.toObj(JsonUtils.toJson(value), type);
     }
     
     /**
@@ -521,17 +522,17 @@ public class AgentDiscoveryApplicationService {
             + CACHE_KEY_SEPARATOR + contentDigest;
     }
     
-    private List<AgentDiscoveryCallInterface> resolveCallInterfaces(String namespaceId,
+    private List<AgentCallInterface> resolveCallInterfaces(String namespaceId,
         String agentName, List<String> runtimeVersions, AgentVersionDetail detail,
         AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
-        List<AgentDiscoveryCallInterface> result =
-            new ArrayList<AgentDiscoveryCallInterface>();
-        for (AgentDefinitionCallInterface source : detail.getCallInterfaces()) {
+        List<AgentCallInterface> result =
+            new ArrayList<AgentCallInterface>();
+        for (AgentCallInterface source : detail.getCallInterfaces()) {
             if (!matchesInterface(source, filter)) {
                 continue;
             }
-            AgentDiscoveryCallInterface callInterface =
-                new AgentDiscoveryCallInterface();
+            AgentCallInterface callInterface =
+                new AgentCallInterface();
             callInterface.setProtocol(source.getProtocol());
             callInterface.setProtocolVersion(source.getProtocolVersion());
             callInterface.setDescriptorMediaType(source.getDescriptorMediaType());
@@ -544,7 +545,7 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private boolean matchesInterface(AgentDefinitionCallInterface callInterface,
+    private boolean matchesInterface(AgentCallInterface callInterface,
         AgentDiscoveryFilter filter) {
         if (filter == null) {
             return true;
@@ -559,7 +560,7 @@ public class AgentDiscoveryApplicationService {
     
     private List<EndpointSet> resolveEndpointSets(String namespaceId, String agentName,
         List<String> runtimeVersions, String contentDigest,
-        AgentDefinitionCallInterface callInterface,
+        AgentCallInterface callInterface,
         AgentDiscoveryFilter filter, boolean currentRuntimeFacts) throws NacosException {
         List<EndpointSet> result = new ArrayList<EndpointSet>();
         for (EndpointSource source : callInterface.getEndpointSourceOrder()) {
@@ -576,7 +577,11 @@ public class AgentDiscoveryApplicationService {
                         callInterface.getProtocol(), runtimeVersions);
             } else {
                 endpointSet =
-                    declaredEndpointSet(contentDigest, callInterface.getDeclaredEndpoints());
+                    declaredEndpointSet(contentDigest,
+                        callInterface.getEndpointSets() == null
+                            || callInterface.getEndpointSets().isEmpty()
+                                ? Collections.<Endpoint>emptyList()
+                                : callInterface.getEndpointSets().get(0).getEndpoints());
             }
             endpointSet.setEndpoints(filterEndpoints(namespaceId, agentName,
                 callInterface.getProtocol(), endpointSet.getEndpoints(), filter));
@@ -589,8 +594,8 @@ public class AgentDiscoveryApplicationService {
         EndpointSet result = new EndpointSet();
         result.setSource(EndpointSource.DECLARED);
         result.setSourceRevision(contentDigest);
-        List<AgentDiscoveryEndpoint> discoveryEndpoints =
-            new ArrayList<AgentDiscoveryEndpoint>();
+        List<Endpoint> discoveryEndpoints =
+            new ArrayList<Endpoint>();
         if (endpoints != null) {
             for (Endpoint endpoint : endpoints) {
                 discoveryEndpoints.add(copyDiscoveryEndpoint(endpoint));
@@ -600,11 +605,11 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private List<AgentDiscoveryEndpoint> filterEndpoints(String namespaceId, String agentName,
-        String protocol, List<AgentDiscoveryEndpoint> endpoints, AgentDiscoveryFilter filter) {
-        List<AgentDiscoveryEndpoint> result = new ArrayList<AgentDiscoveryEndpoint>();
-        for (AgentDiscoveryEndpoint source : endpoints) {
-            AgentDiscoveryEndpoint endpoint = canonicalizeDiscoveryEndpoint(source);
+    private List<Endpoint> filterEndpoints(String namespaceId, String agentName,
+        String protocol, List<Endpoint> endpoints, AgentDiscoveryFilter filter) {
+        List<Endpoint> result = new ArrayList<Endpoint>();
+        for (Endpoint source : endpoints) {
+            Endpoint endpoint = canonicalizeDiscoveryEndpoint(source);
             if (matchesEndpoint(endpoint, filter)) {
                 result.add(endpoint);
             }
@@ -614,15 +619,15 @@ public class AgentDiscoveryApplicationService {
         return result;
     }
     
-    private AgentDiscoveryEndpoint canonicalizeDiscoveryEndpoint(AgentDiscoveryEndpoint source) {
-        AgentDiscoveryEndpoint result =
+    private Endpoint canonicalizeDiscoveryEndpoint(Endpoint source) {
+        Endpoint result =
             copyDiscoveryEndpoint(EndpointCanonicalizer.canonicalize(source));
         result.setBindings(source.getBindings());
         return result;
     }
     
-    private AgentDiscoveryEndpoint copyDiscoveryEndpoint(Endpoint source) {
-        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+    private Endpoint copyDiscoveryEndpoint(Endpoint source) {
+        Endpoint result = new Endpoint();
         result.setUri(source.getUri());
         result.setTransport(source.getTransport());
         result.setPriority(source.getPriority());

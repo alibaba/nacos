@@ -32,6 +32,8 @@ public class AgentEndpointPublicationRedoData
     
     private final String key;
     
+    private final String namespaceId;
+    
     /**
      * Build redo state from one complete publication Batch.
      *
@@ -40,10 +42,13 @@ public class AgentEndpointPublicationRedoData
      * {@code @@} separator. Validated namespaces and protocols reject {@code @}, so the first and
      * last separator boundaries remain unambiguous even when an Agent name contains it.</p>
      *
+     * @param namespaceId effective publication namespace
      * @param batch complete publication Batch
      */
-    public AgentEndpointPublicationRedoData(AgentEndpointRegistrationBatch batch) {
-        this.key = keyOf(batch.getNamespaceId(), batch.getAgentName(), batch.getProtocol());
+    public AgentEndpointPublicationRedoData(String namespaceId,
+        AgentEndpointRegistrationBatch batch) {
+        this.namespaceId = namespaceId;
+        this.key = keyOf(namespaceId, batch.getAgentName(), batch.getProtocol());
         set(batch);
     }
     
@@ -66,5 +71,24 @@ public class AgentEndpointPublicationRedoData
      */
     public String getKey() {
         return key;
+    }
+    
+    /**
+     * Return the effective publication namespace retained for replay.
+     * @return publication namespace
+     */
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        return super.equals(other)
+            && key.equals(((AgentEndpointPublicationRedoData) other).key);
+    }
+    
+    @Override
+    public int hashCode() {
+        return 31 * super.hashCode() + key.hashCode();
     }
 }

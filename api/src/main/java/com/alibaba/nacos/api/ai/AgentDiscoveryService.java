@@ -16,14 +16,17 @@
 
 package com.alibaba.nacos.api.ai;
 
+import java.util.List;
+
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -47,7 +50,7 @@ public interface AgentDiscoveryService {
      * @throws NacosException when validation or the remote request fails
      */
     @Since("3.3.0")
-    default Page<AgentSummary> searchAgents(AgentSearchClientRequest request)
+    default Page<AgentSummary> searchAgents(AgentSearchRequest request)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "Agent discovery is not implemented by this AiService.");
@@ -146,7 +149,7 @@ public interface AgentDiscoveryService {
      * @throws NacosException when validation or publication fails
      */
     @Since("3.3.0")
-    default void registerAgentEndpoints(AgentEndpointRegistrationClientRequest batch)
+    default void registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "Agent discovery is not implemented by this AiService.");
@@ -155,11 +158,14 @@ public interface AgentDiscoveryService {
     /**
      * Remove Endpoint natural keys from this SDK publisher's expected complete Batch.
      *
-     * @param batch Endpoint deregistration intent
+     * @param agentName Agent name
+     * @param protocol Agent protocol
+     * @param endpoints natural keys to remove
      * @throws NacosException when validation or publication fails
      */
     @Since("3.3.0")
-    default void deregisterAgentEndpoints(AgentEndpointDeregistrationClientRequest batch)
+    default void deregisterAgentEndpoints(String agentName, String protocol,
+        List<Endpoint> endpoints)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "Agent discovery is not implemented by this AiService.");

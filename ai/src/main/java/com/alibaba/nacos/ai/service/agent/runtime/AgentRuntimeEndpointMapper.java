@@ -19,7 +19,6 @@ package com.alibaba.nacos.ai.service.agent.runtime;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.identity.RadAsciiAgentIdCodec;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
@@ -107,7 +106,7 @@ public final class AgentRuntimeEndpointMapper {
         result.setClusterName(RadAsciiAgentIdCodec.encode(canonical.getTransport()));
         result.setWeight(canonical.getWeight());
         result.setEnabled(true);
-        result.setHealthy(true);
+        result.setHealthy(endpoint.getHealthy() == null || endpoint.getHealthy());
         result.setEphemeral(true);
         result.setMetadata(metadata);
         return result;
@@ -148,7 +147,7 @@ public final class AgentRuntimeEndpointMapper {
      * @return {@code true} when any persisted binding contains the Version
      */
     public static boolean supportsVersion(Instance instance, String version) {
-        RuntimeEndpointSnapshotItem item = fromInstance(instance, 0L);
+        Endpoint item = fromInstance(instance);
         for (RuntimeVersionBinding binding : item.getBindings()) {
             if (RuntimeVersionRangeSupport.contains(binding.getVersionRange(), version)) {
                 return true;
@@ -161,11 +160,9 @@ public final class AgentRuntimeEndpointMapper {
      * Convert one Naming ServiceStorage instance into a Runtime Endpoint contribution.
      *
      * @param instance Naming instance with operational metadata already applied
-     * @param lastUpdatedTime Naming ServiceInfo observation time
      * @return validated single-contribution management item
      */
-    public static RuntimeEndpointSnapshotItem fromInstance(Instance instance,
-        long lastUpdatedTime) {
+    public static Endpoint fromInstance(Instance instance) {
         if (instance == null) {
             throw new IllegalArgumentException("Naming instance must not be null");
         }
@@ -231,20 +228,21 @@ public final class AgentRuntimeEndpointMapper {
         RuntimeVersionBinding binding = new RuntimeVersionBinding();
         binding.setRuntimeVersion(runtimeVersion);
         binding.setVersionRange(versionRange);
-        RuntimeEndpointSnapshotItem result = new RuntimeEndpointSnapshotItem();
-        result.setEndpoint(canonical);
+        Endpoint result = canonical;
         result.setBindings(new ArrayList<RuntimeVersionBinding>(
             Collections.singletonList(binding)));
         result.setEnabled(instance.isEnabled());
         result.setHealthy(instance.isHealthy());
         result.setState(runtimeState(instance.isEnabled(), instance.isHealthy()));
-        result.setLastUpdatedTime(lastUpdatedTime);
         return result;
     }
     
     private static Endpoint canonicalPayload(Endpoint endpoint) {
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
         canonical.setHealthy(null);
+        canonical.setBindings(null);
+        canonical.setEnabled(null);
+        canonical.setState(null);
         return canonical;
     }
     

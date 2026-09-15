@@ -29,11 +29,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
@@ -46,14 +46,11 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.common.Constants;
@@ -103,6 +100,7 @@ import java.util.function.Predicate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -225,7 +223,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals("a2a", consoleVersion.get("callInterfaces").get(0).get("protocol")
             .asText(), consoleVersion.toString());
         assertEquals(1, consoleVersion.get("callInterfaces").get(0)
-            .get("declaredEndpoints").size(), consoleVersion.toString());
+            .get("endpointSets").get(0).get("endpoints").size(), consoleVersion.toString());
 
         com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint legacyEndpoint =
             legacyEndpoint(VERSION);
@@ -237,7 +235,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         JsonNode consoleRuntime = getConsoleAgent(CONSOLE_AGENT_PATH + "/runtime-endpoints",
             agentName, VERSION);
         JsonNode versionOneRuntimeItems =
-            consoleRuntime.get("runtimeEndpointSnapshot").get("items");
+            consoleRuntime.get("runtimeEndpointSnapshot").get("callInterface").get("endpointSets").get(0).get("endpoints");
         assertEquals(1, versionOneRuntimeItems.size(), consoleRuntime.toString());
         assertEquals(VERSION,
             versionOneRuntimeItems.get(0).get("bindings").get(0).get("runtimeVersion")
@@ -258,11 +256,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         addCleanup(() -> service.deregisterAgentEndpoint(agentName, legacyVersionTwoEndpoint));
         waitUntil("canonical Runtime query should expose the pre-registered Version 2 Endpoint",
             () -> getConsoleAgent(CONSOLE_AGENT_PATH + "/runtime-endpoints", agentName,
-                VERSION_2).get("runtimeEndpointSnapshot").get("items").size() == 1);
+                VERSION_2).get("runtimeEndpointSnapshot").get("callInterface").get("endpointSets").get(0).get("endpoints").size() == 1);
         JsonNode preRegisteredVersionTwo = getConsoleAgent(
             CONSOLE_AGENT_PATH + "/runtime-endpoints", agentName, VERSION_2);
         assertEquals(1,
-            preRegisteredVersionTwo.get("runtimeEndpointSnapshot").get("items").size(),
+            preRegisteredVersionTwo.get("runtimeEndpointSnapshot").get("callInterface").get("endpointSets").get(0).get("endpoints").size(),
             preRegisteredVersionTwo.toString());
 
         AgentCard duplicate = legacyCompatibleAgentCard(agentName, VERSION,
@@ -289,7 +287,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         AgentCard secondCard = legacyCompatibleAgentCard(agentName, VERSION_2,
             "canonical Agent SDK publication");
-        AgentDraftCreateAdminRequest secondDraft = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest secondDraft = new AgentDraftCreateRequest();
         secondDraft.setAgentName(agentName);
         secondDraft.setVersion(VERSION_2);
         secondDraft.setCallInterfaces(Collections.singletonList(
@@ -346,17 +344,17 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedAgent(maintainer, customNamespace, customName,
             Arrays.asList("java-sdk-it", "blue"), Collections.singletonList(PROTOCOL_A2A), false);
         AiService customService = createAiService(customNamespace, mode.getValue());
-        AgentSearchClientRequest currentSnapshot = new AgentSearchClientRequest();
+        AgentSearchRequest currentSnapshot = new AgentSearchRequest();
         currentSnapshot.setAgentNameContains(targetName);
         assertNotNull(defaultService.agent().searchAgents(currentSnapshot));
-        AgentSearchClientRequest customSnapshot = new AgentSearchClientRequest();
+        AgentSearchRequest customSnapshot = new AgentSearchRequest();
         customSnapshot.setAgentNameContains(customName);
         assertNotNull(customService.agent().searchAgents(customSnapshot));
         waitForSearchTotal(defaultService, targetName, 1);
         waitForSearchTotal(defaultService, decoyName, 1);
         waitForSearchTotal(customService, customName, 1);
         
-        AgentSearchClientRequest request = new AgentSearchClientRequest();
+        AgentSearchRequest request = new AgentSearchRequest();
         request.setAgentNameContains(targetName);
         request.setTagsAll(Arrays.asList("java-sdk-it", "blue"));
         request.setProtocolsAny(Arrays.asList(PROTOCOL_MCP, PROTOCOL_A2A));
@@ -399,22 +397,22 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertNull(catalogVersion.getStatus());
 
         
-        AgentSearchClientRequest defaultSearch = new AgentSearchClientRequest();
+        AgentSearchRequest defaultSearch = new AgentSearchRequest();
         defaultSearch.setAgentNameContains(searchScope);
         assertEquals(2, defaultService.agent().searchAgents(defaultSearch).getTotalCount());
-        AgentSearchClientRequest tagSearch = new AgentSearchClientRequest();
+        AgentSearchRequest tagSearch = new AgentSearchRequest();
         tagSearch.setAgentNameContains(searchScope);
         tagSearch.setTagsAll(Collections.singletonList("blue"));
         assertEquals(1, defaultService.agent().searchAgents(tagSearch).getTotalCount());
-        AgentSearchClientRequest protocolSearch = new AgentSearchClientRequest();
+        AgentSearchRequest protocolSearch = new AgentSearchRequest();
         protocolSearch.setAgentNameContains(searchScope);
         protocolSearch.setProtocolsAny(Collections.singletonList(PROTOCOL_A2A));
         assertEquals(1, defaultService.agent().searchAgents(protocolSearch).getTotalCount());
         
-        AgentSearchClientRequest emptySearch = new AgentSearchClientRequest();
+        AgentSearchRequest emptySearch = new AgentSearchRequest();
         emptySearch.setAgentNameContains("no-such-agent-" + targetName);
         assertEquals(0, defaultService.agent().searchAgents(emptySearch).getTotalCount());
-        AgentSearchClientRequest customSearch = new AgentSearchClientRequest();
+        AgentSearchRequest customSearch = new AgentSearchRequest();
         customSearch.setAgentNameContains(customName);
         assertEquals(1, customService.agent().searchAgents(customSearch).getTotalCount());
         assertEquals(0, defaultService.agent().searchAgents(customSearch).getTotalCount());
@@ -446,7 +444,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         
         Endpoint customEndpoint = endpoint(randomPort(), "/custom", "custom");
-        AgentEndpointRegistrationClientRequest customRegistration =
+        AgentEndpointRegistrationBatch customRegistration =
             registration(customName, PROTOCOL_A2A, Collections.singletonList(customEndpoint));
         String registrationSnapshot = JacksonUtils.toJson(customRegistration);
         customService.agent().registerAgentEndpoints(customRegistration);
@@ -455,15 +453,70 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         NacosException isolated = assertThrows(NacosException.class,
             () -> defaultService.agent().discoverAgent(reference(customName, null, null)));
         assertEquals(NacosException.NOT_FOUND, isolated.getErrCode());
-        AgentEndpointDeregistrationClientRequest customDeregistration =
-            deregistration(customName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(customEndpoint)));
+        List<Endpoint> customDeregistration = Collections.singletonList(deregistrationEndpoint(customEndpoint));
         String deregistrationSnapshot = JacksonUtils.toJson(customDeregistration);
-        customService.agent().deregisterAgentEndpoints(customDeregistration);
+        customService.agent().deregisterAgentEndpoints(customName, PROTOCOL_A2A, customDeregistration);
         assertEquals(deregistrationSnapshot, JacksonUtils.toJson(customDeregistration));
         waitForEndpointCount(customService, customName, PROTOCOL_A2A, 0);
     }
     
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespace(
+        AgentTransportMode mode) throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String agentName = randomServiceName("agent-namespace-publication");
+        String tenant = randomServiceName("agent-namespace");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
+            Collections.singletonList("default-only"), Collections.singletonList(PROTOCOL_A2A),
+            false);
+        createPublishedAgent(maintainer, tenant, agentName,
+            Collections.singletonList("tenant-only"), Collections.singletonList(PROTOCOL_A2A),
+            false);
+        AiService defaultService = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        AiService tenantService = createAiService(tenant, mode.getValue());
+        waitForSearchTotal(defaultService, agentName, 1);
+        waitForSearchTotal(tenantService, agentName, 1);
+        AgentSearchRequest search = new AgentSearchRequest();
+        search.setAgentNameContains(agentName);
+        assertEquals(Collections.singletonList("default-only"),
+            defaultService.agent().searchAgents(search).getPageItems().get(0).getTags());
+        assertEquals(Collections.singletonList("tenant-only"),
+            tenantService.agent().searchAgents(search).getPageItems().get(0).getTags());
+        assertFalse(JacksonUtils.toObj(JacksonUtils.toJson(search)).has("namespaceId"));
+
+        Endpoint first = endpoint(randomPort(), "/first", "first");
+        Endpoint second = endpoint(randomPort(), "/second", "second");
+        Endpoint third = endpoint(randomPort(), "/third", "third");
+        AgentEndpointRegistrationBatch batch = registration(agentName, PROTOCOL_A2A,
+            Arrays.asList(first, second, third));
+        String original = JacksonUtils.toJson(batch);
+        defaultService.agent().registerAgentEndpoints(batch);
+        tenantService.agent().registerAgentEndpoints(batch);
+        assertEquals(original, JacksonUtils.toJson(batch));
+        assertFalse(JacksonUtils.toObj(original).has("namespaceId"));
+        waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 3);
+        waitForEndpointCount(tenantService, agentName, PROTOCOL_A2A, 3);
+
+        List<Endpoint> removals = Arrays.asList(deregistrationEndpoint(first),
+            deregistrationEndpoint(second));
+        tenantService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removals);
+        tenantService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removals);
+        waitForEndpointCount(tenantService, agentName, PROTOCOL_A2A, 1);
+        waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 3);
+        assertEquals(third.getUri(), sourceEndpoints(tenantService.agent()
+            .discoverAgent(reference(agentName, null, null)), PROTOCOL_A2A,
+            EndpointSource.RUNTIME).get(0).getUri());
+        tenantService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(third)));
+        waitForEndpointCount(tenantService, agentName, PROTOCOL_A2A, 0);
+        waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 3);
+        defaultService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Arrays.asList(deregistrationEndpoint(first), deregistrationEndpoint(second),
+                deregistrationEndpoint(third)));
+        waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 0);
+    }
+
     @ParameterizedTest
     @EnumSource(AgentTransportMode.class)
     void shouldReplaceAndPartiallyDeregisterCompletePublications(AgentTransportMode mode)
@@ -481,7 +534,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint first = endpoint(randomPort(), "/first", "one");
         Endpoint second = endpoint(randomPort(), "/second", "two");
         Endpoint third = endpoint(randomPort(), "/third", "three");
-        AgentEndpointRegistrationClientRequest initial =
+        AgentEndpointRegistrationBatch initial =
             registration(agentName, PROTOCOL_A2A, Arrays.asList(first, second));
         String initialSnapshot = JacksonUtils.toJson(initial);
         service.agent().registerAgentEndpoints(initial);
@@ -505,16 +558,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         Endpoint sameNaturalKey = deregistrationEndpoint(second);
         sameNaturalKey.setUri(replacePath(second.getUri(), "/different/path?ignored=true"));
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(sameNaturalKey)));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(sameNaturalKey));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         assertTrue(containsEndpoint(service.agent().discoverAgent(reference(agentName, null, null)),
             PROTOCOL_A2A, third.getUri()));
         
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(first))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(first)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         
         Endpoint mcp = endpoint(randomPort(), "/mcp", "mcp");
@@ -525,7 +576,15 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         third.setPriority(7);
         third.setWeight(2.5D);
-        AgentEndpointRegistrationClientRequest multiple =
+        third.setHealthy(false);
+        third.setEnabled(false);
+        third.setState(com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState.DISABLED);
+        com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding forged =
+            new com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding();
+        forged.setRuntimeVersion("9.0.0");
+        forged.setVersionRange("ignored");
+        third.setBindings(Collections.singletonList(forged));
+        AgentEndpointRegistrationBatch multiple =
             registration(agentName, PROTOCOL_A2A, Arrays.asList(first, second, third));
         multiple.setVersionRange("[1.0.0,2.0.0]");
         String multipleSnapshot = JacksonUtils.toJson(multiple);
@@ -533,11 +592,10 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 3);
 
         Endpoint unknown = endpoint(randomPort(), "/unknown", "unknown");
-        AgentEndpointDeregistrationClientRequest removal = deregistration(agentName, PROTOCOL_A2A,
-            Arrays.asList(sameNaturalKey, deregistrationEndpoint(unknown),
-                deregistrationEndpoint(first)));
+        List<Endpoint> removal = Arrays.asList(sameNaturalKey, deregistrationEndpoint(unknown),
+                deregistrationEndpoint(first));
         String removalSnapshot = JacksonUtils.toJson(removal);
-        service.agent().deregisterAgentEndpoints(removal);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removal);
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         assertEquals(multipleSnapshot, JacksonUtils.toJson(multiple));
         assertEquals(removalSnapshot, JacksonUtils.toJson(removal));
@@ -545,12 +603,27 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             service.agent().discoverAgent(reference(agentName, null, null));
         List<Endpoint> retained = sourceEndpoints(remaining, PROTOCOL_A2A, EndpointSource.RUNTIME);
         assertEquals(1, retained.size());
-        AgentDiscoveryEndpoint actual = (AgentDiscoveryEndpoint) retained.get(0);
+        Endpoint actual = (Endpoint) retained.get(0);
         assertEquals(third.getUri(), actual.getUri());
         assertEquals(third.getTransport(), actual.getTransport());
         assertEquals(third.getPriority(), actual.getPriority());
         assertEquals(third.getWeight(), actual.getWeight());
         assertEquals(third.getMetadata(), actual.getMetadata());
+        assertEquals(Boolean.FALSE, actual.getHealthy());
+        assertNull(actual.getEnabled());
+        assertNull(actual.getState());
+        com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot management =
+            maintainer.getRuntimeEndpoints(agentName, PROTOCOL_A2A, VERSION);
+        EndpointSet managedSet = management.getCallInterface().getEndpointSets().get(0);
+        assertEquals(EndpointSource.RUNTIME, managedSet.getSource());
+        assertNotNull(managedSet.getLastUpdatedTime());
+        assertEquals(1, managedSet.getEndpoints().size());
+        Endpoint managed = managedSet.getEndpoints().get(0);
+        assertEquals(third.getUri(), managed.getUri());
+        assertEquals(Boolean.FALSE, managed.getHealthy());
+        assertEquals(Boolean.TRUE, managed.getEnabled());
+        assertEquals(com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState.UNHEALTHY, managed.getState());
+        assertEquals(multiple.getVersionRange(), managed.getBindings().get(0).getVersionRange());
         assertEquals(1, actual.getBindings().size());
         assertEquals(multiple.getRuntimeVersion(), actual.getBindings().get(0).getRuntimeVersion());
         assertEquals(multiple.getVersionRange(), actual.getBindings().get(0).getVersionRange());
@@ -560,21 +633,18 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             registration(agentName, PROTOCOL_MCP, Arrays.asList(mcp, secondMcp)));
         waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
 
-        service.agent().deregisterAgentEndpoints(removal);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removal);
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(third))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(third)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
         waitForEndpointCount(service, agentName, PROTOCOL_MCP, 2);
         
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(third))));
-        AgentEndpointDeregistrationClientRequest allMcp = deregistration(agentName, PROTOCOL_MCP,
-            Arrays.asList(deregistrationEndpoint(secondMcp), deregistrationEndpoint(mcp)));
-        service.agent().deregisterAgentEndpoints(allMcp);
-        service.agent().deregisterAgentEndpoints(allMcp);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(third)));
+        List<Endpoint> allMcp = Arrays.asList(deregistrationEndpoint(secondMcp), deregistrationEndpoint(mcp));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_MCP, allMcp);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_MCP, allMcp);
         waitForEndpointCount(service, agentName, PROTOCOL_MCP, 0);
     }
 
@@ -772,14 +842,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
             rejected.getDetailErrCode());
 
-        service.agent().deregisterAgentEndpoints(deregistration(secondAgent, PROTOCOL_A2A,
-            deregistrationEndpoints(secondEndpoints)));
+        service.agent().deregisterAgentEndpoints(secondAgent, PROTOCOL_A2A,
+            deregistrationEndpoints(secondEndpoints));
         service.agent().registerAgentEndpoints(registration(thirdAgent, PROTOCOL_A2A,
             Collections.singletonList(thirdEndpoint)));
-        service.agent().deregisterAgentEndpoints(deregistration(firstAgent, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(firstEndpoint))));
-        service.agent().deregisterAgentEndpoints(deregistration(thirdAgent, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(thirdEndpoint))));
+        service.agent().deregisterAgentEndpoints(firstAgent, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(firstEndpoint)));
+        service.agent().deregisterAgentEndpoints(thirdAgent, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(thirdEndpoint)));
     }
 
     @Test
@@ -795,8 +865,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         List<List<Endpoint>> admittedEndpoints = new ArrayList<>();
         addCleanup(() -> {
             for (int i = 0; i < admittedAgents.size(); i++) {
-                service.agent().deregisterAgentEndpoints(deregistration(admittedAgents.get(i),
-                    PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.get(i))));
+                service.agent().deregisterAgentEndpoints(admittedAgents.get(i),
+                    PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.get(i)));
             }
         });
 
@@ -839,8 +909,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             probeRejected.getDetailErrCode());
 
         int burstIndex = admittedAgents.indexOf(burstAgent);
-        service.agent().deregisterAgentEndpoints(deregistration(admittedAgents.remove(burstIndex),
-            PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.remove(burstIndex))));
+        service.agent().deregisterAgentEndpoints(admittedAgents.remove(burstIndex),
+            PROTOCOL_A2A, deregistrationEndpoints(admittedEndpoints.remove(burstIndex)));
         service.agent().registerAgentEndpoints(registration(overflowAgent, PROTOCOL_A2A,
             Collections.singletonList(overflowEndpoint)));
         admittedAgents.add(overflowAgent);
@@ -865,13 +935,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(shared)));
         waitForEndpointCount(reader, agentName, PROTOCOL_A2A, 1);
         
-        firstPublisher.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(shared))));
+        firstPublisher.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(shared)));
         waitForEndpointCount(reader, agentName, PROTOCOL_A2A, 1);
-        secondPublisher.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(shared))));
+        secondPublisher.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(shared)));
         waitForEndpointCount(reader, agentName, PROTOCOL_A2A, 0);
     }
     
@@ -919,9 +987,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(countAfterUnsubscribe, listener.eventCount.get(),
             "no callback may be delivered after unsubscribe");
         
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(replacement))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(replacement)));
     }
 
     @Test
@@ -1029,7 +1096,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(0, callbackCount.get());
         
         Endpoint replacement = endpoint(randomPort(), "/replacement", "replacement");
-        AgentEndpointRegistrationClientRequest replacementBatch =
+        AgentEndpointRegistrationBatch replacementBatch =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement));
         service.agent().registerAgentEndpoints(replacementBatch);
         assertTrue(replacementCallback.await(WATCH_HINT_TIMEOUT_MILLIS,
@@ -1044,10 +1111,74 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             "an unchanged complete fingerprint must not deliver a duplicate callback");
         
         service.agent().unsubscribeAgent(reference, listener);
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(replacement))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(replacement)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldWatchPublicAgentHealthAndPartialDeregistrationWithUnifiedModels(
+        AgentTransportMode mode) throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String agentName = randomLegacyUnencodedAgentName();
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
+        service.releaseAgentCard(legacyCompatibleAgentCard(agentName, VERSION,
+            "public unified Endpoint Watch"), AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        AgentReference reference = reference(agentName, VERSION, null);
+        RecordingAgentListener listener = new RecordingAgentListener();
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, listener));
+        AgentDiscoveryResult initial = service.agent().subscribeAgent(reference, listener);
+        assertTrue(sourceEndpoints(initial, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        Endpoint first = endpoint(randomPort(), "/first", "first");
+        Endpoint second = endpoint(randomPort(), "/second", "second");
+        Endpoint retained = endpoint(randomPort(), "/retained", "retained");
+        retained.setHealthy(false);
+        service.agent().registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+            Arrays.asList(first, second, retained)));
+        awaitEvent(listener, "Watch should deliver all three runtime Endpoints",
+            result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 3);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Arrays.asList(deregistrationEndpoint(first), deregistrationEndpoint(second)));
+        AgentDiscoveryResult remaining = awaitEvent(listener,
+            "Watch should preserve the unhealthy remainder after removing two Endpoints",
+            result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 1);
+        Endpoint actual = sourceEndpoints(remaining, PROTOCOL_A2A, EndpointSource.RUNTIME).get(0);
+        assertEquals(retained.getUri(), actual.getUri());
+        assertEquals(Boolean.FALSE, actual.getHealthy());
+        assertEquals(VERSION, actual.getBindings().get(0).getRuntimeVersion());
+        assertNull(actual.getEnabled());
+        assertNull(actual.getState());
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(remaining),
+            AgentDiscoveryCanonicalizer.fingerprint(service.agent().discoverAgent(reference)));
+        retained.setHealthy(true);
+        service.agent().registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(retained)));
+        AgentDiscoveryResult healthy = awaitEvent(listener,
+            "health-only replacement should refresh the complete Watch result",
+            result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).size() == 1
+                && Boolean.TRUE.equals(sourceEndpoints(result, PROTOCOL_A2A,
+                    EndpointSource.RUNTIME).get(0).getHealthy()));
+        assertNotEquals(AgentDiscoveryCanonicalizer.fingerprint(remaining),
+            AgentDiscoveryCanonicalizer.fingerprint(healthy));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(retained)));
+        AgentDiscoveryResult empty = awaitEvent(listener,
+            "removing the last Endpoint should retain an empty RUNTIME Set",
+            result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        EndpointSet emptyRuntime = empty.getCallInterfaces().get(0).getEndpointSets().stream()
+            .filter(set -> set.getSource() == EndpointSource.RUNTIME).findFirst()
+            .orElseThrow(() -> new AssertionError("allowed RUNTIME source must remain present"));
+        assertTrue(emptyRuntime.getEndpoints().isEmpty());
+        assertNotNull(emptyRuntime.getSourceRevision());
+        assertNull(emptyRuntime.getLastUpdatedTime());
+        service.agent().unsubscribeAgent(reference, listener);
+        listener.events.clear();
+        service.agent().registerAgentEndpoints(registration(agentName, PROTOCOL_A2A,
+            Collections.singletonList(first)));
+        assertNull(listener.events.poll(1500L, TimeUnit.MILLISECONDS),
+            "unsubscribed Listener should remain silent");
     }
 
     @Test
@@ -1223,8 +1354,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         service.agent().unsubscribeAgent(latestReference, latestListener);
         service.agent().unsubscribeAgent(stableReference, stableListener);
         service.agent().unsubscribeAgent(exactVersionOneReference, exactVersionOneListener);
-        service.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(versionThreeEndpoint))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(versionThreeEndpoint)));
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
     }
 
@@ -1242,12 +1373,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             Collections.singletonList(PROTOCOL_A2A), false);
 
         Endpoint versionOneEndpoint = endpoint(randomPort(), "/v1", "version-one");
-        AgentEndpointRegistrationClientRequest versionOneRegistration = registration(agentName, VERSION,
+        AgentEndpointRegistrationBatch versionOneRegistration = registration(agentName, VERSION,
             PROTOCOL_A2A, Collections.singletonList(versionOneEndpoint));
         versionOnePublisher.agent().registerAgentEndpoints(versionOneRegistration);
-        addCleanup(() -> versionOnePublisher.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(versionOneEndpoint)))));
+        addCleanup(() -> versionOnePublisher.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(versionOneEndpoint))));
         waitForEndpointCount(reader, reference(agentName, VERSION, null), PROTOCOL_A2A, 1);
 
         AgentReference defaultReference = reference(agentName, null, null);
@@ -1280,12 +1410,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             .equals(runtimeSourceRevision(latestBeforeVersionTwoEndpoint)));
 
         Endpoint versionTwoEndpoint = endpoint(randomPort(), "/v2", "version-two");
-        AgentEndpointRegistrationClientRequest versionTwoRegistration = registration(agentName,
+        AgentEndpointRegistrationBatch versionTwoRegistration = registration(agentName,
             VERSION_2, PROTOCOL_A2A, Collections.singletonList(versionTwoEndpoint));
         versionTwoPublisher.agent().registerAgentEndpoints(versionTwoRegistration);
-        addCleanup(() -> versionTwoPublisher.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(versionTwoEndpoint)))));
+        addCleanup(() -> versionTwoPublisher.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(versionTwoEndpoint))));
         AgentDiscoveryResult combinedDefault = awaitEvent(defaultListener,
             "omitted selector should aggregate both online-Version Endpoints",
             result -> VERSION_2.equals(result.getVersion())
@@ -1338,7 +1467,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
         Endpoint endpoint = endpoint(randomPort(), "/range", "range");
         
-        AgentEndpointRegistrationClientRequest firstRange = registration(agentName, VERSION_2,
+        AgentEndpointRegistrationBatch firstRange = registration(agentName, VERSION_2,
             PROTOCOL_A2A, Collections.singletonList(endpoint));
         firstRange.setVersionRange("[1.0.0,2.0.0]");
         service.agent().registerAgentEndpoints(firstRange);
@@ -1346,7 +1475,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(service, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
         
-        AgentEndpointRegistrationClientRequest secondRange = registration(agentName, VERSION_2,
+        AgentEndpointRegistrationBatch secondRange = registration(agentName, VERSION_2,
             PROTOCOL_A2A, Collections.singletonList(endpoint));
         secondRange.setVersionRange("[2.0.0,3.0.0]");
         service.agent().registerAgentEndpoints(secondRange);
@@ -1354,8 +1483,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(service, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 1);
         
-        service.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(endpoint))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpoint)));
         waitForEndpointCount(service, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
     }
     
@@ -1523,10 +1652,10 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         grpcService.agent().unsubscribeAgent(latestReference, grpcLatestListener);
         httpService.agent().unsubscribeAgent(latestReference, httpLatestListener);
-        grpcService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(grpcVersionTwo))));
-        httpService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(httpVersionTwo))));
+        grpcService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(grpcVersionTwo)));
+        httpService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(httpVersionTwo)));
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 1);
         grpcService.deregisterAgentEndpoint(agentName, legacyVersionTwo);
         waitForEndpointCount(grpcService, reference(agentName, VERSION_2, null), PROTOCOL_A2A, 0);
@@ -1611,11 +1740,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         grpcService.agent().unsubscribeAgent(latestReference, grpcListener);
         httpService.agent().unsubscribeAgent(latestReference, httpListener);
-        grpcService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(grpcVersionTwo))));
-        httpService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
+        grpcService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(grpcVersionTwo)));
+        httpService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
             Arrays.asList(deregistrationEndpoint(httpVersionTwo),
-                deregistrationEndpoint(httpVersionThree))));
+                deregistrationEndpoint(httpVersionThree)));
         waitForEndpointCount(grpcService, reference(agentName, VERSION_3, null), PROTOCOL_A2A, 0);
     }
 
@@ -1665,9 +1794,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint endpointA = endpoint(randomPort(), "/cluster-a", "cluster-a");
         publisherA.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(endpointA)));
-        addCleanup(() -> publisherA.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(endpointA)))));
+        addCleanup(() -> publisherA.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointA))));
         assertPinnedClusterCallbacks("A-A Runtime registration", grpcReaderA, httpReaderA,
             httpReaderB, reference, grpcListener, httpListener,
             result -> VERSION_2.equals(result.getVersion())
@@ -1682,9 +1810,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Endpoint endpointB = endpoint(randomPort(), "/cluster-b", "cluster-b");
         publisherB.agent().registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
             Collections.singletonList(endpointB)));
-        addCleanup(() -> publisherB.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(endpointB)))));
+        addCleanup(() -> publisherB.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointB))));
         assertPinnedClusterCallbacks("A-B Runtime registration", grpcReaderA, httpReaderA,
             httpReaderB, reference, grpcListener, httpListener,
             result -> VERSION_3.equals(result.getVersion())
@@ -1707,14 +1834,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
 
-        publisherA.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(endpointA))));
+        publisherA.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpointA)));
         assertPinnedClusterCallbacks("A-A Runtime deregistration", grpcReaderA, httpReaderA,
             httpReaderB, reference, grpcListener, httpListener,
             result -> !containsEndpoint(result, PROTOCOL_A2A, endpointA.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, endpointB.getUri()));
-        publisherB.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(endpointB))));
+        publisherB.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpointB)));
         assertPinnedClusterCallbacks("A-B Runtime deregistration", grpcReaderA, httpReaderA,
             httpReaderB, reference, grpcListener, httpListener,
             result -> sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
@@ -1791,9 +1918,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             endpoint(randomPort(), "/cluster-peer-restarted", "cluster-peer-restarted");
         publisherB.agent().registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
             Collections.singletonList(endpointAfterRestart)));
-        addCleanup(() -> publisherB.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(endpointAfterRestart)))));
+        addCleanup(() -> publisherB.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpointAfterRestart))));
         assertPinnedClusterCallbacks("A-B Runtime registration after peer restart", grpcReaderA,
             httpReaderA, httpReaderB, reference, grpcListener, httpListener,
             result -> VERSION_3.equals(result.getVersion())
@@ -1833,7 +1959,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForSearchTotal(grpcService, agentName, 1);
         waitForSearchTotal(httpService, agentName, 1);
         
-        AgentSearchClientRequest search = new AgentSearchClientRequest();
+        AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(agentName);
         assertEquals(1, grpcService.agent().searchAgents(search).getTotalCount());
         assertEquals(1, httpService.agent().searchAgents(search).getTotalCount());
@@ -1852,9 +1978,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 .getUri(),
             sourceEndpoints(httpResult, PROTOCOL_A2A, EndpointSource.RUNTIME).get(0).getUri());
         
-        httpService.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(endpoint))));
+        httpService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(endpoint)));
         waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
     }
 
@@ -1901,12 +2026,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(expectedFingerprint, AgentDiscoveryCanonicalizer.fingerprint(
             httpService.agent().discoverAgent(reference)));
 
-        grpcService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(grpcA2a))));
-        httpService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(httpA2a))));
-        grpcService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_MCP,
-            Collections.singletonList(deregistrationEndpoint(grpcMcp))));
+        grpcService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(grpcA2a)));
+        httpService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(httpA2a)));
+        grpcService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_MCP,
+            Collections.singletonList(deregistrationEndpoint(grpcMcp)));
         waitForEndpointCount(grpcService, agentName, PROTOCOL_A2A, 0);
         waitForEndpointCount(httpService, agentName, PROTOCOL_MCP, 0);
     }
@@ -1934,8 +2059,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             WATCH_HINT_TIMEOUT_MILLIS);
         
         service.agent().unsubscribeAgent(reference, listener);
-        service.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(endpoint))));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpoint)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 0);
     }
     
@@ -1976,13 +2101,13 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             AgentTransportMode.GRPC.getValue());
         grpcProperties.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "30000");
         AiService grpcService = createAiServiceWithoutReadiness(grpcProperties);
-        AgentSearchClientRequest search = new AgentSearchClientRequest();
+        AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(agentName);
         assertThrows(NacosException.class, () -> grpcService.agent().searchAgents(search));
         
         autoService.agent().unsubscribeAgent(reference, listener);
-        autoService.agent().deregisterAgentEndpoints(deregistration(agentName, PROTOCOL_A2A,
-            Collections.singletonList(deregistrationEndpoint(endpoint))));
+        autoService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(deregistrationEndpoint(endpoint)));
         waitForEndpointCount(httpService, agentName, PROTOCOL_A2A, 0);
     }
 
@@ -2008,7 +2133,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         waitForSearchTotal(grpcService, stem, 3);
         waitForSearchTotal(httpService, stem, 3);
-        AgentSearchClientRequest combined = new AgentSearchClientRequest();
+        AgentSearchRequest combined = new AgentSearchRequest();
         combined.setAgentNameContains(stem);
         combined.setTagsAll(Arrays.asList("shared", "blue"));
         combined.setProtocolsAny(Arrays.asList(PROTOCOL_MCP, "jsonrpc"));
@@ -2021,7 +2146,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         List<String> expectedOrder = Arrays.asList(agentA, agentB, agentC);
         assertEquals(expectedOrder, searchNamesByPage(grpcService, stem));
         assertEquals(expectedOrder, searchNamesByPage(httpService, stem));
-        AgentSearchClientRequest wrongCase = new AgentSearchClientRequest();
+        AgentSearchRequest wrongCase = new AgentSearchRequest();
         wrongCase.setAgentNameContains(stem + "-b");
         assertEquals(0, grpcService.agent().searchAgents(wrongCase).getTotalCount());
         assertEquals(0, httpService.agent().searchAgents(wrongCase).getTotalCount());
@@ -2065,19 +2190,19 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AiService service = createAiService();
         assertInvalid(() -> service.agent().searchAgents(null));
         
-        AgentSearchClientRequest invalidPage = new AgentSearchClientRequest();
+        AgentSearchRequest invalidPage = new AgentSearchRequest();
         invalidPage.setPageNo(0);
         assertInvalid(() -> service.agent().searchAgents(invalidPage));
-        AgentSearchClientRequest invalidPageSize = new AgentSearchClientRequest();
+        AgentSearchRequest invalidPageSize = new AgentSearchRequest();
         invalidPageSize.setPageSize(0);
         assertInvalid(() -> service.agent().searchAgents(invalidPageSize));
-        AgentSearchClientRequest duplicateTags = new AgentSearchClientRequest();
+        AgentSearchRequest duplicateTags = new AgentSearchRequest();
         duplicateTags.setTagsAll(Arrays.asList("duplicate", "duplicate"));
         assertInvalid(() -> service.agent().searchAgents(duplicateTags));
-        AgentSearchClientRequest duplicateProtocols = new AgentSearchClientRequest();
+        AgentSearchRequest duplicateProtocols = new AgentSearchRequest();
         duplicateProtocols.setProtocolsAny(Arrays.asList(PROTOCOL_A2A, PROTOCOL_A2A));
         assertInvalid(() -> service.agent().searchAgents(duplicateProtocols));
-        AgentSearchClientRequest invalidProtocol = new AgentSearchClientRequest();
+        AgentSearchRequest invalidProtocol = new AgentSearchRequest();
         invalidProtocol.setProtocolsAny(Collections.singletonList("not a protocol"));
         assertInvalid(() -> service.agent().searchAgents(invalidProtocol));
         
@@ -2087,17 +2212,16 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertInvalid(() -> service.agent().discoverAgent(ambiguous));
         
         String agentName = randomServiceName("agent-invalid-publication");
-        AgentEndpointRegistrationClientRequest empty =
+        AgentEndpointRegistrationBatch empty =
             registration(agentName, PROTOCOL_A2A, Collections.<Endpoint>emptyList());
         assertInvalid(() -> service.agent().registerAgentEndpoints(empty));
         Endpoint duplicate = endpoint(randomPort(), "/duplicate", "duplicate");
         assertInvalid(() -> service.agent().registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Arrays.asList(duplicate, duplicate))));
-        Endpoint unhealthyInput = endpoint(randomPort(), "/healthy", "healthy");
-        unhealthyInput.setHealthy(Boolean.TRUE);
-        assertInvalid(() -> service.agent().registerAgentEndpoints(
-            registration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(unhealthyInput))));
+        Endpoint healthDeregistration = deregistrationEndpoint(duplicate);
+        healthDeregistration.setHealthy(Boolean.TRUE);
+        assertInvalid(() -> service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(healthDeregistration)));
         Endpoint invalidUri = endpoint(randomPort(), "/invalid-uri", "invalid-uri");
         invalidUri.setUri("not-a-uri");
         assertInvalid(() -> service.agent().registerAgentEndpoints(
@@ -2107,23 +2231,21 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         invalidTransport.setTransport("invalid transport");
         assertInvalid(() -> service.agent().registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(invalidTransport))));
-        AgentEndpointRegistrationClientRequest invalidVersion =
+        AgentEndpointRegistrationBatch invalidVersion =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(duplicate));
         invalidVersion.setRuntimeVersion("not-semver");
         assertInvalid(() -> service.agent().registerAgentEndpoints(invalidVersion));
-        AgentEndpointRegistrationClientRequest invalidRange =
+        AgentEndpointRegistrationBatch invalidRange =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(duplicate));
         invalidRange.setVersionRange("[2.0.0,1.0.0]");
         assertInvalid(() -> service.agent().registerAgentEndpoints(invalidRange));
         
         Endpoint invalidDeregistration = deregistrationEndpoint(duplicate);
         invalidDeregistration.setPriority(1);
-        assertInvalid(() -> service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(invalidDeregistration))));
-        service.agent().deregisterAgentEndpoints(
-            deregistration(agentName, PROTOCOL_A2A,
-                Collections.singletonList(deregistrationEndpoint(duplicate))));
+        assertInvalid(() -> service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(invalidDeregistration)));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+                Collections.singletonList(deregistrationEndpoint(duplicate)));
         
         NacosException missing = assertThrows(NacosException.class,
             () -> service.agent().discoverAgent(reference(agentName, null, null)));
@@ -2222,7 +2344,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Override
     protected AiService createAiService() throws Exception {
         AiService result = super.createAiService();
-        AgentSearchClientRequest readinessProbe = new AgentSearchClientRequest();
+        AgentSearchRequest readinessProbe = new AgentSearchRequest();
         readinessProbe.setAgentNameContains(randomServiceName("agent-readiness-probe"));
         waitUntil("RAD SDK client should connect to server and negotiate its ability", () -> {
             result.agent().searchAgents(readinessProbe);
@@ -2302,7 +2424,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private void createPublishedAgent(AgentMaintainerService maintainer, String namespaceId,
         String agentName, List<String> tags, List<String> protocols, boolean declaredEndpoint)
         throws Exception {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         request.setAgentName(agentName);
         request.setDisplayName("Display " + agentName);
         request.setDescription("Java SDK Agent discovery integration test");
@@ -2312,7 +2434,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         request.setProvider(provider);
         request.setTags(tags);
         request.setVersion(VERSION);
-        List<AgentDefinitionCallInterface> interfaces = new ArrayList<>();
+        List<AgentCallInterface> interfaces = new ArrayList<>();
         for (String protocol : protocols) {
             interfaces.add(callInterface(agentName, protocol, declaredEndpoint));
         }
@@ -2328,7 +2450,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private void createPublishedVersion(AgentMaintainerService maintainer, String namespaceId,
         String agentName, String version) throws NacosException {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         request.setAgentName(agentName);
         request.setVersion(version);
         request.setCallInterfaces(Collections.singletonList(legacyCompatibleCallInterface(
@@ -2343,7 +2465,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private void createPublishedMultiProtocolVersion(AgentMaintainerService maintainer,
         String namespaceId, String agentName, String version, boolean declaredEndpoint)
         throws NacosException {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         request.setAgentName(agentName);
         request.setVersion(version);
         request.setCallInterfaces(Arrays.asList(
@@ -2357,7 +2479,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
     private void createLegacyCompatiblePublishedAgent(AgentMaintainerService maintainer,
         String agentName) throws Exception {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         request.setAgentName(agentName);
         request.setDisplayName("Display " + agentName);
         request.setDescription("Legacy-compatible Agent before restart");
@@ -2379,20 +2501,20 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private void updateLabel(AgentMaintainerService maintainer, String namespaceId,
         String agentName, String label, String version) throws NacosException {
-        AgentLabelsUpdateAdminRequest labels = new AgentLabelsUpdateAdminRequest();
+        AgentLabelsUpdateRequest labels = new AgentLabelsUpdateRequest();
         labels.setAgentName(agentName);
         labels.setLabels(Collections.singletonMap(label, version));
         maintainer.updateLabels(namespaceId, labels);
     }
     
-    private AgentDefinitionCallInterface callInterface(String agentName, String protocol,
+    private AgentCallInterface callInterface(String agentName, String protocol,
         boolean declaredEndpoint) {
         return callInterface(agentName, protocol, declaredEndpoint, VERSION);
     }
     
-    private AgentDefinitionCallInterface callInterface(String agentName, String protocol,
+    private AgentCallInterface callInterface(String agentName, String protocol,
         boolean declaredEndpoint, String version) {
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");
@@ -2406,7 +2528,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 EndpointSource.DECLARED));
             Endpoint endpoint = endpoint(randomPort(), "/declared", "declared");
             endpoint.setMetadata(Collections.singletonMap("region", "declared"));
-            result.setDeclaredEndpoints(Collections.singletonList(endpoint));
+
+            EndpointSet declaredSet1 = new EndpointSet();
+            declaredSet1.setSource(EndpointSource.DECLARED);
+            declaredSet1.setEndpoints(Collections.singletonList(endpoint));
+            result.setEndpointSets(Collections.singletonList(declaredSet1));
         } else {
             result.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
         }
@@ -2430,24 +2556,28 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
 
-    private AgentDefinitionCallInterface legacyCompatibleCallInterface(AgentCard card) {
+    private AgentCallInterface legacyCompatibleCallInterface(AgentCard card) {
         AgentInterface agentInterface = card.getSupportedInterfaces().get(0);
         Endpoint declaredEndpoint = new Endpoint();
         declaredEndpoint.setUri(agentInterface.getUrl());
         declaredEndpoint.setTransport(agentInterface.getProtocolBinding());
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(PROTOCOL_A2A);
         result.setProtocolVersion(agentInterface.getProtocolVersion());
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class));
         result.setEndpointSourceOrder(Arrays.asList(EndpointSource.DECLARED,
             EndpointSource.RUNTIME));
-        result.setDeclaredEndpoints(Collections.singletonList(declaredEndpoint));
+
+        EndpointSet declaredSet2 = new EndpointSet();
+        declaredSet2.setSource(EndpointSource.DECLARED);
+        declaredSet2.setEndpoints(Collections.singletonList(declaredEndpoint));
+        result.setEndpointSets(Collections.singletonList(declaredSet2));
         return result;
     }
     
-    private AgentVersionAdminRequest versionCommand(String agentName, String version) {
-        AgentVersionAdminRequest result = new AgentVersionAdminRequest();
+    private AgentVersionRequest versionCommand(String agentName, String version) {
+        AgentVersionRequest result = new AgentVersionRequest();
         result.setAgentName(agentName);
         result.setVersion(version);
         return result;
@@ -2461,14 +2591,14 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
     
-    private AgentEndpointRegistrationClientRequest registration(String agentName, String protocol,
+    private AgentEndpointRegistrationBatch registration(String agentName, String protocol,
         List<Endpoint> endpoints) {
         return registration(agentName, VERSION, protocol, endpoints);
     }
     
-    private AgentEndpointRegistrationClientRequest registration(String agentName, String runtimeVersion,
+    private AgentEndpointRegistrationBatch registration(String agentName, String runtimeVersion,
         String protocol, List<Endpoint> endpoints) {
-        AgentEndpointRegistrationClientRequest result = new AgentEndpointRegistrationClientRequest();
+        AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
         result.setAgentName(agentName);
         result.setRuntimeVersion(runtimeVersion);
         result.setProtocol(protocol);
@@ -2476,14 +2606,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return result;
     }
     
-    private AgentEndpointDeregistrationClientRequest deregistration(String agentName, String protocol,
-        List<Endpoint> endpoints) {
-        AgentEndpointDeregistrationClientRequest result = new AgentEndpointDeregistrationClientRequest();
-        result.setAgentName(agentName);
-        result.setProtocol(protocol);
-        result.setEndpoints(endpoints);
-        return result;
-    }
+
     
     private Endpoint endpoint(int port, String path, String region) {
         Endpoint result = new Endpoint();
@@ -2532,7 +2655,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         if (result == null || result.getCallInterfaces() == null) {
             return Collections.emptyList();
         }
-        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : result.getCallInterfaces()) {
             if (!protocol.equals(callInterface.getProtocol())
                 || callInterface.getEndpointSets() == null) {
                 continue;
@@ -2552,7 +2675,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         for (Endpoint endpoint :
             sourceEndpoints(result, PROTOCOL_A2A, EndpointSource.RUNTIME)) {
             if (endpoint.getUri().equals(uri)) {
-                AgentDiscoveryEndpoint discoveryEndpoint = (AgentDiscoveryEndpoint) endpoint;
+                Endpoint discoveryEndpoint = (Endpoint) endpoint;
                 List<RuntimeVersionBinding> bindings = discoveryEndpoint.getBindings();
                 assertEquals(1, bindings.size(), result.toString());
                 assertEquals(runtimeVersion, bindings.get(0).getRuntimeVersion());
@@ -2564,7 +2687,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private String runtimeSourceRevision(AgentDiscoveryResult result) {
-        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : result.getCallInterfaces()) {
             if (!PROTOCOL_A2A.equals(callInterface.getProtocol())) {
                 continue;
             }
@@ -2591,7 +2714,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     
     private AgentSummary searchOne(AiService service, String agentName)
         throws NacosException {
-        AgentSearchClientRequest request = new AgentSearchClientRequest();
+        AgentSearchRequest request = new AgentSearchRequest();
         request.setAgentNameContains(agentName);
         Page<AgentSummary> result = service.agent().searchAgents(request);
         for (AgentSummary entry : result.getPageItems()) {
@@ -2618,7 +2741,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         throws Exception {
         waitUntilLong("Search should converge to " + expected + " Agents for " + nameContains,
             () -> {
-                AgentSearchClientRequest request = new AgentSearchClientRequest();
+                AgentSearchRequest request = new AgentSearchRequest();
                 request.setAgentNameContains(nameContains);
                 return service.agent().searchAgents(request).getTotalCount() == expected;
             });
@@ -2656,7 +2779,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         throws NacosException {
         List<String> result = new ArrayList<>();
         for (int pageNo = 1; pageNo <= 4; pageNo++) {
-            AgentSearchClientRequest request = new AgentSearchClientRequest();
+            AgentSearchRequest request = new AgentSearchRequest();
             request.setAgentNameContains(nameContains);
             request.setPageNo(pageNo);
             request.setPageSize(1);

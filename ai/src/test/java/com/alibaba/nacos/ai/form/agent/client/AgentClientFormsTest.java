@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.form.agent.client;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
@@ -62,7 +62,7 @@ class AgentClientFormsTest {
         assertEquals(20, form.getPageSize());
         
         AgentSearchRequest request = form.toRequest();
-        assertEquals("team", request.getNamespaceId());
+        assertEquals("team", form.getNamespaceId());
         assertEquals("demo", request.getAgentNameContains());
         assertEquals(2, request.getPageNo());
         form.validate();
@@ -71,7 +71,8 @@ class AgentClientFormsTest {
         defaultNamespace.setPageNo(0);
         assertThrows(IllegalArgumentException.class, defaultNamespace::toRequest);
         defaultNamespace.setPageNo(1);
-        assertEquals("public", defaultNamespace.toRequest().getNamespaceId());
+        defaultNamespace.toRequest();
+        assertEquals("public", defaultNamespace.getNamespaceId());
     }
     
     @Test
@@ -154,7 +155,7 @@ class AgentClientFormsTest {
         assertEquals(endpoints, form.getEndpoints());
         
         AgentEndpointRegistrationBatch request = form.toRequest();
-        assertEquals("public", request.getNamespaceId());
+        assertEquals("public", form.getNamespaceId());
         assertEquals(endpoint.getUri(), request.getEndpoints().get(0).getUri());
         assertEquals(endpoint.getTransport(), request.getEndpoints().get(0).getTransport());
         form.validate();
@@ -200,7 +201,7 @@ class AgentClientFormsTest {
         form.setChangeDescription("initial");
         form.setAutoSubmit("true");
         
-        AgentPublishClientRequest request = form.toRequest();
+        AgentPublishRequest request = form.toRequest();
         assertEquals("demo-agent", request.getAgentName());
         assertEquals("Demo", request.getDisplayName());
         assertEquals("description", request.getDescription());

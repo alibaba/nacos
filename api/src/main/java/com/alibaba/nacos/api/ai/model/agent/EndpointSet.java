@@ -35,7 +35,10 @@ public class EndpointSet implements Serializable {
     
     private String sourceRevision;
     
-    private List<AgentDiscoveryEndpoint> endpoints;
+    /** Nacos observation time, returned only by runtime management queries. */
+    private Long lastUpdatedTime;
+    
+    private List<Endpoint> endpoints;
     
     public EndpointSource getSource() {
         return source;
@@ -53,11 +56,19 @@ public class EndpointSet implements Serializable {
         this.sourceRevision = sourceRevision;
     }
     
-    public List<AgentDiscoveryEndpoint> getEndpoints() {
+    public List<Endpoint> getEndpoints() {
         return endpoints;
     }
     
-    public void setEndpoints(List<AgentDiscoveryEndpoint> endpoints) {
+    public void setEndpoints(List<Endpoint> endpoints) {
         this.endpoints = endpoints;
+    }
+    
+    public Long getLastUpdatedTime() {
+        return lastUpdatedTime;
+    }
+    
+    public void setLastUpdatedTime(Long lastUpdatedTime) {
+        this.lastUpdatedTime = lastUpdatedTime;
     }
 }

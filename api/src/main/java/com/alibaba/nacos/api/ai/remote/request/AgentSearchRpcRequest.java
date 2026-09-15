@@ -25,11 +25,13 @@ import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
  */
 public class AgentSearchRpcRequest extends AbstractAgentClientRpcRequest {
     
+    private String namespaceId;
+    
     private AgentSearchRequest searchRequest;
     
     @Override
     public String extractNamespaceId() {
-        return searchRequest == null ? null : searchRequest.getNamespaceId();
+        return namespaceId;
     }
     
     public AgentSearchRequest getSearchRequest() {
@@ -38,5 +40,13 @@ public class AgentSearchRpcRequest extends AbstractAgentClientRpcRequest {
     
     public void setSearchRequest(AgentSearchRequest searchRequest) {
         this.searchRequest = searchRequest;
+    }
+    
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

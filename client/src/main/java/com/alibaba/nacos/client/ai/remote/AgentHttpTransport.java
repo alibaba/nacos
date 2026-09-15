@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -46,15 +46,15 @@ public class AgentHttpTransport implements AgentTransport {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishClientRequest request)
+    public AgentVersionDetail publishAgent(AgentPublishRequest request)
         throws NacosException {
         return clientProxy.publishAgent(request);
     }
     
     @Override
-    public Page<AgentSummary> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
         throws NacosException {
-        return clientProxy.searchAgents(request);
+        return clientProxy.searchAgents(namespaceId, request);
     }
     
     @Override
@@ -64,9 +64,10 @@ public class AgentHttpTransport implements AgentTransport {
     }
     
     @Override
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        return clientProxy.registerAgentEndpoints(batch);
+        return clientProxy.registerAgentEndpoints(namespaceId, batch);
     }
     
     @Override

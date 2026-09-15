@@ -63,13 +63,12 @@ public class AgentSearchForm implements NacosForm {
     public AgentSearchRequest toRequest() {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         AgentSearchRequest result = new AgentSearchRequest();
-        result.setNamespaceId(namespaceId);
         result.setAgentNameContains(agentNameContains);
         result.setTagsAll(tagsAll);
         result.setProtocolsAny(protocolsAny);
         result.setPageNo(pageNo);
         result.setPageSize(pageSize);
-        RadModelValidator.validate(result);
+        RadModelValidator.validate(namespaceId, result);
         return result;
     }
     

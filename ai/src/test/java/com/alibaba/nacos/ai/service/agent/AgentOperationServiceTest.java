@@ -36,9 +36,9 @@ import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
@@ -164,7 +164,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testClientPublicationCreatesDraftWithSharedContent() throws NacosException {
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName(AGENT_NAME);
         request.setVersion(VERSION);
         request.setCallInterfaces(draftRequest().getCallInterfaces());
@@ -194,7 +194,7 @@ class AgentOperationServiceTest {
     void testClientPublicationRejectsMissingRequestAndInvalidDraftSource() {
         assertThrows(IllegalArgumentException.class,
             () -> service.createDraftFromPublication(NAMESPACE_ID, null));
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName(AGENT_NAME);
         request.setVersion(VERSION);
         assertThrows(IllegalArgumentException.class,
@@ -203,7 +203,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testCreateFirstDraftBuildsServerGovernedAgentMetadata() throws NacosException {
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         request.setDisplayName("Display");
         request.setDescription("Description");
         request.setIconUrl("https://example.com/icon.png");
@@ -244,7 +244,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testMigrationGuardBlocksGenericWriteBeforePersistence() throws NacosException {
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         request.setDisplayName(null);
         request.setDescription(null);
         request.setIconUrl(null);
@@ -280,7 +280,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testCreateFirstDraftRejectsBasedOnVersion() {
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         request.setCallInterfaces(null);
         request.setBasedOnVersion("1.0.0");
         
@@ -293,7 +293,7 @@ class AgentOperationServiceTest {
     @Test
     void testEquivalentFirstDraftRetryUsesRecoverableInitialCreatePath()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         request.setDescription("first-create-only");
         AiResource meta = meta(VERSION, null);
         AgentVersionDetail expected = new AgentVersionDetail();
@@ -318,7 +318,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testCreateSubsequentDraftRejectsFirstCreateMetadata() {
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         request.setDescription("first-create-only");
         AiResource meta = meta(null, null);
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -539,7 +539,7 @@ class AgentOperationServiceTest {
     @Test
     void testDraftOperationsRequireWritableResourceAndDelegate() throws NacosException {
         AiResource meta = meta(VERSION, null);
-        AgentDraftCreateAdminRequest request = draftRequest();
+        AgentDraftCreateRequest request = draftRequest();
         AgentVersionDetail draft = new AgentVersionDetail();
         draft.setVersion(request.getVersion());
         draft.setCallInterfaces(request.getCallInterfaces());
@@ -582,7 +582,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testInitialDraftContentGuardCoversMissingDirectContent() {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         
         assertThrows(IllegalArgumentException.class,
             () -> ReflectionTestUtils.invokeMethod(service, "requireInitialDraftContent",
@@ -591,7 +591,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testInitialAgentMetadataDetectionChecksEveryField() {
-        AgentDraftCreateAdminRequest request = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest request = new AgentDraftCreateRequest();
         assertFalse(Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(service,
             "hasInitialAgentMetadata", request)));
         
@@ -1023,7 +1023,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testRegisterLegacyOnlineVersionCreatesPublicCanonicalAgent() throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail expected = new AgentVersionDetail();
         ArgumentCaptor<AgentSummary> agentCaptor = ArgumentCaptor.forClass(AgentSummary.class);
         ArgumentCaptor<AgentVersionDetail> versionCaptor =
@@ -1051,7 +1051,7 @@ class AgentOperationServiceTest {
     @Test
     void testRegisterLegacyOnlineVersionRejectsExistingAgentAndMapsUnexpectedFailure()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
         
@@ -1074,7 +1074,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testReleaseLegacyOnlineVersionCreatesInitialAgent() throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail expected = new AgentVersionDetail();
         when(persistenceService.createInitialOnlineVersion(any(AgentSummary.class),
             any(AgentVersionDetail.class), eq("legacy-a2a"))).thenReturn(expected);
@@ -1086,7 +1086,7 @@ class AgentOperationServiceTest {
     @Test
     void testReleaseLegacyOnlineVersionRecoversConcurrentInitialCreate()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AiResource current = meta(null, null);
         AgentVersionDetail expected = new AgentVersionDetail();
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -1105,7 +1105,7 @@ class AgentOperationServiceTest {
     @Test
     void testReleaseLegacyOnlineVersionPropagatesInitialFailureAndLostRace()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         NacosApiException forbidden = new NacosApiException(NacosException.NO_RIGHT,
             ErrorCode.ACCESS_DENIED, "forbidden");
         when(persistenceService.createInitialOnlineVersion(any(AgentSummary.class),
@@ -1125,7 +1125,7 @@ class AgentOperationServiceTest {
     @Test
     void testClientReleaseAlreadyOnlineA2aVersionIsUnconditionalNoOp()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail existing = existingVersion(request, "a2a");
         existing.setContentDigest("different-content-is-ignored");
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -1145,7 +1145,7 @@ class AgentOperationServiceTest {
     @Test
     void testClientReleaseRejectsOnlineVersionWithoutA2aInterface()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail existing = existingVersion(request, "custom");
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta(null, null));
@@ -1163,7 +1163,7 @@ class AgentOperationServiceTest {
     @Test
     void testClientReleaseRejectsOnlineVersionWithMissingInterfaces()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail existing = existingVersion(request, "a2a");
         existing.setCallInterfaces(null);
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -1179,7 +1179,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testManagementUpdateCreatesMissingVersionAndControlsLatest() throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail expected = new AgentVersionDetail();
         stubWritableMeta(meta(null, null));
         when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -1194,7 +1194,7 @@ class AgentOperationServiceTest {
     @Test
     void testManagementUpdateOnlineVersionRequiresSameContentAndMayPromoteLatest()
         throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail existing = existingVersion(request, "a2a");
         stubWritableMeta(meta(null, null));
         when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -1218,7 +1218,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testManagementUpdateRestoresAllSupportedNonOnlineStates() throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         AgentVersionDetail existing = existingVersion(request, "a2a");
         stubWritableMeta(meta(null, null));
         when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(
@@ -1248,7 +1248,7 @@ class AgentOperationServiceTest {
     
     @Test
     void testManagementUpdateRejectsUnsupportedState() throws NacosException {
-        AgentDraftCreateAdminRequest request = legacyRequest();
+        AgentDraftCreateRequest request = legacyRequest();
         stubWritableMeta(meta(null, null));
         when(persistenceService.findVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionRow("unknown"));
@@ -1265,7 +1265,7 @@ class AgentOperationServiceTest {
     void testDirectOnlineRequestRejectsNullAndCopiedContent() {
         assertThrows(IllegalArgumentException.class,
             () -> service.registerLegacyOnlineVersion(NAMESPACE_ID, null));
-        AgentDraftCreateAdminRequest copied = draftRequest();
+        AgentDraftCreateRequest copied = draftRequest();
         copied.setCallInterfaces(null);
         copied.setBasedOnVersion(VERSION);
         
@@ -1364,8 +1364,8 @@ class AgentOperationServiceTest {
         return result;
     }
     
-    private AgentDraftCreateAdminRequest draftRequest() {
-        AgentDraftCreateAdminRequest result = new AgentDraftCreateAdminRequest();
+    private AgentDraftCreateRequest draftRequest() {
+        AgentDraftCreateRequest result = new AgentDraftCreateRequest();
         result.setAgentName(AGENT_NAME);
         result.setVersion(VERSION);
         result.setCallInterfaces(Collections.emptyList());
@@ -1374,14 +1374,14 @@ class AgentOperationServiceTest {
         return result;
     }
     
-    private AgentDraftCreateAdminRequest legacyRequest() {
-        AgentDraftCreateAdminRequest result = draftRequest();
+    private AgentDraftCreateRequest legacyRequest() {
+        AgentDraftCreateRequest result = draftRequest();
         result.setCallInterfaces(Collections.singletonList(callInterface("a2a")));
         return result;
     }
     
-    private AgentDefinitionCallInterface callInterface(String protocol) {
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+    private AgentCallInterface callInterface(String protocol) {
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setProtocolVersion("0.3");
         result.setDescriptorMediaType("application/json");
@@ -1391,7 +1391,7 @@ class AgentOperationServiceTest {
         return result;
     }
     
-    private AgentVersionDetail existingVersion(AgentDraftCreateAdminRequest request,
+    private AgentVersionDetail existingVersion(AgentDraftCreateRequest request,
         String protocol) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setVersion(VERSION);

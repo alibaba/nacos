@@ -20,11 +20,13 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationClientRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationClientRequest;
+import java.util.Collections;
+import java.util.List;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchClientRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +46,7 @@ class AgentDiscoveryServiceDefaultMethodTest {
     void compatibilityDefaultsReportNotImplemented() {
         AgentDiscoveryService service = new AgentDiscoveryService() {
         };
-        assertNotImplemented(() -> service.searchAgents(new AgentSearchClientRequest()));
+        assertNotImplemented(() -> service.searchAgents(new AgentSearchRequest()));
         assertNotImplemented(() -> service.discoverAgent(new AgentReference(),
             new AgentDiscoveryFilter()));
         assertNotImplemented(() -> service.subscribeAgent(new AgentReference(),
@@ -52,9 +54,9 @@ class AgentDiscoveryServiceDefaultMethodTest {
         assertNotImplemented(() -> service.unsubscribeAgent(new AgentReference(),
             new AgentDiscoveryFilter(), listener()));
         assertNotImplemented(() -> service.registerAgentEndpoints(
-            new AgentEndpointRegistrationClientRequest()));
+            new AgentEndpointRegistrationBatch()));
         assertNotImplemented(() -> service.deregisterAgentEndpoints(
-            new AgentEndpointDeregistrationClientRequest()));
+            "demo", "a2a", Collections.emptyList()));
     }
     
     @Test
@@ -105,24 +107,22 @@ class AgentDiscoveryServiceDefaultMethodTest {
     @Test
     void publicAgentInputsDoNotExposeNamespace() throws Exception {
         Class<?>[] inputs =
-            {AgentSearchClientRequest.class, AgentEndpointRegistrationClientRequest.class,
-                AgentEndpointDeregistrationClientRequest.class, AgentReference.class,
+            {AgentSearchRequest.class, AgentEndpointRegistrationBatch.class,
+                AgentReference.class,
                 AgentDiscoveryFilter.class,
-                AgentPublishClientRequest.class};
+                AgentPublishRequest.class};
         for (Class<?> input : inputs) {
             for (PropertyDescriptor property : Introspector.getBeanInfo(input)
                 .getPropertyDescriptors()) {
                 assertNotEquals("namespaceId", property.getName(), input.getName());
             }
         }
-        assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
-            "searchAgents", com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest.class));
-        assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
-            "registerAgentEndpoints",
-            com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch.class));
-        assertThrows(NoSuchMethodException.class, () -> AgentDiscoveryService.class.getMethod(
-            "deregisterAgentEndpoints",
-            com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistrationBatch.class));
+        assertEquals(Page.class, AgentDiscoveryService.class.getMethod(
+            "searchAgents", AgentSearchRequest.class).getReturnType());
+        assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod(
+            "registerAgentEndpoints", AgentEndpointRegistrationBatch.class).getReturnType());
+        assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod(
+            "deregisterAgentEndpoints", String.class, String.class, List.class).getReturnType());
     }
     
     private void assertNotImplemented(ThrowingOperation operation) {

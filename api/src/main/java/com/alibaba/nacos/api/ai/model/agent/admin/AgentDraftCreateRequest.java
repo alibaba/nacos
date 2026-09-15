@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent;
+package com.alibaba.nacos.api.ai.model.agent.admin;
 
-import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.List;
 
 /**
- * Protocol discovery view with resolved Endpoint sets.
+ * Admin request for creating an initial or subsequent Agent draft.
  *
  * @author Nacos
  * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentDiscoveryCallInterface extends AbstractAgentCallInterface {
+public class AgentDraftCreateRequest extends AbstractAgentDraftRequest {
     
     private static final long serialVersionUID = 1L;
     
-    private List<EndpointSet> endpointSets;
-    
-    public List<EndpointSet> getEndpointSets() {
-        return endpointSets;
-    }
-    
-    public void setEndpointSets(List<EndpointSet> endpointSets) {
-        this.endpointSets = endpointSets;
-    }
 }

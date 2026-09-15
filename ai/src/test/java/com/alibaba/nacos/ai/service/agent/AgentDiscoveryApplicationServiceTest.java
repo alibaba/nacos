@@ -32,7 +32,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOper
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
@@ -40,8 +40,6 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -55,6 +53,8 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -175,7 +175,7 @@ class AgentDiscoveryApplicationServiceTest {
         when(persistenceService.listAgents(condition, 2, 100))
             .thenReturn(sourcePage(2, 2, alpha));
         
-        Page<AgentSummary> result = service.search(request);
+        Page<AgentSummary> result = service.search("public", request);
         
         assertEquals(2, result.getTotalCount());
         assertEquals(2, result.getPagesAvailable());
@@ -183,7 +183,7 @@ class AgentDiscoveryApplicationServiceTest {
         assertEquals("alpha-Agent", result.getPageItems().get(0).getAgentName());
         
         request.setPageNo(2);
-        Page<AgentSummary> second = service.search(request);
+        Page<AgentSummary> second = service.search("public", request);
         AgentSummary betaResult = second.getPageItems().get(0);
         assertEquals("beta-Agent", betaResult.getAgentName());
         assertEquals("Beta", betaResult.getDisplayName());
@@ -200,7 +200,7 @@ class AgentDiscoveryApplicationServiceTest {
             betaResult.getVersionInfo().getOnlineVersions().get(1).getProtocols());
         
         request.setPageNo(Integer.MAX_VALUE);
-        assertTrue(service.search(request).getPageItems().isEmpty());
+        assertTrue(service.search("public", request).getPageItems().isEmpty());
         verify(persistenceService, times(3)).listAgents(condition, 1, 100);
         verify(persistenceService, times(3)).listAgents(condition, 2, 100);
     }
@@ -218,7 +218,7 @@ class AgentDiscoveryApplicationServiceTest {
         when(persistenceService.listAgents(condition, 1, 100))
             .thenReturn(sourcePage(1, 1, summary));
         
-        Page<AgentSummary> result = service.search(request);
+        Page<AgentSummary> result = service.search("public", request);
         
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getTotalCount());
@@ -236,7 +236,7 @@ class AgentDiscoveryApplicationServiceTest {
         AgentSearchRequest request = searchRequest();
         request.setPageNo(3);
         
-        Page<AgentSummary> result = service.search(request);
+        Page<AgentSummary> result = service.search("public", request);
         
         assertEquals(3, result.getPageNumber());
         assertEquals(0, result.getTotalCount());
@@ -279,7 +279,7 @@ class AgentDiscoveryApplicationServiceTest {
         when(searchService.numberedList(any(Query.class))).thenReturn(
             new NumberedPage(Collections.singletonList(indexed), 3L, 2, 2));
         
-        Page<AgentSummary> result = service.search(request);
+        Page<AgentSummary> result = service.search("public", request);
         
         assertEquals(3, result.getTotalCount());
         assertEquals(2, result.getPageNumber());
@@ -336,7 +336,7 @@ class AgentDiscoveryApplicationServiceTest {
         when(searchService.numberedList(any(Query.class))).thenReturn(
             new NumberedPage(Collections.singletonList(indexed), 1L, 1, 1));
         
-        Page<AgentSummary> result = service.search(searchRequest());
+        Page<AgentSummary> result = service.search("public", searchRequest());
         
         assertEquals(Collections.singletonList("legacy"),
             result.getPageItems().get(0).getTags());
@@ -358,7 +358,7 @@ class AgentDiscoveryApplicationServiceTest {
         NacosException failure = new NacosException(NacosException.SERVER_ERROR, "index failed");
         when(searchService.numberedList(any(Query.class))).thenThrow(failure);
         assertSame(failure, assertThrows(NacosException.class,
-            () -> service.search(searchRequest())));
+            () -> service.search("public", searchRequest())));
         verifyNoInteractions(resourceManager, persistenceService);
         
         resetSearchService();
@@ -367,14 +367,14 @@ class AgentDiscoveryApplicationServiceTest {
         when(searchService.numberedList(any(Query.class))).thenReturn(
             new NumberedPage(Collections.singletonList(invalid), 1L, 1, 1));
         NacosApiException invalidError = assertThrows(NacosApiException.class,
-            () -> service.search(searchRequest()));
+            () -> service.search("public", searchRequest()));
         assertEquals(NacosException.SERVER_ERROR, invalidError.getErrCode());
         
         resetSearchService();
         when(searchService.numberedList(any(Query.class))).thenReturn(
             new NumberedPage(Collections.emptyList(), (long) Integer.MAX_VALUE + 1L, 1, 1));
         NacosApiException oversized = assertThrows(NacosApiException.class,
-            () -> service.search(searchRequest()));
+            () -> service.search("public", searchRequest()));
         assertEquals(NacosException.SERVER_ERROR, oversized.getErrCode());
     }
     
@@ -385,7 +385,7 @@ class AgentDiscoveryApplicationServiceTest {
         service = new AgentDiscoveryApplicationService(operationService, persistenceService,
             resourceManager, runtimeRegistryService, (AiResourceSearchService) null, resolver);
         NacosException unavailable = assertThrows(NacosException.class,
-            () -> service.search(searchRequest()));
+            () -> service.search("public", searchRequest()));
         assertEquals(503, unavailable.getErrCode());
         
         @SuppressWarnings("unchecked")
@@ -408,7 +408,7 @@ class AgentDiscoveryApplicationServiceTest {
             .thenReturn(row);
         when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(detail);
-        AgentDiscoveryEndpoint runtimeEndpoint = discoveryEndpoint(
+        Endpoint runtimeEndpoint = discoveryEndpoint(
             endpoint("HTTPS://Runtime.Example.com/agent", "http", 0, null, false), VERSION);
         when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
             Collections.singletonList(VERSION))).thenReturn(endpointSet(EndpointSource.RUNTIME,
@@ -420,7 +420,7 @@ class AgentDiscoveryApplicationServiceTest {
         assertEquals(VERSION, first.getVersion());
         assertEquals(DIGEST, first.getContentDigest());
         assertEquals(2, first.getCallInterfaces().size());
-        AgentDiscoveryCallInterface a2a = first.getCallInterfaces().get(0);
+        AgentCallInterface a2a = first.getCallInterfaces().get(0);
         assertEquals("a2a", a2a.getProtocol());
         assertEquals("1.0", a2a.getProtocolVersion());
         assertEquals("application/json", a2a.getDescriptorMediaType());
@@ -431,7 +431,7 @@ class AgentDiscoveryApplicationServiceTest {
         assertFalse(a2a.getEndpointSets().get(0).getEndpoints().get(0).getHealthy());
         assertEquals(VERSION, a2a.getEndpointSets().get(0).getEndpoints().get(0).getBindings()
             .get(0).getRuntimeVersion());
-        List<AgentDiscoveryEndpoint> declared =
+        List<Endpoint> declared =
             a2a.getEndpointSets().get(1).getEndpoints();
         assertEquals("https://a.example.com:443/agent", declared.get(0).getUri());
         assertEquals("https://b.example.com:443/agent", declared.get(1).getUri());
@@ -453,9 +453,9 @@ class AgentDiscoveryApplicationServiceTest {
             catalog(VERSION, null, "a2a"), catalog("1.0.0", null, "a2a")));
         stubDiscover(agent, DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
             Collections.singletonList(EndpointSource.RUNTIME), null)));
-        AgentDiscoveryEndpoint versionOne = discoveryEndpoint(
+        Endpoint versionOne = discoveryEndpoint(
             endpoint("https://v1.example.com/agent", "http", 0, null, true), "1.0.0");
-        AgentDiscoveryEndpoint versionTwo = discoveryEndpoint(
+        Endpoint versionTwo = discoveryEndpoint(
             endpoint("https://v2.example.com/agent", "http", 0, null, true), VERSION);
         when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
             Arrays.asList(VERSION, "1.0.0"))).thenReturn(endpointSet(EndpointSource.RUNTIME,
@@ -490,10 +490,10 @@ class AgentDiscoveryApplicationServiceTest {
                 Collections.singletonMap("zone", "us"), null),
             endpoint("https://cn.example.com/agent", "http", 0,
                 Collections.singletonMap("zone", "cn"), null));
-        AgentDefinitionCallInterface a2a =
+        AgentCallInterface a2a =
             callInterface("a2a", "1.0", Arrays.asList(EndpointSource.RUNTIME,
                 EndpointSource.DECLARED), endpoints);
-        AgentDefinitionCallInterface other = callInterface("other", "1.0",
+        AgentCallInterface other = callInterface("other", "1.0",
             Collections.singletonList(EndpointSource.DECLARED), endpoints);
         stubDiscover(DIGEST, Arrays.asList(a2a, other));
         
@@ -509,7 +509,7 @@ class AgentDiscoveryApplicationServiceTest {
         
         assertEquals(1, result.getCallInterfaces().size());
         assertEquals(1, result.getCallInterfaces().get(0).getEndpointSets().size());
-        List<AgentDiscoveryEndpoint> filtered =
+        List<Endpoint> filtered =
             result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints();
         assertEquals(1, filtered.size());
         assertEquals("https://cn.example.com:443/agent", filtered.get(0).getUri());
@@ -541,6 +541,25 @@ class AgentDiscoveryApplicationServiceTest {
         
         assertTrue(noProtocol.getCallInterfaces().isEmpty());
         assertTrue(noProtocolVersion.getCallInterfaces().isEmpty());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testDiscoverKeepsAllowedEmptyDeclaredSourceWhenDefinitionHasNoSets(boolean absent)
+        throws NacosException {
+        AgentCallInterface definition = callInterface("custom", "1.0",
+            Collections.singletonList(EndpointSource.DECLARED), Collections.emptyList());
+        definition.setEndpointSets(absent ? null : Collections.emptyList());
+        stubDiscover(DIGEST, Collections.singletonList(definition));
+        AgentDiscoveryResult result = service.discover(discoveryRequest(VERSION, null, null));
+        assertEquals(1, result.getCallInterfaces().size());
+        AgentCallInterface discovered = result.getCallInterfaces().get(0);
+        assertEquals(1, discovered.getEndpointSets().size());
+        EndpointSet declared = discovered.getEndpointSets().get(0);
+        assertEquals(EndpointSource.DECLARED, declared.getSource());
+        assertEquals(DIGEST, declared.getSourceRevision());
+        assertTrue(declared.getEndpoints().isEmpty());
+        assertNull(discovered.getEndpointSourceOrder());
     }
     
     @Test
@@ -600,7 +619,7 @@ class AgentDiscoveryApplicationServiceTest {
             .thenReturn(detail(DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
                 Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), null))));
         EndpointSet runtime = endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
-            Collections.<AgentDiscoveryEndpoint>emptyList());
+            Collections.<Endpoint>emptyList());
         when(runtimeRegistryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
             Collections.singletonList(VERSION))).thenReturn(runtime);
         when(runtimeRegistryService.getCurrentRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME, "a2a",
@@ -722,13 +741,13 @@ class AgentDiscoveryApplicationServiceTest {
         org.mockito.Mockito.reset(searchService);
     }
     
-    private void stubDiscover(String digest, List<AgentDefinitionCallInterface> interfaces)
+    private void stubDiscover(String digest, List<AgentCallInterface> interfaces)
         throws NacosException {
         stubDiscover(enabledAgent(), digest, interfaces);
     }
     
     private void stubDiscover(AgentSummary agent, String digest,
-        List<AgentDefinitionCallInterface> interfaces)
+        List<AgentCallInterface> interfaces)
         throws NacosException {
         when(operationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(persistenceService.requireVersionRow(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -739,7 +758,6 @@ class AgentDiscoveryApplicationServiceTest {
     
     private AgentSearchRequest searchRequest() {
         AgentSearchRequest result = new AgentSearchRequest();
-        result.setNamespaceId(NAMESPACE_ID);
         return result;
     }
     
@@ -798,7 +816,7 @@ class AgentDiscoveryApplicationServiceTest {
     }
     
     private AgentVersionDetail detail(String digest,
-        List<AgentDefinitionCallInterface> interfaces) {
+        List<AgentCallInterface> interfaces) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
         result.setContentDigest(digest);
@@ -806,32 +824,36 @@ class AgentDiscoveryApplicationServiceTest {
         return result;
     }
     
-    private List<AgentDefinitionCallInterface> completeInterfaces() {
+    private List<AgentCallInterface> completeInterfaces() {
         List<Endpoint> declared = Arrays.asList(
             endpoint("https://z.example.com/agent", "http", 1, null, null),
             endpoint("https://b.example.com/agent", "http", 0, null, null),
             endpoint("https://a.example.com/agent", "http", 0, null, null));
-        AgentDefinitionCallInterface a2a = callInterface("a2a", "1.0",
+        AgentCallInterface a2a = callInterface("a2a", "1.0",
             Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), declared);
-        AgentDefinitionCallInterface jsonRpc = callInterface("json-rpc", null,
+        AgentCallInterface jsonRpc = callInterface("json-rpc", null,
             Collections.singletonList(EndpointSource.DECLARED), null);
         return Arrays.asList(a2a, jsonRpc);
     }
     
-    private AgentDefinitionCallInterface callInterface(String protocol, String protocolVersion,
+    private AgentCallInterface callInterface(String protocol, String protocolVersion,
         List<EndpointSource> sources, List<Endpoint> endpoints) {
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setProtocolVersion(protocolVersion);
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(Collections.singletonMap("name", "demo"));
         result.setEndpointSourceOrder(sources);
-        result.setDeclaredEndpoints(endpoints);
+        
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(endpoints);
+        result.setEndpointSets(Collections.singletonList(declaredSet1));
         return result;
     }
     
     private EndpointSet endpointSet(EndpointSource source, String revision,
-        List<AgentDiscoveryEndpoint> endpoints) {
+        List<Endpoint> endpoints) {
         EndpointSet result = new EndpointSet();
         result.setSource(source);
         result.setSourceRevision(revision);
@@ -839,8 +861,8 @@ class AgentDiscoveryApplicationServiceTest {
         return result;
     }
     
-    private AgentDiscoveryEndpoint discoveryEndpoint(Endpoint source, String runtimeVersion) {
-        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+    private Endpoint discoveryEndpoint(Endpoint source, String runtimeVersion) {
+        Endpoint result = new Endpoint();
         result.setUri(source.getUri());
         result.setTransport(source.getTransport());
         result.setPriority(source.getPriority());

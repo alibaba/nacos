@@ -214,8 +214,8 @@ class AiGrpcResourceParserTest {
     
     private static AgentSearchRpcRequest agentSearchRpcRequest(String namespaceId) {
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId(namespaceId);
         AgentSearchRpcRequest result = new AgentSearchRpcRequest();
+        result.setNamespaceId(namespaceId);
         result.setSearchRequest(search);
         return result;
     }
@@ -238,9 +238,9 @@ class AiGrpcResourceParserTest {
         String namespaceId,
         String agentName) {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId(namespaceId);
         batch.setAgentName(agentName);
         AgentEndpointRegisterRpcRequest result = new AgentEndpointRegisterRpcRequest();
+        result.setNamespaceId(namespaceId);
         result.setRegistrationBatch(batch);
         return result;
     }

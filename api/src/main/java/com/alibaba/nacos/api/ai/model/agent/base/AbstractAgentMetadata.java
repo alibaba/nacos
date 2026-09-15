@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.agent.base;
 
+import java.util.Map;
+
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
@@ -43,6 +45,8 @@ public abstract class AbstractAgentMetadata implements Serializable {
     private AgentProvider provider;
     
     private List<String> tags;
+    
+    private Map<String, Object> extensions;
     
     /**
      * Initialize fields shared by concrete Agent models.
@@ -96,5 +100,13 @@ public abstract class AbstractAgentMetadata implements Serializable {
     
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+    
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
+    
+    public void setExtensions(Map<String, Object> extensions) {
+        this.extensions = extensions;
     }
 }

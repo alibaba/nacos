@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 
 /**
  * gRPC binding for code-first Agent definition publication.
@@ -27,7 +27,7 @@ public class AgentPublishRpcRequest extends AbstractAgentClientRpcRequest {
     
     private String namespaceId;
     
-    private AgentPublishClientRequest publishRequest;
+    private AgentPublishRequest publishRequest;
     
     @Override
     public String extractNamespaceId() {
@@ -47,11 +47,11 @@ public class AgentPublishRpcRequest extends AbstractAgentClientRpcRequest {
         this.namespaceId = namespaceId;
     }
     
-    public AgentPublishClientRequest getPublishRequest() {
+    public AgentPublishRequest getPublishRequest() {
         return publishRequest;
     }
     
-    public void setPublishRequest(AgentPublishClientRequest publishRequest) {
+    public void setPublishRequest(AgentPublishRequest publishRequest) {
         this.publishRequest = publishRequest;
     }
 }

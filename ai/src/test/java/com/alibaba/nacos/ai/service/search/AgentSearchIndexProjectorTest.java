@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentExtension;
 import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
@@ -65,11 +65,11 @@ class AgentSearchIndexProjectorTest {
         AgentSummary agent = agent();
         AgentVersionDetail latest = latest();
         AgentCard card = a2aCard();
-        AgentDefinitionCallInterface a2a = callInterface("a2a", card);
+        AgentCallInterface a2a = callInterface("a2a", card);
         Map<String, Object> customDescriptor = new LinkedHashMap<>();
         customDescriptor.put("z", "tail");
         customDescriptor.put("a", "head");
-        AgentDefinitionCallInterface custom = callInterface("acme-rpc", customDescriptor);
+        AgentCallInterface custom = callInterface("acme-rpc", customDescriptor);
         latest.setCallInterfaces(Arrays.asList(a2a, null, custom));
         
         AiResourceIndexProjection projection = projector.project(agent, latest);
@@ -164,11 +164,11 @@ class AgentSearchIndexProjectorTest {
     void shouldSkipBrokenA2aAndDescriptorButContinueToValidContent() {
         AgentSummary agent = agent();
         AgentVersionDetail latest = latest();
-        AgentDefinitionCallInterface brokenA2a = callInterface("a2a", null);
-        AgentDefinitionCallInterface validA2a = callInterface("A2A", a2aCard());
-        AgentDefinitionCallInterface brokenCustom =
+        AgentCallInterface brokenA2a = callInterface("a2a", null);
+        AgentCallInterface validA2a = callInterface("A2A", a2aCard());
+        AgentCallInterface brokenCustom =
             callInterface("custom", new FailingDescriptor());
-        AgentDefinitionCallInterface emptyCustom = callInterface("empty", null);
+        AgentCallInterface emptyCustom = callInterface("empty", null);
         latest.setCallInterfaces(Arrays.asList(brokenA2a, validA2a, brokenCustom, emptyCustom));
         
         AiResourceIndexProjection projection = projector.project(agent, latest);
@@ -353,8 +353,8 @@ class AgentSearchIndexProjectorTest {
         return result;
     }
     
-    private AgentDefinitionCallInterface callInterface(String protocol, Object descriptor) {
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+    private AgentCallInterface callInterface(String protocol, Object descriptor) {
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
         return result;

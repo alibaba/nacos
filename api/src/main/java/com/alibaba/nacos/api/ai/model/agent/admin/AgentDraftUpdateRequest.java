@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent;
+package com.alibaba.nacos.api.ai.model.agent.admin;
+
+import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
+
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
- * Command identifying one exact Agent Version lifecycle target.
+ * Complete replacement request for one exact Agent draft.
  *
  * @author Nacos
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentVersionAdminRequest implements Serializable {
+public class AgentDraftUpdateRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
@@ -34,12 +39,19 @@ public class AgentVersionAdminRequest implements Serializable {
     
     private String version;
     
+    private List<AgentCallInterface> callInterfaces;
+    
+    private String changeDescription;
+    
     /**
-     * Validate the exact Version identity.
+     * Validate the draft identity and content.
      */
     public void validate() {
-        AgentAdminRequestUtils.validateIdentity(agentName);
-        AgentAdminRequestUtils.validateVersion(version);
+        AgentValidationUtils.validateAgentName(agentName);
+        AgentValidationUtils.validateVersion(version);
+        if (callInterfaces == null) {
+            throw new IllegalArgumentException("callInterfaces must not be null");
+        }
     }
     
     public String getAgentName() {
@@ -56,5 +68,21 @@ public class AgentVersionAdminRequest implements Serializable {
     
     public void setVersion(String version) {
         this.version = version;
+    }
+    
+    public List<AgentCallInterface> getCallInterfaces() {
+        return callInterfaces;
+    }
+    
+    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
+        this.callInterfaces = callInterfaces;
+    }
+    
+    public String getChangeDescription() {
+        return changeDescription;
+    }
+    
+    public void setChangeDescription(String changeDescription) {
+        this.changeDescription = changeDescription;
     }
 }

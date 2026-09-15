@@ -78,6 +78,23 @@ authorization resource from the client `name` parameter.
 
 Agent Search HTTP 响应统一为 AgentSummary 的 versionInfo.labels/onlineVersions；验证旧顶层 latestVersion/versions 和管理字段不再出现。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 统一地址模型新增场景（2026-09-15）
+
+| 场景 | 用例 | 断言 |
+| --- | --- | --- |
+| EP-03/07：HTTP 注册上报健康值及维护字段隔离 | `AgentEndpointClientOpenApiITCase.testReportedHealthAndIgnoredManagementFieldsAcrossReadSurfaces` | false 注册及 ACTIVE heartbeat 后仍 false；替换为 true 可发现；伪造 bindings/enabled/state 不生效；Admin 三层非空读取及 RAD 字段隔离 |
+| EP-12：公开 Agent 实际索引与目录 | `AiResourceSearchClientOpenApiITCase.testPublicAgentIndexTracksUnifiedVersionCatalog` | 旧 A2A 创建 PUBLIC Agent，新 Agent 发布第二版；tag/协议/namespace、onlineVersions/labels、offline 与 delete 收敛；默认 AUTO/显式 INDEX 均走共享索引 |
+
+原私有 Search DAUTH-F03 Disabled 保持；公开 fixture 通过旧 A2A 的既有 PUBLIC 语义准备，不关闭鉴权，不写内部存储。
+
+
+### 2026-09-15 请求整合回归
+
+Agent HTTP Search/Register 的 namespace 参数保持；服务端业务模型与 namespace 分离，直接 HTTP 的默认值、自定义 namespace、非法参数、授权隔离及完整替换/全量 DELETE 仍由现有 Agent IT 验证。局部注销三个参数仅为 Java SDK API，不能向 HTTP DELETE 发送 Endpoint 列表。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。

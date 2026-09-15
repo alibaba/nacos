@@ -328,3 +328,13 @@ experimental and may change with that domain.
 9. For server-to-server payloads, also update the
    [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
    or the domain spec that owns the cluster request semantics.
+
+
+### Agent Search/Register Namespace Binding
+
+`AgentSearchRpcRequest` and `AgentEndpointRegisterRpcRequest` carry `namespaceId` at the
+envelope top level; `searchRequest`/`registrationBatch` contain no namespace. Parameter
+extraction, namespace validation, authorization and services use that same envelope value,
+normalizing omission to public under existing rules. RPC type names remain unchanged.
+This pre-3.3 layout change requires matching Client and Server updates. Discover, Watch,
+Publish and historical A2A envelope layouts remain unchanged.

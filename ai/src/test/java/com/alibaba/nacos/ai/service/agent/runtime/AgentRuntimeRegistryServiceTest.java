@@ -19,9 +19,9 @@ package com.alibaba.nacos.ai.service.agent.runtime;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
@@ -95,7 +95,7 @@ class AgentRuntimeRegistryServiceTest {
                 endpoint("https://one.example.com/agent", "json-rpc"),
                 endpoint("https://two.example.com/agent", "json-rpc")));
         
-        registryService.register(PUBLISHER_ID, batch);
+        registryService.register(PUBLISHER_ID, NAMESPACE_ID, batch);
         
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Instance>> instancesCaptor =
@@ -113,11 +113,42 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void testDirectRegistrationKeepsReportedHealthAndIgnoresManagementFields()
+        throws NacosException {
+        Endpoint endpoint = endpoint("https://example.com/agent", "json-rpc");
+        endpoint.setHealthy(false);
+        endpoint.setEnabled(false);
+        endpoint.setState(RuntimeEndpointState.DISABLED);
+        RuntimeVersionBinding forged = new RuntimeVersionBinding();
+        forged.setRuntimeVersion("9.0.0");
+        forged.setVersionRange("ignored");
+        endpoint.setBindings(Collections.singletonList(forged));
+        registryService.register(PUBLISHER_ID, NAMESPACE_ID, registration("1.0.0", "[1.0.0,2.0.0)",
+            Collections.singletonList(endpoint)));
+        
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Instance>> captor = ArgumentCaptor.forClass(List.class);
+        verify(clientOperationService).batchRegisterInstance(eq(expectedService()),
+            captor.capture(), eq(PUBLISHER_ID));
+        Instance stored = captor.getValue().get(0);
+        assertFalse(stored.isHealthy());
+        assertTrue(stored.isEnabled());
+        assertEquals("1.0.0", stored.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_VERSION_KEY));
+        assertEquals("[1.0.0,2.0.0)",
+            stored.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_VERSION_RANGE_KEY));
+        Endpoint decoded = AgentRuntimeEndpointMapper.fromInstance(stored);
+        assertEquals(RuntimeEndpointState.UNHEALTHY, decoded.getState());
+        assertEquals("1.0.0", decoded.getBindings().get(0).getRuntimeVersion());
+        assertEquals("ignored", endpoint.getBindings().get(0).getVersionRange());
+        assertFalse(endpoint.getEnabled());
+    }
+    
+    @Test
     void testLaterRegistrationIsAnotherCompleteReplacement() throws NacosException {
-        registryService.register(PUBLISHER_ID, registration("1.0.0", null,
+        registryService.register(PUBLISHER_ID, NAMESPACE_ID, registration("1.0.0", null,
             Arrays.asList(endpoint("https://one.example.com/agent", "json-rpc"),
                 endpoint("https://two.example.com/agent", "json-rpc"))));
-        registryService.register(PUBLISHER_ID, registration("2.0.0", null,
+        registryService.register(PUBLISHER_ID, NAMESPACE_ID, registration("2.0.0", null,
             Collections.singletonList(
                 endpoint("https://three.example.com/agent", "json-rpc"))));
         
@@ -141,7 +172,7 @@ class AgentRuntimeRegistryServiceTest {
             registration("1.0.0", null, Collections.<Endpoint>emptyList());
         
         assertThrows(IllegalArgumentException.class,
-            () -> registryService.register(PUBLISHER_ID, invalid));
+            () -> registryService.register(PUBLISHER_ID, NAMESPACE_ID, invalid));
         
         verify(clientOperationService, never()).batchRegisterInstance(any(), any(), any());
     }
@@ -183,15 +214,17 @@ class AgentRuntimeRegistryServiceTest {
             registryService.getRuntimeEndpointSnapshot(
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, "1.0.0");
         
-        assertEquals(1, all.getItems().size());
-        RuntimeEndpointSnapshotItem allItem = all.getItems().get(0);
+        assertEquals(1, all.getCallInterface().getEndpointSets().get(0).getEndpoints().size());
+        Endpoint allItem = all.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         assertEquals(2, allItem.getBindings().size());
         assertEquals("1.0.0", allItem.getBindings().get(0).getRuntimeVersion());
         assertEquals("2.0.0", allItem.getBindings().get(1).getRuntimeVersion());
-        assertEquals(1234L, allItem.getLastUpdatedTime());
+        assertEquals(1234L, all.getCallInterface().getEndpointSets().get(0).getLastUpdatedTime());
         assertTrue(allItem.getHealthy());
-        assertEquals(1, versionOneSnapshot.getItems().size());
-        RuntimeEndpointSnapshotItem selected = versionOneSnapshot.getItems().get(0);
+        assertEquals(1,
+            versionOneSnapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().size());
+        Endpoint selected =
+            versionOneSnapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         assertEquals(1, selected.getBindings().size());
         assertEquals("1.0.0", selected.getBindings().get(0).getRuntimeVersion());
         assertFalse(selected.getHealthy());
@@ -214,12 +247,12 @@ class AgentRuntimeRegistryServiceTest {
             registryService.getRuntimeEndpointSet(
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, "1.0.0");
         
-        assertEquals(1, snapshot.getItems().size());
-        RuntimeEndpointSnapshotItem item = snapshot.getItems().get(0);
+        assertEquals(1, snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().size());
+        Endpoint item = snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         assertEquals(2, item.getBindings().size());
         assertEquals("[1.0.0,2.0.0]", item.getBindings().get(0).getVersionRange());
         assertEquals("[1.0.0]", item.getBindings().get(1).getVersionRange());
-        assertEquals("cn-hangzhou", item.getEndpoint().getMetadata().get("region"));
+        assertEquals("cn-hangzhou", item.getMetadata().get("region"));
         assertEquals("cn-hangzhou",
             endpointSet.getEndpoints().get(0).getMetadata().get("region"));
     }
@@ -272,9 +305,12 @@ class AgentRuntimeRegistryServiceTest {
             registryService.getRuntimeEndpointSet(
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, "1.0.0");
         
-        assertTrue(snapshot.getItems().get(0).getEnabled());
-        assertTrue(snapshot.getItems().get(0).getHealthy());
-        assertEquals(RuntimeEndpointState.AVAILABLE, snapshot.getItems().get(0).getState());
+        assertTrue(snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)
+            .getEnabled());
+        assertTrue(snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)
+            .getHealthy());
+        assertEquals(RuntimeEndpointState.AVAILABLE,
+            snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).getState());
         assertEquals(1, endpointSet.getEndpoints().size());
         assertFalse(endpointSet.getEndpoints().get(0).getHealthy());
     }
@@ -436,10 +472,10 @@ class AgentRuntimeRegistryServiceTest {
             registryService.getRuntimeEndpointSnapshot(
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, null);
         
-        assertTrue(result.getItems().isEmpty());
+        assertTrue(result.getCallInterface().getEndpointSets().get(0).getEndpoints().isEmpty());
         assertEquals(NAMESPACE_ID, result.getNamespaceId());
         assertEquals(AGENT_NAME, result.getAgentName());
-        assertEquals(PROTOCOL, result.getProtocol());
+        assertEquals(PROTOCOL, result.getCallInterface().getProtocol());
     }
     
     @Test
@@ -461,7 +497,6 @@ class AgentRuntimeRegistryServiceTest {
     private AgentEndpointRegistrationBatch registration(String runtimeVersion,
         String versionRange, List<Endpoint> endpoints) {
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(AGENT_NAME);
         result.setProtocol(PROTOCOL);
         result.setRuntimeVersion(runtimeVersion);
@@ -508,10 +543,10 @@ class AgentRuntimeRegistryServiceTest {
         assertEquals(NacosException.CONFLICT, exception.getErrCode());
     }
     
-    private RuntimeEndpointSnapshotItem snapshotItem(RuntimeEndpointSnapshot snapshot,
+    private Endpoint snapshotItem(RuntimeEndpointSnapshot snapshot,
         String uri) {
-        for (RuntimeEndpointSnapshotItem item : snapshot.getItems()) {
-            if (uri.equals(item.getEndpoint().getUri())) {
+        for (Endpoint item : snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints()) {
+            if (uri.equals(item.getUri())) {
                 return item;
             }
         }

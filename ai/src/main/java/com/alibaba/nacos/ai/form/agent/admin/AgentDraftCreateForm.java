@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.form.agent.admin;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 
 /**
@@ -39,8 +39,8 @@ public class AgentDraftCreateForm extends AbstractAgentDraftForm {
      * @return validated Agent draft-create request
      * @throws NacosApiException when a JSON-valued form field is invalid
      */
-    public AgentDraftCreateAdminRequest toRequest() throws NacosApiException {
-        AgentDraftCreateAdminRequest result = new AgentDraftCreateAdminRequest();
+    public AgentDraftCreateRequest toRequest() throws NacosApiException {
+        AgentDraftCreateRequest result = new AgentDraftCreateRequest();
         fillRequest(result);
         result.validate();
         return result;

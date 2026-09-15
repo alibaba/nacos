@@ -79,10 +79,12 @@ public class AgentHttpClientLifecycleService {
      * @throws NacosException when validation or registration fails
      */
     public ClientLivenessInfo register(String externalClientId, String requestModule,
+        String namespaceId,
         AgentEndpointRegistrationBatch batch) throws NacosException {
         return clientLifecycleService.register(externalClientId, requestModule,
-            batch.getNamespaceId(),
-            internalClientId -> runtimeRegistryService.register(internalClientId, batch));
+            namespaceId,
+            internalClientId -> runtimeRegistryService.register(internalClientId, namespaceId,
+                batch));
     }
     
     /**

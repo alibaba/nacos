@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageService;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageTestUtils;
 import com.alibaba.nacos.ai.service.agent.storage.PreparedAgentVersionWrite;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.ai.storage.model.AiResourceStorageChangeEvent;
@@ -256,7 +256,7 @@ class A2aMigrationStorageVerifierTest {
     }
     
     private AgentVersionContent content(String protocolVersion) {
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion(protocolVersion);
         callInterface.setDescriptorMediaType("application/json");

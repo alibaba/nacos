@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -41,7 +41,7 @@ public interface AgentClientProxy {
      * @return resulting exact Version detail
      * @throws NacosException when the transport request fails
      */
-    AgentVersionDetail publishAgent(AgentPublishClientRequest request) throws NacosException;
+    AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException;
     
     /**
      * Search visible Agent catalog entries.
@@ -50,7 +50,8 @@ public interface AgentClientProxy {
      * @return Agent catalog page
      * @throws NacosException when the transport request fails
      */
-    Page<AgentSummary> searchAgents(AgentSearchRequest request) throws NacosException;
+    Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
+        throws NacosException;
     
     /**
      * Discover one Agent Version and its Endpoint sets.
@@ -68,7 +69,8 @@ public interface AgentClientProxy {
      * @return HTTP liveness settings, or {@code null} for connection-based transports
      * @throws NacosException when the transport request fails
      */
-    ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException;
     
     /**

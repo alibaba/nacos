@@ -16,27 +16,68 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentSearchRequest;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.io.Serializable;
+import java.util.List;
 
 /**
- * Complete RAD Search request with an effective namespace.
+ * Shared Agent Search criteria; the binding supplies the effective namespace.
  *
  * @author Nacos
  * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AgentSearchRequest extends AbstractAgentSearchRequest {
+public class AgentSearchRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
-    private String namespaceId;
+    private String agentNameContains;
     
-    public String getNamespaceId() {
-        return namespaceId;
+    private List<String> tagsAll;
+    
+    private List<String> protocolsAny;
+    
+    private Integer pageNo;
+    
+    private Integer pageSize;
+    
+    public String getAgentNameContains() {
+        return agentNameContains;
     }
     
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
+    public void setAgentNameContains(String agentNameContains) {
+        this.agentNameContains = agentNameContains;
+    }
+    
+    public List<String> getTagsAll() {
+        return tagsAll;
+    }
+    
+    public void setTagsAll(List<String> tagsAll) {
+        this.tagsAll = tagsAll;
+    }
+    
+    public List<String> getProtocolsAny() {
+        return protocolsAny;
+    }
+    
+    public void setProtocolsAny(List<String> protocolsAny) {
+        this.protocolsAny = protocolsAny;
+    }
+    
+    public Integer getPageNo() {
+        return pageNo;
+    }
+    
+    public void setPageNo(Integer pageNo) {
+        this.pageNo = pageNo;
+    }
+    
+    public Integer getPageSize() {
+        return pageSize;
+    }
+    
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
     }
 }

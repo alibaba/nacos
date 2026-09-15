@@ -18,8 +18,8 @@ package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -194,7 +195,7 @@ class AgentGrpcTransportTest {
     @SuppressWarnings("unchecked")
     void agentOperationsDelegateToGrpcClient() throws NacosException {
         AgentGrpcTransport transport = transport(AgentTransportMode.GRPC);
-        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
+        AgentPublishRequest publishRequest = new AgentPublishRequest();
         AgentVersionDetail version = new AgentVersionDetail();
         AgentSearchRequest searchRequest = new AgentSearchRequest();
         Page<AgentSummary> page = new Page<AgentSummary>();
@@ -203,15 +204,15 @@ class AgentGrpcTransportTest {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         ClientLivenessInfo liveness = new ClientLivenessInfo();
         when(client.publishAgent(publishRequest)).thenReturn(version);
-        when(client.searchAgents(searchRequest)).thenReturn(page);
+        when(client.searchAgents("public", searchRequest)).thenReturn(page);
         when(client.discoverAgent(discoveryRequest)).thenReturn(discovery);
-        when(client.registerAgentEndpoints(batch)).thenReturn(liveness);
+        when(client.registerAgentEndpoints("public", batch)).thenReturn(liveness);
         when(client.heartbeatAgentEndpoints()).thenReturn(liveness);
         
         assertSame(version, transport.publishAgent(publishRequest));
-        assertSame(page, transport.searchAgents(searchRequest));
+        assertSame(page, transport.searchAgents("public", searchRequest));
         assertSame(discovery, transport.discoverAgent(discoveryRequest));
-        assertSame(liveness, transport.registerAgentEndpoints(batch));
+        assertSame(liveness, transport.registerAgentEndpoints("public", batch));
         transport.deregisterAgentEndpoints("public", "agent", "a2a");
         assertSame(liveness, transport.heartbeatAgentEndpoints());
         verify(client).deregisterAgentEndpoints("public", "agent", "a2a");
@@ -222,11 +223,11 @@ class AgentGrpcTransportTest {
     void requiredProxyAcquiresGrpcForEveryLegacyOperation() throws NacosException {
         AgentGrpcTransport transport = transport(AgentTransportMode.HTTP);
         AiClientProxy proxy = transport.requiredProxy();
-        AgentPublishClientRequest publishRequest = new AgentPublishClientRequest();
+        AgentPublishRequest publishRequest = new AgentPublishRequest();
         publishRequest.setAgentName("agent");
         publishRequest.setVersion("1.0.0");
         publishRequest.setCallInterfaces(
-            Collections.singletonList(new AgentDefinitionCallInterface()));
+            Collections.singletonList(new AgentCallInterface()));
         AgentVersionDetail version = new AgentVersionDetail();
         Page page = new Page();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
@@ -237,18 +238,19 @@ class AgentGrpcTransportTest {
         AgentSpecQueryResponse agentSpec =
             new AgentSpecQueryResponse(new AgentSpec(), "md5", "1.0.0");
         when(client.publishAgent(any())).thenReturn(version);
-        when(client.searchAgents(any())).thenReturn(page);
+        when(client.searchAgents(eq("public"), any())).thenReturn(page);
         when(client.discoverAgent(any())).thenReturn(discovery);
-        when(client.registerAgentEndpoints(any())).thenReturn(liveness);
+        when(client.registerAgentEndpoints(eq("public"), any(AgentEndpointRegistrationBatch.class)))
+            .thenReturn(liveness);
         when(client.heartbeatAgentEndpoints()).thenReturn(liveness);
         when(client.queryPrompt("prompt", "1", "latest", "md5")).thenReturn(prompt);
         when(client.querySkill("skill", "1", "latest", "md5")).thenReturn(skill);
         when(client.queryAgentSpec("spec", "1", "latest", "md5")).thenReturn(agentSpec);
         
         assertSame(version, proxy.publishAgent(publishRequest));
-        assertSame(page, proxy.searchAgents(new AgentSearchRequest()));
+        assertSame(page, proxy.searchAgents("public", new AgentSearchRequest()));
         assertSame(discovery, proxy.discoverAgent(new AgentDiscoveryRequest()));
-        assertSame(liveness, proxy.registerAgentEndpoints(batch));
+        assertSame(liveness, proxy.registerAgentEndpoints("public", batch));
         proxy.deregisterAgentEndpoints("public", "agent", "a2a");
         assertSame(liveness, proxy.heartbeatAgentEndpoints());
         assertSame(prompt, proxy.queryPrompt("prompt", "1", "latest", "md5"));

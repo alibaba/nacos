@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -65,6 +66,62 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
 
     private static final int DEFAULT_SERVER_PUBLICATION_CAPACITY = 100;
     
+    @Test
+    public void testReportedHealthAndIgnoredManagementFieldsAcrossReadSurfaces() throws Exception {
+        String agentName = randomAiName("endpoint-health");
+        String clientId = randomHttpClientId();
+        publishAgent(agentName, "1.0.0");
+        addCleanup(() -> deleteEndpointForm(clientId, REQUEST_MODULE, identityForm(agentName)));
+        Map<String, String> form = registrationForm(agentName);
+        Map<String, Object> endpoint = new LinkedHashMap<>();
+        endpoint.put("uri", "http://127.0.0.1:18080/agent");
+        endpoint.put("transport", "HTTP+JSON");
+        endpoint.put("healthy", false);
+        endpoint.put("enabled", false);
+        endpoint.put("state", "DISABLED");
+        Map<String, String> forgedBinding = new LinkedHashMap<>();
+        forgedBinding.put("runtimeVersion", "9.0.0");
+        forgedBinding.put("versionRange", "ignored-on-write");
+        endpoint.put("bindings", Collections.singletonList(forgedBinding));
+        form.put("endpoints", JacksonUtils.toJson(Collections.singletonList(endpoint)));
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE, form));
+        assertLiveness(heartbeat(clientId, REQUEST_MODULE));
+        JsonNode unhealthy = waitForHealth(clientId, agentName, false);
+        assertFalse(unhealthy.has("enabled"), unhealthy.toString());
+        assertFalse(unhealthy.has("state"), unhealthy.toString());
+        assertEquals("1.0.0", unhealthy.at("/bindings/0/runtimeVersion").asText());
+        assertEquals("[1.0.0]", unhealthy.at("/bindings/0/versionRange").asText());
+        JsonNode runtime = getJsonOk(ADMIN_AGENT_PATH + "/runtime-endpoints",
+                Query.newInstance().addParam("agentName", agentName).addParam("protocol", "a2a")).get("data");
+        JsonNode set = runtime.at("/callInterface/endpointSets/0");
+        assertEquals("RUNTIME", set.path("source").asText());
+        assertTrue(set.path("lastUpdatedTime").isNumber(), runtime.toString());
+        JsonNode managed = set.at("/endpoints/0");
+        assertEquals("UNHEALTHY", managed.path("state").asText());
+        assertTrue(managed.path("enabled").asBoolean());
+        assertFalse(managed.path("healthy").asBoolean());
+        assertFalse(managed.has("endpoint"));
+        endpoint.put("healthy", true);
+        form.put("endpoints", JacksonUtils.toJson(Collections.singletonList(endpoint)));
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE, form));
+        waitForHealth(clientId, agentName, true);
+    }
+
+    private JsonNode waitForHealth(String clientId, String agentName, boolean healthy) throws Exception {
+        JsonNode actual = null;
+        for (int attempt = 0; attempt < 50; attempt++) {
+            JsonNode endpoints = discover(clientId, agentName).at("/callInterfaces/0/endpointSets/0/endpoints");
+            if (endpoints.size() == 1) {
+                actual = endpoints.get(0);
+                if (actual.path("healthy").asBoolean() == healthy) {
+                    return actual;
+                }
+            }
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
+        throw new AssertionError("Expected reported health " + healthy + ", last endpoint=" + actual);
+    }
+
     @Test
     public void testCompletePublisherLifecycleAndQueryIsolation() throws Exception {
         String clientId = randomHttpClientId();
@@ -237,16 +294,16 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         assertEquals(DEFAULT_NAMESPACE, snapshot.get("namespaceId").asText(),
                 snapshot.toString());
         assertEquals(agentName, snapshot.get("agentName").asText(), snapshot.toString());
-        assertEquals("a2a", snapshot.get("protocol").asText(), snapshot.toString());
+        assertEquals("a2a", snapshot.get("callInterface").get("protocol").asText(), snapshot.toString());
         assertEquals("1.0.0", snapshot.get("version").asText(), snapshot.toString());
-        assertEquals(expectedCount, snapshot.get("items").size(), snapshot.toString());
+        assertEquals(expectedCount, snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").size(), snapshot.toString());
         if (0 == expectedCount) {
             return;
         }
-        JsonNode item = snapshot.get("items").get(0);
+        JsonNode item = snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").get(0);
         assertEquals("http://127.0.0.1:18080/agent",
-                item.get("endpoint").get("uri").asText(), item.toString());
-        assertEquals("HTTP+JSON", item.get("endpoint").get("transport").asText(),
+                item.get("uri").asText(), item.toString());
+        assertEquals("HTTP+JSON", item.get("transport").asText(),
                 item.toString());
         assertEquals("AVAILABLE", item.get("state").asText(), item.toString());
         assertTrue(item.get("enabled").asBoolean(), item.toString());

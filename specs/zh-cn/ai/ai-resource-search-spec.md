@@ -406,8 +406,8 @@ lease 与重试边界、连续生命周期合并保留活动租约、基于 leas
 NOT READY 限频观测、非阻塞部分快照行为，以及 `AUTO/INDEX/SCAN` 交叉行为。各协议适配器和
 资源 API 分别测试自己的请求语法、响应一致性和单类型交叉结果。
 
-## 地址模型统一的验收补充（评审草案，尚未实施）
+## 地址模型统一的验收
 
 统一模型不改变索引业务语义。必须验证 AgentSearchIndexProjector 的协议/能力/目录投影、定义生命周期调度、原子替换、重建与当前性；运行地址/healthy/revision 变化不得调度目录任务或进入索引。真实非空 INDEX 查询必测，不能通过 SCAN 或仅空结果替代。
 
-本节是下一轮变更提案，不替代尚未修改的现行 Java/Schema。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅登记计划，不声明测试已通过。
+统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。

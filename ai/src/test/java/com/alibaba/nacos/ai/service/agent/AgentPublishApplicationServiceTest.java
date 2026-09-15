@@ -20,9 +20,9 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -69,7 +69,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testCreatesDraftWithoutSubmit() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound());
@@ -81,7 +81,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testCreatesAndSubmitsDraft() throws Exception {
-        AgentPublishClientRequest request = request(true);
+        AgentPublishRequest request = request(true);
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         AgentVersionDetail online = detail(request, AiConstants.Agent.VERSION_STATUS_ONLINE);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -94,7 +94,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testEquivalentExistingDraftCanResumeSubmit() throws Exception {
-        AgentPublishClientRequest request = request(true);
+        AgentPublishRequest request = request(true);
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         AgentVersionDetail reviewing =
             detail(request, AiConstants.Agent.VERSION_STATUS_REVIEWING);
@@ -110,7 +110,7 @@ class AgentPublishApplicationServiceTest {
         for (String status : Arrays.asList(AiConstants.Agent.VERSION_STATUS_REVIEWING,
             AiConstants.Agent.VERSION_STATUS_REVIEWED,
             AiConstants.Agent.VERSION_STATUS_ONLINE)) {
-            AgentPublishClientRequest request = request(true);
+            AgentPublishRequest request = request(true);
             AgentVersionDetail existing = detail(request, status);
             when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
                 .thenReturn(existing);
@@ -121,14 +121,14 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testNonSubmitRejectsAdvancedStateAndSubmitRejectsOfflineState() throws Exception {
-        AgentPublishClientRequest noSubmit = request(false);
+        AgentPublishRequest noSubmit = request(false);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(detail(noSubmit, AiConstants.Agent.VERSION_STATUS_ONLINE));
         NacosApiException advanced = assertThrows(NacosApiException.class,
             () -> service.publish(NAMESPACE_ID, noSubmit));
         assertEquals(ErrorCode.ILLEGAL_STATE.getCode(), advanced.getDetailErrCode());
         
-        AgentPublishClientRequest submit = request(true);
+        AgentPublishRequest submit = request(true);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(detail(submit, AiConstants.Agent.VERSION_STATUS_OFFLINE));
         NacosApiException offline = assertThrows(NacosApiException.class,
@@ -138,7 +138,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testCreateRaceRecoversEquivalentDraft() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound()).thenReturn(draft);
@@ -150,7 +150,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testCreateFailurePreservesSuppressedReadFailure() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         NacosException createFailure = conflictFailure();
         NacosException readFailure = new NacosException(NacosException.SERVER_ERROR, "read");
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -165,7 +165,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testInitialReadFailureIsNotHidden() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         NacosException failure = new NacosException(NacosException.SERVER_ERROR, "read");
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION)).thenThrow(failure);
         assertSame(failure, assertThrows(NacosException.class,
@@ -174,7 +174,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testSubmitFailureConvergesOnlyAfterStateAdvanced() throws Exception {
-        AgentPublishClientRequest request = request(true);
+        AgentPublishRequest request = request(true);
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         AgentVersionDetail online = detail(request, AiConstants.Agent.VERSION_STATUS_ONLINE);
         NacosException submitFailure = new NacosException(NacosException.SERVER_ERROR, "submit");
@@ -192,7 +192,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testExistingContentMustBeEquivalent() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         AgentVersionDetail differentContent =
             detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         differentContent.setContentDigest("sha256:different");
@@ -217,7 +217,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testBasedOnVersionUsesSourceDigest() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         request.setCallInterfaces(null);
         request.setBasedOnVersion("0.9.0");
         AgentVersionDetail existing = new AgentVersionDetail();
@@ -241,7 +241,7 @@ class AgentPublishApplicationServiceTest {
     
     @Test
     void testInitialMetadataMustBeEquivalent() throws Exception {
-        AgentPublishClientRequest request = request(false);
+        AgentPublishRequest request = request(false);
         request.setDisplayName("Demo");
         request.setDescription("description");
         request.setIconUrl("https://example.com/icon.png");
@@ -267,7 +267,7 @@ class AgentPublishApplicationServiceTest {
         assertConflict(() -> service.publish(NAMESPACE_ID, request));
     }
     
-    private AgentSummary matchingAgent(AgentPublishClientRequest request) {
+    private AgentSummary matchingAgent(AgentPublishRequest request) {
         AgentSummary result = new AgentSummary();
         result.setDisplayName(request.getDisplayName());
         result.setDescription(request.getDescription());
@@ -281,8 +281,8 @@ class AgentPublishApplicationServiceTest {
         return result;
     }
     
-    private AgentPublishClientRequest request(boolean autoSubmit) {
-        AgentPublishClientRequest result = new AgentPublishClientRequest();
+    private AgentPublishRequest request(boolean autoSubmit) {
+        AgentPublishRequest result = new AgentPublishRequest();
         result.setAgentName(AGENT_NAME);
         result.setVersion(VERSION);
         result.setCallInterfaces(Collections.singletonList(callInterface()));
@@ -292,8 +292,8 @@ class AgentPublishApplicationServiceTest {
         return result;
     }
     
-    private AgentDefinitionCallInterface callInterface() {
-        AgentDefinitionCallInterface result = new AgentDefinitionCallInterface();
+    private AgentCallInterface callInterface() {
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol("a2a");
         result.setProtocolVersion("0.3");
         result.setDescriptorMediaType("application/json");
@@ -302,7 +302,7 @@ class AgentPublishApplicationServiceTest {
         return result;
     }
     
-    private AgentVersionDetail detail(AgentPublishClientRequest request, String status) {
+    private AgentVersionDetail detail(AgentPublishRequest request, String status) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setAgentName(AGENT_NAME);
         result.setVersion(VERSION);

@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -90,10 +92,10 @@ class AgentMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(versionDetail()), response(overview));
         
-        AgentDraftCreateAdminRequest createRequest = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
         createRequest.setAgentName(AGENT_NAME);
         createRequest.setVersion(VERSION);
-        createRequest.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
+        createRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         AgentProvider provider = new AgentProvider();
         provider.setName("provider");
         createRequest.setProvider(provider);
@@ -123,7 +125,7 @@ class AgentMaintainerServiceImplTest {
     void testUpdateAndDeleteAgent() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(agent()), response(null));
-        AgentUpdateAdminRequest updateRequest = new AgentUpdateAdminRequest();
+        AgentUpdateRequest updateRequest = new AgentUpdateRequest();
         updateRequest.setAgentName(AGENT_NAME);
         updateRequest.setDisplayName("Demo");
         
@@ -170,7 +172,12 @@ class AgentMaintainerServiceImplTest {
         Page<AgentVersionSummary> versionPage = new Page<>();
         versionPage.setPageItems(Collections.singletonList(new AgentVersionSummary()));
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
-        snapshot.setItems(Collections.emptyList());
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
+        snapshot.getCallInterface().getEndpointSets().get(0).setEndpoints(Collections.emptyList());
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(versionPage), response(versionDetail()), response(snapshot));
         
@@ -179,7 +186,7 @@ class AgentMaintainerServiceImplTest {
         RuntimeEndpointSnapshot actual =
             service.getRuntimeEndpoints(NAMESPACE_ID, AGENT_NAME, "A2A", VERSION);
         
-        assertNotNull(actual.getItems());
+        assertNotNull(actual.getCallInterface().getEndpointSets().get(0).getEndpoints());
         List<HttpRequest> requests = captureRequests(3);
         assertRequest(requests.get(0), HttpMethod.GET, rootPath() + "/versions");
         assertEquals("draft", requests.get(0).getParamValues().get("status"));
@@ -193,14 +200,14 @@ class AgentMaintainerServiceImplTest {
     void testDraftOperations() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(versionDetail()), response(versionDetail()), response(null));
-        AgentDraftCreateAdminRequest createRequest = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
         createRequest.setAgentName(AGENT_NAME);
         createRequest.setVersion(VERSION);
-        createRequest.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
-        AgentDraftUpdateAdminRequest updateRequest = new AgentDraftUpdateAdminRequest();
+        createRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
+        AgentDraftUpdateRequest updateRequest = new AgentDraftUpdateRequest();
         updateRequest.setAgentName(AGENT_NAME);
         updateRequest.setVersion(VERSION);
-        updateRequest.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
+        updateRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         
         service.createDraft(NAMESPACE_ID, createRequest);
         service.updateDraft(NAMESPACE_ID, updateRequest);
@@ -224,7 +231,7 @@ class AgentMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(summary), response(summary), response(summary), response(summary),
                 response(summary), response(summary));
-        final AgentVersionAdminRequest command = versionCommand();
+        final AgentVersionRequest command = versionCommand();
         
         service.submit(NAMESPACE_ID, command);
         service.publish(NAMESPACE_ID, command);
@@ -248,7 +255,7 @@ class AgentMaintainerServiceImplTest {
     void testUpdateLabels() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(agent()));
-        AgentLabelsUpdateAdminRequest request = new AgentLabelsUpdateAdminRequest();
+        AgentLabelsUpdateRequest request = new AgentLabelsUpdateRequest();
         request.setAgentName(AGENT_NAME);
         request.setLabels(Collections.singletonMap("stable", VERSION));
         
@@ -272,7 +279,7 @@ class AgentMaintainerServiceImplTest {
         
         service.getAgent(AGENT_NAME);
         service.submit(versionCommand());
-        AgentVersionAdminRequest explicitCommand = versionCommand();
+        AgentVersionRequest explicitCommand = versionCommand();
         service.submit(NAMESPACE_ID, explicitCommand);
         
         List<HttpRequest> requests = captureRequests(3);
@@ -287,18 +294,18 @@ class AgentMaintainerServiceImplTest {
     void testEveryConvenienceOverloadDefaultsMissingNamespaceToPublic() throws NacosException {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(null));
-        AgentUpdateAdminRequest updateRequest = new AgentUpdateAdminRequest();
+        AgentUpdateRequest updateRequest = new AgentUpdateRequest();
         updateRequest.setAgentName(AGENT_NAME);
-        AgentDraftCreateAdminRequest draftCreateRequest = new AgentDraftCreateAdminRequest();
+        AgentDraftCreateRequest draftCreateRequest = new AgentDraftCreateRequest();
         draftCreateRequest.setAgentName(AGENT_NAME);
         draftCreateRequest.setVersion(VERSION);
-        draftCreateRequest.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
-        AgentDraftUpdateAdminRequest draftUpdateRequest = new AgentDraftUpdateAdminRequest();
+        draftCreateRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
+        AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
         draftUpdateRequest.setAgentName(AGENT_NAME);
         draftUpdateRequest.setVersion(VERSION);
-        draftUpdateRequest.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
-        final AgentVersionAdminRequest command = versionCommand();
-        AgentLabelsUpdateAdminRequest labelsRequest = new AgentLabelsUpdateAdminRequest();
+        draftUpdateRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
+        final AgentVersionRequest command = versionCommand();
+        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         labelsRequest.setAgentName(AGENT_NAME);
         
         service.getAgent(AGENT_NAME);
@@ -368,8 +375,8 @@ class AgentMaintainerServiceImplTest {
         return result;
     }
     
-    private AgentVersionAdminRequest versionCommand() {
-        AgentVersionAdminRequest result = new AgentVersionAdminRequest();
+    private AgentVersionRequest versionCommand() {
+        AgentVersionRequest result = new AgentVersionRequest();
         result.setAgentName(AGENT_NAME);
         result.setVersion(VERSION);
         return result;

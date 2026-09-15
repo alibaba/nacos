@@ -270,7 +270,7 @@ All operations reuse one `Endpoint` model:
 
 Context rules:
 
-- Register MUST NOT submit `healthy`.
+- Register MAY submit `healthy`; omission means true. Nacos ignores caller-supplied bindings and management fields, deriving bindings from the enclosing batch.
 - A `DECLARED` endpoint MUST NOT contain `healthy`.
 - A `RUNTIME` discovery endpoint MUST contain `healthy`.
 - Deregister submits only `uri` and `transport`, the endpoint natural-key
@@ -280,8 +280,7 @@ Context rules:
 
 Runtime endpoints do not use `endpointId`.
 
-A discovery result uses `AgentDiscoveryEndpoint`, which extends these Endpoint
-fields with `bindings[] { runtimeVersion, versionRange }`. The field is absent
+A discovery result uses the shared `Endpoint` and includes `bindings[] { runtimeVersion, versionRange }`. The field is absent
 for `DECLARED` endpoints and is non-empty for every `RUNTIME` endpoint. It is
 the sorted, de-duplicated union of enabled publisher bindings that made the
 endpoint eligible for the current discovery target set. It exposes rollout
@@ -322,7 +321,7 @@ Declared and runtime sources share one object:
 EndpointSet {
   source = DECLARED | RUNTIME
   sourceRevision
-  endpoints[] AgentDiscoveryEndpoint
+  endpoints[] Endpoint
 }
 ```
 
@@ -332,12 +331,12 @@ order declared by the selected Agent version and preserves the relative order
 of remaining sources after filtering. A declared but currently empty source is
 returned with `endpoints=[]` and a stable `sourceRevision`.
 
-### 3.10 `AgentDiscoveryCallInterface` And `AgentDiscoveryResult`
+### 3.10 `AgentCallInterface` And `AgentDiscoveryResult`
 
 ```text
 AgentDiscoveryResult
 ├── namespaceId / agentName / version / contentDigest
-└── callInterfaces[] AgentDiscoveryCallInterface
+└── callInterfaces[] AgentCallInterface
     ├── protocol / protocolVersion?
     ├── descriptorMediaType / nativeDescriptor
     └── endpointSets[]
@@ -345,10 +344,10 @@ AgentDiscoveryResult
         └── endpoints[]
 ```
 
-`AgentDiscoveryCallInterface` is a data-plane projection. It is intentionally
-different from the management-plane `AgentCallInterface` defined by the
-[Agent Management Spec](./agent-management-spec.md): the discovery view omits
-management and source-order fields and contains resolved endpoint sets.
+`AgentCallInterface` shares its Java type and containment with management, as defined by the
+[Agent Management Spec](./agent-management-spec.md). This discovery projection omits management
+and source-order fields and contains resolved endpoint sets; its schema constraints remain specific
+to discovery.
 
 Rules:
 
@@ -418,8 +417,9 @@ namespaceId / agentName / protocol
 endpoints[] { uri, transport }
 ```
 
-`AgentEndpointDeregistrationBatch` is retained as an application-facing
-convenience object. The publisher client removes the supplied natural keys
+`AgentEndpointDeregistrationBatch` is a logical command; language bindings need not define
+a separate object. The Java SDK accepts agentName, protocol and List<Endpoint>, with namespace
+supplied by the SDK instance. The publisher client removes the supplied natural keys
 from its locally cached registration batch and registers the complete
 remaining batch. When no Endpoint remains, it deregisters the whole publisher
 publication for `(namespaceId, agentName, protocol)`. A Nacos server does not
@@ -890,8 +890,16 @@ Java binding: the shared Agent/RAD package, abstract field bases and concrete mo
 follow [Agent API Spec — Java model binding](./agent-api-spec.md#java-model-binding).
 This organization does not rename protocol/schema concepts or change storage and discovery semantics.
 
-## Endpoint Consolidation Acceptance Addendum (Review Draft, Not Implemented)
+## Endpoint Consolidation Acceptance
 
-Runtime registration and complete replacement will accept reported healthy instead of forbidding it. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Preserve DECLARED health restrictions, required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
+Runtime registration and complete replacement accept reported healthy. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Preserve DECLARED health restrictions, required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
 
-This is the next-change proposal, not an implementation claim for current Java/schemas. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. This update records planned coverage, not passed tests.
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+
+### Java Request Context Mapping
+
+Complete logical Search/Register requests and their schemas still include namespaceId.
+The Java business model represents only business fields; combine it with HTTP parameters
+or the gRPC envelope to form the complete logical request. Schema validation must compose
+both parts with exactly one effective namespace, without relaxing the protocol constraint.

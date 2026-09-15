@@ -148,9 +148,10 @@ public class AiGrpcRedoService extends AbstractRedoService {
      *
      * @param batch complete registration batch
      */
-    public void cacheAgentEndpointPublication(AgentEndpointRegistrationBatch batch) {
+    public void cacheAgentEndpointPublication(String namespaceId,
+        AgentEndpointRegistrationBatch batch) {
         AgentEndpointPublicationRedoData redoData =
-            new AgentEndpointPublicationRedoData(batch);
+            new AgentEndpointPublicationRedoData(namespaceId, batch);
         super.cachedRedoData(redoData.getKey(), redoData, AgentEndpointRegistrationBatch.class);
     }
     

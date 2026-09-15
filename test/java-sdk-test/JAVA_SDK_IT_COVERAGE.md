@@ -148,6 +148,16 @@ Agent 元数据合并：Search 的 AgentSummary/versionInfo/AgentVersionSummary 
 
 本轮独立验证：默认 SDK 58 项通过、10 项既有跳过；Jackson 3 定向 9 项通过。详见 `Codex/design/nacos-3.3-client-ai-api/MODEL_VALIDATION.md` 的 2026-09-14 记录。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+本轮补充非空 PUBLIC Agent Watch（GRPC/HTTP × 默认/Jackson 3），覆盖 healthy 变化、3 删 2、最后注销与回调/查询模型一致；原 DAUTH-F04/F05 及可选旧服务端/集群缺口保持，具体执行数见上述验证记录。
+
+
+### 2026-09-15 请求整合回归
+
+AgentDiscoveryService 现有覆盖行已迁移到共享 Search/RegistrationBatch 和三参数注销，并增加同名 Agent 双 namespace 隔离断言；未新增独立 API surface，覆盖率分母不变。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。

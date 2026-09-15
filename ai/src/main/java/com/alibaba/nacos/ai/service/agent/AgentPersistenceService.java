@@ -36,7 +36,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
@@ -50,7 +50,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -391,7 +391,7 @@ public class AgentPersistenceService {
      * @throws NacosException when the Version is absent, no longer a draft, or cannot be persisted
      */
     public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
-        List<AgentDefinitionCallInterface> callInterfaces, String changeDescription)
+        List<AgentCallInterface> callInterfaces, String changeDescription)
         throws NacosException {
         validateDraftUpdateInputs(namespaceId, agentName, version, callInterfaces,
             changeDescription);
@@ -438,7 +438,7 @@ public class AgentPersistenceService {
         try {
             AgentSummary currentAgent = getAgent(namespaceId, agentName);
             ensureDraftSlotAvailable(currentAgent, draft.getVersion());
-            List<AgentDefinitionCallInterface> callInterfaces = draft.getCallInterfaces();
+            List<AgentCallInterface> callInterfaces = draft.getCallInterfaces();
             if (callInterfaces == null) {
                 AgentVersionDetail source =
                     getAgentVersion(namespaceId, agentName, basedOnVersion);
@@ -807,7 +807,7 @@ public class AgentPersistenceService {
     }
     
     private AgentVersionDetail normalizeSubsequentDraft(String namespaceId, String agentName,
-        AgentVersionDetail source, List<AgentDefinitionCallInterface> callInterfaces,
+        AgentVersionDetail source, List<AgentCallInterface> callInterfaces,
         AgentVersionStorageDescriptor descriptor) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setNamespaceId(namespaceId);
@@ -937,7 +937,7 @@ public class AgentPersistenceService {
             AgentVersionContent content = storageService.load(descriptor);
             List<String> protocols =
                 new ArrayList<String>(content.getCallInterfaces().size());
-            for (AgentDefinitionCallInterface callInterface : content.getCallInterfaces()) {
+            for (AgentCallInterface callInterface : content.getCallInterfaces()) {
                 protocols.add(callInterface.getProtocol());
             }
             result.put(row.getVersion(), protocols);
@@ -973,7 +973,7 @@ public class AgentPersistenceService {
         result.setOwner(source.getOwner());
         result.setScope(source.getScope());
         try {
-            result.setVersionInfo(JacksonUtils.toJson(versionInfo));
+            result.setVersionInfo(JsonUtils.toJson(versionInfo));
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize Agent version info", e);
         }
@@ -981,7 +981,7 @@ public class AgentPersistenceService {
     }
     
     private void validateDraftUpdateInputs(String namespaceId, String agentName, String version,
-        List<AgentDefinitionCallInterface> callInterfaces, String changeDescription) {
+        List<AgentCallInterface> callInterfaces, String changeDescription) {
         AgentVersionDetail input = new AgentVersionDetail();
         input.setNamespaceId(namespaceId);
         input.setAgentName(agentName);
@@ -997,7 +997,7 @@ public class AgentPersistenceService {
     
     private void validateUpdatedDraft(AiResourceVersion currentRow,
         AgentVersionStorageDescriptor targetDescriptor,
-        List<AgentDefinitionCallInterface> callInterfaces,
+        List<AgentCallInterface> callInterfaces,
         String changeDescription) {
         AgentVersionDetail target = new AgentVersionDetail();
         target.setNamespaceId(currentRow.getNamespaceId());
@@ -1182,12 +1182,12 @@ public class AgentPersistenceService {
         return result;
     }
     
-    private List<String> protocolNames(List<AgentDefinitionCallInterface> callInterfaces) {
+    private List<String> protocolNames(List<AgentCallInterface> callInterfaces) {
         if (callInterfaces == null) {
             throw new IllegalArgumentException("Online Agent Version must contain callInterfaces");
         }
         List<String> result = new ArrayList<String>(callInterfaces.size());
-        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
+        for (AgentCallInterface callInterface : callInterfaces) {
             result.add(callInterface.getProtocol());
         }
         return result;
@@ -1198,7 +1198,7 @@ public class AgentPersistenceService {
             tags == null ? Collections.<String>emptyList() : tags;
         final String result;
         try {
-            result = JacksonUtils.toJson(persistedTags);
+            result = JsonUtils.toJson(persistedTags);
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize Agent tags", e);
         }
@@ -1215,7 +1215,7 @@ public class AgentPersistenceService {
         }
         final List<?> persistedTags;
         try {
-            persistedTags = JacksonUtils.toObj(json, List.class);
+            persistedTags = JsonUtils.toObj(json, List.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid persisted Agent tags", e);
         }
@@ -1235,7 +1235,7 @@ public class AgentPersistenceService {
     
     private String serializeVersionInfo(AgentVersionInfo versionInfo) {
         try {
-            return JacksonUtils.toJson(toResourceVersionInfo(versionInfo));
+            return JsonUtils.toJson(toResourceVersionInfo(versionInfo));
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize Agent version info", e);
         }

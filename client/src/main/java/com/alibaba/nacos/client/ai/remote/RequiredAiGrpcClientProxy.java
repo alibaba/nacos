@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
@@ -43,16 +43,16 @@ class RequiredAiGrpcClientProxy implements AiClientProxy {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishClientRequest request)
+    public AgentVersionDetail publishAgent(AgentPublishRequest request)
         throws NacosException {
         return grpcTransport.requireGrpcClient()
             .publishAgent(AgentModelUtils.copyPublishRequest(request));
     }
     
     @Override
-    public Page<AgentSummary> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
         throws NacosException {
-        return grpcTransport.requireGrpcClient().searchAgents(request);
+        return grpcTransport.requireGrpcClient().searchAgents(namespaceId, request);
     }
     
     @Override
@@ -62,9 +62,10 @@ class RequiredAiGrpcClientProxy implements AiClientProxy {
     }
     
     @Override
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        return grpcTransport.requireGrpcClient().registerAgentEndpoints(batch);
+        return grpcTransport.requireGrpcClient().registerAgentEndpoints(namespaceId, batch);
     }
     
     @Override

@@ -580,12 +580,12 @@
             "$ref": "#/$defs/EndpointSource"
           }
         },
-        "declaredEndpoints": {
+        "endpointSets": {
           "type": "array",
-          "maxItems": 64,
           "items": {
-            "$ref": "#/$defs/DeclaredEndpoint"
-          }
+            "$ref": "#/$defs/DeclaredEndpointSet"
+          },
+          "maxItems": 1
         }
       }
     },
@@ -662,12 +662,70 @@
       },
       "description": "runtimeVersion must be contained by versionRange; this semantic relation requires domain validation."
     },
-    "RuntimeEndpointSnapshotEndpoint": {
+    "RuntimeEndpointState": {
+      "type": "string",
+      "enum": [
+        "AVAILABLE",
+        "DISABLED",
+        "UNHEALTHY"
+      ]
+    },
+    "RuntimeEndpointSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespaceId",
+        "agentName",
+        "callInterface"
+      ],
+      "properties": {
+        "namespaceId": {
+          "$ref": "#/$defs/NamespaceId"
+        },
+        "agentName": {
+          "$ref": "#/$defs/AgentName"
+        },
+        "version": {
+          "$ref": "#/$defs/AgentVersion"
+        },
+        "callInterface": {
+          "$ref": "#/$defs/RuntimeCallInterface"
+        }
+      }
+    },
+    "DeclaredEndpointSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "endpoints"
+      ],
+      "properties": {
+        "source": {
+          "const": "DECLARED"
+        },
+        "sourceRevision": {
+          "$ref": "#/$defs/ContentDigest"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeclaredEndpoint"
+          },
+          "maxItems": 64
+        }
+      }
+    },
+    "RuntimeEndpoint": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "uri",
-        "transport"
+        "transport",
+        "bindings",
+        "state",
+        "enabled",
+        "healthy"
       ],
       "properties": {
         "uri": {
@@ -690,31 +748,6 @@
         },
         "metadata": {
           "$ref": "#/$defs/Metadata"
-        }
-      }
-    },
-    "RuntimeEndpointState": {
-      "type": "string",
-      "enum": [
-        "AVAILABLE",
-        "DISABLED",
-        "UNHEALTHY"
-      ]
-    },
-    "RuntimeEndpointSnapshotItem": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "endpoint",
-        "bindings",
-        "state",
-        "enabled",
-        "healthy",
-        "lastUpdatedTime"
-      ],
-      "properties": {
-        "endpoint": {
-          "$ref": "#/$defs/RuntimeEndpointSnapshotEndpoint"
         },
         "bindings": {
           "type": "array",
@@ -732,9 +765,6 @@
         },
         "healthy": {
           "type": "boolean"
-        },
-        "lastUpdatedTime": {
-          "$ref": "#/$defs/EpochMillis"
         }
       },
       "oneOf": [
@@ -776,34 +806,48 @@
         }
       ]
     },
-    "RuntimeEndpointSnapshot": {
+    "RuntimeEndpointSet": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "namespaceId",
-        "agentName",
-        "protocol",
-        "items"
+        "source",
+        "endpoints",
+        "lastUpdatedTime"
       ],
       "properties": {
-        "namespaceId": {
-          "$ref": "#/$defs/NamespaceId"
+        "source": {
+          "const": "RUNTIME"
         },
-        "agentName": {
-          "$ref": "#/$defs/AgentName"
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuntimeEndpoint"
+          },
+          "maxItems": 1000
         },
+        "lastUpdatedTime": {
+          "$ref": "#/$defs/EpochMillis"
+        }
+      }
+    },
+    "RuntimeCallInterface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "endpointSets"
+      ],
+      "properties": {
         "protocol": {
           "$ref": "#/$defs/ProtocolToken"
         },
-        "version": {
-          "$ref": "#/$defs/AgentVersion"
-        },
-        "items": {
+        "endpointSets": {
           "type": "array",
-          "maxItems": 1000,
           "items": {
-            "$ref": "#/$defs/RuntimeEndpointSnapshotItem"
-          }
+            "$ref": "#/$defs/RuntimeEndpointSet"
+          },
+          "minItems": 1,
+          "maxItems": 1
         }
       }
     }

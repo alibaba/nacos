@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -117,7 +117,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
@@ -146,8 +146,8 @@ public class AiGrpcClient implements AiClientProxy {
     
     private final NacosClientProperties properties;
     
-    private volatile Consumer<AgentEndpointRegistrationBatch> agentEndpointPublicationCapacityRejectedHandler =
-        batch -> {
+    private volatile BiConsumer<String, AgentEndpointRegistrationBatch> agentEndpointPublicationCapacityRejectedHandler =
+        (namespace, batch) -> {
         };
     
     private SecurityProxy securityProxy;
@@ -178,7 +178,7 @@ public class AiGrpcClient implements AiClientProxy {
      * @param handler rejected publication cleanup
      */
     public void setAgentEndpointPublicationCapacityRejectedHandler(
-        Consumer<AgentEndpointRegistrationBatch> handler) {
+        BiConsumer<String, AgentEndpointRegistrationBatch> handler) {
         this.agentEndpointPublicationCapacityRejectedHandler = handler;
     }
     
@@ -295,7 +295,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishClientRequest request)
+    public AgentVersionDetail publishAgent(AgentPublishRequest request)
         throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentPublishRpcRequest rpcRequest = new AgentPublishRpcRequest();
@@ -307,10 +307,11 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     @Override
-    public Page<AgentSummary> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
         throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentSearchRpcRequest rpcRequest = new AgentSearchRpcRequest();
+        rpcRequest.setNamespaceId(namespaceId);
         rpcRequest.setSearchRequest(request);
         AgentSearchResponse response =
             requestToServer(rpcRequest, AgentSearchResponse.class);
@@ -368,10 +369,12 @@ public class AiGrpcClient implements AiClientProxy {
      * @param batch complete registration batch
      * @throws NacosException when ability negotiation or the request fails
      */
-    public void doRegisterAgentEndpoints(String key, AgentEndpointRegistrationBatch batch)
+    public void doRegisterAgentEndpoints(String key, String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentEndpointRegisterRpcRequest request = new AgentEndpointRegisterRpcRequest();
+        request.setNamespaceId(namespaceId);
         request.setRegistrationBatch(batch);
         requestToServer(request, AgentEndpointOperationResponse.class);
         redoService.agentEndpointPublicationRegistered(key);
@@ -391,7 +394,8 @@ public class AiGrpcClient implements AiClientProxy {
         try {
             doDeregisterAgentEndpoints(key, namespaceId, agentName, protocol);
         } catch (NacosException e) {
-            restorePublicationAfterNonRetryableFailure(key, previous, previousRegistered, e);
+            restorePublicationAfterNonRetryableFailure(namespaceId, key, previous,
+                previousRegistered, e);
             throw e;
         }
     }
@@ -763,20 +767,22 @@ public class AiGrpcClient implements AiClientProxy {
      * @throws NacosException if request parameter is invalid or handle error
      */
     @Override
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
-        String key = AgentEndpointPublicationRedoData.keyOf(batch.getNamespaceId(),
+        String key = AgentEndpointPublicationRedoData.keyOf(namespaceId,
             batch.getAgentName(), batch.getProtocol());
         AgentEndpointRegistrationBatch previous =
             redoService.getAgentEndpointPublication(key);
         boolean previousRegistered =
             redoService.isAgentEndpointPublicationRegistered(key);
-        redoService.cacheAgentEndpointPublication(batch);
+        redoService.cacheAgentEndpointPublication(namespaceId, batch);
         try {
-            doRegisterAgentEndpoints(key, batch);
+            doRegisterAgentEndpoints(key, namespaceId, batch);
         } catch (NacosException e) {
-            restorePublicationAfterNonRetryableFailure(key, previous, previousRegistered, e);
+            restorePublicationAfterNonRetryableFailure(namespaceId, key, previous,
+                previousRegistered, e);
             throw e;
         }
         return null;
@@ -976,7 +982,7 @@ public class AiGrpcClient implements AiClientProxy {
         }
     }
     
-    private void restorePublicationAfterNonRetryableFailure(String key,
+    private void restorePublicationAfterNonRetryableFailure(String namespaceId, String key,
         AgentEndpointRegistrationBatch previous, boolean previousRegistered,
         NacosException exception) {
         if (isPublicationCapacityRejected(exception)) {
@@ -984,7 +990,7 @@ public class AiGrpcClient implements AiClientProxy {
             if (previous == null) {
                 return;
             }
-            agentEndpointPublicationCapacityRejectedHandler.accept(previous);
+            agentEndpointPublicationCapacityRejectedHandler.accept(namespaceId, previous);
             return;
         }
         if (exception.getErrCode() >= NacosException.SERVER_ERROR
@@ -993,7 +999,7 @@ public class AiGrpcClient implements AiClientProxy {
         }
         redoService.discardAgentEndpointPublication(key);
         if (previous != null) {
-            redoService.cacheAgentEndpointPublication(previous);
+            redoService.cacheAgentEndpointPublication(namespaceId, previous);
             if (previousRegistered) {
                 redoService.agentEndpointPublicationRegistered(key);
             }
@@ -1146,10 +1152,11 @@ public class AiGrpcClient implements AiClientProxy {
      * @param key publication redo key
      * @param batch rejected publication batch
      */
-    public void discardAgentEndpointPublicationAfterCapacityRejection(String key,
+    public void discardAgentEndpointPublicationAfterCapacityRejection(String namespaceId,
+        String key,
         AgentEndpointRegistrationBatch batch) {
         redoService.discardAgentEndpointPublication(key);
-        agentEndpointPublicationCapacityRejectedHandler.accept(batch);
+        agentEndpointPublicationCapacityRejectedHandler.accept(namespaceId, batch);
     }
     
     private Map<String, String> getSecurityHeaders(String namespace, String mcpName) {

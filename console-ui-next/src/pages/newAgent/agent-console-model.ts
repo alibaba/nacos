@@ -181,7 +181,7 @@ function endpointSourceOrder(mode: EndpointSourceMode): AgentCallInterface['endp
 function endpointSourceMode(
   order: AgentCallInterface['endpointSourceOrder'],
 ): EndpointSourceMode {
-  const key = order.join(',');
+  const key = (order || []).join(',');
   switch (key) {
     case 'RUNTIME,DECLARED':
       return 'runtime-declared';
@@ -259,7 +259,7 @@ function normalizeA2aAgentCard(
   agentName: string,
   version: string,
   text: string,
-): { card: Record<string, unknown>; declaredEndpoints: AgentCallInterface['declaredEndpoints'] } {
+): { card: Record<string, unknown>; declaredEndpoints: NonNullable<AgentCallInterface['endpointSets']>[number]['endpoints'] } {
   const parsed = parseAgentCardJson(required(text, 'agentCard'));
   if (!isObject(parsed)) {
     throw new Error('agentCard must be a JSON object');
@@ -416,7 +416,7 @@ function buildStructuredCallInterface(
       descriptorMediaType: 'application/json',
       nativeDescriptor: normalized.card,
       endpointSourceOrder: endpointSourceOrder(editor.endpointSourceMode),
-      declaredEndpoints: normalized.declaredEndpoints,
+      endpointSets: [{ source: 'DECLARED', endpoints: normalized.declaredEndpoints }],
     };
   }
   const nativeDescriptor = parseJson(
@@ -446,7 +446,8 @@ function buildStructuredCallInterface(
     descriptorMediaType: required(editor.customDescriptorMediaType, 'descriptorMediaType'),
     nativeDescriptor,
     endpointSourceOrder: endpointSourceOrder(editor.endpointSourceMode),
-    declaredEndpoints: declaredEndpoints.length > 0 ? declaredEndpoints : undefined,
+    endpointSets: declaredEndpoints.length > 0
+      ? [{ source: 'DECLARED', endpoints: declaredEndpoints }] : undefined,
   };
 }
 
@@ -699,7 +700,7 @@ export function callInterfacesToProtocolEditors(
   return callInterfaces.map((callInterface) => {
     const common = {
       endpointSourceMode: endpointSourceMode(callInterface.endpointSourceOrder),
-      declaredEndpoints: (callInterface.declaredEndpoints || []).map((endpoint) => ({
+      declaredEndpoints: declaredEndpointsOf(callInterface).map((endpoint) => ({
         uri: endpoint.uri,
         transport: endpoint.transport,
       })),
@@ -716,7 +717,7 @@ export function callInterfacesToProtocolEditors(
       ...common,
       customProtocol: callInterface.protocol,
       customProtocolVersion: callInterface.protocolVersion || '',
-      customDescriptorMediaType: callInterface.descriptorMediaType,
+      customDescriptorMediaType: callInterface.descriptorMediaType || '',
       customNativeDescriptor: JSON.stringify(callInterface.nativeDescriptor, null, 2),
     };
   });
@@ -737,7 +738,7 @@ export function callInterfacesToEditorValues(
       protocolEditorKind: 'a2a',
       agentCard: JSON.stringify(callInterface.nativeDescriptor, null, 2),
       endpointSourceMode: endpointSourceMode(callInterface.endpointSourceOrder),
-      declaredEndpoints: (callInterface.declaredEndpoints || []).map((endpoint) => ({
+      declaredEndpoints: declaredEndpointsOf(callInterface).map((endpoint) => ({
         uri: endpoint.uri,
         transport: endpoint.transport,
       })),
@@ -748,10 +749,10 @@ export function callInterfacesToEditorValues(
     protocolEditorKind: 'custom',
     customProtocol: callInterface.protocol,
     customProtocolVersion: callInterface.protocolVersion || '',
-    customDescriptorMediaType: callInterface.descriptorMediaType,
+    customDescriptorMediaType: callInterface.descriptorMediaType || '',
     customNativeDescriptor: JSON.stringify(callInterface.nativeDescriptor, null, 2),
     endpointSourceMode: endpointSourceMode(callInterface.endpointSourceOrder),
-    declaredEndpoints: (callInterface.declaredEndpoints || []).map((endpoint) => ({
+    declaredEndpoints: declaredEndpointsOf(callInterface).map((endpoint) => ({
       uri: endpoint.uri,
       transport: endpoint.transport,
     })),
@@ -787,7 +788,7 @@ export function getProtocols(callInterfaces: AgentCallInterface[]): string[] {
 }
 
 export function usesRuntimeSource(callInterface: AgentCallInterface | undefined): boolean {
-  return callInterface?.endpointSourceOrder.includes('RUNTIME') === true;
+  return callInterface?.endpointSourceOrder?.includes('RUNTIME') === true;
 }
 
 export function runtimeCacheKey(version: string, protocol: string): string {
@@ -801,4 +802,8 @@ export function namingDetailPath(ref: NamingServiceRef): string {
     namespace: ref.namespaceId,
   });
   return `/serviceDetail?${params.toString()}`;
+}
+
+export function declaredEndpointsOf(callInterface?: AgentCallInterface) {
+  return callInterface?.endpointSets?.find((set) => set.source === 'DECLARED')?.endpoints || [];
 }

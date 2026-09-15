@@ -18,9 +18,9 @@ package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -127,14 +127,13 @@ class AiHttpClientProxyAgentTest {
         doReturn(success(page)).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         AgentSearchRequest request = new AgentSearchRequest();
-        request.setNamespaceId("public");
         request.setAgentNameContains("hello world");
         request.setTagsAll(Arrays.asList("one", "two"));
         request.setProtocolsAny(Arrays.asList("a2a", "mcp"));
         request.setPageNo(2);
         request.setPageSize(10);
         
-        Page<AgentSummary> result = proxy.searchAgents(request);
+        Page<AgentSummary> result = proxy.searchAgents("public", request);
         
         assertEquals("agent-a", result.getPageItems().get(0).getAgentName());
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -158,7 +157,7 @@ class AiHttpClientProxyAgentTest {
         expected.setVersion("1.0.0");
         doReturn(success(expected)).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
-        AgentPublishClientRequest request = new AgentPublishClientRequest();
+        AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName("agent-a");
         request.setDisplayName("Agent A");
         request.setDescription("description");
@@ -169,7 +168,7 @@ class AiHttpClientProxyAgentTest {
         request.setTags(Collections.singletonList("assistant"));
         request.setExtensions(Collections.<String, Object>singletonMap("region", "east"));
         request.setVersion("1.0.0");
-        request.setCallInterfaces(Collections.singletonList(new AgentDefinitionCallInterface()));
+        request.setCallInterfaces(Collections.singletonList(new AgentCallInterface()));
         request.setAuthor("alice");
         request.setChangeDescription("initial");
         request.setAutoSubmit(true);
@@ -230,10 +229,9 @@ class AiHttpClientProxyAgentTest {
         doReturn(success(new Page<AgentSummary>())).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId("public");
         search.setPageNo(1);
         search.setPageSize(20);
-        proxy.searchAgents(search);
+        proxy.searchAgents("public", search);
         
         doReturn(success(new AgentDiscoveryResult())).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
@@ -321,7 +319,7 @@ class AiHttpClientProxyAgentTest {
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         AgentEndpointRegistrationBatch batch = registrationBatch(">=1.0");
         
-        ClientLivenessInfo result = proxy.registerAgentEndpoints(batch);
+        ClientLivenessInfo result = proxy.registerAgentEndpoints("public", batch);
         
         assertEquals(1234, result.getHeartbeatIntervalMillis());
         ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
@@ -346,7 +344,7 @@ class AiHttpClientProxyAgentTest {
         doReturn(success(new ClientLivenessInfo())).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         
-        proxy.registerAgentEndpoints(registrationBatch(null));
+        proxy.registerAgentEndpoints("public", registrationBatch(null));
         
         ArgumentCaptor<Map> form = ArgumentCaptor.forClass(Map.class);
         verify(restTemplate).postForm(anyString(), any(Header.class), form.capture(),
@@ -390,20 +388,21 @@ class AiHttpClientProxyAgentTest {
         when(serverListManager.getServerList()).thenReturn(Collections.<String>emptyList());
         AgentSearchRequest search = new AgentSearchRequest();
         assertEquals(NacosException.INVALID_PARAM,
-            assertThrows(NacosException.class, () -> proxy.searchAgents(search)).getErrCode());
+            assertThrows(NacosException.class, () -> proxy.searchAgents("public", search))
+                .getErrCode());
         
         when(serverListManager.getServerList())
             .thenReturn(Collections.singletonList("127.0.0.1:8848"));
         doThrow(new NacosException(NacosException.CLIENT_ERROR, "direct")).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         NacosException direct = assertThrows(NacosException.class,
-            () -> proxy.registerAgentEndpoints(registrationBatch(null)));
+            () -> proxy.registerAgentEndpoints("public", registrationBatch(null)));
         assertEquals(NacosException.CLIENT_ERROR, direct.getErrCode());
         
         doThrow(new IllegalStateException("boom")).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         NacosException wrapped = assertThrows(NacosException.class,
-            () -> proxy.registerAgentEndpoints(registrationBatch(null)));
+            () -> proxy.registerAgentEndpoints("public", registrationBatch(null)));
         assertEquals(NacosException.SERVER_ERROR, wrapped.getErrCode());
     }
     
@@ -421,7 +420,7 @@ class AiHttpClientProxyAgentTest {
         doReturn(conflict).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         NacosException conflictException = assertThrows(NacosException.class,
-            () -> proxy.registerAgentEndpoints(registrationBatch(null)));
+            () -> proxy.registerAgentEndpoints("public", registrationBatch(null)));
         assertEquals(409, conflictException.getErrCode());
         assertTrue(conflictException.getMessage().contains("detail"));
         
@@ -445,7 +444,7 @@ class AiHttpClientProxyAgentTest {
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> proxy.registerAgentEndpoints(registrationBatch(null)));
+            () -> proxy.registerAgentEndpoints("public", registrationBatch(null)));
         assertEquals(NacosException.OVER_THRESHOLD, exception.getErrCode());
         assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
             exception.getDetailErrCode());
@@ -460,7 +459,7 @@ class AiHttpClientProxyAgentTest {
         doReturn(throttled).doReturn(success(new ClientLivenessInfo())).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         
-        assertNotNull(proxy.registerAgentEndpoints(registrationBatch(null)));
+        assertNotNull(proxy.registerAgentEndpoints("public", registrationBatch(null)));
         verify(restTemplate, times(2)).postForm(anyString(), any(Header.class), any(Map.class),
             eq(String.class));
     }
@@ -471,7 +470,7 @@ class AiHttpClientProxyAgentTest {
             "throttled")).doReturn(success(new ClientLivenessInfo())).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         
-        assertNotNull(proxy.registerAgentEndpoints(registrationBatch(null)));
+        assertNotNull(proxy.registerAgentEndpoints("public", registrationBatch(null)));
         verify(restTemplate, times(2)).postForm(anyString(), any(Header.class), any(Map.class),
             eq(String.class));
     }
@@ -480,38 +479,38 @@ class AiHttpClientProxyAgentTest {
     void forbiddenReloginsAndInvalidSuccessPayloadsAreRejected() throws Exception {
         doReturn(error(403, "forbidden")).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
-        assertThrows(NacosException.class, () -> proxy.searchAgents(new AgentSearchRequest()));
+        assertThrows(NacosException.class,
+            () -> proxy.searchAgents("public", new AgentSearchRequest()));
         verify(securityProxy, times(3)).reLogin();
         
         doReturn(ok("null")).when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
-            () -> proxy.searchAgents(new AgentSearchRequest())).getErrCode());
+            () -> proxy.searchAgents("public", new AgentSearchRequest())).getErrCode());
         
         doReturn(ok("{\"code\":null,\"message\":\"invalid\",\"data\":null}"))
             .when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
-            () -> proxy.searchAgents(new AgentSearchRequest())).getErrCode());
+            () -> proxy.searchAgents("public", new AgentSearchRequest())).getErrCode());
         
         doReturn(ok(JacksonUtils.toJson(
             Result.failure(ErrorCode.AGENT_NOT_FOUND.getCode(), "absent", null))))
             .when(restTemplate)
             .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
         assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), assertThrows(NacosException.class,
-            () -> proxy.searchAgents(new AgentSearchRequest())).getErrCode());
+            () -> proxy.searchAgents("public", new AgentSearchRequest())).getErrCode());
     }
     
     @Test
     void queryEncodingFailureIsMappedToClientError() {
         AgentSearchRequest request = new AgentSearchRequest();
-        request.setNamespaceId("public");
         try (MockedStatic<URLEncoder> encoder = Mockito.mockStatic(URLEncoder.class)) {
             encoder.when(() -> URLEncoder.encode("namespaceId", Constants.ENCODE))
                 .thenThrow(new java.io.UnsupportedEncodingException("unsupported"));
             
             assertEquals(NacosException.CLIENT_ERROR,
-                assertThrows(NacosException.class, () -> proxy.searchAgents(request))
+                assertThrows(NacosException.class, () -> proxy.searchAgents("public", request))
                     .getErrCode());
         }
     }
@@ -541,7 +540,6 @@ class AiHttpClientProxyAgentTest {
         endpoint.setUri("http://host/a");
         endpoint.setTransport("jsonrpc");
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId("public");
         result.setAgentName("agent-a");
         result.setRuntimeVersion("runtime-1");
         result.setVersionRange(versionRange);

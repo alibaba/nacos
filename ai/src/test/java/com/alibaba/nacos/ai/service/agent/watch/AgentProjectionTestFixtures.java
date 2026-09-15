@@ -20,8 +20,8 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryEndpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
@@ -74,8 +74,8 @@ final class AgentProjectionTestFixtures {
     }
     
     static AgentDiscoveryResult snapshot(String agentName, String... runtimeProtocols) {
-        List<AgentDiscoveryCallInterface> interfaces =
-            new ArrayList<AgentDiscoveryCallInterface>();
+        List<AgentCallInterface> interfaces =
+            new ArrayList<AgentCallInterface>();
         for (String protocol : runtimeProtocols) {
             interfaces.add(callInterface(protocol, EndpointSource.RUNTIME));
         }
@@ -88,8 +88,8 @@ final class AgentProjectionTestFixtures {
         return result;
     }
     
-    static AgentDiscoveryCallInterface callInterface(String protocol, EndpointSource source) {
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+    static AgentCallInterface callInterface(String protocol, EndpointSource source) {
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com/" + protocol);
         endpoint.setTransport("http");
         endpoint.setPriority(0);
@@ -106,7 +106,7 @@ final class AgentProjectionTestFixtures {
         endpointSet.setSourceRevision(source == EndpointSource.RUNTIME ? RUNTIME_REVISION
             : CONTENT_DIGEST);
         endpointSet.setEndpoints(Collections.singletonList(endpoint));
-        AgentDiscoveryCallInterface result = new AgentDiscoveryCallInterface();
+        AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");

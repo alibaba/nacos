@@ -19,8 +19,6 @@ package com.alibaba.nacos.api.ai.model.agent;
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.Map;
-
 /**
  * Agent metadata shared by management and discovery catalog views.
  *
@@ -45,8 +43,6 @@ public class AgentSummary extends AbstractAgentMetadata {
     private String scope;
     
     private AgentVersionInfo versionInfo;
-    
-    private Map<String, Object> extensions;
     
     private Long metaVersion;
     
@@ -92,14 +88,6 @@ public class AgentSummary extends AbstractAgentMetadata {
     
     public void setVersionInfo(AgentVersionInfo versionInfo) {
         this.versionInfo = versionInfo;
-    }
-    
-    public Map<String, Object> getExtensions() {
-        return extensions;
-    }
-    
-    public void setExtensions(Map<String, Object> extensions) {
-        this.extensions = extensions;
     }
     
     public Long getMetaVersion() {

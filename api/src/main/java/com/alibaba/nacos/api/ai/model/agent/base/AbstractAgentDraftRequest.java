@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.api.ai.model.agent.base;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Shared draft content for Admin creation and Client publication requests.
@@ -32,11 +32,9 @@ public abstract class AbstractAgentDraftRequest extends AbstractAgentMetadata {
     
     private static final long serialVersionUID = 1L;
     
-    private Map<String, Object> extensions;
-    
     private String version;
     
-    private List<AgentDefinitionCallInterface> callInterfaces;
+    private List<AgentCallInterface> callInterfaces;
     
     private String author;
     
@@ -50,14 +48,6 @@ public abstract class AbstractAgentDraftRequest extends AbstractAgentMetadata {
     protected AbstractAgentDraftRequest() {
     }
     
-    public Map<String, Object> getExtensions() {
-        return extensions;
-    }
-    
-    public void setExtensions(Map<String, Object> extensions) {
-        this.extensions = extensions;
-    }
-    
     public String getVersion() {
         return version;
     }
@@ -66,11 +56,11 @@ public abstract class AbstractAgentDraftRequest extends AbstractAgentMetadata {
         this.version = version;
     }
     
-    public List<AgentDefinitionCallInterface> getCallInterfaces() {
+    public List<AgentCallInterface> getCallInterfaces() {
         return callInterfaces;
     }
     
-    public void setCallInterfaces(List<AgentDefinitionCallInterface> callInterfaces) {
+    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
         this.callInterfaces = callInterfaces;
     }
     
@@ -96,5 +86,13 @@ public abstract class AbstractAgentDraftRequest extends AbstractAgentMetadata {
     
     public void setBasedOnVersion(String basedOnVersion) {
         this.basedOnVersion = basedOnVersion;
+    }
+    
+    /**
+     * Validate the draft identity and content source.
+     */
+    public void validate() {
+        AgentValidationUtils.validateDraft(getAgentName(), getVersion(),
+            getCallInterfaces() != null, getBasedOnVersion());
     }
 }

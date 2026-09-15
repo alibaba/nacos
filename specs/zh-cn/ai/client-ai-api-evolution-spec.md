@@ -174,7 +174,6 @@ abstract 基础层。完整 43 文件清单、改造结论和 M01–M15 验证�
 | 抽象类 | 自身声明的字段 | 复用关系 |
 | --- | --- | --- |
 | AbstractAgentMetadata | agentName/displayName/description/iconUrl/provider/tags | 管理摘要、RAD CatalogEntry、Admin 元数据更新；草稿基类继承它 |
-| AbstractAgentCallInterface | protocol/protocolVersion/descriptorMediaType/nativeDescriptor | 定义接口与 RAD 发现接口为并列具体子类 |
 | AbstractAgentSearchRequest | 五个 Search 条件及分页字段，无 namespace | Client Search 与完整 RAD Search 为并列具体子类 |
 | AbstractAgentEndpointRequest | agentName/protocol/endpoints | 注销具体请求与注册基类复用；不共享注册/注销的操作校验 |
 | AbstractAgentEndpointRegistrationRequest | runtimeVersion/versionRange | 继承 Endpoint 请求基类，供 Client 注册和 RAD RegistrationBatch 使用 |
@@ -195,8 +194,8 @@ abstract 基础层。完整 43 文件清单、改造结论和 M01–M15 验证�
 初版试改按 RAD 概念保留 AgentCatalogVersion、删除 AgentVersionCatalogEntry；
 本次资源/版本整合以 §6.5 为准，统一使用 AgentVersionSummary。初版的其他合并为：
 管理/存储的目录容器也使用前者，同时保留各自的校验和 JSON 结构。
-定义侧 AgentCallInterface 拟命名 AgentDefinitionCallInterface，与 AgentDiscoveryCallInterface
-共同继承 AbstractAgentCallInterface；完整管理详情与发现结果不直接相互继承。
+后续地址模型统一替代两个 CallInterface 并列子类：共用 AgentCallInterface → EndpointSet → Endpoint，
+字段按查询上下文约束；完整管理详情与发现结果不直接相互继承。
 
 Client 专用请求拟统一为 AgentSearchClientRequest、AgentEndpointRegistrationClientRequest、
 AgentEndpointDeregistrationClientRequest、AgentPublishClientRequest。
@@ -271,3 +270,62 @@ Search 同样返回 AgentSummary，但省略 namespace、管理字段、extensio
 字段格式和版本内容 bytes；读取时校验旧字段一致性后组装新模型。发现选择器、地址、Watch、
 A2A、transport 及发布算法不变。UT/IT 必须验证新响应结构、字段边界、完整标签、旧存储读取
 及派生目录一致性；本次新增执行结果单独记录，不沿用上一轮验证结论。
+
+### 6.6 请求分包补充提案（2026-09-15）
+
+本节是请求模型调用关系核查后的分包提案，尚未实施 Java 迁包或改名；实施时替代 §6.2
+对应命名，并同步 Agent API、Java SDK 实现规范及相关 IT 场景/覆盖登记。完整调用方、
+例外、校验和验证阶段见[请求分包核查](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_PACKAGES.md)。
+
+保持 `nacos-api` 模块，根包 `model.agent` 保留 RAD 协议、共享值对象及结果模型；
+共享抽象类继续位于 `model.agent.base`。将 Admin/Client 区别放在 package 中：
+
+- `model.agent.admin`：AgentDraftCreateRequest、AgentDraftUpdateRequest、AgentUpdateRequest、
+  AgentLabelsUpdateRequest、AgentVersionRequest。
+- `model.agent.client`：AgentPublishRequest、AgentSearchRequest、AgentEndpointRegistrationRequest、
+  AgentEndpointDeregistrationRequest。
+
+这些类分别对应现有同名 AdminRequest/ClientRequest，去掉场景后缀，不新增成对包装。
+根包 AgentSearchRequest 仍是含 namespace 的完整 RAD 请求；client.AgentSearchRequest
+仍不包含 namespace，两者保持抽象基类的并列子类。转换处显式区分全限定类型。
+Admin 请求仍由 Maintainer、Console、服务端共享；A2A 内部定义转换可继续复用草稿输入。
+HTTP Form 并不与每个 SDK 请求直接映射，特别是 Client 局部注销仍先计算剩余完整集合。
+
+复用优先调整已有基类：extensions 从三个直接子类上移到 AbstractAgentMetadata；
+Admin 创建/Client 发布的相同草稿校验移到 AbstractAgentDraftRequest。不新增身份/版本基类，
+不改变具体操作的字段边界。包内 AgentAdminRequestUtils 的访问必须随迁包处理，不能公开
+该工具来代替正确的校验归属。
+
+AgentEndpointDeregistrationBatch 是 SDK 内部带 namespace 的删除意图，服务端并不接收它。
+其内收 client 实现模块作为独立后续步骤，须同步专用校验，禁止 api 反向依赖 client。
+
+本提案只调整 Java 类型归属与共享声明，不改变 HTTP JSON、RPC 信封名、namespace 绑定、
+生命周期、局部注销、存储摘要或 RAD revision。Java 调用方需更新 import 并重新编译；
+按已有约束不增加 BETA 兼容壳，历史 A2A 公开契约继续保护。验证在实际执行前保持 Pending。
+
+### 6.7 请求合并与 namespace 上下文（当前实现）
+
+本节替代 §6.1、6.2、6.6 中初版请求分层；前文保留设计演进记录。
+
+Java 模型以 `com.alibaba.nacos.api.ai.model.agent` 为根包。RAD 通用模型、Search 和
+RegistrationBatch 留在根包；五个管理请求放到 `agent.admin`，名称为
+`AgentDraftCreateRequest`、`AgentDraftUpdateRequest`、`AgentUpdateRequest`、
+`AgentLabelsUpdateRequest`、`AgentVersionRequest`；发布请求为 `agent.client.AgentPublishRequest`。
+`agent.base` 只保留 `AbstractAgentMetadata` 和 `AbstractAgentDraftRequest`，均为 abstract，
+构造器为 protected。Metadata 共享元数据及 extensions；Draft 共享版本定义字段和草稿校验。
+Client 发布与 Admin 草稿创建为并列具体子类，公开 API 使用具体类型。
+共享校验集中在 `com.alibaba.nacos.api.ai.utils.AgentValidationUtils`，不在 model 内维护工具类。
+Form 独立承担 HTTP 字符串解析；Admin 模型仍供 Maintainer SDK、Console 和服务端使用，
+namespace 来自 Form 或显式方法参数。JSON 转换使用 `JsonUtils`/`NacosTypeReference`。
+
+Search 和完整注册分别使用根包 `AgentSearchRequest`、`AgentEndpointRegistrationBatch`，
+只包含业务字段，不含 namespace 字段或访问器。局部注销使用
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`，
+不再定义注销 Java Request/Batch。SDK 对调用方内容做防御性复制，从实例取得 namespace，
+通过 HTTP 参数或 RPC 信封显式传入查询/注册服务；PublicationKey 和 redo 数据独立保留 namespace。
+局部注销仍计算剩余完整 Batch，非空则重新注册，为空则整份注销，不修改调用方对象或集合。
+HTTP 参数、鉴权、完整替换和错误语义保持不变；Search/Register 的 RPC namespace 位于信封，
+不再嵌套于业务请求。3.3 BETA Java 类型不保留兼容包装，历史 A2A 公开契约保持不变。
+
+完整 RAD 逻辑 Schema 的 namespace 要求保持不变；Java 模型与上下文一起构成完整请求。
+验证结果单独记录，尚未执行的矩阵项不作为通过证据。

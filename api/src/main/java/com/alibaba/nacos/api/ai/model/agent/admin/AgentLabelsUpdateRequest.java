@@ -14,34 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent.base;
+package com.alibaba.nacos.api.ai.model.agent.admin;
 
-import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 /**
- * Shared Endpoint request fields; concrete operations retain their validation rules.
+ * Complete replacement request for one Agent's custom Version labels.
  *
  * @author Nacos
- * @since 3.3.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class AbstractAgentEndpointRequest implements Serializable {
+public class AgentLabelsUpdateRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
     private String agentName;
     
-    private String protocol;
-    
-    private List<Endpoint> endpoints;
+    private Map<String, String> labels;
     
     /**
-     * Initialize fields shared by concrete Agent models.
+     * Validate custom labels and their exact Version targets.
      */
-    protected AbstractAgentEndpointRequest() {
+    public void validate() {
+        AgentValidationUtils.validateAgentName(agentName);
+        if (labels == null) {
+            throw new IllegalArgumentException("labels must not be null");
+        }
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            AgentValidationUtils.validateNonLatestLabel(entry.getKey());
+            AgentValidationUtils.validateVersion(entry.getValue());
+        }
     }
     
     public String getAgentName() {
@@ -52,19 +58,11 @@ public abstract class AbstractAgentEndpointRequest implements Serializable {
         this.agentName = agentName;
     }
     
-    public String getProtocol() {
-        return protocol;
+    public Map<String, String> getLabels() {
+        return labels;
     }
     
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-    
-    public List<Endpoint> getEndpoints() {
-        return endpoints;
-    }
-    
-    public void setEndpoints(List<Endpoint> endpoints) {
-        this.endpoints = endpoints;
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

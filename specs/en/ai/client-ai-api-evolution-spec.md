@@ -205,7 +205,6 @@ The shared bases are:
 | Abstract class | Fields declared at this level | Reuse |
 | --- | --- | --- |
 | AbstractAgentMetadata | agentName/displayName/description/iconUrl/provider/tags | Management summary, RAD catalog entry, Admin metadata update; draft base extends it |
-| AbstractAgentCallInterface | protocol/protocolVersion/descriptorMediaType/nativeDescriptor | Definition and discovery interfaces are concrete siblings |
 | AbstractAgentSearchRequest | Five Search filter/pagination fields, no namespace | Client Search and complete RAD Search are concrete siblings |
 | AbstractAgentEndpointRequest | agentName/protocol/endpoints | Deregistration models and registration base; operation validation stays separate |
 | AbstractAgentEndpointRegistrationRequest | runtimeVersion/versionRange | Extends endpoint request base for Client registration and RAD RegistrationBatch |
@@ -228,9 +227,9 @@ identity, version or namespace bases merely to share one or two fields.
 The initial trial retained AgentCatalogVersion and removed AgentVersionCatalogEntry.
 Section 6.5 supersedes this binding with AgentVersionSummary; the remaining initial mappings are:
 Management/storage catalog containers reuse the RAD-named type without changing their JSON or
-validation rules. Rename the definition-side AgentCallInterface to AgentDefinitionCallInterface;
-it and AgentDiscoveryCallInterface extend AbstractAgentCallInterface independently. Do not make
-complete management details and discovery results extend one another.
+validation rules. The later endpoint consolidation supersedes the two CallInterface siblings: both use
+AgentCallInterface → EndpointSet → Endpoint, with field constraints by query context.
+Complete management details and discovery results do not extend one another.
 
 Proposed Client request names are AgentSearchClientRequest,
 AgentEndpointRegistrationClientRequest, AgentEndpointDeregistrationClientRequest and
@@ -323,3 +322,76 @@ schema, including schemaVersion, field formats and version-content bytes. Valida
 consistency before assembling the new model. Discovery selection, addresses, Watch, A2A, transports
 and publication algorithms do not change. UT/IT must verify the new response shapes, field boundaries,
 complete labels, old-storage reads and derived catalog consistency; record fresh validation separately.
+
+### 6.6 Request Package Refinement Proposal (2026-09-15)
+
+This is a proposal following the request usage audit; Java classes have not yet moved or been
+renamed. Implementation will replace the corresponding names in section 6.2 and update the Agent
+API, Java SDK implementation specs and affected IT scenario/coverage records. See the
+[request package audit](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_PACKAGES.md)
+for callers, exceptions, validation ownership and implementation stages.
+
+Keep the nacos-api module. Retain RAD protocol objects, shared values and response models in
+model.agent, and abstract shared classes in model.agent.base. Express audience through packages:
+
+- model.agent.admin: AgentDraftCreateRequest, AgentDraftUpdateRequest, AgentUpdateRequest,
+  AgentLabelsUpdateRequest and AgentVersionRequest.
+- model.agent.client: AgentPublishRequest, AgentSearchRequest, AgentEndpointRegistrationRequest
+  and AgentEndpointDeregistrationRequest.
+
+These replace the corresponding existing AdminRequest/ClientRequest names without adding paired
+wrappers. Root AgentSearchRequest remains the complete namespaced RAD request; client.AgentSearchRequest
+remains namespace-free. They are concrete siblings of the same abstract base, explicitly distinguished
+by qualified type names where both occur. Admin requests remain shared by Maintainer, Console and
+the server; internal A2A definition conversion may reuse the draft input. SDK requests do not all map
+directly to HTTP Forms: partial endpoint removal still computes and registers the remaining complete set.
+
+Prefer existing bases: move extensions from its three direct declaring subclasses to
+AbstractAgentMetadata, and identical Admin creation/Client publication validation to
+AbstractAgentDraftRequest. Do not add identity/version bases or widen concrete operation fields.
+Resolve package-private AgentAdminRequestUtils access during relocation rather than making that
+helper public to work around package boundaries.
+
+AgentEndpointDeregistrationBatch is a namespaced SDK-internal removal intent, not a server request.
+Moving it into the client implementation module is a separate follow-up with its dedicated validation;
+api must not acquire a dependency on client.
+
+The proposal changes Java type ownership and shared declarations only. Preserve HTTP JSON, RPC
+envelope names, namespace binding, lifecycle, partial removal, storage digests and RAD revisions.
+Java callers need updated imports and recompilation. The agreed scope does not require BETA aliases;
+released historical A2A contracts remain protected. Validation stays Pending until actually executed.
+
+### 6.7 Request Consolidation And Namespace Context (Current Implementation)
+
+This section supersedes the initial request hierarchy in sections 6.1, 6.2 and 6.6;
+earlier text records design evolution.
+
+Java models use `com.alibaba.nacos.api.ai.model.agent` as the root. Shared RAD models,
+Search and RegistrationBatch stay in that package. `agent.admin` contains
+`AgentDraftCreateRequest`, `AgentDraftUpdateRequest`, `AgentUpdateRequest`,
+`AgentLabelsUpdateRequest` and `AgentVersionRequest`; `agent.client` contains `AgentPublishRequest`.
+`agent.base` contains only `AbstractAgentMetadata` and `AbstractAgentDraftRequest`, both
+abstract with protected constructors. Metadata shares metadata fields and extensions;
+Draft shares version-definition fields and draft validation. Client publication and Admin
+draft creation are sibling concrete subclasses; public APIs use concrete types.
+Shared validation lives in `com.alibaba.nacos.api.ai.utils.AgentValidationUtils`, outside model.
+Forms perform HTTP string parsing. Admin models remain shared by the Maintainer SDK,
+Console and server; namespace comes from the Form or an explicit method argument.
+JSON conversion uses `JsonUtils`/`NacosTypeReference`.
+
+Search and complete registration use root-package `AgentSearchRequest` and
+`AgentEndpointRegistrationBatch`, containing business fields without namespace accessors.
+Partial deregistration uses
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`;
+there is no deregistration Java Request/Batch. The SDK defensively copies caller content
+and supplies its instance namespace through HTTP parameters or the RPC envelope to query
+and registration services. Publication keys and redo data retain namespace separately.
+Partial deregistration registers the complete nonempty remainder or deregisters the whole
+publication when empty, without mutating caller objects or collections. HTTP fields,
+authorization, replacement and error semantics remain unchanged. Search/Register RPC
+namespace is on the envelope rather than nested in the business request.
+No 3.3 BETA Java compatibility wrappers are retained; historical A2A contracts are unchanged.
+
+Logical RAD schemas still require namespace; the Java model and its context together
+form the complete request. Execution results are recorded separately; pending matrix
+entries are not evidence of passing tests.

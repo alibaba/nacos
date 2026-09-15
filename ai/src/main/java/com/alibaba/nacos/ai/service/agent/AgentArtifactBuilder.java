@@ -18,9 +18,11 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,14 +55,14 @@ public final class AgentArtifactBuilder {
         if (version == null || version.getCallInterfaces() == null) {
             return null;
         }
-        for (AgentDefinitionCallInterface callInterface : version.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : version.getCallInterfaces()) {
             if (callInterface == null || !A2A_PROTOCOL.equalsIgnoreCase(
                 callInterface.getProtocol())) {
                 continue;
             }
             try {
-                AgentCard card = JacksonUtils.toObj(
-                    JacksonUtils.toJson(callInterface.getNativeDescriptor()), AgentCard.class);
+                AgentCard card = JsonUtils.toObj(
+                    JsonUtils.toJson(callInterface.getNativeDescriptor()), AgentCard.class);
                 AgentRequestUtil.validateAgentCard(card);
                 if (Objects.equals(agentName, card.getName()) && Objects.equals(
                     version.getVersion(), card.getVersion())) {
@@ -88,7 +90,10 @@ public final class AgentArtifactBuilder {
         result.put("agentName", version.getAgentName());
         result.put("version", version.getVersion());
         result.put("contentDigest", version.getContentDigest());
-        result.put("callInterfaces", version.getCallInterfaces());
+        AgentVersionContent definition = new AgentVersionContent(version.getCallInterfaces());
+        byte[] bytes = AgentVersionContentSerializer.serialize(definition).getBytes();
+        result.put("callInterfaces",
+            AgentVersionContentSerializer.deserialize(bytes).getCallInterfaces());
         return result;
     }
 }

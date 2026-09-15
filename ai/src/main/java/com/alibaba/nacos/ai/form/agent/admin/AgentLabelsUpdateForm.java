@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.ai.form.agent.admin;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 
 import java.io.Serial;
 import java.util.Map;
@@ -50,12 +50,12 @@ public class AgentLabelsUpdateForm extends AgentAdminForm {
      * @return validated Agent labels-update request
      * @throws NacosApiException when the labels JSON is invalid
      */
-    public AgentLabelsUpdateAdminRequest toRequest() throws NacosApiException {
+    public AgentLabelsUpdateRequest toRequest() throws NacosApiException {
         super.validate();
-        AgentLabelsUpdateAdminRequest result = new AgentLabelsUpdateAdminRequest();
+        AgentLabelsUpdateRequest result = new AgentLabelsUpdateRequest();
         result.setAgentName(getAgentName());
         result.setLabels(AgentAdminFormJsonParser.parseOptional("labels", labels,
-            new TypeReference<Map<String, String>>() {
+            new NacosTypeReference<Map<String, String>>() {
             }));
         result.validate();
         return result;

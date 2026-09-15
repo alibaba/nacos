@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -139,10 +139,9 @@ class AiGrpcClientAgentTest {
         when(rpcClient.request(any(AgentDiscoveryRpcRequest.class)))
             .thenReturn(discoveryResponse);
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId("public");
         AgentDiscoveryRequest discovery = discoveryRequest();
         
-        assertSame(page, client.searchAgents(search));
+        assertSame(page, client.searchAgents("public", search));
         assertSame(discoveryResult, client.discoverAgent(discovery));
         
         List<Request> requests = rpcClientRequests();
@@ -214,7 +213,7 @@ class AiGrpcClientAgentTest {
     @Test
     void publishUsesTypedRequestAndRadAbility() throws Exception {
         support(AbilityKey.SERVER_RAD_V1);
-        AgentPublishClientRequest publication = new AgentPublishClientRequest();
+        AgentPublishRequest publication = new AgentPublishRequest();
         publication.setAgentName("agent-a");
         AgentVersionDetail expected = new AgentVersionDetail();
         AgentPublishRpcResponse response = new AgentPublishRpcResponse();
@@ -237,24 +236,24 @@ class AiGrpcClientAgentTest {
             .thenReturn(AbilityStatus.NOT_SUPPORTED);
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
             assertThrows(NacosException.class,
-                () -> client.publishAgent(new AgentPublishClientRequest())).getErrCode());
+                () -> client.publishAgent(new AgentPublishRequest())).getErrCode());
     }
     
     @Test
     void strictAbilityRequiresConnectedExplicitSupport() throws Exception {
         when(rpcClient.isRunning()).thenReturn(false);
         assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
-            () -> client.searchAgents(new AgentSearchRequest())).getErrCode());
+            () -> client.searchAgents("public", new AgentSearchRequest())).getErrCode());
         
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
             .thenReturn(AbilityStatus.UNKNOWN, AbilityStatus.NOT_SUPPORTED);
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
             assertThrows(NacosException.class,
-                () -> client.searchAgents(new AgentSearchRequest())).getErrCode());
+                () -> client.searchAgents("public", new AgentSearchRequest())).getErrCode());
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
             assertThrows(NacosException.class,
-                () -> client.searchAgents(new AgentSearchRequest())).getErrCode());
+                () -> client.searchAgents("public", new AgentSearchRequest())).getErrCode());
         verify(rpcClient, never()).request(any(AgentSearchRpcRequest.class));
     }
     
@@ -265,10 +264,10 @@ class AiGrpcClientAgentTest {
         when(rpcClient.request(any(AgentEndpointRegisterRpcRequest.class))).thenReturn(response);
         AgentEndpointRegistrationBatch batch = registrationBatch("http://one/a");
         
-        assertNull(client.registerAgentEndpoints(batch));
+        assertNull(client.registerAgentEndpoints("public", batch));
         
         InOrder order = inOrder(redoService, rpcClient);
-        order.verify(redoService).cacheAgentEndpointPublication(batch);
+        order.verify(redoService).cacheAgentEndpointPublication("public", batch);
         ArgumentCaptor<AgentEndpointRegisterRpcRequest> request =
             ArgumentCaptor.forClass(AgentEndpointRegisterRpcRequest.class);
         order.verify(rpcClient).request(request.capture());
@@ -287,12 +286,12 @@ class AiGrpcClientAgentTest {
             .thenReturn(error(ErrorCode.PARAMETER_VALIDATE_ERROR));
         
         assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
-            () -> client.registerAgentEndpoints(replacement)).getErrCode());
+            () -> client.registerAgentEndpoints("public", replacement)).getErrCode());
         
         InOrder order = inOrder(redoService);
-        order.verify(redoService).cacheAgentEndpointPublication(replacement);
+        order.verify(redoService).cacheAgentEndpointPublication("public", replacement);
         order.verify(redoService).discardAgentEndpointPublication(PUBLICATION_KEY);
-        order.verify(redoService).cacheAgentEndpointPublication(previous);
+        order.verify(redoService).cacheAgentEndpointPublication("public", previous);
         order.verify(redoService).agentEndpointPublicationRegistered(PUBLICATION_KEY);
     }
     
@@ -305,10 +304,10 @@ class AiGrpcClientAgentTest {
             .thenReturn(error(ErrorCode.PARAMETER_VALIDATE_ERROR))
             .thenReturn(error(ErrorCode.SERVER_ERROR));
         
-        assertThrows(NacosException.class, () -> client.registerAgentEndpoints(batch));
+        assertThrows(NacosException.class, () -> client.registerAgentEndpoints("public", batch));
         verify(redoService).discardAgentEndpointPublication(PUBLICATION_KEY);
         
-        assertThrows(NacosException.class, () -> client.registerAgentEndpoints(batch));
+        assertThrows(NacosException.class, () -> client.registerAgentEndpoints("public", batch));
         verify(redoService, times(1)).discardAgentEndpointPublication(PUBLICATION_KEY);
     }
     
@@ -319,13 +318,16 @@ class AiGrpcClientAgentTest {
         AgentEndpointRegistrationBatch batch = registrationBatch("http://one/a");
         AtomicReference<AgentEndpointRegistrationBatch> discarded =
             new AtomicReference<AgentEndpointRegistrationBatch>();
-        client.setAgentEndpointPublicationCapacityRejectedHandler(discarded::set);
+        client.setAgentEndpointPublicationCapacityRejectedHandler((namespace, publication) -> {
+            assertEquals("public", namespace);
+            discarded.set(publication);
+        });
         when(redoService.getAgentEndpointPublication(PUBLICATION_KEY)).thenReturn(batch);
         when(rpcClient.request(any(AgentEndpointRegisterRpcRequest.class)))
             .thenReturn(error(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT));
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> client.registerAgentEndpoints(batch));
+            () -> client.registerAgentEndpoints("public", batch));
         assertEquals(NacosException.OVER_THRESHOLD, exception.getErrCode());
         assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
             exception.getDetailErrCode());
@@ -337,7 +339,8 @@ class AiGrpcClientAgentTest {
     void capacityRedoDiscardIsSafeBeforeServiceInstallsCleanupHandler() {
         AgentEndpointRegistrationBatch batch = registrationBatch("http://one/a");
         
-        client.discardAgentEndpointPublicationAfterCapacityRejection(PUBLICATION_KEY, batch);
+        client.discardAgentEndpointPublicationAfterCapacityRejection("public", PUBLICATION_KEY,
+            batch);
         
         verify(redoService).discardAgentEndpointPublication(PUBLICATION_KEY);
     }
@@ -351,7 +354,7 @@ class AiGrpcClientAgentTest {
             .thenReturn(error(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT));
         
         NacosApiException exception = assertThrows(NacosApiException.class,
-            () -> client.registerAgentEndpoints(batch));
+            () -> client.registerAgentEndpoints("public", batch));
         
         assertEquals(ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT.getCode(),
             exception.getDetailErrCode());
@@ -390,7 +393,7 @@ class AiGrpcClientAgentTest {
             () -> client.deregisterAgentEndpoints("public", "agent-a", "a2a")).getErrCode());
         
         verify(redoService).discardAgentEndpointPublication(PUBLICATION_KEY);
-        verify(redoService).cacheAgentEndpointPublication(previous);
+        verify(redoService).cacheAgentEndpointPublication("public", previous);
         verify(redoService).agentEndpointPublicationRegistered(PUBLICATION_KEY);
     }
     
@@ -401,7 +404,7 @@ class AiGrpcClientAgentTest {
             .thenReturn(error(ErrorCode.ACCESS_DENIED));
         
         assertEquals(NacosException.NO_RIGHT, assertThrows(NacosException.class,
-            () -> client.searchAgents(new AgentSearchRequest())).getErrCode());
+            () -> client.searchAgents("public", new AgentSearchRequest())).getErrCode());
         verify(securityProxy).reLogin();
     }
     
@@ -459,7 +462,6 @@ class AiGrpcClientAgentTest {
         endpoint.setUri(uri);
         endpoint.setTransport("jsonrpc");
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId("public");
         result.setAgentName("agent-a");
         result.setRuntimeVersion("runtime-1");
         result.setProtocol("a2a");

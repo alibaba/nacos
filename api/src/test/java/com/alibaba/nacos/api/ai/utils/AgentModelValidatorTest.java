@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.model.Page;
@@ -83,19 +83,22 @@ class AgentModelValidatorTest {
         agent.getVersionInfo().getLabels().put("candidate", "2.0.0");
         assertDoesNotThrow(() -> AgentModelValidator.validateAgent(agent));
         
-        AgentDefinitionCallInterface callInterface = newValidCallInterface();
-        callInterface.setDeclaredEndpoints(null);
+        AgentCallInterface callInterface = newValidCallInterface();
+        
+        callInterface.setEndpointSets(null);
         assertDoesNotThrow(() -> AgentModelValidator.validateCallInterface(callInterface));
         
         RuntimeEndpointSnapshot unhealthySnapshot = newValidRuntimeEndpointSnapshot();
-        RuntimeEndpointSnapshotItem unhealthyItem = unhealthySnapshot.getItems().get(0);
+        Endpoint unhealthyItem =
+            unhealthySnapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         unhealthyItem.setHealthy(false);
         unhealthyItem.setState(RuntimeEndpointState.UNHEALTHY);
         assertDoesNotThrow(() -> AgentModelValidator.validateRuntimeEndpointSnapshot(
             unhealthySnapshot));
         
         RuntimeEndpointSnapshot disabledSnapshot = newValidRuntimeEndpointSnapshot();
-        RuntimeEndpointSnapshotItem disabledItem = disabledSnapshot.getItems().get(0);
+        Endpoint disabledItem =
+            disabledSnapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         disabledItem.setEnabled(false);
         disabledItem.setState(RuntimeEndpointState.DISABLED);
         assertDoesNotThrow(() -> AgentModelValidator.validateRuntimeEndpointSnapshot(
@@ -242,43 +245,86 @@ class AgentModelValidatorTest {
     @Test
     void testRejectsInvalidCallInterfaceCollections() {
         AgentVersionDetail noCallInterface = newValidVersionDetail();
-        noCallInterface.setCallInterfaces(Collections.<AgentDefinitionCallInterface>emptyList());
+        noCallInterface.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionDetail(noCallInterface));
         
-        AgentDefinitionCallInterface noEndpointSource = newValidCallInterface();
+        AgentCallInterface noEndpointSource = newValidCallInterface();
         noEndpointSource.setEndpointSourceOrder(Collections.<EndpointSource>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(noEndpointSource));
         
-        AgentDefinitionCallInterface duplicateEndpointSource = newValidCallInterface();
+        AgentCallInterface duplicateEndpointSource = newValidCallInterface();
         duplicateEndpointSource.setEndpointSourceOrder(
             Arrays.asList(EndpointSource.RUNTIME, EndpointSource.RUNTIME));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(duplicateEndpointSource));
         
-        AgentDefinitionCallInterface tooManyEndpoints = newValidCallInterface();
-        tooManyEndpoints.setDeclaredEndpoints(
+        AgentCallInterface tooManyEndpoints = newValidCallInterface();
+        
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(
             Collections.nCopies(65, newDeclaredEndpoint("https://agent.example.com/a2a")));
+        tooManyEndpoints.setEndpointSets(Collections.singletonList(declaredSet1));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(tooManyEndpoints));
     }
     
     @Test
+    void testRejectsRuntimeOrDuplicateSetsAndHealthInDefinition() {
+        AgentCallInterface definition = newValidCallInterface();
+        EndpointSet declared = definition.getEndpointSets().get(0);
+        definition.setEndpointSets(Arrays.asList(declared, declared));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateCallInterface(definition));
+        definition.setEndpointSets(Collections.singletonList(declared));
+        declared.setSource(EndpointSource.RUNTIME);
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateCallInterface(definition));
+        declared.setSource(EndpointSource.DECLARED);
+        declared.getEndpoints().get(0).setHealthy(false);
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateCallInterface(definition));
+        declared.getEndpoints().get(0).setHealthy(null);
+        assertDoesNotThrow(() -> AgentModelValidator.validateCallInterface(definition));
+    }
+    
+    @Test
+    void testRuntimeSnapshotRequiresExactlyOneRuntimeSet() {
+        RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
+        EndpointSet runtime = snapshot.getCallInterface().getEndpointSets().get(0);
+        snapshot.getCallInterface().setEndpointSets(Collections.emptyList());
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(null));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtime));
+        runtime.setSource(EndpointSource.DECLARED);
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
+        runtime.setSource(EndpointSource.RUNTIME);
+        assertDoesNotThrow(() -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
+    }
+    
+    @Test
     void testRejectsInvalidRuntimeEndpointCollections() {
         RuntimeEndpointSnapshot oversized = newValidRuntimeEndpointSnapshot();
-        oversized.setItems(Collections.nCopies(1001, oversized.getItems().get(0)));
+        oversized.getCallInterface().getEndpointSets().get(0).setEndpoints(Collections.nCopies(1001,
+            oversized.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(oversized));
         
         RuntimeEndpointSnapshot duplicateEndpoint = newValidRuntimeEndpointSnapshot();
-        duplicateEndpoint.setItems(Arrays.asList(duplicateEndpoint.getItems().get(0),
-            duplicateEndpoint.getItems().get(0)));
+        duplicateEndpoint.getCallInterface().getEndpointSets().get(0).setEndpoints(Arrays.asList(
+            duplicateEndpoint.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0),
+            duplicateEndpoint.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(duplicateEndpoint));
         
         RuntimeEndpointSnapshot noBindings = newValidRuntimeEndpointSnapshot();
-        noBindings.getItems().get(0).setBindings(
+        noBindings.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).setBindings(
             Collections.<RuntimeVersionBinding>emptyList());
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(noBindings));
@@ -289,13 +335,16 @@ class AgentModelValidatorTest {
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(selectedVersionMismatch));
         
         RuntimeEndpointSnapshot duplicateBinding = newValidRuntimeEndpointSnapshot();
-        RuntimeVersionBinding binding = duplicateBinding.getItems().get(0).getBindings().get(0);
-        duplicateBinding.getItems().get(0).setBindings(Arrays.asList(binding, binding));
+        RuntimeVersionBinding binding = duplicateBinding.getCallInterface().getEndpointSets().get(0)
+            .getEndpoints().get(0).getBindings().get(0);
+        duplicateBinding.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)
+            .setBindings(Arrays.asList(binding, binding));
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(duplicateBinding));
         
         RuntimeEndpointSnapshot endpointHealth = newValidRuntimeEndpointSnapshot();
-        endpointHealth.getItems().get(0).getEndpoint().setHealthy(true);
+        endpointHealth.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)
+            .setHealthy(false);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(endpointHealth));
     }
@@ -350,7 +399,7 @@ class AgentModelValidatorTest {
     void testRejectsDuplicateDeclaredEndpointNaturalKey() {
         AgentVersionDetail detail = newValidVersionDetail();
         Endpoint duplicate = newDeclaredEndpoint("https://AGENT.EXAMPLE.COM/another-path");
-        detail.getCallInterfaces().get(0).getDeclaredEndpoints().add(duplicate);
+        detail.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().add(duplicate);
         
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateVersionDetail(detail));
@@ -359,7 +408,8 @@ class AgentModelValidatorTest {
     @Test
     void testRejectsVersionRangeThatDoesNotContainRuntimeVersion() {
         RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
-        RuntimeVersionBinding binding = snapshot.getItems().get(0).getBindings().get(0);
+        RuntimeVersionBinding binding = snapshot.getCallInterface().getEndpointSets().get(0)
+            .getEndpoints().get(0).getBindings().get(0);
         binding.setRuntimeVersion("2.0.0");
         
         assertThrows(IllegalArgumentException.class,
@@ -369,7 +419,7 @@ class AgentModelValidatorTest {
     @Test
     void testRejectsInconsistentRuntimeEndpointState() {
         RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
-        RuntimeEndpointSnapshotItem item = snapshot.getItems().get(0);
+        Endpoint item = snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
         item.setEnabled(false);
         item.setState(RuntimeEndpointState.AVAILABLE);
         
@@ -390,7 +440,7 @@ class AgentModelValidatorTest {
             () -> AgentModelValidator.validateVersionDetail(detail));
         
         RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
-        snapshot.getItems().get(0).setHealthy(null);
+        snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).setHealthy(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
     }
@@ -441,7 +491,7 @@ class AgentModelValidatorTest {
     
     @Test
     void testRejectsMissingNativeDescriptorAfterBinding() {
-        AgentDefinitionCallInterface callInterface = newValidCallInterface();
+        AgentCallInterface callInterface = newValidCallInterface();
         callInterface.setNativeDescriptor(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateCallInterface(callInterface));
@@ -450,7 +500,8 @@ class AgentModelValidatorTest {
     @Test
     void testRejectsNonCanonicalRuntimeVersionRange() {
         RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
-        snapshot.getItems().get(0).getBindings().get(0)
+        snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).getBindings()
+            .get(0)
             .setVersionRange("[1.0.6,1.0.6]");
         
         assertThrows(IllegalArgumentException.class,
@@ -503,7 +554,7 @@ class AgentModelValidatorTest {
         detail.setAgentName("Demo Agent");
         detail.setVersion("1.0.0");
         detail.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
-        detail.setCallInterfaces(new ArrayList<AgentDefinitionCallInterface>(
+        detail.setCallInterfaces(new ArrayList<AgentCallInterface>(
             Collections.singletonList(newValidCallInterface())));
         detail.setAuthor("nacos");
         detail.setChangeDescription("Initial online version");
@@ -555,8 +606,8 @@ class AgentModelValidatorTest {
         return summary;
     }
     
-    private AgentDefinitionCallInterface newValidCallInterface() {
-        AgentDefinitionCallInterface callInterface = new AgentDefinitionCallInterface();
+    private AgentCallInterface newValidCallInterface() {
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -565,7 +616,11 @@ class AgentModelValidatorTest {
             Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         List<Endpoint> endpoints = new ArrayList<Endpoint>();
         endpoints.add(newDeclaredEndpoint("https://agent.example.com/a2a"));
-        callInterface.setDeclaredEndpoints(endpoints);
+        
+        EndpointSet declaredSet2 = new EndpointSet();
+        declaredSet2.setSource(EndpointSource.DECLARED);
+        declaredSet2.setEndpoints(endpoints);
+        callInterface.setEndpointSets(Collections.singletonList(declaredSet2));
         return callInterface;
     }
     
@@ -574,20 +629,24 @@ class AgentModelValidatorTest {
         binding.setRuntimeVersion("1.0.6");
         binding.setVersionRange("[1.0.0,2.0.0)");
         
-        RuntimeEndpointSnapshotItem item = new RuntimeEndpointSnapshotItem();
-        item.setEndpoint(newDeclaredEndpoint("https://runtime.example.com/a2a"));
+        Endpoint item = newDeclaredEndpoint("https://runtime.example.com/a2a");
         item.setBindings(Collections.singletonList(binding));
         item.setState(RuntimeEndpointState.AVAILABLE);
         item.setEnabled(true);
         item.setHealthy(true);
-        item.setLastUpdatedTime(2L);
         
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
         snapshot.setNamespaceId("public");
         snapshot.setAgentName("Demo Agent");
-        snapshot.setProtocol("a2a");
+        snapshot.getCallInterface().setProtocol("a2a");
         snapshot.setVersion("1.0.0");
-        snapshot.setItems(Collections.singletonList(item));
+        snapshot.getCallInterface().getEndpointSets().get(0)
+            .setEndpoints(Collections.singletonList(item));
         return snapshot;
     }
     

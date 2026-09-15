@@ -35,9 +35,9 @@ import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -49,7 +49,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
@@ -274,7 +274,7 @@ public class AgentOperationService {
      * @return verified draft detail
      * @throws NacosException when creation fails
      */
-    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateAdminRequest request)
+    public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
         throws NacosException {
         if (request == null) {
             throw new IllegalArgumentException("Agent draft request must not be null");
@@ -293,7 +293,7 @@ public class AgentOperationService {
      * @throws NacosException when creation fails
      */
     public AgentVersionDetail createDraftFromPublication(String namespaceId,
-        AgentPublishClientRequest request) throws NacosException {
+        AgentPublishRequest request) throws NacosException {
         if (request == null) {
             throw new IllegalArgumentException("Agent draft request must not be null");
         }
@@ -349,7 +349,7 @@ public class AgentOperationService {
      * @throws NacosException when the Agent already exists or persistence fails
      */
     public AgentVersionDetail registerLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateAdminRequest request) throws NacosException {
+        AgentDraftCreateRequest request) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -387,7 +387,7 @@ public class AgentOperationService {
      * @throws NacosException when persistence, authorization, or content validation fails
      */
     public AgentVersionDetail releaseLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateAdminRequest request, boolean setAsLatest) throws NacosException {
+        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -438,7 +438,7 @@ public class AgentOperationService {
      * @throws NacosException when the Agent is absent, content differs, or persistence fails
      */
     public AgentVersionDetail updateLegacyOnlineVersion(String namespaceId,
-        AgentDraftCreateAdminRequest request, boolean setAsLatest) throws NacosException {
+        AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -539,7 +539,7 @@ public class AgentOperationService {
      * @throws NacosException when update fails
      */
     public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
-        List<AgentDefinitionCallInterface> callInterfaces, String changeDescription)
+        List<AgentCallInterface> callInterfaces, String changeDescription)
         throws NacosException {
         requireWritableMeta(namespaceId, agentName);
         AgentVersionDetail result = persistenceService.updateDraft(namespaceId, agentName, version,
@@ -796,7 +796,7 @@ public class AgentOperationService {
         pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
         pipelineInfo.setPipeline(new ArrayList<>());
         persistenceService.updatePublishPipelineInfo(namespaceId, agentName, version,
-            JacksonUtils.toJson(pipelineInfo));
+            JsonUtils.toJson(pipelineInfo));
         String result = publishPipelineExecutor.execute(context,
             pipelineResult -> onPipelineComplete(namespaceId, agentName, version, executionId,
                 pipelineResult),
@@ -809,7 +809,7 @@ public class AgentOperationService {
     }
     
     private AgentVersionDetail directOnlineExistingAgent(String namespaceId,
-        AgentDraftCreateAdminRequest request, boolean setAsLatest, boolean clientOnlineNoOp)
+        AgentDraftCreateRequest request, boolean setAsLatest, boolean clientOnlineNoOp)
         throws NacosException {
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -860,7 +860,7 @@ public class AgentOperationService {
     }
     
     private void validateDirectOnlineRequest(String namespaceId,
-        AgentDraftCreateAdminRequest request) {
+        AgentDraftCreateRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Agent direct-online request must not be null");
         }
@@ -873,7 +873,7 @@ public class AgentOperationService {
         }
     }
     
-    private AgentVersionDetail toOnlineVersion(AgentDraftCreateAdminRequest request) {
+    private AgentVersionDetail toOnlineVersion(AgentDraftCreateRequest request) {
         AgentVersionDetail result = new AgentVersionDetail();
         result.setVersion(request.getVersion());
         result.setStatus(AiConstants.Agent.VERSION_STATUS_ONLINE);
@@ -887,7 +887,7 @@ public class AgentOperationService {
         if (version.getCallInterfaces() == null) {
             return false;
         }
-        for (AgentDefinitionCallInterface callInterface : version.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : version.getCallInterfaces()) {
             if (callInterface != null && protocol.equals(callInterface.getProtocol())) {
                 return true;
             }
@@ -934,7 +934,7 @@ public class AgentOperationService {
                 : result.getStatus());
             completed.setPipeline(result == null ? null : result.getPipeline());
             persistenceService.updatePublishPipelineInfo(namespaceId, agentName, version,
-                JacksonUtils.toJson(completed));
+                JsonUtils.toJson(completed));
             
             AiResourceVersion latest =
                 persistenceService.requireVersionRow(namespaceId, agentName, version);
@@ -1072,7 +1072,7 @@ public class AgentOperationService {
     }
     
     private AgentSummary toInitialLegacyAgent(String namespaceId,
-        AgentDraftCreateAdminRequest request) {
+        AgentDraftCreateRequest request) {
         AgentSummary result = toInitialAgent(namespaceId, request);
         result.setScope(VisibilityConstants.SCOPE_PUBLIC);
         return result;

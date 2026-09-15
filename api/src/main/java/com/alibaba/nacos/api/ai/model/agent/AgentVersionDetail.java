@@ -34,7 +34,7 @@ public class AgentVersionDetail extends AgentVersionSummary {
     
     private String agentName;
     
-    private List<AgentDefinitionCallInterface> callInterfaces;
+    private List<AgentCallInterface> callInterfaces;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -52,11 +52,11 @@ public class AgentVersionDetail extends AgentVersionSummary {
         this.agentName = agentName;
     }
     
-    public List<AgentDefinitionCallInterface> getCallInterfaces() {
+    public List<AgentCallInterface> getCallInterfaces() {
         return callInterfaces;
     }
     
-    public void setCallInterfaces(List<AgentDefinitionCallInterface> callInterfaces) {
+    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
         this.callInterfaces = callInterfaces;
     }
 }

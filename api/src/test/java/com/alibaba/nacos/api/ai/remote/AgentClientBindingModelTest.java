@@ -34,7 +34,7 @@ import com.alibaba.nacos.api.ai.remote.response.AgentSearchResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AgentClientBindingModelTest {
+class AgentClientBindingModelTest extends BasicRequestTest {
     
     @Test
     void testBindingModels() {
@@ -61,8 +61,8 @@ class AgentClientBindingModelTest {
     @Test
     void testGrpcRequests() throws Exception {
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId("search-ns");
         AgentSearchRpcRequest searchRequest = new AgentSearchRpcRequest();
+        searchRequest.setNamespaceId("search-ns");
         searchRequest.setSearchRequest(search);
         assertSame(search, searchRequest.getSearchRequest());
         assertEquals(Constants.AI.AI_MODULE, searchRequest.getModule());
@@ -82,10 +82,10 @@ class AgentClientBindingModelTest {
         assertEquals("discovery-agent", discoveryRequest.extractAgentName());
         
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId("register-ns");
         batch.setAgentName("register-agent");
         AgentEndpointRegisterRpcRequest registerRequest =
             new AgentEndpointRegisterRpcRequest();
+        registerRequest.setNamespaceId("register-ns");
         registerRequest.setRegistrationBatch(batch);
         assertSame(batch, registerRequest.getRegistrationBatch());
         assertEquals(Constants.AI.AI_MODULE, registerRequest.getModule());
@@ -105,10 +105,21 @@ class AgentClientBindingModelTest {
         assertEquals("a2a", deregisterRequest.getProtocol());
         
         assertTrue(searchRequest instanceof AbstractAgentClientRpcRequest);
-        String serialized = new ObjectMapper().writeValueAsString(searchRequest);
+        String serialized = mapper.writeValueAsString(searchRequest);
         assertTrue(serialized.contains("\"searchRequest\""));
         assertFalse(serialized.contains("extractNamespaceId"));
         assertFalse(serialized.contains("extractAgentName"));
+        assertEquals("search-ns", mapper.readTree(serialized).path("namespaceId").asText());
+        assertFalse(mapper.readTree(serialized).path("searchRequest").has("namespaceId"));
+        AgentSearchRpcRequest restoredSearch =
+            mapper.readValue(serialized, AgentSearchRpcRequest.class);
+        assertEquals("search-ns", restoredSearch.extractNamespaceId());
+        String registrationJson = mapper.writeValueAsString(registerRequest);
+        assertFalse(mapper.readTree(registrationJson).path("registrationBatch").has("namespaceId"));
+        AgentEndpointRegisterRpcRequest restoredRegister = mapper.readValue(registrationJson,
+            AgentEndpointRegisterRpcRequest.class);
+        assertEquals("register-ns", restoredRegister.extractNamespaceId());
+        assertEquals("register-agent", restoredRegister.extractAgentName());
     }
     
     @Test

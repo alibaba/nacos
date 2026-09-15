@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.model.agent;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 
 import java.util.List;
 
@@ -35,12 +35,12 @@ public class AgentVersionContent {
     
     private Integer schemaVersion;
     
-    private List<AgentDefinitionCallInterface> callInterfaces;
+    private List<AgentCallInterface> callInterfaces;
     
     public AgentVersionContent() {
     }
     
-    public AgentVersionContent(List<AgentDefinitionCallInterface> callInterfaces) {
+    public AgentVersionContent(List<AgentCallInterface> callInterfaces) {
         this.kind = KIND;
         this.schemaVersion = SCHEMA_VERSION;
         this.callInterfaces = callInterfaces;
@@ -62,11 +62,11 @@ public class AgentVersionContent {
         this.schemaVersion = schemaVersion;
     }
     
-    public List<AgentDefinitionCallInterface> getCallInterfaces() {
+    public List<AgentCallInterface> getCallInterfaces() {
         return callInterfaces;
     }
     
-    public void setCallInterfaces(List<AgentDefinitionCallInterface> callInterfaces) {
+    public void setCallInterfaces(List<AgentCallInterface> callInterfaces) {
         this.callInterfaces = callInterfaces;
     }
 }

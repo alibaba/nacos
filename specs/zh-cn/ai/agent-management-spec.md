@@ -258,7 +258,7 @@ Reconciliation 按 [AI 资源检索规范](ai-resource-search-spec.md)最终收�
 | `descriptorMediaType` | 是 | `nativeDescriptor` 的媒体类型。 |
 | `nativeDescriptor` | 是 | 完整协议原生 descriptor。 |
 | `endpointSourceOrder[]` | 是 | `RUNTIME` 和 `DECLARED` 的非空有序集合。 |
-| `declaredEndpoints[]` | 否 | Adapter 派生的静态 Endpoint 投影。 |
+| `endpointSets[]` | 否 | 至多一个 DECLARED Set，包含 Adapter 派生的静态 Endpoint。 |
 
 规范 protocol token 匹配 `[A-Za-z0-9][A-Za-z0-9-]{0,31}`，并按大小写敏感比较。
 CallInterface 唯一性、Endpoint 发布、RAD filter 和 Naming serviceName 组合使用相同 token。
@@ -289,7 +289,7 @@ URI 包含非空 scheme 和 host。port 必须显式给出，或能根据 scheme
 范围内的有效默认值。DNS host 使用大小写无关的 canonical 形式；IP literal 使用稳定的
 IPv4 或 IPv6 表达。
 
-Adapter 从 `nativeDescriptor` 派生并校验 `declaredEndpoints`。客户端不得独立编辑这两种
+Adapter 从 `nativeDescriptor` 派生并校验 `endpointSets[source=DECLARED].endpoints`。客户端不得独立编辑这两种
 表达。同一自然 Endpoint 多次出现时，第一次 descriptor 出现位置决定列表位置，而 native
 descriptor 仍由 canonical content 完整表达。
 
@@ -308,10 +308,14 @@ descriptor 仍由 canonical content 完整表达。
 `RuntimeEndpointSnapshot` 不分页，包含：
 
 ```text
-namespaceId / agentName / protocol / version?
-items[] {
-  endpoint, bindings[] { runtimeVersion, versionRange },
-  state, enabled, healthy, lastUpdatedTime
+namespaceId / agentName / version?
+callInterface {
+  protocol,
+  endpointSets[] {
+    source = RUNTIME, lastUpdatedTime,
+    endpoints[] { uri, transport, priority, weight, metadata,
+      bindings[] { runtimeVersion, versionRange }, state, enabled, healthy }
+  }
 }
 state = AVAILABLE | DISABLED | UNHEALTHY
 ```
@@ -324,7 +328,7 @@ state = AVAILABLE | DISABLED | UNHEALTHY
 
 `protocol` 必填。没有 `version` 时，Snapshot 对该 protocol 下每个 Endpoint 自然键返回一个有效项
 及其全部 Version binding；指定 `version` 时，只保留命中该 Version 的 binding，并在没有
-剩余 binding 时移除该项。没有实例时返回空 `items[]`。Snapshot 不应用
+剩余 binding 时移除该项。没有实例时返回空 `callInterface.endpointSets[0].endpoints[]`。Snapshot 不应用
 `endpointSourceOrder`，也不声明某一项可发现。Console 只把 Version detail 和 Snapshot 作为
 独立读取事实进行组合。
 
@@ -332,67 +336,38 @@ RAD Catalog、Discover 和 Watch 对象属于数据面视图，只由
 [RAD 协议规范](rad-protocol-spec.md)定义。特别是，`AgentDiscoveryResult` 将一个 online
 Version 定义与允许的 DECLARED 和 RUNTIME Endpoint set 组合，但不作为事实保存。
 
-### 6.1 管理读取向 RAD 模型收敛（评审草案，尚未实施）
+### 6.1 统一模型与查询边界
 
-当前实现仍遵循上文的管理读取模型。本节记录下一轮模型整合方向，不提前修改现行 Schema、
-存储或运行行为：管理读取复用 RAD 的 `CallInterface → EndpointSet → Endpoint` 三层结构，
-层数不计外层 Agent/Version 结果。保留 EndpointSet，不将 source 下移到 Endpoint。
+管理与发现共用具体 Java 类型 `AgentCallInterface → EndpointSet → Endpoint`，source 放在 Set。
+定义只包含 DECLARED Set，并保留完整 endpointSourceOrder，包括 RUNTIME 优先策略。
+Runtime 查询在 callInterface 下返回恰好一个 RUNTIME Set，空结果也保留 Set；无需存在 Agent
+定义，省略 descriptor。外层 RuntimeEndpointSnapshot 保留身份和可选 version，Console 另保留
+namingServiceRef。删除嵌套的 SnapshotItem 地址包装。
 
-- 精确 Version 定义与 Runtime 状态可以通过两个 API 分别查询，但从 CallInterface 开始共用
-  具体 Java 模型及相同包含关系；不因入口不同再使用另一套地址容器。
-- VersionDetail 读取只装载 DECLARED 地址；Runtime 管理读取只装载 RUNTIME 地址。
-  外层 Agent/Version 身份、版本元数据和 Console 专用引用按操作保留，不强制合并根响应。
-- 定义仍需完整保留 endpointSourceOrder；只读取 DECLARED Set 不能把来源配置误改为
-  DECLARED-only。Runtime 地址、返回 revision、健康状态和管理观测信息不得写入版本内容。
-- 管理可以返回禁用地址，也可在不存在定义时查询 Runtime；因此允许的协议描述缺省规则、
-  管理状态字段位置和管理 sourceRevision 作用域需在实施前明确，不能假定等同于 Discover。
-- 模型复用不改变 RAD 的来源顺序、空 Set、绑定、健康状态或 Watch 契约。管理专用字段不得
-  泄漏到 RAD 响应。实施需同步管理/API 与 Java Binding 规范、Schema、存储映射及相应 IT。
+管理返回 enabled/state，将 Naming 观察时间统一放到 EndpointSet；本轮管理结果省略 sourceRevision。
+Discover/Watch 必须返回 sourceRevision，省略 endpointSourceOrder、enabled/state 和观察时间。
+其过滤、bindings 并集、来源顺序、空 Set 和判等规则保持。共用类型不意味着合并 API，也不意味着
+管理和发现共用同一个贡献筛选算法。
 
-### 6.2 模型收敛的候选处理方式（评审草案，尚未确认实施）
+### 6.2 写入政策与定义存储
 
-以下为 §6.1 的展开建议，现有规范正文和 Schema 仍描述当前实现：
+Runtime 注册/完整替换接受 healthy，缺省 true，表示当前贡献的上报健康值，不是永久健康开关。
+ACTIVE HTTP heartbeat 保留显式上报值；后续继续遵循现有 Naming 活性及恢复规则。
+DECLARED 禁止 healthy；注销仍只接受自然键业务字段。提交的 bindings、enabled/state 和观测值
+被忽略，bindings 由批次 runtimeVersion/versionRange 生成；定义提交的 sourceRevision 也忽略。
+非法 JSON 类型、身份、URI、metadata、批次版本仍报错。只调用 Java setter 不发送请求。
 
-- 最新范围不要求 3.3 BETA 升级或旧存储兼容。内部可保留 AgentVersionContent 内容容器，
-  成员直接复用统一 CallInterface/EndpointSet/Endpoint；格式随新模型调整，不另复制内部领域类。
-  保存完整定义、声明地址、来源配置与顺序，不能把经过 Filter 的发现结果直接当作定义存储。
-  响应 sourceRevision 和 runtime/观察字段不参与版本 bytes；摘要仍针对实际保存 bytes。
-- 最新输入方向：Runtime 注册/完整替换允许 healthy；bindings、管理状态和观测时间由 Nacos
-  维护，用户提交时忽略。定义与注销仍按各自操作校验；具体范围和新增测试见 §6.3。
-  输入归一化剔除维护字段，读取复制必须保留它们，不能混用两个方向。
-- SnapshotItem 的公开包装可由统一 Endpoint 承接，Runtime mapper 与 legacy migration
-  comparator 同步适配；管理与发现现有的贡献筛选、聚合规则分别保留。观察时间可考虑放到
-  EndpointSet；state 可保持由 enabled/healthy 派生，字段位置尚待确定。
-- 写入字段限制针对注册/定义 API 提交；Java 对象 setter 不会自动改变服务端状态。Snapshot
-  的内部引用与导出联动是实现适配，不是必须保留旧公开类型的设计理由。
-- 管理 sourceRevision 首轮建议允许省略，以免为模型统一增加新的管理比较机制。若提供，
-  需明确地址、bindings、enabled/healthy 等输入，排除 Service 观察时间；不能直接声称发现
-  revision 覆盖整个管理 JSON。RAD 的字段必选性与比较规则保持。
-- 上述管理 revision 指管理结果复用 EndpointSet.sourceRevision 后的取值规则，不是新增模型；
-  当前 RuntimeEndpointSnapshot 没有该字段，其是否提供与计算范围可单独确定。
-- Nacos Agent Artifact 是另一个定义 JSON 读取/导出入口，建议同步采用统一定义结构，只输出
-  声明地址及定义字段，并更新 Schema/测试；本轮不为 BETA 保留旧导出表示。原生 A2A
-  AgentCard 表示保持原协议结构。
+内部保留 AgentVersionContent 容器，成员复用统一类型。存储显式投影完整定义和声明地址，排除
+Runtime、健康、管理字段、revision 和观察时间；读取校验同步采用新格式。不支持 BETA 存储/导出
+升级兼容。digest 基于实际保存 bytes，所有派生引用应一致。Artifact 经投影导出相同定义结构；
+原生 A2A AgentCard 保持。输入归一化移除维护字段，读取复制保留各视图允许的字段。
 
-### 6.3 地址模型输入与全链路验收（评审草案，尚未实施）
+### 6.3 验收
 
-用户已确认模型统一方向及 healthy 可写、维护字段忽略。实施解释建议为：healthy 表示注册或
-完整替换时上报的当前健康值，缺省 true；不改变后续 Naming 活性管理，不增加永久健康开关。
-DECLARED 不包含健康，bindings、enabled/state 和观测值仍由 Nacos 维护。定义响应 revision
-建议在写入时忽略。非法身份、URI、批次版本、保留 metadata 或 JSON 类型仍受原契约约束。
-
-实施前按 [完整测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)
-固定六入口样例及字段位置，建立 16 组验收映射。范围包括原始 HTTP、SDK/Maintainer typed 结果、
-Console 两种部署和页面、Naming 映射、定义存储、旧 A2A、历史迁移、索引任务/投影、Artifact、
-Watch/revision 和正式构件。新输入行为独立于类型替换验证。
-
-不考虑 BETA 存储升级，不免除历史 A2A 迁移验证。迁移正常流程在专用隔离环境运行；真实故障
-恢复和集群注入继续延期。原私有 Search/Artifact 失败用例保持独立记录，补充公开 Agent 的非空
-实际 INDEX/Artifact 成功流程；不能以空结果、SCAN 或全 skipped 替代。
-
-新存储 bytes 导致定义 digest 及其派生引用变化可以接受，但新系统内引用必须一致；未改变的
-RUNTIME revision 编码和固定向量保持。当前 Schema 与 Java 未实施本节，覆盖率不提前提升。
-
+[完整测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)按 16 组
+跟踪契约、存储、运行时、Watch、旧 A2A、迁移、索引、导出、Console 和 transport；执行证据与
+计划分开记录。历史 A2A 迁移仍在范围内，真实故障恢复和集群故障注入继续延期。
+默认发现协议并集问题 MODEL-D01 单独登记，本轮不改变该行为。
 
 ## 7. 容量与安全
 

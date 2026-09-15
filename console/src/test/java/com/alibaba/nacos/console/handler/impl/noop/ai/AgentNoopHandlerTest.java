@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateAdminRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateAdminRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -47,15 +47,15 @@ class AgentNoopHandlerTest {
     @Test
     void shouldRejectEveryOperationWhenAgentModuleIsDisabled() {
         assertDisabled(() -> handler.getAgent("ns", "agent"));
-        assertDisabled(() -> handler.updateAgent("ns", new AgentUpdateAdminRequest()));
+        assertDisabled(() -> handler.updateAgent("ns", new AgentUpdateRequest()));
         assertDisabled(() -> handler.deleteAgent("ns", "agent"));
         assertDisabled(
             () -> handler.listAgents("ns", "agent", "tag", "PUBLIC", "owner", null, 1, 10));
         assertDisabled(() -> handler.listVersions("ns", "agent", "draft", 1, 10));
         assertDisabled(() -> handler.getVersion("ns", "agent", "1.0.0"));
         assertDisabled(() -> handler.getRuntimeEndpoints("ns", "agent", "a2a", "1.0.0"));
-        assertDisabled(() -> handler.createDraft("ns", new AgentDraftCreateAdminRequest()));
-        assertDisabled(() -> handler.updateDraft("ns", new AgentDraftUpdateAdminRequest()));
+        assertDisabled(() -> handler.createDraft("ns", new AgentDraftCreateRequest()));
+        assertDisabled(() -> handler.updateDraft("ns", new AgentDraftUpdateRequest()));
         assertDisabled(() -> handler.deleteDraft("ns", "agent", "1.0.0"));
         assertDisabled(() -> handler.submit("ns", "agent", "1.0.0"));
         assertDisabled(() -> handler.publish("ns", "agent", "1.0.0"));
@@ -63,7 +63,7 @@ class AgentNoopHandlerTest {
         assertDisabled(() -> handler.redraft("ns", "agent", "1.0.0"));
         assertDisabled(() -> handler.online("ns", "agent", "1.0.0"));
         assertDisabled(() -> handler.offline("ns", "agent", "1.0.0"));
-        assertDisabled(() -> handler.updateLabels("ns", new AgentLabelsUpdateAdminRequest()));
+        assertDisabled(() -> handler.updateLabels("ns", new AgentLabelsUpdateRequest()));
     }
     
     private void assertDisabled(Executable operation) {

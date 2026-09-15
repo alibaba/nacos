@@ -38,7 +38,7 @@ import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentDefinitionCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
@@ -46,7 +46,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -622,10 +622,10 @@ public class A2aMigrationTargetStore {
         result.setStatus(agent.getStatus());
         result.setOwner(agent.getOwner());
         result.setScope(agent.getScope());
-        result.setBizTags(JacksonUtils.toJson(Collections.emptyList()));
+        result.setBizTags(JsonUtils.toJson(Collections.emptyList()));
         result.setExt(AgentResourceExtSerializer.serialize(ext));
         result.setFrom(MIGRATION_RESOURCE_SOURCE);
-        result.setVersionInfo(JacksonUtils.toJson(versionInfo));
+        result.setVersionInfo(JsonUtils.toJson(versionInfo));
         result.setMetaVersion(1L);
         return result;
     }
@@ -661,12 +661,12 @@ public class A2aMigrationTargetStore {
         return result;
     }
     
-    private List<String> protocolNames(List<AgentDefinitionCallInterface> callInterfaces) {
+    private List<String> protocolNames(List<AgentCallInterface> callInterfaces) {
         if (callInterfaces == null) {
             throw new IllegalArgumentException("Migrated Agent Version content is required");
         }
         List<String> result = new ArrayList<String>(callInterfaces.size());
-        for (AgentDefinitionCallInterface callInterface : callInterfaces) {
+        for (AgentCallInterface callInterface : callInterfaces) {
             result.add(callInterface.getProtocol());
         }
         return result;
@@ -687,11 +687,11 @@ public class A2aMigrationTargetStore {
     }
     
     private Object semanticValue(String json) {
-        return JacksonUtils.toObj(json, Object.class);
+        return JsonUtils.toObj(json, Object.class);
     }
     
     private Object semanticValue(Object value) {
-        return JacksonUtils.toObj(JacksonUtils.toJson(value), Object.class);
+        return JsonUtils.toObj(JsonUtils.toJson(value), Object.class);
     }
     
     private void deleteStorage(AiResourceVersion version) throws NacosException {

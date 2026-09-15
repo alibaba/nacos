@@ -72,6 +72,18 @@ Agent Admin requests now carry the AdminRequest suffix. The default-namespace li
 
 AgentSummary 合并详情/列表类型；验证详情保留 extensions、列表省略 extensions；versionInfo 保存完整标签及 onlineVersions，单版本条目复用 AgentVersionSummary，metadata/lifecycle 行为保持。
 
-### Agent 地址模型统一：待实施验收计划（2026-09-14）
+### Agent 地址模型统一：实施与验收（2026-09-15）
 
-下一轮 CallInterface → EndpointSet → Endpoint 统一的跨入口、存储、迁移、索引、Artifact、Console 与 transport 验收，见 [完整测试方案](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。healthy 可写与维护字段忽略按独立行为变化验证。本文此处仅链接计划，既有场景状态及严格/有效覆盖率均不变；新模型的 16 组验收当前全部 Pending，不复用先前摘要合并或历史迁移的通过数量。
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。
+
+
+### 2026-09-15 请求整合回归
+
+Agent 五个管理请求改用 model.agent.admin 下的 AgentDraftCreateRequest、AgentDraftUpdateRequest、AgentUpdateRequest、AgentLabelsUpdateRequest、AgentVersionRequest。既有生命周期、namespace、嵌套定义/运行地址和错误映射场景保持，默认/Jackson 3 均需重跑。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。

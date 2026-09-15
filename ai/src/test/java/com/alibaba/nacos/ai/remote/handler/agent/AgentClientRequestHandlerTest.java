@@ -23,7 +23,7 @@ import com.alibaba.nacos.ai.service.agent.watch.AgentGrpcWatchService;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishClientRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
@@ -93,7 +93,7 @@ class AgentClientRequestHandlerTest {
     
     @Test
     void testPublishHandler() throws NacosException {
-        AgentPublishClientRequest publication = new AgentPublishClientRequest();
+        AgentPublishRequest publication = new AgentPublishRequest();
         AgentVersionDetail detail = new AgentVersionDetail();
         AgentPublishRpcRequest request = new AgentPublishRpcRequest();
         request.setPublishRequest(publication);
@@ -110,7 +110,7 @@ class AgentClientRequestHandlerTest {
     void testSearchHandler() throws NacosException {
         AgentSearchRequest search = new AgentSearchRequest();
         Page page = new Page();
-        when(discoveryService.search(search)).thenReturn(page);
+        when(discoveryService.search("public", search)).thenReturn(page);
         AgentSearchRpcRequest request = new AgentSearchRpcRequest();
         request.setSearchRequest(search);
         
@@ -118,7 +118,7 @@ class AgentClientRequestHandlerTest {
             new AgentSearchRpcRequestHandler(discoveryService).handle(request, meta);
         
         assertSame(page, response.getPage());
-        assertEquals("public", search.getNamespaceId());
+        assertEquals("public", request.getNamespaceId());
         assertInvalid(new AgentSearchRpcRequestHandler(discoveryService)
             .handle(new AgentSearchRpcRequest(), meta));
     }
@@ -151,8 +151,8 @@ class AgentClientRequestHandlerTest {
                 .handle(request, meta);
         
         assertTrue(response.isSuccess());
-        assertEquals("public", batch.getNamespaceId());
-        verify(runtimeRegistryService).register("connection", batch);
+        assertEquals("public", request.getNamespaceId());
+        verify(runtimeRegistryService).register("connection", "public", batch);
         assertInvalid(new AgentEndpointRegisterRpcRequestHandler(runtimeRegistryService)
             .handle(new AgentEndpointRegisterRpcRequest(), meta));
     }
@@ -179,6 +179,24 @@ class AgentClientRequestHandlerTest {
             .deregisterPublisher("connection", "public", "demo", null);
         assertInvalid(new AgentEndpointDeregisterRpcRequestHandler(runtimeRegistryService)
             .handle(invalidRequest, meta));
+    }
+    
+    @Test
+    void testSearchAndRegisterUseExplicitEnvelopeNamespace() throws NacosException {
+        AgentSearchRequest search = new AgentSearchRequest();
+        AgentSearchRpcRequest searchRpc = new AgentSearchRpcRequest();
+        searchRpc.setNamespaceId("tenant-b");
+        searchRpc.setSearchRequest(search);
+        new AgentSearchRpcRequestHandler(discoveryService).handle(searchRpc, meta);
+        verify(discoveryService).search("tenant-b", search);
+        
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        AgentEndpointRegisterRpcRequest registration = new AgentEndpointRegisterRpcRequest();
+        registration.setNamespaceId("tenant-b");
+        registration.setRegistrationBatch(batch);
+        new AgentEndpointRegisterRpcRequestHandler(runtimeRegistryService)
+            .handle(registration, meta);
+        verify(runtimeRegistryService).register("connection", "tenant-b", batch);
     }
     
     @Test

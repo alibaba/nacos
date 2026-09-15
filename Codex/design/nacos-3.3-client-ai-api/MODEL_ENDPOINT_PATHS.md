@@ -1,5 +1,33 @@
 # CallInterface、Endpoint 与 EndpointSet：入口及模型关系
 
+## 2026-09-15 实施后的关系
+
+当前主干已经统一，以下图反映本轮工作区；后文保留 9 月 14 日改造前的核查记录。
+字段写入规则和验收要求以 [测试矩阵](MODEL_ENDPOINT_TEST_PLAN.md) 为准，实际结果见
+[验证记录](MODEL_ENDPOINT_VALIDATION.md)。
+
+```mermaid
+flowchart TB
+    W["① Admin / Console draft / Client publishAgent"] -. "定义写入" .-> C
+    V["② getAgentVersion / Agent Artifact"] --> VD["AgentVersionDetail"]
+    VD -->|"callInterfaces[]"| C["AgentCallInterface"]
+    D["④ Discover / ⑤ Watch"] --> DR["AgentDiscoveryResult"]
+    DR -->|"callInterfaces[]"| C
+    Q["⑥ Admin / Maintainer / Console getRuntimeEndpoints"] --> S["RuntimeEndpointSnapshot"]
+    S -->|"callInterface"| C
+    C -->|"endpointSets[]"| ES["EndpointSet<br/>source / sourceRevision? / lastUpdatedTime?"]
+    ES -->|"endpoints[]"| E["Endpoint<br/>uri / transport / priority / weight / metadata<br/>healthy? / bindings? / enabled? / state?"]
+    P["③ Client register / deregister<br/>批次持有 protocol 和版本范围"] -->|"endpoints[]"| E
+    E -->|"bindings[]"| B["RuntimeVersionBinding"]
+```
+
+- 定义：完整 descriptor 和来源顺序，Set 只保存 DECLARED 地址；运行事实不写入定义或 Artifact。
+- 发现和订阅：共用完整发现结果；Set 带 RAD revision，Endpoint 保留匹配绑定和健康值，排除管理状态及观察时间。
+- Runtime 管理：无需定义，CallInterface 只有 protocol 和一个 RUNTIME Set；Endpoint 平铺健康、绑定和管理状态，Set 返回一次观察时间。Console 外层继续提供 Naming 跳转信息。
+- 注册/注销直接携带 Endpoint 列表，无需构造 descriptor 或 Set。注册可上报 healthy，服务端维护字段忽略；注销保留自然键语义。
+
+## 改造前核查记录（2026-09-14）
+
 核查日期：2026-09-14。基于当前 `codex/agent-model-consolidation` 未提交工作区，
 其中 AgentSummary / AgentVersionInfo / AgentVersionSummary 已完成合并试改。
 本文记录现有实现，用于下一轮模型评审；不改变 Java、Wire、存储或发现算法。
@@ -262,3 +290,12 @@ Version，但协议描述、来源顺序和声明地址仍取 latest；旧在线
 ## 9. 下一轮测试方案
 
 本图仍描述当前实现。最新确认的 healthy 可写、维护字段忽略，以及统一后的字段建议和 16 组验收，见 [MODEL_ENDPOINT_TEST_PLAN.md](MODEL_ENDPOINT_TEST_PLAN.md)。当前图表中的“Register 禁止 healthy”是改造前行为，不是新的目标契约。
+
+
+## 2026-09-15 请求模型补充
+
+请求层以 [当前请求整合方案](MODEL_REQUEST_PACKAGES.md#75-最终目标及验证差异) 为准：
+agent 根包保留共享 AgentSearchRequest、AgentEndpointRegistrationBatch，均不含 namespace；
+admin 包放五个管理 Request，client 包只放 AgentPublishRequest，类名不再重复 Admin/Client。
+base 仅保留 Metadata/Draft 两个 abstract 类；局部注销直接接收 agentName、protocol、List<Endpoint>。
+本页 CallInterface → EndpointSet → Endpoint 的包含关系保持不变。
