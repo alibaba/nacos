@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.config.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /**
  * Nacos configuration detail information.
  *
@@ -38,7 +36,6 @@ public class ConfigDetailInfo extends ConfigBasicInfo {
     /**
      * Optional schema text; null when absent.
      */
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String schema;
     
     public String getSchema() {

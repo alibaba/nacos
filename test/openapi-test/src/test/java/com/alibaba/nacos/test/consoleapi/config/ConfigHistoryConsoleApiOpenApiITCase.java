@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Schema: current and historical details preserve version-specific text, absent values are JSON null,
+ *     <li>Schema: current and historical details preserve version-specific text, absent values may be omitted or null,
  *     explicit empty current schema is preserved, and history extInfo remains available.</li>
  *     <li>Expected capability: publish and republish create history rows, history list is newest first, detail returns
  *     selected historical content, previous returns current config's latest historical content, and namespace config
@@ -55,7 +56,7 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
         postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
                 .addParam("content", "without-schema").addParam("type", DEFAULT_TYPE));
         JsonNode withoutSchema = queryConfig(dataId, groupName, "").get("data");
-        assertTrue(withoutSchema.path("schema").isNull(), withoutSchema.toString());
+        assertFalse(withoutSchema.hasNonNull("schema"), withoutSchema.toString());
 
         postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
                 .addParam("content", "first-content").addParam("type", DEFAULT_TYPE)
@@ -84,12 +85,13 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
                 configQuery(dataId, groupName, "")
                         .addParam("nid", histories.get(1).get("id").asText())).get("data");
         assertEquals("without-schema", oldDetail.path("content").asText(), oldDetail.toString());
-        assertTrue(oldDetail.path("schema").isNull(), oldDetail.toString());
+        assertFalse(oldDetail.hasNonNull("schema"), oldDetail.toString());
 
         postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
                 .addParam("content", "empty-schema").addParam("type", DEFAULT_TYPE)
                 .addParam("schema", ""));
         JsonNode emptySchema = queryConfig(dataId, groupName, "").get("data");
+        assertTrue(emptySchema.path("schema").isTextual(), emptySchema.toString());
         assertEquals("", emptySchema.path("schema").asText(), emptySchema.toString());
     }
 

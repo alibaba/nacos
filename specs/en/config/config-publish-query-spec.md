@@ -101,10 +101,11 @@ not be converted to a 500 server error.
 
 V3 Admin and Console Config detail responses include `schema` as optional text
 from the stored Config metadata. The response preserves stored text, including
-an explicitly stored empty string, and includes `schema: null` when no value is
-stored. This field does not change runtime Config content or validation.
-Gray detail models inherit the field and return null because gray storage does
-not retain schema metadata.
+an explicitly stored empty string. When no value is stored, the model value is
+null and the response may omit the field under the default serialization rules.
+This field does not change runtime Config content or validation. Gray detail
+models inherit the field with a null value because gray storage does not retain
+schema metadata; their responses may also omit the field.
 
 Admin query returns Config detail for management users. When the stored config
 is encrypted, Admin query decrypts the content before returning the detail

@@ -168,7 +168,7 @@ class ConfigInfoTest {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         detailInfo.setSchema(schema);
         String json = mapper.writeValueAsString(detailInfo);
-        assertTrue(mapper.readTree(json).has("schema"));
+        assertEquals(schema != null, mapper.readTree(json).has("schema"));
         assertEquals(schema, mapper.readValue(json, ConfigDetailInfo.class).getSchema());
     }
     

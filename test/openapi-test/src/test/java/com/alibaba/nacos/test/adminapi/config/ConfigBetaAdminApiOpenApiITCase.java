@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -55,7 +56,7 @@ public class ConfigBetaAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         assertEquals(groupName, beta.get("groupName").asText(), beta.toString());
         assertEquals(DEFAULT_NAMESPACE, beta.get("namespaceId").asText(), beta.toString());
         assertEquals(content, beta.get("content").asText(), beta.toString());
-        assertTrue(beta.path("schema").isNull(), beta.toString());
+        assertFalse(beta.hasNonNull("schema"), beta.toString());
         assertEquals("beta", beta.get("grayName").asText(), beta.toString());
         assertTrue(beta.get("grayRule").asText().contains(betaIps), beta.toString());
         

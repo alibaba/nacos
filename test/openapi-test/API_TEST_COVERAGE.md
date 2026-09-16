@@ -351,8 +351,9 @@ Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP r
 ## Config detail schema (#15853)
 
 Admin and Console config history ITs cover current detail, history detail, and
-previous-version `schema`, including absent values, explicit empty current
-values, different schema versions, and preservation of historical `extInfo`.
+previous-version `schema`, including absent values (omitted or JSON null),
+explicit empty current values, different schema versions, and preservation of
+historical `extInfo`.
 See the Config detail schema matrices in `ADMIN_API_TEST_SCENARIOS.md` and
 `CONSOLE_API_TEST_SCENARIOS.md`. Corrupt/legacy extensions are covered by unit
 tests because the public HTTP publish workflow cannot generate them.

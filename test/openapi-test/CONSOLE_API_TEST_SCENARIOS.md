@@ -133,10 +133,10 @@ verifies the following workflow against a standalone server:
 
 | Scenario | Expected result |
 | --- | --- |
-| Publish without schema, then query current detail | `schema` exists and is JSON null. |
+| Publish without schema, then query current detail | `schema` is omitted or JSON null. |
 | Publish two different schema/content versions | Current detail returns the latest stored schema. |
 | Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
-| Query an older history record without schema | `schema` exists and is JSON null. |
+| Query an older history record without schema | `schema` is omitted or JSON null. |
 | Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
 | Publish an explicit empty schema | Current detail preserves the empty string. |
 
@@ -144,5 +144,5 @@ Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTes
 public publish APIs cannot create these legacy/corrupt history records. Existing
 required-parameter, missing-history, and identity-mismatch cases remain applicable.
 
-The inherited `ConfigGrayInfo` response also exposes null `schema` for beta
+The inherited `ConfigGrayInfo` response also omits `schema` or returns null for beta
 configurations; the existing beta query IT asserts this boundary.

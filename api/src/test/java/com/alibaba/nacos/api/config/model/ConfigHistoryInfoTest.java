@@ -61,7 +61,7 @@ class ConfigHistoryInfoTest {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         detailInfo.setSchema(schema);
         String json = mapper.writeValueAsString(detailInfo);
-        assertTrue(mapper.readTree(json).has("schema"));
+        assertEquals(schema != null, mapper.readTree(json).has("schema"));
         ConfigHistoryDetailInfo result = mapper.readValue(json, ConfigHistoryDetailInfo.class);
         assertEquals(schema, result.getSchema());
         assertEquals(detailInfo.getExtInfo(), result.getExtInfo());
