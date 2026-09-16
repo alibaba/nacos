@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
 
+import jakarta.annotation.PreDestroy;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -32,9 +34,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -159,6 +159,7 @@ public class NacosDnsServer {
     /**
      * Stop DNS server.
      */
+    @PreDestroy
     public void stop() {
         running = false;
         if (udpSocket != null) {
