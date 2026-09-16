@@ -24,6 +24,7 @@ import com.alibaba.nacos.ai.form.agent.admin.AgentDraftUpdateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentRuntimeEndpointForm;
+import com.alibaba.nacos.ai.form.agent.admin.AgentScopeForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentVersionForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentVersionListForm;
@@ -95,6 +96,18 @@ public class ConsoleAgentController {
     public Result<AgentSummary> updateAgent(AgentUpdateForm form) throws NacosException {
         AgentUpdateRequest request = form.toRequest();
         return Result.success(agentProxy.updateAgent(form.getNamespaceId(), request));
+    }
+    
+    /**
+     * Update Agent Resource visibility without changing Version state.
+     */
+    @Since("3.3.0")
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateScope(AgentScopeForm form) throws NacosException {
+        form.validate();
+        agentProxy.updateScope(form.getNamespaceId(), form.getAgentName(), form.getScope());
+        return Result.success("ok");
     }
     
     /**

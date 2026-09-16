@@ -84,7 +84,7 @@ liveness probe available, and verifies that requests to the independent ARD
 port cannot inherit a Nacos authorization header. The guard complements rather
 than replaces the functional scenario rows. The live
 [authorization operation registry](AUTHORIZATION_OPERATION_COVERAGE.md) maps all
-386 production `@Secured` methods in 56 Controllers to direct tests or reviewed
+392 production `@Secured` methods in 56 Controllers to direct tests or reviewed
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
@@ -389,3 +389,5 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
 全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
+
+Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.

@@ -556,7 +556,19 @@ Runtime 查询输入为 `namespaceId + agentName + protocol + version?`；`proto
 Agent Update 可以修改展示字段、tags、extensions 和 enabled 状态，但不能修改身份、
 owner、scope、Version 内容、labels 或派生 catalog。owner 在首建时由服务端初始化，
 首版不提供 owner 转移能力；scope 变更属于独立的公开/私有可见性操作，不进入通用
-metadata CAS，首版 Agent API 暂不暴露该操作。删除定义会立即阻止普通发现，但不会
+metadata CAS，通过 `PUT /agents/scope` 修改。该 Form 操作接受可省略的 `namespaceId`
+（省略或空值规范化为 `public`）、必填 `agentName` 和必填 `scope`（大小写不敏感的
+`PUBLIC`/`PRIVATE`），返回 `Result<String>`，成功 data 为 `"ok"`。操作要求 Agent WRITE
+及资源写可见性，保留 A2A 迁移写入限制，仅更新 scope 和更新时间，记录审计并触发现有搜索
+和 Watch 失效通知，不改变 owner、内容、版本状态、labels 或 Runtime Endpoint。重复设置相同
+scope 成功；非法参数、资源不存在和写入拒绝分别保持现有 400、404、403 错误契约。
+
+内置策略首建 Agent 默认 `PUBLIC`，创建和发布请求不接受 scope；发布、新版本、等价重试
+和 Runtime 注册保留已存值。`AgentMaintainerService.updateScope` 提供显式 namespace
+及默认 namespace 重载，返回 `boolean`。Console 转发相同相对 `/scope` 操作，详情页复用已有
+scope 控件，创建表单不增加可见性选择。
+
+删除定义会立即阻止普通发现，但不会
 删除由独立 Publisher 拥有的 Runtime Publication。
 
 ### 3.2 Version 生命周期路径

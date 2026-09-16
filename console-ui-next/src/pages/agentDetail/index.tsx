@@ -166,6 +166,7 @@ export default function AgentDetailPage() {
   const [versionPageNo, setVersionPageNo] = useState(1);
   const [actionLoading, setActionLoading] = useState(false);
   const [enableToggling, setEnableToggling] = useState(false);
+  const [scopeToggling, setScopeToggling] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [labelsText, setLabelsText] = useState('{}');
 
@@ -337,6 +338,20 @@ export default function AgentDetailPage() {
     }
   };
 
+  const toggleAgentScope = async (isPublic: boolean) => {
+    const agent = currentOverview?.agent;
+    const scope = isPublic ? 'PUBLIC' : 'PRIVATE';
+    if (!agent || agent.scope === scope) return;
+    setScopeToggling(true);
+    try {
+      await agentApi.updateScope({ namespaceId, agentName, scope });
+      toast.success(t('agent.updateSuccess'));
+      await loadOverview();
+    } finally {
+      setScopeToggling(false);
+    }
+  };
+
   const toggleAgentEnable = async (enabled: boolean) => {
     const agent = currentOverview?.agent;
     if (!agent || agent.status === (enabled ? 'enable' : 'disable')) {
@@ -472,7 +487,8 @@ export default function AgentDetailPage() {
                 publicLabel={t('agent.publicScope')}
                 privateLabel={t('agent.privateScope')}
                 enableDisabled={enableToggling}
-                scopeDisabled
+                scopeDisabled={scopeToggling}
+                onScopeChange={toggleAgentScope}
                 onEnabledChange={toggleAgentEnable}
                 visibilityLabel={canManageVisibility
                   ? t('common.visibilityAuthorization.entry')

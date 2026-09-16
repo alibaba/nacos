@@ -75,7 +75,7 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 initialAgent.toString());
         assertEquals("enable", initialAgent.get("status").asText(), initialAgent.toString());
         assertTrue(initialAgent.has("owner"), initialAgent.toString());
-        assertEquals("PRIVATE", initialAgent.get("scope").asText(), initialAgent.toString());
+        assertEquals("PUBLIC", initialAgent.get("scope").asText(), initialAgent.toString());
         assertEquals("create", initialAgent.get("extensions").get("x-openapi-it").get("marker")
                 .asText(), initialAgent.toString());
 

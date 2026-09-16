@@ -692,7 +692,22 @@ tags, extensions, and enabled state, but not identity, owner, scope, Version
 content, labels, or the derived catalog. The server initializes owner on first
 creation and the initial release exposes no owner-transfer operation. Scope
 changes are a dedicated public/private visibility operation, are not part of
-the shared metadata CAS, and are not exposed by the initial Agent API binding.
+the shared metadata CAS, and use `PUT /agents/scope`. This Form operation accepts
+`namespaceId` (omitted or empty means `public`), required `agentName`, and required
+`scope` (`PUBLIC` or `PRIVATE`, case-insensitive). It returns `Result<String>` with
+`data="ok"`, requires Agent WRITE and resource write visibility, and retains the
+A2A migration mutation guard. It changes only scope and its update timestamp,
+audits the change, and schedules existing search and Watch invalidation. It does
+not change owner, content, Version states, labels, or Runtime Endpoints. Repeating
+the same scope succeeds. Invalid input, missing resources, and denied writes keep
+the existing 400, 404, and 403 error contracts.
+
+The built-in initial Agent scope is `PUBLIC`. Creation and publication requests
+do not accept scope; publication, new Versions, equivalent retries, and Runtime
+registration preserve the stored value. `AgentMaintainerService.updateScope`
+exposes explicit-namespace and default-namespace overloads and returns `boolean`.
+Console forwards the same relative `/scope` operation and uses the existing detail
+page scope control; creation forms do not gain a visibility selector.
 Definition deletion immediately prevents ordinary discovery; it does not
 delete independently owned runtime publications.
 

@@ -57,6 +57,12 @@ public class AgentNoopHandler implements AgentHandler {
     }
     
     @Override
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        throw disabled();
+    }
+    
+    @Override
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         throw disabled();
     }

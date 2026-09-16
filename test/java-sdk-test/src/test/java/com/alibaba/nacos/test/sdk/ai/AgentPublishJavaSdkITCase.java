@@ -21,7 +21,10 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -42,6 +45,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -79,6 +83,77 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String VERSION_FOUR = "4.0.0";
 
     private static final long POLLING_TIMEOUT_SECONDS = 25L;
+
+    @Test
+    void shouldDiscoverDefaultPublicAndPreservePrivateOnPublishRetry() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED);
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        for (String transport : new String[] {"HTTP", "GRPC"}) {
+            Properties publisherProperties = sdkProperties();
+            publisherProperties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, transport);
+            Properties readerProperties = sdkProperties(AuthIdentity.CLIENT_READ_ONLY);
+            readerProperties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, transport);
+            AiService publisher = createAiService(publisherProperties);
+            AiService reader = createAiService(readerProperties);
+            String name = randomServiceName("agent-scope-"
+                    + transport.toLowerCase(java.util.Locale.ROOT));
+            AgentPublishRequest request = initialRequest(name, VERSION_ONE, "scope", true);
+            addCleanup(() -> maintainer.deleteAgent(name));
+            AgentVersionDetail online = publisher.agent().publishAgent(request);
+            assertEquals("PUBLIC", maintainer.getAgent(name).getAgent().getScope());
+            assertEquals(online.getContentDigest(),
+                    reader.agent().discoverAgent(reference(name, null)).getContentDigest());
+            assertTrue(maintainer.updateScope(name, "PRIVATE"));
+            assertNotFound(() -> reader.agent().discoverAgent(reference(name, null)));
+            assertEquals("online", publisher.agent().publishAgent(request).getStatus());
+            assertEquals("PRIVATE", maintainer.getAgent(name).getAgent().getScope());
+            assertTrue(maintainer.updateScope(name, "PUBLIC"));
+            assertEquals(online.getContentDigest(),
+                    reader.agent().discoverAgent(reference(name, null)).getContentDigest());
+        }
+    }
+
+    @Disabled("DAUTH-F05: auth-enabled Watch fails before scope update; restore after identity fix")
+    @Test
+    void shouldInvalidateWatchAfterScopeBecomesPrivate() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED);
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        for (String transport : new String[] {"HTTP", "GRPC"}) {
+            Properties readerProperties = sdkProperties(AuthIdentity.CLIENT_READ_ONLY);
+            readerProperties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, transport);
+            AiService publisher = createAiService();
+            AiService reader = createAiService(readerProperties);
+            String name = randomServiceName("agent-scope-watch");
+            addCleanup(() -> maintainer.deleteAgent(name));
+            publisher.agent().publishAgent(initialRequest(name, VERSION_ONE, "scope", true));
+            CountDownLatch snapshotReceived = new CountDownLatch(1);
+            CountDownLatch unavailableReceived = new CountDownLatch(1);
+            AtomicReference<NacosAgentDiscoveryEvent> unavailable = new AtomicReference<>();
+            AbstractNacosAgentDiscoveryListener listener =
+                    new AbstractNacosAgentDiscoveryListener() {
+                        @Override
+                        public void onEvent(NacosAgentDiscoveryEvent event) {
+                            if (event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT) {
+                                snapshotReceived.countDown();
+                            } else {
+                                unavailable.set(event);
+                                unavailableReceived.countDown();
+                            }
+                        }
+                    };
+            reader.agent().subscribeAgent(reference(name, null), listener);
+            addCleanup(() -> reader.agent().unsubscribeAgent(reference(name, null), listener));
+            assertTrue(snapshotReceived.await(25, TimeUnit.SECONDS),
+                    transport + " initial Watch snapshot");
+            assertTrue(maintainer.updateScope(name, "PRIVATE"));
+            assertTrue(unavailableReceived.await(25, TimeUnit.SECONDS),
+                    transport + " private scope Watch invalidation");
+            assertEquals(Integer.valueOf(NacosException.NOT_FOUND),
+                    unavailable.get().getErrorCode());
+            assertNull(unavailable.get().getAgentDiscoveryResult());
+            reader.agent().unsubscribeAgent(reference(name, null), listener);
+        }
+    }
 
     @Test
     void shouldPublishDraftResumeAndConvergeAcrossCanonicalAndLegacyReads() throws Exception {

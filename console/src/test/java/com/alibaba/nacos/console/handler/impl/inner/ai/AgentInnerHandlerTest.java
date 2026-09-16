@@ -76,6 +76,12 @@ class AgentInnerHandlerTest {
     }
     
     @Test
+    void testScopeForwarding() throws Exception {
+        handler.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+        verify(agentOperationService).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryOperationToLocalServices() throws Exception {
         AgentOverview overview = new AgentOverview();
         AgentSummary persistedAgent = new AgentSummary();

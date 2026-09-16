@@ -132,11 +132,16 @@ The Resource row maps MCP fields as follows:
 | `desc` | MCP description. |
 | `status` | Historical `enabled=true` maps to `enable`; otherwise `disable`. |
 | `owner` | Creating or importing operator; historical reconciliation uses `nacos`. |
-| `scope` | Visibility default for new resources; historical reconciliation uses `PUBLIC`. |
+| `scope` | Visibility default for new resources (`PUBLIC` with the built-in policy); historical reconciliation uses `PUBLIC`. |
 | `bizTags` | Public MCP business tags, or an empty collection. |
 | `ext` | `McpResourceExt` containing the internal `mcpId` alias. |
 | `from` | Local creation, import source, or `legacy-mcp` reconciliation source. |
 | `versionInfo` | Standard editing, reviewing, online-count, and label summary. |
+
+Creation and release requests do not gain a scope parameter. The independent
+scope operation changes visibility; publication, Version updates, Runtime
+registration, and retries preserve the stored scope. Existing private resources
+are not migrated to public. Draft Versions remain excluded from runtime Serving.
 
 Within one Namespace, exactly one effective `type=mcp` Resource may exist for
 one `mcpName`. Because the current physical uniqueness includes `from`,

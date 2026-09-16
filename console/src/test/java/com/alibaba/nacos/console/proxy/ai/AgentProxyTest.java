@@ -69,6 +69,12 @@ class AgentProxyTest {
     }
     
     @Test
+    void testScopeForwarding() throws Exception {
+        agentProxy.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+        verify(agentHandler).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryOperationAndBuildRuntimeView() throws Exception {
         AgentOverview overview = new AgentOverview();
         AgentSummary agent = new AgentSummary();

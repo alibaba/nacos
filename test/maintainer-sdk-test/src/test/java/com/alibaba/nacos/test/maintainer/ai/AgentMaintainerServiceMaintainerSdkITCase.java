@@ -111,6 +111,14 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertEquals(AiConstants.Agent.VERSION_STATUS_DRAFT, createdDraft.getStatus());
         AgentOverview created = agentService.getAgent(agentName);
         assertOverview(created, Constants.DEFAULT_NAMESPACE_ID, agentName, INITIAL_VERSION);
+        assertTrue(agentService.updateScope(agentName, "private"));
+        assertEquals("PRIVATE", agentService.getAgent(agentName).getAgent().getScope());
+        agentService.createDraft(createRequest);
+        assertEquals("PRIVATE", agentService.getAgent(agentName).getAgent().getScope());
+        assertTrue(agentService.updateScope(Constants.DEFAULT_NAMESPACE_ID, agentName, "PUBLIC"));
+        NacosException invalidScope = assertThrows(NacosException.class,
+            () -> agentService.updateScope(agentName, "SHARED"));
+        assertEquals(NacosException.INVALID_PARAM, invalidScope.getErrCode());
         String initialOwner = created.getAgent().getOwner();
         String initialScope = created.getAgent().getScope();
         assertEquals("Default namespace Agent", created.getAgent().getDescription());
@@ -119,7 +127,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
                 .get("nested"));
         assertEquals(AiConstants.Agent.RESOURCE_STATUS_ENABLE, created.getAgent().getStatus());
         assertNotNull(created.getAgent().getOwner());
-        assertEquals("PRIVATE", created.getAgent().getScope());
+        assertEquals("PUBLIC", created.getAgent().getScope());
         
         AgentOverview queried = agentService.getAgent(agentName);
         assertOverview(queried, Constants.DEFAULT_NAMESPACE_ID, agentName, INITIAL_VERSION);

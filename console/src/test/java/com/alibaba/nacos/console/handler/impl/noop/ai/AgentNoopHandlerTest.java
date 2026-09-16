@@ -45,6 +45,11 @@ class AgentNoopHandlerTest {
     }
     
     @Test
+    void testScopeRejectedWhenModuleDisabled() {
+        assertThrows(NacosException.class, () -> handler.updateScope("public", "agent", "PRIVATE"));
+    }
+    
+    @Test
     void shouldRejectEveryOperationWhenAgentModuleIsDisabled() {
         assertDisabled(() -> handler.getAgent("ns", "agent"));
         assertDisabled(() -> handler.updateAgent("ns", new AgentUpdateRequest()));

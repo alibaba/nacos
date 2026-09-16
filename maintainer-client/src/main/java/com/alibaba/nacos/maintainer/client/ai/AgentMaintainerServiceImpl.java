@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
@@ -74,6 +75,20 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
             JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<AgentSummary>>() {
             });
         return result.getData();
+    }
+    
+    @Override
+    public boolean updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = identityParams(namespaceId, agentName);
+        params.put("scope", scope);
+        HttpRestResult<String> restResult = executeFormRequest(HttpMethod.PUT, ROOT_PATH + "/scope",
+            namespaceId, agentName, params);
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     @Override

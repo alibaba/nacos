@@ -39,6 +39,29 @@ import com.alibaba.nacos.api.model.Page;
 public interface AgentMaintainerService {
     
     /**
+     * Update Agent visibility without changing its Versions or Runtime Endpoints.
+     *
+     * @param namespaceId namespace identifier, empty means public
+     * @param agentName canonical Agent name
+     * @param scope PUBLIC or PRIVATE, case-insensitive
+     * @return whether the update succeeded
+     * @throws NacosException when the request is invalid, denied, or fails remotely
+     */
+    boolean updateScope(String namespaceId, String agentName, String scope) throws NacosException;
+    
+    /**
+     * Update Agent visibility in the default namespace.
+     *
+     * @param agentName canonical Agent name
+     * @param scope PUBLIC or PRIVATE, case-insensitive
+     * @return whether the update succeeded
+     * @throws NacosException when the request is invalid, denied, or fails remotely
+     */
+    default boolean updateScope(String agentName, String scope) throws NacosException {
+        return updateScope(Constants.DEFAULT_NAMESPACE_ID, agentName, scope);
+    }
+    
+    /**
      * Get an Agent overview.
      *
      * @param namespaceId namespace identifier

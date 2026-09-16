@@ -86,6 +86,22 @@ class AgentMaintainerServiceImplTest {
     }
     
     @Test
+    void testScopeFormAndDefaultNamespace() throws NacosException {
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+            .thenReturn(response("ok"));
+        org.junit.jupiter.api.Assertions
+            .assertTrue(service.updateScope(NAMESPACE_ID, AGENT_NAME, "private"));
+        org.junit.jupiter.api.Assertions.assertTrue(service.updateScope(AGENT_NAME, "PUBLIC"));
+        List<HttpRequest> requests = captureRequests(2);
+        assertRequest(requests.get(0), HttpMethod.PUT, rootPath() + "/scope");
+        assertEquals(NAMESPACE_ID, requests.get(0).getParamValues().get("namespaceId"));
+        assertEquals(AGENT_NAME, requests.get(0).getParamValues().get("agentName"));
+        assertEquals("private", requests.get(0).getParamValues().get("scope"));
+        assertEquals("public", requests.get(1).getParamValues().get("namespaceId"));
+        assertEquals("PUBLIC", requests.get(1).getParamValues().get("scope"));
+    }
+    
+    @Test
     void testCreateDraftAndGetAgent() throws NacosException {
         AgentOverview overview = new AgentOverview();
         overview.setAgent(agent());

@@ -117,11 +117,15 @@ Resource row 按以下规则映射 MCP 字段：
 | `desc` | MCP 描述。 |
 | `status` | 历史 `enabled=true` 映射为 `enable`，否则为 `disable`。 |
 | `owner` | 创建或导入操作人；历史对账使用 `nacos`。 |
-| `scope` | 新资源使用 Visibility 默认值；历史对账使用 `PUBLIC`。 |
+| `scope` | 新资源使用 Visibility 默认值，内置策略为 `PUBLIC`；历史对账使用 `PUBLIC`。 |
 | `bizTags` | MCP 公开业务 Tag，无值时为空集合。 |
 | `ext` | 包含内部 `mcpId` 别名的 `McpResourceExt`。 |
 | `from` | 本地创建、导入来源或 `legacy-mcp` 对账来源。 |
 | `versionInfo` | 通用 editing、reviewing、online count 和 label 摘要。 |
+
+创建与 Release 请求不增加 scope 参数。可见性通过独立 scope 操作修改；发布、版本更新、
+Runtime 注册及重试均保留已存 scope，不将已有私有资源迁移为公开。草稿版本继续排除在
+运行时 Serving 之外。
 
 一个 Namespace 内，同一 `mcpName` 只能有一个有效的 `type=mcp` Resource。由于
 当前物理唯一性包含 `from`，对账必须检测同名多来源 row 并阻止完成，不能静默选择一条。

@@ -148,7 +148,7 @@
         <mockito.version>4.11.0</mockito.version>
         <byte-buddy-agent.version>1.17.8</byte-buddy-agent.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.4.0</jraft-core.version>
+        <jraft-core.version>1.4.1</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <rocksdb.version>8.10.2</rocksdb.version>
         <!-- gson version should follow grcp-core dependency -->
@@ -287,7 +287,7 @@
                     <inputEncoding>UTF-8</inputEncoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**
+                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**,**/core/remote/thirdparty/clhm/**
                     </excludes>
                 </configuration>
                 <executions>
@@ -318,6 +318,7 @@
                             <exclude>**/consistency/entity/**</exclude>
                             <exclude>**/istio/model/**</exclude>
                             <exclude>**/common/packagescan/**</exclude>
+                            <exclude>**/core/remote/thirdparty/clhm/**</exclude>
                             <exclude>**/nacos/test/**</exclude>
                             <exclude>**/protobuf/**</exclude>
                         </excludes>
@@ -421,6 +422,7 @@
                         <exclude>**/packagescan/classreading/**</exclude>
                         <exclude>**/packagescan/resource/**</exclude>
                         <exclude>**/packagescan/util/**</exclude>
+                        <exclude>**/core/remote/thirdparty/clhm/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

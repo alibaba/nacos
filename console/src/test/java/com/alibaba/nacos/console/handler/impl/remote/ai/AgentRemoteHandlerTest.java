@@ -71,6 +71,12 @@ class AgentRemoteHandlerTest extends AbstractRemoteHandlerTest {
     }
     
     @Test
+    void testScopeForwarding() throws Exception {
+        handler.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+        verify(agentMaintainerService).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryOperationToMaintainerService() throws Exception {
         AgentOverview overview = new AgentOverview();
         AgentSummary agent = new AgentSummary();

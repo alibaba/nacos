@@ -39,6 +39,24 @@ class AgentAdminFormsTest {
     private static final String VERSION = "1.0.0";
     
     @Test
+    void testScopeFormValidationAndDefaultNamespace() throws NacosApiException {
+        AgentScopeForm form = new AgentScopeForm();
+        form.setAgentName(AGENT_NAME);
+        for (String scope : new String[] {null, "", " ", "SHARED", " PUBLIC "}) {
+            form.setScope(scope);
+            assertThrows(NacosApiException.class, form::validate);
+        }
+        for (String scope : new String[] {"PUBLIC", "private", "Public"}) {
+            form.setScope(scope);
+            form.validate();
+            assertEquals("public", form.getNamespaceId());
+            assertEquals(scope, form.getScope());
+        }
+        form.setAgentName(null);
+        assertThrows(IllegalArgumentException.class, form::validate);
+    }
+    
+    @Test
     void testDraftCreateFormBuildsCompleteRequest() throws NacosApiException {
         AgentDraftCreateForm form = new AgentDraftCreateForm();
         form.setAgentName(AGENT_NAME);

@@ -120,7 +120,38 @@ Implementation timeouts are operational defaults, not public API guarantees.
 Domain specs must not expose JRaft timeout values as user-visible correctness
 contracts unless a domain API explicitly defines them.
 
+### Raft Log Request Encoding
+
+Raft task data uses a two-byte request type prefix followed by the serialized
+Protobuf request. The first byte is `0x38` (field 7, varint); the second byte is
+`1` for `ReadRequest` or `2` for `WriteRequest`. Follower apply and log recovery
+must use this prefix to distinguish reads from writes. Missing or truncated
+prefixes, unknown request types, and malformed Protobuf data must fail with
+`ConsistencyException`; unknown types must not be treated as writes. Protobuf
+parse failures retain their cause, and debug diagnostics must not include the
+request payload.
+
+In Nacos 3.3, the untagged `GetRequest` / `Log` fallback and its conversion
+helpers are removed. The tagged format introduced in Nacos 2.1.0 remains
+supported. This is an internal Raft log contract, not a public Java SDK or
+HTTP API change.
+
+An existing data directory can still contain untagged entries from older
+releases, including Nacos 2.0.x, even after an intermediate upgrade. Before
+upgrading to a release without the fallback, operators must finish recovery
+and snapshot/log migration using a release that can read those entries.
+Changing the running version alone does not convert persisted logs. Direct
+replay of untagged entries is no longer supported and must fail explicitly.
+
 ### JRaft Transport Authentication
+
+Nacos uses the JRaft gRPC transport without the optional Bolt transport or SOFA
+Hessian dependency. The Nacos RPC factory must construct both clients and servers
+on that classpath, sharing registered Protobuf parsers and response marshallers.
+Server creation preserves JRaft 1.4.1 endpoint binding: a non-blank endpoint IP
+selects the listen address, while a blank IP uses a wildcard address. The existing
+`jraft.grpc.max_inbound_message_size.bytes` property and configuration helper
+remain effective before server startup.
 
 JRaft native gRPC is an inner server-to-server transport. New JRaft clients
 always attach the configured Nacos server identity through gRPC

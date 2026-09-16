@@ -110,6 +110,8 @@ class LocalDataSourceServiceImplTest {
             assertNotNull(service1.getJdbcTemplate());
             assertNotNull(service1.getTransactionTemplate());
             assertEquals("derby", service1.getDataSourceType());
+            assertEquals(DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT,
+                ((HikariDataSource) service1.getDatasource()).getConnectionTimeout());
         } finally {
             EnvUtil.setEnvironment(null);
         }

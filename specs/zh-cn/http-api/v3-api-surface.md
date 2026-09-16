@@ -77,11 +77,11 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
 | `/v3/admin/cs/*` | 25 | GET, POST, PUT, DELETE | 配置 CRUD、历史、监听者、容量、指标、ops。 |
 | `/v3/admin/ns/*` | 29 | GET, POST, PUT, DELETE | 服务、实例、客户端、集群、健康状态、ops。 |
-| `/v3/admin/ai/*` | 103 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
+| `/v3/admin/ai/*` | 104 | GET, POST, PUT, DELETE | MCP、A2A、Agent、Prompt、Skill、AgentSpec、Pipeline。 |
 | `/v3/console/core/*` | 7 | GET, POST, PUT, DELETE | 控制台集群和命名空间操作。 |
 | `/v3/console/cs/*` | 17 | GET, POST, DELETE | 控制台配置和历史操作。 |
 | `/v3/console/ns/*` | 11 | GET, POST, PUT, DELETE | 控制台服务和实例操作。 |
-| `/v3/console/ai/*` | 81 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
+| `/v3/console/ai/*` | 82 | GET, POST, PUT, DELETE | 控制台 AI 管理、导入、生命周期、Pipeline。 |
 | `/v3/console/copilot/*` | 6 | GET, POST | 配置和 SSE Copilot 操作。 |
 | `/v3/auth/user` | 7 | GET, POST, PUT, DELETE | 默认鉴权插件中的用户登录和管理。 |
 | `/v3/auth/role` | 4 | GET, POST, DELETE | 默认鉴权插件中的角色管理。 |
@@ -223,6 +223,7 @@ Admin 路径使用已实现的 `/v3/admin/ai/agents` 前缀；Console 目标路�
 | `/online` | POST | 将 Offline Version 上线。 |
 | `/offline` | POST | 将 Online Version 下线。 |
 | `/labels` | PUT | 更新自定义 Version Label。 |
+| `/scope` | PUT | 修改 Agent Resource 的 `PUBLIC`/`PRIVATE` 可见性，保留 Version 与 Runtime 状态。 |
 
 目标 API 不增加 Client HTTP Watch 或 Endpoint List GET。Watch 和 Push 使用协商后的
 gRPC Binding；Runtime 查看使用 Admin 或 Console 的 `/runtime-endpoints` 路径。

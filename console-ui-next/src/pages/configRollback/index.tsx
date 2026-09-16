@@ -155,6 +155,7 @@ export default function ConfigRollbackPage() {
   }
 
   const historyDetail = currentHistory as ConfigHistoryDetail | null;
+  const isInsertRollback = historyDetail?.opType?.trim() === 'I';
 
   if (!historyDetail) {
     return (
@@ -231,7 +232,9 @@ export default function ConfigRollbackPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('history.rollback')}</DialogTitle>
-            <DialogDescription>{t('history.rollbackConfirm')}</DialogDescription>
+            <DialogDescription>
+              {isInsertRollback ? t('history.rollbackConfirmInsert') : t('history.rollbackConfirm')}
+            </DialogDescription>
           </DialogHeader>
           <div className="text-sm space-y-1">
             <p>Data ID: <span className="font-medium">{historyDetail.dataId}</span></p>
@@ -241,8 +244,16 @@ export default function ConfigRollbackPage() {
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={rollbackLoading}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleRollback} disabled={rollbackLoading}>
-              {rollbackLoading ? t('common.loading') : t('common.confirm')}
+            <Button
+              variant={isInsertRollback ? 'destructive' : 'default'}
+              onClick={handleRollback}
+              disabled={rollbackLoading}
+            >
+              {rollbackLoading
+                ? t('common.loading')
+                : isInsertRollback
+                  ? t('history.rollbackConfirmDelete')
+                  : t('common.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

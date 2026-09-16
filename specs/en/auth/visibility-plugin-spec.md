@@ -195,7 +195,12 @@ source, metadata, masking, and update semantics.
 
 If the selected plugin is disabled or unavailable, the current AI domain skips
 visibility filtering and single-resource visibility validation; creation falls
-back to `PRIVATE` scope. This preserves the historical disabled behavior and
+back to `PRIVATE` for every resource type. The same fallback applies when a
+plugin returns a blank default. Type-specific defaults belong to
+`VisibilityService.resolveDefaultScopeForCreate`; the domain helper must not
+duplicate them. A nonblank plugin default, including `PRIVATE`, takes precedence.
+Existing stored scopes are never rewritten by default resolution. The skipped
+visibility checks preserve the historical disabled behavior and
 must not be confused with auth being enabled or disabled. The built-in plugin
 also treats disabled auth as allowing visibility.
 
