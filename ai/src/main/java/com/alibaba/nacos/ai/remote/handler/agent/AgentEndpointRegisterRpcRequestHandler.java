@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.remote.handler.agent;
 
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.annotation.Since;
@@ -60,9 +60,10 @@ public class AgentEndpointRegisterRpcRequestHandler
         try {
             AgentEndpointRegistrationBatch batch =
                 requireRequest(request.getRegistrationBatch(), "registrationBatch");
-            batch.setNamespaceId(NamespaceUtil.processNamespaceParameter(
-                batch.getNamespaceId()));
-            runtimeRegistryService.register(meta.getConnectionId(), batch);
+            request.setNamespaceId(NamespaceUtil.processNamespaceParameter(
+                request.getNamespaceId()));
+            runtimeRegistryService.register(meta.getConnectionId(), request.getNamespaceId(),
+                batch);
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);
         }

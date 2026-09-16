@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.client.ai.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;

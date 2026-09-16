@@ -47,7 +47,7 @@ const CALL_INTERFACES: AgentCallInterface[] = [
     descriptorMediaType: 'application/json',
     nativeDescriptor: { name: 'demo' },
     endpointSourceOrder: ['RUNTIME', 'DECLARED'],
-    declaredEndpoints: [],
+    endpointSets: [{ source: 'DECLARED', endpoints: [] }],
   },
 ];
 
@@ -84,6 +84,33 @@ function parseInterface(result: { callInterfaces?: string }): AgentCallInterface
 }
 
 describe('Agent Console editor model', () => {
+  it('accepts nullable response fields and effective Endpoint defaults in the editor', () => {
+    const callInterface: AgentCallInterface = {
+      protocol: 'custom',
+      protocolVersion: null,
+      descriptorMediaType: 'application/json',
+      nativeDescriptor: { method: 'invoke' },
+      endpointSourceOrder: ['DECLARED'],
+      endpointSets: [{
+        source: 'DECLARED',
+        sourceRevision: null,
+        lastUpdatedTime: null,
+        endpoints: [{
+          uri: 'https://example.com/rpc', transport: 'HTTP',
+          priority: 0, weight: 1, healthy: true, enabled: true,
+          metadata: null, bindings: null, state: null,
+        }],
+      }],
+    };
+    const expected = [{ uri: 'https://example.com/rpc', transport: 'HTTP' }];
+    const editor = callInterfacesToEditorValues([callInterface]);
+    expect(editor.customProtocolVersion).toBe('');
+    expect(editor.declaredEndpoints).toEqual(expected);
+    expect(callInterfacesToProtocolEditors([callInterface])[0].declaredEndpoints).toEqual(expected);
+    expect(JSON.parse(editor.callInterfaces || '[]')[0].endpointSets[0].endpoints[0].healthy).toBe(true);
+    expect(usesRuntimeSource({ ...callInterface, endpointSourceOrder: null })).toBe(false);
+  });
+
   it('builds the complete initial draft with raw direct content', () => {
     expect(buildDraftCreateData('public', values(), true, 'direct')).toEqual({
       namespaceId: 'public',
@@ -140,7 +167,7 @@ describe('Agent Console editor model', () => {
     expect(callInterface.protocolVersion).toBe('0.3');
     expect(callInterface.descriptorMediaType).toBe('application/json');
     expect(callInterface.endpointSourceOrder).toEqual(['DECLARED', 'RUNTIME']);
-    expect(callInterface.declaredEndpoints).toEqual([
+    expect(callInterface.endpointSets?.[0].endpoints).toEqual([
       { uri: 'https://agent.example.com/a2a', transport: 'HTTP+JSON' },
       { uri: 'ws://stream.example.com/a2a', transport: 'WebSocket' },
     ]);
@@ -172,7 +199,7 @@ describe('Agent Console editor model', () => {
       }),
     }), true, 'direct'));
 
-    expect(callInterface.declaredEndpoints).toEqual([
+    expect(callInterface.endpointSets?.[0].endpoints).toEqual([
       { uri: 'http://legacy.example.com/a2a', transport: 'HTTP+JSON' },
       { uri: 'wss://stream.example.com/a2a', transport: 'HTTP+JSON' },
       { uri: 'https://api.example.com:8443/a2a', transport: 'HTTP+JSON' },
@@ -353,9 +380,9 @@ describe('Agent Console editor model', () => {
         descriptorMediaType: 'application/json',
         nativeDescriptor: ['native', 'descriptor'],
         endpointSourceOrder: expected,
-        declaredEndpoints: [
+        endpointSets: [{ source: 'DECLARED', endpoints: [
           { uri: 'https://api.example.com/rpc', transport: 'HTTP+JSON' },
-        ],
+        ] }],
       });
     },
   );
@@ -401,7 +428,7 @@ describe('Agent Console editor model', () => {
     }), true, 'direct'));
     expect(callInterface.protocolVersion).toBe('2.0');
     expect(callInterface.nativeDescriptor).toBe('opaque');
-    expect(callInterface.declaredEndpoints).toBeUndefined();
+    expect(callInterface.endpointSets?.[0].endpoints).toBeUndefined();
   });
 
   it('builds a subsequent draft by copying one exact version without metadata', () => {
@@ -476,10 +503,10 @@ describe('Agent Console editor model', () => {
           }],
         },
         endpointSourceOrder: ['DECLARED', 'RUNTIME'],
-        declaredEndpoints: [{
+        endpointSets: [{ source: 'DECLARED', endpoints: [{
           uri: 'https://agent.example.com/a2a',
           transport: 'HTTP+JSON',
-        }],
+        }] }],
       },
       {
         protocol: 'json-rpc',
@@ -583,7 +610,7 @@ describe('Agent Console editor model', () => {
       values({ protocolEditorKind: 'a2a', agentCard: updatedText }),
       [editor],
     ).callInterfaces) as AgentCallInterface[];
-    expect(updatedDraft[0].declaredEndpoints).toEqual(endpoints);
+    expect(updatedDraft[0].endpointSets?.[0].endpoints).toEqual(endpoints);
   });
 
   it.each([

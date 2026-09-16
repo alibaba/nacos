@@ -17,8 +17,8 @@
 package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.service.runtime.AiHttpClientLifecycleService;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.springframework.stereotype.Service;
@@ -79,10 +79,12 @@ public class AgentHttpClientLifecycleService {
      * @throws NacosException when validation or registration fails
      */
     public ClientLivenessInfo register(String externalClientId, String requestModule,
+        String namespaceId,
         AgentEndpointRegistrationBatch batch) throws NacosException {
         return clientLifecycleService.register(externalClientId, requestModule,
-            batch.getNamespaceId(),
-            internalClientId -> runtimeRegistryService.register(internalClientId, batch));
+            namespaceId,
+            internalClientId -> runtimeRegistryService.register(internalClientId, namespaceId,
+                batch));
     }
     
     /**

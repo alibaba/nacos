@@ -250,12 +250,12 @@ application/vnd.nacos.ai-agent+json
 The former is available only when the exact common-latest Version contains a
 complete valid A2A Agent Card and returns only that native card. The latter
 returns a versioned, protocol-neutral Nacos Agent definition without Runtime
-Endpoints, health, Publishers, heartbeats, owner, scope, or review state. An
+Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared addresses carry effective healthy/enabled=true defaults without implying probes. An
 artifact URL includes the exact Version, its `contentDigest`, and the
 representation key. An offline Version, digest mismatch, or unavailable
 representation returns ARD not found. The Nacos representation validates
 against
-[`NacosAgentArtifact`](../../schemas/ai/agent/0.2.0/agent-artifact.schema.json#/$defs/NacosAgentArtifact).
+[`NacosAgentArtifact`](../../schemas/ai/agent/agent-artifact.schema.json#/$defs/NacosAgentArtifact).
 A deployment with the default Nacos server on port 8848 and the adaptor on port
 9080 must work without gateway path co-location.
 
@@ -400,3 +400,9 @@ exclude Runtime state.
   detail, audit, or authenticated API shapes should be supported.
 - Define operational guidance for running the adaptor behind gateways and
   service meshes.
+
+## Endpoint Consolidation Acceptance
+
+Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors. Do not export runtime, health, or management observation fields.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.

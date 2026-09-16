@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai;
 
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import java.util.List;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.SkillService;
@@ -38,7 +40,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -47,17 +49,13 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -102,7 +100,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -272,17 +270,17 @@ class NacosAiServiceTest {
     void grpcCapacityRejectionDiscardsPublicationManagerCache()
         throws NoSuchFieldException, IllegalAccessException {
         AiGrpcClient constructedGrpcClient = grpcClientConstruction.constructed().get(0);
-        ArgumentCaptor<Consumer<AgentEndpointRegistrationBatch>> handlerCaptor =
-            ArgumentCaptor.forClass(Consumer.class);
+        ArgumentCaptor<BiConsumer<String, AgentEndpointRegistrationBatch>> handlerCaptor =
+            ArgumentCaptor.forClass(BiConsumer.class);
         verify(constructedGrpcClient)
             .setAgentEndpointPublicationCapacityRejectedHandler(handlerCaptor.capture());
         injectMocks();
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         
-        handlerCaptor.getValue().accept(batch);
+        handlerCaptor.getValue().accept("tenant-b", batch);
         
         verify(agentEndpointPublicationManager)
-            .discardAfterRemoteCapacityRejection(batch);
+            .discardAfterRemoteCapacityRejection("tenant-b", batch);
     }
     
     @Test
@@ -1019,12 +1017,13 @@ class NacosAiServiceTest {
     @Test
     void agentSearchAndDiscoverBindNamespaceAndDelegate() throws Exception {
         injectMocks();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        when(agentTransportRouter.searchAgents(any(AgentSearchRequest.class))).thenReturn(page);
+        Page<AgentSummary> page = new Page<AgentSummary>();
+        when(agentTransportRouter.searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID),
+            any(AgentSearchRequest.class))).thenReturn(page);
         AgentDiscoveryResult discoveryResult = new AgentDiscoveryResult();
         when(agentTransportRouter.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenReturn(discoveryResult);
-        AgentSearchQuery search = new AgentSearchQuery();
+        AgentSearchRequest search = new AgentSearchRequest();
         AgentReference reference = new AgentReference();
         reference.setAgentName("agent-a");
         
@@ -1033,8 +1032,9 @@ class NacosAiServiceTest {
         
         ArgumentCaptor<AgentSearchRequest> searchCaptor =
             ArgumentCaptor.forClass(AgentSearchRequest.class);
-        verify(agentTransportRouter).searchAgents(searchCaptor.capture());
-        assertEquals(Constants.DEFAULT_NAMESPACE_ID, searchCaptor.getValue().getNamespaceId());
+        verify(agentTransportRouter).searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID),
+            searchCaptor.capture());
+        assertEquals(search.getAgentNameContains(), searchCaptor.getValue().getAgentNameContains());
         assertNotSame(search, searchCaptor.getValue());
         ArgumentCaptor<AgentDiscoveryRequest> discoveryCaptor =
             ArgumentCaptor.forClass(AgentDiscoveryRequest.class);
@@ -1070,42 +1070,32 @@ class NacosAiServiceTest {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
     void completeAgentEndpointOperationsBindNamespaceBeforeDelegating() throws Exception {
         injectMocks();
-        AgentEndpointRegistration registration = new AgentEndpointRegistration();
+        AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();
         registration.setAgentName("agent-a");
         registration.setRuntimeVersion("1.0.0");
         registration.setProtocol("a2a");
         registration.setEndpoints(Collections.emptyList());
-        AgentEndpointDeregistration deregistration =
-            new AgentEndpointDeregistration();
-        deregistration.setAgentName("agent-a");
-        deregistration.setProtocol("a2a");
-        deregistration.setEndpoints(Collections.emptyList());
-        
         assertThrows(NacosException.class,
             () -> nacosAiService.agent().registerAgentEndpoints(registration));
-        assertThrows(NacosException.class,
-            () -> nacosAiService.agent().deregisterAgentEndpoints(deregistration));
-        
+        assertThrows(NacosException.class, () -> nacosAiService.agent()
+            .deregisterAgentEndpoints("agent-a", "a2a", Collections.emptyList()));
         registration.setEndpoints(Collections.singletonList(endpoint("http://host/a")));
-        deregistration.setEndpoints(Collections.singletonList(endpoint("http://host/a")));
+        List<Endpoint> removals = Collections.singletonList(endpoint("http://host/a"));
         nacosAiService.agent().registerAgentEndpoints(registration);
-        nacosAiService.agent().deregisterAgentEndpoints(deregistration);
-        
+        nacosAiService.agent().deregisterAgentEndpoints("agent-a", "a2a", removals);
         ArgumentCaptor<AgentEndpointRegistrationBatch> registrationCaptor =
             ArgumentCaptor.forClass(AgentEndpointRegistrationBatch.class);
-        verify(agentEndpointPublicationManager).register(registrationCaptor.capture());
-        assertEquals(Constants.DEFAULT_NAMESPACE_ID,
-            registrationCaptor.getValue().getNamespaceId());
-        ArgumentCaptor<AgentEndpointDeregistrationBatch> deregistrationCaptor =
-            ArgumentCaptor.forClass(AgentEndpointDeregistrationBatch.class);
-        verify(agentEndpointPublicationManager).deregister(deregistrationCaptor.capture());
-        assertEquals(Constants.DEFAULT_NAMESPACE_ID,
-            deregistrationCaptor.getValue().getNamespaceId());
+        verify(agentEndpointPublicationManager).register(eq(Constants.DEFAULT_NAMESPACE_ID),
+            registrationCaptor.capture());
+        ArgumentCaptor<List<Endpoint>> deregistrationCaptor = ArgumentCaptor.forClass(List.class);
+        verify(agentEndpointPublicationManager).deregister(eq(Constants.DEFAULT_NAMESPACE_ID),
+            eq("agent-a"), eq("a2a"), deregistrationCaptor.capture());
         assertNotSame(registration.getEndpoints(), registrationCaptor.getValue().getEndpoints());
-        assertNotSame(deregistration.getEndpoints(),
-            deregistrationCaptor.getValue().getEndpoints());
+        assertNotSame(removals, deregistrationCaptor.getValue());
+        assertNotSame(removals.get(0), deregistrationCaptor.getValue().get(0));
     }
     
     @Test
@@ -1224,20 +1214,20 @@ class NacosAiServiceTest {
                 properties.setProperty(AiConstants.AI_TRANSPORT_MODE, override);
                 properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, global);
                 service.mcp().getMcpServer("mcp", "1.0.0");
-                service.agent().searchAgents(new AgentSearchQuery());
+                service.agent().searchAgents(new AgentSearchRequest());
                 service.prompt().getPrompt("prompt");
                 if ("grpc".equals(global)) {
                     verify(grpc).queryMcpServer("mcp", "1.0.0");
-                    verify(http).searchAgents(any());
+                    verify(http).searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID), any());
                     verify(http).queryPrompt("prompt", null, null, null);
                     verify(http, never()).queryMcpServer(any(), any());
-                    verify(grpc, never()).searchAgents(any());
+                    verify(grpc, never()).searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID), any());
                 } else {
                     verify(http).queryMcpServer("mcp", "1.0.0");
-                    verify(grpc).searchAgents(any());
+                    verify(grpc).searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID), any());
                     verify(grpc).queryPrompt("prompt", null, null, null);
                     verify(grpc, never()).queryMcpServer(any(), any());
-                    verify(http, never()).searchAgents(any());
+                    verify(http, never()).searchAgents(eq(Constants.DEFAULT_NAMESPACE_ID), any());
                 }
                 verify(grpc).start(any(), any());
             } finally {

@@ -17,12 +17,18 @@
 package com.alibaba.nacos.test.consoleapi.ai.agent;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.test.consoleapi.ai.AiConsoleApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,6 +55,72 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
+
+    @Test
+    public void testUnifiedDefinitionAndNonEmptyRuntimeAcrossConsoleDeploymentModes()
+            throws Exception {
+        String agentName = randomAiName("console-endpoint-model");
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
+        Map<String, Object> draft = agentInitialDraftRequest(null, agentName, "1.0.0");
+        draft.put("callInterfaces", List.of(Map.of("protocol", "custom",
+                "descriptorMediaType", "application/json", "nativeDescriptor", Map.of("method", "invoke"),
+                "endpointSourceOrder", List.of("RUNTIME", "DECLARED"),
+                "endpointSets", List.of(Map.of("source", "DECLARED", "endpoints",
+                        List.of(Map.of("uri", "https://example.com/declared", "transport", "HTTP")))))));
+        postFormOk(CONSOLE_AGENT_PATH + "/draft", agentForm(draft));
+        postFormOk(CONSOLE_AGENT_PATH + "/force-publish",
+                agentForm(agentVersionCommand(null, agentName, "1.0.0")));
+        JsonNode definition = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
+                agentVersionIdentityQuery(null, agentName, "1.0.0")).get("data");
+        assertEquals("DECLARED", definition.at("/callInterfaces/0/endpointSets/0/source").asText());
+        assertEquals("https://example.com:443/declared",
+                definition.at("/callInterfaces/0/endpointSets/0/endpoints/0/uri").asText());
+        String endpointPath = nacosPath("/v3/client/ai/agents/endpoints");
+        String clientId = "http-console-model-" + UUID.randomUUID();
+        addCleanup(() -> {
+            HttpDelete delete = new HttpDelete(BASE_URL + endpointPath + "?"
+                    + agentIdentityQuery(DEFAULT_NAMESPACE, agentName).addParam("protocol", "custom").toQueryUrl());
+            delete.setHeader("X-Nacos-Client-Id", clientId);
+            delete.setHeader("Request-Module", "AI");
+            executeRaw(delete, AuthIdentity.CLIENT_READ_WRITE);
+        });
+        HttpPost registration = new HttpPost(BASE_URL + endpointPath);
+        registration.setHeader("X-Nacos-Client-Id", clientId);
+        registration.setHeader("Request-Module", "AI");
+        Query form = agentIdentityQuery(DEFAULT_NAMESPACE, agentName).addParam("protocol", "custom")
+                .addParam("runtimeVersion", "1.0.0").addParam("endpoints", JacksonUtils.toJson(List.of(
+                        Map.of("uri", "http://127.0.0.1:29003/runtime", "transport", "HTTP", "healthy", false))));
+        registration.setEntity(new StringEntity(form.toQueryUrl(), ContentType.APPLICATION_FORM_URLENCODED));
+        HttpResponse registered = executeRaw(registration, AuthIdentity.CLIENT_READ_WRITE);
+        assertEquals(200, registered.code(), registered.body());
+        JsonNode view = null;
+        for (int retry = 0; retry < 60; retry++) {
+            view = getJsonOk(CONSOLE_AGENT_RUNTIME_ENDPOINTS_PATH,
+                    agentVersionIdentityQuery(null, agentName, "1.0.0").addParam("protocol", "custom")).get("data");
+            if (view.at("/runtimeEndpointSnapshot/callInterface/endpointSets/0/endpoints").size() == 1) {
+                break;
+            }
+            Thread.sleep(100L);
+        }
+        JsonNode callInterface = view.at("/runtimeEndpointSnapshot/callInterface");
+        JsonNode runtimeSet = callInterface.at("/endpointSets/0");
+        assertEquals(1, runtimeSet.path("endpoints").size(), view.toString());
+        assertEquals("RUNTIME", runtimeSet.path("source").asText());
+        assertTrue(runtimeSet.path("lastUpdatedTime").asLong() > 0, view.toString());
+        JsonNode endpoint = runtimeSet.at("/endpoints/0");
+        assertEquals("http://127.0.0.1:29003/runtime", endpoint.path("uri").asText());
+        assertFalse(endpoint.path("healthy").asBoolean(true), view.toString());
+        assertTrue(endpoint.path("enabled").asBoolean(), view.toString());
+        assertEquals("UNHEALTHY", endpoint.path("state").asText());
+        assertEquals("[1.0.0]", endpoint.at("/bindings/0/versionRange").asText());
+        assertFalse(endpoint.has("endpoint"), view.toString());
+        assertFalse(callInterface.hasNonNull("nativeDescriptor"), view.toString());
+        assertTrue(view.hasNonNull("namingServiceRef"), view.toString());
+        JsonNode copied = postFormOk(CONSOLE_AGENT_PATH + "/draft",
+                agentForm(agentDraftCreateRequest(null, agentName, "2.0.0", "1.0.0"))).get("data");
+        assertEquals(definition.get("callInterfaces"), copied.get("callInterfaces"));
+        assertEquals(definition.get("contentDigest"), copied.get("contentDigest"));
+    }
 
     @Test
     public void testConsoleScopeRoundTrip() throws Exception {
@@ -78,7 +150,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 agentForm(agentInitialDraftRequest(null, agentName, firstVersion))).get("data");
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         assertVersion(draft, firstVersion, "draft");
-        assertFalse(draft.has("publishPipelineInfo"), draft.toString());
+        assertFalse(draft.hasNonNull("publishPipelineInfo"), draft.toString());
 
         JsonNode overview = getJsonOk(CONSOLE_AGENT_PATH,
                 agentIdentityQuery(null, agentName)).get("data");
@@ -87,7 +159,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals(agentName, overview.get("agent").get("agentName").asText(),
                 overview.toString());
         assertFalse(overview.get("versionPage").get("pageItems").get(0)
-                .has("publishPipelineInfo"), overview.toString());
+                .hasNonNull("publishPipelineInfo"), overview.toString());
 
         JsonNode updated = putFormOk(CONSOLE_AGENT_PATH,
                 agentForm(agentUpdateRequest(null, agentName, "console"))).get("data");
@@ -113,7 +185,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode versionDetail = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, firstVersion)).get("data");
         assertVersion(versionDetail, firstVersion, "draft");
-        assertFalse(versionDetail.has("publishPipelineInfo"), versionDetail.toString());
+        assertFalse(versionDetail.hasNonNull("publishPipelineInfo"), versionDetail.toString());
 
         JsonNode replaced = putFormOk(CONSOLE_AGENT_PATH + "/draft",
                 agentForm(agentDraftUpdateRequest(null, agentName, firstVersion,
@@ -224,15 +296,15 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode snapshot = runtimeView.get("runtimeEndpointSnapshot");
         assertEquals(namespaceId, snapshot.get("namespaceId").asText(), runtimeView.toString());
         assertEquals(agentName, snapshot.get("agentName").asText(), runtimeView.toString());
-        assertEquals("a2a", snapshot.get("protocol").asText(), runtimeView.toString());
+        assertEquals("a2a", snapshot.get("callInterface").get("protocol").asText(), runtimeView.toString());
         if (null == version) {
             assertTrue(snapshot.get("version") == null || snapshot.get("version").isNull(),
                     runtimeView.toString());
         } else {
             assertEquals(version, snapshot.get("version").asText(), runtimeView.toString());
         }
-        assertTrue(snapshot.get("items").isArray(), runtimeView.toString());
-        assertFalse(snapshot.get("items").elements().hasNext(), runtimeView.toString());
+        assertTrue(snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").isArray(), runtimeView.toString());
+        assertFalse(snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").elements().hasNext(), runtimeView.toString());
 
         JsonNode namingReference = runtimeView.get("namingServiceRef");
         assertEquals(namespaceId, namingReference.get("namespaceId").asText(),

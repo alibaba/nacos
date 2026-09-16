@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchEventType;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryNotifyResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentUnsubscribeRpcResponse;

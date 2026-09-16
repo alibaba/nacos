@@ -66,6 +66,7 @@ import {
   type AgentVersionAction,
   buildAgentStatusUpdateData,
   endpointSourceOrderLabelKey,
+  declaredEndpointsOf,
   formatProtocolLabel,
   getProtocols,
   getVersionActions,
@@ -84,7 +85,7 @@ const VERSION_STATUSES: AgentVersionStatus[] = [
   'offline',
 ];
 
-function formatTime(value?: number): string {
+function formatTime(value?: number | null): string {
   return value ? new Date(value).toLocaleString() : '-';
 }
 
@@ -178,7 +179,7 @@ export default function AgentDetailPage() {
       const labels = { ...(overview.agent.versionInfo?.labels || {}) };
       delete labels.latest;
       setLabelsText(JSON.stringify(labels, null, 2));
-      const fallback = overview.agent.versionCatalog?.latestVersion
+      const fallback = overview.agent.versionInfo?.labels?.latest
         || overview.agent.versionInfo?.editingVersion
         || overview.agent.versionInfo?.reviewingVersion
         || overview.versionPage.pageItems[0]?.version
@@ -392,10 +393,9 @@ export default function AgentDetailPage() {
     ? getVersionActions(currentVersion.status, currentPipelineInfo, globalAdmin)
     : [];
   const canManageVisibility = globalAdmin || Boolean(username && agent.owner === username);
-  const onlineVersionCount = agent.versionCatalog?.onlineVersions?.length
-    ?? agent.versionInfo?.onlineCnt
+  const onlineVersionCount = agent.versionInfo?.onlineVersions?.length
     ?? 0;
-  const latestVersion = agent.versionCatalog?.latestVersion;
+  const latestVersion = agent.versionInfo?.labels?.latest;
   const canCreateDraftFrom = currentVersion?.status === 'online'
     || currentVersion?.status === 'offline';
   const hasUnpublishedVersion = Boolean(
@@ -428,7 +428,7 @@ export default function AgentDetailPage() {
                       <SelectItem key={version.version} value={version.version}>
                         <AiVersionSelectOption
                           version={version.version}
-                          status={version.status}
+                          status={version.status ?? undefined}
                           latest={latestVersion === version.version}
                           publishPipelineInfo={version.publishPipelineInfo}
                           labels={{
@@ -481,7 +481,7 @@ export default function AgentDetailPage() {
               </div>
               <AiResourceStatusControls
                 enabled={agent.status === 'enable'}
-                scope={agent.scope}
+                scope={agent.scope ?? undefined}
                 enabledLabel={t('agent.enabled')}
                 disabledLabel={t('agent.disabled')}
                 publicLabel={t('agent.publicScope')}
@@ -635,7 +635,7 @@ export default function AgentDetailPage() {
                             />
                             <Info
                               label={t('agent.descriptorMediaType')}
-                              value={selectedInterface.descriptorMediaType}
+                              value={selectedInterface.descriptorMediaType || '-'}
                             />
                             <Info
                               label={t('agent.sourceOrder')}
@@ -652,17 +652,17 @@ export default function AgentDetailPage() {
                               </h3>
                               <span className="text-xs text-muted-foreground">
                                 {t('agent.declaredEndpointCount', {
-                                  count: selectedInterface.declaredEndpoints?.length || 0,
+                                  count: declaredEndpointsOf(selectedInterface).length,
                                 })}
                               </span>
                             </div>
-                            {(selectedInterface.declaredEndpoints || []).length === 0 ? (
+                            {declaredEndpointsOf(selectedInterface).length === 0 ? (
                               <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
                                 {t('agent.noDeclaredEndpoints')}
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                {selectedInterface.declaredEndpoints?.map((endpoint) => (
+                                {declaredEndpointsOf(selectedInterface).map((endpoint) => (
                                   <div
                                     key={`${endpoint.uri}@@${endpoint.transport}`}
                                     className="flex flex-col gap-1 rounded-lg border bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -725,24 +725,24 @@ export default function AgentDetailPage() {
                 )}
                 {runtimeLoading && !runtimeView ? (
                   <Skeleton className="h-24 w-full" />
-                ) : (runtimeView?.runtimeEndpointSnapshot.items || []).length === 0 ? (
+                ) : (runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints || []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('agent.noRuntimeEndpoints')}</p>
                 ) : (
                   <div className="space-y-2">
-                    {runtimeView?.runtimeEndpointSnapshot.items.map((item) => (
-                      <div key={`${item.endpoint.uri}@@${item.endpoint.transport}`} className="rounded-lg border p-3">
+                    {runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints.map((item) => (
+                      <div key={`${item.uri}@@${item.transport}`} className="rounded-lg border p-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-sm break-all">{item.endpoint.uri}</span>
+                          <span className="font-mono text-sm break-all">{item.uri}</span>
                           <Badge>{item.state}</Badge>
-                          <Badge variant="outline">{item.endpoint.transport}</Badge>
+                          <Badge variant="outline">{item.transport}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {item.bindings.map(
+                          {(item.bindings || []).map(
                             (binding) => `${binding.runtimeVersion} → ${binding.versionRange}`,
                           ).join(', ')}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatTime(item.lastUpdatedTime)}
+                          {formatTime(runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.lastUpdatedTime)}
                         </p>
                       </div>
                     ))}
@@ -788,11 +788,11 @@ export default function AgentDetailPage() {
               </div>
               <Info
                 label={t('agent.latestVersion')}
-                value={agent.versionCatalog?.latestVersion || '-'}
+                value={agent.versionInfo?.labels?.latest || '-'}
               />
               <Info
                 label={t('agent.onlineVersions')}
-                value={String(agent.versionInfo?.onlineCnt || 0)}
+                value={String(agent.versionInfo?.onlineVersions?.length || 0)}
               />
             </CardContent>
           </Card>
@@ -876,9 +876,11 @@ export default function AgentDetailPage() {
                 >
                   <div className="flex justify-between gap-2">
                     <span className="font-mono text-sm font-medium">{version.version}</span>
-                    <Badge variant="outline">
-                      {versionStatusLabel(t, version.status)}
-                    </Badge>
+                    {version.status && (
+                      <Badge variant="outline">
+                        {versionStatusLabel(t, version.status)}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
                     {version.author && <span>{version.author}</span>}

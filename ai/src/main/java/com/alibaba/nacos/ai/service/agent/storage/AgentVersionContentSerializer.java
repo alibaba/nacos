@@ -19,12 +19,13 @@ package com.alibaba.nacos.ai.service.agent.storage;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -65,7 +66,10 @@ public final class AgentVersionContentSerializer {
     
     private static final Set<String> CALL_INTERFACE_FIELDS = new HashSet<String>(Arrays.asList(
         "protocol", "protocolVersion", "descriptorMediaType", "nativeDescriptor",
-        "endpointSourceOrder", "declaredEndpoints"));
+        "endpointSourceOrder", "endpointSets"));
+    
+    private static final Set<String> ENDPOINT_SET_FIELDS = new HashSet<String>(Arrays.asList(
+        "source", "endpoints"));
     
     private static final Set<String> ENDPOINT_FIELDS = new HashSet<String>(Arrays.asList(
         "uri", "transport", "priority", "weight", "metadata"));
@@ -84,7 +88,7 @@ public final class AgentVersionContentSerializer {
         validate(content);
         final byte[] bytes;
         try {
-            bytes = JacksonUtils.toJsonBytes(toStorageProjection(content));
+            bytes = JsonUtils.toJsonBytes(toStorageProjection(content));
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize AgentVersionContent", e);
         }
@@ -131,7 +135,7 @@ public final class AgentVersionContentSerializer {
         validateStorageJsonShape(bytes);
         final AgentVersionContent content;
         try {
-            content = JacksonUtils.toObj(bytes, AgentVersionContent.class);
+            content = JsonUtils.toObj(bytes, AgentVersionContent.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid AgentVersionContent", e);
         }
@@ -181,7 +185,8 @@ public final class AgentVersionContentSerializer {
         return result;
     }
     
-    private static Map<String, Object> toStorageProjection(AgentCallInterface callInterface) {
+    private static Map<String, Object> toStorageProjection(
+        AgentCallInterface callInterface) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("protocol", callInterface.getProtocol());
         if (callInterface.getProtocolVersion() != null) {
@@ -194,13 +199,20 @@ public final class AgentVersionContentSerializer {
             sources.add(source.name());
         }
         result.put("endpointSourceOrder", sources);
-        if (callInterface.getDeclaredEndpoints() != null
-            && !callInterface.getDeclaredEndpoints().isEmpty()) {
-            List<Map<String, Object>> endpoints = new ArrayList<Map<String, Object>>();
-            for (Endpoint endpoint : callInterface.getDeclaredEndpoints()) {
-                endpoints.add(toStorageProjection(EndpointCanonicalizer.canonicalize(endpoint)));
+        if (callInterface.getEndpointSets() != null && !callInterface.getEndpointSets().isEmpty()) {
+            List<Map<String, Object>> sets = new ArrayList<Map<String, Object>>();
+            for (EndpointSet endpointSet : callInterface.getEndpointSets()) {
+                Map<String, Object> set = new LinkedHashMap<String, Object>();
+                set.put("source", EndpointSource.DECLARED.name());
+                List<Map<String, Object>> endpoints = new ArrayList<Map<String, Object>>();
+                for (Endpoint endpoint : endpointSet.getEndpoints()) {
+                    endpoints
+                        .add(toStorageProjection(EndpointCanonicalizer.canonicalize(endpoint)));
+                }
+                set.put("endpoints", endpoints);
+                sets.add(set);
             }
-            result.put("declaredEndpoints", endpoints);
+            result.put("endpointSets", sets);
         }
         return result;
     }
@@ -237,7 +249,7 @@ public final class AgentVersionContentSerializer {
         validateSingleJsonValue(bytes);
         final Map<?, ?> root;
         try {
-            root = JacksonUtils.toObj(bytes, Map.class);
+            root = JsonUtils.toObj(bytes, Map.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid AgentVersionContent", e);
         }
@@ -255,14 +267,23 @@ public final class AgentVersionContentSerializer {
             }
             Map<?, ?> interfaceObject = (Map<?, ?>) callInterface;
             rejectUnknownFields(interfaceObject, CALL_INTERFACE_FIELDS, "AgentCallInterface");
-            Object endpoints = interfaceObject.get("declaredEndpoints");
-            if (!(endpoints instanceof List)) {
+            Object sets = interfaceObject.get("endpointSets");
+            if (!(sets instanceof List)) {
                 continue;
             }
-            for (Object endpoint : (List<?>) endpoints) {
-                if (endpoint instanceof Map) {
-                    rejectUnknownFields((Map<?, ?>) endpoint, ENDPOINT_FIELDS,
-                        "DeclaredEndpoint");
+            for (Object set : (List<?>) sets) {
+                if (!(set instanceof Map)) {
+                    continue;
+                }
+                Map<?, ?> setObject = (Map<?, ?>) set;
+                rejectUnknownFields(setObject, ENDPOINT_SET_FIELDS, "EndpointSet");
+                Object endpoints = setObject.get("endpoints");
+                if (endpoints instanceof List) {
+                    for (Object endpoint : (List<?>) endpoints) {
+                        if (endpoint instanceof Map) {
+                            rejectUnknownFields((Map<?, ?>) endpoint, ENDPOINT_FIELDS, "Endpoint");
+                        }
+                    }
                 }
             }
         }

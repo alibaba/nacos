@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.ai.form.agent.client;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;

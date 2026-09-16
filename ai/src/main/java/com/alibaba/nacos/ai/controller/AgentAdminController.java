@@ -31,13 +31,12 @@ import com.alibaba.nacos.ai.form.agent.admin.AgentVersionListForm;
 import com.alibaba.nacos.ai.param.AgentAdminHttpParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -103,7 +102,7 @@ public class AgentAdminController {
     @Since("3.3.0")
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Agent> updateAgent(AgentUpdateForm form) throws NacosException {
+    public Result<AgentSummary> updateAgent(AgentUpdateForm form) throws NacosException {
         AgentUpdateRequest request = form.toRequest();
         return Result.success(
             agentOperationService.updateAgent(toAgent(form.getNamespaceId(), request)));
@@ -319,14 +318,14 @@ public class AgentAdminController {
     @Since("3.3.0")
     @PutMapping("/labels")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Agent> updateLabels(AgentLabelsUpdateForm form) throws NacosException {
+    public Result<AgentSummary> updateLabels(AgentLabelsUpdateForm form) throws NacosException {
         AgentLabelsUpdateRequest request = form.toRequest();
         return Result.success(agentOperationService.updateLabels(form.getNamespaceId(),
             request.getAgentName(), request.getLabels()));
     }
     
-    private Agent toAgent(String namespaceId, AgentUpdateRequest request) {
-        Agent result = new Agent();
+    private AgentSummary toAgent(String namespaceId, AgentUpdateRequest request) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(namespaceId);
         result.setAgentName(request.getAgentName());
         result.setDisplayName(request.getDisplayName());

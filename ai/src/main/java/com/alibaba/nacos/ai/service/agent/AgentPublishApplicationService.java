@@ -19,9 +19,9 @@ package com.alibaba.nacos.ai.service.agent;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -63,7 +63,7 @@ public class AgentPublishApplicationService {
         AgentVersionDetail current = findEquivalent(namespaceId, request);
         if (current == null) {
             try {
-                current = operationService.createDraft(namespaceId, request);
+                current = operationService.createDraftFromPublication(namespaceId, request);
             } catch (NacosException createFailure) {
                 current = recoverEquivalent(namespaceId, request, createFailure);
             }
@@ -105,7 +105,8 @@ public class AgentPublishApplicationService {
         return existing;
     }
     
-    private AgentVersionDetail recoverEquivalent(String namespaceId, AgentPublishRequest request,
+    private AgentVersionDetail recoverEquivalent(String namespaceId,
+        AgentPublishRequest request,
         NacosException originalFailure) throws NacosException {
         final AgentVersionDetail existing;
         try {
@@ -143,7 +144,7 @@ public class AgentPublishApplicationService {
         if (!hasInitialMetadata(request)) {
             return;
         }
-        Agent existing = operationService.getAgent(namespaceId, request.getAgentName());
+        AgentSummary existing = operationService.getAgent(namespaceId, request.getAgentName());
         if (request.getDisplayName() != null
             && !Objects.equals(request.getDisplayName(), existing.getDisplayName())
             || request.getDescription() != null

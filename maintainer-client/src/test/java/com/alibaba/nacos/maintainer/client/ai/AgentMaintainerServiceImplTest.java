@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -144,7 +145,7 @@ class AgentMaintainerServiceImplTest {
         updateRequest.setAgentName(AGENT_NAME);
         updateRequest.setDisplayName("Demo");
         
-        Agent updated = service.updateAgent(NAMESPACE_ID, updateRequest);
+        AgentSummary updated = service.updateAgent(NAMESPACE_ID, updateRequest);
         service.deleteAgent(NAMESPACE_ID, AGENT_NAME);
         
         assertEquals(AGENT_NAME, updated.getAgentName());
@@ -187,7 +188,12 @@ class AgentMaintainerServiceImplTest {
         Page<AgentVersionSummary> versionPage = new Page<>();
         versionPage.setPageItems(Collections.singletonList(new AgentVersionSummary()));
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
-        snapshot.setItems(Collections.emptyList());
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
+        snapshot.getCallInterface().getEndpointSets().get(0).setEndpoints(Collections.emptyList());
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(versionPage), response(versionDetail()), response(snapshot));
         
@@ -196,7 +202,7 @@ class AgentMaintainerServiceImplTest {
         RuntimeEndpointSnapshot actual =
             service.getRuntimeEndpoints(NAMESPACE_ID, AGENT_NAME, "A2A", VERSION);
         
-        assertNotNull(actual.getItems());
+        assertNotNull(actual.getCallInterface().getEndpointSets().get(0).getEndpoints());
         List<HttpRequest> requests = captureRequests(3);
         assertRequest(requests.get(0), HttpMethod.GET, rootPath() + "/versions");
         assertEquals("draft", requests.get(0).getParamValues().get("status"));
@@ -241,7 +247,7 @@ class AgentMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenReturn(response(summary), response(summary), response(summary), response(summary),
                 response(summary), response(summary));
-        final AgentVersionCommand command = versionCommand();
+        final AgentVersionRequest command = versionCommand();
         
         service.submit(NAMESPACE_ID, command);
         service.publish(NAMESPACE_ID, command);
@@ -269,7 +275,7 @@ class AgentMaintainerServiceImplTest {
         request.setAgentName(AGENT_NAME);
         request.setLabels(Collections.singletonMap("stable", VERSION));
         
-        Agent result = service.updateLabels(NAMESPACE_ID, request);
+        AgentSummary result = service.updateLabels(NAMESPACE_ID, request);
         
         assertEquals(AGENT_NAME, result.getAgentName());
         HttpRequest httpRequest = captureRequests(1).get(0);
@@ -289,7 +295,7 @@ class AgentMaintainerServiceImplTest {
         
         service.getAgent(AGENT_NAME);
         service.submit(versionCommand());
-        AgentVersionCommand explicitCommand = versionCommand();
+        AgentVersionRequest explicitCommand = versionCommand();
         service.submit(NAMESPACE_ID, explicitCommand);
         
         List<HttpRequest> requests = captureRequests(3);
@@ -314,7 +320,7 @@ class AgentMaintainerServiceImplTest {
         draftUpdateRequest.setAgentName(AGENT_NAME);
         draftUpdateRequest.setVersion(VERSION);
         draftUpdateRequest.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
-        final AgentVersionCommand command = versionCommand();
+        final AgentVersionRequest command = versionCommand();
         AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         labelsRequest.setAgentName(AGENT_NAME);
         
@@ -372,8 +378,8 @@ class AgentMaintainerServiceImplTest {
         return Constants.AdminApiPath.AI_AGENTS_ADMIN_PATH;
     }
     
-    private Agent agent() {
-        Agent result = new Agent();
+    private AgentSummary agent() {
+        AgentSummary result = new AgentSummary();
         result.setAgentName(AGENT_NAME);
         return result;
     }
@@ -385,8 +391,8 @@ class AgentMaintainerServiceImplTest {
         return result;
     }
     
-    private AgentVersionCommand versionCommand() {
-        AgentVersionCommand result = new AgentVersionCommand();
+    private AgentVersionRequest versionCommand() {
+        AgentVersionRequest result = new AgentVersionRequest();
         result.setAgentName(AGENT_NAME);
         result.setVersion(VERSION);
         return result;

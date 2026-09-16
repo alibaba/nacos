@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
@@ -34,7 +35,7 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -389,7 +390,7 @@ class A2aMigrationTargetStoreTest {
     void shouldRejectIncompleteDefinitionsAndPersistenceFailures() throws NacosException {
         assertThrows(IllegalArgumentException.class,
             () -> targetStore.reconcile(null, () -> true));
-        Agent incomplete = agent();
+        AgentSummary incomplete = agent();
         assertThrows(IllegalArgumentException.class, () -> targetStore.reconcile(
             new A2aMigrationDefinition(incomplete, Collections.emptyList(), "1.0.0"),
             () -> true));
@@ -576,8 +577,8 @@ class A2aMigrationTargetStoreTest {
         return new A2aMigrationDefinition(agent(), details, latest);
     }
     
-    private Agent agent() {
-        Agent result = new Agent();
+    private AgentSummary agent() {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(AGENT_NAME);
         result.setDescription("Research");
@@ -605,7 +606,11 @@ class A2aMigrationTargetStoreTest {
         Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com/" + version);
         endpoint.setTransport("HTTP+JSON");
-        callInterface.setDeclaredEndpoints(Collections.singletonList(endpoint));
+        
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(Collections.singletonList(endpoint));
+        callInterface.setEndpointSets(Collections.singletonList(declaredSet1));
         return new AgentVersionContent(Collections.singletonList(callInterface));
     }
     

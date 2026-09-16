@@ -509,3 +509,9 @@ cross-surface reads, both Runtime layouts, shadow on/off, reconnect/redo,
 quiescing availability, rolling mixed members, cross-node reconciliation,
 leader/owner restart, ACK/marker propagation, load-balanced reads, rollback
 boundaries, and all unrelated resource regressions.
+
+## Endpoint Consolidation Acceptance
+
+This iteration does not change the migration state machine or historical A2A public models, but consolidates address models used by converters, storage read-back, runtime comparison, and Search gates. Validate normal SYNCING/QUIESCING/terminal flows and both shadow policies with the new structure. Excluding BETA upgrades does not waive historical A2A migration regression; failure recovery and cluster injection remain deferred for this iteration.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.

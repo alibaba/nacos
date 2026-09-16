@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.model.v2.Result;
 import org.junit.jupiter.api.Test;
 

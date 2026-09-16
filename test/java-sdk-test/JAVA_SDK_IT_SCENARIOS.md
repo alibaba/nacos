@@ -180,4 +180,24 @@ are recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
 
 Separate review increment: strict 1/1 = 100%; effective 1/1 = 100%. This single input-contract group does not change the historical domain denominator or the existing migration/reliability gaps.
 
+## Agent model consolidation
+
+Agent model consolidation uses concrete namespace-free ClientRequest types; Search verifies inherited catalog metadata and shared version entries under grpc/http/auto. Draft publication retains idempotence, source validation and namespace binding. Abstract-base and fixed-JSON contracts are covered in API UTs.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent 模型合并验证沿用 AgentDiscoveryServiceJavaSdkITCase：新目录路径、跨 transport 返回一致、管理字段隔离，既有发现/订阅场景不变。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+
+### 2026-09-15 请求整合回归
+
+Agent Search/Register 使用 agent 根包共享模型，局部注销使用三参数；publish 使用 agent.client.AgentPublishRequest。新增同名 Agent 双 namespace 搜索、注册及 3 删 2 隔离场景，GRPC/HTTP/AUTO 和两种 JSON adapter 共用。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
 Scope Watch regression: `AgentPublishJavaSdkITCase#shouldInvalidateWatchAfterScopeBecomesPrivate` is Partial and explicitly disabled under `DAUTH-F05` after reproducing missing initial Watch delivery with auth enabled. Direct HTTP/gRPC default-public discovery and private-preserving publish retry remain executable.

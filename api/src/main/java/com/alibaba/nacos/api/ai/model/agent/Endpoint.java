@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Shared endpoint value used by declared and runtime Agent views.
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Endpoint implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -35,13 +33,24 @@ public class Endpoint implements Serializable {
     
     private String transport;
     
-    private Integer priority;
+    /** Lower values have higher priority; defaults to the minimum priority value, zero. */
+    private int priority;
     
-    private Double weight;
+    /** Relative weight among endpoints at the same priority; defaults to one. */
+    private double weight = 1D;
     
     private Map<String, String> metadata;
     
-    private Boolean healthy;
+    /** Registration health defaults to true; runtime reads return the current health. */
+    private boolean healthy = true;
+    
+    /** Nacos-maintained fields. Ignored when submitted in a write request. */
+    private List<RuntimeVersionBinding> bindings;
+    
+    /** Whether the endpoint is enabled; maintained by Nacos and defaults to true. */
+    private boolean enabled = true;
+    
+    private RuntimeEndpointState state;
     
     public String getUri() {
         return uri;
@@ -59,19 +68,19 @@ public class Endpoint implements Serializable {
         this.transport = transport;
     }
     
-    public Integer getPriority() {
+    public int getPriority() {
         return priority;
     }
     
-    public void setPriority(Integer priority) {
+    public void setPriority(int priority) {
         this.priority = priority;
     }
     
-    public Double getWeight() {
+    public double getWeight() {
         return weight;
     }
     
-    public void setWeight(Double weight) {
+    public void setWeight(double weight) {
         this.weight = weight;
     }
     
@@ -83,12 +92,35 @@ public class Endpoint implements Serializable {
         this.metadata = metadata;
     }
     
-    public Boolean getHealthy() {
+    public boolean getHealthy() {
         return healthy;
     }
     
-    public void setHealthy(Boolean healthy) {
+    public void setHealthy(boolean healthy) {
         this.healthy = healthy;
     }
     
+    public List<RuntimeVersionBinding> getBindings() {
+        return bindings;
+    }
+    
+    public void setBindings(List<RuntimeVersionBinding> bindings) {
+        this.bindings = bindings;
+    }
+    
+    public boolean getEnabled() {
+        return enabled;
+    }
+    
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+    
+    public RuntimeEndpointState getState() {
+        return state;
+    }
+    
+    public void setState(RuntimeEndpointState state) {
+        this.state = state;
+    }
 }

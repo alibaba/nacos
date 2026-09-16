@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.test.openapi.client.ai;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -104,7 +104,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
                 1L, false, Collections.emptyList());
         long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
         assertTrue(elapsedMillis >= 700L, "unchanged Watch returned too early: " + elapsedMillis);
-        assertFalse(timedOut.has("changedClientWatchIds"), timedOut.toString());
+        assertFalse(timedOut.hasNonNull("changedClientWatchIds"), timedOut.toString());
 
         List<Map<String, Object>> batch = new ArrayList<>();
         batch.add(watchItem("first", null, firstAgent, firstFingerprint));
@@ -416,7 +416,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
                     REQUEST_MODULE, watchForm(12L, 1000L, Collections.singletonList(
                             watchItem("cross-node", null, agentName, afterFingerprint)))),
                     12L, false, Collections.emptyList());
-            assertFalse(generationTwelve.has("changedClientWatchIds"),
+            assertFalse(generationTwelve.hasNonNull("changedClientWatchIds"),
                     generationTwelve.toString());
         } finally {
             generationTen.cancel(true);
@@ -505,7 +505,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
 
     private List<String> changedIds(JsonNode data) {
         List<String> result = new ArrayList<>();
-        if (data.has("changedClientWatchIds")) {
+        if (data.hasNonNull("changedClientWatchIds")) {
             data.get("changedClientWatchIds").forEach(each -> result.add(each.asText()));
         }
         return result;

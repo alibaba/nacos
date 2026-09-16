@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.ai.watch;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchEventType;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryNotifyResponse;
 import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;

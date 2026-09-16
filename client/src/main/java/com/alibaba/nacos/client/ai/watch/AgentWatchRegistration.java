@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 
 /**

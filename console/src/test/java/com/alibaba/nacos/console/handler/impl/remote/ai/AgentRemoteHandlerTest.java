@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -34,6 +36,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -75,16 +79,19 @@ class AgentRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void shouldDelegateEveryOperationToMaintainerService() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent agent = new Agent();
+        AgentSummary agent = new AgentSummary();
         AgentUpdateRequest updateRequest = new AgentUpdateRequest();
         AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
         AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
-        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();
-        AgentVersionSummary versionSummary = new AgentVersionSummary();
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
         when(agentMaintainerService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(overview);
         when(agentMaintainerService.updateAgent(NAMESPACE_ID, updateRequest)).thenReturn(agent);
         when(agentMaintainerService.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE",
@@ -99,12 +106,14 @@ class AgentRemoteHandlerTest extends AbstractRemoteHandlerTest {
             .thenReturn(versionDetail);
         when(agentMaintainerService.updateDraft(NAMESPACE_ID, draftUpdateRequest))
             .thenReturn(versionDetail);
+        AgentVersionSummary versionSummary = new AgentVersionSummary();
         when(agentMaintainerService.submit(any(), any())).thenReturn(versionSummary);
         when(agentMaintainerService.publish(any(), any())).thenReturn(versionSummary);
         when(agentMaintainerService.forcePublish(any(), any())).thenReturn(versionSummary);
         when(agentMaintainerService.redraft(any(), any())).thenReturn(versionSummary);
         when(agentMaintainerService.online(any(), any())).thenReturn(versionSummary);
         when(agentMaintainerService.offline(any(), any())).thenReturn(versionSummary);
+        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         when(agentMaintainerService.updateLabels(NAMESPACE_ID, labelsRequest)).thenReturn(agent);
         
         assertSame(overview, handler.getAgent(NAMESPACE_ID, AGENT_NAME));
@@ -130,8 +139,8 @@ class AgentRemoteHandlerTest extends AbstractRemoteHandlerTest {
         
         verify(agentMaintainerService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
         verify(agentMaintainerService).deleteDraft(NAMESPACE_ID, AGENT_NAME, VERSION);
-        ArgumentCaptor<AgentVersionCommand> commandCaptor =
-            ArgumentCaptor.forClass(AgentVersionCommand.class);
+        ArgumentCaptor<AgentVersionRequest> commandCaptor =
+            ArgumentCaptor.forClass(AgentVersionRequest.class);
         verify(agentMaintainerService).submit(
             org.mockito.ArgumentMatchers.eq(NAMESPACE_ID), commandCaptor.capture());
         assertEquals(AGENT_NAME, commandCaptor.getValue().getAgentName());

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -148,7 +148,7 @@ public final class AgentWatchMetrics {
     
     static void recordJsonBytes(Transport transport, Object payload) {
         try {
-            recordBytes(transport, JacksonUtils.toJsonBytes(payload).length);
+            recordBytes(transport, JsonUtils.toJsonBytes(payload).length);
         } catch (RuntimeException ignored) {
             // Metrics must never change Watch delivery behavior.
         }

@@ -444,6 +444,22 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         return form;
     }
 
+    /**
+     * Create a public Agent through the historical A2A contract, then verify its canonical view.
+     *
+     * @param agentName unique fixture name
+     * @param version initial online version
+     * @throws Exception when registration or verification fails
+     */
+    protected void publishPublicAgent(String agentName, String version) throws Exception {
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
+        postFormOk(ADMIN_A2A_PATH, buildAgentCardForm(agentName, version, "URL",
+                buildV1AgentCard(agentName, version, "1.0")));
+        JsonNode overview = getJsonOk(ADMIN_AGENT_PATH,
+                agentIdentityQuery(DEFAULT_NAMESPACE, agentName)).get("data");
+        assertEquals("PUBLIC", overview.get("agent").get("scope").asText(), overview.toString());
+    }
+
     protected Query agentIdentityQuery(String namespaceId, String agentName) {
         Query query = Query.newInstance();
         addIfNotBlank(query, "namespaceId", namespaceId);
