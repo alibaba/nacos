@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -32,6 +33,8 @@ import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -101,10 +104,14 @@ class A2aMaintainerServiceImplTest {
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     
-    @Test
-    void testRegisterAgentV1ShouldFallbackOnOldServer() throws NacosException {
-        NacosException legacyValidationError = new NacosException(NacosException.INVALID_PARAM,
-            "Required parameter `agentCard.protocolVersion` not present");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRegisterAgentV1ShouldFallbackOnOldServer(boolean typedError) throws NacosException {
+        NacosException legacyValidationError = typedError
+            ? new NacosApiException(400, 20000, "parameter missing",
+                "Required parameter `agentCard.protocolVersion` not present")
+            : new NacosException(NacosException.INVALID_PARAM,
+                "Required parameter `agentCard.protocolVersion` not present");
         HttpRestResult<String> successResult = buildSuccessResult();
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenThrow(legacyValidationError)
@@ -135,10 +142,14 @@ class A2aMaintainerServiceImplTest {
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     
-    @Test
-    void testUpdateAgentCardV1ShouldFallbackOnOldServer() throws NacosException {
-        NacosException legacyValidationError = new NacosException(NacosException.INVALID_PARAM,
-            "Required parameter `agentCard.preferredTransport` not present");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUpdateAgentCardV1ShouldFallbackOnOldServer(boolean typedError) throws NacosException {
+        NacosException legacyValidationError = typedError
+            ? new NacosApiException(400, 20000, "parameter missing",
+                "Required parameter `agentCard.preferredTransport` not present")
+            : new NacosException(NacosException.INVALID_PARAM,
+                "Required parameter `agentCard.preferredTransport` not present");
         HttpRestResult<String> successResult = buildSuccessResult();
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
             .thenThrow(legacyValidationError)

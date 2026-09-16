@@ -125,6 +125,10 @@ Rules:
 The current v3 Console API surface is described by the
 [V3 API Surface](../http-api/v3-api-surface.md).
 
+Remote Admin business errors must follow the [Response And Error Spec](../http-api/response-error-spec.md):
+independent Console preserves upstream HTTP status, business code, summary, and
+string detail rather than converting every typed failure to `SERVER_ERROR`.
+
 ## 5. UI Entry And Static Assets
 
 Console owns the browser entry and static asset serving behavior:

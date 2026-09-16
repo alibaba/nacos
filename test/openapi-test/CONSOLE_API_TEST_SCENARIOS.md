@@ -153,3 +153,17 @@ Agent Console 复用改名后的 Admin Request，现有合并部署和独立 rem
 JSON-04/08：合并/独立 Console 返回的 Runtime CallInterface 无 descriptor 事实，可省略或 null；保持现有错误码断言，CONSOLE-ERR-01 继续单独登记。
 
 [本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+## CONSOLE-ERR-01 错误透传回归（2026-09-16）
+
+复用 AgentConsoleApiOpenApiITCase 和 A2aConsoleApiOpenApiITCase 原14项，在合并和独立
+Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详情和成功副作用验证。
+共享 Maintainer 代理的修改另回归 Config/Naming 代表流程；不新增覆盖行、不提升覆盖比例。
+独立部署使用 nacos.deployment.type=console，nacos.console.port 指向该独立进程；Client
+写入仍使用服务端端口。CI 自动运行独立部署仍是后续任务。
+
+结果见 [Console 错误透传验证](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md)。
+
+实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
+全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
+CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。

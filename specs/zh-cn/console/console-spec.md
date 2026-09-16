@@ -105,6 +105,9 @@ Admin API 或 Maintainer SDK，除非某能力被明确设计为仅控制台可�
 
 当前 v3 Console API 范围由 [V3 API 范围](../http-api/v3-api-surface.md)描述。
 
+远程 Admin 业务错误遵循[响应与错误规范](../http-api/response-error-spec.md)：独立 Console
+保留上游 HTTP 状态、业务码、摘要和字符串详情，不应将类型化业务失败统一转换为 `SERVER_ERROR`。
+
 ## 5. UI 入口与静态资源
 
 Console 负责浏览器入口和静态资源服务行为：

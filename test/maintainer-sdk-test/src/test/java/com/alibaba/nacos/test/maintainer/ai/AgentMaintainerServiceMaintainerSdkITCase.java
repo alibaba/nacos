@@ -32,6 +32,8 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
@@ -65,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     overloads always use {@code public}, explicit method arguments are the sole custom-namespace
  *     source, list filters are applied before pagination, the orderBy allowlist is preserved, and
  *     malformed identities fail with controlled SDK exceptions.</li>
- *     <li>Exception/error handling: absent resources map to HTTP not-found, invalid lifecycle
+ *     <li>Exception/error handling: absent resources preserve both HTTP not-found and the API business code, invalid lifecycle
  *     transitions remain controlled parameter-state errors, and draft deletion makes the exact
  *     Version absent.</li>
  *     <li>Compatibility: {@link AiMaintainerService#a2a()} remains available; its existing
@@ -93,9 +95,11 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertNotNull(aiMaintainerService.a2a());
         
         String agentName = randomMaintainerName("agent-default");
-        NacosException missing =
-            assertThrows(NacosException.class, () -> agentService.getAgent(agentName));
+        NacosApiException missing =
+            assertThrows(NacosApiException.class, () -> agentService.getAgent(agentName));
         assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(), missing.getDetailErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getMsg(), missing.getErrAbstract());
         
         AgentDraftCreateRequest createRequest =
             buildInitialDraftRequest(agentName, "Default namespace Agent", INITIAL_VERSION);
@@ -192,15 +196,19 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
             INITIAL_VERSION));
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE, onlineAgain.getStatus());
         
-        NacosException invalidPublish = assertThrows(NacosException.class,
+        NacosApiException invalidPublish = assertThrows(NacosApiException.class,
             () -> agentService.publish(versionCommand(agentName, INITIAL_VERSION)));
         assertEquals(NacosException.INVALID_PARAM, invalidPublish.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getCode().intValue(), invalidPublish.getDetailErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getMsg(), invalidPublish.getErrAbstract());
         assertFalse(String.valueOf(invalidPublish.getMessage()).isEmpty());
         
         agentService.deleteAgent(agentName);
-        NacosException deleted =
-            assertThrows(NacosException.class, () -> agentService.getAgent(agentName));
+        NacosApiException deleted =
+            assertThrows(NacosApiException.class, () -> agentService.getAgent(agentName));
         assertEquals(NacosException.NOT_FOUND, deleted.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(), deleted.getDetailErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getMsg(), deleted.getErrAbstract());
     }
 
     @Test
@@ -267,14 +275,18 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         assertContainsVersion(agentService.listAgentVersions(namespaceId, agentName,
             AiConstants.Agent.VERSION_STATUS_DRAFT, 1, 10), SECOND_VERSION);
         
-        NacosException invalidRedraft = assertThrows(NacosException.class,
+        NacosApiException invalidRedraft = assertThrows(NacosApiException.class,
             () -> agentService.redraft(namespaceId, versionCommand(agentName, SECOND_VERSION)));
         assertEquals(NacosException.INVALID_PARAM, invalidRedraft.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getCode().intValue(), invalidRedraft.getDetailErrCode());
+        assertEquals(ErrorCode.ILLEGAL_STATE.getMsg(), invalidRedraft.getErrAbstract());
         
         agentService.deleteDraft(namespaceId, agentName, SECOND_VERSION);
-        NacosException deletedDraft = assertThrows(NacosException.class,
+        NacosApiException deletedDraft = assertThrows(NacosApiException.class,
             () -> agentService.getAgentVersion(namespaceId, agentName, SECOND_VERSION));
         assertEquals(NacosException.NOT_FOUND, deletedDraft.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(), deletedDraft.getDetailErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getMsg(), deletedDraft.getErrAbstract());
         
         AgentDraftCreateRequest submittedDraft = new AgentDraftCreateRequest();
         submittedDraft.setAgentName(agentName);

@@ -68,6 +68,15 @@ v3 errors:
 Deprecated v3 APIs that use the shared compatibility gate return HTTP `410 Gone`
 with `API_DEPRECATED` while `nacos.core.api.compatibility.enabled` is false.
 
+For a failed remote Admin HTTP response in the standard `Result<String>` format,
+Maintainer SDK must preserve the HTTP status separately from the business `code`, summary
+`message`, and detail `data`. This also applies when the business code is newer
+than the SDK's local enum. Independent Console must propagate that typed error
+through `NacosApiExceptionHandler`, so its error contract matches merged Console.
+Plain-text, empty, or nonstandard error bodies retain the existing generic
+`NacosException` fallback. This requirement does not change retry, re-login, or
+server-selection policy.
+
 ## 4. Exception Handler Convergence
 
 Nacos-owned v3 HTTP APIs should converge on `@NacosApi` and

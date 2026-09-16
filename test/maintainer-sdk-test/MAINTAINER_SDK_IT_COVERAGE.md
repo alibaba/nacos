@@ -111,3 +111,19 @@ AgentMaintainerService 覆盖行保持；本轮只调整五个具体请求的包
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Remote API errors（2026-09-16）
+
+AgentMaintainerServiceMaintainerSdkITCase strengthens existing missing-resource, invalid-publish,
+invalid-redraft, and deleted-version scenarios: NacosApiException retains HTTP status separately
+from the exact business code and summary. The complete Maintainer SDK suite is exercised with
+both default and Jackson 3 adapters because ClientHttpProxy is shared by all domains, including
+multipart uploads, authentication refresh, and legacy fallback. Existing scenario row counts
+and known exclusions remain unchanged. Nonstandard remote responses keep the generic exception
+fallback and are covered by proxy unit tests.
+
+See [validation evidence](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md).
+
+Verified on 2026-09-16: both adapters discovered 46 cases, with 44 passed, zero failures/errors,
+and two existing skips each (DAUTH-F04 and the opt-in real restart scenario). No recovery test was
+performed. This validates the strengthened business-error assertions without upgrading unrelated coverage gaps.

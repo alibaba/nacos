@@ -121,8 +121,12 @@ LEGACY smoke 的 canonical cleanup helper 无法清理旧布局；进入迁移�
 
 ## 待办 CONSOLE-ERR-01：独立 Console 错误码透传
 
-**状态：已记录，延后修复。**2026-09-15 用户明确要求：等待当前 review 的改动全部完成后，
-再实施本问题的修复。当前继续完成模型整合 review；本待办不立即修改生产代码或 CI。
+**当前状态（2026-09-16）：错误码透传已修复并验证，按用户要求单独提交；独立 Console CI 待处理。**
+Agent 模型改动已先提交 `757cd8daa`。复用原 IT 验证三项错误全部通过，旧构件对照复现
+原失败；386项UT及两套Maintainer全量IT通过，扩展Naming回归发现另一项既有问题。
+详见[Console 错误透传验证](./CONSOLE_ERROR_VALIDATION.md)。
+
+以下保留2026-09-15延期时的范围和验收计划；原轮次的失败统计不追溯改写。
 
 问题：已有 OpenAPI IT 在合并部署下通过，在独立 Console 下，业务码
 50100（A2A AgentCard 不存在）、23000（草稿未经审核发布）、20004（Agent 版本不存在）
@@ -147,7 +151,7 @@ LEGACY smoke 的 canonical cleanup helper 无法清理旧布局；进入迁移�
 3. 原有三项失败必须通过；执行完整模型测试矩阵、Maintainer 全量默认/Jackson 3 IT，
    以及 Console 双部署回归。实现时同步相关 API/SDK 场景文档和 coverage registry。
 
-本待办的完成条件尚未满足；记录延期不代表问题已修复，也不改变其他已知缺口的状态。
+错误码生产修复已通过本轮验收；独立 Console CI 和其他已知缺口仍独立保留。
 
 ## 中间问题与证据
 

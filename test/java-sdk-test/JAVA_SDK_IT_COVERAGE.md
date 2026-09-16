@@ -172,3 +172,11 @@ The shared-listener fixture is PUBLIC for JSON regression coverage. The initial 
 fixture reproduced DAUTH-F05 (`TERMINATED/-404` after successful synchronous Discover);
 private authorized asynchronous Watch remains an explicit gap, not a passing claim.
 Listener-sharing, failure-isolation and partial-unsubscribe assertions are retained.
+
+## CONSOLE-ERR-01 impact（2026-09-16）
+
+NacosApiException adds a raw-business-code constructor for Maintainer HTTP error propagation.
+Client SDK interfaces, transports, callbacks and exception mapping are unchanged. Its constructor
+is covered by API UT; the affected public SDK end-to-end checks are maintained in
+[Maintainer SDK coverage](../maintainer-sdk-test/MAINTAINER_SDK_IT_COVERAGE.md), including both JSON adapters.
+No Client SDK coverage status is upgraded by those results.
