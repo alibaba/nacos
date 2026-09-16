@@ -124,17 +124,36 @@ public class NacosDnsServer {
                 },
                 new ThreadPoolExecutor.AbortPolicy());
 
-        udpListenerThread = new Thread(this::startUdpListener, "nacos-dns-udp-listener");
+        // Bind UDP first to get the actual port (supports port=0 for ephemeral)
+        try {
+            udpSocket = new DatagramSocket(properties.getPort());
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind UDP socket on port {}", properties.getPort(), e);
+            return;
+        }
+        int actualPort = udpSocket.getLocalPort();
+
+        // Bind TCP to the same port
+        try {
+            tcpSocket = new ServerSocket(actualPort);
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind TCP socket on port {}", actualPort, e);
+            udpSocket.close();
+            return;
+        }
+
+        running = true;
+
+        udpListenerThread = new Thread(this::startUdpListenerLoop, "nacos-dns-udp-listener");
         udpListenerThread.setDaemon(true);
         udpListenerThread.start();
 
-        tcpListenerThread = new Thread(this::startTcpListener, "nacos-dns-tcp-listener");
+        tcpListenerThread = new Thread(this::startTcpListenerLoop, "nacos-dns-tcp-listener");
         tcpListenerThread.setDaemon(true);
         tcpListenerThread.start();
 
-        running = true;
         LOGGER.info("Nacos DNS server started on port {}, domain suffix: {}",
-                properties.getPort(), properties.getDomainSuffix());
+                actualPort, properties.getDomainSuffix());
     }
 
     /**
@@ -164,12 +183,11 @@ public class NacosDnsServer {
     }
 
     /**
-     * Start UDP listener loop.
+     * Start UDP listener loop (socket already bound in start()).
      */
-    private void startUdpListener() {
+    private void startUdpListenerLoop() {
         try {
-            udpSocket = new DatagramSocket(properties.getPort());
-            LOGGER.info("DNS UDP server listening on port {}", properties.getPort());
+            LOGGER.info("DNS UDP server listening on port {}", udpSocket.getLocalPort());
 
             while (running) {
                 byte[] recvBuf = new byte[UDP_RECEIVE_BUFFER_SIZE];
@@ -188,10 +206,6 @@ public class NacosDnsServer {
                 } catch (Exception e) {
                     LOGGER.warn("Dropping UDP query, worker queue full", e);
                 }
-            }
-        } catch (SocketException e) {
-            if (running) {
-                LOGGER.error("Failed to start UDP DNS server on port {}", properties.getPort(), e);
             }
         } catch (IOException e) {
             if (running) {
@@ -240,12 +254,11 @@ public class NacosDnsServer {
     }
 
     /**
-     * Start TCP listener loop.
+     * Start TCP listener loop (socket already bound in start()).
      */
-    private void startTcpListener() {
+    private void startTcpListenerLoop() {
         try {
-            tcpSocket = new ServerSocket(properties.getPort());
-            LOGGER.info("DNS TCP server listening on port {}", properties.getPort());
+            LOGGER.info("DNS TCP server listening on port {}", tcpSocket.getLocalPort());
 
             while (running) {
                 Socket clientSocket = tcpSocket.accept();
