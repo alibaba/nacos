@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.adminapi.config;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
+ *     <li>Schema: current and historical details preserve version-specific text, absent values are JSON null,
+ *     explicit empty current schema is preserved, and history extInfo remains available.</li>
  *     <li>Expected capability: publish and republish create history rows, history list is newest first, detail returns
  *     the selected history content, previous returns the current config's latest historical content, and namespace
  *     config listing exposes the current config identity, with storage IDs represented as JSON strings.</li>
@@ -41,6 +44,54 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public class ConfigHistoryAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
+
+    @Test
+    public void testSchemaInCurrentAndHistoricalDetails() throws Exception {
+        String dataId = randomDataId("schema-history");
+        String groupName = randomGroupName("schema-history");
+        String firstSchema = "{\"type\":\"object\"}";
+        String secondSchema = "{\"type\":\"string\"}";
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, ""));
+        postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "without-schema").addParam("type", DEFAULT_TYPE));
+        JsonNode withoutSchema = queryConfig(dataId, groupName, "").get("data");
+        assertTrue(withoutSchema.path("schema").isNull(), withoutSchema.toString());
+
+        postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "first-content").addParam("type", DEFAULT_TYPE)
+                .addParam("schema", firstSchema));
+        postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "second-content").addParam("type", DEFAULT_TYPE)
+                .addParam("schema", secondSchema));
+        JsonNode current = queryConfig(dataId, groupName, "").get("data");
+        assertEquals(secondSchema, current.path("schema").asText(), current.toString());
+
+        JsonNode histories = getJsonOk(ADMIN_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems");
+        JsonNode detail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", histories.get(0).get("id").asText())).get("data");
+        assertEquals("first-content", detail.path("content").asText(), detail.toString());
+        assertEquals(firstSchema, detail.path("schema").asText(), detail.toString());
+        JsonNode extInfo = JacksonUtils.toObj(
+                detail.get("extInfo").asText());
+        assertEquals(firstSchema, extInfo.path("c_schema").asText(), detail.toString());
+
+        JsonNode previous = getJsonOk(ADMIN_HISTORY_PATH + "/previous",
+                configQuery(dataId, groupName, "").addParam("id", current.get("id").asText()))
+                .get("data");
+        assertEquals(firstSchema, previous.path("schema").asText(), previous.toString());
+        JsonNode oldDetail = getJsonOk(ADMIN_HISTORY_PATH,
+                configQuery(dataId, groupName, "")
+                        .addParam("nid", histories.get(1).get("id").asText())).get("data");
+        assertEquals("without-schema", oldDetail.path("content").asText(), oldDetail.toString());
+        assertTrue(oldDetail.path("schema").isNull(), oldDetail.toString());
+
+        postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "empty-schema").addParam("type", DEFAULT_TYPE)
+                .addParam("schema", ""));
+        JsonNode emptySchema = queryConfig(dataId, groupName, "").get("data");
+        assertEquals("", emptySchema.path("schema").asText(), emptySchema.toString());
+    }
     
     @Test
     public void testHistoryListDetailPreviousAndNamespaceConfigs() throws Exception {

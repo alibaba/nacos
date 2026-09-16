@@ -63,3 +63,13 @@ Current in-scope maintained surfaces: 11.
 
 - Strict coverage: 9 / 11 = 81.8%
 - Effective coverage: (9 + 2 * 0.5) / 11 = 90.9%
+
+## Config detail schema (#15853)
+
+`ConfigMaintainerServiceMaintainerSdkITCase.shouldQueryConfigHistory` verifies
+that current, historical, and previous-version detail models expose null schema
+when publishing through the Maintainer SDK, whose publish interface has no
+schema parameter. Non-null response deserialization is covered for all three
+SDK query methods by `NacosConfigMaintainerServiceImplTest`; HTTP IT covers
+publishing non-null schema and preserving historical values. No new SDK publish
+interface is introduced.

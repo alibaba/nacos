@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.api.config.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -155,6 +159,17 @@ class ConfigInfoTest {
         assertTrue(json.contains("\"appName\":\"testApp\""));
         assertTrue(json.contains("\"createTime\":" + createTime));
         assertTrue(json.contains("\"modifyTime\":" + modifyTime));
+    }
+    
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "schema text", "{\"type\":\"object\"}\n"})
+    void testSchemaRoundTrip(String schema) throws JsonProcessingException {
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        detailInfo.setSchema(schema);
+        String json = mapper.writeValueAsString(detailInfo);
+        assertTrue(mapper.readTree(json).has("schema"));
+        assertEquals(schema, mapper.readValue(json, ConfigDetailInfo.class).getSchema());
     }
     
     private void asserJsonContainDetailInfos(String json) {

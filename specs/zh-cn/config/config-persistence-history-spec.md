@@ -70,6 +70,11 @@ Config 支持嵌入式和外部存储模式：
 
 ## 5. 历史
 
+V3 Admin 和 Console 的历史详情及上一版本响应，从所选历史记录的 `extInfo.c_schema`
+提取并返回 `schema`，同时原样保留 `extInfo`。不得使用当前配置的 schema 填充历史响应。
+扩展信息缺失、不是合法 JSON 或没有文本类型的 `c_schema` 时，返回 `schema: null`，
+历史查询仍应成功。Schema 文本按该条历史记录中的存储值返回。
+
 历史记录必须保留足够信息以便检查和恢复配置变化：
 
 - `dataId`、`groupName` 和 `namespaceId`；

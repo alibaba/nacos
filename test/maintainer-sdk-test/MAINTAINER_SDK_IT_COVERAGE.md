@@ -93,3 +93,13 @@ restart that passed in the reliability suite; the other is the exact
   validates its complete functional and multipart behavior, but a public API
   and spec decision is required before callers can explicitly stop its private
   HTTP and auth-refresh resources.
+
+## Config detail schema (#15853)
+
+`ConfigMaintainerServiceMaintainerSdkITCase.shouldQueryConfigHistory` verifies
+that current, historical, and previous-version detail models expose null schema
+when publishing through the Maintainer SDK, whose publish interface has no
+schema parameter. Non-null response deserialization is covered for all three
+SDK query methods by `NacosConfigMaintainerServiceImplTest`; HTTP IT covers
+publishing non-null schema and preserving historical values. No new SDK publish
+interface is introduced.

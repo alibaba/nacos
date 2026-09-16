@@ -347,3 +347,12 @@ bounds, default namespace, and successful empty results.
 | AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry`, `src/test/java/com/alibaba/nacos/test/openapi/ard` |
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
+
+## Config detail schema (#15853)
+
+Admin and Console config history ITs cover current detail, history detail, and
+previous-version `schema`, including absent values, explicit empty current
+values, different schema versions, and preservation of historical `extInfo`.
+See the Config detail schema matrices in `ADMIN_API_TEST_SCENARIOS.md` and
+`CONSOLE_API_TEST_SCENARIOS.md`. Corrupt/legacy extensions are covered by unit
+tests because the public HTTP publish workflow cannot generate them.

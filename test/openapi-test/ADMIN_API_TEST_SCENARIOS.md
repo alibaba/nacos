@@ -121,3 +121,24 @@ standalone profile has no deterministic Agent review Pipeline.
 | `SkillUploadAdminApiOpenApiITCase` | `POST /v3/admin/ai/skills/upload`<br>`POST /v3/admin/ai/skills/upload/precheck`<br>`POST /v3/admin/ai/skills/upload/batch` | Covered | Uploads single and batch Skill ZIPs as the global administrator; verifies ZIP-and-namespace-only server-side precheck, owner, maximum published version (online or offline), predicted target version, single-code reporting, archive entry paths, distinct `NOT_A_SKILL`/`INVALID_SKILL` results, legacy batch `succeeded`/`failed` fields, and per-item `success`, `errorCode`, and `errorMessage` in `results`; validates overwrite behavior, next version generation, version normalization/fallback, upload-time first-available version-source selection when a higher-priority candidate is occupied, partial batch handling, empty/malformed ZIP, and upload error envelopes. Permission-denied owner and error-code reporting remains covered by the focused service test until a direct multi-identity multipart scenario is added. |
 | `AgentSpecAdminApiOpenApiITCase` | `GET,DELETE /v3/admin/ai/agentspecs`<br>`GET /v3/admin/ai/agentspecs/list`<br>`GET /v3/admin/ai/agentspecs/version`<br>`GET /v3/admin/ai/agentspecs/version/meta`<br>`POST,PUT,DELETE /v3/admin/ai/agentspecs/draft`<br>`POST /v3/admin/ai/agentspecs/submit`<br>`POST /v3/admin/ai/agentspecs/publish`<br>`POST /v3/admin/ai/agentspecs/force-publish`<br>`POST /v3/admin/ai/agentspecs/redraft`<br>`POST /v3/admin/ai/agentspecs/online`<br>`POST /v3/admin/ai/agentspecs/offline`<br>`PUT /v3/admin/ai/agentspecs/labels`<br>`PUT /v3/admin/ai/agentspecs/biz-tags`<br>`PUT /v3/admin/ai/agentspecs/scope` | Covered | Exercises AgentSpec draft/create/update/delete/fork, submit, reviewing-state repeat-submit idempotency, force-publish, metadata, version/meta, labels, server-managed latest label preservation, publish-parameter compatibility, bizTags, scope, online/offline latest maintenance, list, and delete; covers defaults, search/scope filters, version validation, absent resources, and controlled workflow errors. |
 | `AgentSpecUploadAdminApiOpenApiITCase` | `POST /v3/admin/ai/agentspecs/upload` | Covered | Uploads single and batch AgentSpec ZIPs, validates manifest/resources, overwrite behavior, next version generation, and partial batch handling; covers empty/malformed ZIP, missing manifest, invalid targetVersion, and upload error envelopes. |
+
+## Config detail schema regression (#15853)
+
+`ConfigHistoryAdminApiOpenApiITCase.testSchemaInCurrentAndHistoricalDetails`
+verifies the following workflow against a standalone server:
+
+| Scenario | Expected result |
+| --- | --- |
+| Publish without schema, then query current detail | `schema` exists and is JSON null. |
+| Publish two different schema/content versions | Current detail returns the latest stored schema. |
+| Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
+| Query an older history record without schema | `schema` exists and is JSON null. |
+| Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
+| Publish an explicit empty schema | Current detail preserves the empty string. |
+
+Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTest`;
+public publish APIs cannot create these legacy/corrupt history records. Existing
+required-parameter, missing-history, and identity-mismatch cases remain applicable.
+
+The inherited `ConfigGrayInfo` response also exposes null `schema` for beta
+configurations; the existing beta and gray query ITs assert this boundary.
