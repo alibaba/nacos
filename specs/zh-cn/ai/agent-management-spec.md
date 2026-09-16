@@ -134,8 +134,7 @@ Agent 资源包含以下字段：
 | `status` | 是 | `enable` 或 `disable`。 |
 | `owner` | 是 | 管理 owner。 |
 | `scope` | 是 | 共享可见性 scope；本版本为 `PUBLIC` 或 `PRIVATE`。 |
-| `versionInfo` | 只读 | 共享的 editing、reviewing、online count 和 label 摘要。 |
-| `versionCatalog` | 只读 | online Version 和 protocol 的紧凑目录。 |
+| `versionInfo` | 只读 | editingVersion、reviewingVersion、完整 labels 映射与 onlineVersions[]。 |
 | `metaVersion` | 只读 | 与 AI Resource 模型共享的单调元数据修订号；首版 Agent Admin API 不暴露条件写入参数。 |
 | `createTime`、`updateTime` | 只读 | 审计时间。 |
 
@@ -149,8 +148,10 @@ Agent 资源包含以下字段：
 - 协议 Adapter 只能在首次创建 Agent 时使用 native descriptor 初始化调用方未提供的
   目录字段。后续 descriptor 更新不得覆盖独立治理的 Agent 元数据。
 
-`versionCatalog` 包含 `latestVersion` 和 `onlineVersions[]`。每个 online 条目只包含
-`version`、`labels[]` 和 `protocols[]`。它由服务端派生，不是客户端可写事实。
+`versionInfo.onlineVersions[]` 使用 AgentVersionSummary 的目录视图，仅包含 version、labels[]、protocols[]。
+latest 来自 labels["latest"]，在线数量从列表派生。完整标签映射可以保留指向非在线版本的标签；
+目录条目仅投影在线标签。公开模型不再包含并列 versionCatalog 或独立 onlineCnt。
+底层 version_info 与 ext.versionCatalog 的存储格式仍由显式转换保持，不能直接序列化公共 DTO 替代。
 
 ## 4. Agent Version 与生命周期
 
@@ -259,7 +260,7 @@ Reconciliation 按 [AI 资源检索规范](ai-resource-search-spec.md)最终收�
 | `descriptorMediaType` | 是 | `nativeDescriptor` 的媒体类型。 |
 | `nativeDescriptor` | 是 | 完整协议原生 descriptor。 |
 | `endpointSourceOrder[]` | 是 | `RUNTIME` 和 `DECLARED` 的非空有序集合。 |
-| `declaredEndpoints[]` | 否 | Adapter 派生的静态 Endpoint 投影。 |
+| `endpointSets[]` | 否 | 至多一个 DECLARED Set，包含 Adapter 派生的静态 Endpoint。 |
 
 规范 protocol token 匹配 `[A-Za-z0-9][A-Za-z0-9-]{0,31}`，并按大小写敏感比较。
 CallInterface 唯一性、Endpoint 发布、RAD filter 和 Naming serviceName 组合使用相同 token。
@@ -290,7 +291,7 @@ URI 包含非空 scheme 和 host。port 必须显式给出，或能根据 scheme
 范围内的有效默认值。DNS host 使用大小写无关的 canonical 形式；IP literal 使用稳定的
 IPv4 或 IPv6 表达。
 
-Adapter 从 `nativeDescriptor` 派生并校验 `declaredEndpoints`。客户端不得独立编辑这两种
+Adapter 从 `nativeDescriptor` 派生并校验 `endpointSets[source=DECLARED].endpoints`。客户端不得独立编辑这两种
 表达。同一自然 Endpoint 多次出现时，第一次 descriptor 出现位置决定列表位置，而 native
 descriptor 仍由 canonical content 完整表达。
 
@@ -300,8 +301,8 @@ descriptor 仍由 canonical content 完整表达。
 
 | 视图 | 包含 | 不包含 |
 | --- | --- | --- |
-| `AgentSummary` | 展示、治理和 Version Catalog 摘要。 | Descriptor、Endpoint、完整历史、extensions。 |
-| `AgentOverview` | 完整 Agent 和有界的 Version Summary page。 | Version payload 和 Runtime Endpoint。 |
+| `AgentSummary` | 展示、治理、统一 versionInfo；详情可带 extensions，列表省略它。 | Descriptor、Endpoint、完整历史。 |
+| `AgentOverview` | AgentSummary 详情投影和有界的 Version Summary page。 | Version payload 和 Runtime Endpoint。 |
 | `AgentVersionSummary` | Version、status、审核 Pipeline 结果、author、change description、digest 和时间。 | CallInterface payload。 |
 | `AgentVersionDetail` | 精确 Version 元数据和完整 CallInterface。 | Runtime Endpoint。 |
 | `RuntimeEndpointSnapshot` | 一个 Agent 和 protocol 的原始运行时快照，可按 Version 过滤。 | Descriptor、publisher identity、最终可发现性结论。 |
@@ -309,10 +310,14 @@ descriptor 仍由 canonical content 完整表达。
 `RuntimeEndpointSnapshot` 不分页，包含：
 
 ```text
-namespaceId / agentName / protocol / version?
-items[] {
-  endpoint, bindings[] { runtimeVersion, versionRange },
-  state, enabled, healthy, lastUpdatedTime
+namespaceId / agentName / version?
+callInterface {
+  protocol,
+  endpointSets[] {
+    source = RUNTIME, lastUpdatedTime,
+    endpoints[] { uri, transport, priority, weight, metadata,
+      bindings[] { runtimeVersion, versionRange }, state, enabled, healthy }
+  }
 }
 state = AVAILABLE | DISABLED | UNHEALTHY
 ```
@@ -325,13 +330,46 @@ state = AVAILABLE | DISABLED | UNHEALTHY
 
 `protocol` 必填。没有 `version` 时，Snapshot 对该 protocol 下每个 Endpoint 自然键返回一个有效项
 及其全部 Version binding；指定 `version` 时，只保留命中该 Version 的 binding，并在没有
-剩余 binding 时移除该项。没有实例时返回空 `items[]`。Snapshot 不应用
+剩余 binding 时移除该项。没有实例时返回空 `callInterface.endpointSets[0].endpoints[]`。Snapshot 不应用
 `endpointSourceOrder`，也不声明某一项可发现。Console 只把 Version detail 和 Snapshot 作为
 独立读取事实进行组合。
 
 RAD Catalog、Discover 和 Watch 对象属于数据面视图，只由
 [RAD 协议规范](rad-protocol-spec.md)定义。特别是，`AgentDiscoveryResult` 将一个 online
 Version 定义与允许的 DECLARED 和 RUNTIME Endpoint set 组合，但不作为事实保存。
+
+### 6.1 统一模型与查询边界
+
+管理与发现共用具体 Java 类型 `AgentCallInterface → EndpointSet → Endpoint`，source 放在 Set。
+定义只包含 DECLARED Set，并保留完整 endpointSourceOrder，包括 RUNTIME 优先策略。
+Runtime 查询在 callInterface 下返回恰好一个 RUNTIME Set，空结果也保留 Set；无需存在 Agent
+定义，省略 descriptor。外层 RuntimeEndpointSnapshot 保留身份和可选 version，Console 另保留
+namingServiceRef。删除嵌套的 SnapshotItem 地址包装。
+
+管理返回 enabled/state，将 Naming 观察时间统一放到 EndpointSet；本轮管理结果省略 sourceRevision。
+Discover/Watch 必须返回 sourceRevision，endpointSourceOrder 和观察时间省略或为 null；Endpoint 输出 enabled=true，state 可选，非空时必须与 healthy 一致。
+其过滤、bindings 并集、来源顺序、空 Set 和判等规则保持。共用类型不意味着合并 API，也不意味着
+管理和发现共用同一个贡献筛选算法。
+
+### 6.2 写入政策与定义存储
+
+Runtime 注册/完整替换接受 healthy，缺省 true，表示当前贡献的上报健康值，不是永久健康开关。
+ACTIVE HTTP heartbeat 保留显式上报值；后续继续遵循现有 Naming 活性及恢复规则。
+DECLARED 接受但不持久化 healthy/管理状态，读取返回 healthy/enabled=true；注销仅读取自然键业务字段，忽略共享 Endpoint 其他属性。提交的 bindings、enabled/state 和观测值
+被忽略，bindings 由批次 runtimeVersion/versionRange 生成；定义提交的 sourceRevision 也忽略。
+非法 JSON 类型、身份、URI、metadata、批次版本仍报错。只调用 Java setter 不发送请求。
+
+内部保留 AgentVersionContent 容器，成员复用统一类型。存储显式投影完整定义和声明地址，排除
+Runtime、健康、管理字段、revision 和观察时间；读取校验同步采用新格式。不支持 BETA 存储/导出
+升级兼容。digest 基于实际保存 bytes，所有派生引用应一致。Artifact 经投影导出相同定义结构；
+原生 A2A AgentCard 保持。输入归一化移除维护字段，读取复制保留各视图允许的字段。
+
+### 6.3 验收
+
+[完整测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)按 16 组
+跟踪契约、存储、运行时、Watch、旧 A2A、迁移、索引、导出、Console 和 transport；执行证据与
+计划分开记录。历史 A2A 迁移仍在范围内，真实故障恢复和集群故障注入继续延期。
+默认发现协议并集问题 MODEL-D01 单独登记，本轮不改变该行为。
 
 ## 7. 容量与安全
 
@@ -394,3 +432,13 @@ Runtime A2A 发布和注销投影由 [Agent 存储规范](agent-storage-spec.md)
 Agent 和 AgentSpec 可以通过通用资源关系互相引用，但不互相拥有生命周期。本版本不增加
 Agent 专用 `sourceRef`、`defaultInterfaceId`、`interfaceId`、`descriptorDigest` 或随机
 Endpoint 标识。
+
+Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵循
+[Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
+该组织方式不重命名协议/schema 概念，不改变存储或发现语义。
+
+### 序列化器无关的公开模型（Schema 0.3.0）
+
+可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled/state 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
+
+采用[管理 Schema 0.3.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.3.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。

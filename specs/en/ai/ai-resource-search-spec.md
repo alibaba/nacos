@@ -548,3 +548,9 @@ type, rate-limited NOT READY observation, non-blocking partial snapshot
 behavior, and the `AUTO/INDEX/SCAN` matrix. Protocol adaptors and resource APIs
 separately test their request grammar, response conformance, and single-type
 cross-results.
+
+## Endpoint Consolidation Acceptance
+
+The unified models preserve index semantics. Verify AgentSearchIndexProjector protocol/capability/catalog projection, definition lifecycle scheduling, atomic replacement, rebuild, and currency. Runtime endpoint, healthy, and revision changes must not schedule directory indexing or enter its documents. Require a real nonempty INDEX query, not SCAN or empty results as a substitute.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.

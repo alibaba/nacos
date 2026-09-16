@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import java.net.IDN;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -40,6 +43,26 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EndpointCanonicalizerTest {
+    
+    @Test
+    void shouldDeepCopyRuntimeBindingsAndManagementState() {
+        Endpoint source = endpoint("HTTPS://Example.COM/a", "JSONRPC");
+        RuntimeVersionBinding binding = new RuntimeVersionBinding();
+        binding.setRuntimeVersion("1.0.0");
+        binding.setVersionRange("[1.0.0]");
+        source.setBindings(Collections.singletonList(binding));
+        source.setHealthy(false);
+        source.setEnabled(true);
+        source.setState(RuntimeEndpointState.UNHEALTHY);
+        Endpoint copy = EndpointCanonicalizer.canonicalize(source);
+        assertEquals(Boolean.FALSE, copy.getHealthy());
+        assertEquals(Boolean.TRUE, copy.getEnabled());
+        assertEquals(RuntimeEndpointState.UNHEALTHY, copy.getState());
+        assertEquals("[1.0.0]", copy.getBindings().get(0).getVersionRange());
+        copy.getBindings().get(0).setVersionRange("[2.0.0]");
+        assertEquals("[1.0.0]", source.getBindings().get(0).getVersionRange());
+        assertNotSame(source.getBindings(), copy.getBindings());
+    }
     
     @Test
     void testCanonicalizesDnsAndIdnWithDefaultPorts() {
@@ -89,14 +112,14 @@ class EndpointCanonicalizerTest {
         assertEquals("https://example.com:443/a", canonical.getUri());
         assertEquals(Integer.valueOf(0), canonical.getPriority());
         assertEquals(Double.valueOf(1D), canonical.getWeight());
-        assertNull(canonical.getHealthy());
+        assertEquals(true, canonical.getHealthy());
         assertEquals(Arrays.asList("environment", "zone"),
             new ArrayList<String>(canonical.getMetadata().keySet()));
         
         canonical.getMetadata().put("new", "value");
         assertFalse(original.getMetadata().containsKey("new"));
         assertEquals("HTTPS://Example.COM/a", original.getUri());
-        assertNull(original.getPriority());
+        assertEquals(0, original.getPriority());
     }
     
     @Test

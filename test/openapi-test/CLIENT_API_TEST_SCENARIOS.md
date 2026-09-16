@@ -73,3 +73,34 @@ authorization resource from the client `name` parameter.
 | `AgentPublishClientOpenApiITCase` | `POST /v3/client/ai/agents` | Covered | Verifies draft-only and auto-submit publication, resume, equivalent retries, conflicting content or initial metadata, advanced/offline Version errors, direct and `basedOnVersion` content, default/custom namespace isolation, malformed Form JSON and boolean fields, no Endpoint side effect, and Admin/Console/RAD/legacy A2A cross-checks. Cross-user default-public discovery and private/grant/revoke behavior are additionally covered by AiResourceVisibilityOpenApiITCase without granting visibility to the public reader. |
 | `AgentEndpointClientOpenApiITCase` | `POST,DELETE /v3/client/ai/agents/endpoints`<br>`PUT /v3/client/ai/agents/endpoints/heartbeat` | Covered | Verifies Form-based complete HTTP Publisher replacement, visibility through Discover, idempotent registration/deregistration, empty Runtime Endpoint projection after deregistration, liveness intervals, heartbeat, and `HTTP_CLIENT_NOT_FOUND (50404)` before registration and after deregistration. Cross-validates the same workflow from Admin creation and Overview through Console Overview, then checks the populated and post-deregistration empty Runtime snapshots on both management surfaces, including lossless `HTTP+JSON` transport, endpoint payload, Version binding, enablement, health, state, and Console Naming reference. Confirms that a query with the same Client id does not create a Publisher, and covers required headers, Client-id syntax, complete-batch validation, malformed `endpoints` JSON Form-field handling, the configured Server soft watermark (reduced to 3 in `it-new.yml`), whole-batch admission from below to above the watermark, equal-size replacement above it, atomic rejection of further growth with `AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT`, and capacity reuse after deregistration. |
 | `McpPublishClientOpenApiITCase`, `McpEndpointClientOpenApiITCase` | `GET,POST /v3/client/ai/mcp`<br>`POST,DELETE /v3/client/ai/mcp/endpoints`<br>`PUT /v3/client/ai/mcp/endpoints/heartbeat` | Covered | Runs against stable `LIFECYCLE_MANAGED` state and verifies latest/exact MCP query; omitted and explicit-false direct-online release plus `createDraft=true`; Tool, Resource, and auto-REF Form JSON fields; duplicate, malformed, and missing errors; Runtime Endpoint register/query/idempotent-register/deregister; stable Agent/MCP shared HTTP Client identity; heartbeat renewal while either module still owns a publication; `HTTP_CLIENT_NOT_FOUND` before creation and after the final publication is removed; and required header, identity, namespace, address, port, missing-target, and non-REF error envelopes. `McpMigrationAdminApiOpenApiITCase` owns the pre-cutover client draft gate. Shared-client expiration and replay are exercised through the Java SDK directed-restart scenario because they require a long-lived client process across server replacement. AiResourceVisibilityOpenApiITCase verifies default-public Client release, non-owner READ, private scope and grant/revoke, without bypassing WRITE or request authorization. |
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent Search HTTP 响应统一为 AgentSummary 的 versionInfo.labels/onlineVersions；验证旧顶层 latestVersion/versions 和管理字段不再出现。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 统一地址模型新增场景（2026-09-15）
+
+| 场景 | 用例 | 断言 |
+| --- | --- | --- |
+| EP-03/07：HTTP 注册上报健康值及维护字段隔离 | `AgentEndpointClientOpenApiITCase.testReportedHealthAndIgnoredManagementFieldsAcrossReadSurfaces` | false 注册及 ACTIVE heartbeat 后仍 false；替换为 true 可发现；伪造 bindings/enabled/state 不生效；Admin 三层非空读取及 RAD 字段隔离 |
+| EP-12：公开 Agent 实际索引与目录 | `AiResourceSearchClientOpenApiITCase.testPublicAgentIndexTracksUnifiedVersionCatalog` | 旧 A2A 创建 PUBLIC Agent，新 Agent 发布第二版；tag/协议/namespace、onlineVersions/labels、offline 与 delete 收敛；默认 AUTO/显式 INDEX 均走共享索引 |
+
+原私有 Search DAUTH-F03 Disabled 保持；公开 fixture 通过旧 A2A 的既有 PUBLIC 语义准备，不关闭鉴权，不写内部存储。
+
+
+### 2026-09-15 请求整合回归
+
+Agent HTTP Search/Register 的 namespace 参数保持；服务端业务模型与 namespace 分离，直接 HTTP 的默认值、自定义 namespace、非法参数、授权隔离及完整替换/全量 DELETE 仍由现有 Agent IT 验证。局部注销三个参数仅为 Java SDK API，不能向 HTTP DELETE 发送 Endpoint 列表。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-01/03/04：Endpoint 缺省 0/1/true/true，false/0 和最大 priority 往返，伪造 enabled/state/bindings 不覆盖服务端状态；Search 可选管理字段允许 null，仍不返回非空管理事实。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。

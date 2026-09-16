@@ -73,3 +73,43 @@ schema parameter. Non-null response deserialization is covered for all three
 SDK query methods by `NacosConfigMaintainerServiceImplTest`; HTTP IT covers
 publishing non-null schema and preserving historical values. No new SDK publish
 interface is introduced.
+
+## Agent model consolidation
+
+Agent Admin requests now carry the AdminRequest suffix. The default-namespace lifecycle verifies inherited metadata and version-summary fields, using concrete summary instances without namespace, agentName or callInterfaces. Existing custom-namespace, copied-draft, update and lifecycle/error coverage is retained.
+
+### Agent 元数据模型合并（2026-09-14）
+
+AgentSummary 合并详情/列表类型；验证详情保留 extensions、列表省略 extensions；versionInfo 保存完整标签及 onlineVersions，单版本条目复用 AgentVersionSummary，metadata/lifecycle 行为保持。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。
+
+
+### 2026-09-15 请求整合回归
+
+Agent 五个管理请求改用 model.agent.admin 下的 AgentDraftCreateRequest、AgentDraftUpdateRequest、AgentUpdateRequest、AgentLabelsUpdateRequest、AgentVersionRequest。既有生命周期、namespace、嵌套定义/运行地址和错误映射场景保持，默认/Jackson 3 均需重跑。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Remote API errors（2026-09-16）
+
+AgentMaintainerServiceMaintainerSdkITCase strengthens existing missing-resource, invalid-publish,
+invalid-redraft, and deleted-version scenarios: NacosApiException retains HTTP status separately
+from the exact business code and summary. The complete Maintainer SDK suite is exercised with
+both default and Jackson 3 adapters because ClientHttpProxy is shared by all domains, including
+multipart uploads, authentication refresh, and legacy fallback. Existing scenario row counts
+and known exclusions remain unchanged. Nonstandard remote responses keep the generic exception
+fallback and are covered by proxy unit tests.
+
+See [validation evidence](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md).
+
+Verified on 2026-09-16: both adapters discovered 46 cases, with 44 passed, zero failures/errors,
+and two existing skips each (DAUTH-F04 and the opt-in real restart scenario). No recovery test was
+performed. This validates the strengthened business-error assertions without upgrading unrelated coverage gaps.

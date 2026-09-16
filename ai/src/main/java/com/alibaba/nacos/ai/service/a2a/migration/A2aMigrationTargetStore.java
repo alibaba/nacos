@@ -37,7 +37,7 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.resource.AiResourceChangeNotifier;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
@@ -46,7 +46,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,7 +279,7 @@ public class A2aMigrationTargetStore {
             || definition.getVersions().isEmpty()) {
             throw new IllegalArgumentException("Complete migrated Agent definition is required");
         }
-        Agent sourceAgent = definition.getAgent();
+        AgentSummary sourceAgent = definition.getAgent();
         Map<String, List<String>> protocols = new LinkedHashMap<String, List<String>>();
         Map<String, AgentVersionDetail> versions =
             new LinkedHashMap<String, AgentVersionDetail>();
@@ -306,12 +306,11 @@ public class A2aMigrationTargetStore {
         labels.put(AiResourceConstants.LABEL_LATEST, definition.getLatestVersion());
         AgentVersionCatalogBuilder.Result derived = AgentVersionCatalogBuilder.build(protocols,
             labels);
-        Agent agent = copyAgent(sourceAgent);
+        AgentSummary agent = copyAgent(sourceAgent);
         AgentVersionInfo versionInfo = new AgentVersionInfo();
-        versionInfo.setOnlineCnt(versions.size());
+        versionInfo.setOnlineVersions(derived.getVersionCatalog().getOnlineVersions());
         versionInfo.setLabels(new HashMap<String, String>(derived.getLabels()));
         agent.setVersionInfo(versionInfo);
-        agent.setVersionCatalog(derived.getVersionCatalog());
         agent.setMetaVersion(1L);
         agent.setCreateTime(0L);
         agent.setUpdateTime(0L);
@@ -604,16 +603,16 @@ public class A2aMigrationTargetStore {
         return (int) Math.ceil((double) page.getTotalCount() / pageSize);
     }
     
-    private AiResource toResourceRow(Agent agent) {
+    private AiResource toResourceRow(AgentSummary agent) {
         AgentResourceExt ext = new AgentResourceExt();
         ext.setSchemaVersion(AgentResourceExt.SCHEMA_VERSION);
         ext.setDisplayName(agent.getDisplayName());
         ext.setIconUrl(agent.getIconUrl());
         ext.setProvider(agent.getProvider());
         ext.setExtensions(agent.getExtensions());
-        ext.setVersionCatalog(agent.getVersionCatalog());
+        ext.setVersionCatalog(agent.getVersionInfo());
         ResourceVersionInfo versionInfo = new ResourceVersionInfo();
-        versionInfo.setOnlineCnt(agent.getVersionInfo().getOnlineCnt());
+        versionInfo.setOnlineCnt(agent.getVersionInfo().onlineCnt());
         versionInfo.setLabels(new HashMap<String, String>(agent.getVersionInfo().getLabels()));
         AiResource result = new AiResource();
         result.setNamespaceId(agent.getNamespaceId());
@@ -623,10 +622,10 @@ public class A2aMigrationTargetStore {
         result.setStatus(agent.getStatus());
         result.setOwner(agent.getOwner());
         result.setScope(agent.getScope());
-        result.setBizTags(JacksonUtils.toJson(Collections.emptyList()));
+        result.setBizTags(JsonUtils.toJson(Collections.emptyList()));
         result.setExt(AgentResourceExtSerializer.serialize(ext));
         result.setFrom(MIGRATION_RESOURCE_SOURCE);
-        result.setVersionInfo(JacksonUtils.toJson(versionInfo));
+        result.setVersionInfo(JsonUtils.toJson(versionInfo));
         result.setMetaVersion(1L);
         return result;
     }
@@ -645,8 +644,8 @@ public class A2aMigrationTargetStore {
         return result;
     }
     
-    private Agent copyAgent(Agent source) {
-        Agent result = new Agent();
+    private AgentSummary copyAgent(AgentSummary source) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(source.getNamespaceId());
         result.setAgentName(source.getAgentName());
         result.setDisplayName(source.getDisplayName());
@@ -688,11 +687,11 @@ public class A2aMigrationTargetStore {
     }
     
     private Object semanticValue(String json) {
-        return JacksonUtils.toObj(json, Object.class);
+        return JsonUtils.toObj(json, Object.class);
     }
     
     private Object semanticValue(Object value) {
-        return JacksonUtils.toObj(JacksonUtils.toJson(value), Object.class);
+        return JsonUtils.toObj(JsonUtils.toJson(value), Object.class);
     }
     
     private void deleteStorage(AiResourceVersion version) throws NacosException {

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchEventType;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest;
 
 import java.util.Objects;

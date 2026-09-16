@@ -134,7 +134,7 @@ AgentVersionContent
     protocol / protocolVersion
     descriptorMediaType / nativeDescriptor
     endpointSourceOrder[]
-    declaredEndpoints[]
+    endpointSets[] { source = DECLARED, endpoints[] }
 ```
 
 The server validates the object, creates the storage projection below, and
@@ -146,12 +146,11 @@ values are not required to produce the same digest.
 
 Before serialization, the server creates the storage projection:
 
-1. it rejects unknown schema properties on the envelope, CallInterface, and
-   Endpoint objects, then projects only schema-version-1 fields;
+1. writes project only schema-version-1 definition fields, ignoring response-only fields; reads reject unknown properties on the envelope, CallInterface, EndpointSet and Endpoint objects;
 2. it canonicalizes every declared Endpoint URI, and validates and preserves
    its transport, through the common Endpoint canonicalizer;
 3. it materializes effective Endpoint `priority=0` and `weight=1`;
-4. it omits absent or empty Endpoint `metadata` and `declaredEndpoints`; and
+4. it omits absent or empty Endpoint `metadata` and absent/empty `endpointSets`, while preserving an explicitly supplied DECLARED Set with empty endpoints; and
 5. it otherwise preserves all array order and descriptor JSON values.
 
 `nativeDescriptor` JSON members and Endpoint `metadata` map entries remain
@@ -747,3 +746,13 @@ The optional shadow represents only historical exact-Version A2A publication
 requests. It is not a second RAD fact source and does not support general RAD
 Version ranges. This temporary dual-materialization implementation is targeted
 for removal in Nacos 4.0 without changing the canonical Runtime layout.
+
+## Endpoint Consolidation Acceptance
+
+AgentVersionContent may reuse unified CallInterface/EndpointSet/Endpoint members while storing only complete definitions, declared addresses, and source configuration. BETA format compatibility is out of scope. Map reported healthy to current Naming contribution health without changing subsequent liveness. Exclude runtime, health, observations, and response revision from version bytes. Verify new-format read-back, byte digests, migration verification, and definition independence from runtime changes.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Annotation-independent public Endpoint projection
+
+Public Endpoint defaults and nullable response references do not widen AgentVersionContent. Serialize only uri, transport, effective priority/weight and metadata for declared addresses. Read-back constructs healthy/enabled=true without persisting those fields; changes to submitted state/health leave stored bytes and contentDigest unchanged. Internal storage schema v1 is unchanged. Artifact public serialization follows its updated schema while contentDigest continues to identify stored definition bytes.

@@ -103,3 +103,11 @@ restart, peer restart, pre-terminal withdrawal, post-terminal local-`LEGACY`
 restart, and fixed-node plus load-balanced reads. `M-ST-07..09` are therefore
 `Verified`; only the optional process crash at every internal persistence
 boundary in `M-ST-04` remains `Partial`.
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 模型统一后的正常迁移回归
+
+独立新数据目录实际执行 LEGACY、AUTO/SYNCING、QUIESCING 和 CANONICAL 正常流程；shadow=true/false 两种策略的同连接 Watch、端点替换/注销及终态跨面投影均通过。迁移配置开关显式启用，未将跳过算为通过；准备阶段清理了 LEGACY 基线遗留的测试定义，细节与各方法结果见模型统一验证记录。真实故障恢复和三节点场景仍延期。

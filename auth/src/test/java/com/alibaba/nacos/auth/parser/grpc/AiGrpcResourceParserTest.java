@@ -19,10 +19,10 @@ package com.alibaba.nacos.auth.parser.grpc;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
@@ -214,8 +214,8 @@ class AiGrpcResourceParserTest {
     
     private static AgentSearchRpcRequest agentSearchRpcRequest(String namespaceId) {
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId(namespaceId);
         AgentSearchRpcRequest result = new AgentSearchRpcRequest();
+        result.setNamespaceId(namespaceId);
         result.setSearchRequest(search);
         return result;
     }
@@ -238,9 +238,9 @@ class AiGrpcResourceParserTest {
         String namespaceId,
         String agentName) {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId(namespaceId);
         batch.setAgentName(agentName);
         AgentEndpointRegisterRpcRequest result = new AgentEndpointRegisterRpcRequest();
+        result.setNamespaceId(namespaceId);
         result.setRegistrationBatch(batch);
         return result;
     }

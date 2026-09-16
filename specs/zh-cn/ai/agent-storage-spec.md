@@ -123,7 +123,7 @@ AgentVersionContent
     protocol / protocolVersion
     descriptorMediaType / nativeDescriptor
     endpointSourceOrder[]
-    declaredEndpoints[]
+    endpointSets[] { source = DECLARED, endpoints[] }
 ```
 
 服务端校验对象并构造下述存储投影，然后使用 Nacos 公共 JSON serializer 一次序列化为
@@ -133,12 +133,12 @@ UTF-8。同一份输出 bytes 传递给 AI Storage，并用于计算 `size` 和
 
 序列化前，服务端先构造 storage projection：
 
-1. 拒绝 envelope、CallInterface 和 Endpoint object 上的未知 schema property，再仅投影
-   schema version 1 定义的字段；
+1. 写入只投影 schema version 1 的定义字段，忽略只读字段；读取拒绝 envelope、CallInterface、
+   EndpointSet 和 Endpoint 上的未知 property；
 2. 使用公共 Endpoint canonicalizer 规范每个 declared Endpoint 的 URI，并校验且保持其
    transport 原值；
 3. 显式写入 Endpoint 的有效默认值 `priority=0` 和 `weight=1`；
-4. 省略缺失或为空的 Endpoint `metadata` 和 `declaredEndpoints`；
+4. 省略缺失或为空的 Endpoint `metadata` 和 endpointSets；显式提交的空 DECLARED Set 保留；
 5. 除上述规范化外，保持所有数组顺序和 descriptor JSON value 不变。
 
 `nativeDescriptor` 的 JSON member 和 Endpoint `metadata` map entry 仍是开放内容，但必须
@@ -624,3 +624,13 @@ Runtime 等价、重试、Connection 清理、切流、回滚和延期旧 Servic
 
 可选 Shadow 只表达历史精确 Version A2A Publication 请求，不是第二个 RAD 事实源，也不支持
 通用 RAD Version Range。这套临时双物化实现计划在 Nacos 4.0 删除，且不改变标准 Runtime Layout。
+
+## 地址模型统一的验收
+
+AgentVersionContent 容器可复用统一 CallInterface/EndpointSet/Endpoint，存储只保存完整定义、声明地址及来源配置；不考虑 BETA 旧格式兼容。注册 healthy 映射为当前 Naming contribution health，后续活性处理保持；Runtime/健康/观测/revision 不进入版本内容。验证新格式读回、实际 bytes 的 digest、迁移读回及运行变化不影响定义。
+
+统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### 去注解后的公开 Endpoint 与存储投影
+
+公开 Endpoint 默认值及可选引用的 null 输出不扩大 AgentVersionContent。声明地址仅存储 uri、transport、生效 priority/weight 与 metadata；读回补出 healthy/enabled=true，这些字段不落库，提交的状态/健康变化不影响版本 bytes 和 contentDigest。内部 storage schema v1 不变。Artifact 公开序列化遵循更新后的 Schema，contentDigest 仍标识存储定义的 bytes。

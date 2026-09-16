@@ -19,10 +19,10 @@ package com.alibaba.nacos.ai.service.agent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -73,7 +73,7 @@ class AgentPublishApplicationServiceTest {
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound());
-        when(operationService.createDraft(NAMESPACE_ID, request)).thenReturn(draft);
+        when(operationService.createDraftFromPublication(NAMESPACE_ID, request)).thenReturn(draft);
         
         assertSame(draft, service.publish(NAMESPACE_ID, request));
         verify(operationService, never()).submit(NAMESPACE_ID, AGENT_NAME, VERSION);
@@ -86,7 +86,7 @@ class AgentPublishApplicationServiceTest {
         AgentVersionDetail online = detail(request, AiConstants.Agent.VERSION_STATUS_ONLINE);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound()).thenReturn(online);
-        when(operationService.createDraft(NAMESPACE_ID, request)).thenReturn(draft);
+        when(operationService.createDraftFromPublication(NAMESPACE_ID, request)).thenReturn(draft);
         
         assertSame(online, service.publish(NAMESPACE_ID, request));
         verify(operationService).submit(NAMESPACE_ID, AGENT_NAME, VERSION);
@@ -102,7 +102,7 @@ class AgentPublishApplicationServiceTest {
             .thenReturn(draft, reviewing);
         
         assertSame(reviewing, service.publish(NAMESPACE_ID, request));
-        verify(operationService, never()).createDraft(NAMESPACE_ID, request);
+        verify(operationService, never()).createDraftFromPublication(NAMESPACE_ID, request);
     }
     
     @Test
@@ -142,7 +142,8 @@ class AgentPublishApplicationServiceTest {
         AgentVersionDetail draft = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound()).thenReturn(draft);
-        when(operationService.createDraft(NAMESPACE_ID, request)).thenThrow(conflictFailure());
+        when(operationService.createDraftFromPublication(NAMESPACE_ID, request))
+            .thenThrow(conflictFailure());
         
         assertSame(draft, service.publish(NAMESPACE_ID, request));
     }
@@ -154,7 +155,8 @@ class AgentPublishApplicationServiceTest {
         NacosException readFailure = new NacosException(NacosException.SERVER_ERROR, "read");
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(notFound()).thenThrow(readFailure);
-        when(operationService.createDraft(NAMESPACE_ID, request)).thenThrow(createFailure);
+        when(operationService.createDraftFromPublication(NAMESPACE_ID, request))
+            .thenThrow(createFailure);
         
         assertSame(createFailure, assertThrows(NacosException.class,
             () -> service.publish(NAMESPACE_ID, request)));
@@ -250,7 +252,7 @@ class AgentPublishApplicationServiceTest {
         request.setTags(Collections.singletonList("assistant"));
         request.setExtensions(Collections.<String, Object>singletonMap("region", "east"));
         AgentVersionDetail existing = detail(request, AiConstants.Agent.VERSION_STATUS_DRAFT);
-        Agent agent = matchingAgent(request);
+        AgentSummary agent = matchingAgent(request);
         when(operationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(existing);
         when(operationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
@@ -265,8 +267,8 @@ class AgentPublishApplicationServiceTest {
         assertConflict(() -> service.publish(NAMESPACE_ID, request));
     }
     
-    private Agent matchingAgent(AgentPublishRequest request) {
-        Agent result = new Agent();
+    private AgentSummary matchingAgent(AgentPublishRequest request) {
+        AgentSummary result = new AgentSummary();
         result.setDisplayName(request.getDisplayName());
         result.setDescription(request.getDescription());
         result.setIconUrl(request.getIconUrl());

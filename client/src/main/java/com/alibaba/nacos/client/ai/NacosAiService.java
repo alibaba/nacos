@@ -40,7 +40,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -49,17 +49,14 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointDeregistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointDeregistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistration;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -107,7 +104,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * Nacos AI feature facade.
@@ -229,11 +226,12 @@ public class NacosAiService implements AiService {
         this.mcpEndpointPublicationManager = new McpEndpointPublicationManager(
             this.mcpTransportRouter, this.httpPublicationCoordinator);
         this.grpcClient.setAgentEndpointPublicationCapacityRejectedHandler(
-            new Consumer<AgentEndpointRegistrationBatch>() {
+            new BiConsumer<String, AgentEndpointRegistrationBatch>() {
                 
                 @Override
-                public void accept(AgentEndpointRegistrationBatch batch) {
-                    agentEndpointPublicationManager.discardAfterRemoteCapacityRejection(batch);
+                public void accept(String namespaceId, AgentEndpointRegistrationBatch batch) {
+                    agentEndpointPublicationManager.discardAfterRemoteCapacityRejection(namespaceId,
+                        batch);
                 }
             });
         this.aiChangeNotifier = new AiChangeNotifier();
@@ -776,7 +774,8 @@ public class NacosAiService implements AiService {
     private final class AgentServiceDelegate implements AgentService {
         
         @Override
-        public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+        public AgentVersionDetail publishAgent(AgentPublishRequest request)
+            throws NacosException {
             return agentTransportRouter.publishAgent(AgentModelUtils.copyPublishRequest(request));
         }
         
@@ -893,11 +892,11 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public Page<AgentCatalogEntry> searchAgents(AgentSearchQuery request)
+        public Page<AgentSummary> searchAgents(AgentSearchRequest request)
             throws NacosException {
             AgentSearchRequest boundRequest =
                 AgentModelUtils.copySearchRequest(request, namespaceId);
-            return agentTransportRouter.searchAgents(boundRequest);
+            return agentTransportRouter.searchAgents(namespaceId, boundRequest);
         }
         
         @Override
@@ -922,19 +921,20 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public void registerAgentEndpoints(AgentEndpointRegistration batch)
+        public void registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
             throws NacosException {
             AgentEndpointRegistrationBatch boundBatch =
                 AgentModelUtils.copyRegistrationBatch(batch, namespaceId);
-            agentEndpointPublicationManager.register(boundBatch);
+            agentEndpointPublicationManager.register(namespaceId, boundBatch);
         }
         
         @Override
-        public void deregisterAgentEndpoints(AgentEndpointDeregistration batch)
+        public void deregisterAgentEndpoints(String agentName, String protocol,
+            List<Endpoint> endpoints)
             throws NacosException {
-            AgentEndpointDeregistrationBatch boundBatch =
-                AgentModelUtils.copyDeregistrationBatch(batch, namespaceId);
-            agentEndpointPublicationManager.deregister(boundBatch);
+            List<Endpoint> removals = AgentModelUtils.copyDeregistrationEndpoints(namespaceId,
+                agentName, protocol, endpoints);
+            agentEndpointPublicationManager.deregister(namespaceId, agentName, protocol, removals);
         }
     }
 }

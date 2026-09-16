@@ -82,7 +82,7 @@ An A2A binding is one `AgentCallInterface` with:
 | `protocolVersion` | Normalized A2A protocol version used for fast filtering. |
 | `descriptorMediaType` | AgentCard JSON media type. |
 | `nativeDescriptor` | Complete normalized AgentCard, without losing supported upstream fields. |
-| `declaredEndpoints` | Derived from root URL and supported/additional interfaces. |
+| `endpointSets[source=DECLARED].endpoints` | Derived from root URL and supported/additional interfaces. |
 | `endpointSourceOrder` | Derived from the compatibility registration type. |
 
 The current descriptor baseline supports A2A 1.0 fields and the existing 0.x

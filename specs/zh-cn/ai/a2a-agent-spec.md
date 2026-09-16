@@ -70,7 +70,7 @@ A2A Binding 是一个 `AgentCallInterface`：
 | `protocolVersion` | 用于快速过滤的规范化 A2A 协议版本。 |
 | `descriptorMediaType` | AgentCard JSON 媒体类型。 |
 | `nativeDescriptor` | 完整规范化 AgentCard，不丢失已支持的上游字段。 |
-| `declaredEndpoints` | 从 root URL 和 supported/additional interfaces 派生。 |
+| `endpointSets[source=DECLARED].endpoints` | 从 root URL 和 supported/additional interfaces 派生。 |
 | `endpointSourceOrder` | 从兼容 registration type 派生。 |
 
 当前 descriptor 基线支持 A2A 1.0 字段和现有 0.x 兼容字段。Adapter 规范化时不得

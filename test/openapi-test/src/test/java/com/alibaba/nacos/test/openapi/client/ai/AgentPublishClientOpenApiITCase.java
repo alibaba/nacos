@@ -226,9 +226,13 @@ public class AgentPublishClientOpenApiITCase extends AgentClientOpenApiBaseITCas
         callInterface.put("nativeDescriptor", descriptor);
         callInterface.put("endpointSourceOrder",
                 Arrays.asList("DECLARED", "RUNTIME"));
-        callInterface.put("declaredEndpoints", Arrays.asList(
+
+        Map<String, Object> declaredSet1 = new LinkedHashMap<>();
+        declaredSet1.put("source", "DECLARED");
+        declaredSet1.put("endpoints", Arrays.asList(
                 declaredEndpoint("https://example.com/" + agentName + "/jsonrpc", "JSONRPC"),
                 declaredEndpoint("https://example.com/" + agentName + "/grpc", "GRPC")));
+        callInterface.put("endpointSets", java.util.Collections.singletonList(declaredSet1));
         result.put("callInterfaces", Collections.singletonList(callInterface));
         return result;
     }

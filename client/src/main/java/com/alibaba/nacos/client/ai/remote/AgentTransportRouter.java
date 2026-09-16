@@ -17,14 +17,14 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
@@ -50,7 +50,8 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    public AgentVersionDetail publishAgent(AgentPublishRequest request)
+        throws NacosException {
         AgentTransport transport = select();
         AgentVersionDetail result = transport.publishAgent(request);
         recordHttpSuccess(transport);
@@ -58,18 +59,18 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     @Override
-    public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
         throws NacosException {
         AgentTransport transport = select();
-        Page<AgentCatalogEntry> result;
+        Page<AgentSummary> result;
         try {
-            result = transport.searchAgents(request);
+            result = transport.searchAgents(namespaceId, request);
         } catch (NacosException | NacosRuntimeException e) {
             if (transport.getType() != AgentTransportType.GRPC || !canFallbackRead(e)) {
                 throw e;
             }
             transport = httpTransport;
-            result = transport.searchAgents(request);
+            result = transport.searchAgents(namespaceId, request);
         }
         recordHttpSuccess(transport);
         return result;
@@ -103,9 +104,10 @@ public class AgentTransportRouter implements AgentClientProxy {
     }
     
     @Override
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        return registerAgentEndpoints(batch, selectPublicationTransport());
+        return registerAgentEndpoints(namespaceId, batch, selectPublicationTransport());
     }
     
     /**
@@ -116,10 +118,11 @@ public class AgentTransportRouter implements AgentClientProxy {
      * @return HTTP liveness information, or {@code null} for gRPC
      * @throws NacosException when registration fails
      */
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch,
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch,
         AgentTransportType ownerTransport) throws NacosException {
         AgentTransport transport = getTransport(ownerTransport);
-        ClientLivenessInfo result = transport.registerAgentEndpoints(batch);
+        ClientLivenessInfo result = transport.registerAgentEndpoints(namespaceId, batch);
         recordHttpSuccess(transport);
         return result;
     }

@@ -21,7 +21,6 @@ import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
@@ -115,7 +114,7 @@ public class A2aRuntimeSnapshotComparator {
         canonical.setHealthy(source.isHealthy());
         canonical.setWeight(source.getWeight());
         canonical.getMetadata().putAll(publicMetadata(metadata));
-        return snapshot(AgentRuntimeEndpointMapper.fromInstance(canonical, 0L),
+        return snapshot(AgentRuntimeEndpointMapper.fromInstance(canonical),
             canonical.getMetadata());
     }
     
@@ -124,7 +123,7 @@ public class A2aRuntimeSnapshotComparator {
             throw new IllegalArgumentException(
                 "Canonical RAD Naming instance and metadata are required");
         }
-        RuntimeEndpointSnapshotItem item = AgentRuntimeEndpointMapper.fromInstance(source, 0L);
+        Endpoint item = AgentRuntimeEndpointMapper.fromInstance(source);
         String runtimeVersion = source.getMetadata().get(
             Constants.Agent.AGENT_ENDPOINT_VERSION_KEY);
         String versionRange = source.getMetadata().get(
@@ -135,9 +134,9 @@ public class A2aRuntimeSnapshotComparator {
         return snapshot(item, source.getMetadata());
     }
     
-    private SnapshotEntry snapshot(RuntimeEndpointSnapshotItem item,
+    private SnapshotEntry snapshot(Endpoint item,
         Map<String, String> rawMetadata) {
-        Endpoint endpoint = item.getEndpoint();
+        Endpoint endpoint = item;
         return new SnapshotEntry(endpoint.getUri(), endpoint.getTransport(),
             endpoint.getPriority(), endpoint.getWeight(), endpoint.getMetadata(),
             valueOrEmpty(rawMetadata.get(

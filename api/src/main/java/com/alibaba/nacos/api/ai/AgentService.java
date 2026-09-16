@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -41,7 +41,8 @@ public interface AgentService extends A2aService, AgentDiscoveryService {
      * @throws NacosException when validation, publication, or submit fails
      */
     @Since("3.3.0")
-    default AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    default AgentVersionDetail publishAgent(AgentPublishRequest request)
+        throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "Agent publication is not implemented by this AgentService.");
     }

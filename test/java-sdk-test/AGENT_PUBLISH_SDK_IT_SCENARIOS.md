@@ -59,3 +59,15 @@ external Java clients against the standalone server.
 Except for the documented scope-invalidation regression above, Server Watch/Push, local `getAll` or `selectOneHealthy` helpers, management
 metadata subscription, rolling upgrade, data migration, dual writes, and
 force-publish remain outside this phase.
+
+## Agent model consolidation
+
+The publication request is agent.client.AgentPublishRequest, a sibling of agent.admin.AgentDraftCreateRequest through AbstractAgentDraftRequest. Existing HTTP/gRPC publication scenarios exercise shared inherited content, source validation, idempotence and submit semantics with the renamed input.
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。

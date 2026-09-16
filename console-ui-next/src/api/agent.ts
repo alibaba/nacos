@@ -4,11 +4,10 @@ import type {
   AgentDraftCreateData,
   AgentDraftUpdateData,
   AgentListParams,
-  AgentMetadata,
+  AgentSummary,
   AgentMetadataUpdateData,
   AgentOverview,
   AgentPage,
-  AgentSummary,
   AgentVersionActionData,
   AgentVersionDetail,
   AgentVersionStatus,
@@ -48,8 +47,8 @@ export const agentApi = {
   }): ApiResult<AgentOverview> =>
     client.get(BASE, { params }) as ApiResult<AgentOverview>,
 
-  updateAgent: (data: AgentMetadataUpdateData): ApiResult<AgentMetadata> =>
-    client.put(BASE, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<AgentMetadata>,
+  updateAgent: (data: AgentMetadataUpdateData): ApiResult<AgentSummary> =>
+    client.put(BASE, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<AgentSummary>,
 
   updateScope: (data: {
     namespaceId?: string;
@@ -116,10 +115,10 @@ export const agentApi = {
     namespaceId?: string;
     agentName: string;
     labels: string;
-  }): ApiResult<AgentMetadata> =>
+  }): ApiResult<AgentSummary> =>
     client.put(`${BASE}/labels`, toFormParams(data), {
       headers: FORM_HEADERS,
-    }) as ApiResult<AgentMetadata>,
+    }) as ApiResult<AgentSummary>,
 };
 
 export { toFormParams };

@@ -17,13 +17,13 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -100,6 +100,33 @@ class AgentAdminFormsTest {
         
         assertEquals(VERSION, form.getBasedOnVersion());
         assertEquals(VERSION, form.toRequest().getBasedOnVersion());
+    }
+    
+    @Test
+    void testDraftFormsParseNestedCallInterfacesAsTypedModels() throws NacosApiException {
+        String json = "[{\"protocol\":\"custom\",\"descriptorMediaType\":\"application/json\","
+            + "\"nativeDescriptor\":{\"method\":\"invoke\"},"
+            + "\"endpointSourceOrder\":[\"RUNTIME\",\"DECLARED\"],"
+            + "\"endpointSets\":[{\"source\":\"DECLARED\",\"endpoints\":[{"
+            + "\"uri\":\"https://example.com/rpc\",\"transport\":\"HTTP\"}]}]}]";
+        AgentDraftCreateForm create = new AgentDraftCreateForm();
+        create.setNamespaceId("tenant-one");
+        create.setAgentName(AGENT_NAME);
+        create.setVersion(VERSION);
+        create.setCallInterfaces(json);
+        AgentDraftCreateRequest created = create.toRequest();
+        assertEquals("tenant-one", create.getNamespaceId());
+        assertEquals("custom", created.getCallInterfaces().get(0).getProtocol());
+        assertEquals("https://example.com/rpc", created.getCallInterfaces().get(0)
+            .getEndpointSets().get(0).getEndpoints().get(0).getUri());
+        AgentDraftUpdateForm update = new AgentDraftUpdateForm();
+        update.setAgentName(AGENT_NAME);
+        update.setVersion(VERSION);
+        update.setCallInterfaces(json);
+        AgentDraftUpdateRequest updated = update.toRequest();
+        assertEquals("custom", updated.getCallInterfaces().get(0).getProtocol());
+        assertEquals("HTTP", updated.getCallInterfaces().get(0).getEndpointSets().get(0)
+            .getEndpoints().get(0).getTransport());
     }
     
     @Test
@@ -232,7 +259,7 @@ class AgentAdminFormsTest {
     
     @Test
     void testJsonParserTypeReferenceOverload() throws NacosApiException {
-        TypeReference<List<String>> type = new TypeReference<List<String>>() {
+        NacosTypeReference<List<String>> type = new NacosTypeReference<List<String>>() {
         };
         assertNull(AgentAdminFormJsonParser.parseOptional("tags", null, type));
         assertEquals("assistant",

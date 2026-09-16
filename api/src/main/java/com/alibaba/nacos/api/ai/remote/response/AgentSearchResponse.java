@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.response;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.remote.response.Response;
 
@@ -27,13 +27,13 @@ import com.alibaba.nacos.api.remote.response.Response;
  */
 public class AgentSearchResponse extends Response {
     
-    private Page<AgentCatalogEntry> page;
+    private Page<AgentSummary> page;
     
-    public Page<AgentCatalogEntry> getPage() {
+    public Page<AgentSummary> getPage() {
         return page;
     }
     
-    public void setPage(Page<AgentCatalogEntry> page) {
+    public void setPage(Page<AgentSummary> page) {
         this.page = page;
     }
 }

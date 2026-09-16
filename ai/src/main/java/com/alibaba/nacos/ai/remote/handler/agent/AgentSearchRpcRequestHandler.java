@@ -57,9 +57,10 @@ public class AgentSearchRpcRequestHandler
         AgentSearchResponse response = new AgentSearchResponse();
         try {
             requireRequest(request.getSearchRequest(), "searchRequest");
-            request.getSearchRequest().setNamespaceId(NamespaceUtil.processNamespaceParameter(
-                request.getSearchRequest().getNamespaceId()));
-            response.setPage(discoveryService.search(request.getSearchRequest()));
+            request.setNamespaceId(NamespaceUtil.processNamespaceParameter(
+                request.getNamespaceId()));
+            response.setPage(
+                discoveryService.search(request.getNamespaceId(), request.getSearchRequest()));
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);
         }

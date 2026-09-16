@@ -28,11 +28,11 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigFactory;
@@ -219,11 +219,11 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
             () -> VERSION_TWO.equals(grpcService.getAgentCard(CUTOVER_AGENT).getVersion()));
         assertEquals(VERSION_TWO,
             grpcService.agent().discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
-        AgentSearchQuery search = new AgentSearchQuery();
+        AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(CUTOVER_AGENT);
         waitUntil("terminal Agent should remain searchable", () -> grpcService.agent().searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
-                && VERSION_TWO.equals(each.getLatestVersion())));
+                && VERSION_TWO.equals(each.getVersionInfo().latestVersion())));
     }
 
     @Test
@@ -672,7 +672,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         if (result == null || result.getCallInterfaces() == null) {
             return Collections.emptyList();
         }
-        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : result.getCallInterfaces()) {
             if (!A2A_PROTOCOL.equals(callInterface.getProtocol())
                 || callInterface.getEndpointSets() == null) {
                 continue;

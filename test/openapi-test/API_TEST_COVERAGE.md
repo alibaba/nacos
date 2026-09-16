@@ -346,6 +346,50 @@ bounds, default namespace, and successful empty results.
 | Auth API | [AUTH_API_TEST_SCENARIOS.md](AUTH_API_TEST_SCENARIOS.md) | `src/test/java/com/alibaba/nacos/test/adminapi/auth`, `src/test/java/com/alibaba/nacos/test/openapi/auth` |
 | AI Registry Adaptor | [AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md) | `ai-registry-adaptor/src/test/java/com/alibaba/nacos/airegistry`, `src/test/java/com/alibaba/nacos/test/openapi/ard` |
 
+## Agent model consolidation
+
+Agent model consolidation strengthens the existing Agent Admin row with raw-JSON summary/detail boundary assertions in AgentAdminApiOpenApiITCase. The initial package-only consolidation preserved wire contracts. The resource/version consolidation below changes Search and management response shapes; Discover, Endpoint publication, definition publish and Watch retain their existing wire structures and regression suites. No HTTP surface is added or reclassified, so strict/effective coverage totals are unchanged.
+
+### Agent 元数据模型合并（2026-09-14）
+
+本轮 Agent 元数据合并更新 Search/Admin/Console 响应形状断言，复用既有 API surface 行，不增加覆盖率；执行结果见下方。
+
+本轮独立验证：28 项通过、2 项既有条件跳过，包含受影响的 A2A 管理互通场景。详情见 `Codex/design/nacos-3.3-client-ai-api/MODEL_VALIDATION.md` 的 2026-09-14 记录。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+本轮新增公开 INDEX/Artifact、直接 HTTP 健康输入/维护字段忽略，以及两种 Console 部署的非空统一模型成功流程。普通批次 56 通过、2 个原私有资源跳过；独立 Console 11 通过、3 个原错误映射断言失败。保留失败和 Disabled，不据此修改原统计口径。
+
+
+### 2026-09-15 请求整合回归
+
+Agent Client/Admin/Console 覆盖行的 HTTP 契约保持不变，本轮 Request 合并不增加新 HTTP surface；既有默认值、namespace 隔离、发布/运行地址、索引、A2A 迁移与 Artifact 场景全部纳入回归。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+Agent JSON 契约更新到 Schema 0.3.0：Client Endpoint 默认值/false/0/忽略管理输入、管理/Console 可选 null、版本摘要及导出；测试分别落在 AgentEndpointClientOpenApiITCase、AgentDiscoveryClientOpenApiITCase、AgentConsoleApiOpenApiITCase 及既有 Agent 管理套件。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+## CONSOLE-ERR-01 错误透传回归（2026-09-16）
+
+复用 AgentConsoleApiOpenApiITCase 和 A2aConsoleApiOpenApiITCase 原14项，在合并和独立
+Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详情和成功副作用验证。
+共享 Maintainer 代理的修改另回归 Config/Naming 代表流程；不新增覆盖行、不提升覆盖比例。
+独立部署使用 nacos.deployment.type=console，nacos.console.port 指向该独立进程；Client
+写入仍使用服务端端口。CI 自动运行独立部署仍是后续任务。
+
+结果见 [Console 错误透传验证](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md)。
+
+实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
+全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
+CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
+
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
 
 ## Config detail schema (#15853)

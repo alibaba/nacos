@@ -17,14 +17,14 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import io.grpc.Status;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,21 +66,21 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.HTTP, grpcTransport, httpTransport);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         AgentVersionDetail version = new AgentVersionDetail();
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         ClientLivenessInfo liveness = new ClientLivenessInfo();
         when(httpTransport.publishAgent(any())).thenReturn(version);
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         when(httpTransport.discoverAgent(any())).thenReturn(discovery);
-        when(httpTransport.registerAgentEndpoints(any())).thenReturn(liveness);
+        when(httpTransport.registerAgentEndpoints(eq("public"), any())).thenReturn(liveness);
         when(httpTransport.heartbeatAgentEndpoints()).thenReturn(liveness);
         
         assertSame(version, router.publishAgent(new AgentPublishRequest()));
-        assertSame(page, router.searchAgents(new AgentSearchRequest()));
+        assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
         assertEquals(AgentTransportType.HTTP, router.selectPublicationTransport());
         assertSame(liveness,
-            router.registerAgentEndpoints(new AgentEndpointRegistrationBatch()));
+            router.registerAgentEndpoints("public", new AgentEndpointRegistrationBatch()));
         router.deregisterAgentEndpoints("public", "agent", "a2a");
         assertSame(liveness, router.heartbeatAgentEndpoints());
         
@@ -97,16 +98,16 @@ class AgentTransportRouterTest {
             new NacosException(NacosException.SERVER_ERROR, "search failed");
         NacosException discoverFailure =
             new NacosException(NacosException.SERVER_ERROR, "discover failed");
-        when(httpTransport.searchAgents(any())).thenThrow(searchFailure);
+        when(httpTransport.searchAgents(eq("public"), any())).thenThrow(searchFailure);
         when(httpTransport.discoverAgent(any())).thenThrow(discoverFailure);
         
         assertSame(searchFailure,
             assertThrows(NacosException.class,
-                () -> router.searchAgents(new AgentSearchRequest())));
+                () -> router.searchAgents("public", new AgentSearchRequest())));
         assertSame(discoverFailure,
             assertThrows(NacosException.class,
                 () -> router.discoverAgent(new AgentDiscoveryRequest())));
-        verify(grpcTransport, never()).searchAgents(any());
+        verify(grpcTransport, never()).searchAgents(eq("public"), any());
         verify(grpcTransport, never()).discoverAgent(any());
     }
     
@@ -116,14 +117,14 @@ class AgentTransportRouterTest {
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         AgentVersionDetail version = new AgentVersionDetail();
         when(grpcTransport.publishAgent(any())).thenReturn(version);
-        when(grpcTransport.searchAgents(any())).thenThrow(
+        when(grpcTransport.searchAgents(eq("public"), any())).thenThrow(
             new NacosException(NacosException.SERVER_ERROR, "unavailable"));
         
         assertSame(version, router.publishAgent(new AgentPublishRequest()));
         assertThrows(NacosException.class,
-            () -> router.searchAgents(new AgentSearchRequest()));
+            () -> router.searchAgents("public", new AgentSearchRequest()));
         assertEquals(AgentTransportType.GRPC, router.selectPublicationTransport());
-        verify(httpTransport, never()).searchAgents(any());
+        verify(httpTransport, never()).searchAgents(eq("public"), any());
         verify(httpTransport, never()).publishAgent(any());
     }
     
@@ -132,14 +133,14 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
-        when(grpcTransport.searchAgents(any())).thenReturn(page);
+        when(grpcTransport.searchAgents(eq("public"), any())).thenReturn(page);
         when(grpcTransport.discoverAgent(any())).thenReturn(discovery);
         
-        assertSame(page, router.searchAgents(new AgentSearchRequest()));
+        assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
-        verify(httpTransport, never()).searchAgents(any());
+        verify(httpTransport, never()).searchAgents(eq("public"), any());
         verify(httpTransport, never()).discoverAgent(any());
     }
     
@@ -148,14 +149,14 @@ class AgentTransportRouterTest {
         router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(false);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
         AgentVersionDetail version = new AgentVersionDetail();
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         when(httpTransport.discoverAgent(any())).thenReturn(discovery);
         when(httpTransport.publishAgent(any())).thenReturn(version);
         
-        assertSame(page, router.searchAgents(new AgentSearchRequest()));
+        assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
         assertSame(version, router.publishAgent(new AgentPublishRequest()));
         assertEquals(AgentTransportType.HTTP, router.selectPublicationTransport());
@@ -168,16 +169,16 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        when(grpcTransport.searchAgents(any())).thenThrow(
+        when(grpcTransport.searchAgents(eq("public"), any())).thenThrow(
             new NacosException(NacosException.CLIENT_DISCONNECT, "disconnected"));
         when(grpcTransport.discoverAgent(any())).thenThrow(
             new NacosException(NacosException.UN_REGISTER, "unregistered"));
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
+        Page<AgentSummary> page = new Page<AgentSummary>();
         AgentDiscoveryResult discovery = new AgentDiscoveryResult();
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         when(httpTransport.discoverAgent(any())).thenReturn(discovery);
         
-        assertSame(page, router.searchAgents(new AgentSearchRequest()));
+        assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         assertSame(discovery, router.discoverAgent(new AgentDiscoveryRequest()));
         verify(grpcTransport, times(2)).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
@@ -188,17 +189,17 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        Page<AgentSummary> page = new Page<AgentSummary>();
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         int[] transportErrors = {NacosException.CLIENT_DISCONNECT, NacosException.UN_REGISTER};
         
         for (int error : transportErrors) {
             doThrow(new NacosException(error, "transport failure")).when(grpcTransport)
-                .searchAgents(any());
-            assertSame(page, router.searchAgents(new AgentSearchRequest()));
+                .searchAgents(eq("public"), any());
+            assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         }
         
-        verify(httpTransport, times(transportErrors.length)).searchAgents(any());
+        verify(httpTransport, times(transportErrors.length)).searchAgents(eq("public"), any());
     }
     
     @Test
@@ -207,15 +208,16 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        Page<AgentSummary> page = new Page<AgentSummary>();
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         Throwable[] unavailableFailures = {Status.UNAVAILABLE.asRuntimeException(),
             Status.UNAVAILABLE.asException()};
         
         for (Throwable failure : unavailableFailures) {
             doThrow(new NacosException(NacosException.SERVER_ERROR,
-                new IllegalStateException(failure))).when(grpcTransport).searchAgents(any());
-            assertSame(page, router.searchAgents(new AgentSearchRequest()));
+                new IllegalStateException(failure))).when(grpcTransport)
+                .searchAgents(eq("public"), any());
+            assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         }
         
         verify(grpcTransport, times(unavailableFailures.length))
@@ -229,12 +231,12 @@ class AgentTransportRouterTest {
         when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
-        when(grpcTransport.searchAgents(any())).thenThrow(
+        when(grpcTransport.searchAgents(eq("public"), any())).thenThrow(
             new NacosException(NacosException.CLIENT_DISCONNECT, "connection unavailable"));
-        Page<AgentCatalogEntry> page = new Page<AgentCatalogEntry>();
-        when(httpTransport.searchAgents(any())).thenReturn(page);
+        Page<AgentSummary> page = new Page<AgentSummary>();
+        when(httpTransport.searchAgents(eq("public"), any())).thenReturn(page);
         
-        assertSame(page, router.searchAgents(new AgentSearchRequest()));
+        assertSame(page, router.searchAgents("public", new AgentSearchRequest()));
         verify(grpcTransport).recordHttpSuccess(AgentGrpcTransport.Resource.AGENT);
     }
     
@@ -248,12 +250,12 @@ class AgentTransportRouterTest {
         
         for (int error : serverErrors) {
             doThrow(new NacosException(error, "server failure")).when(grpcTransport)
-                .searchAgents(any());
+                .searchAgents(eq("public"), any());
             assertThrows(NacosException.class,
-                () -> router.searchAgents(new AgentSearchRequest()));
+                () -> router.searchAgents("public", new AgentSearchRequest()));
         }
         
-        verify(httpTransport, never()).searchAgents(any());
+        verify(httpTransport, never()).searchAgents(eq("public"), any());
     }
     
     @Test
@@ -266,12 +268,13 @@ class AgentTransportRouterTest {
         
         for (Throwable failure : serverFailures) {
             doThrow(new NacosException(NacosException.SERVER_ERROR,
-                new IllegalStateException(failure))).when(grpcTransport).searchAgents(any());
+                new IllegalStateException(failure))).when(grpcTransport)
+                .searchAgents(eq("public"), any());
             assertThrows(NacosException.class,
-                () -> router.searchAgents(new AgentSearchRequest()));
+                () -> router.searchAgents("public", new AgentSearchRequest()));
         }
         
-        verify(httpTransport, never()).searchAgents(any());
+        verify(httpTransport, never()).searchAgents(eq("public"), any());
     }
     
     @Test
@@ -304,17 +307,17 @@ class AgentTransportRouterTest {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         ClientLivenessInfo grpcLiveness = new ClientLivenessInfo();
         ClientLivenessInfo httpLiveness = new ClientLivenessInfo();
-        when(grpcTransport.registerAgentEndpoints(batch)).thenReturn(grpcLiveness);
-        when(httpTransport.registerAgentEndpoints(batch)).thenReturn(httpLiveness);
+        when(grpcTransport.registerAgentEndpoints("public", batch)).thenReturn(grpcLiveness);
+        when(httpTransport.registerAgentEndpoints("public", batch)).thenReturn(httpLiveness);
         when(grpcTransport.heartbeatAgentEndpoints()).thenReturn(grpcLiveness);
         when(httpTransport.heartbeatAgentEndpoints()).thenReturn(httpLiveness);
         when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
         when(httpTransport.getType()).thenReturn(AgentTransportType.HTTP);
         
         assertSame(grpcLiveness,
-            router.registerAgentEndpoints(batch, AgentTransportType.GRPC));
+            router.registerAgentEndpoints("public", batch, AgentTransportType.GRPC));
         assertSame(httpLiveness,
-            router.registerAgentEndpoints(batch, AgentTransportType.HTTP));
+            router.registerAgentEndpoints("public", batch, AgentTransportType.HTTP));
         router.deregisterAgentEndpoints("public", "agent", "a2a", AgentTransportType.GRPC);
         router.deregisterAgentEndpoints("public", "agent", "a2a", AgentTransportType.HTTP);
         assertSame(grpcLiveness, router.heartbeatAgentEndpoints(AgentTransportType.GRPC));
@@ -336,10 +339,11 @@ class AgentTransportRouterTest {
         for (int code : codes) {
             NacosException failure = new NacosException(code, "business failure",
                 Status.UNAVAILABLE.asRuntimeException());
-            org.mockito.Mockito.doThrow(failure).when(grpcTransport).searchAgents(any());
+            org.mockito.Mockito.doThrow(failure).when(grpcTransport).searchAgents(eq("public"),
+                any());
             assertSame(failure, assertThrows(NacosException.class,
-                () -> router.searchAgents(new AgentSearchRequest())));
+                () -> router.searchAgents("public", new AgentSearchRequest())));
         }
-        verify(httpTransport, never()).searchAgents(any());
+        verify(httpTransport, never()).searchAgents(eq("public"), any());
     }
 }

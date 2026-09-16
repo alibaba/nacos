@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 import java.util.List;
 
 /**
- * Protocol binding and native descriptor for an Agent version.
+ * Shared protocol descriptor fields for definition and discovery views.
  *
  * @author Nacos
+ * @since 3.3.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentCallInterface implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -39,9 +37,10 @@ public class AgentCallInterface implements Serializable {
     
     private Object nativeDescriptor;
     
+    /** Definition source preference; absent from discovery and raw runtime views. */
     private List<EndpointSource> endpointSourceOrder;
     
-    private List<Endpoint> declaredEndpoints;
+    private List<EndpointSet> endpointSets;
     
     public String getProtocol() {
         return protocol;
@@ -83,11 +82,11 @@ public class AgentCallInterface implements Serializable {
         this.endpointSourceOrder = endpointSourceOrder;
     }
     
-    public List<Endpoint> getDeclaredEndpoints() {
-        return declaredEndpoints;
+    public List<EndpointSet> getEndpointSets() {
+        return endpointSets;
     }
     
-    public void setDeclaredEndpoints(List<Endpoint> declaredEndpoints) {
-        this.declaredEndpoints = declaredEndpoints;
+    public void setEndpointSets(List<EndpointSet> endpointSets) {
+        this.endpointSets = endpointSets;
     }
 }

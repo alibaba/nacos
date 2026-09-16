@@ -198,12 +198,12 @@ CLIENT_DISCONNECT、UN_REGISTER 或通用 transport 异常中的 gRPC UNAVAILABL
 
 | 能力 | 方法 | 契约 |
 | --- | --- | --- |
-| Search | `searchAgents` | 接受 `AgentSearchQuery`，返回 `Page<AgentCatalogEntry>`。 |
+| Search | `searchAgents` | 接受 `AgentSearchRequest`，返回 `Page<AgentSummary>`。 |
 | Discover | `discoverAgent` 重载 | 接受 `AgentReference` 和可选 `AgentDiscoveryFilter`，返回一个完整 `AgentDiscoveryResult`。 |
 | Watch | `subscribeAgent` 重载 | 接受相同 Reference、可选 Filter 和 Listener；返回当前完整结果，后续传递完整替换结果。 |
 | 取消 Watch | `unsubscribeAgent` 重载 | 按相同 Reference、Filter 和 Listener identity 移除 Watch。 |
-| 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistration`，并保留为 redo 意图。 |
-| 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `AgentEndpointDeregistration`。 |
+| 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationBatch`，并保留为 redo 意图。 |
+| 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `agentName, protocol, List<Endpoint>`。 |
 
 Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进制兼容。
 `NacosAgentDiscoveryEvent` 增加 Event Type 与 Unavailable Error Getter，现有 Result
@@ -225,9 +225,18 @@ Listener Callback 在 Connection/HTTP I/O 外执行；有 Listener Executor 时�
 使用有界共享 Executor，并隔离异常。该 Agent-only 分层不改变 Prompt、Skill、MCP、
 AgentSpec 或旧 A2A 的 Transport Ownership。
 
-这些公开方法的 Search/Endpoint 入参分别是 `AgentSearchQuery`、`AgentEndpointRegistration`
-和 `AgentEndpointDeregistration`，不包含 `namespaceId` 字段或访问器，也不继承带 namespace 的
-传输模型。Proxy 复制调用方内容，将 SDK namespace 注入原有内部传输对象，不修改输入。目标 Watch、Cache 和 Redo 行为遵循
+Agent/RAD 具体模型与抽象基类组织遵循
+[Agent API Java 模型绑定](../ai/agent-api-spec.md#java-模型绑定)。
+SDK 签名使用具体业务模型或参数；namespace 由实例提供。
+
+Search 和完整注册分别使用根包 `AgentSearchRequest`、`AgentEndpointRegistrationBatch`，
+只包含业务字段，不含 namespace 字段或访问器。局部注销使用
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`，
+不再定义注销 Java Request/Batch。SDK 对调用方内容做防御性复制，从实例取得 namespace，
+通过 HTTP 参数或 RPC 信封显式传入查询/注册服务；PublicationKey 和 redo 数据独立保留 namespace。
+局部注销仍计算剩余完整 Batch，非空则重新注册，为空则整份注销，不修改调用方对象或集合。
+HTTP 参数、鉴权、完整替换和错误语义保持不变；Search/Register 的 RPC namespace 位于信封，
+不再嵌套于业务请求。3.3 BETA Java 类型不保留兼容包装，历史 A2A 公开契约保持不变。
 [客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md)和
 [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)。
 

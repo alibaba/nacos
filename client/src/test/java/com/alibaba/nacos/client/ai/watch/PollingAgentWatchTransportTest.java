@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.ai.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 

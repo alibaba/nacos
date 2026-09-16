@@ -10,78 +10,74 @@ export type RuntimeEndpointState = 'AVAILABLE' | 'DISABLED' | 'UNHEALTHY';
 
 export interface AgentProvider {
   name: string;
-  url?: string;
+  url?: string | null;
 }
 
 export interface AgentVersionInfo {
-  editingVersion?: string;
-  reviewingVersion?: string;
-  onlineCnt?: number;
-  labels?: Record<string, string>;
+  editingVersion?: string | null;
+  reviewingVersion?: string | null;
+  onlineVersions?: AgentVersionSummary[] | null;
+  labels?: Record<string, string> | null;
 }
 
-export interface AgentVersionCatalogEntry {
-  version: string;
-  labels?: string[];
-  protocols?: string[];
-}
-
-export interface AgentVersionCatalog {
-  latestVersion?: string;
-  onlineVersions?: AgentVersionCatalogEntry[];
-}
-
-export interface AgentMetadata {
+export interface AgentSummary {
   namespaceId: string;
   agentName: string;
-  displayName?: string;
-  description?: string;
-  iconUrl?: string;
-  provider?: AgentProvider;
-  tags?: string[];
-  extensions?: Record<string, unknown>;
+  displayName?: string | null;
+  description?: string | null;
+  iconUrl?: string | null;
+  provider?: AgentProvider | null;
+  tags?: string[] | null;
+  extensions?: Record<string, unknown> | null;
   status: AgentResourceStatus;
-  owner?: string;
-  scope?: AgentScope;
-  versionInfo?: AgentVersionInfo;
-  versionCatalog?: AgentVersionCatalog;
-  metaVersion?: number;
-  createTime?: number;
-  updateTime?: number;
+  owner?: string | null;
+  scope?: AgentScope | null;
+  versionInfo?: AgentVersionInfo | null;
+  metaVersion?: number | null;
+  createTime?: number | null;
+  updateTime?: number | null;
 }
-
-export type AgentSummary = Omit<AgentMetadata, 'extensions'>;
 
 export interface AgentEndpoint {
   uri: string;
   transport: string;
+  /** Lower values have higher priority; omitted input defaults to zero. */
   priority?: number;
+  /** Omitted input defaults to one. */
   weight?: number;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
+  /** Omitted input defaults to true; runtime reads reflect current health. */
   healthy?: boolean;
+  bindings?: RuntimeVersionBinding[] | null;
+  /** Maintained by Nacos; defaults to true. */
+  enabled?: boolean;
+  state?: RuntimeEndpointState | null;
 }
 
 export interface AgentCallInterface {
   protocol: string;
-  protocolVersion?: string;
-  descriptorMediaType: string;
-  nativeDescriptor: unknown;
-  endpointSourceOrder: EndpointSource[];
-  declaredEndpoints?: AgentEndpoint[];
+  protocolVersion?: string | null;
+  descriptorMediaType?: string | null;
+  nativeDescriptor?: unknown;
+  endpointSourceOrder?: EndpointSource[] | null;
+  endpointSets?: EndpointSet[] | null;
 }
 
 export interface AgentVersionSummary {
   version: string;
-  status: AgentVersionStatus;
-  publishPipelineInfo?: string;
-  author?: string;
-  changeDescription?: string;
-  contentDigest?: string;
-  createTime?: number;
-  updateTime?: number;
+  labels?: string[] | null;
+  protocols?: string[] | null;
+  status?: AgentVersionStatus | null;
+  publishPipelineInfo?: string | null;
+  author?: string | null;
+  changeDescription?: string | null;
+  contentDigest?: string | null;
+  createTime?: number | null;
+  updateTime?: number | null;
 }
 
 export interface AgentVersionDetail extends AgentVersionSummary {
+  status: AgentVersionStatus;
   namespaceId: string;
   agentName: string;
   callInterfaces: AgentCallInterface[];
@@ -95,7 +91,7 @@ export interface AgentPage<T> {
 }
 
 export interface AgentOverview {
-  agent: AgentMetadata;
+  agent: AgentSummary;
   versionPage: AgentPage<AgentVersionSummary>;
 }
 
@@ -104,21 +100,18 @@ export interface RuntimeVersionBinding {
   versionRange: string;
 }
 
-export interface RuntimeEndpointSnapshotItem {
-  endpoint: AgentEndpoint;
-  bindings: RuntimeVersionBinding[];
-  state: RuntimeEndpointState;
-  enabled: boolean;
-  healthy: boolean;
-  lastUpdatedTime: number;
+export interface EndpointSet {
+  source: EndpointSource;
+  sourceRevision?: string | null;
+  endpoints: AgentEndpoint[];
+  lastUpdatedTime?: number | null;
 }
 
 export interface RuntimeEndpointSnapshot {
   namespaceId: string;
   agentName: string;
-  protocol: string;
-  version?: string;
-  items: RuntimeEndpointSnapshotItem[];
+  version?: string | null;
+  callInterface: AgentCallInterface;
 }
 
 export interface NamingServiceRef {
