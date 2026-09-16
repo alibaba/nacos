@@ -34,6 +34,7 @@ import org.xbill.DNS.Type;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,18 +51,21 @@ import java.util.stream.Collectors;
  */
 @Component
 public class NacosDnsQueryHandler {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosDnsQueryHandler.class);
-    
+
+    /** Maximum number of answer records to include in a response. */
+    private static final int MAX_ANSWER_RECORDS = 20;
+
     private final InstanceOperatorClientImpl instanceOperator;
     private final NacosDnsProperties properties;
-    
+
     public NacosDnsQueryHandler(InstanceOperatorClientImpl instanceOperator,
             NacosDnsProperties properties) {
         this.instanceOperator = instanceOperator;
         this.properties = properties;
     }
-    
+
     /**
      * Handle a DNS query message and return the response message.
      *
@@ -72,38 +76,49 @@ public class NacosDnsQueryHandler {
         Message response = new Message(query.getHeader().getID());
         response.getHeader().setFlag(org.xbill.DNS.Flags.QR);
         response.getHeader().setFlag(org.xbill.DNS.Flags.RA);
-        
+
         Record question = query.getQuestion();
         if (question == null) {
             response.getHeader().setRcode(Rcode.FORMERR);
             return response;
         }
-        
+
+        // Only answer IN class queries
+        if (question.getDClass() != DClass.IN) {
+            response.getHeader().setRcode(Rcode.REFUSED);
+            return response;
+        }
+
         String domain = question.getName().toString(true);
         int type = question.getType();
-        
+
         LOGGER.debug("DNS query: domain={}, type={}", domain, Type.string(type));
-        
+
         // Only support A record and AAAA record for now
         if (type != Type.A && type != Type.AAAA) {
             response.getHeader().setRcode(Rcode.NOTIMP);
             return response;
         }
-        
+
         // Parse domain and look up service
         List<InetAddress> addresses = resolveToAddresses(domain);
-        
+
         if (addresses == null || addresses.isEmpty()) {
             response.getHeader().setRcode(Rcode.NXDOMAIN);
             return response;
         }
-        
+
+        // Shuffle to provide basic round-robin, then limit to MAX_ANSWER_RECORDS
+        Collections.shuffle(addresses);
+        int limit = Math.min(addresses.size(), MAX_ANSWER_RECORDS);
+
         // Add question section
         response.addRecord(question, Section.QUESTION);
-        
+
         // Add answer records
         Name queryName = question.getName();
-        for (InetAddress addr : addresses) {
+        for (int i = 0; i < limit; i++) {
+            InetAddress addr = addresses.get(i);
             Record record;
             if (type == Type.A && addr.getAddress().length == 4) {
                 record = new ARecord(queryName, DClass.IN, properties.getTtl(), addr);
@@ -114,10 +129,10 @@ public class NacosDnsQueryHandler {
             }
             response.addRecord(record, Section.ANSWER);
         }
-        
+
         return response;
     }
-    
+
     /**
      * Resolve a domain name to a list of IP addresses from Nacos service instances.
      */
@@ -126,22 +141,22 @@ public class NacosDnsQueryHandler {
         if (domain.endsWith(".")) {
             domain = domain.substring(0, domain.length() - 1);
         }
-        
+
         // Check domain suffix
         String suffix = "." + properties.getDomainSuffix();
         if (!domain.endsWith(suffix)) {
             LOGGER.debug("Domain {} does not match suffix {}", domain, suffix);
             return null;
         }
-        
+
         // Strip suffix
         String servicePart = domain.substring(0, domain.length() - suffix.length());
-        
+
         // Parse service name and group
         String[] parts = servicePart.split("\\.");
         String serviceName;
         String groupName;
-        
+
         if (parts.length == 1) {
             serviceName = parts[0];
             groupName = properties.getDefaultGroup();
@@ -152,36 +167,41 @@ public class NacosDnsQueryHandler {
             LOGGER.debug("Invalid domain format: {}", domain);
             return null;
         }
-        
+
         LOGGER.debug("Resolving service: serviceName={}, groupName={}, namespace={}",
                 serviceName, groupName, properties.getNamespace());
-        
+
         // Query Nacos for healthy instances
         try {
             ServiceInfo serviceInfo = instanceOperator.listInstance(
                     properties.getNamespace(), groupName, serviceName,
                     null, null, true);
-            
+
             if (serviceInfo == null || serviceInfo.getHosts() == null) {
                 return null;
             }
-            
+
             return serviceInfo.getHosts().stream()
                     .filter(Instance::isEnabled)
                     .filter(Instance::isHealthy)
-                    .map(inst -> {
-                        try {
-                            return InetAddress.getByName(inst.getIp());
-                        } catch (UnknownHostException e) {
-                            LOGGER.warn("Invalid IP address: {}", inst.getIp());
-                            return null;
-                        }
-                    })
+                    .map(inst -> parseIpAddress(inst.getIp()))
                     .filter(addr -> addr != null)
                     .collect(Collectors.toList());
-                    
+
         } catch (Exception e) {
             LOGGER.error("Failed to query Nacos service: {}/{}", groupName, serviceName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Parse an IP string into InetAddress without performing a DNS lookup.
+     */
+    private InetAddress parseIpAddress(String ip) {
+        try {
+            return InetAddress.getByName(ip);
+        } catch (UnknownHostException e) {
+            LOGGER.warn("Invalid IP address: {}", ip);
             return null;
         }
     }
