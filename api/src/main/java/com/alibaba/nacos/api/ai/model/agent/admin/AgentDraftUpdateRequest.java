@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 import java.util.List;
 
@@ -30,7 +28,6 @@ import java.util.List;
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentDraftUpdateRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;

@@ -114,7 +114,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals("UNHEALTHY", endpoint.path("state").asText());
         assertEquals("[1.0.0]", endpoint.at("/bindings/0/versionRange").asText());
         assertFalse(endpoint.has("endpoint"), view.toString());
-        assertFalse(callInterface.has("nativeDescriptor"), view.toString());
+        assertFalse(callInterface.hasNonNull("nativeDescriptor"), view.toString());
         assertTrue(view.hasNonNull("namingServiceRef"), view.toString());
         JsonNode copied = postFormOk(CONSOLE_AGENT_PATH + "/draft",
                 agentForm(agentDraftCreateRequest(null, agentName, "2.0.0", "1.0.0"))).get("data");
@@ -131,7 +131,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 agentForm(agentInitialDraftRequest(null, agentName, firstVersion))).get("data");
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         assertVersion(draft, firstVersion, "draft");
-        assertFalse(draft.has("publishPipelineInfo"), draft.toString());
+        assertFalse(draft.hasNonNull("publishPipelineInfo"), draft.toString());
 
         JsonNode overview = getJsonOk(CONSOLE_AGENT_PATH,
                 agentIdentityQuery(null, agentName)).get("data");
@@ -140,7 +140,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals(agentName, overview.get("agent").get("agentName").asText(),
                 overview.toString());
         assertFalse(overview.get("versionPage").get("pageItems").get(0)
-                .has("publishPipelineInfo"), overview.toString());
+                .hasNonNull("publishPipelineInfo"), overview.toString());
 
         JsonNode updated = putFormOk(CONSOLE_AGENT_PATH,
                 agentForm(agentUpdateRequest(null, agentName, "console"))).get("data");
@@ -166,7 +166,7 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         JsonNode versionDetail = getJsonOk(CONSOLE_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, firstVersion)).get("data");
         assertVersion(versionDetail, firstVersion, "draft");
-        assertFalse(versionDetail.has("publishPipelineInfo"), versionDetail.toString());
+        assertFalse(versionDetail.hasNonNull("publishPipelineInfo"), versionDetail.toString());
 
         JsonNode replaced = putFormOk(CONSOLE_AGENT_PATH + "/draft",
                 agentForm(agentDraftUpdateRequest(null, agentName, firstVersion,

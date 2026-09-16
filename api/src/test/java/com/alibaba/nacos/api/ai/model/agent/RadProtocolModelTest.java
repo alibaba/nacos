@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RadProtocolModelTest {
     
@@ -109,7 +110,7 @@ class RadProtocolModelTest {
         
         JsonNode requestJson = objectMapper.readTree(objectMapper.writeValueAsBytes(request));
         assertEquals("latest", requestJson.path("reference").path("label").asText());
-        assertFalse(requestJson.path("reference").has("version"));
+        assertTrue(requestJson.path("reference").get("version").isNull());
         AgentDiscoveryRequest restoredRequest =
             objectMapper.treeToValue(requestJson, AgentDiscoveryRequest.class);
         assertEquals(EndpointSource.RUNTIME,
@@ -198,12 +199,12 @@ class RadProtocolModelTest {
         JsonNode registrationJson =
             objectMapper.readTree(objectMapper.writeValueAsBytes(registration));
         assertEquals("[1.0.0,2.0.0)", registrationJson.path("versionRange").asText());
-        assertFalse(registrationJson.path("endpoints").get(0).has("healthy"));
+        assertTrue(registrationJson.at("/endpoints/0/healthy").asBoolean());
         AgentEndpointRegistrationBatch restoredRegistration =
             objectMapper.treeToValue(registrationJson,
                 AgentEndpointRegistrationBatch.class);
         assertEquals("1.0.6", restoredRegistration.getRuntimeVersion());
-        assertNull(restoredRegistration.getEndpoints().get(0).getHealthy());
+        assertEquals(true, restoredRegistration.getEndpoints().get(0).getHealthy());
         
         assertFalse(registrationJson.has("namespaceId"));
     }

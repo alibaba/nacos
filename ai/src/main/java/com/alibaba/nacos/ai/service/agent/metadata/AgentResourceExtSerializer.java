@@ -289,7 +289,7 @@ public final class AgentResourceExtSerializer {
     
     private static Map<String, Object> toStorageProjection(AgentVersionInfo catalog) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        putIfPresent(result, "latestVersion", catalog.getLatestVersion());
+        putIfPresent(result, "latestVersion", catalog.latestVersion());
         List<Map<String, Object>> versions = new ArrayList<Map<String, Object>>();
         for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             Map<String, Object> version = new LinkedHashMap<String, Object>();

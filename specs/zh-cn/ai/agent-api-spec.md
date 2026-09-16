@@ -642,3 +642,7 @@ Layout 和替换范围，不改写到新的无 Version Agent Naming Service；�
 模型统一同时影响 Client 注册/发布、Admin/Maintainer、Console 与旧 A2A 内部转换。healthy 可写范围建议为 Runtime 注册/完整替换，缺省 true；输入中的 bindings、enabled/state 和观测时间忽略。HTTP、gRPC 与两种 SDK JSON adapter 必须一致；命名空间、鉴权、错误和查询/订阅行为保持。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### Agent JSON 输出契约
+
+Agent form/model 的可选 null 输出交由序列化器处理。各 binding 接受共享 Endpoint 默认值；注销仅读取 uri/transport，其他字段不改变删除键。遵循 RAD/管理 Schema 0.3.0 和 [JSON 回归矩阵](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)，覆盖 HTTP、gRPC、两种 SDK JSON adapter、合并与独立 Console。

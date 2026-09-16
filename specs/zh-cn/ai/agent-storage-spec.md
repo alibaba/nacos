@@ -630,3 +630,7 @@ Runtime 等价、重试、Connection 清理、切流、回滚和延期旧 Servic
 AgentVersionContent 容器可复用统一 CallInterface/EndpointSet/Endpoint，存储只保存完整定义、声明地址及来源配置；不考虑 BETA 旧格式兼容。注册 healthy 映射为当前 Naming contribution health，后续活性处理保持；Runtime/健康/观测/revision 不进入版本内容。验证新格式读回、实际 bytes 的 digest、迁移读回及运行变化不影响定义。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### 去注解后的公开 Endpoint 与存储投影
+
+公开 Endpoint 默认值及可选引用的 null 输出不扩大 AgentVersionContent。声明地址仅存储 uri、transport、生效 priority/weight 与 metadata；读回补出 healthy/enabled=true，这些字段不落库，提交的状态/健康变化不影响版本 bytes 和 contentDigest。内部 storage schema v1 不变。Artifact 公开序列化遵循更新后的 Schema，contentDigest 仍标识存储定义的 bytes。

@@ -42,10 +42,6 @@ public final class EndpointCanonicalizer {
     
     private static final int MAX_PORT = 65535;
     
-    private static final int DEFAULT_PRIORITY = 0;
-    
-    private static final double DEFAULT_WEIGHT = 1D;
-    
     private EndpointCanonicalizer() {
     }
     
@@ -63,16 +59,12 @@ public final class EndpointCanonicalizer {
         CanonicalEndpointUri canonicalUri = parseUri(endpoint.getUri());
         AgentValidationUtils.validateTransport(endpoint.getTransport());
         
-        Integer priority = endpoint.getPriority();
-        if (priority == null) {
-            priority = DEFAULT_PRIORITY;
-        } else if (priority < 0) {
+        int priority = endpoint.getPriority();
+        if (priority < 0) {
             throw new IllegalArgumentException("Endpoint priority must not be negative");
         }
-        Double weight = endpoint.getWeight();
-        if (weight == null) {
-            weight = DEFAULT_WEIGHT;
-        } else if (weight.isNaN() || weight.isInfinite() || weight < 0D || weight > 10000D) {
+        double weight = endpoint.getWeight();
+        if (Double.isNaN(weight) || Double.isInfinite(weight) || weight < 0D || weight > 10000D) {
             throw new IllegalArgumentException("Endpoint weight must be between 0 and 10000");
         }
         AgentValidationUtils.validateEndpointMetadata(endpoint.getMetadata());

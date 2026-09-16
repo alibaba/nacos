@@ -400,7 +400,7 @@ Console additionally retains namingServiceRef. No nested SnapshotItem remains.
 
 Management includes enabled/state and puts the Naming observation time once on EndpointSet.
 Management sourceRevision is omitted in this iteration. Discover/Watch require sourceRevision
-and omit endpointSourceOrder, enabled/state and observations. Their filtering, binding unions,
+and omit endpointSourceOrder and observations (or serialize them as null). Endpoints include enabled=true; state is optional and, when present, agrees with health. Their filtering, binding unions,
 source order, empty Sets and equality rules remain unchanged. Shared types do not merge queries
 or make management and discovery use the same contribution-filtering algorithm.
 
@@ -409,8 +409,8 @@ or make management and discovery use the same contribution-filtering algorithm.
 Runtime registration and complete replacement accept healthy, defaulting to true. This reports
 current contribution health; it does not override subsequent Naming liveness permanently.
 Active HTTP heartbeats preserve explicitly reported health. Existing recovery liveness rules
-continue to apply. DECLARED forbids healthy; deregistration still accepts only natural-key
-business fields. Bindings, enabled/state and observation values submitted by callers are ignored;
+continue to apply. DECLARED accepts but does not persist health or management state, and returns default healthy/enabled=true. Deregistration reads only natural-key
+business fields and ignores other shared Endpoint properties. Bindings, enabled/state and observation values submitted by callers are ignored;
 bindings are derived from the batch runtimeVersion/versionRange. Definition input sourceRevision
 is ignored. Malformed JSON types and invalid identity, URI, metadata or batch versions remain errors.
 Java setters alone do not send any write.
@@ -509,3 +509,9 @@ not add Agent-specific `sourceRef`, `defaultInterfaceId`, `interfaceId`,
 Java binding: the shared Agent/RAD package, abstract field bases and concrete model boundaries
 follow [Agent API Spec — Java model binding](./agent-api-spec.md#java-model-binding).
 This organization does not rename protocol/schema concepts or change storage and discovery semantics.
+
+### Serializer-independent public models (Schema 0.3.0)
+
+Optional reference properties may be absent or null, without adding new business meaning. Endpoint priority/weight/healthy/enabled are non-null effective values: 0/1/true/true, respectively. Priority sorts ascending. Definition storage remains an explicit projection and excludes health, bindings, enabled/state and observations. Management runtime queries retain current Naming health and enabled/state. Java derived version helpers are onlineCnt()/latestVersion(); JSON remains labels plus onlineVersions.
+
+Use [management schema 0.3.0](../../schemas/ai/agent/agent-management.schema.json). [Artifact schema 0.3.0](../../schemas/ai/agent/agent-artifact.schema.json) references that public shape; the artifact payload schemaVersion remains 1.0. Historical schema revisions are retained in Git tags/commits.

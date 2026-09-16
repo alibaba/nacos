@@ -797,3 +797,7 @@ separate specification and must not be inferred from this API-only contract.
 Consolidation affects Client registration/publication, Admin/Maintainer, Console, and internal legacy A2A conversion. The proposed writable healthy scope is Runtime registration/complete replacement, defaulting to true; ignore submitted bindings, enabled/state, and observations. HTTP, gRPC, and both SDK JSON adapters must agree while preserving namespace, authorization, error, query, and subscription behavior.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Agent JSON inclusion contract
+
+The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.3.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.

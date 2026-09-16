@@ -173,9 +173,9 @@ DefinitionCallInterface；migration comparator 使用 SnapshotItem。需适配�
 
 | 文件 | 影响 |
 | --- | --- |
-| `specs/schemas/ai/agent/0.1.0/agent-management.schema.json` | 直接调整 AgentCallInterface、VersionDetail 引用、RuntimeEndpointSnapshot/Item/Endpoint 的结构；不是只重命名 Java 类 |
-| `specs/schemas/ai/rad/0.1.0/rad-protocol.schema.json` | 作为三层结构基准；保护既有 DECLARED/RUNTIME 校验和不接受未知管理字段。共用 Java 类型不要求放宽 RAD JSON |
-| `specs/schemas/ai/agent/0.2.0/agent-artifact.schema.json` | 管理 CallInterface 的直接 `$ref`，必须联动评审；当前 artifact payload 的 schemaVersion 为 1.0，不能把目录 0.2.0 当作 payload 版本 |
+| `specs/schemas/ai/agent/agent-management.schema.json` | 直接调整 AgentCallInterface、VersionDetail 引用、RuntimeEndpointSnapshot/Item/Endpoint 的结构；不是只重命名 Java 类 |
+| `specs/schemas/ai/rad/rad-protocol.schema.json` | 作为三层结构基准；保护既有 DECLARED/RUNTIME 校验和不接受未知管理字段。共用 Java 类型不要求放宽 RAD JSON |
+| `specs/schemas/ai/agent/agent-artifact.schema.json` | 管理 CallInterface 的直接 `$ref`，必须联动评审；artifact payload 的 schemaVersion 为 1.0，与文件内契约版本元数据分开；历史结构按 Git revision 追溯 |
 | `specs/schemas/ai/agent/internal/v1/agent-storage.schema.json` | 应保护现有内部格式，通过显式转换与查询 DTO 隔离；不能用管理 schema 替换它 |
 
 中英文 Agent 管理/API、RAD Java 模型绑定、Client AI API evolution、SDK Java implementation、
@@ -336,7 +336,7 @@ Schema 引用，所以不做处理时会自动从 declaredEndpoints 变成 endpo
 
 contentDigest 标识 Version 持久化内容，不等于导出 JSON 的字节摘要。存储格式保持时，导出
 结构变化不必改变版本 digest，但同一 Artifact 定位键可能得到不同 JSON 外形；必须明确格式
-版本/representation 的处理，不能把 Java 改名当作对外无变化。当前 schema 目录为 0.2.0，
+版本/representation 的处理，不能把 Java 改名当作对外无变化。公开 Schema 采用固定路径，历史版本通过 Git 追溯，
 payload.schemaVersion 为 1.0，两者不是同一字段；如果需要区分新旧表示，应明确版本策略，
 本轮讨论不擅自指定新版本号。忽略 BETA 兼容并不要求保留旧表示，但仍需更新 Schema、规范和
 导出实例校验。旧 A2A 表示、exact version/digest 选择和 runtime 变化不影响定义 Artifact 均需回归。

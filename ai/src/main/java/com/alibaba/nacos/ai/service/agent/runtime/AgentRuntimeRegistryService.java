@@ -460,7 +460,7 @@ public class AgentRuntimeRegistryService {
         Endpoint second = EndpointCanonicalizer.canonicalize(right);
         return first.getUri().equals(second.getUri())
             && first.getTransport().equals(second.getTransport())
-            && first.getPriority().equals(second.getPriority())
+            && first.getPriority() == second.getPriority()
             && sameWeight(first.getWeight(), second.getWeight())
             && Objects.equals(first.getMetadata(), second.getMetadata());
     }

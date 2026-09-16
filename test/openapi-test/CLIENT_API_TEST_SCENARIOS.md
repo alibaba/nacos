@@ -98,3 +98,9 @@ Agent HTTP Search/Register 的 namespace 参数保持；服务端业务模型与
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-01/03/04：Endpoint 缺省 0/1/true/true，false/0 和最大 priority 往返，伪造 enabled/state/bindings 不覆盖服务端状态；Search 可选管理字段允许 null，仍不返回非空管理事实。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。

@@ -84,6 +84,33 @@ function parseInterface(result: { callInterfaces?: string }): AgentCallInterface
 }
 
 describe('Agent Console editor model', () => {
+  it('accepts nullable response fields and effective Endpoint defaults in the editor', () => {
+    const callInterface: AgentCallInterface = {
+      protocol: 'custom',
+      protocolVersion: null,
+      descriptorMediaType: 'application/json',
+      nativeDescriptor: { method: 'invoke' },
+      endpointSourceOrder: ['DECLARED'],
+      endpointSets: [{
+        source: 'DECLARED',
+        sourceRevision: null,
+        lastUpdatedTime: null,
+        endpoints: [{
+          uri: 'https://example.com/rpc', transport: 'HTTP',
+          priority: 0, weight: 1, healthy: true, enabled: true,
+          metadata: null, bindings: null, state: null,
+        }],
+      }],
+    };
+    const expected = [{ uri: 'https://example.com/rpc', transport: 'HTTP' }];
+    const editor = callInterfacesToEditorValues([callInterface]);
+    expect(editor.customProtocolVersion).toBe('');
+    expect(editor.declaredEndpoints).toEqual(expected);
+    expect(callInterfacesToProtocolEditors([callInterface])[0].declaredEndpoints).toEqual(expected);
+    expect(JSON.parse(editor.callInterfaces || '[]')[0].endpointSets[0].endpoints[0].healthy).toBe(true);
+    expect(usesRuntimeSource({ ...callInterface, endpointSourceOrder: null })).toBe(false);
+  });
+
   it('builds the complete initial draft with raw direct content', () => {
     expect(buildDraftCreateData('public', values(), true, 'direct')).toEqual({
       namespaceId: 'public',

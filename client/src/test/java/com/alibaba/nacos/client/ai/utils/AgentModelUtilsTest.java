@@ -74,7 +74,7 @@ class AgentModelUtilsTest {
         assertEquals(Boolean.FALSE, copy.getHealthy());
         assertNull(copy.getBindings());
         assertNull(copy.getState());
-        assertNull(copy.getEnabled());
+        assertEquals(true, copy.getEnabled());
         assertEquals("9.0.0", endpoint.getBindings().get(0).getRuntimeVersion());
         assertEquals(RuntimeEndpointState.DISABLED, endpoint.getState());
         assertEquals("https://example.com/a2a", endpoint.getUri());
@@ -264,8 +264,12 @@ class AgentModelUtilsTest {
         source.get(0).setUri("http://other:80");
         assertEquals("http://localhost:80/path", result.get(0).getUri());
         source.get(0).setPriority(1);
-        assertThrows(NacosException.class, () -> AgentModelUtils.copyDeregistrationEndpoints(
-            "public", "agent-a", "a2a", source));
+        source.get(0).setHealthy(false);
+        List<Endpoint> populated = AgentModelUtils.copyDeregistrationEndpoints(
+            "public", "agent-a", "a2a", source);
+        assertEquals("http://other:80", populated.get(0).getUri());
+        assertEquals(1, source.get(0).getPriority());
+        assertEquals(false, source.get(0).getHealthy());
     }
     
     @Test

@@ -252,14 +252,14 @@ public final class AgentModelValidator {
         List<AgentVersionSummary> versions = catalog.getOnlineVersions();
         requireNonNull(versions, "versionCatalog.onlineVersions");
         if (versions.isEmpty()) {
-            if (catalog.getLatestVersion() != null) {
+            if (catalog.latestVersion() != null) {
                 throw new IllegalArgumentException(
                     "latestVersion must be absent when onlineVersions is empty");
             }
             return;
         }
         
-        AgentValidationUtils.validateVersion(catalog.getLatestVersion());
+        AgentValidationUtils.validateVersion(catalog.latestVersion());
         Set<String> versionValues = new HashSet<String>();
         Set<String> labelValues = new HashSet<String>();
         boolean latestFound = false;
@@ -270,7 +270,7 @@ public final class AgentModelValidator {
                 throw new IllegalArgumentException(
                     "Duplicate online Agent Version: " + version.getValue());
             }
-            latestFound |= catalog.getLatestVersion().equals(version.getValue());
+            latestFound |= catalog.latestVersion().equals(version.getValue());
             validateCatalogLabels(entry.getLabels(), labelValues);
             validateProtocols(entry.getProtocols(), "versionCatalog.protocols");
         }
@@ -569,8 +569,6 @@ public final class AgentModelValidator {
             validateRuntimeVersionBinding(binding, selectedVersion, bindingKeys);
         }
         requireNonNull(item.getState(), "runtime Endpoint state");
-        requireNonNull(item.getEnabled(), "runtime Endpoint enabled");
-        requireNonNull(item.getHealthy(), "runtime Endpoint healthy");
         validateRuntimeEndpointState(item);
     }
     
@@ -614,9 +612,6 @@ public final class AgentModelValidator {
     private static void validateEndpoint(Endpoint endpoint) {
         requireNonNull(endpoint, "Endpoint");
         EndpointCanonicalizer.canonicalize(endpoint);
-        if (endpoint.getHealthy() != null) {
-            throw new IllegalArgumentException("Declared Endpoint forbids healthy");
-        }
     }
     
     private static void validateAbsoluteUri(String value, String fieldName) {

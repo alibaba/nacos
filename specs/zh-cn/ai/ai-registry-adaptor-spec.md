@@ -214,10 +214,10 @@ application/vnd.nacos.ai-agent+json
 
 前者只在 common latest 精确 Version 中存在可完整导出的合法 A2A Agent Card 时可用，响应只
 包含该原生 Agent Card。后者返回版本化、协议无关的 Nacos Agent 定义，不包含 Runtime Endpoint、
-健康、Publisher、心跳、owner、scope 或审批状态。Artifact URL 必须包含精确 Version、该
+实时健康观测、Publisher、心跳、owner、scope 或审批状态。声明地址携带 healthy/enabled=true 生效默认值，不代表探活。Artifact URL 必须包含精确 Version、该
 Version 的 `contentDigest` 和 representation key；Version offline、digest 不匹配或表示不可用时
 返回 ARD not found。Nacos 表示必须通过
-[`NacosAgentArtifact`](../../schemas/ai/agent/0.2.0/agent-artifact.schema.json#/$defs/NacosAgentArtifact)
+[`NacosAgentArtifact`](../../schemas/ai/agent/agent-artifact.schema.json#/$defs/NacosAgentArtifact)
 校验。默认 Nacos 主服务运行在 8848、适配器运行在 9080 时，无需通过网关合并路径
 也必须可以正常获取 artifact。
 

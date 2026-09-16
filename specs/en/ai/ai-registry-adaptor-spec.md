@@ -250,12 +250,12 @@ application/vnd.nacos.ai-agent+json
 The former is available only when the exact common-latest Version contains a
 complete valid A2A Agent Card and returns only that native card. The latter
 returns a versioned, protocol-neutral Nacos Agent definition without Runtime
-Endpoints, health, Publishers, heartbeats, owner, scope, or review state. An
+Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared addresses carry effective healthy/enabled=true defaults without implying probes. An
 artifact URL includes the exact Version, its `contentDigest`, and the
 representation key. An offline Version, digest mismatch, or unavailable
 representation returns ARD not found. The Nacos representation validates
 against
-[`NacosAgentArtifact`](../../schemas/ai/agent/0.2.0/agent-artifact.schema.json#/$defs/NacosAgentArtifact).
+[`NacosAgentArtifact`](../../schemas/ai/agent/agent-artifact.schema.json#/$defs/NacosAgentArtifact).
 A deployment with the default Nacos server on port 8848 and the adaptor on port
 9080 must work without gateway path co-location.
 

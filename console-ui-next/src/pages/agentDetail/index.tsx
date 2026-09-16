@@ -85,7 +85,7 @@ const VERSION_STATUSES: AgentVersionStatus[] = [
   'offline',
 ];
 
-function formatTime(value?: number): string {
+function formatTime(value?: number | null): string {
   return value ? new Date(value).toLocaleString() : '-';
 }
 
@@ -413,7 +413,7 @@ export default function AgentDetailPage() {
                       <SelectItem key={version.version} value={version.version}>
                         <AiVersionSelectOption
                           version={version.version}
-                          status={version.status}
+                          status={version.status ?? undefined}
                           latest={latestVersion === version.version}
                           publishPipelineInfo={version.publishPipelineInfo}
                           labels={{
@@ -466,7 +466,7 @@ export default function AgentDetailPage() {
               </div>
               <AiResourceStatusControls
                 enabled={agent.status === 'enable'}
-                scope={agent.scope}
+                scope={agent.scope ?? undefined}
                 enabledLabel={t('agent.enabled')}
                 disabledLabel={t('agent.disabled')}
                 publicLabel={t('agent.publicScope')}

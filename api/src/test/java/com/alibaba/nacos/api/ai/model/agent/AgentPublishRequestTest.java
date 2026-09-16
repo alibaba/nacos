@@ -75,9 +75,13 @@ class AgentPublishRequestTest {
             mapper.readValue(content, AgentPublishRequest.class);
         admin.validate();
         client.validate();
-        assertEquals(mapper.readTree(content), mapper.valueToTree(admin));
-        String publication = content.substring(0, content.length() - 1) + ",\"autoSubmit\":false}";
-        assertEquals(mapper.readTree(publication), mapper.valueToTree(client));
+        com.fasterxml.jackson.databind.node.ObjectNode expected =
+            (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(content);
+        expected.putNull("callInterfaces");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) expected.get("provider")).putNull("url");
+        assertEquals(expected, mapper.valueToTree(admin));
+        expected.put("autoSubmit", false);
+        assertEquals(expected, mapper.valueToTree(client));
         assertFalse(mapper.valueToTree(admin).has("autoSubmit"));
         assertFalse(mapper.valueToTree(client).has("namespaceId"));
     }

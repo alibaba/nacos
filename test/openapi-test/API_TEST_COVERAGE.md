@@ -369,3 +369,9 @@ Agent Client/Admin/Console 覆盖行的 HTTP 契约保持不变，本轮 Request
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+Agent JSON 契约更新到 Schema 0.3.0：Client Endpoint 默认值/false/0/忽略管理输入、管理/Console 可选 null、版本摘要及导出；测试分别落在 AgentEndpointClientOpenApiITCase、AgentDiscoveryClientOpenApiITCase、AgentConsoleApiOpenApiITCase 及既有 Agent 管理套件。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。

@@ -51,6 +51,7 @@ class AgentVersionContentSerializerTest {
         set.setSourceRevision("ignored");
         set.setLastUpdatedTime(999L);
         Endpoint endpoint = set.getEndpoints().get(0);
+        endpoint.setHealthy(false);
         endpoint.setEnabled(false);
         endpoint.setState(com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState.DISABLED);
         com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding forged =
@@ -67,7 +68,8 @@ class AgentVersionContentSerializerTest {
         assertNull(restored.getSourceRevision());
         assertNull(restored.getLastUpdatedTime());
         assertNull(restored.getEndpoints().get(0).getBindings());
-        assertNull(restored.getEndpoints().get(0).getEnabled());
+        assertTrue(restored.getEndpoints().get(0).getEnabled());
+        assertTrue(restored.getEndpoints().get(0).getHealthy());
         assertNull(restored.getEndpoints().get(0).getState());
         assertEquals("ignored", set.getSourceRevision());
         set.setSource(EndpointSource.RUNTIME);

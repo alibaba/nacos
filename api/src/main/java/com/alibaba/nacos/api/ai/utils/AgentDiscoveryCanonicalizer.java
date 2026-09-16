@@ -280,6 +280,8 @@ public final class AgentDiscoveryCanonicalizer {
             copy.setWeight(normalizeZero(canonical.getWeight()));
             copy.setMetadata(canonical.getMetadata());
             copy.setHealthy(canonical.getHealthy());
+            copy.setEnabled(canonical.getEnabled());
+            copy.setState(canonical.getState());
             copy.setBindings(copyBindings(each.getBindings()));
             result.add(copy);
         }

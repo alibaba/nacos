@@ -223,7 +223,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         search.setAgentNameContains(CUTOVER_AGENT);
         waitUntil("terminal Agent should remain searchable", () -> grpcService.agent().searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
-                && VERSION_TWO.equals(each.getVersionInfo().getLatestVersion())));
+                && VERSION_TWO.equals(each.getVersionInfo().latestVersion())));
     }
 
     @Test

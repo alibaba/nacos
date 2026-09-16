@@ -752,3 +752,7 @@ for removal in Nacos 4.0 without changing the canonical Runtime layout.
 AgentVersionContent may reuse unified CallInterface/EndpointSet/Endpoint members while storing only complete definitions, declared addresses, and source configuration. BETA format compatibility is out of scope. Map reported healthy to current Naming contribution health without changing subsequent liveness. Exclude runtime, health, observations, and response revision from version bytes. Verify new-format read-back, byte digests, migration verification, and definition independence from runtime changes.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Annotation-independent public Endpoint projection
+
+Public Endpoint defaults and nullable response references do not widen AgentVersionContent. Serialize only uri, transport, effective priority/weight and metadata for declared addresses. Read-back constructs healthy/enabled=true without persisting those fields; changes to submitted state/health leave stored bytes and contentDigest unchanged. Internal storage schema v1 is unchanged. Artifact public serialization follows its updated schema while contentDigest continues to identify stored definition bytes.

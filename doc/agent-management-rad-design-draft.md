@@ -1207,17 +1207,18 @@ generation/manifest 方案，不能由单 key CAS 直接替代。
 
 #### 4.4.4 正式 Specs 与 Schema
 
-当前方案已落为互相独立演进的正式规范与 Schema：
+当前方案对应以下正式规范与 Schema；公开 Agent/RAD 契约使用同一发布版本：
 
 | 契约 | 正式文档 | Schema |
 |---|---|---|
-| Agent 管理模型 | [Agent 管理规范](../specs/zh-cn/ai/agent-management-spec.md) | [Agent Management 0.1.0](../specs/schemas/ai/agent/0.1.0/agent-management.schema.json) |
-| RAD 数据面协议 | [RAD 协议规范](../specs/zh-cn/ai/rad-protocol-spec.md) | [RAD Protocol 0.1.0](../specs/schemas/ai/rad/0.1.0/rad-protocol.schema.json) |
+| Agent 管理模型 | [Agent 管理规范](../specs/zh-cn/ai/agent-management-spec.md) | [Agent Management（当前）](../specs/schemas/ai/agent/agent-management.schema.json) |
+| RAD 数据面协议 | [RAD 协议规范](../specs/zh-cn/ai/rad-protocol-spec.md) | [RAD Protocol（当前）](../specs/schemas/ai/rad/rad-protocol.schema.json) |
 | API Binding | [Agent API 规范](../specs/zh-cn/ai/agent-api-spec.md) | 复用 Agent/RAD Schema，不复制领域对象 |
 | 内部存储与 Naming 映射 | [Agent 存储规范](../specs/zh-cn/ai/agent-storage-spec.md) | [Agent Storage v1](../specs/schemas/ai/agent/internal/v1/agent-storage.schema.json) |
 
-外部 `0.1.0` 与内部 `schemaVersion=1` 分文件演进；进入实现后以正式 Specs 为规则源，Schema 用于对象生成和
-序列化校验。旧 `doc/rad-protocol` 讨论稿不再作为规则源。
+公开契约版本由 Schema 内元数据声明，与内部 `schemaVersion=1` 分开演进。公开 Schema 采用固定路径，
+历史修订通过 Git tag/commit 追溯；以正式 Specs 为规则源，Schema 用于对象生成和序列化校验。
+旧 `doc/rad-protocol` 讨论稿不再作为规则源。
 
 ## 5. API 设计
 

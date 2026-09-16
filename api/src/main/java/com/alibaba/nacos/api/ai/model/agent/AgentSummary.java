@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.agent;
 
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Agent metadata shared by management and discovery catalog views.
@@ -29,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Nacos
  * @since 3.3.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentSummary extends AbstractAgentMetadata {
     
     private static final long serialVersionUID = 1L;

@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -41,7 +42,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Recursive domain validation for RAD 0.1.0 public models.
+ * Recursive domain validation for RAD 0.3.0 public models.
  *
  * @author Nacos
  */
@@ -148,7 +149,7 @@ public final class RadModelValidator {
             || entry.getVersionInfo().getReviewingVersion() != null) {
             throw invalid("Search must not expose management fields");
         }
-        AgentVersion latest = AgentVersion.parse(entry.getVersionInfo().getLatestVersion());
+        AgentVersion latest = AgentVersion.parse(entry.getVersionInfo().latestVersion());
         List<AgentVersionSummary> versions = entry.getVersionInfo().getOnlineVersions();
         requireNonEmpty(versions, "versionInfo.onlineVersions");
         Set<String> versionValues = new HashSet<String>();
@@ -352,7 +353,7 @@ public final class RadModelValidator {
         }
         requireNonEmptyArray(batch.getEndpoints(), MAX_BATCH_ENDPOINTS, "endpoints");
         validateEndpointBatch(batch.getEndpoints(), namespaceId, batch.getAgentName(),
-            batch.getProtocol(), EndpointHealthRule.OPTIONAL, false, false);
+            batch.getProtocol(), false, false);
     }
     
     /**
@@ -371,7 +372,7 @@ public final class RadModelValidator {
         AgentValidationUtils.validateProtocol(protocol);
         requireNonEmptyArray(endpoints, MAX_BATCH_ENDPOINTS, "endpoints");
         validateEndpointBatch(endpoints, namespaceId, agentName,
-            protocol, EndpointHealthRule.FORBIDDEN, true, false);
+            protocol, true, false);
     }
     
     private static void validateCallInterface(AgentCallInterface callInterface,
@@ -409,10 +410,8 @@ public final class RadModelValidator {
         int capacity = source == EndpointSource.DECLARED ? MAX_DECLARED_ENDPOINTS
             : MAX_RUNTIME_ENDPOINTS;
         requireArray(endpointSet.getEndpoints(), capacity, "endpoints");
-        EndpointHealthRule healthRule = source == EndpointSource.RUNTIME
-            ? EndpointHealthRule.REQUIRED : EndpointHealthRule.FORBIDDEN;
         validateEndpointBatch(endpointSet.getEndpoints(), namespaceId, agentName, protocol,
-            healthRule, false, true);
+            false, true);
         for (Endpoint endpoint : endpointSet.getEndpoints()) {
             validateDiscoveryBindings(endpoint, source);
         }
@@ -421,12 +420,12 @@ public final class RadModelValidator {
     
     private static void validateEndpointBatch(List<? extends Endpoint> endpoints,
         String namespaceId,
-        String agentName, String protocol, EndpointHealthRule healthRule,
+        String agentName, String protocol,
         boolean deregistration, boolean requireCanonicalOutput) {
         Set<EndpointNaturalKey> keys = new HashSet<EndpointNaturalKey>();
         for (Endpoint endpoint : endpoints) {
             requireNonNull(endpoint, "endpoints item");
-            validateEndpoint(endpoint, healthRule, deregistration, requireCanonicalOutput);
+            validateEndpoint(endpoint, deregistration, requireCanonicalOutput);
             EndpointNaturalKey key =
                 EndpointNaturalKey.of(namespaceId, agentName, protocol, endpoint);
             if (!keys.add(key)) {
@@ -469,26 +468,23 @@ public final class RadModelValidator {
         }
     }
     
-    private static void validateEndpoint(Endpoint endpoint, EndpointHealthRule healthRule,
-        boolean deregistration, boolean requireCanonicalOutput) {
-        if (deregistration && (endpoint.getPriority() != null || endpoint.getWeight() != null
-            || endpoint.getMetadata() != null || endpoint.getHealthy() != null)) {
-            throw invalid("Deregister Endpoint may contain only uri and transport");
-        }
-        if (healthRule == EndpointHealthRule.REQUIRED && endpoint.getHealthy() == null) {
-            throw invalid("RUNTIME discovery Endpoint must contain healthy");
-        }
-        if (healthRule == EndpointHealthRule.FORBIDDEN && endpoint.getHealthy() != null) {
-            throw invalid("Endpoint must not contain healthy in this context");
+    private static void validateEndpoint(Endpoint endpoint, boolean deregistration,
+        boolean requireCanonicalOutput) {
+        if (deregistration) {
+            // A returned Endpoint can be deregistered directly; only its natural key is used.
+            return;
         }
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
-        if (requireCanonicalOutput
-            && (endpoint.getEnabled() != null || endpoint.getState() != null)) {
-            throw invalid("Discovery Endpoint must not contain management state");
+        if (requireCanonicalOutput && !endpoint.getEnabled()) {
+            throw invalid("Discovery Endpoint must be enabled");
+        }
+        if (requireCanonicalOutput && endpoint.getState() != null
+            && endpoint.getState() != (endpoint.getHealthy() ? RuntimeEndpointState.AVAILABLE
+                : RuntimeEndpointState.UNHEALTHY)) {
+            throw invalid("Discovery Endpoint state must match effective health");
         }
         if (requireCanonicalOutput
-            && (!canonical.getUri().equals(endpoint.getUri()) || endpoint.getPriority() == null
-                || endpoint.getWeight() == null
+            && (!canonical.getUri().equals(endpoint.getUri())
                 || endpoint.getMetadata() != null && endpoint.getMetadata().isEmpty())) {
             throw invalid("Discovery Endpoint must contain canonical effective values");
         }
@@ -669,9 +665,4 @@ public final class RadModelValidator {
         return new IllegalArgumentException(message);
     }
     
-    private enum EndpointHealthRule {
-        REQUIRED,
-        OPTIONAL,
-        FORBIDDEN
-    }
 }

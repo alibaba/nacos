@@ -10,66 +10,70 @@ export type RuntimeEndpointState = 'AVAILABLE' | 'DISABLED' | 'UNHEALTHY';
 
 export interface AgentProvider {
   name: string;
-  url?: string;
+  url?: string | null;
 }
 
 export interface AgentVersionInfo {
-  editingVersion?: string;
-  reviewingVersion?: string;
-  onlineVersions?: AgentVersionSummary[];
-  labels?: Record<string, string>;
+  editingVersion?: string | null;
+  reviewingVersion?: string | null;
+  onlineVersions?: AgentVersionSummary[] | null;
+  labels?: Record<string, string> | null;
 }
 
 export interface AgentSummary {
   namespaceId: string;
   agentName: string;
-  displayName?: string;
-  description?: string;
-  iconUrl?: string;
-  provider?: AgentProvider;
-  tags?: string[];
-  extensions?: Record<string, unknown>;
+  displayName?: string | null;
+  description?: string | null;
+  iconUrl?: string | null;
+  provider?: AgentProvider | null;
+  tags?: string[] | null;
+  extensions?: Record<string, unknown> | null;
   status: AgentResourceStatus;
-  owner?: string;
-  scope?: AgentScope;
-  versionInfo?: AgentVersionInfo;
-  metaVersion?: number;
-  createTime?: number;
-  updateTime?: number;
+  owner?: string | null;
+  scope?: AgentScope | null;
+  versionInfo?: AgentVersionInfo | null;
+  metaVersion?: number | null;
+  createTime?: number | null;
+  updateTime?: number | null;
 }
 
 export interface AgentEndpoint {
   uri: string;
   transport: string;
+  /** Lower values have higher priority; omitted input defaults to zero. */
   priority?: number;
+  /** Omitted input defaults to one. */
   weight?: number;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string> | null;
+  /** Omitted input defaults to true; runtime reads reflect current health. */
   healthy?: boolean;
-  bindings?: RuntimeVersionBinding[];
+  bindings?: RuntimeVersionBinding[] | null;
+  /** Maintained by Nacos; defaults to true. */
   enabled?: boolean;
-  state?: RuntimeEndpointState;
+  state?: RuntimeEndpointState | null;
 }
 
 export interface AgentCallInterface {
   protocol: string;
-  protocolVersion?: string;
-  descriptorMediaType?: string;
+  protocolVersion?: string | null;
+  descriptorMediaType?: string | null;
   nativeDescriptor?: unknown;
-  endpointSourceOrder?: EndpointSource[];
-  endpointSets?: EndpointSet[];
+  endpointSourceOrder?: EndpointSource[] | null;
+  endpointSets?: EndpointSet[] | null;
 }
 
 export interface AgentVersionSummary {
   version: string;
-  labels?: string[];
-  protocols?: string[];
-  status?: AgentVersionStatus;
-  publishPipelineInfo?: string;
-  author?: string;
-  changeDescription?: string;
-  contentDigest?: string;
-  createTime?: number;
-  updateTime?: number;
+  labels?: string[] | null;
+  protocols?: string[] | null;
+  status?: AgentVersionStatus | null;
+  publishPipelineInfo?: string | null;
+  author?: string | null;
+  changeDescription?: string | null;
+  contentDigest?: string | null;
+  createTime?: number | null;
+  updateTime?: number | null;
 }
 
 export interface AgentVersionDetail extends AgentVersionSummary {
@@ -98,15 +102,15 @@ export interface RuntimeVersionBinding {
 
 export interface EndpointSet {
   source: EndpointSource;
-  sourceRevision?: string;
+  sourceRevision?: string | null;
   endpoints: AgentEndpoint[];
-  lastUpdatedTime?: number;
+  lastUpdatedTime?: number | null;
 }
 
 export interface RuntimeEndpointSnapshot {
   namespaceId: string;
   agentName: string;
-  version?: string;
+  version?: string | null;
   callInterface: AgentCallInterface;
 }
 

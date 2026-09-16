@@ -43,7 +43,7 @@ class AgentVersionCatalogBuilderTest {
         AgentVersionCatalogBuilder.Result result = AgentVersionCatalogBuilder.build(
             Collections.<String, List<String>>emptyMap(), labels);
         
-        assertNull(result.getVersionCatalog().getLatestVersion());
+        assertNull(result.getVersionCatalog().latestVersion());
         assertEquals(Collections.emptyList(),
             result.getVersionCatalog().getOnlineVersions());
         assertEquals(Collections.singletonMap("archived", "0.9.0"), result.getLabels());
@@ -66,7 +66,7 @@ class AgentVersionCatalogBuilderTest {
             AgentVersionCatalogBuilder.build(versions, labels);
         AgentVersionInfo catalog = result.getVersionCatalog();
         
-        assertEquals("1.0.0", catalog.getLatestVersion());
+        assertEquals("1.0.0", catalog.latestVersion());
         assertEquals(Arrays.asList("2.0.0", "2.0.0-RC1", "1.0.0"),
             catalogVersions(catalog));
         assertEquals(Arrays.asList("beta", "canary"),
@@ -89,12 +89,12 @@ class AgentVersionCatalogBuilderTest {
         
         AgentVersionCatalogBuilder.Result missingLatest = AgentVersionCatalogBuilder.build(
             versions, Collections.<String, String>emptyMap());
-        assertEquals("1.0.0", missingLatest.getVersionCatalog().getLatestVersion());
+        assertEquals("1.0.0", missingLatest.getVersionCatalog().latestVersion());
         assertEquals("1.0.0", missingLatest.getLabels().get("latest"));
         
         AgentVersionCatalogBuilder.Result staleLatest = AgentVersionCatalogBuilder.build(
             versions, Collections.singletonMap("latest", "2.0.0"));
-        assertEquals("1.0.0", staleLatest.getVersionCatalog().getLatestVersion());
+        assertEquals("1.0.0", staleLatest.getVersionCatalog().latestVersion());
         assertEquals("1.0.0", staleLatest.getLabels().get("latest"));
     }
     

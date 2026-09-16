@@ -147,3 +147,9 @@ Agent Console 复用改名后的 Admin Request，现有合并部署和独立 rem
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-04/08：合并/独立 Console 返回的 Runtime CallInterface 无 descriptor 事实，可省略或 null；保持现有错误码断言，CONSOLE-ERR-01 继续单独登记。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。

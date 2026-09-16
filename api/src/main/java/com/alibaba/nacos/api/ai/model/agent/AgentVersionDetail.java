@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
 /**
@@ -25,7 +24,6 @@ import java.util.List;
  * @author Nacos
  * @since 3.3.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentVersionDetail extends AgentVersionSummary {
     
     private static final long serialVersionUID = 1L;

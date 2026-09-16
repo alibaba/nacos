@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,6 @@ import java.util.Map;
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentDiscoveryFilter implements Serializable {
     
     private static final long serialVersionUID = 1L;

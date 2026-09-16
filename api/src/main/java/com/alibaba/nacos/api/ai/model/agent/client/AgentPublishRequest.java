@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.agent.client;
 
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Client definition publication; autoSubmit defaults to false and uses ordinary submit.
@@ -25,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Nacos
  * @since 3.3.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentPublishRequest extends AbstractAgentDraftRequest {
     
     private static final long serialVersionUID = 1L;

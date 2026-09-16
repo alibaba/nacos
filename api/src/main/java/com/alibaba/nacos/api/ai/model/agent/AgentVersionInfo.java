@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.List;
@@ -28,7 +25,6 @@ import java.util.List;
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentVersionInfo implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -68,11 +64,10 @@ public class AgentVersionInfo implements Serializable {
     /**
      * Get the derived number of online versions, without adding a JSON property.
      *
-     * @return online count, or null before online versions are materialized
+     * @return online count, or zero when no online versions are available
      */
-    @JsonIgnore
-    public Integer getOnlineCnt() {
-        return onlineVersions == null ? null : onlineVersions.size();
+    public int onlineCnt() {
+        return onlineVersions == null ? 0 : onlineVersions.size();
     }
     
     /**
@@ -80,8 +75,7 @@ public class AgentVersionInfo implements Serializable {
      *
      * @return latest version, or null when no latest label exists
      */
-    @JsonIgnore
-    public String getLatestVersion() {
+    public String latestVersion() {
         return labels == null ? null : labels.get("latest");
     }
     

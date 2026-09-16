@@ -272,7 +272,7 @@ class AgentModelValidatorTest {
     }
     
     @Test
-    void testRejectsRuntimeOrDuplicateSetsAndHealthInDefinition() {
+    void testRejectsRuntimeOrDuplicateSetsButAcceptsIgnoredHealthInDefinition() {
         AgentCallInterface definition = newValidCallInterface();
         EndpointSet declared = definition.getEndpointSets().get(0);
         definition.setEndpointSets(Arrays.asList(declared, declared));
@@ -284,9 +284,8 @@ class AgentModelValidatorTest {
             () -> AgentModelValidator.validateCallInterface(definition));
         declared.setSource(EndpointSource.DECLARED);
         declared.getEndpoints().get(0).setHealthy(false);
-        assertThrows(IllegalArgumentException.class,
-            () -> AgentModelValidator.validateCallInterface(definition));
-        declared.getEndpoints().get(0).setHealthy(null);
+        assertDoesNotThrow(() -> AgentModelValidator.validateCallInterface(definition));
+        declared.getEndpoints().get(0).setHealthy(true);
         assertDoesNotThrow(() -> AgentModelValidator.validateCallInterface(definition));
     }
     
@@ -440,7 +439,7 @@ class AgentModelValidatorTest {
             () -> AgentModelValidator.validateVersionDetail(detail));
         
         RuntimeEndpointSnapshot snapshot = newValidRuntimeEndpointSnapshot();
-        snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).setHealthy(null);
+        snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).setState(null);
         assertThrows(IllegalArgumentException.class,
             () -> AgentModelValidator.validateRuntimeEndpointSnapshot(snapshot));
     }

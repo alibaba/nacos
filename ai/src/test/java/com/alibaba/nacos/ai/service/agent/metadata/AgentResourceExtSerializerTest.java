@@ -72,7 +72,7 @@ class AgentResourceExtSerializerTest {
         assertNull(restored.getIconUrl());
         assertNull(restored.getProvider());
         assertNull(restored.getExtensions());
-        assertNull(restored.getVersionCatalog().getLatestVersion());
+        assertNull(restored.getVersionCatalog().latestVersion());
         assertEquals(Collections.emptyList(),
             restored.getVersionCatalog().getOnlineVersions());
     }
@@ -394,7 +394,7 @@ class AgentResourceExtSerializerTest {
     
     private void assertCatalogEquals(AgentVersionInfo expected,
         AgentVersionInfo actual) {
-        assertEquals(expected.getLatestVersion(), actual.getLatestVersion());
+        assertEquals(expected.latestVersion(), actual.latestVersion());
         assertEquals(expected.getOnlineVersions().size(), actual.getOnlineVersions().size());
         for (int i = 0; i < expected.getOnlineVersions().size(); i++) {
             AgentVersionSummary expectedEntry = expected.getOnlineVersions().get(i);

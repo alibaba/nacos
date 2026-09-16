@@ -148,7 +148,7 @@ public class AgentAiResourceSearchTypeHandler implements AiResourceSearchTypeHan
         }
         AgentSummary agent = persistenceService.getAgent(namespaceId, resourceName);
         AgentVersionInfo catalog = agent.getVersionInfo();
-        String latestVersion = catalog == null ? null : catalog.getLatestVersion();
+        String latestVersion = catalog == null ? null : catalog.latestVersion();
         if (StringUtils.isBlank(latestVersion)
             || StringUtils.isNotBlank(requestedVersion)
                 && !latestVersion.equals(requestedVersion)) {

@@ -350,3 +350,11 @@ two namespaces contain the same Agent/protocol, share caller-owned input objects
 remove two of three endpoints and finally all endpoints in one namespace while asserting
 the other retains all three. Default/Jackson 3 runs use the same case. These are scenario
 contracts; fresh execution status is recorded in the design validation ledger.
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-01/03：shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespace 在 GRPC/HTTP/AUTO 和两种 JSON adapter 下断言 0/1/true/true 默认值，并直接使用 discover 返回的两个完整 Endpoint（含 bindings）执行 3 删 2、重复删除及 namespace 隔离；输入不被修改。INDEX/SCAN 均复验。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+共享监听器用例 `shouldShareCanonicalPollingIntentAndIsolateListeners` 使用 PUBLIC Agent，继续验证空 Filter/无 Filter 的同一意图、完整快照一致、抛异常监听器隔离和部分取消订阅。原私有 fixture 在本轮复现服务端异步 `TERMINATED/-404`（DAUTH-F05），因此该项通过不代表私有授权 Watch 已修复；原始失败日志保留在本轮验证记录中。

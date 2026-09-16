@@ -358,7 +358,7 @@ public class AgentDiscoveryApplicationService {
             return false;
         }
         AgentVersionInfo catalog = summary.getVersionInfo();
-        if (catalog == null || catalog.getLatestVersion() == null
+        if (catalog == null || catalog.latestVersion() == null
             || catalog.getOnlineVersions() == null || catalog.getOnlineVersions().isEmpty()) {
             return false;
         }
@@ -401,7 +401,7 @@ public class AgentDiscoveryApplicationService {
             : copy(summary.getTags()));
         AgentVersionInfo versionInfo = new AgentVersionInfo();
         Map<String, String> labels = new LinkedHashMap<String, String>();
-        labels.put("latest", summary.getVersionInfo().getLatestVersion());
+        labels.put("latest", summary.getVersionInfo().latestVersion());
         versionInfo.setLabels(labels);
         result.setVersionInfo(versionInfo);
         

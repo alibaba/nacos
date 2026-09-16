@@ -73,11 +73,13 @@ class RadModelValidatorTest {
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
         runtime.setLastUpdatedTime(null);
         Endpoint endpoint = runtime.getEndpoints().get(0);
+        endpoint.setEnabled(false);
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
         endpoint.setEnabled(true);
+        endpoint.setState(RuntimeEndpointState.UNHEALTHY);
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
-        endpoint.setEnabled(null);
         endpoint.setState(RuntimeEndpointState.AVAILABLE);
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
         endpoint.setState(null);
         assertDoesNotThrow(() -> RadModelValidator.validate(result));
     }
@@ -168,21 +170,21 @@ class RadModelValidatorTest {
     }
     
     @Test
-    void shouldRejectRuntimeEndpointWithoutHealthy() {
+    void shouldAcceptRuntimeEndpointWithDefaultHealth() {
         AgentDiscoveryResult result = newValidDiscoveryResult();
         result.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
-            .setHealthy(null);
+            .setHealthy(true);
         
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
     }
     
     @Test
-    void shouldRejectDeclaredEndpointWithHealthy() {
+    void shouldAcceptDeclaredEndpointWithDefaultHealth() {
         AgentDiscoveryResult result = newValidDiscoveryResult();
         result.getCallInterfaces().get(0).getEndpointSets().get(1).getEndpoints().get(0)
             .setHealthy(true);
         
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
     }
     
     @Test
@@ -205,10 +207,14 @@ class RadModelValidatorTest {
     }
     
     @Test
-    void shouldRejectDeregistrationEndpointWithMetadata() {
+    void shouldIgnoreNonKeyDeregistrationFields() {
         List<Endpoint> endpoints = newValidDeregistrationEndpoints();
         endpoints.get(0).setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validateDeregistration(
+        endpoints.get(0).setPriority(-1);
+        endpoints.get(0).setHealthy(false);
+        endpoints.get(0).setEnabled(false);
+        endpoints.get(0).setState(RuntimeEndpointState.DISABLED);
+        assertDoesNotThrow(() -> RadModelValidator.validateDeregistration(
             "public", "Demo Agent", "a2a", endpoints));
     }
     
@@ -242,12 +248,12 @@ class RadModelValidatorTest {
         assertThrows(IllegalArgumentException.class,
             () -> RadModelValidator.validate(nonCanonicalResult));
         
-        AgentDiscoveryResult missingEffectiveValueResult = newValidDiscoveryResult();
-        missingEffectiveValueResult.getCallInterfaces().get(0).getEndpointSets().get(0)
+        AgentDiscoveryResult negativePriorityResult = newValidDiscoveryResult();
+        negativePriorityResult.getCallInterfaces().get(0).getEndpointSets().get(0)
             .getEndpoints().get(0)
-            .setPriority(null);
+            .setPriority(-1);
         assertThrows(IllegalArgumentException.class,
-            () -> RadModelValidator.validate(missingEffectiveValueResult));
+            () -> RadModelValidator.validate(negativePriorityResult));
         
         assertDoesNotThrow(() -> RadModelValidator.validate("public", newValidRegistrationBatch()));
     }
@@ -633,7 +639,9 @@ class RadModelValidatorTest {
         endpoint.setPriority(0);
         endpoint.setWeight(1.0D);
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
-        endpoint.setHealthy(healthy);
+        if (healthy != null) {
+            endpoint.setHealthy(healthy);
+        }
         return endpoint;
     }
     

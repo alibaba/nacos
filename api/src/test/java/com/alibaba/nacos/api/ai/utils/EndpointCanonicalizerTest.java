@@ -112,14 +112,14 @@ class EndpointCanonicalizerTest {
         assertEquals("https://example.com:443/a", canonical.getUri());
         assertEquals(Integer.valueOf(0), canonical.getPriority());
         assertEquals(Double.valueOf(1D), canonical.getWeight());
-        assertNull(canonical.getHealthy());
+        assertEquals(true, canonical.getHealthy());
         assertEquals(Arrays.asList("environment", "zone"),
             new ArrayList<String>(canonical.getMetadata().keySet()));
         
         canonical.getMetadata().put("new", "value");
         assertFalse(original.getMetadata().containsKey("new"));
         assertEquals("HTTPS://Example.COM/a", original.getUri());
-        assertNull(original.getPriority());
+        assertEquals(0, original.getPriority());
     }
     
     @Test

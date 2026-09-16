@@ -1248,7 +1248,7 @@ public class AgentPersistenceService {
         ResourceVersionInfo result = new ResourceVersionInfo();
         result.setEditingVersion(source.getEditingVersion());
         result.setReviewingVersion(source.getReviewingVersion());
-        result.setOnlineCnt(source.getOnlineCnt());
+        result.setOnlineCnt(source.onlineCnt());
         result.setLabels(source.getLabels() == null ? null
             : new HashMap<String, String>(source.getLabels()));
         return result;
@@ -1263,8 +1263,8 @@ public class AgentPersistenceService {
         result.setEditingVersion(source.getEditingVersion());
         result.setReviewingVersion(source.getReviewingVersion());
         AgentModelValidator.validateVersionCatalog(catalog);
-        if (!Objects.equals(source.getOnlineCnt(), catalog.getOnlineCnt())
-            || !Objects.equals(source.getLabels().get("latest"), catalog.getLatestVersion())) {
+        if (!Objects.equals(source.getOnlineCnt(), catalog.onlineCnt())
+            || !Objects.equals(source.getLabels().get("latest"), catalog.latestVersion())) {
             throw new IllegalArgumentException("Stored Agent version metadata is inconsistent");
         }
         result.setOnlineVersions(catalog.getOnlineVersions());
@@ -1509,7 +1509,7 @@ public class AgentPersistenceService {
     
     private boolean sameVersionCatalog(AgentVersionInfo actual,
         AgentVersionInfo expected) {
-        if (!Objects.equals(actual.getLatestVersion(), expected.getLatestVersion())
+        if (!Objects.equals(actual.latestVersion(), expected.latestVersion())
             || actual.getOnlineVersions().size() != expected.getOnlineVersions().size()) {
             return false;
         }

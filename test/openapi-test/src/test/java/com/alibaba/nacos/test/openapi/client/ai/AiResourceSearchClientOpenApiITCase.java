@@ -147,7 +147,7 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode generic = awaitGenericSearch(query, Set.of("agent:" + agentName));
         assertEquals(Set.of("agent:" + agentName), genericKeys(generic), generic.toString());
         JsonNode initial = awaitAgentCatalog(agentName, "1.0.0", 1);
-        assertFalse(initial.has("namespaceId"), initial.toString());
+        assertFalse(initial.hasNonNull("namespaceId"), initial.toString());
         assertEquals(DEFAULT_NAMESPACE, generic.get("data").get("items").get(0)
                 .get("namespaceId").asText(), generic.toString());
         assertTrue(initial.get("versionInfo").get("onlineVersions").get(0)

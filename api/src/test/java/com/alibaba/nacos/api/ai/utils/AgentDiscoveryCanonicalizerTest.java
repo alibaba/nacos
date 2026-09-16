@@ -277,7 +277,7 @@ class AgentDiscoveryCanonicalizerTest {
         AgentDiscoveryResult implicit = fullResult();
         Endpoint endpoint = runtimeEndpoint(implicit);
         endpoint.setUri("HTTPS://[2001:0DB8:0:0:0:0:0:1]/路径");
-        endpoint.setPriority(null);
+        endpoint.setPriority(0);
         endpoint.setWeight(-0.0D);
         endpoint.setMetadata(Collections.<String, String>emptyMap());
         descriptor(implicit).put("text", "你好\nrad");
@@ -385,10 +385,10 @@ class AgentDiscoveryCanonicalizerTest {
         assertThrows(IllegalArgumentException.class,
             () -> AgentDiscoveryCanonicalizer.fingerprint(duplicateEndpoints));
         
-        AgentDiscoveryResult missingHealth = fullResult();
-        runtimeEndpoint(missingHealth).setHealthy(null);
+        AgentDiscoveryResult disabled = fullResult();
+        runtimeEndpoint(disabled).setEnabled(false);
         assertThrows(IllegalArgumentException.class,
-            () -> AgentDiscoveryCanonicalizer.fingerprint(missingHealth));
+            () -> AgentDiscoveryCanonicalizer.fingerprint(disabled));
         AgentDiscoveryResult missingBindings = fullResult();
         runtimeEndpoint(missingBindings).setBindings(null);
         assertThrows(IllegalArgumentException.class,

@@ -228,10 +228,10 @@ class RuntimeEndpointRevisionTest {
         assertThrows(IllegalArgumentException.class,
             () -> revision(null));
         
-        Endpoint missingHealth =
+        Endpoint defaultHealth =
             createEndpoint("http://example.com/rpc", "HTTP", null);
-        assertThrows(IllegalArgumentException.class,
-            () -> revision(missingHealth));
+        assertEquals(revision(createEndpoint("http://example.com/rpc", "HTTP", true)),
+            revision(defaultHealth));
         
         Endpoint missingBindings =
             createEndpoint("http://missing.example.com/rpc", "HTTP", true);
@@ -278,7 +278,9 @@ class RuntimeEndpointRevisionTest {
         Endpoint result = new Endpoint();
         result.setUri(uri);
         result.setTransport(transport);
-        result.setHealthy(healthy);
+        if (healthy != null) {
+            result.setHealthy(healthy);
+        }
         result.setBindings(Collections.singletonList(binding("1.0.0", "[1.0.0]")));
         return result;
     }

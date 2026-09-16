@@ -95,9 +95,9 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("updated", summary.get("tags").get(1).asText(), summary.toString());
         assertEquals(updated.get("provider"), summary.get("provider"), summary.toString());
         assertEquals(updated.get("iconUrl"), summary.get("iconUrl"), summary.toString());
-        assertFalse(summary.has("extensions"), summary.toString());
+        assertFalse(summary.hasNonNull("extensions"), summary.toString());
         assertFalse(summary.has("callInterfaces"), summary.toString());
-        assertTrue(updated.has("extensions"), updated.toString());
+        assertTrue(updated.hasNonNull("extensions"), updated.toString());
 
         JsonNode versions = getJsonOk(ADMIN_AGENT_VERSIONS_PATH,
                 Query.newInstance().addParam("agentName", agentName)

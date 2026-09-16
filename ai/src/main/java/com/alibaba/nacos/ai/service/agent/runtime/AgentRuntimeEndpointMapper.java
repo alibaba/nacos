@@ -106,7 +106,7 @@ public final class AgentRuntimeEndpointMapper {
         result.setClusterName(RadAsciiAgentIdCodec.encode(canonical.getTransport()));
         result.setWeight(canonical.getWeight());
         result.setEnabled(true);
-        result.setHealthy(endpoint.getHealthy() == null || endpoint.getHealthy());
+        result.setHealthy(endpoint.getHealthy());
         result.setEphemeral(true);
         result.setMetadata(metadata);
         return result;
@@ -239,9 +239,9 @@ public final class AgentRuntimeEndpointMapper {
     
     private static Endpoint canonicalPayload(Endpoint endpoint) {
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
-        canonical.setHealthy(null);
+        canonical.setHealthy(true);
         canonical.setBindings(null);
-        canonical.setEnabled(null);
+        canonical.setEnabled(true);
         canonical.setState(null);
         return canonical;
     }

@@ -366,7 +366,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(1, page.getTotalCount());
         assertEquals(1, page.getPageItems().size());
         assertEquals(targetName, page.getPageItems().get(0).getAgentName());
-        assertEquals(VERSION, page.getPageItems().get(0).getVersionInfo().getLatestVersion());
+        assertEquals(VERSION, page.getPageItems().get(0).getVersionInfo().latestVersion());
         AgentSummary entry = page.getPageItems().get(0);
         assertEquals("Display " + targetName, entry.getDisplayName());
         assertEquals("Java SDK Agent discovery integration test", entry.getDescription());
@@ -393,7 +393,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertFalse(catalogJson.get("versionInfo").has("editingVersion"));
         assertFalse(catalogJson.get("versionInfo").has("reviewingVersion"));
         assertEquals(VERSION, entry.getVersionInfo().getLabels().get(LABEL_STABLE));
-        assertEquals(Integer.valueOf(1), entry.getVersionInfo().getOnlineCnt());
+        assertEquals(Integer.valueOf(1), entry.getVersionInfo().onlineCnt());
         assertNull(catalogVersion.getStatus());
 
         
@@ -498,10 +498,24 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 3);
         waitForEndpointCount(tenantService, agentName, PROTOCOL_A2A, 3);
 
-        List<Endpoint> removals = Arrays.asList(deregistrationEndpoint(first),
-            deregistrationEndpoint(second));
+        List<Endpoint> discovered = sourceEndpoints(tenantService.agent()
+            .discoverAgent(reference(agentName, null, null)), PROTOCOL_A2A, EndpointSource.RUNTIME);
+        List<Endpoint> removals = new ArrayList<>();
+        for (Endpoint endpoint : discovered) {
+            assertEquals(0, endpoint.getPriority());
+            assertEquals(1D, endpoint.getWeight());
+            assertTrue(endpoint.getHealthy());
+            assertTrue(endpoint.getEnabled());
+            assertFalse(endpoint.getBindings().isEmpty());
+            if (!third.getUri().equals(endpoint.getUri())) {
+                removals.add(endpoint);
+            }
+        }
+        assertEquals(2, removals.size());
+        String removalSnapshot = JacksonUtils.toJson(removals);
         tenantService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removals);
         tenantService.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A, removals);
+        assertEquals(removalSnapshot, JacksonUtils.toJson(removals));
         waitForEndpointCount(tenantService, agentName, PROTOCOL_A2A, 1);
         waitForEndpointCount(defaultService, agentName, PROTOCOL_A2A, 3);
         assertEquals(third.getUri(), sourceEndpoints(tenantService.agent()
@@ -610,7 +624,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(third.getWeight(), actual.getWeight());
         assertEquals(third.getMetadata(), actual.getMetadata());
         assertEquals(Boolean.FALSE, actual.getHealthy());
-        assertNull(actual.getEnabled());
+        assertTrue(actual.getEnabled());
         assertNull(actual.getState());
         com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot management =
             maintainer.getRuntimeEndpoints(agentName, PROTOCOL_A2A, VERSION);
@@ -996,10 +1010,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentMaintainerService maintainer = createAgentMaintainerService();
         AiService reader = createAiService();
         AiService publisher = createAiService();
-        String agentName = randomServiceName("agent-shared-watch");
-        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
-            Collections.singletonList("java-sdk-it"), Collections.singletonList(PROTOCOL_A2A),
-            false);
+        String agentName = randomLegacyUnencodedAgentName();
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, agentName));
+        // Exercise listener sharing with PUBLIC visibility; private async Watch is DAUTH-F05.
+        publisher.releaseAgentCard(legacyCompatibleAgentCard(agentName, VERSION,
+            "public shared Watch listeners"), AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
         Endpoint initial = endpoint(randomPort(), "/initial", "initial");
         publisher.agent().registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(initial)));
@@ -1148,7 +1163,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(retained.getUri(), actual.getUri());
         assertEquals(Boolean.FALSE, actual.getHealthy());
         assertEquals(VERSION, actual.getBindings().get(0).getRuntimeVersion());
-        assertNull(actual.getEnabled());
+        assertTrue(actual.getEnabled());
         assertNull(actual.getState());
         assertEquals(AgentDiscoveryCanonicalizer.fingerprint(remaining),
             AgentDiscoveryCanonicalizer.fingerprint(service.agent().discoverAgent(reference)));
@@ -1318,7 +1333,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         AgentSummary versionTwoCatalog =
             waitForCatalog(service, agentName, VERSION_2, 2);
-        assertEquals(VERSION_2, versionTwoCatalog.getVersionInfo().getLatestVersion());
+        assertEquals(VERSION_2, versionTwoCatalog.getVersionInfo().latestVersion());
         assertEquals(Arrays.asList(VERSION_2, VERSION),
             Arrays.asList(versionTwoCatalog.getVersionInfo().getOnlineVersions().get(0).getVersion(),
                 versionTwoCatalog.getVersionInfo().getOnlineVersions().get(1).getVersion()));
@@ -1343,7 +1358,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         awaitEvent(latestListener, "offlining latest recalculates to Version 2",
             result -> VERSION_2.equals(result.getVersion()));
         assertEquals(VERSION_2,
-            waitForCatalogLatest(service, agentName, VERSION_2).getVersionInfo().getLatestVersion());
+            waitForCatalogLatest(service, agentName, VERSION_2).getVersionInfo().latestVersion());
         maintainer.online(Constants.DEFAULT_NAMESPACE_ID,
             versionCommand(agentName, VERSION_3));
         awaitEvent(latestListener, "onlining Version 3 restores latest",
@@ -2220,8 +2235,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             registration(agentName, PROTOCOL_A2A, Arrays.asList(duplicate, duplicate))));
         Endpoint healthDeregistration = deregistrationEndpoint(duplicate);
         healthDeregistration.setHealthy(Boolean.TRUE);
-        assertInvalid(() -> service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
-                Collections.singletonList(healthDeregistration)));
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(healthDeregistration));
+        assertTrue(healthDeregistration.getHealthy(), "deregistration must not mutate its input");
         Endpoint invalidUri = endpoint(randomPort(), "/invalid-uri", "invalid-uri");
         invalidUri.setUri("not-a-uri");
         assertInvalid(() -> service.agent().registerAgentEndpoints(
@@ -2240,10 +2256,15 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         invalidRange.setVersionRange("[2.0.0,1.0.0]");
         assertInvalid(() -> service.agent().registerAgentEndpoints(invalidRange));
         
-        Endpoint invalidDeregistration = deregistrationEndpoint(duplicate);
-        invalidDeregistration.setPriority(1);
+        Endpoint completeDeregistration = deregistrationEndpoint(duplicate);
+        completeDeregistration.setPriority(-1);
+        service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(completeDeregistration));
+        assertEquals(-1, completeDeregistration.getPriority(), "unused fields must be ignored and unchanged");
         assertInvalid(() -> service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
-                Collections.singletonList(invalidDeregistration)));
+            Collections.singletonList(invalidUri)));
+        assertInvalid(() -> service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
+            Collections.singletonList(invalidTransport)));
         service.agent().deregisterAgentEndpoints(agentName, PROTOCOL_A2A,
                 Collections.singletonList(deregistrationEndpoint(duplicate)));
         
@@ -2728,7 +2749,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private String latestSearchVersion(AiService service, String agentName)
         throws NacosException {
         AgentSummary entry = searchOne(service, agentName);
-        return entry == null ? null : entry.getVersionInfo().getLatestVersion();
+        return entry == null ? null : entry.getVersionInfo().latestVersion();
     }
     
     private String searchedAgentName(AiService service, String agentName)
@@ -2753,7 +2774,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("Search catalog should converge for " + agentName, () -> {
             AgentSummary entry = searchOne(service, agentName);
             result.set(entry);
-            return entry != null && latestVersion.equals(entry.getVersionInfo().getLatestVersion())
+            return entry != null && latestVersion.equals(entry.getVersionInfo().latestVersion())
                 && entry.getVersionInfo().getOnlineVersions() != null && entry.getVersionInfo().getOnlineVersions().size() == versionCount;
         });
         return result.get();
@@ -2765,7 +2786,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("Search catalog should converge for " + agentName, () -> {
             AgentSummary entry = searchOne(service, agentName);
             result.set(entry);
-            return entry != null && latestVersion.equals(entry.getVersionInfo().getLatestVersion());
+            return entry != null && latestVersion.equals(entry.getVersionInfo().latestVersion());
         });
         return result.get();
     }
@@ -2799,7 +2820,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getIconUrl(), actual.getIconUrl());
         assertEquals(expected.getTags(), actual.getTags());
-        assertEquals(expected.getVersionInfo().getLatestVersion(), actual.getVersionInfo().getLatestVersion());
+        assertEquals(expected.getVersionInfo().latestVersion(), actual.getVersionInfo().latestVersion());
         assertEquals(JacksonUtils.toJson(expected.getVersionInfo().getOnlineVersions()),
             JacksonUtils.toJson(actual.getVersionInfo().getOnlineVersions()));
     }

@@ -499,11 +499,11 @@ public class A2aServerOperationService implements A2aOperationService {
     
     private boolean hasA2aLatest(AgentSummary summary) {
         if (summary.getVersionInfo() == null
-            || StringUtils.isBlank(summary.getVersionInfo().getLatestVersion())
+            || StringUtils.isBlank(summary.getVersionInfo().latestVersion())
             || summary.getVersionInfo().getOnlineVersions() == null) {
             return false;
         }
-        String latest = summary.getVersionInfo().getLatestVersion();
+        String latest = summary.getVersionInfo().latestVersion();
         for (AgentVersionSummary entry : summary.getVersionInfo().getOnlineVersions()) {
             if (latest.equals(entry.getVersion()) && entry.getProtocols() != null
                 && entry.getProtocols().contains(A2A_PROTOCOL)) {
@@ -514,7 +514,7 @@ public class A2aServerOperationService implements A2aOperationService {
     }
     
     private AgentCardVersionInfo projectVersionInfo(AgentSummary summary) throws NacosException {
-        String latest = summary.getVersionInfo().getLatestVersion();
+        String latest = summary.getVersionInfo().latestVersion();
         com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail latestDetail =
             agentOperationService.getVersion(summary.getNamespaceId(), summary.getAgentName(),
                 latest);
@@ -586,7 +586,7 @@ public class A2aServerOperationService implements A2aOperationService {
     
     private String latestVersion(AgentSummary agent) {
         return agent.getVersionInfo() == null ? null
-            : agent.getVersionInfo().getLatestVersion();
+            : agent.getVersionInfo().latestVersion();
     }
     
     private AgentSummary getLegacyAgent(String namespaceId, String agentName)

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.agent;
 
 import com.alibaba.nacos.api.model.Page;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 
@@ -26,7 +25,6 @@ import java.io.Serializable;
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentOverview implements Serializable {
     
     private static final long serialVersionUID = 1L;

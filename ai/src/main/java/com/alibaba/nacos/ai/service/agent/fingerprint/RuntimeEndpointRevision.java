@@ -92,9 +92,6 @@ public final class RuntimeEndpointRevision {
         for (Endpoint endpoint : endpoints) {
             Endpoint canonicalEndpoint = EndpointCanonicalizer.canonicalize(endpoint);
             Endpoint canonical = copyEndpoint(canonicalEndpoint);
-            if (canonical.getHealthy() == null) {
-                throw new IllegalArgumentException("Runtime Endpoint healthy must not be null");
-            }
             canonical.setBindings(canonicalBindings(endpoint.getBindings()));
             EndpointNaturalKey key = EndpointNaturalKey.of(namespaceId, agentName, protocol,
                 canonical);

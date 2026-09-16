@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.agent.admin;
 
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -27,7 +26,6 @@ import java.util.Map;
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentLabelsUpdateRequest implements Serializable {
     
     private static final long serialVersionUID = 1L;

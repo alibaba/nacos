@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.agent.admin;
 
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Admin request for creating an initial or subsequent Agent draft.
@@ -25,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Nacos
  * @since 3.3.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AgentDraftCreateRequest extends AbstractAgentDraftRequest {
     
     private static final long serialVersionUID = 1L;

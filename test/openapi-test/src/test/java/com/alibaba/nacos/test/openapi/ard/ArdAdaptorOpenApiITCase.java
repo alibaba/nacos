@@ -157,12 +157,16 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
             assertEquals(1, callInterface.get("endpointSets").size(), callInterface.toString());
             JsonNode set = callInterface.get("endpointSets").get(0);
             assertEquals("DECLARED", set.get("source").asText(), set.toString());
-            assertFalse(set.has("sourceRevision"), set.toString());
-            assertFalse(set.has("lastUpdatedTime"), set.toString());
+            assertFalse(set.hasNonNull("sourceRevision"), set.toString());
+            assertFalse(set.hasNonNull("lastUpdatedTime"), set.toString());
             assertTrue(set.get("endpoints").size() > 0, set.toString());
             for (JsonNode endpoint : set.get("endpoints")) {
-                for (String field : Arrays.asList("healthy", "bindings", "enabled", "state", "endpoint")) {
-                    assertFalse(endpoint.has(field), endpoint.toString());
+                assertTrue(endpoint.path("healthy").asBoolean(), endpoint.toString());
+                assertTrue(endpoint.path("enabled").asBoolean(), endpoint.toString());
+                assertEquals(0, endpoint.path("priority").asInt());
+                assertEquals(1D, endpoint.path("weight").asDouble());
+                for (String field : Arrays.asList("bindings", "state", "endpoint")) {
+                    assertFalse(endpoint.hasNonNull(field), endpoint.toString());
                 }
             }
         }

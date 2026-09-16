@@ -18,8 +18,8 @@
 
 | Item | Value |
 |---|---|
-| Status | Experimental; normative for protocol version `0.1.0` |
-| Protocol version | `0.1.0` |
+| Status | Experimental; normative for protocol version `0.3.0` |
+| Protocol version | `0.3.0` |
 | Scope | Remote Agent search, discovery, watch, and runtime endpoint publication |
 | Goal | Return Agent calling descriptors and currently available addresses through a small, stable model |
 
@@ -41,7 +41,7 @@ and does not define Agent message, task, or session protocols.
 
 ### 1.1 Operations
 
-RAD 0.1.0 defines five operations:
+RAD 0.3.0 defines five operations:
 
 | Operation | Input | Output | Semantics |
 |---|---|---|---|
@@ -59,7 +59,7 @@ root messages.
 
 ### 1.2 Out Of Scope
 
-RAD 0.1.0 does not define Agent management lifecycle, client connection and
+RAD 0.3.0 does not define Agent management lifecycle, client connection and
 reconnection, internal storage, historical compatibility, MCP, call proxying,
 credentials, retries, or load balancing. Agent resource and version semantics
 are defined by the [Agent Management Spec](./agent-management-spec.md).
@@ -107,7 +107,7 @@ Prerelease identifiers are dot-separated `[0-9A-Za-z-]+` values. A prerelease
 identifier containing only digits MUST NOT contain leading zeroes unless it is
 exactly `0`.
 
-RAD 0.1.0 does not accept build metadata. Version identity and comparison are
+RAD 0.3.0 does not accept build metadata. Version identity and comparison are
 case-sensitive. Ordering follows SemVer precedence and MUST NOT first convert
 the version to a fixed-width integer.
 
@@ -125,7 +125,7 @@ Maven `ComparableVersion`.
 | `[1.0.0,)` | `version >= 1.0.0` |
 | `(,2.0.0)` | `version < 2.0.0` |
 
-RAD 0.1.0 accepts one exact version or one continuous interval. It does not
+RAD 0.3.0 accepts one exact version or one continuous interval. It does not
 accept a union of versions or intervals. An expression contains no spaces and
 has at least one boundary. A missing lower boundary uses `(` and a missing
 upper boundary uses `)`.
@@ -139,7 +139,7 @@ The server stores and compares the canonical form.
 
 ### 2.5 Protocol Version Negotiation
 
-A binding declares support for RAD 0.1.0 through its documentation or Nacos
+A binding declares support for RAD 0.3.0 through its documentation or Nacos
 capability negotiation. RAD root messages do not carry a protocol-version or
 schema-version field.
 
@@ -164,7 +164,7 @@ introducing another page class.
 
 ### 3.2 Common JSON Rules
 
-- An absent optional value is omitted rather than represented as `null`.
+- An absent optional reference value MAY be omitted or represented as `null`; both mean absent. Required values and Endpoint priority, weight, healthy, and enabled MUST NOT be null.
 - Ordinary objects reject unknown properties.
 - Only `nativeDescriptor` and explicitly declared `metadata` maps are open
   content.
@@ -266,15 +266,17 @@ All operations reuse one `Endpoint` model:
 | `priority` | No | Lower is preferred; integer `0..2147483647`, default `0` |
 | `weight` | No | Weight within a priority; number `0..10000`, default `1` |
 | `metadata` | No | At most 32 flat string key/value entries |
-| `healthy` | Conditionally | Present only and always in a `RUNTIME` discovery result |
+| `healthy` | Effective value | Boolean, default `true`; Runtime reads use aggregate live health; Declared reads assume usability without probing. |
+| `enabled` | Effective value | Boolean, default `true`; maintained by Nacos; discovery excludes disabled runtime endpoints. |
+| `state` | No | Nacos-maintained state; if present in discovery, AVAILABLE/UNHEALTHY agrees with health. |
 
 Context rules:
 
 - Register MAY submit `healthy`; omission means true. Nacos ignores caller-supplied bindings and management fields, deriving bindings from the enclosing batch.
-- A `DECLARED` endpoint MUST NOT contain `healthy`.
+- A `DECLARED` endpoint returns effective `healthy=true` and `enabled=true`. These values are not health-check observations and are not persisted in the version definition.
 - A `RUNTIME` discovery endpoint MUST contain `healthy`.
-- Deregister submits only `uri` and `transport`, the endpoint natural-key
-  fields represented by the public object. It is a publisher-client convenience
+- Deregister reads only `uri` and `transport`, the endpoint natural-key
+  fields represented by the public object, and ignores other shared Endpoint fields. A returned Endpoint may be submitted directly. It is a publisher-client convenience
   command; a Nacos binding applies it to local desired state before sending a
   complete replacement batch.
 
@@ -325,7 +327,7 @@ EndpointSet {
 }
 ```
 
-`source` determines the `healthy` constraint. `AgentDiscoveryResult` does not
+`source` determines the health source and runtime binding constraint. `AgentDiscoveryResult` does not
 return `endpointSourceOrder`. The Registry emits `endpointSets[]` in the source
 order declared by the selected Agent version and preserves the relative order
 of remaining sources after filtering. A declared but currently empty source is
@@ -780,10 +782,18 @@ metadata MUST NOT use Nacos-reserved internal keys.
 
 ## 12. Schema And Evolution
 
+RAD, the Watch binding, Agent management, and Agent Artifact use the same
+public contract release version, `0.3.0`. Their companion schemas and
+cross-schema references MUST select this release together. Public schemas use
+stable paths without version directories; historical revisions are retained in
+Git. Reproducible validation MUST resolve the complete schema set from one
+pinned Git tag or commit. Artifact payload `schemaVersion` and internal storage
+versions retain their independent meaning.
+
 The normative domain companion is the
-[RAD 0.1.0 JSON Schema](../../schemas/ai/rad/0.1.0/rad-protocol.schema.json).
+[RAD 0.3.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json).
 The experimental Nacos transport envelopes are defined separately by the
-[RAD Watch Binding 0.1.0 JSON Schema](../../schemas/ai/rad/watch/0.1.0/rad-watch-binding.schema.json)
+[RAD Watch Binding 0.3.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
 and do not extend the immutable RAD root-message set. Both use JSON Schema
 Draft 2020-12. Ordinary objects use strict property sets; only metadata maps
 and `nativeDescriptor` are open content. Schema defaults are annotations;
@@ -892,7 +902,7 @@ This organization does not rename protocol/schema concepts or change storage and
 
 ## Endpoint Consolidation Acceptance
 
-Runtime registration and complete replacement accept reported healthy. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Preserve DECLARED health restrictions, required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
+Runtime registration and complete replacement accept reported healthy. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Use the effective Endpoint defaults defined above; preserve required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
 
@@ -903,3 +913,9 @@ Complete logical Search/Register requests and their schemas still include namesp
 The Java business model represents only business fields; combine it with HTTP parameters
 or the gRPC envelope to form the complete logical request. Schema validation must compose
 both parts with exactly one effective namespace, without relaxing the protocol constraint.
+
+### Annotation-independent Agent JSON models
+
+Agent models do not carry Jackson inclusion or ignore annotations. Optional reference fields follow the selected serializer: omission and explicit null both mean absent; unknown non-null management fields remain forbidden in discovery/search views. The four Endpoint scalars always have effective values (priority=0, weight=1, healthy=true, enabled=true); lower priority sorts first. AgentVersionInfo exposes onlineCnt() (zero when absent) and latestVersion() (null when absent) only as Java helpers, never extra JSON properties. Endpoint state is redundant with health/enabled and does not add a new fingerprint component.
+
+The nativeDescriptor value remains parsed JSON, not a raw string. This change preserves the existing serializer policy, including filtering null object members during definition storage; it does not promise byte-for-byte preservation of arbitrary protocol JSON. Discovery fingerprints are computed from the stored/read-back descriptor and canonical semantic fields, not transport JSON property order.

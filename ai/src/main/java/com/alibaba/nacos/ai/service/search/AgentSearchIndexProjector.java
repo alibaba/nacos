@@ -135,7 +135,7 @@ public class AgentSearchIndexProjector {
             return null;
         }
         Map<String, Object> catalog = new LinkedHashMap<>();
-        putIfPresent(catalog, "latestVersion", info.getLatestVersion());
+        putIfPresent(catalog, "latestVersion", info.latestVersion());
         if (info.getOnlineVersions() != null) {
             List<Map<String, Object>> versions = new ArrayList<>();
             for (AgentVersionSummary version : info.getOnlineVersions()) {

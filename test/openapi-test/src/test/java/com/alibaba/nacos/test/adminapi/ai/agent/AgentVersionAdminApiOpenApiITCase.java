@@ -64,11 +64,11 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 agentForm(initialRequest)).get("data");
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         assertVersion(firstDraft, firstVersion, "draft");
-        assertFalse(firstDraft.has("publishPipelineInfo"), firstDraft.toString());
+        assertFalse(firstDraft.hasNonNull("publishPipelineInfo"), firstDraft.toString());
         JsonNode initialOverview = getOverview(agentName);
         JsonNode initialAgent = initialOverview.get("agent");
         assertFalse(initialOverview.get("versionPage").get("pageItems").get(0)
-                .has("publishPipelineInfo"), initialOverview.toString());
+                .hasNonNull("publishPipelineInfo"), initialOverview.toString());
         assertEquals("OpenAPI Agent create", initialAgent.get("displayName").asText(),
                 initialAgent.toString());
         assertEquals("Agent admin OpenAPI create", initialAgent.get("description").asText(),
@@ -80,7 +80,7 @@ public class AgentVersionAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                 .asText(), initialAgent.toString());
 
         JsonNode original = getVersion(agentName, firstVersion);
-        assertFalse(original.has("publishPipelineInfo"), original.toString());
+        assertFalse(original.hasNonNull("publishPipelineInfo"), original.toString());
         String originalDigest = original.get("contentDigest").asText();
         JsonNode retriedDraft = postFormOk(ADMIN_AGENT_PATH + "/draft",
                 agentForm(initialRequest)).get("data");

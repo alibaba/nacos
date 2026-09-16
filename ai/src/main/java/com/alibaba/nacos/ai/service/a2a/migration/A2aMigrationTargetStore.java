@@ -612,7 +612,7 @@ public class A2aMigrationTargetStore {
         ext.setExtensions(agent.getExtensions());
         ext.setVersionCatalog(agent.getVersionInfo());
         ResourceVersionInfo versionInfo = new ResourceVersionInfo();
-        versionInfo.setOnlineCnt(agent.getVersionInfo().getOnlineCnt());
+        versionInfo.setOnlineCnt(agent.getVersionInfo().onlineCnt());
         versionInfo.setLabels(new HashMap<String, String>(agent.getVersionInfo().getLabels()));
         AiResource result = new AiResource();
         result.setNamespaceId(agent.getNamespaceId());

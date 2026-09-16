@@ -278,19 +278,19 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
     private void assertSearchSummary(JsonNode item) {
         for (String field : Arrays.asList("versionCatalog", "latestVersion", "versions",
                 "namespaceId", "status", "owner", "scope", "extensions", "metaVersion")) {
-            assertFalse(item.has(field), "Search must omit " + field + ": " + item);
+            assertFalse(item.hasNonNull(field), "Search must not expose non-null " + field + ": " + item);
         }
         JsonNode info = item.get("versionInfo");
         assertNotNull(info, item.toString());
         assertFalse(info.has("onlineCnt"), info.toString());
         assertFalse(info.has("latestVersion"), info.toString());
-        assertFalse(info.has("editingVersion"), info.toString());
-        assertFalse(info.has("reviewingVersion"), info.toString());
+        assertFalse(info.hasNonNull("editingVersion"), info.toString());
+        assertFalse(info.hasNonNull("reviewingVersion"), info.toString());
         assertTrue(info.get("labels").has("latest"), info.toString());
         for (JsonNode version : info.get("onlineVersions")) {
             assertTrue(version.has("protocols"), version.toString());
-            assertFalse(version.has("status"), version.toString());
-            assertFalse(version.has("contentDigest"), version.toString());
+            assertFalse(version.hasNonNull("status"), version.toString());
+            assertFalse(version.hasNonNull("contentDigest"), version.toString());
         }
     }
 

@@ -63,7 +63,9 @@ class AgentContractModelTest extends BasicRequestTest {
     }
     
     @Test
-    void testEndpointOptionalValuesAreNotSerialized() throws JsonProcessingException {
+    void testEndpointDefaultsAreSerializedAndReferenceNullsFollowMapperPolicy()
+        throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
         Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com/agent");
         endpoint.setTransport("JSON-RPC");
@@ -72,14 +74,35 @@ class AgentContractModelTest extends BasicRequestTest {
         String json = mapper.writeValueAsString(endpoint);
         assertFalse(json.contains("effectivePriority"));
         assertFalse(json.contains("effectiveWeight"));
-        assertFalse(json.contains("priority"));
-        assertFalse(json.contains("weight"));
-        assertFalse(json.contains("healthy"));
+        assertEquals(0, mapper.readTree(json).get("priority").asInt());
+        assertEquals(1D, mapper.readTree(json).get("weight").asDouble());
+        assertTrue(mapper.readTree(json).get("healthy").asBoolean());
+        assertTrue(mapper.readTree(json).get("enabled").asBoolean());
+        assertTrue(mapper.readTree(json).get("state").isNull());
         
         Endpoint deserialized = mapper.readValue(json, Endpoint.class);
         assertEquals("https://example.com/agent", deserialized.getUri());
         assertEquals("JSON-RPC", deserialized.getTransport());
         assertEquals("cn-hangzhou-a", deserialized.getMetadata().get("zone"));
+    }
+    
+    @Test
+    void testMissingEndpointFieldsUseDefaultsAndFalseAndZeroSurviveJson() throws Exception {
+        Endpoint endpoint = mapper.readValue(
+            "{\"uri\":\"https://example.com:443/a2a\",\"transport\":\"HTTP\"}", Endpoint.class);
+        assertEquals(0, endpoint.getPriority());
+        assertEquals(1D, endpoint.getWeight());
+        assertTrue(endpoint.getHealthy());
+        assertTrue(endpoint.getEnabled());
+        endpoint.setWeight(0D);
+        endpoint.setHealthy(false);
+        endpoint.setEnabled(false);
+        Endpoint restored = mapper.readValue(mapper.writeValueAsString(endpoint), Endpoint.class);
+        assertEquals(0D, restored.getWeight());
+        assertFalse(restored.getHealthy());
+        assertFalse(restored.getEnabled());
+        assertThrows(JsonProcessingException.class, () -> mapper.readValue(
+            "{\"healthy\":\"not-a-boolean\"}", Endpoint.class));
     }
     
     @Test
@@ -486,11 +509,16 @@ class AgentContractModelTest extends BasicRequestTest {
     }
     
     @Test
-    void testClientInputsOmitUnsetFieldsWithUnconfiguredMapper() throws JsonProcessingException {
+    void testClientInputsLeaveNullPolicyToUnconfiguredMapper() throws JsonProcessingException {
         ObjectMapper plainMapper = new ObjectMapper();
-        assertEquals("{}", plainMapper.writeValueAsString(new AgentSearchRequest()));
-        assertEquals("{}",
-            plainMapper.writeValueAsString(new AgentEndpointRegistrationBatch()));
+        com.fasterxml.jackson.databind.JsonNode search =
+            plainMapper.valueToTree(new AgentSearchRequest());
+        assertEquals(5, search.size());
+        search.elements().forEachRemaining(value -> assertTrue(value.isNull()));
+        com.fasterxml.jackson.databind.JsonNode batch =
+            plainMapper.valueToTree(new AgentEndpointRegistrationBatch());
+        assertTrue(batch.get("endpoints").isNull());
+        assertFalse(batch.has("namespaceId"));
     }
     
     @Test
@@ -543,8 +571,22 @@ class AgentContractModelTest extends BasicRequestTest {
             mapper.readValue(definition, AgentCallInterface.class);
         AgentCallInterface resolved =
             mapper.readValue(discovery, AgentCallInterface.class);
-        assertEquals(mapper.readTree(definition), mapper.valueToTree(declared));
-        assertEquals(mapper.readTree(discovery), mapper.valueToTree(resolved));
+        com.fasterxml.jackson.databind.node.ObjectNode expectedDefinition =
+            (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(definition);
+        com.fasterxml.jackson.databind.node.ObjectNode expectedDiscovery =
+            (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(discovery);
+        for (com.fasterxml.jackson.databind.node.ObjectNode expected : Arrays
+            .asList(expectedDefinition, expectedDiscovery)) {
+            com.fasterxml.jackson.databind.node.ObjectNode endpoint =
+                (com.fasterxml.jackson.databind.node.ObjectNode) expected
+                    .at("/endpointSets/0/endpoints/0");
+            endpoint.put("priority", 0);
+            endpoint.put("weight", 1D);
+            endpoint.put("healthy", true);
+            endpoint.put("enabled", true);
+        }
+        assertEquals(expectedDefinition, mapper.valueToTree(declared));
+        assertEquals(expectedDiscovery, mapper.valueToTree(resolved));
         assertFalse(mapper.valueToTree(declared).has("declaredEndpoints"));
         assertFalse(mapper.valueToTree(resolved).has("declaredEndpoints"));
         assertFalse(mapper.valueToTree(resolved).has("endpointSourceOrder"));
@@ -605,14 +647,14 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals("0.9.0", restored.getVersionInfo().getLabels().get("archived"));
         assertEquals(info.getEditingVersion(), restored.getVersionInfo().getEditingVersion());
         assertEquals(info.getReviewingVersion(), restored.getVersionInfo().getReviewingVersion());
-        assertEquals("1.0.0", restored.getVersionInfo().getLatestVersion());
-        assertEquals(Integer.valueOf(1), restored.getVersionInfo().getOnlineCnt());
+        assertEquals("1.0.0", restored.getVersionInfo().latestVersion());
+        assertEquals(Integer.valueOf(1), restored.getVersionInfo().onlineCnt());
         restored.getVersionInfo().setOnlineVersions(Collections.emptyList());
         restored.getVersionInfo().getLabels().remove("latest");
-        assertEquals(Integer.valueOf(0), restored.getVersionInfo().getOnlineCnt());
-        assertNull(restored.getVersionInfo().getLatestVersion());
-        assertNull(new AgentVersionInfo().getOnlineCnt());
-        assertNull(new AgentVersionInfo().getLatestVersion());
+        assertEquals(Integer.valueOf(0), restored.getVersionInfo().onlineCnt());
+        assertNull(restored.getVersionInfo().latestVersion());
+        assertEquals(0, new AgentVersionInfo().onlineCnt());
+        assertNull(new AgentVersionInfo().latestVersion());
     }
     
     private void assertSiblingRequests(Class<?> client, Class<?> wireOrAdmin) {
@@ -711,20 +753,22 @@ class AgentContractModelTest extends BasicRequestTest {
         endpoint.setPriority(1);
         endpoint.setWeight(2.5D);
         endpoint.setMetadata(Collections.singletonMap("zone", "cn-hangzhou-a"));
-        endpoint.setHealthy(healthy);
+        if (healthy != null) {
+            endpoint.setHealthy(healthy);
+        }
         return endpoint;
     }
     
     private void assertVersionInfo(AgentVersionInfo versionInfo) {
         assertEquals("2.0.0", versionInfo.getEditingVersion());
         assertEquals("2.1.0", versionInfo.getReviewingVersion());
-        assertEquals(Integer.valueOf(1), versionInfo.getOnlineCnt());
+        assertEquals(Integer.valueOf(1), versionInfo.onlineCnt());
         assertEquals("1.0.0", versionInfo.getLabels().get("latest"));
         assertEquals("1.0.0", versionInfo.getLabels().get("stable"));
     }
     
     private void assertVersionCatalog(AgentVersionInfo catalog) {
-        assertEquals("1.0.0", catalog.getLatestVersion());
+        assertEquals("1.0.0", catalog.latestVersion());
         AgentVersionSummary entry = catalog.getOnlineVersions().get(0);
         assertEquals("1.0.0", entry.getVersion());
         assertEquals(Collections.singletonList("stable"), entry.getLabels());
@@ -765,7 +809,7 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals(Integer.valueOf(1), endpoint.getPriority());
         assertEquals(Double.valueOf(2.5D), endpoint.getWeight());
         assertEquals("cn-hangzhou-a", endpoint.getMetadata().get("zone"));
-        assertEquals(healthy, endpoint.getHealthy());
+        assertEquals(healthy == null || healthy, endpoint.getHealthy());
     }
     
     private String contentDigest() {

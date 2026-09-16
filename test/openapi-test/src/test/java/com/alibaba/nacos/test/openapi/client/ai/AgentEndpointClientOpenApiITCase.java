@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -87,8 +88,10 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         assertLiveness(postEndpointForm(clientId, REQUEST_MODULE, form));
         assertLiveness(heartbeat(clientId, REQUEST_MODULE));
         JsonNode unhealthy = waitForHealth(clientId, agentName, false);
-        assertFalse(unhealthy.has("enabled"), unhealthy.toString());
-        assertFalse(unhealthy.has("state"), unhealthy.toString());
+        assertTrue(unhealthy.path("enabled").asBoolean(), unhealthy.toString());
+        assertEquals(0, unhealthy.path("priority").asInt());
+        assertEquals(1D, unhealthy.path("weight").asDouble());
+        assertFalse(unhealthy.hasNonNull("state"), unhealthy.toString());
         assertEquals("1.0.0", unhealthy.at("/bindings/0/runtimeVersion").asText());
         assertEquals("[1.0.0]", unhealthy.at("/bindings/0/versionRange").asText());
         JsonNode runtime = getJsonOk(ADMIN_AGENT_PATH + "/runtime-endpoints",
@@ -105,21 +108,38 @@ public class AgentEndpointClientOpenApiITCase extends AgentClientOpenApiBaseITCa
         form.put("endpoints", JacksonUtils.toJson(Collections.singletonList(endpoint)));
         assertLiveness(postEndpointForm(clientId, REQUEST_MODULE, form));
         waitForHealth(clientId, agentName, true);
+        endpoint.remove("healthy");
+        endpoint.put("weight", 0D);
+        endpoint.put("priority", 2147483647);
+        form.put("endpoints", JacksonUtils.toJson(Collections.singletonList(endpoint)));
+        assertLiveness(postEndpointForm(clientId, REQUEST_MODULE, form));
+        JsonNode defaults = waitForEndpoint(clientId, agentName,
+                value -> value.path("healthy").asBoolean()
+                        && value.path("weight").isNumber() && value.path("weight").asDouble() == 0D
+                        && value.path("priority").asInt() == 2147483647);
+        assertEquals(0D, defaults.path("weight").asDouble());
+        assertEquals(2147483647, defaults.path("priority").asInt());
     }
 
     private JsonNode waitForHealth(String clientId, String agentName, boolean healthy) throws Exception {
+        return waitForEndpoint(clientId, agentName, value -> value.path("healthy").isBoolean()
+                && value.path("healthy").asBoolean() == healthy);
+    }
+
+    private JsonNode waitForEndpoint(String clientId, String agentName, Predicate<JsonNode> matches)
+            throws Exception {
         JsonNode actual = null;
         for (int attempt = 0; attempt < 50; attempt++) {
             JsonNode endpoints = discover(clientId, agentName).at("/callInterfaces/0/endpointSets/0/endpoints");
             if (endpoints.size() == 1) {
                 actual = endpoints.get(0);
-                if (actual.path("healthy").asBoolean() == healthy) {
+                if (matches.test(actual)) {
                     return actual;
                 }
             }
             TimeUnit.MILLISECONDS.sleep(100);
         }
-        throw new AssertionError("Expected reported health " + healthy + ", last endpoint=" + actual);
+        throw new AssertionError("Expected Endpoint values did not converge; last endpoint=" + actual);
     }
 
     @Test

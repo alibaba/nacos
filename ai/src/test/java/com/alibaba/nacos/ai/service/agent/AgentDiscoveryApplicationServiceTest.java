@@ -191,7 +191,7 @@ class AgentDiscoveryApplicationServiceTest {
         assertEquals("https://example.com/icon.png", betaResult.getIconUrl());
         assertSame(provider, betaResult.getProvider());
         assertEquals(Collections.singletonList("team"), betaResult.getTags());
-        assertEquals("2.0.0", betaResult.getVersionInfo().getLatestVersion());
+        assertEquals("2.0.0", betaResult.getVersionInfo().latestVersion());
         assertEquals("2.0.0", betaResult.getVersionInfo().getOnlineVersions().get(0).getVersion());
         assertEquals(Collections.singletonList("stable"),
             betaResult.getVersionInfo().getOnlineVersions().get(0).getLabels());
@@ -291,7 +291,7 @@ class AgentDiscoveryApplicationServiceTest {
         assertEquals("https://example.com/icon.png", item.getIconUrl());
         assertEquals("Nacos", item.getProvider().getName());
         assertNull(item.getTags());
-        assertEquals("2.0.0", item.getVersionInfo().getLatestVersion());
+        assertEquals("2.0.0", item.getVersionInfo().latestVersion());
         assertEquals("2.0.0", item.getVersionInfo().getOnlineVersions().get(0).getVersion());
         assertEquals(Collections.singletonList("stable"),
             item.getVersionInfo().getOnlineVersions().get(0).getLabels());
@@ -328,7 +328,7 @@ class AgentDiscoveryApplicationServiceTest {
             Collections.singletonList(catalog("1.0.0", null, "a2a")));
         Map<String, Object> metadata = new LinkedHashMap<String, Object>();
         Map<String, Object> storedCatalog = new LinkedHashMap<>();
-        storedCatalog.put("latestVersion", catalog.getLatestVersion());
+        storedCatalog.put("latestVersion", catalog.latestVersion());
         storedCatalog.put("onlineVersions", catalog.getOnlineVersions());
         metadata.put("versionCatalog", storedCatalog);
         AiResourceSearchResult indexed = indexedResult("legacy-Agent", metadata);
@@ -881,9 +881,13 @@ class AgentDiscoveryApplicationServiceTest {
         Endpoint result = new Endpoint();
         result.setUri(uri);
         result.setTransport(transport);
-        result.setPriority(priority);
+        if (priority != null) {
+            result.setPriority(priority);
+        }
         result.setMetadata(metadata);
-        result.setHealthy(healthy);
+        if (healthy != null) {
+            result.setHealthy(healthy);
+        }
         return result;
     }
     

@@ -345,7 +345,7 @@ Runtime 查询在 callInterface 下返回恰好一个 RUNTIME Set，空结果也
 namingServiceRef。删除嵌套的 SnapshotItem 地址包装。
 
 管理返回 enabled/state，将 Naming 观察时间统一放到 EndpointSet；本轮管理结果省略 sourceRevision。
-Discover/Watch 必须返回 sourceRevision，省略 endpointSourceOrder、enabled/state 和观察时间。
+Discover/Watch 必须返回 sourceRevision，endpointSourceOrder 和观察时间省略或为 null；Endpoint 输出 enabled=true，state 可选，非空时必须与 healthy 一致。
 其过滤、bindings 并集、来源顺序、空 Set 和判等规则保持。共用类型不意味着合并 API，也不意味着
 管理和发现共用同一个贡献筛选算法。
 
@@ -353,7 +353,7 @@ Discover/Watch 必须返回 sourceRevision，省略 endpointSourceOrder、enable
 
 Runtime 注册/完整替换接受 healthy，缺省 true，表示当前贡献的上报健康值，不是永久健康开关。
 ACTIVE HTTP heartbeat 保留显式上报值；后续继续遵循现有 Naming 活性及恢复规则。
-DECLARED 禁止 healthy；注销仍只接受自然键业务字段。提交的 bindings、enabled/state 和观测值
+DECLARED 接受但不持久化 healthy/管理状态，读取返回 healthy/enabled=true；注销仅读取自然键业务字段，忽略共享 Endpoint 其他属性。提交的 bindings、enabled/state 和观测值
 被忽略，bindings 由批次 runtimeVersion/versionRange 生成；定义提交的 sourceRevision 也忽略。
 非法 JSON 类型、身份、URI、metadata、批次版本仍报错。只调用 Java setter 不发送请求。
 
@@ -434,3 +434,9 @@ Endpoint 标识。
 Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵循
 [Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
 该组织方式不重命名协议/schema 概念，不改变存储或发现语义。
+
+### 序列化器无关的公开模型（Schema 0.3.0）
+
+可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled/state 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
+
+采用[管理 Schema 0.3.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.3.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。

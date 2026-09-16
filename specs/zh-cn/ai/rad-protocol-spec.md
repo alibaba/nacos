@@ -18,8 +18,8 @@
 
 | 项目 | 值 |
 |---|---|
-| 状态 | 实验性；对协议版本 `0.1.0` 具有规范性 |
-| 协议版本 | `0.1.0` |
+| 状态 | 实验性；对协议版本 `0.3.0` 具有规范性 |
+| 协议版本 | `0.3.0` |
 | 范围 | Remote Agent 搜索、发现、订阅和运行时端点发布 |
 | 目标 | 通过少量稳定对象返回 Agent 调用描述和当前可用地址 |
 
@@ -39,7 +39,7 @@ RAD 返回调用远程 Agent 所需的元数据，但不代理调用，也不定
 
 ### 1.1 操作
 
-RAD 0.1.0 定义五个操作：
+RAD 0.3.0 定义五个操作：
 
 | 操作 | 输入 | 输出 | 语义 |
 |---|---|---|---|
@@ -55,7 +55,7 @@ Binding 可以只投递变化提示，并要求 Consumer 执行一次经过鉴�
 
 ### 1.2 范围外内容
 
-RAD 0.1.0 不定义 Agent 管理生命周期、客户端连接与重连、内部存储、历史兼容、
+RAD 0.3.0 不定义 Agent 管理生命周期、客户端连接与重连、内部存储、历史兼容、
 MCP、调用代理、凭据、重试或负载均衡。Agent 资源和版本语义由
 [Agent 管理规范](./agent-management-spec.md)定义。
 
@@ -98,7 +98,7 @@ Agent 版本采用 `MAJOR.MINOR.PATCH[-PRERELEASE]`，总长不超过 64 个字�
 核心数值标识不得包含前导零。Prerelease 标识由 `.` 分隔，每一项匹配
 `[0-9A-Za-z-]+`；只包含数字的 Prerelease 标识不得带前导零，除非它恰好是 `0`。
 
-RAD 0.1.0 不接受 build metadata。版本身份和比较均大小写敏感，顺序遵循 SemVer
+RAD 0.3.0 不接受 build metadata。版本身份和比较均大小写敏感，顺序遵循 SemVer
 优先级，不得先将版本转换为固定宽度整数。
 
 ### 2.4 版本范围
@@ -114,7 +114,7 @@ Agent 版本，比较使用 RAD SemVer，而不是 Maven `ComparableVersion`。
 | `[1.0.0,)` | `version >= 1.0.0` |
 | `(,2.0.0)` | `version < 2.0.0` |
 
-RAD 0.1.0 只接受一个精确版本或一个连续区间，不接受多个版本或区间的并集。表达式
+RAD 0.3.0 只接受一个精确版本或一个连续区间，不接受多个版本或区间的并集。表达式
 不得包含空格，并且至少包含一个边界。缺失下界时使用 `(`，缺失上界时使用 `)`。
 
 上下界都存在时，下界必须早于上界。只有两端均为闭区间时才允许上下界相等，此时
@@ -124,7 +124,7 @@ RAD 0.1.0 只接受一个精确版本或一个连续区间，不接受多个版�
 
 ### 2.5 协议版本协商
 
-Binding 通过其文档或 Nacos 能力协商声明支持 RAD 0.1.0。RAD 根消息本身不携带
+Binding 通过其文档或 Nacos 能力协商声明支持 RAD 0.3.0。RAD 根消息本身不携带
 协议版本或 Schema 版本字段。
 
 ## 3. 公共模型
@@ -147,7 +147,7 @@ Schema 只暴露以下六个根消息：
 
 ### 3.2 通用 JSON 规则
 
-- 可选值缺失时省略字段，不使用显式 `null`。
+- 可选引用值允许省略或显式 `null`，均表示未提供；必填值及 Endpoint priority、weight、healthy、enabled 不得为 null。
 - 普通对象不接受未知属性。
 - 只有 `nativeDescriptor` 和明确声明的 `metadata` Map 是开放内容。
 - 可选请求数组一旦出现就至少包含一项；必需的响应集合为空时明确返回 `[]`；Schema 声明
@@ -234,14 +234,16 @@ Filter 的全部字段都是可选字段：
 | `priority` | 否 | 越小越优先，整数 `0..2147483647`，缺省为 `0` |
 | `weight` | 否 | 同一 Priority 内的权重，数字 `0..10000`，缺省为 `1` |
 | `metadata` | 否 | 最多 32 个扁平字符串键值 |
-| `healthy` | 条件必选 | 只在 `RUNTIME` 发现结果中出现，并且必须出现 |
+| `healthy` | 生效值 | 非 null boolean，缺省 true；Runtime 返回当前聚合健康，Declared 仅假定可用，不代表探活。 |
+| `enabled` | 生效值 | 非 null boolean，缺省 true；由 Nacos 维护，发现排除 disabled runtime 地址。 |
+| `state` | 否 | Nacos 维护；发现结果非空时 AVAILABLE/UNHEALTHY 必须与 healthy 一致。 |
 
 上下文规则：
 
 - Register 允许提交 `healthy`，缺省 true。提交的 bindings 和管理字段忽略，绑定以批次字段为准。
-- `DECLARED` Endpoint 不得包含 `healthy`。
+- `DECLARED` Endpoint 返回生效值 `healthy=true`、`enabled=true`，不表示探活结果，也不进入版本定义存储。
 - `RUNTIME` 发现结果中的 Endpoint 必须包含 `healthy`。
-- Deregister 只提交 `uri` 和 `transport`，它们是公开对象中代表 Endpoint
+- Deregister 只读取 `uri` 和 `transport`，忽略共享 Endpoint 的其他属性；允许直接传入查询得到的 Endpoint。它们是公开对象中代表 Endpoint
   自然键的字段。它是 Publisher Client 的便利命令；Nacos Binding 先将其应用到
   本地期望状态，再发送完整替换 Batch。
 
@@ -288,7 +290,7 @@ EndpointSet {
 }
 ```
 
-`source` 决定 `healthy` 约束。`AgentDiscoveryResult` 不返回
+`source` 决定健康值的来源与运行时 binding 约束。`AgentDiscoveryResult` 不返回
 `endpointSourceOrder`。Registry 按选中 Agent 版本声明的来源顺序输出
 `endpointSets[]`，应用 Filter 后保持剩余来源的相对顺序。已经声明但当前为空的来源
 仍以 `endpoints=[]` 和稳定的 `sourceRevision` 返回。
@@ -652,10 +654,15 @@ Descriptor、URI 和 Metadata 都是不可信输入，不得保存明文凭据�
 
 ## 12. Schema 与演进
 
+RAD、Watch binding、Agent 管理和 Agent Artifact 使用同一个公开契约发布版本 `0.3.0`，
+配套 Schema 及相互引用必须同步选择该版本。公开 Schema 使用不带版本目录的固定路径，
+历史修订保留在 Git 中。需要可复现校验时，必须从同一个固定 Git tag 或 commit 读取整组
+Schema。Artifact payload 的 `schemaVersion` 和内部存储版本继续保留各自含义。
+
 规范性领域配套文件是
-[RAD 0.1.0 JSON Schema](../../schemas/ai/rad/0.1.0/rad-protocol.schema.json)。
+[RAD 0.3.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json)。
 实验性的 Nacos 传输信封由独立的
-[RAD Watch Binding 0.1.0 JSON Schema](../../schemas/ai/rad/watch/0.1.0/rad-watch-binding.schema.json)
+[RAD Watch Binding 0.3.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
 定义，不扩展不可变的 RAD 根消息集合。两者都使用 JSON Schema Draft 2020-12。普通
 对象使用严格属性集合，只有 Metadata Map 和 `nativeDescriptor` 是开放内容。Schema
 Default 只是注解，生效值由实现物化。
@@ -760,7 +767,7 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 
 ## 地址模型统一的验收
 
-Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健康值；bindings、管理状态、观测时间由 Nacos 维护，提交时忽略。DECLARED 的健康约束、RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
+Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健康值；bindings、管理状态、观测时间由 Nacos 维护，提交时忽略。采用上述 Endpoint 生效默认值；RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
 
@@ -770,3 +777,9 @@ Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健�
 完整逻辑 Search/Register 请求及 Schema 仍包含 namespaceId。Java 业务模型仅表示其业务字段；
 HTTP 参数或 gRPC 信封与业务模型组合后才是完整逻辑请求。Schema 验证须组合这两部分，
 保证存在且只有一个生效 namespace，不得因 Java 类删字段而放宽协议约束。
+
+### Agent JSON 模型不依赖序列化注解
+
+Agent 模型不再携带 Jackson inclusion/ignore 注解。可选引用字段由序列化器决定省略或输出 null，两者均表示未提供；发现/Search 仍禁止携带非空的管理专用内容。Endpoint 四个标量始终有生效值：priority=0、weight=1、healthy=true、enabled=true，priority 越小越优先。AgentVersionInfo 的 onlineCnt()（缺省 0）和 latestVersion()（缺省 null）仅为 Java 辅助方法，不新增 JSON 字段。Endpoint state 与 health/enabled 语义重复，不新增指纹分量。
+
+nativeDescriptor 仍是解析后的 JSON 值，不是原始字符串。本次保持现有序列化器政策，包括定义存储时过滤对象 null 成员，不承诺任意协议 JSON 的逐字节保留。发现指纹使用存储读回的 descriptor 和规范化语义字段，不依赖传输 JSON 的字段顺序。

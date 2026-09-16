@@ -161,3 +161,14 @@ AgentDiscoveryService 现有覆盖行已迁移到共享 Search/RegistrationBatch
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+Agent 去注解更新：Endpoint 生效默认值、完整查询 Endpoint 直接多项注销、onlineCnt()/latestVersion()；延续 GRPC/HTTP/AUTO × Jackson 2/3 × INDEX/SCAN、Watch、旧 A2A 与正常迁移矩阵。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+The shared-listener fixture is PUBLIC for JSON regression coverage. The initial private
+fixture reproduced DAUTH-F05 (`TERMINATED/-404` after successful synchronous Discover);
+private authorized asynchronous Watch remains an explicit gap, not a passing claim.
+Listener-sharing, failure-isolation and partial-unsubscribe assertions are retained.

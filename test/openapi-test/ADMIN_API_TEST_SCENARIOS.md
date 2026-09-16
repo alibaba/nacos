@@ -145,3 +145,9 @@ Agent 管理 Request 迁到 model.agent.admin，HTTP Form 及路径/参数不变
 
 本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 enabled/healthy/state，管理可选引用字段允许 null，Artifact 对齐新 Schema。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。

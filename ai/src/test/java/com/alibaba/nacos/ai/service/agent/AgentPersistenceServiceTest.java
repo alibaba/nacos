@@ -231,7 +231,7 @@ class AgentPersistenceServiceTest {
             versionInfo.getLabels().get(AiResourceConstants.LABEL_LATEST));
         AgentVersionInfo catalog = AgentResourceExtSerializer.deserialize(
             persistedResource.get().getExt()).getVersionCatalog();
-        assertEquals(VERSION, catalog.getLatestVersion());
+        assertEquals(VERSION, catalog.latestVersion());
         assertEquals(Collections.singletonList("a2a"),
             catalog.getOnlineVersions().get(0).getProtocols());
         assertEquals(AiConstants.Agent.VERSION_STATUS_ONLINE,
@@ -1159,7 +1159,7 @@ class AgentPersistenceServiceTest {
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(row);
         AgentSummary summary = assertDoesNotThrow(() -> service.getAgent(NAMESPACE_ID, AGENT_NAME));
         assertEquals("0.9.0", summary.getVersionInfo().getLabels().get("archived"));
-        assertEquals("1.0.0", summary.getVersionInfo().getLatestVersion());
+        assertEquals("1.0.0", summary.getVersionInfo().latestVersion());
         assertEquals(1, summary.getVersionInfo().getOnlineVersions().size());
         row.setVersionInfo("{\"onlineCnt\":2,\"labels\":{\"latest\":\"1.0.0\"}}");
         assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosApiException.class,
@@ -1286,7 +1286,7 @@ class AgentPersistenceServiceTest {
         assertEquals("Updated description", result.getDescription());
         assertEquals(Collections.singletonList("updated"), result.getTags());
         assertEquals("1.2.0", result.getVersionInfo().getEditingVersion());
-        assertEquals("1.1.0", result.getVersionInfo().getLatestVersion());
+        assertEquals("1.1.0", result.getVersionInfo().latestVersion());
         assertEquals(5L, result.getMetaVersion());
         ArgumentCaptor<AiResource> updateCaptor = ArgumentCaptor.forClass(AiResource.class);
         verify(resourcePersistService).updateMetaCas(eq(NAMESPACE_ID),
@@ -1296,7 +1296,7 @@ class AgentPersistenceServiceTest {
         assertEquals("1.2.0", JacksonUtils.toObj(update.getVersionInfo(),
             ResourceVersionInfo.class).getEditingVersion());
         assertEquals("1.1.0", AgentResourceExtSerializer.deserialize(
-            update.getExt()).getVersionCatalog().getLatestVersion());
+            update.getExt()).getVersionCatalog().latestVersion());
         assertEquals("Updated description", update.getDesc());
         assertEquals(concurrentRow.getOwner(), update.getOwner());
         assertEquals(concurrentRow.getScope(), update.getScope());
@@ -2227,7 +2227,7 @@ class AgentPersistenceServiceTest {
         assertEquals(online.getAuthor(), result.getAuthor());
         assertEquals(online.getChangeDescription(), result.getChangeDescription());
         AgentSummary projected = service.getAgent(NAMESPACE_ID, AGENT_NAME);
-        assertEquals(VERSION, projected.getVersionInfo().getLatestVersion());
+        assertEquals(VERSION, projected.getVersionInfo().latestVersion());
         verify(storageService).save(onlinePrepared);
     }
     
@@ -2390,8 +2390,8 @@ class AgentPersistenceServiceTest {
         
         AgentSummary result = service.synchronizeDerivedState(NAMESPACE_ID, AGENT_NAME,
             latestVersion, labels, VERSION, reviewedVersion);
-        assertEquals(2, result.getVersionInfo().getOnlineCnt());
-        assertEquals(latestVersion, result.getVersionInfo().getLatestVersion());
+        assertEquals(2, result.getVersionInfo().onlineCnt());
+        assertEquals(latestVersion, result.getVersionInfo().latestVersion());
         
         ArgumentCaptor<AiResource> updateCaptor = ArgumentCaptor.forClass(AiResource.class);
         verify(resourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq(AGENT_NAME),
@@ -2406,7 +2406,7 @@ class AgentPersistenceServiceTest {
         assertEquals(reviewedVersion, versionInfo.getLabels().get("stable"));
         AgentResourceExt resourceExt =
             AgentResourceExtSerializer.deserialize(updateCaptor.getValue().getExt());
-        assertEquals(latestVersion, resourceExt.getVersionCatalog().getLatestVersion());
+        assertEquals(latestVersion, resourceExt.getVersionCatalog().latestVersion());
         assertEquals(2, resourceExt.getVersionCatalog().getOnlineVersions().size());
         assertEquals(latestVersion,
             resourceExt.getVersionCatalog().getOnlineVersions().get(0).getVersion());

@@ -66,7 +66,7 @@ class AgentRuntimeEndpointMapperTest {
         assertEquals("9.0.0", source.getBindings().get(0).getRuntimeVersion());
         source.setHealthy(true);
         assertTrue(AgentRuntimeEndpointMapper.toInstance(source, "1.0.0", null).isHealthy());
-        source.setHealthy(null);
+        source = endpoint("https://example.com/agent", "HTTP");
         assertTrue(AgentRuntimeEndpointMapper.toInstance(source, "1.0.0", null).isHealthy());
     }
     
