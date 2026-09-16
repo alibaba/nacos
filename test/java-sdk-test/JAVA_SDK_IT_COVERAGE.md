@@ -182,3 +182,11 @@ is covered by API UT; the affected public SDK end-to-end checks are maintained i
 No Client SDK coverage status is upgraded by those results.
 
 Agent/MCP visibility additions: `AgentPublishJavaSdkITCase` and `McpHttpClientJavaSdkITCase` verify HTTP/gRPC default-public creation, separate READ-only consumers, private/public transitions, and Agent publication retry preserving PRIVATE. No Client SDK signature changes are introduced. The additional `shouldInvalidateWatchAfterScopeBecomesPrivate` regression is disabled with `DAUTH-F05`: auth-enabled HTTP Watch failed to produce the initial snapshot before any scope mutation. Its UNAVAILABLE/error/payload assertions remain intact for restoration after the independent identity fix. Existing restart and environment-gated coverage remain unchanged.
+
+## Config detail schema impact (#15853)
+
+`ConfigDetailInfo` and `ConfigHistoryDetailInfo` are management response models.
+Runtime `ConfigService` does not return them, so its client SDK IT scenarios are
+unchanged. Maintainer SDK coverage and the non-null publish limitation are
+recorded in `../maintainer-sdk-test/MAINTAINER_SDK_IT_COVERAGE.md` and
+`../maintainer-sdk-test/MAINTAINER_SDK_IT_SCENARIOS.md`.

@@ -391,3 +391,13 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
+
+## Config detail schema (#15853)
+
+Admin and Console config history ITs cover current detail, history detail, and
+previous-version `schema`, including absent values (omitted or JSON null),
+explicit empty current values, different schema versions, and preservation of
+historical `extInfo`.
+See the Config detail schema matrices in `ADMIN_API_TEST_SCENARIOS.md` and
+`CONSOLE_API_TEST_SCENARIOS.md`. Corrupt/legacy extensions are covered by unit
+tests because the public HTTP publish workflow cannot generate them.

@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -327,6 +328,7 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         ConfigDetailInfo currentConfig = maintainerService.getConfig(dataId, group, namespaceId);
         assertConfigDetail(currentConfig, dataId, group, namespaceId, secondContent);
         assertNotNull(currentConfig.getId());
+        assertNull(currentConfig.getSchema());
 
         Page<ConfigHistoryBasicInfo> historyPage =
                 maintainerService.listConfigHistory(dataId, group, namespaceId, 1, 10);
@@ -356,11 +358,13 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
                         newestHistory.getId());
         assertEquals(firstContent, historyDetail.getContent());
+        assertNull(historyDetail.getSchema());
 
         ConfigHistoryDetailInfo previousDetail =
                 maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
                         currentConfig.getId());
         assertEquals(firstContent, previousDetail.getContent());
+        assertNull(previousDetail.getSchema());
         assertEquals(newestHistory.getId(), previousDetail.getId());
     }
 
