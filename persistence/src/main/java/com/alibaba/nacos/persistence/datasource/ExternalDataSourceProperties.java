@@ -18,8 +18,6 @@ package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
-import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.zaxxer.hikari.HikariDataSource;
@@ -52,11 +50,13 @@ public class ExternalDataSourceProperties {
     /**
      * Build serveral HikariDataSource.
      *
-     * @param environment {@link Environment}
-     * @param callback    Callback function when constructing data source
+     * @param environment    {@link Environment}
+     * @param dataSourceType datasource type resolved during service initialization
+     * @param callback       Callback function when constructing data source
      * @return List of {@link HikariDataSource}
      */
-    List<HikariDataSource> build(Environment environment, Callback<HikariDataSource> callback) {
+    List<HikariDataSource> build(Environment environment, String dataSourceType,
+        Callback<HikariDataSource> callback) {
         List<HikariDataSource> dataSources = new ArrayList<>();
         DatasourceConfigResolver configResolver = new DatasourceConfigResolver(environment);
         Integer num = configResolver.resolve("num", Integer.class);
@@ -69,7 +69,6 @@ public class ExternalDataSourceProperties {
         Preconditions.checkArgument(Objects.nonNull(defaultPassword),
             "nacos.plugin.datasource.db.password[.index] "
                 + "(legacy db.password[.index]) is null");
-        String defaultDriverClassName = resolveDefaultDriverClassName(environment);
         for (int index = 0; index < num; index++) {
             String url = configResolver.resolveIndexed("url", index, false);
             Preconditions.checkArgument(Objects.nonNull(url),
@@ -80,7 +79,7 @@ public class ExternalDataSourceProperties {
             DataSourcePoolProperties poolProperties =
                 DataSourcePoolProperties.build(configResolver);
             if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(defaultDriverClassName);
+                poolProperties.setDriverClassName(resolveDefaultDriverClassName(dataSourceType));
             }
             poolProperties.setJdbcUrl(url.trim());
             poolProperties.setUsername(user.trim());
@@ -105,12 +104,10 @@ public class ExternalDataSourceProperties {
      * When the dialect cannot be resolved or does not provide a default driver, the MySQL
      * compatibility default is kept.
      *
-     * @param environment environment used to resolve the selected dialect
+     * @param dialectType datasource type resolved during service initialization
      * @return default JDBC driver class name, never blank
      */
-    String resolveDefaultDriverClassName(Environment environment) {
-        String dialectType =
-            DatasourcePlatformUtil.getDatasourcePlatform(environment, PersistenceConstant.MYSQL);
+    String resolveDefaultDriverClassName(String dialectType) {
         String driverClassName = null;
         try {
             DatabaseDialect dialect = DatabaseDialectManager.getInstance().getDialect(dialectType);

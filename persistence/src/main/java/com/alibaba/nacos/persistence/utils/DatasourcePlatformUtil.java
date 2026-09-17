@@ -19,7 +19,6 @@ package com.alibaba.nacos.persistence.utils;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.core.env.Environment;
 
 /**
  * get datasource platform util.
@@ -40,26 +39,6 @@ public class DatasourcePlatformUtil {
             return result.trim();
         }
         result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
-        return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
-    }
-    
-    /**
-     * get datasource platform from the given environment.
-     *
-     * @param environment     environment to read the dialect selection from
-     * @param defaultPlatform default platform.
-     * @return selected datasource platform, or {@code defaultPlatform} when not configured
-     */
-    public static String getDatasourcePlatform(Environment environment, String defaultPlatform) {
-        if (environment == null) {
-            return defaultPlatform;
-        }
-        String result =
-            environment.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
-        if (StringUtils.isNotBlank(result)) {
-            return result.trim();
-        }
-        result = environment.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
         return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
     }
 }

@@ -16,13 +16,18 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
@@ -32,6 +37,10 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class ExternalDataSourcePropertiesTest {
     
@@ -57,8 +66,11 @@ public class ExternalDataSourcePropertiesTest {
     
     private Map<String, DatabaseDialect> originalDialects;
     
+    private PluginStateChecker originalStateChecker;
+    
     @BeforeEach
     void setUp() throws Exception {
+        originalStateChecker = PluginStateCheckerHolder.getInstance().orElse(null);
         dialectMap = getDialectMap();
         originalDialects = new HashMap<>(dialectMap);
         dialectMap.clear();
@@ -69,58 +81,83 @@ public class ExternalDataSourcePropertiesTest {
     void tearDown() {
         dialectMap.clear();
         dialectMap.putAll(originalDialects);
-        PluginStateCheckerHolder.setInstance(null);
+        PluginStateCheckerHolder.setInstance(originalStateChecker);
     }
     
     @Test
-    void driverClassNameUsesDialectDefaultWhenPoolConfigIsBlank() {
+    void driverClassNameUsesDialectDefaultWhenPoolConfigIsAbsent() {
         dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(TEST_DIALECT_DRIVER));
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("nacos.plugin.datasource-dialect.type", TEST_DIALECT_TYPE);
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
             });
         
         assertEquals(TEST_DIALECT_DRIVER, dataSources.get(0).getDriverClassName());
     }
     
     @Test
-    void driverClassNameUsesDialectDefaultSelectedByLegacyPlatformProperty() {
+    void driverClassNameUsesSuppliedDialectTypeWhenEnvironmentSelectsAnotherDialect() {
         dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(TEST_DIALECT_DRIVER));
+        dialectMap.put(PersistenceConstant.MYSQL, new TestDatabaseDialect(MYSQL_COMPAT_DRIVER));
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("spring.sql.init.platform", TEST_DIALECT_TYPE);
+        environment.setProperty("nacos.plugin.datasource-dialect.type", PersistenceConstant.MYSQL);
+        environment.setProperty("spring.sql.init.platform", PersistenceConstant.MYSQL);
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
             });
         
         assertEquals(TEST_DIALECT_DRIVER, dataSources.get(0).getDriverClassName());
     }
     
-    @Test
-    void explicitPoolConfigDriverClassNameOverridesDialectDefault() {
-        dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(TEST_DIALECT_DRIVER));
+    @ParameterizedTest
+    @ValueSource(strings = {"nacos.plugin.datasource.db.pool.config.driver-class-name",
+        "db.pool.config.driverClassName"})
+    void explicitPoolConfigDriverClassNameSkipsDialectDefault(String driverProperty) {
+        DatabaseDialect dialect = mock(DatabaseDialect.class);
+        doThrow(new UnsupportedOperationException("Default driver must not be requested"))
+            .when(dialect).getDefaultDriverClassName();
+        dialectMap.put(TEST_DIALECT_TYPE, dialect);
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("nacos.plugin.datasource-dialect.type", TEST_DIALECT_TYPE);
+        environment.setProperty(driverProperty, MYSQL_COMPAT_DRIVER);
+        
+        List<HikariDataSource> dataSources =
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
+            });
+        
+        assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
+        verify(dialect, never()).getDefaultDriverClassName();
+    }
+    
+    @Test
+    void canonicalPoolConfigDriverClassNameOverridesLegacyAndSkipsDialectDefault() {
+        DatabaseDialect dialect = mock(DatabaseDialect.class);
+        doThrow(new UnsupportedOperationException("Default driver must not be requested"))
+            .when(dialect).getDefaultDriverClassName();
+        dialectMap.put(TEST_DIALECT_TYPE, dialect);
+        MockEnvironment environment = mysqlEnvironment();
+        environment.setProperty("db.pool.config.driverClassName", TEST_DIALECT_DRIVER);
         environment.setProperty("nacos.plugin.datasource.db.pool.config.driver-class-name",
             MYSQL_COMPAT_DRIVER);
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
             });
         
         assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
+        verify(dialect, never()).getDefaultDriverClassName();
     }
     
-    @Test
-    void driverClassNameFallsBackToMysqlWhenDialectProvidesNone() {
-        dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(null));
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "\t"})
+    void driverClassNameFallsBackToMysqlWhenDialectProvidesNoDriver(String driverClassName) {
+        dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(driverClassName));
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("nacos.plugin.datasource-dialect.type", TEST_DIALECT_TYPE);
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
             });
         
         assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
@@ -129,10 +166,9 @@ public class ExternalDataSourcePropertiesTest {
     @Test
     void driverClassNameFallsBackToMysqlWhenDialectIsNotLoaded() {
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("nacos.plugin.datasource-dialect.type", "unknown-dialect");
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, "unknown-dialect", dataSource -> {
             });
         
         assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
@@ -143,21 +179,20 @@ public class ExternalDataSourcePropertiesTest {
         dialectMap.put(TEST_DIALECT_TYPE, new TestDatabaseDialect(TEST_DIALECT_DRIVER));
         PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);
         MockEnvironment environment = mysqlEnvironment();
-        environment.setProperty("nacos.plugin.datasource-dialect.type", TEST_DIALECT_TYPE);
         
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
+            new ExternalDataSourceProperties().build(environment, TEST_DIALECT_TYPE, dataSource -> {
             });
         
         assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
     }
     
     @Test
-    void driverClassNameFallsBackToMysqlWhenNoDialectSelected() {
-        // No dialect property and no mysql dialect registered: keep the historical behavior.
+    void driverClassNameFallsBackToMysqlWhenMysqlDialectIsNotLoaded() {
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(mysqlEnvironment(), dataSource -> {
-            });
+            new ExternalDataSourceProperties().build(mysqlEnvironment(), PersistenceConstant.MYSQL,
+                dataSource -> {
+                });
         
         assertEquals(MYSQL_COMPAT_DRIVER, dataSources.get(0).getDriverClassName());
     }
@@ -190,12 +225,13 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.password", PASSWORD);
         environment.setProperty("db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, (dataSource -> {
-                assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-                assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-                assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
-                
-            }));
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                (dataSource -> {
+                    assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                    assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                    assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                    
+                }));
         assertEquals(1, dataSources.size());
     }
     
@@ -207,11 +243,12 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("nacos.plugin.datasource.db.password", PASSWORD);
         environment.setProperty("nacos.plugin.datasource.db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
-                assertEquals(JDBC_URL, dataSource.getJdbcUrl());
-                assertEquals(USERNAME, dataSource.getUsername());
-                assertEquals(PASSWORD, dataSource.getPassword());
-            });
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                dataSource -> {
+                    assertEquals(JDBC_URL, dataSource.getJdbcUrl());
+                    assertEquals(USERNAME, dataSource.getUsername());
+                    assertEquals(PASSWORD, dataSource.getPassword());
+                });
         assertEquals(1, dataSources.size());
     }
     
@@ -229,8 +266,9 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("nacos.plugin.datasource.db.password.1",
             "canonical-password-1");
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, dataSource -> {
-            });
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                dataSource -> {
+                });
         assertEquals(2, dataSources.size());
         assertEquals("canonical-url-0", dataSources.get(0).getJdbcUrl());
         assertEquals("legacy-url-1", dataSources.get(1).getJdbcUrl());
@@ -254,12 +292,13 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         environment.setProperty("db.url.1", JDBC_URL);
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, (dataSource -> {
-                assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-                assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-                assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
-                
-            }));
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                (dataSource -> {
+                    assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                    assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                    assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                    
+                }));
         assertEquals(2, dataSources.size());
     }
     
@@ -279,12 +318,13 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         environment.setProperty("db.url.1", JDBC_URL);
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, (dataSource -> {
-                assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-                assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-                assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
-                
-            }));
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                (dataSource -> {
+                    assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                    assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                    assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                    
+                }));
         assertEquals(2, dataSources.size());
     }
     
@@ -296,11 +336,12 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.password", PASSWORD);
         environment.setProperty("db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources =
-            new ExternalDataSourceProperties().build(environment, (dataSource -> {
-                dataSource.validate();
-                assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE,
-                    dataSource.getMinimumIdle());
-            }));
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                (dataSource -> {
+                    dataSource.validate();
+                    assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE,
+                        dataSource.getMinimumIdle());
+                }));
         assertEquals(1, dataSources.size());
     }
     
@@ -309,7 +350,7 @@ public class ExternalDataSourcePropertiesTest {
         assertThrows(IllegalArgumentException.class, () -> {
             
             MockEnvironment environment = new MockEnvironment();
-            new ExternalDataSourceProperties().build(environment, null);
+            new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL, null);
             
         });
         
@@ -330,12 +371,13 @@ public class ExternalDataSourcePropertiesTest {
             environment.setProperty("db.password", PASSWORD);
             environment.setProperty("db.url.0", JDBC_URL);
             List<HikariDataSource> dataSources =
-                new ExternalDataSourceProperties().build(environment, (dataSource -> {
-                    assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-                    assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-                    assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
-                    
-                }));
+                new ExternalDataSourceProperties().build(environment, PersistenceConstant.MYSQL,
+                    (dataSource -> {
+                        assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                        assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                        assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                        
+                    }));
         });
     }
     

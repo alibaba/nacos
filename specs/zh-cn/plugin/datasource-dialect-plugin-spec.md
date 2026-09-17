@@ -70,12 +70,15 @@ dialect 和另一个数据库的 mapper 是无效行为。
 
 `getDefaultDriverClassName()` 让方言插件自己携带所属数据库的驱动知识，用户只需通过
 `nacos.plugin.datasource-dialect.type` 选择方言，外部数据源即可选出匹配的驱动。
-datasource 模块仅在 `nacos.plugin.datasource.db.pool.config.driver-class-name`
-为空时才会读取该值；显式配置的驱动类始终优先。当所选方言无法解析、已被禁用或返回
-`null`/空白时，datasource 模块保持 MySQL 驱动兼容默认值。内置的 `mysql`、`postgresql`、
+datasource 模块仅在完成历史和标准连接池配置绑定后，驱动类仍为空时才会读取该值。
+通过标准 key 或历史 alias 显式配置驱动时，必须完全跳过默认驱动 getter，
+即使该 getter 会抛出异常也不影响显式驱动配置；标准 key 仍优先于历史 alias。
+当所选方言无法解析、已被禁用或返回 `null`/空白时，datasource 模块保持 MySQL 驱动兼容默认值。
+内置的 `mysql`、`postgresql`、
 `oracle`、`derby` 方言分别提供 `com.mysql.cj.jdbc.Driver`、`org.postgresql.Driver`、
 `oracle.jdbc.OracleDriver` 和 `org.apache.derby.jdbc.EmbeddedDriver`。提供默认驱动类名
 并不意味着打包驱动 jar，部署时仍需将驱动放入 classpath 或 `${nacos.home}/plugins`。
+驱动类的兼容回退不会替换所选方言，也不会放宽该方言的启动校验。
 
 `isDuplicateKeyException(throwable)` 是 config 仓储判断插入失败是否为唯一键重复冲突的
 统一入口。默认实现会遍历异常因果链，当发现 Spring 的 `DuplicateKeyException` 时返回
@@ -129,6 +132,9 @@ default 中硬编码，因为各数据库能接受的转义字符字面量写法
 
 方言 selector 只提供启动选择并需要重启生效。该互斥类型的持久化状态不能替代静态选择，
 运行时 status API 必须拒绝选择变更。
+
+外部数据源查询默认驱动时，必须复用服务初始化时已按标准 key 和历史 alias 优先级解析的
+数据源类型。连接池 reload 继续使用该类型，不得重新从环境中读取 selector。
 
 标准选择 key 与历史 alias 均未配置时，选择结果沿用服务端存储默认值：单机模式以及
 配置了 `-DembeddedStorage=true` 的集群模式选择 `derby`，普通集群模式选择 `mysql`。
