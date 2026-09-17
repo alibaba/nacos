@@ -391,3 +391,9 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
+
+Skill frontmatter (#15345) is covered on Admin and Console lists through draft
+creation/update, draft deletion, publish and version online/offline transitions.
+Both Skill API scenario matrices record null/legacy behavior and deterministic
+CAS coverage in service unit tests. Lists must not load per-item versions or
+package storage. Historical backfill and frontmatter search are out of scope.

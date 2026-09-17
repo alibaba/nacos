@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.consoleapi.ai.skill;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.consoleapi.ai.AiConsoleApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
@@ -238,6 +239,63 @@ public class SkillConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 404, ErrorCode.RESOURCE_NOT_FOUND, "Skill not found");
         assertError(getRaw(CONSOLE_SKILL_VERSION_DOWNLOAD_PATH, skillVersionQuery(absentSkill, "1.0.0")),
                 404, ErrorCode.RESOURCE_NOT_FOUND, "Skill not found");
+    }
+
+
+    @Test
+    public void testSkillFrontMatterLifecycle() throws Exception {
+        String name = randomAiName("frontmatter");
+        Map<String, String> create = frontMatterForm(name, "Initial");
+        create.put("targetVersion", "1.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/draft", create);
+        addCleanup(() -> deleteSkillQuietly(name));
+        assertFrontMatter(name, "Initial", "1.0.0");
+        putFormOk(CONSOLE_SKILL_PATH + "/draft", frontMatterForm(name, "Published"));
+        assertFrontMatter(name, "Published", "1.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(name, "1.0.0"));
+        postFormOk(CONSOLE_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
+        putFormOk(CONSOLE_SKILL_PATH + "/draft", frontMatterForm(name, "Draft"));
+        assertFrontMatter(name, "Published", "1.0.0");
+        deleteJsonOk(CONSOLE_SKILL_PATH + "/draft", skillQuery(name));
+        assertFrontMatter(name, "Published", "1.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
+        putFormOk(CONSOLE_SKILL_PATH + "/draft", frontMatterForm(name, "Second"));
+        postFormOk(CONSOLE_SKILL_PATH + "/force-publish", skillPublishForm(name, "2.0.0"));
+        assertFrontMatter(name, "Second", "2.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/offline", skillOnlineForm(name, "2.0.0", null));
+        assertFrontMatter(name, "Published", "1.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/online", skillOnlineForm(name, "2.0.0", null));
+        assertFrontMatter(name, "Second", "2.0.0");
+        postFormOk(CONSOLE_SKILL_PATH + "/offline", skillOnlineForm(name, "2.0.0", null));
+        postFormOk(CONSOLE_SKILL_PATH + "/offline", skillOnlineForm(name, "1.0.0", null));
+        JsonNode page = getJsonOk(CONSOLE_SKILL_LIST_PATH, skillQuery(name)).get("data");
+        JsonNode item = findByName(page, "name", name);
+        assertFalse(item.isMissingNode(), page.toString());
+        assertTrue(!item.has("frontMatter") || item.get("frontMatter").isNull(), item.toString());
+    }
+
+    private Map<String, String> frontMatterForm(String name, String alias) {
+        Map<String, String> form = skillQueryForm(name);
+        form.put("skillCard", JacksonUtils.toJson(Map.of("name", name, "description", "Display test",
+                "skillMd", "---\nname: " + name + "\ndescription: Display test\nalias: " + alias
+                        + "\nmetadata:\n  custom: custom-value\n---\nUse these instructions.\n")));
+        return form;
+    }
+
+    private void assertFrontMatter(String name, String alias, String version) throws Exception {
+        JsonNode page = getJsonOk(CONSOLE_SKILL_LIST_PATH,
+                Query.newInstance().addParam("skillName", name).addParam("search", "accurate")).get("data");
+        JsonNode item = findByName(page, "name", name);
+        assertFalse(item.isMissingNode(), page.toString());
+        JsonNode frontMatter = item.get("frontMatter");
+        assertNotNull(frontMatter, item.toString());
+        assertTrue(frontMatter.isObject(), item.toString());
+        assertEquals(alias, frontMatter.path("alias").asText(), item.toString());
+        assertEquals(name, frontMatter.path("name").asText(), item.toString());
+        assertEquals(version, frontMatter.path("version").asText(), item.toString());
+        assertEquals("custom-value", frontMatter.path("metadata.custom").asText(), item.toString());
+        JsonNode detail = getJsonOk(CONSOLE_SKILL_PATH, skillQuery(name)).get("data");
+        assertEquals(frontMatter, detail.get("frontMatter"), detail.toString());
     }
 
     private void assertSkillListContains(Query query, String skillName) throws Exception {

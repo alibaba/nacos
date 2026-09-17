@@ -151,3 +151,14 @@ Agent 管理 Request 迁到 model.agent.admin，HTTP Form 及路径/参数不变
 JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 enabled/healthy/state，管理可选引用字段允许 null，Artifact 对齐新 Schema。
 
 [本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+### Skill frontmatter response scenarios (#15345)
+
+| Scenario | Expected result | Coverage |
+| --- | --- | --- |
+| Create/update draft | List returns parsed name, version and custom alias from saved SKILL.md. | `testSkillFrontMatterLifecycle` |
+| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
+| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
+| CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |

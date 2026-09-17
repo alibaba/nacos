@@ -155,6 +155,30 @@ Client Facade 为 `GET /v3/client/ai/skills/search`；它接受 `query`、可重
 
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 
+### 4.1 管理列表 frontmatter
+
+Admin 和 Console 的 Skill 列表及元数据详情响应提供可空的
+`frontMatter: Map<String, String>`（响应序列化器可以省略 null 字段）。
+值沿用现有 Skill frontmatter 解析器的字符串表示，
+包括展开后的 `metadata.*` 键。本次不增加 frontmatter 搜索，也不修改包解析规则。
+
+展示版本优先使用服务端维护的 `latest`，其次是 `editingVersion`，最后是
+`reviewingVersion`。编辑草稿不能覆盖已上线版本的 frontmatter；没有展示版本时返回 null。
+
+新增或更新内容时，在版本存储描述符中保存解析后的 `frontMatter`。上传、覆盖上传、
+创建/更新/派生草稿及新增内置 Skill 均从实际保存的 SKILL.md 内容提取这些字段。
+`ai_resource.ext` 仅保存展示快照 `frontMatter` 与 `frontMatterVersion`，保留无关扩展键。
+发布、强制发布、退回编辑、删除草稿和版本上下线通过版本元数据更新快照，不读取包文件。
+编辑其他版本时复用未变化的展示快照。
+
+快照使用元数据 CAS 写入；冲突后必须重新读取资源行、选择展示版本并读取相应元数据，
+重试耗尽返回资源冲突。列表和元数据详情从同一资源行比较 `frontMatterVersion` 与展示版本，
+不匹配时返回 null，不为 frontmatter 额外查询版本表或存储。
+
+没有这些元数据的历史版本保持可读，frontmatter 可以返回 null；不进行迁移、bootstrap 修复或
+列表查询时回填。更新历史内容只为被更新版本生成元数据，单纯发布或切换未经更新的历史版本
+不会重新解析其文件。
+
 ## 5. 生命周期
 
 Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)：

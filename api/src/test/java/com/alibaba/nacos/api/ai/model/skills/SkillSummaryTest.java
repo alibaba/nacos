@@ -187,4 +187,18 @@ class SkillSummaryTest extends BasicRequestTest {
         assertEquals(2, summary.getOnlineCnt());
         assertEquals(100L, summary.getDownloadCount());
     }
+    
+    @Test
+    void testFrontMatterJsonRoundTripAndLegacyResponse() throws JsonProcessingException {
+        SkillSummary summary = new SkillSummary();
+        Map<String, String> frontMatter = new HashMap<>();
+        frontMatter.put("alias", "Display name");
+        frontMatter.put("metadata.version", "1.0.0");
+        summary.setFrontMatter(frontMatter);
+        SkillSummary restored =
+            mapper.readValue(mapper.writeValueAsString(summary), SkillSummary.class);
+        assertEquals(frontMatter, restored.getFrontMatter());
+        assertNull(mapper.readValue("{}", SkillSummary.class).getFrontMatter());
+    }
+    
 }

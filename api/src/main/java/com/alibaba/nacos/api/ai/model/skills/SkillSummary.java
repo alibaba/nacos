@@ -57,6 +57,12 @@ public class SkillSummary extends SkillBasicInfo {
     private Map<String, String> labels;
     
     /**
+     * Frontmatter of the display version's SKILL.md, or null when unavailable.
+     * Values follow the Skill parser's string representation.
+     */
+    private Map<String, String> frontMatter;
+    
+    /**
      * The version currently being edited (draft).
      */
     private String editingVersion;
@@ -127,6 +133,14 @@ public class SkillSummary extends SkillBasicInfo {
     
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
+    }
+
+    public Map<String, String> getFrontMatter() {
+        return frontMatter;
+    }
+
+    public void setFrontMatter(Map<String, String> frontMatter) {
+        this.frontMatter = frontMatter;
     }
     
     public String getEditingVersion() {

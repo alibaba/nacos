@@ -167,3 +167,14 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
 全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
+
+### Skill frontmatter response scenarios (#15345)
+
+| Scenario | Expected result | Coverage |
+| --- | --- | --- |
+| Create/update draft | List returns parsed name, version and custom alias from saved SKILL.md. | `testSkillFrontMatterLifecycle` |
+| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
+| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
+| CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |

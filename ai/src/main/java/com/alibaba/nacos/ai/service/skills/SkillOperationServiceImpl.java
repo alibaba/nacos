@@ -79,6 +79,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -130,6 +131,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final String META_JSON_RESOURCE_NAME = "_meta.json";
     
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
+    
+    private static final String FRONT_MATTER = "frontMatter";
+    
+    private static final String FRONT_MATTER_VERSION = "frontMatterVersion";
     
     private static final String SCOPE_SKILL = "skill";
     
@@ -472,7 +477,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // Step 4: Insert meta + version rows with status directly set to online (published)
         String storageJson = buildStorageJson(namespaceId, skillName, version, files,
-            SkillContentDigestUtils.computeContentMd5(skill), provider);
+            SkillContentDigestUtils.computeContentMd5(skill), provider, skill.getSkillMd());
         resourceManager.insertBootstrapMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             skill.getDescription(), null, DEFAULT_AUTHOR, from, version, storageJson);
         
@@ -485,6 +490,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         versions.put(version, files);
         manifest.setVersions(versions);
         manifestService.write(namespaceId, skillName, manifest);
+        refreshFrontMatter(namespaceId, skillName, version);
         scheduleSkillIndexMaintenance(namespaceId, skillName);
     }
     
@@ -933,7 +939,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         deleteRemovedSkillStorageFiles(namespaceId, skill.getName(), editing,
             draftVersion.getStorage(), provider, files);
         String storageJson = buildStorageJson(namespaceId, skill.getName(), editing, files,
-            SkillContentDigestUtils.computeContentMd5(skill), provider);
+            SkillContentDigestUtils.computeContentMd5(skill), provider, skill.getSkillMd());
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson, commitMsg);
@@ -942,6 +948,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 RESOURCE_TYPE_SKILL, editing, storageJson);
         }
         resourceManager.bumpMetaDescription(namespaceId, meta, skill.getDescription());
+        refreshFrontMatter(namespaceId, skill.getName(), editing);
     }
     
     /**
@@ -986,6 +993,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setNamespaceId(namespaceId);
         detail.setName(skillName);
         detail.setDescription(meta.getDesc());
+        detail.setFrontMatter(readDisplayFrontMatter(meta));
         detail.setOwner(meta.getOwner());
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setBizTags(meta.getBizTags());
@@ -1117,12 +1125,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (meta == null) {
                 continue;
             }
-            ResourceVersionInfo versionInfo =
-                AiResourceManager.parseVersionInfo(meta.getVersionInfo());
             SkillSummary item = new SkillSummary();
             item.setNamespaceId(namespaceId);
             item.setName(meta.getName());
             item.setDescription(meta.getDesc());
+            item.setFrontMatter(readDisplayFrontMatter(meta));
             item.setOwner(meta.getOwner());
             item.setEnable(
                 AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
@@ -1133,6 +1140,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
             item.setDownloadCount(meta.getDownloadCount());
             item.setWritable(VisibilityHelper.canWriteResource(meta));
+            ResourceVersionInfo versionInfo =
+                AiResourceManager.parseVersionInfo(meta.getVersionInfo());
             if (versionInfo != null) {
                 item.setLabels(versionInfo.getLabels());
                 item.setEditingVersion(versionInfo.getEditingVersion());
@@ -1228,11 +1237,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
                 AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
                 buildStorageJson(namespaceId, name, newVersion, files,
-                    SkillContentDigestUtils.computeContentMd5(baseSkill), provider));
+                    SkillContentDigestUtils.computeContentMd5(baseSkill), provider,
+                    baseSkill.getSkillMd()));
             
             // Step 3: Update meta's editingVersion pointer
             resourceManager.markEditingVersionCas(namespaceId, meta, info, newVersion,
                 "create draft");
+            refreshFrontMatter(namespaceId, name, newVersion);
         }
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion,
             AiResourceTraceService.OP_CREATE_DRAFT,
@@ -1279,7 +1290,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         deleteRemovedSkillStorageFiles(namespaceId, name, editing, draftVersion.getStorage(),
             provider, files);
         String storageJson = buildStorageJson(namespaceId, name, editing, files,
-            SkillContentDigestUtils.computeContentMd5(draftSkill), provider);
+            SkillContentDigestUtils.computeContentMd5(draftSkill), provider,
+            draftSkill.getSkillMd());
         if (StringUtils.isNotBlank(commitMsg)) {
             resourceManager.updateVersionStorageAndDesc(namespaceId, name, RESOURCE_TYPE_SKILL,
                 editing,
@@ -1289,6 +1301,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 storageJson);
         }
         resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
+        refreshFrontMatter(namespaceId, name, editing);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing,
             AiResourceTraceService.OP_UPDATE_DRAFT,
             VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -1303,6 +1316,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, name, v.getVersion(),
                 v.getStorage()));
+        refreshFrontMatter(namespaceId, name, null);
     }
     
     /**
@@ -1390,6 +1404,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        refreshFrontMatter(namespaceId, name, null);
         scheduleSkillIndexMaintenance(namespaceId, name);
     }
     
@@ -1408,6 +1423,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        refreshFrontMatter(namespaceId, name, null);
         scheduleSkillIndexMaintenance(namespaceId, name);
     }
     
@@ -1424,12 +1440,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         manifestService.write(namespaceId, name, manifest);
+        refreshFrontMatter(namespaceId, name, null);
         scheduleSkillIndexMaintenance(namespaceId, name);
     }
     
     @Override
     public void redraft(String namespaceId, String name, String version) throws NacosException {
         resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_SKILL, version);
+        refreshFrontMatter(namespaceId, name, null);
     }
     
     /**
@@ -1501,6 +1519,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResourceVersion v =
             resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info, version, online);
         if (v == null) {
+            refreshFrontMatter(namespaceId, name, null);
             return;
         }
         
@@ -1524,6 +1543,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
             scheduleSkillIndexMaintenance(namespaceId, name);
         }
+        refreshFrontMatter(namespaceId, name, null);
     }
     
     /**
@@ -1620,11 +1640,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
             AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
             buildStorageJson(namespaceId, skillName, version, files,
-                SkillContentDigestUtils.computeContentMd5(skill), provider));
+                SkillContentDigestUtils.computeContentMd5(skill), provider, skill.getSkillMd()));
         
         // 3) create or update meta for editingVersion
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
             skill.getDescription(), null, version, existedMeta, isNewSkill);
+        refreshFrontMatter(namespaceId, skillName, version);
     }
     
     /**
@@ -1642,16 +1663,116 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      *                   yet need to persist the listener-related fingerprint
      */
     private static String buildStorageJson(String namespaceId, String skillName, String version,
-        List<String> files, String contentMd5, String provider) {
+        List<String> files, String contentMd5, String provider, String skillMd) {
         Map<String, Object> json = new LinkedHashMap<>(8);
         json.put("provider", provider);
         json.put("scope", namespaceId + ":" + skillName + ":" + version);
         json.put("files", files);
+        json.put(FRONT_MATTER, SkillZipParser.parseYamlFrontMatterFromMarkdown(skillMd));
         if (StringUtils.isNotBlank(contentMd5)) {
             json.put(com.alibaba.nacos.ai.constant.Constants.Skills.STORAGE_KEY_CONTENT_MD5,
                 contentMd5);
         }
         return JacksonUtils.toJson(json);
+    }
+    
+    /**
+     * Refresh only the display metadata, re-resolving the version on every CAS attempt.
+     * Content writes pass their version so editing a draft never reloads an unchanged latest.
+     * Historical descriptors have no frontmatter and are deliberately not repaired from storage.
+     */
+    private void refreshFrontMatter(String namespaceId, String name, String changedVersion)
+        throws NacosException {
+        for (int attempt = 0; attempt < AiResourceConstants.MAX_WORKING_VERSION_RETRY; attempt++) {
+            AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
+            if (meta == null) {
+                return;
+            }
+            String displayVersion = resolveDisplayVersion(meta);
+            Map<String, Object> ext = parseMetadata(meta.getExt());
+            if (changedVersion != null && !changedVersion.equals(displayVersion)) {
+                return;
+            }
+            if (changedVersion == null && displayVersion != null
+                && displayVersion.equals(ext.get(FRONT_MATTER_VERSION))) {
+                return;
+            }
+            Map<String, String> frontMatter = null;
+            if (StringUtils.isNotBlank(displayVersion)) {
+                AiResourceVersion version = resourceManager.findVersion(namespaceId, name,
+                    RESOURCE_TYPE_SKILL, displayVersion);
+                if (version != null) {
+                    frontMatter = readFrontMatter(parseMetadata(version.getStorage()));
+                }
+            }
+            Map<String, Object> updatedExt = new LinkedHashMap<>(ext);
+            updatedExt.remove(FRONT_MATTER);
+            updatedExt.remove(FRONT_MATTER_VERSION);
+            if (frontMatter != null) {
+                updatedExt.put(FRONT_MATTER, frontMatter);
+                updatedExt.put(FRONT_MATTER_VERSION, displayVersion);
+            }
+            if (ext.equals(updatedExt)) {
+                return;
+            }
+            AiResource update = new AiResource();
+            update.setStatus(meta.getStatus());
+            update.setDesc(meta.getDesc());
+            update.setBizTags(meta.getBizTags());
+            update.setVersionInfo(meta.getVersionInfo());
+            update.setExt(updatedExt.isEmpty() ? null : JacksonUtils.toJson(updatedExt));
+            if (meta.getMetaVersion() != null && aiResourcePersistService.updateMetaCas(namespaceId,
+                name, RESOURCE_TYPE_SKILL, meta.getMetaVersion(), update)) {
+                return;
+            }
+        }
+        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+            "Skill frontmatter update conflict, retry");
+    }
+    
+    private static String resolveDisplayVersion(AiResource meta) {
+        ResourceVersionInfo info = AiResourceManager.parseVersionInfo(meta.getVersionInfo());
+        if (info == null) {
+            return null;
+        }
+        String latest = info.getLabels() == null ? null
+            : info.getLabels().get(AiResourceConstants.LABEL_LATEST);
+        if (StringUtils.isNotBlank(latest)) {
+            return latest;
+        }
+        return StringUtils.isNotBlank(info.getEditingVersion()) ? info.getEditingVersion()
+            : info.getReviewingVersion();
+    }
+    
+    private static Map<String, String> readDisplayFrontMatter(AiResource meta) {
+        Map<String, Object> ext = parseMetadata(meta.getExt());
+        String displayVersion = resolveDisplayVersion(meta);
+        return displayVersion != null
+            && Objects.equals(displayVersion, ext.get(FRONT_MATTER_VERSION))
+                ? readFrontMatter(ext) : null;
+    }
+    
+    private static Map<String, String> readFrontMatter(Map<String, Object> metadata) {
+        Object value = metadata.get(FRONT_MATTER);
+        if (!(value instanceof Map)) {
+            return null;
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        ((Map<?, ?>) value).forEach((key, item) -> {
+            if (key != null && item != null) {
+                result.put(String.valueOf(key), String.valueOf(item));
+            }
+        });
+        return result;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseMetadata(String json) {
+        if (StringUtils.isBlank(json)) {
+            return new LinkedHashMap<>();
+        }
+        Map<String, Object> result = JacksonUtils.toObj(json, Map.class);
+        return result == null ? new LinkedHashMap<>() : result;
     }
     
     /**
