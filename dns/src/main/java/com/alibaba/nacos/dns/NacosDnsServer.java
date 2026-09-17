@@ -327,23 +327,70 @@ public class NacosDnsServer {
 
     /**
      * Handle a TCP DNS connection.
+     *
+     * <p>Enforces an absolute receive deadline covering both the 2-byte length
+     * prefix and the complete message body, per RFC 7766 §6.2.3. The idle
+     * deadline is reset only after a complete DNS message has been received.
      */
     private void handleTcpConnection(Socket clientSocket) throws IOException {
-        clientSocket.setSoTimeout(TCP_SOCKET_TIMEOUT_MS);
         clientSocket.setTcpNoDelay(true);
 
         DataInputStream in = new DataInputStream(clientSocket.getInputStream());
         DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-        while (running) {
+        // Absolute deadline: entire connection must complete within this budget.
+        // Reset only after a complete message is received (RFC 7766 §6.2.3).
+        long deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
+
+        while (running && System.currentTimeMillis() < deadline) {
             try {
-                // TCP DNS: first 2 bytes are message length
-                int length = in.readUnsignedShort();
-                if (length < 0 || length > UDP_RECEIVE_BUFFER_SIZE) {
+                // Set per-read timeout based on remaining absolute deadline
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
                     break;
                 }
+                clientSocket.setSoTimeout((int) Math.min(remaining, Integer.MAX_VALUE));
+
+                // Read 2-byte length prefix
+                int b0 = in.read();
+                if (b0 < 0) {
+                    break;
+                }
+                long remainingAfterFirstByte = deadline - System.currentTimeMillis();
+                if (remainingAfterFirstByte <= 0) {
+                    break;
+                }
+                clientSocket.setSoTimeout((int) Math.min(remainingAfterFirstByte, Integer.MAX_VALUE));
+
+                int b1 = in.read();
+                if (b1 < 0) {
+                    break;
+                }
+
+                int length = (b0 << 8) | b1;
+                if (length <= 0 || length > UDP_RECEIVE_BUFFER_SIZE) {
+                    break;
+                }
+
+                // Read message body within remaining deadline
                 byte[] queryData = new byte[length];
-                in.readFully(queryData);
+                int totalRead = 0;
+                while (totalRead < length) {
+                    long remainingBody = deadline - System.currentTimeMillis();
+                    if (remainingBody <= 0) {
+                        break;
+                    }
+                    clientSocket.setSoTimeout((int) Math.min(remainingBody, Integer.MAX_VALUE));
+
+                    int n = in.read(queryData, totalRead, length - totalRead);
+                    if (n < 0) {
+                        break;
+                    }
+                    totalRead += n;
+                }
+                if (totalRead < length) {
+                    break;
+                }
 
                 Message query = new Message(queryData);
                 Message response = queryHandler.handleQuery(query);
@@ -354,6 +401,9 @@ public class NacosDnsServer {
                     out.write(responseData);
                     out.flush();
                 }
+
+                // Reset idle deadline only after a complete message (RFC 7766)
+                deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
             } catch (java.net.SocketTimeoutException e) {
                 break;
             }
