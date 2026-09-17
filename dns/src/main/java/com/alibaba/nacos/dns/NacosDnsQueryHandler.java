@@ -108,9 +108,22 @@ public class NacosDnsQueryHandler {
             return response;
         }
 
-        // Shuffle to provide basic round-robin, then limit to MAX_ANSWER_RECORDS
-        Collections.shuffle(addresses);
-        int limit = Math.min(addresses.size(), MAX_ANSWER_RECORDS);
+        // Filter addresses by requested record type first, then shuffle and limit.
+        // This ensures mixed IPv4/IPv6 deployments don't return empty answers.
+        List<InetAddress> matching = addresses.stream()
+                .filter(addr -> (type == Type.A && addr.getAddress().length == 4)
+                        || (type == Type.AAAA && addr.getAddress().length == 16))
+                .collect(Collectors.toList());
+
+        if (matching.isEmpty()) {
+            response.getHeader().setRcode(Rcode.NOERROR);
+            response.addRecord(question, Section.QUESTION);
+            return response;
+        }
+
+        // Shuffle matching addresses for basic round-robin, then cap at MAX_ANSWER_RECORDS
+        Collections.shuffle(matching);
+        int limit = Math.min(matching.size(), MAX_ANSWER_RECORDS);
 
         // Add question section
         response.addRecord(question, Section.QUESTION);
@@ -118,14 +131,12 @@ public class NacosDnsQueryHandler {
         // Add answer records
         Name queryName = question.getName();
         for (int i = 0; i < limit; i++) {
-            InetAddress addr = addresses.get(i);
+            InetAddress addr = matching.get(i);
             Record record;
-            if (type == Type.A && addr.getAddress().length == 4) {
+            if (type == Type.A) {
                 record = new ARecord(queryName, DClass.IN, properties.getTtl(), addr);
-            } else if (type == Type.AAAA && addr.getAddress().length == 16) {
-                record = new AAAARecord(queryName, DClass.IN, properties.getTtl(), addr);
             } else {
-                continue;
+                record = new AAAARecord(queryName, DClass.IN, properties.getTtl(), addr);
             }
             response.addRecord(record, Section.ANSWER);
         }

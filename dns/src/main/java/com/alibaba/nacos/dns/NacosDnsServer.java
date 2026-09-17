@@ -77,8 +77,11 @@ public class NacosDnsServer {
     /** Maximum concurrent TCP connections. */
     private static final int MAX_TCP_CONNECTIONS = 64;
 
-    /** Worker thread pool size for query processing. */
-    private static final int WORKER_THREADS = 16;
+    /** UDP worker thread pool size for quick query processing. */
+    private static final int UDP_WORKER_THREADS = 16;
+
+    /** TCP worker thread pool size (separate to prevent slow TCP from blocking UDP). */
+    private static final int TCP_WORKER_THREADS = 8;
 
     private final NacosDnsProperties properties;
     private final NacosDnsQueryHandler queryHandler;
@@ -87,8 +90,9 @@ public class NacosDnsServer {
     private Thread udpListenerThread;
     private Thread tcpListenerThread;
 
-    /** Worker pool for query processing (bounded queue). */
-    private ExecutorService workerPool;
+    /** Separate worker pools: UDP queries and TCP connections don't starve each other. */
+    private ExecutorService udpWorkerPool;
+    private ExecutorService tcpWorkerPool;
 
     private DatagramSocket udpSocket;
     private ServerSocket tcpSocket;
@@ -113,12 +117,23 @@ public class NacosDnsServer {
             return;
         }
 
-        workerPool = new ThreadPoolExecutor(
-                WORKER_THREADS, WORKER_THREADS,
+        udpWorkerPool = new ThreadPoolExecutor(
+                UDP_WORKER_THREADS, UDP_WORKER_THREADS,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(1024),
                 r -> {
-                    Thread t = new Thread(r, "nacos-dns-worker");
+                    Thread t = new Thread(r, "nacos-dns-udp-worker");
+                    t.setDaemon(true);
+                    return t;
+                },
+                new ThreadPoolExecutor.AbortPolicy());
+
+        tcpWorkerPool = new ThreadPoolExecutor(
+                TCP_WORKER_THREADS, TCP_WORKER_THREADS,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(256),
+                r -> {
+                    Thread t = new Thread(r, "nacos-dns-tcp-worker");
                     t.setDaemon(true);
                     return t;
                 },
@@ -172,10 +187,18 @@ public class NacosDnsServer {
                 LOGGER.warn("Error closing TCP socket", e);
             }
         }
-        if (workerPool != null) {
-            workerPool.shutdown();
+        if (udpWorkerPool != null) {
+            udpWorkerPool.shutdown();
             try {
-                workerPool.awaitTermination(5, TimeUnit.SECONDS);
+                udpWorkerPool.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (tcpWorkerPool != null) {
+            tcpWorkerPool.shutdown();
+            try {
+                tcpWorkerPool.awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -203,7 +226,7 @@ public class NacosDnsServer {
                 System.arraycopy(packet.getData(), packet.getOffset(), queryData, 0, dataLen);
 
                 try {
-                    workerPool.submit(() -> handleUdpQuery(queryData, clientAddr, clientPort));
+                    udpWorkerPool.submit(() -> handleUdpQuery(queryData, clientAddr, clientPort));
                 } catch (Exception e) {
                     LOGGER.warn("Dropping UDP query, worker queue full", e);
                 }
@@ -274,7 +297,7 @@ public class NacosDnsServer {
 
                 activeTcpConnections.incrementAndGet();
                 try {
-                    workerPool.submit(() -> {
+                    tcpWorkerPool.submit(() -> {
                         try {
                             handleTcpConnection(clientSocket);
                         } catch (Exception e) {
