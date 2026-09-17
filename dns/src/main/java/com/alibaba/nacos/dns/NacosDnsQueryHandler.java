@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.xbill.DNS.AAAARecord;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
+import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Rcode;
@@ -74,8 +75,8 @@ public class NacosDnsQueryHandler {
      */
     public Message handleQuery(Message query) {
         Message response = new Message(query.getHeader().getID());
-        response.getHeader().setFlag(org.xbill.DNS.Flags.QR);
-        response.getHeader().setFlag(org.xbill.DNS.Flags.RA);
+        response.getHeader().setFlag(Flags.QR);
+        response.getHeader().setFlag(Flags.RA);
 
         Record question = query.getQuestion();
         if (question == null) {

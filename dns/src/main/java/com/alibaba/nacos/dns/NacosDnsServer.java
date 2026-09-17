@@ -23,6 +23,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
+import org.xbill.DNS.Section;
 
 import jakarta.annotation.PreDestroy;
 
@@ -155,6 +156,8 @@ public class NacosDnsServer {
         } catch (IOException e) {
             LOGGER.error("Failed to bind TCP socket on port {}", actualPort, e);
             udpSocket.close();
+            udpWorkerPool.shutdownNow();
+            tcpWorkerPool.shutdownNow();
             return;
         }
 
@@ -274,7 +277,7 @@ public class NacosDnsServer {
         truncated.getHeader().setFlag(Flags.QR);
         truncated.getHeader().setFlag(Flags.TC);
         truncated.getHeader().setFlag(Flags.RA);
-        truncated.addRecord(query.getQuestion(), org.xbill.DNS.Section.QUESTION);
+        truncated.addRecord(query.getQuestion(), Section.QUESTION);
         return truncated.toWire();
     }
 
@@ -321,7 +324,7 @@ public class NacosDnsServer {
             }
         } catch (IOException e) {
             if (running) {
-                LOGGER.error("Failed to start TCP DNS server on port {}", properties.getPort(), e);
+                LOGGER.error("Failed to start TCP DNS server on port {}", tcpSocket.getLocalPort(), e);
             }
         }
     }
