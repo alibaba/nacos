@@ -32,8 +32,11 @@ import org.xbill.DNS.Section;
 import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.DatagramSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -172,5 +175,68 @@ class NacosDnsServerTest {
         assertTrue(answers <= 20,
                 "answer records should be capped at 20, got " + answers);
         assertTrue(answers > 0, "should have some answers");
+    }
+
+    /**
+     * Slow TCP client sending only 1 byte of the 2-byte length prefix must be
+     * closed within the absolute deadline (review #6, RFC 7766 §6.2.3).
+     */
+    @Test
+    void testSlowTcpFrameClosedWithinDeadline() throws Exception {
+        mockInstances(1);
+        server.start();
+        int port = getListeningPort();
+        Thread.sleep(200);
+
+        Socket slowClient = new Socket("127.0.0.1", port);
+        slowClient.setSoTimeout(10000);
+        OutputStream out = slowClient.getOutputStream();
+        InputStream in = slowClient.getInputStream();
+
+        // Send only 1 byte (first byte of 2-byte length prefix), never send the second
+        out.write(0x00);
+        out.flush();
+
+        long start = System.currentTimeMillis();
+        int b = in.read();
+        long elapsed = System.currentTimeMillis() - start;
+
+        // Server should close the connection within ~5 seconds (deadline)
+        assertEquals(-1, b, "connection should be closed (EOF) after deadline");
+        assertTrue(elapsed < 8000,
+                "slow frame should be closed within deadline, took " + elapsed + "ms");
+
+        slowClient.close();
+    }
+
+    /**
+     * TCP workers occupied by slow connections must not block UDP queries
+     * (review #6: separate worker pools).
+     */
+    @Test
+    void testUdpResponsiveWhileTcpWorkersBusy() throws Exception {
+        mockInstances(2);
+        server.start();
+        int port = getListeningPort();
+        Thread.sleep(200);
+
+        // Open 8 TCP connections and send 1 byte each (they'll wait on deadline)
+        List<Socket> slowConns = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            Socket s = new Socket("127.0.0.1", port);
+            s.getOutputStream().write(0x00);
+            s.getOutputStream().flush();
+            slowConns.add(s);
+        }
+
+        // UDP query should still succeed immediately (separate worker pool)
+        Message response = sendQuery(port, "svc.nacos.", false);
+        assertFalse(response.getHeader().getFlag(Flags.TC));
+        assertEquals(2, response.getSection(Section.ANSWER).size(),
+                "UDP should remain responsive despite busy TCP workers");
+
+        for (Socket s : slowConns) {
+            s.close();
+        }
     }
 }

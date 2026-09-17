@@ -273,4 +273,52 @@ class NacosDnsQueryHandlerTest {
         assertTrue(response.getHeader().getFlag(Flags.QR), "response should set QR flag");
         assertTrue(response.getHeader().getFlag(Flags.RA), "response should set RA flag");
     }
+
+    // ---- Mixed IPv4/IPv6 regression tests (review #7) ----
+
+    @Test
+    void testAaaaQueryWithManyIpv4AndOneIpv6ReturnsIpv6() {
+        // 100 IPv4 + 1 IPv6: AAAA query must still find the single IPv6 address
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        List<Instance> hosts = new ArrayList<>();
+        for (int i = 1; i <= 100; i++) {
+            hosts.add(buildInstance("10.0." + (i / 256) + "." + (i % 256), true, true));
+        }
+        hosts.add(buildInstance("2001:db8::1", true, true));
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+                .thenReturn(buildServiceInfo(hosts));
+
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        Message query = buildQuery("svc.nacos.", Type.AAAA, DClass.IN);
+        Message response = handler.handleQuery(query);
+
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        assertEquals(1, response.getSection(Section.ANSWER).size(),
+                "AAAA query should return the single IPv6 address even when 100 IPv4 exist");
+        Record r = response.getSection(Section.ANSWER).get(0);
+        assertEquals(Type.AAAA, r.getType());
+    }
+
+    @Test
+    void testAQueryWithManyIpv6AndOneIpv4ReturnsIpv4() {
+        // 100 IPv6 + 1 IPv4: A query must still find the single IPv4 address
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        List<Instance> hosts = new ArrayList<>();
+        for (int i = 1; i <= 100; i++) {
+            hosts.add(buildInstance("2001:db8::" + i, true, true));
+        }
+        hosts.add(buildInstance("10.0.0.1", true, true));
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+                .thenReturn(buildServiceInfo(hosts));
+
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        assertEquals(1, response.getSection(Section.ANSWER).size(),
+                "A query should return the single IPv4 address even when 100 IPv6 exist");
+        Record r = response.getSection(Section.ANSWER).get(0);
+        assertEquals(Type.A, r.getType());
+    }
 }
