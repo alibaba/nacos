@@ -34,6 +34,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -338,31 +339,16 @@ public class NacosDnsServer {
         DataInputStream in = new DataInputStream(clientSocket.getInputStream());
         DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-        // Absolute deadline: entire connection must complete within this budget.
-        // Reset only after a complete message is received (RFC 7766 §6.2.3).
         long deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
 
-        while (running && System.currentTimeMillis() < deadline) {
+        while (running) {
             try {
-                // Set per-read timeout based on remaining absolute deadline
-                long remaining = deadline - System.currentTimeMillis();
-                if (remaining <= 0) {
-                    break;
-                }
-                clientSocket.setSoTimeout((int) Math.min(remaining, Integer.MAX_VALUE));
-
                 // Read 2-byte length prefix
-                int b0 = in.read();
+                int b0 = readByteWithDeadline(in, clientSocket, deadline);
                 if (b0 < 0) {
                     break;
                 }
-                long remainingAfterFirstByte = deadline - System.currentTimeMillis();
-                if (remainingAfterFirstByte <= 0) {
-                    break;
-                }
-                clientSocket.setSoTimeout((int) Math.min(remainingAfterFirstByte, Integer.MAX_VALUE));
-
-                int b1 = in.read();
+                int b1 = readByteWithDeadline(in, clientSocket, deadline);
                 if (b1 < 0) {
                     break;
                 }
@@ -376,12 +362,9 @@ public class NacosDnsServer {
                 byte[] queryData = new byte[length];
                 int totalRead = 0;
                 while (totalRead < length) {
-                    long remainingBody = deadline - System.currentTimeMillis();
-                    if (remainingBody <= 0) {
+                    if (checkDeadline(clientSocket, deadline) < 0) {
                         break;
                     }
-                    clientSocket.setSoTimeout((int) Math.min(remainingBody, Integer.MAX_VALUE));
-
                     int n = in.read(queryData, totalRead, length - totalRead);
                     if (n < 0) {
                         break;
@@ -408,6 +391,37 @@ public class NacosDnsServer {
                 break;
             }
         }
+    }
+
+    /**
+     * Check remaining time until deadline and configure socket timeout.
+     *
+     * @return remaining milliseconds (>0), or -1 if deadline expired
+     */
+    private long checkDeadline(Socket socket, long deadline) throws SocketException {
+        long remaining = deadline - System.currentTimeMillis();
+        if (remaining <= 0) {
+            return -1;
+        }
+        socket.setSoTimeout((int) Math.min(remaining, Integer.MAX_VALUE));
+        return remaining;
+    }
+
+    /**
+     * Read one byte, respecting the absolute deadline.
+     *
+     * @return the byte read (0-255), or -1 on EOF/deadline expiry
+     */
+    private int readByteWithDeadline(DataInputStream in, Socket socket, long deadline)
+            throws IOException {
+        if (checkDeadline(socket, deadline) < 0) {
+            return -1;
+        }
+        int b = in.read();
+        if (b < 0) {
+            return -1;
+        }
+        return b;
     }
 
     public boolean isRunning() {
