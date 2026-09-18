@@ -55,11 +55,11 @@ import static org.mockito.Mockito.when;
  * @author Nacos
  */
 class NacosDnsServerTest {
-
+    
     private NacosDnsServer server;
     private NacosDnsProperties properties;
     private InstanceOperatorClientImpl instanceOperator;
-
+    
     @BeforeEach
     void setUp() {
         properties = new NacosDnsProperties();
@@ -68,19 +68,19 @@ class NacosDnsServerTest {
         properties.setDomainSuffix("nacos");
         properties.setDefaultGroup("DEFAULT_GROUP");
         properties.setTtl(60);
-
+        
         instanceOperator = mock(InstanceOperatorClientImpl.class);
         NacosDnsQueryHandler queryHandler = new NacosDnsQueryHandler(instanceOperator, properties);
         server = new NacosDnsServer(properties, queryHandler);
     }
-
+    
     @AfterEach
     void tearDown() {
         if (server != null) {
             server.stop();
         }
     }
-
+    
     private void mockInstances(int count) {
         List<Instance> hosts = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
@@ -93,10 +93,11 @@ class NacosDnsServerTest {
         }
         ServiceInfo info = new ServiceInfo();
         info.setHosts(hosts);
-        when(instanceOperator.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
-                .thenReturn(info);
+        when(instanceOperator.listInstance(anyString(), anyString(), anyString(), any(), any(),
+            anyBoolean()))
+            .thenReturn(info);
     }
-
+    
     private int getListeningPort() throws Exception {
         Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
         f.setAccessible(true);
@@ -111,7 +112,7 @@ class NacosDnsServerTest {
         assert sock != null;
         return sock.getLocalPort();
     }
-
+    
     private Message sendQuery(int port, String domain, boolean tcp) throws Exception {
         SimpleResolver resolver = new SimpleResolver("127.0.0.1");
         resolver.setPort(port);
@@ -122,7 +123,7 @@ class NacosDnsServerTest {
         Message query = Message.newQuery(question);
         return resolver.send(query);
     }
-
+    
     /**
      * Small instance set should fit in UDP without truncation.
      */
@@ -132,13 +133,13 @@ class NacosDnsServerTest {
         server.start();
         int port = getListeningPort();
         Thread.sleep(200);
-
+        
         Message response = sendQuery(port, "svc.nacos.", false);
         assertFalse(response.getHeader().getFlag(Flags.TC),
-                "Small UDP response should not be truncated");
+            "Small UDP response should not be truncated");
         assertEquals(2, response.getSection(Section.ANSWER).size());
     }
-
+    
     /**
      * TCP query should return results successfully.
      */
@@ -148,18 +149,18 @@ class NacosDnsServerTest {
         server.start();
         int port = getListeningPort();
         Thread.sleep(500);
-
+        
         Message response = sendQuery(port, "svc.nacos.", true);
         assertFalse(response.getHeader().getFlag(Flags.TC),
-                "TCP response should not be truncated");
+            "TCP response should not be truncated");
         assertTrue(response.getSection(Section.ANSWER).size() > 0,
-                "TCP response should contain answer records");
+            "TCP response should contain answer records");
         for (Record r : response.getSection(Section.ANSWER)) {
             assertEquals(Type.A, r.getType());
             assertTrue(r instanceof ARecord);
         }
     }
-
+    
     /**
      * Large instance set: verify results are capped at 20 (round-robin).
      */
@@ -169,14 +170,14 @@ class NacosDnsServerTest {
         server.start();
         int port = getListeningPort();
         Thread.sleep(200);
-
+        
         Message response = sendQuery(port, "svc.nacos.", false);
         int answers = response.getSection(Section.ANSWER).size();
         assertTrue(answers <= 20,
-                "answer records should be capped at 20, got " + answers);
+            "answer records should be capped at 20, got " + answers);
         assertTrue(answers > 0, "should have some answers");
     }
-
+    
     /**
      * Slow TCP client sending only 1 byte of the 2-byte length prefix must be
      * closed within the absolute deadline (review #6, RFC 7766 §6.2.3).
@@ -187,28 +188,28 @@ class NacosDnsServerTest {
         server.start();
         int port = getListeningPort();
         Thread.sleep(200);
-
+        
         Socket slowClient = new Socket("127.0.0.1", port);
         slowClient.setSoTimeout(10000);
         OutputStream out = slowClient.getOutputStream();
         InputStream in = slowClient.getInputStream();
-
+        
         // Send only 1 byte (first byte of 2-byte length prefix), never send the second
         out.write(0x00);
         out.flush();
-
+        
         long start = System.currentTimeMillis();
         int b = in.read();
         long elapsed = System.currentTimeMillis() - start;
-
+        
         // Server should close the connection within ~5 seconds (deadline)
         assertEquals(-1, b, "connection should be closed (EOF) after deadline");
         assertTrue(elapsed < 8000,
-                "slow frame should be closed within deadline, took " + elapsed + "ms");
-
+            "slow frame should be closed within deadline, took " + elapsed + "ms");
+        
         slowClient.close();
     }
-
+    
     /**
      * TCP workers occupied by slow connections must not block UDP queries
      * (review #6: separate worker pools).
@@ -219,7 +220,7 @@ class NacosDnsServerTest {
         server.start();
         int port = getListeningPort();
         Thread.sleep(200);
-
+        
         // Open 8 TCP connections and send 1 byte each (they'll wait on deadline)
         List<Socket> slowConns = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
@@ -228,13 +229,13 @@ class NacosDnsServerTest {
             s.getOutputStream().flush();
             slowConns.add(s);
         }
-
+        
         // UDP query should still succeed immediately (separate worker pool)
         Message response = sendQuery(port, "svc.nacos.", false);
         assertFalse(response.getHeader().getFlag(Flags.TC));
         assertEquals(2, response.getSection(Section.ANSWER).size(),
-                "UDP should remain responsive despite busy TCP workers");
-
+            "UDP should remain responsive despite busy TCP workers");
+        
         for (Socket s : slowConns) {
             s.close();
         }

@@ -27,5 +27,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(NacosDnsProperties.class)
 public class NacosDnsAutoConfiguration {
-
+    
 }

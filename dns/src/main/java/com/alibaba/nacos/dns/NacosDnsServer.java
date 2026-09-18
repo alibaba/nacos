@@ -64,51 +64,51 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Component
 public class NacosDnsServer {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosDnsServer.class);
-
+    
     /** Standard DNS UDP payload limit without EDNS. */
     private static final int UDP_MAX_RESPONSE_SIZE = 512;
-
+    
     /** Receive buffer large enough for EDNS-sized UDP queries. */
     private static final int UDP_RECEIVE_BUFFER_SIZE = 4096;
-
+    
     /** TCP read timeout in milliseconds. */
     private static final int TCP_SOCKET_TIMEOUT_MS = 5000;
-
+    
     /** Maximum concurrent TCP connections. */
     private static final int MAX_TCP_CONNECTIONS = 64;
-
+    
     /** UDP worker thread pool size for quick query processing. */
     private static final int UDP_WORKER_THREADS = 16;
-
+    
     /** TCP worker thread pool size (separate to prevent slow TCP from blocking UDP). */
     private static final int TCP_WORKER_THREADS = 8;
-
+    
     private final NacosDnsProperties properties;
     private final NacosDnsQueryHandler queryHandler;
-
+    
     /** Dedicated listener threads (non-daemon, short-lived). */
     private Thread udpListenerThread;
     private Thread tcpListenerThread;
-
+    
     /** Separate worker pools: UDP queries and TCP connections don't starve each other. */
     private ExecutorService udpWorkerPool;
     private ExecutorService tcpWorkerPool;
-
+    
     private DatagramSocket udpSocket;
     private ServerSocket tcpSocket;
     private volatile boolean running = false;
-
+    
     /** Track active TCP connections to enforce limit. */
     private final AtomicInteger activeTcpConnections = new AtomicInteger(0);
-
+    
     public NacosDnsServer(NacosDnsProperties properties,
-            NacosDnsQueryHandler queryHandler) {
+        NacosDnsQueryHandler queryHandler) {
         this.properties = properties;
         this.queryHandler = queryHandler;
     }
-
+    
     /**
      * Start DNS server when application is ready.
      */
@@ -118,29 +118,29 @@ public class NacosDnsServer {
             LOGGER.info("Nacos DNS server is disabled.");
             return;
         }
-
+        
         udpWorkerPool = new ThreadPoolExecutor(
-                UDP_WORKER_THREADS, UDP_WORKER_THREADS,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(1024),
-                r -> {
-                    Thread t = new Thread(r, "nacos-dns-udp-worker");
-                    t.setDaemon(true);
-                    return t;
-                },
-                new ThreadPoolExecutor.AbortPolicy());
-
+            UDP_WORKER_THREADS, UDP_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(1024),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-udp-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
         tcpWorkerPool = new ThreadPoolExecutor(
-                TCP_WORKER_THREADS, TCP_WORKER_THREADS,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(256),
-                r -> {
-                    Thread t = new Thread(r, "nacos-dns-tcp-worker");
-                    t.setDaemon(true);
-                    return t;
-                },
-                new ThreadPoolExecutor.AbortPolicy());
-
+            TCP_WORKER_THREADS, TCP_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(256),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-tcp-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
         // Bind UDP first to get the actual port (supports port=0 for ephemeral)
         try {
             udpSocket = new DatagramSocket(properties.getPort());
@@ -149,7 +149,7 @@ public class NacosDnsServer {
             return;
         }
         int actualPort = udpSocket.getLocalPort();
-
+        
         // Bind TCP to the same port
         try {
             tcpSocket = new ServerSocket(actualPort);
@@ -160,21 +160,21 @@ public class NacosDnsServer {
             tcpWorkerPool.shutdownNow();
             return;
         }
-
+        
         running = true;
-
+        
         udpListenerThread = new Thread(this::startUdpListenerLoop, "nacos-dns-udp-listener");
         udpListenerThread.setDaemon(true);
         udpListenerThread.start();
-
+        
         tcpListenerThread = new Thread(this::startTcpListenerLoop, "nacos-dns-tcp-listener");
         tcpListenerThread.setDaemon(true);
         tcpListenerThread.start();
-
+        
         LOGGER.info("Nacos DNS server started on port {}, domain suffix: {}",
-                actualPort, properties.getDomainSuffix());
+            actualPort, properties.getDomainSuffix());
     }
-
+    
     /**
      * Stop DNS server.
      */
@@ -209,26 +209,26 @@ public class NacosDnsServer {
         }
         LOGGER.info("Nacos DNS server stopped.");
     }
-
+    
     /**
      * Start UDP listener loop (socket already bound in start()).
      */
     private void startUdpListenerLoop() {
         try {
             LOGGER.info("DNS UDP server listening on port {}", udpSocket.getLocalPort());
-
+            
             while (running) {
                 byte[] recvBuf = new byte[UDP_RECEIVE_BUFFER_SIZE];
                 DatagramPacket packet = new DatagramPacket(recvBuf, recvBuf.length);
                 udpSocket.receive(packet);
-
+                
                 // Defensive copy: extract only received bytes to avoid buffer race
                 InetAddress clientAddr = packet.getAddress();
                 int clientPort = packet.getPort();
                 int dataLen = packet.getLength();
                 byte[] queryData = new byte[dataLen];
                 System.arraycopy(packet.getData(), packet.getOffset(), queryData, 0, dataLen);
-
+                
                 try {
                     udpWorkerPool.submit(() -> handleUdpQuery(queryData, clientAddr, clientPort));
                 } catch (Exception e) {
@@ -241,7 +241,7 @@ public class NacosDnsServer {
             }
         }
     }
-
+    
     /**
      * Handle a single UDP DNS query.
      */
@@ -249,7 +249,7 @@ public class NacosDnsServer {
         try {
             Message query = new Message(queryData);
             Message response = queryHandler.handleQuery(query);
-
+            
             byte[] responseData = response.toWire();
             // Truncate if response exceeds standard UDP size to prevent amplification
             if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
@@ -260,15 +260,16 @@ public class NacosDnsServer {
                     responseData = buildTruncatedResponse(query);
                 }
             }
-
+            
             synchronized (udpSocket) {
-                udpSocket.send(new DatagramPacket(responseData, responseData.length, clientAddr, clientPort));
+                udpSocket.send(
+                    new DatagramPacket(responseData, responseData.length, clientAddr, clientPort));
             }
         } catch (Exception e) {
             LOGGER.debug("Error handling UDP DNS query from {}:{}", clientAddr, clientPort, e);
         }
     }
-
+    
     /**
      * Build a minimal truncated response (header + question only).
      */
@@ -280,25 +281,25 @@ public class NacosDnsServer {
         truncated.addRecord(query.getQuestion(), Section.QUESTION);
         return truncated.toWire();
     }
-
+    
     /**
      * Start TCP listener loop (socket already bound in start()).
      */
     private void startTcpListenerLoop() {
         try {
             LOGGER.info("DNS TCP server listening on port {}", tcpSocket.getLocalPort());
-
+            
             while (running) {
                 Socket clientSocket = tcpSocket.accept();
-
+                
                 // Enforce connection limit
                 if (activeTcpConnections.get() >= MAX_TCP_CONNECTIONS) {
                     LOGGER.warn("Too many TCP connections ({}), rejecting {}",
-                            activeTcpConnections.get(), clientSocket.getRemoteSocketAddress());
+                        activeTcpConnections.get(), clientSocket.getRemoteSocketAddress());
                     clientSocket.close();
                     continue;
                 }
-
+                
                 activeTcpConnections.incrementAndGet();
                 try {
                     tcpWorkerPool.submit(() -> {
@@ -306,7 +307,7 @@ public class NacosDnsServer {
                             handleTcpConnection(clientSocket);
                         } catch (Exception e) {
                             LOGGER.debug("Error handling TCP DNS query from {}",
-                                    clientSocket.getRemoteSocketAddress(), e);
+                                clientSocket.getRemoteSocketAddress(), e);
                         } finally {
                             activeTcpConnections.decrementAndGet();
                             try {
@@ -324,11 +325,12 @@ public class NacosDnsServer {
             }
         } catch (IOException e) {
             if (running) {
-                LOGGER.error("Failed to start TCP DNS server on port {}", tcpSocket.getLocalPort(), e);
+                LOGGER.error("Failed to start TCP DNS server on port {}", tcpSocket.getLocalPort(),
+                    e);
             }
         }
     }
-
+    
     /**
      * Handle a TCP DNS connection.
      *
@@ -338,12 +340,12 @@ public class NacosDnsServer {
      */
     private void handleTcpConnection(Socket clientSocket) throws IOException {
         clientSocket.setTcpNoDelay(true);
-
+        
         DataInputStream in = new DataInputStream(clientSocket.getInputStream());
         DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-
+        
         long deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
-
+        
         while (running) {
             try {
                 // Read 2-byte length prefix
@@ -355,12 +357,12 @@ public class NacosDnsServer {
                 if (b1 < 0) {
                     break;
                 }
-
+                
                 int length = (b0 << 8) | b1;
                 if (length <= 0 || length > UDP_RECEIVE_BUFFER_SIZE) {
                     break;
                 }
-
+                
                 // Read message body within remaining deadline
                 byte[] queryData = new byte[length];
                 int totalRead = 0;
@@ -377,17 +379,17 @@ public class NacosDnsServer {
                 if (totalRead < length) {
                     break;
                 }
-
+                
                 Message query = new Message(queryData);
                 Message response = queryHandler.handleQuery(query);
-
+                
                 byte[] responseData = response.toWire();
                 synchronized (out) {
                     out.writeShort(responseData.length);
                     out.write(responseData);
                     out.flush();
                 }
-
+                
                 // Reset idle deadline only after a complete message (RFC 7766)
                 deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
             } catch (java.net.SocketTimeoutException e) {
@@ -395,7 +397,7 @@ public class NacosDnsServer {
             }
         }
     }
-
+    
     /**
      * Check remaining time until deadline and configure socket timeout.
      *
@@ -409,14 +411,14 @@ public class NacosDnsServer {
         socket.setSoTimeout((int) Math.min(remaining, Integer.MAX_VALUE));
         return remaining;
     }
-
+    
     /**
      * Read one byte, respecting the absolute deadline.
      *
      * @return the byte read (0-255), or -1 on EOF/deadline expiry
      */
     private int readByteWithDeadline(DataInputStream in, Socket socket, long deadline)
-            throws IOException {
+        throws IOException {
         if (checkDeadline(socket, deadline) < 0) {
             return -1;
         }
@@ -426,7 +428,7 @@ public class NacosDnsServer {
         }
         return b;
     }
-
+    
     public boolean isRunning() {
         return running;
     }

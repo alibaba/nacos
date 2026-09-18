@@ -52,21 +52,21 @@ import java.util.stream.Collectors;
  */
 @Component
 public class NacosDnsQueryHandler {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosDnsQueryHandler.class);
-
+    
     /** Maximum number of answer records to include in a response. */
     private static final int MAX_ANSWER_RECORDS = 20;
-
+    
     private final InstanceOperatorClientImpl instanceOperator;
     private final NacosDnsProperties properties;
-
+    
     public NacosDnsQueryHandler(InstanceOperatorClientImpl instanceOperator,
-            NacosDnsProperties properties) {
+        NacosDnsProperties properties) {
         this.instanceOperator = instanceOperator;
         this.properties = properties;
     }
-
+    
     /**
      * Handle a DNS query message and return the response message.
      *
@@ -77,58 +77,58 @@ public class NacosDnsQueryHandler {
         Message response = new Message(query.getHeader().getID());
         response.getHeader().setFlag(Flags.QR);
         response.getHeader().setFlag(Flags.RA);
-
+        
         Record question = query.getQuestion();
         if (question == null) {
             response.getHeader().setRcode(Rcode.FORMERR);
             return response;
         }
-
+        
         // Only answer IN class queries
         if (question.getDClass() != DClass.IN) {
             response.getHeader().setRcode(Rcode.REFUSED);
             return response;
         }
-
+        
         String domain = question.getName().toString(true);
         int type = question.getType();
-
+        
         LOGGER.debug("DNS query: domain={}, type={}", domain, Type.string(type));
-
+        
         // Only support A record and AAAA record for now
         if (type != Type.A && type != Type.AAAA) {
             response.getHeader().setRcode(Rcode.NOTIMP);
             return response;
         }
-
+        
         // Parse domain and look up service
         List<InetAddress> addresses = resolveToAddresses(domain);
-
+        
         if (addresses == null || addresses.isEmpty()) {
             response.getHeader().setRcode(Rcode.NXDOMAIN);
             return response;
         }
-
+        
         // Filter addresses by requested record type first, then shuffle and limit.
         // This ensures mixed IPv4/IPv6 deployments don't return empty answers.
         List<InetAddress> matching = addresses.stream()
-                .filter(addr -> (type == Type.A && addr.getAddress().length == 4)
-                        || (type == Type.AAAA && addr.getAddress().length == 16))
-                .collect(Collectors.toList());
-
+            .filter(addr -> (type == Type.A && addr.getAddress().length == 4)
+                || (type == Type.AAAA && addr.getAddress().length == 16))
+            .collect(Collectors.toList());
+        
         if (matching.isEmpty()) {
             response.getHeader().setRcode(Rcode.NOERROR);
             response.addRecord(question, Section.QUESTION);
             return response;
         }
-
+        
         // Shuffle matching addresses for basic round-robin, then cap at MAX_ANSWER_RECORDS
         Collections.shuffle(matching);
         int limit = Math.min(matching.size(), MAX_ANSWER_RECORDS);
-
+        
         // Add question section
         response.addRecord(question, Section.QUESTION);
-
+        
         // Add answer records
         Name queryName = question.getName();
         for (int i = 0; i < limit; i++) {
@@ -141,10 +141,10 @@ public class NacosDnsQueryHandler {
             }
             response.addRecord(record, Section.ANSWER);
         }
-
+        
         return response;
     }
-
+    
     /**
      * Resolve a domain name to a list of IP addresses from Nacos service instances.
      */
@@ -153,22 +153,22 @@ public class NacosDnsQueryHandler {
         if (domain.endsWith(".")) {
             domain = domain.substring(0, domain.length() - 1);
         }
-
+        
         // Check domain suffix
         String suffix = "." + properties.getDomainSuffix();
         if (!domain.endsWith(suffix)) {
             LOGGER.debug("Domain {} does not match suffix {}", domain, suffix);
             return null;
         }
-
+        
         // Strip suffix
         String servicePart = domain.substring(0, domain.length() - suffix.length());
-
+        
         // Parse service name and group
         String[] parts = servicePart.split("\\.");
         String serviceName;
         String groupName;
-
+        
         if (parts.length == 1) {
             serviceName = parts[0];
             groupName = properties.getDefaultGroup();
@@ -179,33 +179,33 @@ public class NacosDnsQueryHandler {
             LOGGER.debug("Invalid domain format: {}", domain);
             return null;
         }
-
+        
         LOGGER.debug("Resolving service: serviceName={}, groupName={}, namespace={}",
-                serviceName, groupName, properties.getNamespace());
-
+            serviceName, groupName, properties.getNamespace());
+        
         // Query Nacos for healthy instances
         try {
             ServiceInfo serviceInfo = instanceOperator.listInstance(
-                    properties.getNamespace(), groupName, serviceName,
-                    null, null, true);
-
+                properties.getNamespace(), groupName, serviceName,
+                null, null, true);
+            
             if (serviceInfo == null || serviceInfo.getHosts() == null) {
                 return null;
             }
-
+            
             return serviceInfo.getHosts().stream()
-                    .filter(Instance::isEnabled)
-                    .filter(Instance::isHealthy)
-                    .map(inst -> parseIpAddress(inst.getIp()))
-                    .filter(addr -> addr != null)
-                    .collect(Collectors.toList());
-
+                .filter(Instance::isEnabled)
+                .filter(Instance::isHealthy)
+                .map(inst -> parseIpAddress(inst.getIp()))
+                .filter(addr -> addr != null)
+                .collect(Collectors.toList());
+            
         } catch (Exception e) {
             LOGGER.error("Failed to query Nacos service: {}/{}", groupName, serviceName, e);
             return null;
         }
     }
-
+    
     /**
      * Parse an IP string into InetAddress without performing a DNS lookup.
      */
