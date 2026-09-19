@@ -145,7 +145,7 @@ jobs:
           else
             echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO_B }}" >> $GITHUB_ENV
           fi
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: Deploy nacos
         with:
           yamlString: |
@@ -204,7 +204,7 @@ jobs:
             echo "CODE_PATH=java/auth" >> $GITHUB_ENV
             echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
           fi
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: java e2e test
         with:
           yamlString: |
@@ -254,7 +254,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: go e2e test
         with:
           yamlString: |
@@ -305,7 +305,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: cpp e2e test
         with:
           yamlString: |
@@ -360,7 +360,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: csharp e2e test
         with:
           yamlString: |
@@ -413,7 +413,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: nodejs e2e test
         with:
           yamlString: |
@@ -464,7 +464,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: python e2e test
         with:
           yamlString: |
@@ -518,7 +518,7 @@ jobs:
         mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: apache/rocketmq-test-tool@java-dev
+      - uses: apache/rocketmq-test-tool@8089a997c62018d98cd00694442e6fd8354bd4ef # pins java-dev
         name: clean
         with:
           yamlString: |
