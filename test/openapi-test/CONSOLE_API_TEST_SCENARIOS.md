@@ -198,7 +198,7 @@ CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证
 | Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
 | No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
 | Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
-| CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+| CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
 C11 repeats the complete AI Console class set against the final artifact's
 independent Console deployment. Agent Runtime assertions require enabled/healthy
 and absence of the removed state field. These executions do not change the

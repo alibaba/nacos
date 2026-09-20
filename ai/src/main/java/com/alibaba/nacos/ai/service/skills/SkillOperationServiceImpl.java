@@ -1677,57 +1677,65 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Refresh only the display metadata, re-resolving the version on every CAS attempt.
+     * Best-effort refresh of display metadata, re-resolving the version on every CAS attempt.
      * Content writes pass their version so editing a draft never reloads an unchanged latest.
      * Historical descriptors have no frontmatter and are deliberately not repaired from storage.
+     * A refresh failure must not override an already completed lifecycle operation.
      */
-    private void refreshFrontMatter(String namespaceId, String name, String changedVersion)
-        throws NacosException {
-        for (int attempt = 0; attempt < AiResourceConstants.MAX_WORKING_VERSION_RETRY; attempt++) {
-            AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
-            if (meta == null) {
-                return;
-            }
-            String displayVersion = resolveDisplayVersion(meta);
-            Map<String, Object> ext = parseMetadata(meta.getExt());
-            if (changedVersion != null && !changedVersion.equals(displayVersion)) {
-                return;
-            }
-            if (changedVersion == null && displayVersion != null
-                && displayVersion.equals(ext.get(FRONT_MATTER_VERSION))) {
-                return;
-            }
-            Map<String, String> frontMatter = null;
-            if (StringUtils.isNotBlank(displayVersion)) {
-                AiResourceVersion version = resourceManager.findVersion(namespaceId, name,
-                    RESOURCE_TYPE_SKILL, displayVersion);
-                if (version != null) {
-                    frontMatter = readFrontMatter(parseMetadata(version.getStorage()));
+    private void refreshFrontMatter(String namespaceId, String name, String changedVersion) {
+        try {
+            for (int attempt =
+                0; attempt < AiResourceConstants.MAX_WORKING_VERSION_RETRY; attempt++) {
+                AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
+                if (meta == null) {
+                    return;
+                }
+                String displayVersion = resolveDisplayVersion(meta);
+                Map<String, Object> ext = parseMetadata(meta.getExt());
+                if (changedVersion != null && !changedVersion.equals(displayVersion)) {
+                    return;
+                }
+                if (changedVersion == null && displayVersion != null
+                    && displayVersion.equals(ext.get(FRONT_MATTER_VERSION))) {
+                    return;
+                }
+                Map<String, String> frontMatter = null;
+                if (StringUtils.isNotBlank(displayVersion)) {
+                    AiResourceVersion version = resourceManager.findVersion(namespaceId, name,
+                        RESOURCE_TYPE_SKILL, displayVersion);
+                    if (version != null) {
+                        frontMatter = readFrontMatter(parseMetadata(version.getStorage()));
+                    }
+                }
+                Map<String, Object> updatedExt = new LinkedHashMap<>(ext);
+                updatedExt.remove(FRONT_MATTER);
+                updatedExt.remove(FRONT_MATTER_VERSION);
+                if (frontMatter != null) {
+                    updatedExt.put(FRONT_MATTER, frontMatter);
+                    updatedExt.put(FRONT_MATTER_VERSION, displayVersion);
+                }
+                if (ext.equals(updatedExt)) {
+                    return;
+                }
+                AiResource update = new AiResource();
+                update.setStatus(meta.getStatus());
+                update.setDesc(meta.getDesc());
+                update.setBizTags(meta.getBizTags());
+                update.setVersionInfo(meta.getVersionInfo());
+                update.setExt(updatedExt.isEmpty() ? null : JacksonUtils.toJson(updatedExt));
+                if (meta.getMetaVersion() != null
+                    && aiResourcePersistService.updateMetaCas(namespaceId, name,
+                        RESOURCE_TYPE_SKILL, meta.getMetaVersion(), update)) {
+                    return;
                 }
             }
-            Map<String, Object> updatedExt = new LinkedHashMap<>(ext);
-            updatedExt.remove(FRONT_MATTER);
-            updatedExt.remove(FRONT_MATTER_VERSION);
-            if (frontMatter != null) {
-                updatedExt.put(FRONT_MATTER, frontMatter);
-                updatedExt.put(FRONT_MATTER_VERSION, displayVersion);
-            }
-            if (ext.equals(updatedExt)) {
-                return;
-            }
-            AiResource update = new AiResource();
-            update.setStatus(meta.getStatus());
-            update.setDesc(meta.getDesc());
-            update.setBizTags(meta.getBizTags());
-            update.setVersionInfo(meta.getVersionInfo());
-            update.setExt(updatedExt.isEmpty() ? null : JacksonUtils.toJson(updatedExt));
-            if (meta.getMetaVersion() != null && aiResourcePersistService.updateMetaCas(namespaceId,
-                name, RESOURCE_TYPE_SKILL, meta.getMetaVersion(), update)) {
-                return;
-            }
+            LOGGER.warn("Failed to refresh Skill frontmatter snapshot for namespace [{}], "
+                + "skill [{}] after {} CAS retries", namespaceId, name,
+                AiResourceConstants.MAX_WORKING_VERSION_RETRY);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh Skill frontmatter snapshot for namespace [{}], "
+                + "skill [{}]: {}", namespaceId, name, e.getMessage());
         }
-        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
-            "Skill frontmatter update conflict, retry");
     }
     
     private static String resolveDisplayVersion(AiResource meta) {

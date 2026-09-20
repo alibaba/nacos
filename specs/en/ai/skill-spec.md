@@ -223,8 +223,9 @@ refresh that snapshot from version metadata, without reading package files.
 Unchanged display snapshots are reused during edits of another version.
 
 Snapshot writes use metadata CAS. Conflicts must restart version selection and
-metadata loading from the current resource row; retry exhaustion is reported
-as a resource conflict. Lists and metadata detail queries compare
+metadata loading from the current resource row. Snapshot refresh is best-effort:
+retry exhaustion or refresh failure is logged and must not fail an already
+completed lifecycle operation. Lists and metadata detail queries compare
 `frontMatterVersion` with the display version from the same row and return null
 on a mismatch, without querying version rows or storage for frontmatter.
 

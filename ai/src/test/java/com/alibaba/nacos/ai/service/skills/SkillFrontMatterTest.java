@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
@@ -28,9 +29,7 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
@@ -58,7 +57,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -317,18 +315,20 @@ class SkillFrontMatterTest {
     }
     
     @Test
-    void exhaustedCacheRetriesAreReportedAndLifecycleRetryRepairsSnapshot() throws Exception {
+    void exhaustedCacheRetriesDoNotFailCompletedLifecycleOperation() throws Exception {
         create("one", "1.0.0", "First");
         service.forcePublish("public", "one", "1.0.0", true);
         service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
         service.updateDraft("public", skill("one", "Second"), null);
         rejectCache = true;
-        NacosApiException failure = assertThrows(NacosApiException.class,
-            () -> service.forcePublish("public", "one", "2.0.0", true));
-        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), failure.getDetailErrCode());
+        service.forcePublish("public", "one", "2.0.0", true);
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE,
+            versions.get(key("one", "2.0.0")).getStatus());
+        assertTrue(resources.get("one").getVersionInfo().contains("\"latest\":\"2.0.0\""));
         assertNull(summary("one").getFrontMatter());
         rejectCache = false;
-        service.publish("public", "one", "2.0.0", true);
+        service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
+        service.changeOnlineStatus("public", "one", "version", "2.0.0", true);
         assertEquals("Second", summary("one").getFrontMatter().get("alias"));
     }
     

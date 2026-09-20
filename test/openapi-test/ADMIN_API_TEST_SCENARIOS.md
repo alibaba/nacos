@@ -182,7 +182,7 @@ JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 ena
 | Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
 | No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
 | Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
-| CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+| CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
 C11 migration regression uses an isolated released 3.2.4 SDK for historical-wire
 mutations and the current SDK for RAD admission/terminal assertions. ARD reads in
 `A2aMigrationAdminApiOpenApiITCase` use the explicit Client identity. Normal Admin,
