@@ -332,6 +332,20 @@ class AiGrpcClientAgentTest {
     }
     
     @Test
+    void responseLossKeepsGrpcPublicationRedoPending() throws Exception {
+        support(AbilityKey.SERVER_RAD_V1);
+        AgentEndpointRegistrationBatch batch = registrationBatch("http://one/a");
+        NacosException failure =
+            new NacosException(NacosException.HTTP_CLIENT_ERROR_CODE, "response lost");
+        when(rpcClient.request(any(AgentEndpointRegisterRpcRequest.class))).thenThrow(failure);
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> client.registerAgentEndpoints("public", batch)));
+        verify(redoService).cacheAgentEndpointPublication("public", batch);
+        verify(redoService, never()).discardAgentEndpointPublication(PUBLICATION_KEY);
+        verify(redoService, never()).agentEndpointPublicationRegistered(PUBLICATION_KEY);
+    }
+    
+    @Test
     void nonRetryableInitialFailureDiscardsAndRetryableFailureKeepsRedoIntent()
         throws Exception {
         support(AbilityKey.SERVER_RAD_V1);

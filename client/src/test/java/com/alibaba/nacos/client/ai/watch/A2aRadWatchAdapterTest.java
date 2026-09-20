@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -49,15 +50,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -383,6 +387,65 @@ class A2aRadWatchAdapterTest {
         AgentDiscoveryRequest request = A2aRadConverter.discoveryRequest("public", "demo", null);
         assertNotNull(manager.subscribe(request.getReference(), request.getFilter(),
             mock(AbstractNacosAgentDiscoveryListener.class)));
+    }
+    
+    @Test
+    void shutdownContinuesAfterCleanupFailureAndLateEventsCannotReachListeners() throws Exception {
+        AgentWatchManager shared = mock(AgentWatchManager.class);
+        A2aRadWatchAdapter isolated = new A2aRadWatchAdapter("public", shared);
+        when(shared.subscribe(any(), any(), any())).thenReturn(snapshot("URL"));
+        CardListener first = new CardListener();
+        CardListener second = new CardListener();
+        isolated.subscribe("demo", null, first);
+        isolated.subscribe("demo", null, second);
+        ArgumentCaptor<AbstractNacosAgentDiscoveryListener> bridges =
+            ArgumentCaptor.forClass(AbstractNacosAgentDiscoveryListener.class);
+        verify(shared, times(2)).subscribe(any(), any(), bridges.capture());
+        doThrow(new NacosException(500, "cleanup failure"))
+            .doNothing().when(shared).unsubscribe(any(), any(), any());
+        isolated.shutdown();
+        verify(shared, times(2)).unsubscribe(any(), any(), any());
+        for (AbstractNacosAgentDiscoveryListener bridge : bridges.getAllValues()) {
+            bridge.onEvent(
+                new NacosAgentDiscoveryEvent(snapshot("URL")));
+        }
+        assertTrue(first.cards.isEmpty());
+        assertTrue(second.cards.isEmpty());
+        verify(shared, never()).shutdown();
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void failedActivationCannotRemoveAReplacementListener(boolean resubscribe) throws Exception {
+        AgentWatchManager shared = mock(AgentWatchManager.class);
+        A2aRadWatchAdapter isolated = new A2aRadWatchAdapter("public", shared);
+        CardListener listener = new CardListener();
+        AtomicInteger calls =
+            new AtomicInteger();
+        when(shared.subscribe(any(), any(), any())).thenAnswer(call -> {
+            if (calls.incrementAndGet() == 1) {
+                isolated.unsubscribe("demo", null, listener);
+                if (resubscribe) {
+                    isolated.subscribe("demo", null, listener);
+                }
+                throw new NacosException(500, "late activation failure");
+            }
+            return snapshot("URL");
+        });
+        try {
+            assertEquals(500, assertThrows(NacosException.class,
+                () -> isolated.subscribe("demo", null, listener)).getErrCode());
+            if (resubscribe) {
+                isolated.subscribe("demo", null, listener);
+                ArgumentCaptor<AbstractNacosAgentDiscoveryListener> bridges =
+                    ArgumentCaptor.forClass(AbstractNacosAgentDiscoveryListener.class);
+                verify(shared, times(3)).subscribe(any(), any(), bridges.capture());
+                assertSame(bridges.getAllValues().get(1),
+                    bridges.getAllValues().get(2));
+            }
+        } finally {
+            isolated.shutdown();
+        }
     }
     
     private void refresh() {

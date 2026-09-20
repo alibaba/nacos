@@ -292,6 +292,23 @@ class HttpAgentWatchTransportTest {
     }
     
     @Test
+    void capacityRejectionWithoutPendingAdditionFallsBackWithoutDroppingAcknowledgedWatch()
+        throws Exception {
+        TestCallback callback = new TestCallback();
+        TestLifecycleListener lifecycle = new TestLifecycleListener();
+        transport.setLifecycleListener(lifecycle);
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
+        requestExecutor.runUntilRequests(client, 1, 10);
+        client.failure = new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "capacity changed");
+        requestExecutor.runUntilRequests(client, 2, 10);
+        assertEquals(1, lifecycle.unavailable);
+        assertEquals(0, callback.unavailable);
+        assertNull(retryTask.get());
+        assertFalse(transport.isAvailable());
+    }
+    
+    @Test
     void capacityRejectsOnlyLatestAdditionAndKeepsExistingBatchAvailable() throws Exception {
         TestCallback first = new TestCallback();
         TestCallback rejected = new TestCallback();

@@ -107,6 +107,20 @@ class EndpointCanonicalizerTest {
     }
     
     @Test
+    void shouldRejectNullPriorityAndWeightInsteadOfSilentlyDefaulting() {
+        Endpoint source = endpoint("https://example.com/a", "HTTP");
+        source.setPriority(null);
+        assertEquals("Endpoint priority must not be null",
+            assertThrows(IllegalArgumentException.class,
+                () -> EndpointCanonicalizer.canonicalize(source)).getMessage());
+        source.setPriority(0);
+        source.setWeight(null);
+        assertEquals("Endpoint weight must not be null",
+            assertThrows(IllegalArgumentException.class,
+                () -> EndpointCanonicalizer.canonicalize(source)).getMessage());
+    }
+    
+    @Test
     void shouldDeepCopyRuntimeBindingsAndManagementState() {
         Endpoint source = endpoint("HTTPS://Example.COM/a", "JSONRPC");
         RuntimeVersionBinding binding = new RuntimeVersionBinding();

@@ -1244,6 +1244,66 @@ class AgentWatchManagerTest {
         assertTrue(callbacks.isEmpty());
     }
     
+    @Test
+    void currentNotificationAndMembershipRespectAbsentPendingAndClosedIntents() throws Exception {
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        AgentDiscoveryRequest request = new AgentDiscoveryRequest();
+        request.setNamespaceId("public");
+        request.setReference(reference);
+        assertFalse(manager.containsListener(request, listener));
+        manager.notifyCurrent(reference, null, listener);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(null);
+        assertNull(manager.subscribe(reference, null, listener));
+        assertTrue(manager.containsListener(request, listener));
+        assertFalse(manager.containsListener(request, new TestListener(null)));
+        int queued = callbacks.size();
+        manager.notifyCurrent(reference, null, listener);
+        assertEquals(queued, callbacks.size());
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(1, listener.events.size());
+        assertNull(listener.events.get(0).getAgentDiscoveryResult());
+        manager.shutdown();
+        assertFalse(manager.containsListener(request, listener));
+        manager.notifyCurrent(reference, null, listener);
+        assertTrue(callbacks.isEmpty());
+    }
+    
+    @Test
+    void initialMigrationRejectionDoesNotCreatePendingRetryOrCallback() throws Exception {
+        NacosException failure = new NacosException(50105, "migration");
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenThrow(failure);
+        assertEquals(50105, assertThrows(NacosException.class,
+            () -> manager.subscribe(reference("agent-a"), null, new TestListener(null)))
+            .getErrCode());
+        assertEquals(0, manager.intentCount());
+        assertTrue(scheduled.isEmpty());
+        assertTrue(callbacks.isEmpty());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {50105, NacosException.NO_RIGHT, NacosException.OVER_THRESHOLD,
+        NacosException.CLIENT_OVER_THRESHOLD, NacosException.INVALID_PARAM,
+        NacosException.CLIENT_INVALID_PARAM})
+    void terminalRejectionDuringRefreshTerminatesWatchInsteadOfRetrying(int code) throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A))
+            .thenThrow(new NacosException(code, "terminal rejection"));
+        TestListener listener = new TestListener(null);
+        manager.subscribe(reference("agent-a"), null, listener);
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "different", false);
+        scheduled.remove(0).run();
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(0, manager.intentCount());
+        assertEquals(1, listener.events.size());
+        assertEquals(Integer.valueOf(code), listener.events.get(0).getErrorCode());
+        assertTrue(scheduled.isEmpty());
+    }
+    
     private void runScheduled(int index) {
         scheduled.get(index).run();
     }

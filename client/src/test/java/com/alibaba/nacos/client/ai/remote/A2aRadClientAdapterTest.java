@@ -16,6 +16,13 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
+import java.util.Collections;
+import java.util.Arrays;
+import com.alibaba.nacos.client.ai.utils.A2aRadConverter;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
@@ -89,6 +96,32 @@ class A2aRadClientAdapterTest {
         assertThrows(NacosException.class, () -> adapter.getAgentCard("", null, null));
         assertThrows(NacosException.class, () -> adapter.releaseAgentCard(null, null, false));
         verifyNoInteractions(proxy);
+    }
+    
+    @Test
+    void successfulDiscoveryProjectsCardUsingExactlyOneRead() throws Exception {
+        AgentDiscoveryResult result =
+            new AgentDiscoveryResult();
+        result.setNamespaceId("public");
+        result.setAgentName("demo");
+        result.setVersion("1.0.0");
+        AgentPublishRequest published = A2aRadConverter
+            .publishRequest("public", card(), "URL", false);
+        AgentCallInterface call =
+            published.getCallInterfaces().get(0);
+        EndpointSet runtime =
+            new EndpointSet();
+        runtime.setSource(EndpointSource.RUNTIME);
+        call.setEndpointSets(Arrays.asList(call.getEndpointSets().get(0), runtime));
+        result.setCallInterfaces(Collections.singletonList(call));
+        when(proxy.discoverAgent(any())).thenReturn(result);
+        assertEquals("https://example.com/rpc",
+            adapter.getAgentCard("demo", "1.0.0", null).getUrl());
+        ArgumentCaptor<AgentDiscoveryRequest> query =
+            ArgumentCaptor.forClass(AgentDiscoveryRequest.class);
+        verify(proxy).discoverAgent(query.capture());
+        assertEquals("1.0.0", query.getValue().getReference().getVersion());
+        verifyNoMoreInteractions(proxy);
     }
     
     private AgentCard card() {

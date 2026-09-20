@@ -437,6 +437,17 @@ class RpcClientTest {
     }
     
     @Test
+    void testOrdinaryRequestWithZeroTimeoutStillMakesAnAttempt() throws Exception {
+        rpcClient.currentConnection = connection;
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        HealthCheckResponse expected = new HealthCheckResponse();
+        when(connection.request(any(), eq(0L))).thenReturn(expected);
+        org.junit.jupiter.api.Assertions.assertSame(expected,
+            rpcClient.request(new HealthCheckRequest(), 0L));
+        verify(connection).request(any(), eq(0L));
+    }
+    
+    @Test
     void testRequestWithoutAnyTry() throws NacosException {
         assertThrows(NacosException.class, () -> {
             when(rpcClientConfig.retryTimes()).thenReturn(-1);

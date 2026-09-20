@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -212,6 +213,58 @@ class AiCapabilityCacheTest {
         } finally {
             release.countDown();
             executor.shutdownNow();
+        }
+    }
+    
+    @Test
+    void unexpectedLoaderFailurePreservesCauseAndAllowsNextAttempt() throws Exception {
+        AiCapabilityCache cache = new AiCapabilityCache();
+        IllegalStateException cause = new IllegalStateException("loader failed");
+        NacosException failure = assertThrows(NacosException.class,
+            () -> cache.get("target", identity, () -> {
+                throw cause;
+            }));
+        assertEquals(NacosException.SERVER_ERROR, failure.getErrCode());
+        assertSame(cause, failure.getCause());
+        assertSame(AiCapabilitySnapshot.unknown(),
+            cache.get("target", identity, AiCapabilitySnapshot::unknown));
+        cache.close();
+    }
+    
+    @Test
+    void waiterTimeoutDoesNotCancelOwnerOrCacheItsFailure() throws Exception {
+        AiCapabilityCache cache = new AiCapabilityCache();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        try {
+            Future<AiCapabilitySnapshot> owner = executor.submit(() -> cache.get("target", identity,
+                () -> {
+                    started.countDown();
+                    try {
+                        assertTrue(release.await(30, TimeUnit.SECONDS));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new NacosException(NacosException.SERVER_ERROR, e);
+                    }
+                    return AiCapabilitySnapshot.unknown();
+                }));
+            assertTrue(started.await(5, TimeUnit.SECONDS));
+            NacosException failure = assertThrows(NacosException.class,
+                () -> cache.get("target", identity, () -> {
+                    throw new AssertionError("Waiter must share the original load");
+                }));
+            assertEquals(NacosException.SERVER_ERROR, failure.getErrCode());
+            assertTrue(failure.getCause() instanceof TimeoutException);
+            release.countDown();
+            assertSame(AiCapabilitySnapshot.unknown(), owner.get(5, TimeUnit.SECONDS));
+            assertSame(AiCapabilitySnapshot.unknown(), cache.get("target", identity, () -> {
+                throw new AssertionError("Successful owner result must remain cached");
+            }));
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            cache.close();
         }
     }
     

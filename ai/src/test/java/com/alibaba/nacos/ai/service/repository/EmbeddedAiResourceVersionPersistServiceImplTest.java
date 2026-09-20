@@ -180,12 +180,13 @@ class EmbeddedAiResourceVersionPersistServiceImplTest {
     }
     
     @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
     @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
-    void updateContentShouldUseOrdinaryEmbeddedUpdate(boolean success) {
+    void updateContentShouldUseOrdinaryEmbeddedUpdate(Boolean success) {
         when(databaseOperate.queryOne(anyString(), any(Object[].class),
             eq(AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER))).thenReturn(newVersion());
         when(databaseOperate.blockUpdate()).thenReturn(success);
-        assertEquals(success ? 1 : 0,
+        assertEquals(Boolean.TRUE.equals(success) ? 1 : 0,
             service.updateContent("public", "agent", "agent", "1.0.0", "{}", "desc", "writer"));
         Mockito.verify(databaseOperate).blockUpdate();
     }

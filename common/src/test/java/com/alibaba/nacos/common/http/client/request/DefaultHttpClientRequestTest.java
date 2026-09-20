@@ -127,6 +127,16 @@ class DefaultHttpClientRequestTest {
         assertEquals(response, getActualResponse(actual));
     }
     
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testNonRepeatableMarkerDoesNotCreateABodyForEmptyGet() throws Exception {
+        HttpUriRequestBase request = DefaultHttpClientRequest.build(uri, "GET",
+            new RequestHttpEntity(null, Header.newInstance(), Query.EMPTY, null, false),
+            defaultConfig);
+        org.junit.jupiter.api.Assertions.assertNull(request.getEntity());
+        assertEquals("GET", request.getMethod());
+    }
+    
     private SimpleHttpResponse getActualResponse(HttpClientResponse actual)
         throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("response");

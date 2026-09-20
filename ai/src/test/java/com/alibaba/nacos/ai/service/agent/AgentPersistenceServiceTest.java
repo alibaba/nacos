@@ -172,6 +172,19 @@ class AgentPersistenceServiceTest {
     }
     
     @Test
+    void testClientCreationRejectsExistingResourceEvenWhenMetadataMatches() throws Exception {
+        stubPrepare();
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(equivalentStoredResource());
+        NacosException failure = assertThrows(NacosException.class,
+            () -> service.createInitialDraftForPublication(agent, initialDraft));
+        assertEquals(NacosException.CONFLICT, failure.getErrCode());
+        verify(versionPersistService, never()).insert(any(AiResourceVersion.class));
+        verify(storageService, never()).save(any(PreparedAgentVersionWrite.class));
+        verify(resourcePersistService, never()).insert(any(AiResource.class));
+    }
+    
+    @Test
     void testClientCreationDoesNotAdoptConcurrentEquivalentVersion() throws Exception {
         stubPrepare();
         when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,

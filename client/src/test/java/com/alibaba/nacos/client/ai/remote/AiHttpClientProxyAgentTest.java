@@ -455,6 +455,19 @@ class AiHttpClientProxyAgentTest {
     }
     
     @Test
+    void watchMigrationRejectionIsPreservedWithoutRetry() throws Exception {
+        doReturn(error(409, Result.failure(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            "migration", "historical A2A"))).when(restTemplate)
+            .postForm(anyString(), any(HttpClientConfig.class), any(Header.class),
+                any(Map.class), eq(String.class));
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode().intValue(),
+            assertThrows(NacosException.class, () -> proxy.watchAgents(watchRequest(1L, 1000L)))
+                .getErrCode());
+        verify(restTemplate).postForm(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Map.class), eq(String.class));
+    }
+    
+    @Test
     void migrationDetailIsPreservedWithoutRetryingOtherServers() throws Exception {
         HttpRestResult<String> migrating = error(409, Result.failure(
             ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), "migration", "historical A2A"));

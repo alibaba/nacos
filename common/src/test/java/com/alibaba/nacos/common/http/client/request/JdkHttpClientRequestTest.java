@@ -34,6 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -67,6 +69,7 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -343,6 +346,23 @@ class JdkHttpClientRequestTest {
         } finally {
             server.stop(0);
         }
+    }
+    
+    @Test
+    void testNonRepeatableFileLengthIncludesMultipartFramingAndUtf8Bytes() throws Exception {
+        File file = tempDir.resolve("agent.txt").toFile();
+        byte[] content = "Agent 中文".getBytes(StandardCharsets.UTF_8);
+        Files.write(file.toPath(), content);
+        httpClientRequest.execute(uri, "POST", new RequestHttpEntity(null, Header.newInstance(),
+            Query.EMPTY, file, false));
+        ArgumentCaptor<byte[]> parts =
+            ArgumentCaptor.forClass(byte[].class);
+        verify(outputStream, times(3)).write(parts.capture());
+        long length = parts.getAllValues().stream().mapToLong(bytes -> bytes.length).sum();
+        verify(connection).setFixedLengthStreamingMode(length);
+        assertArrayEquals(content, parts.getAllValues().get(1));
+        verify(outputStream).flush();
+        verify(outputStream).close();
     }
     
     @Test

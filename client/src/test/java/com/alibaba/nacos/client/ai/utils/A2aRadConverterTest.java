@@ -227,6 +227,63 @@ class A2aRadConverterTest {
         assertNotFound(snapshot);
     }
     
+    @Test
+    void invalidDeclaredUriBecomesControlledPublicationError() {
+        AgentCard invalid = card();
+        invalid.setUrl("relative-path");
+        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+            () -> A2aRadConverter.publishRequest("public", invalid, null, false)).getErrCode());
+        assertEquals("relative-path", invalid.getUrl());
+    }
+    
+    @Test
+    void exactVersionAndNativeIdentityMustMatchDiscoveryEnvelope() throws Exception {
+        AgentDiscoveryResult result = snapshot("URL");
+        AgentDiscoveryRequest exact = request("2.0.0");
+        assertEquals(NacosException.NOT_FOUND, assertThrows(NacosException.class,
+            () -> A2aRadConverter.project(result, exact, null)).getErrCode());
+        AgentCard mismatch = card();
+        mismatch.setName("different");
+        result.getCallInterfaces().get(0).setNativeDescriptor(mismatch);
+        assertNotFound(result);
+    }
+    
+    @Test
+    void absentAndIncompleteInterfacesNeverFabricateACard() throws Exception {
+        AgentDiscoveryResult result = snapshot("URL");
+        result.setCallInterfaces(null);
+        assertNotFound(result);
+        AgentCallInterface other = new AgentCallInterface();
+        other.setProtocol("mcp");
+        result.setCallInterfaces(Arrays.asList(null, other));
+        assertNotFound(result);
+        AgentCallInterface valid = snapshot("URL").getCallInterfaces().get(0);
+        result.setCallInterfaces(Arrays.asList(null, other, valid));
+        assertEquals("demo", A2aRadConverter.project(result, request(null), null).getName());
+        EndpointSet declared = valid.getEndpointSets().get(0);
+        EndpointSet runtime = valid.getEndpointSets().get(1);
+        for (List<EndpointSet> invalid : Arrays.asList(null, Arrays.asList(null, runtime),
+            Arrays.asList(declared, null), Arrays.asList(declared, declared),
+            Arrays.asList(new EndpointSet(), runtime),
+            Arrays.asList(declared, new EndpointSet()))) {
+            valid.setEndpointSets(invalid);
+            assertNotFound(result);
+        }
+    }
+    
+    @Test
+    void absentRuntimeAddressesAndNullEntriesRetainDeclaredFallback() throws Exception {
+        AgentDiscoveryResult result = snapshot("SERVICE");
+        runtime(result).setEndpoints(null);
+        assertEquals("https://declared.example/rpc",
+            A2aRadConverter.project(result, request(null), null).getUrl());
+        Endpoint disabled = endpoint("https://disabled.example/rpc", "JSONRPC", 0);
+        disabled.setEnabled(false);
+        runtime(result).setEndpoints(Arrays.asList(null, disabled));
+        assertEquals("https://declared.example/rpc",
+            A2aRadConverter.project(result, request(null), null).getUrl());
+    }
+    
     private void assertNotFound(AgentDiscoveryResult snapshot) throws Exception {
         AgentDiscoveryRequest request = request(null);
         assertEquals(NacosException.NOT_FOUND, assertThrows(NacosException.class,

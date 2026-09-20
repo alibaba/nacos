@@ -134,6 +134,21 @@ class A2aAgentCardUtilsTest {
         assertThrows(NacosException.class, () -> A2aAgentCardUtils.validateAgentCard(card));
     }
     
+    @Test
+    void incompleteSupportedInterfacesWithoutLegacyFallbackAreRejected() {
+        AgentCard card = new AgentCard();
+        card.setName("demo");
+        card.setVersion("1.0.0");
+        for (AgentInterface invalid : Arrays.asList(null,
+            address(null, "HTTP+JSON", "1.0"), address("https://example.com", null, "1.0"),
+            address("https://example.com", "HTTP+JSON", null))) {
+            card.setSupportedInterfaces(Collections.singletonList(invalid));
+            assertThrows(NacosException.class, () -> A2aAgentCardUtils.validateAgentCard(card));
+        }
+        card.setSupportedInterfaces(Collections.emptyList());
+        assertThrows(NacosException.class, () -> A2aAgentCardUtils.validateAgentCard(card));
+    }
+    
     private AgentCard legacy() {
         AgentCard card = new AgentCard();
         card.setName("demo");

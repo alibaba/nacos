@@ -535,6 +535,33 @@ class AiHttpClientProxyTest {
         assertFalse(httpClientProxy.isOnlyServer("one:8848"));
     }
     
+    @ParameterizedTest
+    @ValueSource(strings = {"one:8848", "http://one:8848", "https://one:8848"})
+    void matchingSoleTargetAcceptsConfiguredScheme(String target) {
+        when(serverListManager.getServerList()).thenReturn(Collections.singletonList(target));
+        assertTrue(httpClientProxy.isOnlyServer("one:8848"));
+        assertFalse(httpClientProxy.isOnlyServer("other:8848"));
+    }
+    
+    @Test
+    void allCapabilityTargetsUnreachablePreservesLastFailureAndCanRecover() throws Exception {
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(serverListManager.getServerList()).thenReturn(Arrays.asList("one:8848", "two:8848"));
+        when(securityProxy.getIdentityContext(any())).thenReturn(Collections.emptyMap());
+        java.net.ConnectException first = new java.net.ConnectException("one refused");
+        java.net.ConnectException last = new java.net.ConnectException("two refused");
+        doThrow(first).doThrow(last).when(nacosRestTemplate).get(anyString(),
+            any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+        assertSame(last,
+            assertThrows(NacosException.class, httpClientProxy::getCapabilities).getCause());
+        verify(nacosRestTemplate, times(2)).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+        prepareCapabilityResponse(200, "{\"code\":0,\"data\":{\"schemaVersion\":1,"
+            + "\"capabilities\":{\"radV1\":true}}}");
+        assertEquals(AbilityStatus.SUPPORTED, httpClientProxy.getCapabilities().get("radV1"));
+    }
+    
     private void prepareCapabilityResponse(int status, String body) throws Exception {
         when(serverListManager.getContextPath()).thenReturn("/nacos");
         when(securityProxy.getIdentityContext(any()))

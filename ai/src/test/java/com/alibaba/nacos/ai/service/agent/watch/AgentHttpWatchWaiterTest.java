@@ -73,6 +73,21 @@ class AgentHttpWatchWaiterTest {
     }
     
     @Test
+    void missingProjectionInvalidatesOnlyItsOpaqueId() {
+        AtomicInteger cleanups = new AtomicInteger();
+        AgentWatchBatchItem missing = item("missing", "agent-a", "same");
+        AgentWatchBatchItem retained = item("retained", "agent-b", "same");
+        AgentHttpWatchWaiter waiter = waiter(Arrays.asList(missing, retained), cleanups);
+        Map<AgentProjectionKey, AgentProjectionState> states = Collections.singletonMap(
+            AgentProjectionKey.of(retained.getDiscoveryRequest()),
+            AgentProjectionState.available("same", Collections.emptySet(), 1L));
+        assertTrue(waiter.completeIfChanged(states));
+        assertEquals(Collections.singletonList("missing"),
+            result(waiter).getChangedClientWatchIds());
+        assertEquals(1, cleanups.get());
+    }
+    
+    @Test
     void testChangedResponseContainsOnlyOpaqueIdsAndCleansOnce() {
         AtomicInteger cleanups = new AtomicInteger();
         AgentWatchBatchItem first = item("first", "agent-a", "fingerprint-a");

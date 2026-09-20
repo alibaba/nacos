@@ -531,6 +531,38 @@ class DefaultVisibilityServiceTest {
     }
     
     @Test
+    void missingApiScopeUsesEnabledPluginAndExplicitIdentity() {
+        NacosAuthConfigHolder holder = mock(NacosAuthConfigHolder.class);
+        NacosAuthConfig config = mock(NacosAuthConfig.class);
+        when(holder.isAnyAuthEnabled()).thenReturn(true);
+        when(holder.getAllNacosAuthConfig())
+            .thenReturn(java.util.Collections.singletonList(config));
+        when(config.isAuthEnabled()).thenReturn(true);
+        when(config.getNacosAuthSystemType()).thenReturn("nacos");
+        AuthPluginManager plugins = mock(AuthPluginManager.class);
+        AbstractNacosAuthPluginService auth = mock(AbstractNacosAuthPluginService.class);
+        when(plugins.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.of(auth));
+        when(auth.validateAuthority(any(IdentityContext.class), any(Permission.class)))
+            .thenAnswer(invocation -> {
+                IdentityContext identity = invocation.getArgument(0);
+                NacosUser user = (NacosUser) identity.getParameter(AuthConstants.NACOS_USER_KEY);
+                assertEquals("reader", user.getUserName());
+                AuthResult result = new AuthResult();
+                result.setSuccess(true);
+                return result;
+            });
+        try (MockedStatic<NacosAuthConfigHolder> configs = mockStatic(NacosAuthConfigHolder.class);
+            MockedStatic<AuthPluginManager> managers = mockStatic(AuthPluginManager.class)) {
+            configs.when(NacosAuthConfigHolder::getInstance).thenReturn(holder);
+            managers.when(AuthPluginManager::getInstance).thenReturn(plugins);
+            assertTrue(new DefaultVisibilityService().validateVisibility("reader",
+                VisibilityConstants.ACTION_READ, null, new TestResource("public", "agent", "agent",
+                    VisibilityConstants.SCOPE_PRIVATE, "owner"))
+                .isAllowed());
+        }
+    }
+    
+    @Test
     void getVisibilityServiceNameShouldReturnAuthPluginType() {
         assertEquals(AuthConstants.AUTH_PLUGIN_TYPE,
             new DefaultVisibilityService().getVisibilityServiceName());

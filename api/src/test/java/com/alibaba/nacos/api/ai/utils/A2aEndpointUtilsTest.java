@@ -128,6 +128,21 @@ class A2aEndpointUtilsTest {
                 Collections.singletonMap("__nacos.agent.endpoint.path__", "spoof")));
     }
     
+    @Test
+    void rootedPathAndMissingMetadataUseExplicitFallbackRules() {
+        AgentEndpoint input = source();
+        input.setPath("/rpc");
+        assertEquals("http://example.com:80/rpc", A2aEndpointUtils.toEndpoint(input).getUri());
+        assertNull(A2aEndpointUtils.protocolVersion(null, null));
+        assertNull(A2aEndpointUtils.protocolVersion(null, ""));
+        assertEquals("1.0", A2aEndpointUtils.protocolVersion(null, "1.0"));
+        assertNull(A2aEndpointUtils.tenant(null, null));
+        assertNull(A2aEndpointUtils.tenant(null, ""));
+        assertEquals("team", A2aEndpointUtils.tenant(null, "team"));
+        assertNull(A2aEndpointUtils.protocolVersion(Collections.emptyMap(), ""));
+        assertNull(A2aEndpointUtils.tenant(Collections.emptyMap(), ""));
+    }
+    
     private AgentEndpoint source() {
         AgentEndpoint source = new AgentEndpoint();
         source.setAddress("example.com");

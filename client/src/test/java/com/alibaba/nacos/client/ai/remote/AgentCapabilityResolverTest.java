@@ -218,6 +218,48 @@ class AgentCapabilityResolverTest {
         assertEquals(A2aModeSelector.Mode.RAD, negative.current());
     }
     
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "AUTO"})
+    void positiveInitializationFixesRadWithoutHttpAndSurvivesDisconnect(AgentTransportMode mode)
+        throws Exception {
+        connected(AbilityStatus.SUPPORTED, AbilityStatus.SUPPORTED);
+        AgentCapabilityResolver resolver = resolver(mode);
+        resolver.initialize();
+        assertEquals(A2aModeSelector.Mode.RAD, resolver.current());
+        when(client.isEnable()).thenReturn(false);
+        assertTrue(resolver.useRad());
+        verify(http, never()).getCapabilities();
+    }
+    
+    @ParameterizedTest
+    @EnumSource(value = AbilityStatus.class, names = {"SUPPORTED", "NOT_SUPPORTED", "UNKNOWN"})
+    void explicitGrpcNativeGuardUsesLegacyEvidenceOnlyWhenRadIsUnknown(AbilityStatus legacy)
+        throws Exception {
+        connected(AbilityStatus.UNKNOWN, legacy);
+        AgentCapabilityResolver resolver = resolver(AgentTransportMode.GRPC);
+        if (legacy == AbilityStatus.SUPPORTED) {
+            assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, assertThrows(NacosException.class,
+                () -> resolver.requireRad("publishAgent")).getErrCode());
+        } else {
+            resolver.requireRad("publishAgent");
+            assertEquals(NacosException.SERVER_ERROR,
+                assertThrows(NacosException.class, resolver::useRad).getErrCode());
+        }
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+    }
+    
+    @Test
+    void nullGrpcAbilityIsUnknownAndNegativeRadSelectsLegacy() throws Exception {
+        connected(null, null);
+        AgentCapabilityResolver resolver = resolver(AgentTransportMode.GRPC);
+        assertThrows(NacosException.class, resolver::useRad);
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+        connected(AbilityStatus.NOT_SUPPORTED, AbilityStatus.UNKNOWN);
+        assertFalse(resolver.useRad());
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, assertThrows(NacosException.class,
+            () -> resolver.requireRad("searchAgents")).getErrCode());
+    }
+    
     private AgentCapabilityResolver resolver(AgentTransportMode mode) {
         return new AgentCapabilityResolver(mode, grpc, client, http);
     }

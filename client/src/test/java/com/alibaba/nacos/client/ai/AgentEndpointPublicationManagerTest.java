@@ -932,6 +932,136 @@ class AgentEndpointPublicationManagerTest {
         }
     }
     
+    @Test
+    void invalidLegacyRemovalIsRejectedBeforeAnyRemoteCall() throws Exception {
+        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+            () -> manager.deregisterA2a("public", "agent-a", "not-a-version")).getErrCode());
+        verify(clientProxy, never()).deregisterAgentEndpoints(any(), any(), any(), any());
+    }
+    
+    @Test
+    void repeatedPendingLegacyRemovalWaitsForExistingRedo() throws Exception {
+        registerLegacy("1.0.0", "one");
+        doThrow(new NacosException(500, "response lost")).when(clientProxy)
+            .deregisterAgentEndpoints("public", "agent-a", "a2a", AgentTransportType.HTTP);
+        assertThrows(NacosException.class,
+            () -> manager.deregisterA2a("public", "agent-a", "1.0.0"));
+        manager.deregisterA2a("public", "agent-a", "1.0.0");
+        verify(clientProxy).deregisterAgentEndpoints("public", "agent-a", "a2a",
+            AgentTransportType.HTTP);
+        assertTrue(manager.hasHttpPublication());
+    }
+    
+    @Test
+    void missingAndClosedGrpcPublicationRemoveRedoWithoutNetwork() throws Exception {
+        AgentEndpointPublicationRedoData pending =
+            redo(registration("a2a", endpoint("http://one:80")));
+        AtomicReference<AgentEndpointPublicationRedoData> reconciled =
+            new AtomicReference<>(pending);
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertNull(reconciled.get());
+        manager.shutdown();
+        reconciled.set(pending);
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertNull(reconciled.get());
+        verify(clientProxy, never()).registerAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void grpcRedoDoesNotReplayHttpOwnerOrAlreadyRegisteredSnapshot() throws Exception {
+        registerLegacy("1.0.0", "one");
+        manager.redoGrpcPublication(redo(lastPublication(AgentTransportType.HTTP)), ignored -> {
+            throw new AssertionError("HTTP owner must be untouched");
+        });
+        manager.deregisterA2a("public", "agent-a", "1.0.0");
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        registerLegacy("1.0.0", "one");
+        AgentEndpointPublicationRedoData completed = redo(lastPublication(AgentTransportType.GRPC));
+        completed.registered();
+        manager.redoGrpcPublication(completed, ignored -> {
+            throw new AssertionError("Completed registration must be untouched");
+        });
+        verify(clientProxy, times(2)).registerAgentEndpoints(any(), any(), any());
+    }
+    
+    @Test
+    void grpcRedoCapacityRejectionEvictsPublicationAndReleasesSource() throws Exception {
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        registerLegacy("1.0.0", "one");
+        AgentEndpointPublicationRedoData pending = redo(lastPublication(AgentTransportType.GRPC));
+        when(clientProxy.registerAgentEndpoints(any(), any(), eq(AgentTransportType.GRPC)))
+            .thenThrow(publicationCapacityException()).thenReturn(null);
+        AtomicReference<AgentEndpointPublicationRedoData> reconciled =
+            new AtomicReference<>(pending);
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertNull(reconciled.get());
+        manager.register("public", registration("a2a", endpoint("http://native:80")));
+    }
+    
+    @Test
+    void grpcInitialUnknownThenDefinitiveRejectionRemovesItsRedo() throws Exception {
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        when(clientProxy.registerAgentEndpoints(any(), any(), eq(AgentTransportType.GRPC)))
+            .thenThrow(new NacosException(500, "unknown"))
+            .thenThrow(new NacosException(403, "denied")).thenReturn(null);
+        assertThrows(NacosException.class, () -> registerLegacy("1.0.0", "one"));
+        AgentEndpointPublicationRedoData pending = redo(lastPublication(AgentTransportType.GRPC));
+        AtomicReference<AgentEndpointPublicationRedoData> reconciled =
+            new AtomicReference<>(pending);
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertNull(reconciled.get());
+        manager.register("public", registration("a2a", endpoint("http://native:80")));
+    }
+    
+    @Test
+    void grpcRetryableFailureRetainsIntentAndCleanRejectionKeepsAcknowledgedSnapshot()
+        throws Exception {
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        registerLegacy("1.0.0", "one");
+        AgentEndpointPublicationRedoData pending = redo(lastPublication(AgentTransportType.GRPC));
+        when(clientProxy.registerAgentEndpoints(any(), any(), eq(AgentTransportType.GRPC)))
+            .thenThrow(new NacosException(500, "unknown"))
+            .thenThrow(new NacosException(403, "denied"));
+        manager.redoGrpcPublication(pending, ignored -> {
+            throw new AssertionError("Transient failure must remain pending");
+        });
+        AtomicReference<AgentEndpointPublicationRedoData> reconciled = new AtomicReference<>();
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertSame(pending.get(), reconciled.get().get());
+        assertTrue(reconciled.get().isRegistered());
+        assertTrue(reconciled.get().isExpectedRegistered());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void grpcRejectedReplacementRestoresPendingRegistrationOrRemoval(boolean removal)
+        throws Exception {
+        when(clientProxy.selectPublicationTransport()).thenReturn(AgentTransportType.GRPC);
+        registerLegacy("1.0.0", "one");
+        if (removal) {
+            doThrow(new NacosException(500, "unknown removal")).when(clientProxy)
+                .deregisterAgentEndpoints("public", "agent-a", "a2a", AgentTransportType.GRPC);
+            assertThrows(NacosException.class,
+                () -> manager.deregisterA2a("public", "agent-a", "1.0.0"));
+        } else {
+            when(clientProxy.registerAgentEndpoints(any(), any(), eq(AgentTransportType.GRPC)))
+                .thenThrow(new NacosException(500, "unknown registration"));
+            assertThrows(NacosException.class, () -> registerLegacy("1.1.0", "one"));
+        }
+        doThrow(new NacosException(500, "unknown replacement"))
+            .doThrow(new NacosException(403, "denied")).when(clientProxy)
+            .registerAgentEndpoints(any(), any(), eq(AgentTransportType.GRPC));
+        assertThrows(NacosException.class, () -> registerLegacy("1.2.0", "one"));
+        AgentEndpointPublicationRedoData pending = redo(lastPublication(AgentTransportType.GRPC));
+        AtomicReference<AgentEndpointPublicationRedoData> reconciled = new AtomicReference<>();
+        manager.redoGrpcPublication(pending, reconciled::set);
+        assertEquals(!removal, reconciled.get().isExpectedRegistered());
+        assertEquals(removal, reconciled.get().isRegistered());
+        assertEquals(removal, reconciled.get().isUnregistering());
+        assertBinding(reconciled.get().get(), removal ? "1.0.0" : "1.1.0",
+            removal ? "[1.0.0]" : "[1.0.0,1.1.0]");
+    }
+    
     private void registerLegacy(String version, String... hosts) throws NacosException {
         List<AgentEndpoint> endpoints = new ArrayList<>();
         for (String host : hosts) {
