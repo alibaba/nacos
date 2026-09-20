@@ -70,6 +70,9 @@ public class ControllerMethodsCache {
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
+        if (RequestMethod.HEAD.name().equals(httpMethod)) {
+            httpMethod = RequestMethod.GET.name();
+        }
         String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(EnvUtil.getContextPath(), "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
