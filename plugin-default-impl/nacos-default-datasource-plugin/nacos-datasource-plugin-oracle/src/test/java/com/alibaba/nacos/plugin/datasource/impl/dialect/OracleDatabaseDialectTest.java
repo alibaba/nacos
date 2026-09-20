@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.agent;
+package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
-/**
- * Runtime endpoint management state.
- *
- * @author Nacos
- */
-public enum RuntimeEndpointState {
+import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class OracleDatabaseDialectTest {
     
-    AVAILABLE,
-    
-    DISABLED,
-    
-    UNHEALTHY
+    @Test
+    void testGetDefaultDriverClassName() {
+        OracleDatabaseDialect dialect = new OracleDatabaseDialect();
+        assertEquals(DatabaseTypeConstant.ORACLE, dialect.getType());
+        assertEquals("oracle.jdbc.OracleDriver", dialect.getDefaultDriverClassName());
+    }
 }

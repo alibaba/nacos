@@ -94,6 +94,16 @@ restart that passed in the reliability suite; the other is the exact
   and spec decision is required before callers can explicitly stop its private
   HTTP and auth-refresh resources.
 
+## Config detail schema (#15853)
+
+`ConfigMaintainerServiceMaintainerSdkITCase.shouldQueryConfigHistory` verifies
+that current, historical, and previous-version detail models expose null schema
+when publishing through the Maintainer SDK, whose publish interface has no
+schema parameter. Non-null response deserialization is covered for all three
+SDK query methods by `NacosConfigMaintainerServiceImplTest`; HTTP IT covers
+publishing non-null schema and preserving historical values. No new SDK publish
+interface is introduced.
+
 ### Agent 元数据模型合并（2026-09-14）
 
 Agent 元数据合并的响应形状和完整标签验证补入现有 AgentMaintainerService 场景，覆盖登记保持不变。

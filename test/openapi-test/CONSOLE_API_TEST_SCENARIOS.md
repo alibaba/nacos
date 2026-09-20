@@ -126,6 +126,27 @@ The console API IT set was validated with:
 The full console IT verification ran 75 tests with no failures.
 The Agent Console API verification ran 2 tests with no failures.
 
+## Config detail schema regression (#15853)
+
+`ConfigHistoryConsoleApiOpenApiITCase.testSchemaInCurrentAndHistoricalDetails`
+verifies the following workflow against a standalone server:
+
+| Scenario | Expected result |
+| --- | --- |
+| Publish without schema, then query current detail | `schema` is omitted or JSON null. |
+| Publish two different schema/content versions | Current detail returns the latest stored schema. |
+| Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
+| Query an older history record without schema | `schema` is omitted or JSON null. |
+| Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
+| Publish an explicit empty schema | Current detail preserves the empty string. |
+
+Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTest`;
+public publish APIs cannot create these legacy/corrupt history records. Existing
+required-parameter, missing-history, and identity-mismatch cases remain applicable.
+
+The inherited `ConfigGrayInfo` response also omits `schema` or returns null for beta
+configurations; the existing beta query IT asserts this boundary.
+
 ### Agent 元数据模型合并（2026-09-14）
 
 Agent Console 消费相同 AgentSummary/versionInfo 新结构，保持版本详情与 Runtime 查询分开；固定地址/运行地址模型本轮不变。
@@ -178,3 +199,8 @@ CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证
 | No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
 | Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
 | CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+C11 repeats the complete AI Console class set against the final artifact's
+independent Console deployment. Agent Runtime assertions require enabled/healthy
+and absence of the removed state field. These executions do not change the
+API-surface denominator; final outcomes and prior intermittent Prompt observations
+are recorded separately in the SDK scenario and coverage records.

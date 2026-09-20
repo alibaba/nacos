@@ -154,9 +154,11 @@ using Naming ClientData Distro, indexes, events, and cleanup. The adapter never
 reads and merges an old publication.
 
 Every converted Naming Instance uses canonical singular `runtimeVersion` and
-`versionRange` metadata. Legacy `protocolVersion` and `tenant` remain reserved
-metadata solely for A2A reverse projection; they are excluded from public RAD
-Endpoint metadata and Runtime revision. Legacy Endpoint URI, transport, health,
+`versionRange` metadata. A2A `protocolVersion` and `tenant` are exposed as public Endpoint metadata
+`__nacos.agent.endpoint.protocolVersion__` and `__nacos.agent.endpoint.tenant__`, including in Runtime revision input.
+These are the existing Nacos-owned Naming keys, reused without alias conversion.
+Only these two reserved keys are accepted as compatibility metadata in external
+Endpoint input; other internal control keys remain forbidden. Legacy Endpoint URI, transport, health,
 and weight pass through the canonical Runtime mapping and validation.
 
 The `LEGACY` branch preserves the existing handler and
@@ -258,3 +260,132 @@ canonical Agent identity or the protocol-neutral RAD result. The AgentCard
 media type and pinned upstream schema baseline used by ARD are versioned with
 the [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md); a change updates
 the adaptor fixtures, validator, specification, and conformance tests together.
+
+### Java SDK RAD Card adaptation
+
+When the SDK uses RAD, a missing or blank legacy Version explicitly selects
+`label=latest` and `protocols=[a2a]`; it does not use the unqualified RAD runtime
+pool. Discover retains both Endpoint Sets in definition preference order,
+including empty Sets. That order determines the returned registrationType;
+an explicit query type only selects the current projection. URL returns the
+complete normalized native Card. SERVICE projects enabled Runtime Endpoints,
+retains unhealthy ones, and falls back to the stored Card only for an empty
+runtime set. Priority and natural key determine stable order; the stored
+preferred transport selects the root interface when present. Both interface
+arrays retain every projected address. A missing/invalid A2A descriptor or an
+identity mismatch fails as not found. No supplementary Admin or legacy-wire queries are made.
+
+RAD latest queries return latestVersion=true; exact-Version queries return
+null even if the selected Version is latest, without an additional lookup.
+Legacy wire responses keep their existing latest flag semantics.
+Client release converts the complete Card into one A2A CallInterface and passes
+setAsLatest as autoSubmit to Client publish, with no pre-read, retry or forced
+publication. Client publication state rules remain authoritative.
+
+Public `__nacos.agent.endpoint.protocolVersion__` must be nonempty printable ASCII of at most 64
+characters; `__nacos.agent.endpoint.tenant__` is a string of at most 256 characters and may be empty.
+Only a missing protocol version falls back to the target CallInterface;
+tenant is never synthesized. Native RAD callers may provide these keys.
+
+Historical empty protocol versions mean absent; empty tenant values are preserved.
+
+The historical LEGACY wire projector retains its original empty-string fields; the absent-value normalization above applies to canonical RAD conversion.
+
+### Java SDK RAD Endpoint intent adaptation
+
+This section applies only when the SDK's A2A facade selects RAD. Its legacy-wire
+mode and old SDKs retain the exact-Version isolation described above.
+Each single or collection register replaces the complete intent of one exact
+Version. Empty, mixed-Version, null-member and duplicate-key inputs are rejected
+before changing cached or remote state. Caller objects are defensively copied.
+For one SDK publication `(namespaceId, agentName, a2a)`, matching natural keys
+with identical remaining payload merge into one Endpoint and one binding.
+Different transports, hosts or effective ports remain separate Endpoints;
+conflicting path, query or metadata cannot be silently selected from one Version.
+
+The binding's runtimeVersion is the greatest active reference by RAD's exact
+case-sensitive SemVer order. Its closed versionRange expands to include all
+observed registrations while that Endpoint remains referenced, including
+intermediate Versions. Removing a Version or replacing its address list removes
+references but never shrinks that retained range. Removing the last reference
+deletes the Endpoint and forgets its range. Re-registering later starts a fresh
+exact range. Legacy deregistration removes the entire target Version's intent,
+even when the overload carries only one address. Other Versions remain intact;
+only an empty publication sends whole-publication Deregister.
+
+Native RAD and adapted A2A Runtime writes to the same live SDK publication are
+mutually exclusive. A conflicting source fails before remote I/O; definition
+publication and reads are unaffected. Confirmed final cleanup releases the
+source. A rejected initial write does not acquire it; unknown results retain
+the intended source and sticky transport until recovery or confirmed cleanup.
+Ordinary definitive failures restore the prior references and ranges. Remote
+publication-capacity eviction retains the existing discard contract. Native
+partial removal remains a natural-key operation and does not use legacy
+whole-Version removal or retained-range behavior.
+
+All writes and gRPC reconnect replays pass through the same publication monitor.
+A stale redo snapshot cannot overwrite a newer registration or removal. Rejected
+or completed replay reconciles the existing redo record without another remote
+write; HTTP recovery keeps the existing shared AI liveness coordinator. No
+physical child-publisher identity or second heartbeat/redo framework is added.
+
+### Java SDK RAD Card Watch Adaptation
+
+In RAD mode, legacy Card subscriptions use the same canonical Watch manager, transport,
+capacity accounting and listener dispatcher as native discovery. Blank Version selects
+explicit `latest`; exact Version retains the degraded `latestVersion=null` projection.
+The adapter returns the current Card and queues the legacy initial callback through the
+serialized listener dispatcher, including the caller's executor. Each listener compares
+the complete projected Card structurally, independently of JSON member order. Changes
+only to RAD fields that do not affect the Card do not trigger a legacy callback.
+
+A missing Agent or missing valid A2A descriptor returns no invented Card and retains the
+existing pending observation. Unavailability clears Card comparison state without sending
+stale content; recovery can notify even when the recovered Card equals the old one. The
+legacy listener has no unavailable-event shape; native terminal authorization/capacity
+errors still end observation and require explicit resubscription. No authentication error
+is converted into polling fallback. Where the selected binding lacks Watch, existing RAD
+Discover polling is used. This never changes to legacy A2A polling in RAD mode.
+
+Duplicate listener identity shares one bridge. Unsubscribe removes it before wire cleanup;
+late callbacks cannot resurrect it. Shutdown removes only the adapter's listeners before
+its owning service closes the shared manager. All remote activation and user callbacks run
+outside the adapter monitor. Initial snapshot and refresh notifications share monotonic
+ordering, so a late-enqueued older event cannot overwrite a newer delivered state.
+
+C09 prepares this component; C10 enables all legacy facade operations together.
+
+### Client instance routing activation
+
+The 3.3 Java SDK routes every inherited A2A overload through the same Agent facade.
+The first reliable selection is fixed for that AiService lifetime. Initial preferred
+gRPC negotiation can establish this selection; HTTP-only initialization does not start
+gRPC just to choose A2A. An undecided call can use authenticated HTTP capabilities,
+and only missing HTTP evidence can require legacy gRPC negotiation. Authentication
+and transport failures do not select legacy mode. Reconnect invalidates HTTP evidence
+without changing an existing A2A selection. Native Agent calls use current evidence.
+
+A positive HTTP RAD declaration remains independent of gRPC. With missing HTTP
+evidence, a successful old gRPC negotiation may reject a native operation only for
+a sole, matching configured main address; this is not cached as an HTTP capability
+or promoted to all cluster members. Different targets or multiple configured targets
+remain unknown. Explicit gRPC native operations report an unavailable connection
+separately from unsupported RAD. Unsubscribe uses local listener state without a
+capability request. Full publication cleanup continues through its existing owner.
+
+All legacy query/publication/Endpoint/Watch operations switch together. The existing
+Endpoint manager owns both API sources and rejects mixing them for one live
+publication. Card queries and events share the same conversion; no migration or
+business error silently re-enters old A2A after RAD selection.
+
+Only positive initial RAD negotiation fixes the mode during construction. A negative
+or missing gRPC RAD bit waits until the first A2A operation checks independent HTTP
+evidence. Once that operation selects legacy, later reconnects do not upgrade it.
+An instance with no A2A operation yet has no legacy intent to migrate.
+
+For an undecided instance, positive live gRPC RAD evidence also selects the RAD API
+family when HTTP evidence is missing or negative. It does not establish HTTP support
+or reachability: each RAD-backed legacy business operation still checks its configured
+transport. A negative HTTP declaration therefore produces unsupported on HTTP rather
+than silently sending legacy gRPC. Cancellation and full cleanup retain their local
+and existing-owner paths.

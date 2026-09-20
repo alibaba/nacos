@@ -49,10 +49,10 @@ These cross-cutting rows do not change the public SDK-surface counts.
 | Scenario | Required behavior | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | Explicit identity selection | Tests can choose anonymous, read-write, read-only, or authenticated-no-permission credentials without logging passwords or tokens. | Covered | `JavaSdkBaseITCase` maps shared `nacos.test.auth.*` properties and password environment variables into public SDK factory properties. |
-| Auth-enabled functional matrix | A normal application identity executes the complete Config, Naming, AI, and Lock functional suite while administrative fixture setup uses a separate administrator identity. | Partial | Default and Jackson 3 each discover 101 tests: 81 pass and 20 skip with no failures or errors. Eight skips are exact product findings (`DAUTH-F04` once and `DAUTH-F05` seven times); twelve are environment-gated migration/restart/cluster cases. |
+| Auth-enabled functional matrix | A normal application identity executes the complete Config, Naming, AI, and Lock functional suite while administrative fixture setup uses a separate administrator identity. | Partial | Final C11 default and Jackson 3 runs each discover 175 tests: 146 pass and 29 skip with no failures or errors. DAUTH-F05 cases are restored; DAUTH-F04 remains a baseline finding. Environment-gated transport, migration, and restart cases have separate directed reports in C11_PROGRESS.md. |
 | Negative identity and action matrix | Anonymous, invalid, authenticated-no-permission, read-only, and read-write callers produce controlled results without cache fallback or unauthorized side effects. | Partial | Config, Naming, HTTP/gRPC/AUTO, no-permission, and read-only checks remain active. `shouldRejectInvalidCredentialsInsteadOfDowngradingToAnonymousAi` is retained but disabled as `DAUTH-F04`. |
-| Async identity and SDK lifecycle | Listener/Watch delivery retains the admitted identity across worker threads, unsubscribe/shutdown stops later delivery, and SDK instances release global subscribers. | Partial | Seven exact Agent identity-context scenarios are disabled as `DAUTH-F05`. The possible `NacosAiService.shutdown()` notifier leak is recorded as `DAUTH-F06`; it did not cause a stable failure in either full adapter run and was not fixed in this change. |
-| Capacity, reconnect, and cluster fault injection | Capacity limits and real transport recovery remain authenticated and are not silently omitted from CI. | Partial | Config, Naming, Lock, Maintainer, Jackson 3, Agent rolling-restart, and Agent peer-restart reliability cases pass. Agent standalone restart and pinned-node convergence are explicitly disabled as `DAUTH-F05`; the runner writes a `status.txt` for each instead of reporting a false pass. |
+| Async identity and SDK lifecycle | Listener/Watch delivery retains the admitted identity across worker threads, unsubscribe/shutdown stops later delivery, and SDK instances release global subscribers. | Partial | The seven Agent identity-context scenarios formerly disabled as DAUTH-F05 are restored and pass. Cancellation and shutdown assertions remain active. The separately recorded DAUTH-F06 general notifier finding is not claimed fixed by this work. |
+| Capacity, reconnect, and cluster fault injection | Capacity limits and real transport recovery remain authenticated and are not silently omitted from CI. | Partial | Final C11 standalone Config, Naming, Lock, Agent/MCP, Maintainer, and Config Jackson 3 restarts pass with the original clients. Pinned-node change and rolling-restart cases pass; final peer-restart and migration cluster results are tracked separately in C11_PROGRESS.md. None of these Agent scenarios remains disabled as DAUTH-F05. |
 | Lock authorization denial | The experimental Lock server applies the documented `SignType.LOCK` guard and rejects insufficient identities. | Documented gap | The complete Lock lifecycle runs with the authenticated read-write identity, including a stable 5-second expiry/reacquire window. The current server handler lacks the authorization guard, so the suite does not assert a false denial contract. |
 
 ## ConfigService
@@ -109,12 +109,12 @@ The detailed operation, boundary, failure, and compound matrix is maintained in
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | Factory, namespace, and lifecycle | Default/custom namespace binding, namespace-free inputs, caller isolation, inactive/active/repeated shutdown. | Covered | Default and custom service creation, namespace-free Search/Endpoint inputs with implicit instance binding across grpc/http/auto, caller-owned request and Batch isolation, active HTTP publication cleanup, and repeated shutdown are covered in standalone IT; deterministic resource cleanup is also covered by unit tests. |
-| Agent transport mode | Explicit GRPC/HTTP and AUTO, synchronous initial gRPC startup, never-connected STARTING fallback, operation routing, and publication ownership. | Partial | Stable IT verifies AUTO on an available negotiated gRPC connection, AUTO Search/subscription/Publication over HTTP when a deliberately unreachable gRPC port remains STARTING, explicit HTTP independence from gRPC startup, and explicit GRPC failure without HTTP fallback. Probe thresholds, business-error classification, read-only fallback, sticky mixed Publication ownership, and reconnect suspension are deterministic UT scenarios. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
+| Agent transport mode | Explicit GRPC/HTTP and AUTO, synchronous initial gRPC startup, never-connected STARTING fallback, operation routing, and publication ownership. | Partial | Stable IT verifies AUTO on an available negotiated gRPC connection, AUTO Search/subscription/Publication over HTTP when a deliberately unreachable gRPC port remains STARTING, explicit HTTP independence from gRPC startup, and explicit GRPC failure without HTTP fallback. Probe thresholds, business-error classification, read-only fallback, sticky mixed Publication ownership, and reconnect suspension are deterministic UT scenarios. The affected `DAUTH-F05` methods were restored in C09; final directed lifecycle evidence is tracked in the C11 adaptation validation report. |
 | Search | Default, literal name, tags-all, protocols-any, combined filters, pagination, empty result, validation, and transport parity. | Covered | Individual/default/combined/empty/paged searches, local null/page/duplicate/protocol boundaries, namespace isolation, and HTTP/gRPC parity are covered. |
 | Discover | Latest/exact/label resolution, unfiltered and combined filters, declared/runtime source shape, not found, validation, and transport parity. | Covered | Latest/exact/label and combined-filter results, full unfiltered interface shape, declared/runtime source projection, not-found mapping, ambiguous/null reference validation, and HTTP/gRPC parity are covered. |
-| Definition and Version evolution | Endpoint-first and definition-first ordering, latest/exact/label consistency, catalog ordering, offline/online latest recalculation, and publication ranges. | Partial | Standalone IT covers Versions 1 through 3, Endpoint-first and definition-first transitions, latest/exact/label polling behavior, catalog ordering, latest recalculation through offline/online, and replacement between two inclusive Version ranges. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
-| Local polling subscription | Existing and missing initial target, full replacement callbacks, fingerprint de-duplication, unsubscribe, and listener isolation/failure. | Partial | Standalone IT covers subscribe-before-create, subscribe-existing, Runtime source-revision replacement, unchanged de-duplication, and post-unsubscribe suppression. Listener identity, failure, scheduling, shutdown races, digest/version revisions, and poll failures use deterministic unit tests. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
-| Complete Endpoint publication | Pre-registration, register/replace/idempotence, partial/final/unknown/repeated deregistration, multiple protocols/publishers, HTTP heartbeat identity, gRPC redo, validation, and shutdown. | Partial | Stable standalone IT covers pre-registration, complete replacement convergence, canonical single-key and multi-key partial removal under grpc/http/auto, mixed unknown keys, preserved Endpoint fields and Version bindings, immutable inputs, final/whole-multi-key/repeated removal, protocol isolation, two-publisher aggregation, HTTP publication observed through gRPC, active HTTP shutdown, and public local boundaries. An opt-in directed IT stops and restarts the real server and verifies gRPC reconnect redo plus HTTP `50404` replay through the same SDK process. Generic heartbeat failures, retry classification, rollback, and redo races use deterministic unit tests. Combined partial-deregistration failure/recovery remains deferred and is not claimed by the multi-key transport increment. The exact affected methods are retained with `DAUTH-F05` and must be restored after the visibility identity fix. |
+| Definition and Version evolution | Endpoint-first and definition-first ordering, latest/exact/label consistency, catalog ordering, offline/online latest recalculation, and publication ranges. | Partial | Standalone IT covers Versions 1 through 3, Endpoint-first and definition-first transitions, latest/exact/label polling behavior, catalog ordering, latest recalculation through offline/online, and replacement between two inclusive Version ranges. The affected `DAUTH-F05` methods were restored in C09; final directed lifecycle evidence is tracked in the C11 adaptation validation report. |
+| Local polling subscription | Existing and missing initial target, full replacement callbacks, fingerprint de-duplication, unsubscribe, and listener isolation/failure. | Partial | Standalone IT covers subscribe-before-create, subscribe-existing, Runtime source-revision replacement, unchanged de-duplication, and post-unsubscribe suppression. Listener identity, failure, scheduling, shutdown races, digest/version revisions, and poll failures use deterministic unit tests. The affected `DAUTH-F05` methods were restored in C09; final directed lifecycle evidence is tracked in the C11 adaptation validation report. |
+| Complete Endpoint publication | Pre-registration, register/replace/idempotence, partial/final/unknown/repeated deregistration, multiple protocols/publishers, HTTP heartbeat identity, gRPC redo, validation, and shutdown. | Partial | Stable standalone IT covers pre-registration, complete replacement convergence, canonical single-key and multi-key partial removal under grpc/http/auto, mixed unknown keys, preserved Endpoint fields and Version bindings, immutable inputs, final/whole-multi-key/repeated removal, protocol isolation, two-publisher aggregation, HTTP publication observed through gRPC, active HTTP shutdown, and public local boundaries. An opt-in directed IT stops and restarts the real server and verifies gRPC reconnect redo plus HTTP `50404` replay through the same SDK process. Generic heartbeat failures, retry classification, rollback, and redo races use deterministic unit tests. Combined partial-deregistration failure/recovery remains deferred and is not claimed by the multi-key transport increment. The affected `DAUTH-F05` methods were restored in C09; final directed lifecycle evidence is tracked in the C11 adaptation validation report. |
 
 ## Agent Code Publication
 
@@ -123,7 +123,7 @@ The complete implemented scenario matrix is maintained in
 
 | Public SDK surface | Required scenarios | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `AiService.agent().publishAgent` | Draft-only and auto-submit publication, resume, equivalent retry, conflicts, direct and inherited Version evolution, namespace/caller isolation, HTTP/gRPC parity, Endpoint independence, and cross-surface A2A visibility. | Covered | `AgentPublishJavaSdkITCase` verifies draft/resume/online convergence, exact retry and conflict behavior, invalid state mapping, direct and inherited Versions, default/custom namespaces, HTTP/gRPC parity, Endpoint independence and pre-registration, and canonical Admin/Console/RAD plus legacy A2A projections. Caller isolation, ability negotiation, and submit-result ambiguity are covered by focused unit tests. AgentPublishJavaSdkITCase additionally verifies PUBLIC defaults, private/public transitions and publication retry retaining PRIVATE across HTTP and gRPC with a separate READ-only SDK. |
+| `AiService.agent().publishAgent` | First-Version submit, complete draft replacement, non-draft no-op, direct/copy inputs, namespace/caller/governance isolation, Endpoint independence and three transports. | Pending | Updated AgentPublishJavaSdkITCase; see C05 stage and final matrix evidence. |
 
 ## LockService
 
@@ -153,8 +153,9 @@ The complete implemented scenario matrix is maintained in
 
 ## AI Resource Interface Compatibility (3.3 phase 1)
 
-This increment is separate from the historical surface denominator. The scope
-is interface delegation and resource transport; A2A-to-RAD conversion is deferred.
+The following table preserves the historical phase-1 snapshot, separate from the
+original surface denominator. Its scope was interface delegation and resource
+transport; the later C10/C11 entries below supersede its A2A-to-RAD and Watch gaps.
 See [AI_API_COMPATIBILITY.md](AI_API_COMPATIBILITY.md) for the executable old-API
 fixture and exact released dependency resolution.
 
@@ -192,7 +193,6 @@ Agent 模型合并验证沿用 AgentDiscoveryServiceJavaSdkITCase：新目录路
 
 CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
 
-
 ### 2026-09-15 请求整合回归
 
 Agent Search/Register 使用 agent 根包共享模型，局部注销使用三参数；publish 使用 agent.client.AgentPublishRequest。新增同名 Agent 双 namespace 搜索、注册及 3 删 2 隔离场景，GRPC/HTTP/AUTO 和两种 JSON adapter 共用。
@@ -201,3 +201,199 @@ Agent Search/Register 使用 agent 根包共享模型，局部注销使用三参
 既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
 
 Scope Watch regression: `AgentPublishJavaSdkITCase#shouldInvalidateWatchAfterScopeBecomesPrivate` is Partial and explicitly disabled under `DAUTH-F05` after reproducing missing initial Watch delivery with auth enabled. Direct HTTP/gRPC default-public discovery and private-preserving publish retry remain executable.
+
+## A2A to RAD adaptation target (2026-09-16; design only)
+
+This target supersedes the early phase-one-only routing assumptions for future implementation.
+Current production code and historical coverage rows above are unchanged.
+The [SDK scenario matrix](JAVA_SDK_IT_SCENARIOS.md)
+enumerates API01–API28, every overload/entry, and scenario groups G/P/E/W/N/C/T/M.
+Run RAD HTTP, gRPC, AUTO-to-gRPC, AUTO-to-HTTP separately, plus real non-RAD
+servers under all three modes. Native local unsubscribe/shutdown remain cleanup exceptions.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2aService, all 18 overloads, facade and agent() | RAD query projection, exact latestVersion=null, Client release state table, cached multi-Version Endpoint intents, Watch-first subscription, deregistration and cleanup | Pending | Existing AiService/Agent tests are a baseline, not evidence for the new routing/semantics. O1/O2 are agreed: field defaults, writable enabled, state removal, single-binding continuous ranges retained across partial reference removal; implementation remains Pending. |
+| AgentDiscoveryService, all 9 signatures | Search/Discover/filter/Watch, registration and partial deregistration in each actual wire environment; no-RAD controlled errors | Pending | Reuse AgentDiscoveryServiceJavaSdkITCase; retain DAUTH-F05 skips as gaps, not passes. |
+| AgentService.publishAgent | Auto-submit only a newly created first Version; existing drafts follow autoSubmit and use full definition replacement; non-draft no-op; failures propagate without automatic retry/recreation | Pending | Replace the previous equivalent-retry and failure-recovery assertions; verify O3 matrix §6.1, governance isolation and unchanged Admin/Console behavior. |
+
+Future-target signature coverage: Covered=0, Partial=0, Pending=28; strict 0/28=0%,
+effective (0+0×0.5)/28=0%. This separate denominator is not added to implemented-surface totals.
+Additional 28 AI regression signatures and all five accessors/factory/shutdown are listed in the matrix.
+
+O1 acceptance is detailed in matrix §7.1 (E17/E18/E24): resolve each binding field
+from Endpoint then Batch, default the final range only afterwards, reject invalid
+open-boundary combinations atomically, preserve defensive copies, accept enabled,
+and remove state from results. Verify management/discovery/Watch and Console projections,
+including Naming operational overrides and independent publishers. These targets remain
+Pending across all four RAD transport environments; historical ignored-field assertions
+must be revised during implementation, not counted as current target coverage.
+
+Capability consumption also follows matrix §10.1: parse radV1/mcp/skill/prompt/agentSpec
+independently, distinguish HTTP declarations from gRPC reachability, retain Skill/AgentSpec
+HTTP paths and existing resource behavior on servers without the new endpoint. No mandatory
+preflight is added to the four existing resource services. These new scenarios remain Pending.
+
+O3 is agreed in matrix §6.1, with ten detailed acceptance cases. Verify sole existing
+drafts (including Admin-created drafts and failed first submissions) follow only the
+current flag. Publication failures must not trigger automatic writes or post-failure
+recovery into success; a later explicit application invocation uses the actual state.
+Verify complete multi-protocol definition replacement, caller isolation and retained
+governance properties across all four RAD transports. Fault timing and write-attempt
+counts use focused UTs and a directed external harness; no target is marked executed.
+
+O4 is agreed in matrix §5.1 (eight detailed targets). Definitions must carry both
+sources in the preferred order, while Discover/Watch may explicitly select either
+source. Verify default order, empty Sets, single-source query filters, A2A type
+overrides and watch isolation across all four RAD transports. Reject single-source
+definitions without rejecting single-source queries; retain source filters in the
+public API. Console, storage and Artifact regressions remain part of the matrix.
+These are Pending targets, not changes to historical execution evidence.
+
+O6 uses the standard Client auth flow; auth-off capability success is not proof of
+validated identity. O5 now accepts explicit migration-unready rejection for new RAD instances;
+existing old-wire migration tests do not validate that target. Separate reads, publication and Endpoint writes
+for unprojected historical names, migration-owned projections and independent standard
+Agents. SDK-first upgrades must be supported; no upgrade-order prerequisite is accepted.
+Keep the SDK process alive across old-to-new-to-old reconnections: actual abilities refresh,
+but an instance that initially selects legacy A2A retains all old F/R methods, exact-Version
+redo/deregistration and polling. Assert no RAD Batch/publisher/Watch conversion, including
+migration completion on a live connection. Initial failed/unknown probes must not latch
+legacy mode; concurrent calls share one decision. Re-instantiation may select RAD without
+changing the original instance or automatically transferring its registrations/listeners.
+Also start new instances first reaching RAD during migration: unsafe/unready related requests
+must expose migration detail 50105 without legacy fallback, transparent publication retry or
+partial business writes, across all four RAD transports and applicable F/R entry points.
+Cover query/Watch, unprojected name conflicts and Runtime writes; complete server protection
+beyond current definition guards. After cutover, an explicit subsequent call can succeed.
+The agreed node-level gate rejects all RAD business requests, even unrelated standard Agents
+and absent names, while historical authority remains. Fresh/terminal CANONICAL restores normal
+resource outcomes; capabilities and existing-intent cleanup remain available.
+Existing applications using old servers retain old A2A; do not require a native-RAD handover
+mechanism. Legacy public compatibility remains in scope (matrix M04/M05/M09/M11).
+
+## Staged adaptation validation (2026-09-17)
+
+The [SDK scenario matrix](JAVA_SDK_IT_SCENARIOS.md)
+requires tests with each implementation commit and a full rerun after all changes. The
+[SDK scenario matrix](JAVA_SDK_IT_SCENARIOS.md) now contains
+148 main groups and 73 detailed targets; section 16 assigns every main group to its first
+responsible stage. These counts are test-design inventory, not executed coverage.
+
+| Stage | SDK evidence required | Status |
+| --- | --- | --- |
+| C01–C06 | Migration rejection, native Endpoint/source/publication contracts, capability consumers; existing public behavior tested at each stage | Pending |
+| C07–C09 | Adapter UT plus already exposed native/legacy regression; no public A2A-to-RAD coverage claim yet | Pending |
+| C10 | All 18 old and 10 native signatures through actual public factories/interfaces, four N/three L environments and applicable F/R entries | Pending |
+| C11 | Full final matrix at final source SHA, both JSON adapters, legacy artifacts, other 28 AI signatures and directed fixtures | Pending |
+
+Keep target coverage 0/28 until executed. DAUTH-F05 cannot be hidden by auth-off or Disabled
+cases; MODEL-D01 remains a separately recorded baseline issue. Source-mixing rejection and
+public metadata precedence now have explicit E25-a/b and E23-a assertions.
+
+### C01 migration admission implementation (2026-09-17)
+
+New `AgentMigrationClientOpenApiITCase` uses an external historical-authority server with
+`-Dnacos.agent.migration.gate=blocked`. It asserts Search/Discover/Publish/Register/Watch
+50105 for both independent managed and unprojected names, no HTTP owner or publication
+side effects, heartbeat 50404 for missing owners, and whole cleanup remaining available.
+`A2aMigrationAdminApiOpenApiITCase` now observes internal convergence through management
+while asserting native RAD rejection before cutover. `A2aUpgradeMigrationJavaSdkITCase`
+retains old-wire mutation/layout assertions, checks native rejection, and installs RAD Watch
+after terminal cutover. Runtime mirror inspection before cutover is management evidence,
+not successful Client discovery coverage. `AiTransportResourceMatrixJavaSdkITCase` accepts an
+explicit blocked fixture to verify other AI resources while native Agent publication is fenced.
+
+Execution evidence is recorded in the SDK scenario and coverage records.
+The overall C01–C11 target matrix remains pending until its required environments are executed.
+
+### C02 per-Endpoint binding scenarios (stage validation passed)
+
+| Contract | Required external evidence |
+| --- | --- |
+| Batch defaults and Endpoint overrides | HTTP and SDK: inherit independently; override runtime only with inclusive/exclusive default range; absent range resolves after override |
+| Input cardinality / atomic failure | Empty, null-item or multiple bindings, invalid version/range and a later invalid Endpoint reject the entire replacement; original publication remains |
+| Per-Endpoint versions | One batch with distinct effective versions; version-specific Discover and management snapshots preserve each binding |
+| SDK lifecycle | Caller mutation does not affect cached bindings; remove two of three Endpoints and retain the third binding; final removal cleans publication |
+| Query aggregation | Two publishers sharing one natural key produce multiple output bindings; multi-binding output cannot be registered as one input |
+
+UT additionally covers deep-copy/redo and error mapping. Default and Jackson 3 SDK adapters are both required.
+Stage evidence: 9 HTTP scenarios and 7 SDK cases per adapter (default/Jackson 3) passed; see ADAPTATION_VALIDATION.md for fixture corrections and environment limits. The final full matrix remains pending.
+
+### C03 Endpoint enabled and derived state (stage validation passed)
+
+| Surface | Scenarios | Stage evidence |
+| --- | --- | --- |
+| Runtime registration | healthy/enabled default true; disabled publication retained in management, excluded per publisher from discovery, restored by replacement; no state property | Passed: HTTP/gRPC/AUTO with default and Jackson 3 adapters |
+
+Final adaptation matrix remains pending; see the staged validation report.
+
+### C04 Source preferences (stage validation passed)
+
+| Surface | Scenarios | Stage evidence |
+| --- | --- | --- |
+| Definition and discovery sources | Both definition orders; reject single/null/empty/duplicate/unknown orders before writes; explicit source selection, reversed filter order, empty Runtime without fallback; Watch selection and cancellation; Admin/Console/Maintainer and Artifact regression | Passed: 33 HTTP + 4 independent Console; 13 SDK and 4 Maintainer per JSON adapter. Auth-off stage; see ADAPTATION_VALIDATION.md for final auth-on/Disabled exclusions. |
+
+Final A2A projection routing (G14-d) remains assigned to C07/C10. MODEL-D01 protocol-union behavior remains outside this change.
+
+### C05 Client publication (stage validation passed)
+
+| Surface | Scenarios | Stage evidence |
+| --- | --- | --- |
+| Agent publish | First Version forces ordinary submit; Admin-created draft remains a draft with false; complete replacement including protocol removal and basedOnVersion; later versions respect flag; non-draft no-op preserves digest/latest/governance, offline included; caller object unchanged | Passed on final C05 artifact with auth enabled: 17 HTTP/Console/Artifact, 6 independent Console, 14 SDK and 4 Maintainer per JSON adapter (59 total, zero skips). Earlier auth-off runs are archived separately. |
+| Failure/concurrency | No server/client publication replay; Resource/Version transactional CAS; reject update after submit/delete and stale first-version detection; storage failure and unknown commit preserve verified active content | Passed: domain/transport UT and 12 real Derby transaction cases through both repository implementations; 1,214 related UT in total. Real READ-only/no-permission no-op denial, scope/owner preservation and explicit delete/recreate passed. Asynchronous Watch remains C09. |
+
+## C09 恢复记录（2026-09-17）
+
+DAUTH-F05 的显式身份校验已在本轮 A2A/RAD C09 修复；所有七项 Agent Discovery
+方法及 Scope Watch 方法已移除该编号的 Disabled，可靠性脚本也已恢复对应入口。
+此外，HTTP Watch 在权限或 scope 变化而共享 fingerprint 不变时返回受影响的 opaque ID，
+由后续 Discover 执行资源授权。当前用例分别断言 HTTP 404 和 gRPC RESOURCE_NOT_FOUND(-404)。
+普通测试和重启/集群 fixture 的执行证据分开登记；恢复入口不等于可靠性验证通过。
+以上替代本文历史段落中“仍 Disabled”的当前状态描述，历史失败记录保持。
+最终阶段结果见 [SDK scenario matrix](JAVA_SDK_IT_SCENARIOS.md)。
+
+## C10 公共入口矩阵（阶段验证完成）
+
+`A2aRadRoutingJavaSdkITCase` 通过公开工厂逐项调用 18 个 A2A 重载（扁平/agent()）
+及 10 个原生签名。新服 grpc/http/auto 为普通参数化用例；外部 HTTP-only 网关用
+`nacos.ai.adaptation.http-only-address`，真实 3.2.4 用
+`nacos.ai.compatibility.old-server-address`。缺少 fixture 的 skip 不能计为通过。
+断言包括首版默认发布、草稿再提交、精确 latestVersion 降级、单条/批量替换、
+同址版本范围保留、两类订阅回调、取消、完整清理后换来源、原生 API 的旧服异常。
+C10 阶段已完成；C11 最终矩阵的运行及制品证据见 ADAPTATION_VALIDATION.md。
+
+### C11 migration and restart fixture update
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Released A2A SDK + current RAD SDK | LEGACY/SYNCING/QUIESCING, terminal authority, redo and cluster cutover | Partial | Migration tests call public A2A methods in a separate 3.2.4 SDK process with its independent dependencies. Current SDK A2A/native methods assert the RAD gate. Standalone shadow=true/false fixtures pass 19/6 executions; external-MySQL three-node Runtime/cutover cases pass. Extra embedded cutover remains a recorded Search persistence failure; details in C11_PROGRESS.md. |
+| A2A and native publication restart | Both sources restore without owner collision | Covered | Different AiService instances publish to the same Agent; same-instance source conflict is tested separately by C10. The final real Agent/MCP restart passes with original instances; the old/new/old roundtrip also verifies same-instance version redo and selective deregistration. |
+
+
+The first HTTP callback after a real server restart uses the existing 120-second
+recovery budget. A failed Discover may retain up to 60 seconds of retry backoff
+after HTTP Watch falls back to polling; the ordinary 25-second callback budget
+is insufficient for that transition. Version, endpoint, callback and subsequent
+change assertions remain unchanged; normal gRPC hint latency keeps its own budget.
+
+### C11-F2 HTTP 发布响应丢失
+
+`A2aRadRoutingJavaSdkITCase#lostPublishResponseIsNotReplayedAndExplicitRetryUsesStoredState`
+通过 `nacos.ai.adaptation.lost-publish-address` 启用。使用外部 HTTP 代理在服务端成功
+处理发布后丢弃响应，覆盖 AiService 旧入口、agent() 旧入口、原生 publishAgent，分别
+执行默认/Jackson 3 profile。首调用必须抛异常；服务端已保存 ONLINE；调用方显式重试
+保持 contentDigest 不变。每 profile 代理应观察到 6 次 POST 和 3 次响应丢弃，避免只
+通过 mock 验证上层一次调用而漏掉 JDK 自动重放。未部署丢响应代理的普通套件会跳过，
+不能用普通套件通过来代替本项定向证据。
+
+C11 final cluster results: embedded definition/Runtime changes, rolling restart,
+and pinned-peer restart pass; external-MySQL Runtime migration and terminal cutover
+pass with all-node native admission, old/new reads, both Watch bindings, duplicate
+suppression, replacement and deregistration. The additional embedded cutover
+failure is retained as an unresolved Search persistence finding, not counted as
+passing migration coverage. See C11_PROGRESS.md for all 66 report groups and skips.
+
+### A2A metadata reserved-key regression
+
+A2A conversion and RAD metadata use the same `__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__` keys as legacy Naming Instances. AgentDiscoveryService and A2aRadRouting SDK ITs verify HTTP/gRPC/AUTO Discover/Watch and legacy projection under default/Jackson 3 profiles; migration comparator UTs verify identical old/new meaning and changed tenant/protocol detection. Invalid control metadata remains rejected.

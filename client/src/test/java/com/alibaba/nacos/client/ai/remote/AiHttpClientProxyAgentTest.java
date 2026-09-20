@@ -151,12 +151,28 @@ class AiHttpClientProxyAgentTest {
     }
     
     @Test
+    void publishNeverReplaysAnUncertainHttpWriteAcrossServers() throws Exception {
+        when(serverListManager.getServerList())
+            .thenReturn(Arrays.asList("127.0.0.1:8848", "127.0.0.2:8848"));
+        doThrow(new java.io.IOException("response lost")).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class), eq(false));
+        AgentPublishRequest request = new AgentPublishRequest();
+        request.setAgentName("agent-a");
+        request.setVersion("1.0.0");
+        NacosException failure =
+            assertThrows(NacosException.class, () -> proxy.publishAgent(request));
+        assertTrue(failure.getMessage().contains("response lost"));
+        verify(restTemplate, times(1)).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class), eq(false));
+    }
+    
+    @Test
     void publishSerializesCompleteFormAndReturnsDetail() throws Exception {
         AgentVersionDetail expected = new AgentVersionDetail();
         expected.setAgentName("agent-a");
         expected.setVersion("1.0.0");
         doReturn(success(expected)).when(restTemplate)
-            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class), eq(false));
         AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName("agent-a");
         request.setDisplayName("Agent A");
@@ -179,7 +195,7 @@ class AiHttpClientProxyAgentTest {
         ArgumentCaptor<Header> header = ArgumentCaptor.forClass(Header.class);
         ArgumentCaptor<Map> form = ArgumentCaptor.forClass(Map.class);
         verify(restTemplate).postForm(url.capture(), header.capture(), form.capture(),
-            eq(String.class));
+            eq(String.class), eq(false));
         assertTrue(url.getValue().endsWith("/nacos/v3/client/ai/agents"));
         assertEquals(Constants.AI.AI_MODULE,
             header.getValue().getValue(HttpHeaderConsts.REQUEST_MODULE));
@@ -340,16 +356,19 @@ class AiHttpClientProxyAgentTest {
     }
     
     @Test
-    void registerOmitsNullVersionRange() throws Exception {
+    void registerOmitsNullBatchDefaults() throws Exception {
         doReturn(success(new ClientLivenessInfo())).when(restTemplate)
             .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
         
-        proxy.registerAgentEndpoints("public", registrationBatch(null));
+        AgentEndpointRegistrationBatch batch = registrationBatch(null);
+        batch.setRuntimeVersion(null);
+        proxy.registerAgentEndpoints("public", batch);
         
         ArgumentCaptor<Map> form = ArgumentCaptor.forClass(Map.class);
         verify(restTemplate).postForm(anyString(), any(Header.class), form.capture(),
             eq(String.class));
         assertFalse(form.getValue().containsKey("versionRange"));
+        assertFalse(form.getValue().containsKey("runtimeVersion"));
     }
     
     @Test
@@ -433,6 +452,33 @@ class AiHttpClientProxyAgentTest {
             .delete(anyString(), any(Header.class), any(Query.class), eq(String.class));
         assertEquals(418, assertThrows(NacosException.class,
             () -> proxy.deregisterAgentEndpoints("public", "agent-a", "a2a")).getErrCode());
+    }
+    
+    @Test
+    void watchMigrationRejectionIsPreservedWithoutRetry() throws Exception {
+        doReturn(error(409, Result.failure(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            "migration", "historical A2A"))).when(restTemplate)
+            .postForm(anyString(), any(HttpClientConfig.class), any(Header.class),
+                any(Map.class), eq(String.class));
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode().intValue(),
+            assertThrows(NacosException.class, () -> proxy.watchAgents(watchRequest(1L, 1000L)))
+                .getErrCode());
+        verify(restTemplate).postForm(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Map.class), eq(String.class));
+    }
+    
+    @Test
+    void migrationDetailIsPreservedWithoutRetryingOtherServers() throws Exception {
+        HttpRestResult<String> migrating = error(409, Result.failure(
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), "migration", "historical A2A"));
+        doReturn(migrating).when(restTemplate)
+            .postForm(anyString(), any(Header.class), any(Map.class), eq(String.class));
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode().intValue(),
+            assertThrows(NacosException.class,
+                () -> proxy.registerAgentEndpoints("public", registrationBatch(null)))
+                .getErrCode());
+        verify(restTemplate).postForm(anyString(), any(Header.class), any(Map.class),
+            eq(String.class));
     }
     
     @Test

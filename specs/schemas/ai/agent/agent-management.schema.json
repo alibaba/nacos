@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nacos.io/schemas/ai/agent/agent-management.schema.json",
   "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
-  "title": "Nacos Agent Management Model 0.3.0",
+  "title": "Nacos Agent Management Model 0.5.0",
   "description": "Definition bundle for public Agent resources, exact Version definitions, and bounded management read views.",
   "x-status": "experimental",
-  "x-schema-version": "0.3.0",
+  "x-schema-version": "0.5.0",
   "x-entrypoints": {
     "AgentSummary": "#/$defs/AgentSummary",
     "AgentOverview": "#/$defs/AgentOverview",
@@ -628,9 +628,19 @@
           }
         },
         {
-          "not": {
-            "pattern": "^__nacos\\.agent\\.endpoint\\."
-          }
+          "anyOf": [
+            {
+              "enum": [
+                "__nacos.agent.endpoint.protocolVersion__",
+                "__nacos.agent.endpoint.tenant__"
+              ]
+            },
+            {
+              "not": {
+                "pattern": "^__nacos\\.agent\\.endpoint\\."
+              }
+            }
+          ]
         }
       ]
     },
@@ -643,6 +653,18 @@
       "additionalProperties": {
         "type": "string",
         "maxLength": 256
+      },
+      "properties": {
+        "__nacos.agent.endpoint.protocolVersion__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[!-~]+$"
+        },
+        "__nacos.agent.endpoint.tenant__": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "DeclaredEndpoint": {
@@ -691,18 +713,6 @@
           "type": "boolean",
           "default": true,
           "description": "Defaults to true on reads. Not persisted in the version definition."
-        },
-        "state": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "AVAILABLE",
-            "DISABLED",
-            "UNHEALTHY",
-            null
-          ]
         },
         "bindings": {
           "type": [
@@ -757,12 +767,13 @@
         },
         "endpointSourceOrder": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 2,
           "maxItems": 2,
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/EndpointSource"
-          }
+          },
+          "description": "Contains both DECLARED and RUNTIME exactly once; ordering is a default preference, not an availability restriction."
         },
         "endpointSets": {
           "anyOf": [
@@ -904,14 +915,6 @@
       },
       "description": "runtimeVersion must be contained by versionRange; this semantic relation requires domain validation."
     },
-    "RuntimeEndpointState": {
-      "type": "string",
-      "enum": [
-        "AVAILABLE",
-        "DISABLED",
-        "UNHEALTHY"
-      ]
-    },
     "RuntimeEndpointSnapshot": {
       "type": "object",
       "additionalProperties": false,
@@ -983,7 +986,6 @@
         "uri",
         "transport",
         "bindings",
-        "state",
         "enabled",
         "healthy"
       ],
@@ -1025,9 +1027,6 @@
             "$ref": "#/$defs/RuntimeVersionBinding"
           }
         },
-        "state": {
-          "$ref": "#/$defs/RuntimeEndpointState"
-        },
         "enabled": {
           "type": "boolean",
           "default": true
@@ -1036,45 +1035,7 @@
           "type": "boolean",
           "default": true
         }
-      },
-      "oneOf": [
-        {
-          "properties": {
-            "state": {
-              "const": "DISABLED"
-            },
-            "enabled": {
-              "const": false
-            }
-          }
-        },
-        {
-          "properties": {
-            "state": {
-              "const": "UNHEALTHY"
-            },
-            "enabled": {
-              "const": true
-            },
-            "healthy": {
-              "const": false
-            }
-          }
-        },
-        {
-          "properties": {
-            "state": {
-              "const": "AVAILABLE"
-            },
-            "enabled": {
-              "const": true
-            },
-            "healthy": {
-              "const": true
-            }
-          }
-        }
-      ]
+      }
     },
     "RuntimeEndpointSet": {
       "type": "object",

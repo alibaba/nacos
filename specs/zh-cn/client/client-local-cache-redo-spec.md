@@ -260,3 +260,11 @@ Agent Shutdown 还要取消 HTTP Batch Long Poll、Best-effort Unsubscribe 当�
 - Config listener recovery、Naming redo、AI redo 和
   [运行时推送与重连规范](runtime-push-reconnect-spec.md)定义的 runtime push recovery 应共享可观测字段。
 - 多语言 SDK 应说明自己支持哪些本地缓存和 redo 行为，以及哪些行为有意与 Java 不同。
+
+### 8.5 A2A 适配后的 Runtime 意图
+
+A2A 使用 RAD 时，publication 状态同时保留各精确版本的引用快照及各 Endpoint 的连续范围。
+这些状态与既有完整 Batch、固定 transport owner 一起提交、回滚、重放和清理，不建立第二套
+redo 缓存。原生 RAD/A2A 写入来源互斥遵循 [A2A Agent 规范](../ai/a2a-agent-spec.md)。
+gRPC 定时任务将受管理 publication 交给同一个串行 owner；核对快照身份以阻止旧工作覆盖
+新写入，完成或拒绝的重放只协调自身仍为当前记录的 redo 状态。

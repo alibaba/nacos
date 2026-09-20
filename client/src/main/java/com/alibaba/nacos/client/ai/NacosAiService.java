@@ -80,6 +80,11 @@ import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.event.SkillChangedEvent;
 import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
+import com.alibaba.nacos.client.ai.remote.AgentCapabilityResolver;
+import com.alibaba.nacos.client.ai.remote.A2aRadClientAdapter;
+import com.alibaba.nacos.client.ai.remote.capability.A2aModeSelector;
+import com.alibaba.nacos.client.ai.watch.A2aRadWatchAdapter;
+import java.util.Collections;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.ai.remote.AgentGrpcTransport;
@@ -141,6 +146,12 @@ public class NacosAiService implements AiService {
     private final AgentTransportRouter agentTransportRouter;
     
     private final McpTransportRouter mcpTransportRouter;
+    
+    private final AgentCapabilityResolver agentCapabilityResolver;
+    
+    private final A2aRadClientAdapter a2aRadClientAdapter;
+    
+    private final A2aRadWatchAdapter a2aRadWatchAdapter;
     
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
     
@@ -216,6 +227,10 @@ public class NacosAiService implements AiService {
                     AiConstants.DEFAULT_AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS),
                 new AgentWatchTransportRouter(agentMode, grpcClient, httpProxy,
                     AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL));
+        this.agentCapabilityResolver =
+            new AgentCapabilityResolver(agentMode, grpcTransport, grpcClient, httpProxy);
+        this.a2aRadClientAdapter = new A2aRadClientAdapter(namespaceId, agentTransportRouter);
+        this.a2aRadWatchAdapter = new A2aRadWatchAdapter(namespaceId, agentDiscoveryCacheHolder);
         this.httpPublicationCoordinator = new AiHttpPublicationCoordinator();
         this.agentEndpointPublicationManager =
             new AgentEndpointPublicationManager(this.agentTransportRouter,
@@ -234,6 +249,10 @@ public class NacosAiService implements AiService {
                         batch);
                 }
             });
+        this.grpcClient.setAgentEndpointPublicationRedoHandler(
+            redoData -> agentEndpointPublicationManager.redoGrpcPublication(redoData,
+                replacement -> grpcClient.reconcileAgentEndpointPublicationRedo(redoData,
+                    replacement)));
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -282,6 +301,7 @@ public class NacosAiService implements AiService {
     
     private void start() throws NacosException {
         this.grpcTransport.startConfiguredTransport();
+        this.agentCapabilityResolver.initialize();
         NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
         NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
         NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
@@ -367,6 +387,7 @@ public class NacosAiService implements AiService {
         if (!shutdown.compareAndSet(false, true)) {
             return;
         }
+        this.a2aRadWatchAdapter.shutdown();
         this.agentDiscoveryCacheHolder.shutdown();
         this.agentEndpointPublicationManager.shutdown();
         this.mcpEndpointPublicationManager.shutdown();
@@ -771,12 +792,22 @@ public class NacosAiService implements AiService {
         }
     }
     
+    private boolean useRadForRequest(String operation) throws NacosException {
+        if (!agentCapabilityResolver.useRad()) {
+            return false;
+        }
+        agentCapabilityResolver.requireRad(operation);
+        return true;
+    }
+    
     private final class AgentServiceDelegate implements AgentService {
         
         @Override
         public AgentVersionDetail publishAgent(AgentPublishRequest request)
             throws NacosException {
-            return agentTransportRouter.publishAgent(AgentModelUtils.copyPublishRequest(request));
+            AgentPublishRequest copied = AgentModelUtils.copyPublishRequest(request);
+            agentCapabilityResolver.requireRad("publishAgent");
+            return agentTransportRouter.publishAgent(copied);
         }
         
         @Override
@@ -787,6 +818,9 @@ public class NacosAiService implements AiService {
                 throw new NacosApiException(NacosException.INVALID_PARAM,
                     ErrorCode.PARAMETER_MISSING,
                     "parameters `agentName` can't be empty or null");
+            }
+            if (useRadForRequest("getAgentCard")) {
+                return a2aRadClientAdapter.getAgentCard(agentName, version, registrationType);
             }
             return grpcTransport.requireGrpcClient()
                 .getAgentCard(agentName, version, registrationType);
@@ -807,6 +841,10 @@ public class NacosAiService implements AiService {
             if (StringUtils.isBlank(registrationType)) {
                 registrationType = AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE;
             }
+            if (useRadForRequest("releaseAgentCard")) {
+                a2aRadClientAdapter.releaseAgentCard(agentCard, registrationType, setAsLatest);
+                return;
+            }
             grpcTransport.requireGrpcClient()
                 .releaseAgentCard(agentCard, registrationType, setAsLatest);
         }
@@ -820,6 +858,11 @@ public class NacosAiService implements AiService {
                     "parameters `agentName` can't be empty or null");
             }
             validateAgentEndpoint(endpoint);
+            if (useRadForRequest("registerAgentEndpoint")) {
+                agentEndpointPublicationManager.registerA2a(namespaceId, agentName,
+                    Collections.singletonList(endpoint));
+                return;
+            }
             grpcTransport.requireGrpcClient().registerAgentEndpoint(agentName, endpoint);
         }
         
@@ -832,6 +875,11 @@ public class NacosAiService implements AiService {
                     "parameters `agentName` can't be empty or null");
             }
             validateAgentEndpoint(endpoints);
+            if (useRadForRequest("registerAgentEndpoint")) {
+                agentEndpointPublicationManager.registerA2a(namespaceId, agentName,
+                    endpoints);
+                return;
+            }
             grpcTransport.requireGrpcClient().registerAgentEndpoints(agentName, endpoints);
         }
         
@@ -844,6 +892,11 @@ public class NacosAiService implements AiService {
                     "parameters `agentName` can't be empty or null");
             }
             validateAgentEndpoint(endpoint);
+            if (agentCapabilityResolver.useRad()) {
+                agentEndpointPublicationManager.deregisterA2a(namespaceId, agentName,
+                    endpoint.getVersion());
+                return;
+            }
             grpcTransport.requireGrpcClient().deregisterAgentEndpoint(agentName, endpoint);
         }
         
@@ -859,6 +912,9 @@ public class NacosAiService implements AiService {
                 throw new NacosApiException(NacosException.INVALID_PARAM,
                     ErrorCode.PARAMETER_MISSING,
                     "parameters `agentCardListener` can't be empty or null");
+            }
+            if (useRadForRequest("subscribeAgentCard")) {
+                return a2aRadWatchAdapter.subscribe(agentName, version, agentCardListener);
             }
             AgentCardListenerInvoker listenerInvoker =
                 new AgentCardListenerInvoker(agentCardListener);
@@ -883,11 +939,15 @@ public class NacosAiService implements AiService {
             if (null == agentCardListener) {
                 return;
             }
+            if (agentCapabilityResolver.current() == A2aModeSelector.Mode.RAD) {
+                a2aRadWatchAdapter.unsubscribe(agentName, version, agentCardListener);
+                return;
+            }
             AgentCardListenerInvoker listenerInvoker =
                 new AgentCardListenerInvoker(agentCardListener);
             aiChangeNotifier.deregisterListener(agentName, version, listenerInvoker);
             if (!aiChangeNotifier.isAgentCardSubscribed(agentName, version)) {
-                grpcTransport.requireGrpcClient().unsubscribeAgentCard(agentName, version);
+                agentCardCacheHolder.removeAgentCardUpdateTask(agentName, version);
             }
         }
         
@@ -896,6 +956,7 @@ public class NacosAiService implements AiService {
             throws NacosException {
             AgentSearchRequest boundRequest =
                 AgentModelUtils.copySearchRequest(request, namespaceId);
+            agentCapabilityResolver.requireRad("searchAgents");
             return agentTransportRouter.searchAgents(namespaceId, boundRequest);
         }
         
@@ -904,6 +965,7 @@ public class NacosAiService implements AiService {
             AgentDiscoveryFilter filter) throws NacosException {
             AgentDiscoveryRequest request =
                 AgentModelUtils.copyDiscoveryRequest(reference, filter, namespaceId);
+            agentCapabilityResolver.requireRad("discoverAgent");
             return agentTransportRouter.discoverAgent(request);
         }
         
@@ -911,6 +973,12 @@ public class NacosAiService implements AiService {
         public AgentDiscoveryResult subscribeAgent(AgentReference reference,
             AgentDiscoveryFilter filter, AbstractNacosAgentDiscoveryListener listener)
             throws NacosException {
+            AgentModelUtils.copyDiscoveryRequest(reference, filter, namespaceId);
+            if (listener == null) {
+                throw new NacosException(NacosException.INVALID_PARAM,
+                    "Agent discovery listener must not be null.");
+            }
+            agentCapabilityResolver.requireRad("subscribeAgent");
             return agentDiscoveryCacheHolder.subscribe(reference, filter, listener);
         }
         
@@ -925,6 +993,7 @@ public class NacosAiService implements AiService {
             throws NacosException {
             AgentEndpointRegistrationBatch boundBatch =
                 AgentModelUtils.copyRegistrationBatch(batch, namespaceId);
+            agentCapabilityResolver.requireRad("registerAgentEndpoints");
             agentEndpointPublicationManager.register(namespaceId, boundBatch);
         }
         

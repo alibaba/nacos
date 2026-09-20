@@ -18,8 +18,8 @@
 
 | Item | Value |
 |---|---|
-| Status | Experimental; normative for protocol version `0.3.0` |
-| Protocol version | `0.3.0` |
+| Status | Experimental; normative for protocol version `0.5.0` |
+| Protocol version | `0.5.0` |
 | Scope | Remote Agent search, discovery, watch, and runtime endpoint publication |
 | Goal | Return Agent calling descriptors and currently available addresses through a small, stable model |
 
@@ -41,7 +41,7 @@ and does not define Agent message, task, or session protocols.
 
 ### 1.1 Operations
 
-RAD 0.3.0 defines five operations:
+RAD 0.5.0 defines five operations:
 
 | Operation | Input | Output | Semantics |
 |---|---|---|---|
@@ -59,7 +59,7 @@ root messages.
 
 ### 1.2 Out Of Scope
 
-RAD 0.3.0 does not define Agent management lifecycle, client connection and
+RAD 0.5.0 does not define Agent management lifecycle, client connection and
 reconnection, internal storage, historical compatibility, MCP, call proxying,
 credentials, retries, or load balancing. Agent resource and version semantics
 are defined by the [Agent Management Spec](./agent-management-spec.md).
@@ -107,7 +107,7 @@ Prerelease identifiers are dot-separated `[0-9A-Za-z-]+` values. A prerelease
 identifier containing only digits MUST NOT contain leading zeroes unless it is
 exactly `0`.
 
-RAD 0.3.0 does not accept build metadata. Version identity and comparison are
+RAD 0.5.0 does not accept build metadata. Version identity and comparison are
 case-sensitive. Ordering follows SemVer precedence and MUST NOT first convert
 the version to a fixed-width integer.
 
@@ -125,7 +125,7 @@ Maven `ComparableVersion`.
 | `[1.0.0,)` | `version >= 1.0.0` |
 | `(,2.0.0)` | `version < 2.0.0` |
 
-RAD 0.3.0 accepts one exact version or one continuous interval. It does not
+RAD 0.5.0 accepts one exact version or one continuous interval. It does not
 accept a union of versions or intervals. An expression contains no spaces and
 has at least one boundary. A missing lower boundary uses `(` and a missing
 upper boundary uses `)`.
@@ -139,7 +139,7 @@ The server stores and compares the canonical form.
 
 ### 2.5 Protocol Version Negotiation
 
-A binding declares support for RAD 0.3.0 through its documentation or Nacos
+A binding declares support for RAD 0.5.0 through its documentation or Nacos
 capability negotiation. RAD root messages do not carry a protocol-version or
 schema-version field.
 
@@ -267,12 +267,11 @@ All operations reuse one `Endpoint` model:
 | `weight` | No | Weight within a priority; number `0..10000`, default `1` |
 | `metadata` | No | At most 32 flat string key/value entries |
 | `healthy` | Effective value | Boolean, default `true`; Runtime reads use aggregate live health; Declared reads assume usability without probing. |
-| `enabled` | Effective value | Boolean, default `true`; maintained by Nacos; discovery excludes disabled runtime endpoints. |
-| `state` | No | Nacos-maintained state; if present in discovery, AVAILABLE/UNHEALTHY agrees with health. |
+| `enabled` | Effective value | Boolean, default `true`; writable per Runtime contribution; Naming operational overrides take precedence. Discovery excludes disabled contributions. |
 
 Context rules:
 
-- Register MAY submit `healthy`; omission means true. Nacos ignores caller-supplied bindings and management fields, deriving bindings from the enclosing batch.
+- Register MAY submit `healthy` and `enabled`; omission means true and explicit null is invalid for either flag. Bindings inherit Batch defaults as described in section 3.12; EndpointSet revision and observation time remain server-maintained.
 - A `DECLARED` endpoint returns effective `healthy=true` and `enabled=true`. These values are not health-check observations and are not persisted in the version definition.
 - A `RUNTIME` discovery endpoint MUST contain `healthy`.
 - Deregister reads only `uri` and `transport`, the endpoint natural-key
@@ -338,6 +337,7 @@ returned with `endpoints=[]` and a stable `sourceRevision`.
 ```text
 AgentDiscoveryResult
 ├── namespaceId / agentName / version / contentDigest
+├── description? / tags?
 └── callInterfaces[] AgentCallInterface
     ├── protocol / protocolVersion?
     ├── descriptorMediaType / nativeDescriptor
@@ -362,8 +362,13 @@ Rules:
 - `descriptorMediaType` describes `nativeDescriptor`.
 - `endpointSets[]` is authoritative for this discovery snapshot. Addresses
   inside `nativeDescriptor` MUST NOT override it.
-- The result does not return display fields, owner, scope, extensions, or
-  publisher identity.
+- `description` and `tags` are the current Agent catalog values, including when selecting an
+  older exact Version. They are independent of the selected Version's native descriptor.
+  Description is optional and at most 2048 characters. Tags are optional, case-sensitive,
+  unique, at most 32 items of 1..64 characters; no tags are represented as absent or null.
+  These fields remain available when filtering produces empty calling interfaces.
+- The result does not return displayName, iconUrl, provider, owner, scope, extensions, or
+  publisher identity. Reuse the already loaded Agent metadata; no additional query is needed.
 
 ### 3.11 Digest And Revision
 
@@ -396,21 +401,34 @@ Agent, definition version, protocol, source, and selector semantics:
 `AgentEndpointRegistrationBatch` contains:
 
 ```text
-namespaceId / agentName / runtimeVersion / protocol
-versionRange?            # default: exact range [runtimeVersion]
-endpoints[]              # 1..1000
+namespaceId / agentName / protocol
+runtimeVersion? / versionRange?    # field-level defaults for each Endpoint
+endpoints[]                       # 1..1000; each accepts one optional binding
 ```
 
-`runtimeVersion` is the deployed implementation version. `versionRange`
-describes Agent versions that the deployment can serve. When absent, the
-server canonicalizes it to `[runtimeVersion]`. `runtimeVersion` MUST be
-contained in the effective range.
+Each submitted Endpoint has exactly one effective runtime binding. If `bindings` is
+absent or null, inherit both fields from the Batch. Otherwise it MUST contain one
+non-null item; an empty or multi-item list is invalid. Resolve fields independently:
 
-For one publisher and `(namespaceId, agentName, protocol)`, this array is the
-complete desired Endpoint batch. Register replaces the previous batch in full;
-an omitted Endpoint is removed. One publisher therefore has one effective
-`runtimeVersion` and `versionRange` for this scope at a time. Changing either
-value is a complete replacement, not an internal group update.
+```text
+runtimeVersion = Endpoint.binding.runtimeVersion ?? Batch.runtimeVersion
+versionRange   = Endpoint.binding.versionRange ?? Batch.versionRange
+                 ?? exact(runtimeVersion)
+```
+
+Only absent/null means inherit; empty strings are invalid. Any supplied Batch default
+must have valid syntax. The effective runtime version MUST exist and be contained by
+the effective range. Do not materialize an exact Batch range before Endpoint overrides.
+For example, overriding 1.0.0 with 2.0.0 inherits [1.0.0,2.0.0], but fails against
+[1.0.0,2.0.0). With no Batch range, the override yields [2.0.0].
+
+For one publisher and `(namespaceId, agentName, protocol)`, the array is the complete
+desired Endpoint batch. Validate every resolved binding before atomically replacing
+all previous endpoints. Different endpoints may carry different pairs. Input permits
+one binding per Endpoint; query aggregation across publishers may return several.
+SDK intent, partial deregistration and redo retain deep-copied effective bindings;
+server HTTP and gRPC apply the same defaults even for callers without the Java SDK.
+Pre-registration still does not require Agent or Version existence.
 
 `AgentEndpointDeregistrationBatch` contains:
 
@@ -596,6 +614,11 @@ public `AgentDiscoveryResult` after effective defaults are materialized and
 canonical JSON is produced. Public array order defined by this specification
 is preserved; object/map keys are sorted. Internal owner, connection,
 heartbeat, task, and timestamp fields are excluded.
+Description and tags participate in this fingerprint. Tags are sorted by their string values
+for canonical comparison, so reordering the same set does not emit a callback. Absent and null
+have the same meaning. Agent metadata changes use existing resource invalidation and only notify
+when the public projection changes; they do not change contentDigest or Endpoint sourceRevision.
+The 0.5.0 metadata extension leaves the fingerprint of a result with both fields absent unchanged.
 
 ## 7. Register And Deregister
 
@@ -636,8 +659,8 @@ and:
 (namespaceId, agentName, protocol)
 ```
 
-`runtimeVersion` and `versionRange` are shared content of that batch, not an
-additional publication identity or a server-managed binding group.
+Batch `runtimeVersion` and `versionRange` are optional defaults. Each Endpoint carries
+one resolved pair; neither field adds a publication identity or server-managed binding group.
 
 Rules:
 
@@ -674,10 +697,10 @@ batch replacement are serialized for the same Client.
 The publisher transport supplies an opaque identity and liveness semantics.
 The identity does not enter discovery results.
 
-Each publisher contributes at most one complete batch, with one singular
-`runtimeVersion` and `versionRange` pair, to one
-`(namespaceId, agentName, protocol)` Naming service. Different publishers may
-contribute different pairs. The Nacos read path loads the complete internal
+Each publisher contributes at most one complete batch to one
+`(namespaceId, agentName, protocol)` Naming service. Every Endpoint in that batch
+carries one singular `runtimeVersion` and `versionRange` pair; pairs may differ
+between Endpoints and publishers. The Nacos read path loads the complete internal
 Service projection from Naming `ServiceStorage`, retains contributions whose
 range matches the target Version, and aggregates query-time bindings by public
 Endpoint natural key. Agent code does not directly walk the Naming client
@@ -780,10 +803,20 @@ plaintext credentials. Discovery results MUST NOT expose connection ownership,
 publisher identity, heartbeat data, or internal routing information. Endpoint
 metadata MUST NOT use Nacos-reserved internal keys.
 
+
+HTTP Watch also rechecks each retained projection's read visibility using the captured
+non-secret owner identity at initial comparison and asynchronous reconciliation. A denied
+or uncertain owner produces only the corresponding opaque changed item id, even when the
+shared content fingerprint is unchanged. The subsequent Discover decides the actual error
+or content. Eligibility is never written into the shared projection or fingerprint, and an
+eligible reader with the same fingerprint can continue waiting. This preserves the
+request-level HTTP authorization boundary while preventing stale private content from
+remaining silently cached after a visibility change.
+
 ## 12. Schema And Evolution
 
 RAD, the Watch binding, Agent management, and Agent Artifact use the same
-public contract release version, `0.3.0`. Their companion schemas and
+public contract release version, `0.5.0`. Their companion schemas and
 cross-schema references MUST select this release together. Public schemas use
 stable paths without version directories; historical revisions are retained in
 Git. Reproducible validation MUST resolve the complete schema set from one
@@ -791,9 +824,9 @@ pinned Git tag or commit. Artifact payload `schemaVersion` and internal storage
 versions retain their independent meaning.
 
 The normative domain companion is the
-[RAD 0.3.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json).
+[RAD 0.5.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json).
 The experimental Nacos transport envelopes are defined separately by the
-[RAD Watch Binding 0.3.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
+[RAD Watch Binding 0.5.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
 and do not extend the immutable RAD root-message set. Both use JSON Schema
 Draft 2020-12. Ordinary objects use strict property sets; only metadata maps
 and `nativeDescriptor` are open content. Schema defaults are annotations;
@@ -902,7 +935,7 @@ This organization does not rename protocol/schema concepts or change storage and
 
 ## Endpoint Consolidation Acceptance
 
-Runtime registration and complete replacement accept reported healthy. Ignore caller-supplied bindings, management state, and observations maintained by Nacos. Use the effective Endpoint defaults defined above; preserve required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
+Runtime registration and complete replacement accept reported healthy and enabled. Resolve one input binding per Endpoint using Batch defaults; observations and revisions remain server-maintained. Use the effective Endpoint defaults defined above; preserve required RUNTIME output health/bindings, the three-level structure, and Watch comparison semantics. Update input schemas and SDK/HTTP/gRPC validation together.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
 
@@ -916,6 +949,12 @@ both parts with exactly one effective namespace, without relaxing the protocol c
 
 ### Annotation-independent Agent JSON models
 
-Agent models do not carry Jackson inclusion or ignore annotations. Optional reference fields follow the selected serializer: omission and explicit null both mean absent; unknown non-null management fields remain forbidden in discovery/search views. The four Endpoint scalars always have effective values (priority=0, weight=1, healthy=true, enabled=true); lower priority sorts first. AgentVersionInfo exposes onlineCnt() (zero when absent) and latestVersion() (null when absent) only as Java helpers, never extra JSON properties. Endpoint state is redundant with health/enabled and does not add a new fingerprint component.
+Agent models do not carry Jackson inclusion or ignore annotations. Optional reference fields follow the selected serializer: omission and explicit null both mean absent; unknown non-null management fields remain forbidden in discovery/search views. The four Endpoint scalars always have effective values (priority=0, weight=1, healthy=true, enabled=true); lower priority sorts first. AgentVersionInfo exposes onlineCnt() (zero when absent) and latestVersion() (null when absent) only as Java helpers, never extra JSON properties. Endpoint has no state property. Console derives DISABLED when enabled=false, otherwise UNHEALTHY when healthy=false, otherwise AVAILABLE. This adds no fingerprint component.
 
 The nativeDescriptor value remains parsed JSON, not a raw string. This change preserves the existing serializer policy, including filtering null object members during definition storage; it does not promise byte-for-byte preservation of arbitrary protocol JSON. Discovery fingerprints are computed from the stored/read-back descriptor and canonical semantic fields, not transport JSON property order.
+
+Registration preserves disabled contributions for management reads. Discovery excludes each disabled contribution before aggregating health and bindings, so another publisher can keep the same natural endpoint discoverable. Complete replacement can re-enable a contribution. Heartbeats do not overwrite enabled; existing Naming operational overrides retain priority. Endpoint.state and RuntimeEndpointState are removed.
+
+Definition endpointSourceOrder MUST contain both DECLARED and RUNTIME exactly once. It is a recommendation, not a source allow-list. Without a source filter, Discover and Watch return both sets in definition order, retaining empty sets. A source filter MAY select one source; selecting both preserves definition order regardless of filter order. An explicitly selected empty RUNTIME set MUST NOT be replaced by DECLARED addresses.
+
+Public Endpoint metadata uses `__nacos.agent.endpoint.protocolVersion__` (nonempty printable ASCII, at most 64 characters) and `__nacos.agent.endpoint.tenant__` (at most 256 characters, including an explicit empty string) for A2A compatibility. Effective values participate in Runtime source revision and discovery fingerprints. These reuse the historical Nacos-owned keys. Only these two reserved keys are accepted in Endpoint metadata; other control keys remain forbidden. Invalid Endpoint input is rejected.

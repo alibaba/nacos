@@ -27,6 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.utils.AuthIdentityUtils;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.visibility.VisibilityGrantService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
@@ -73,7 +74,7 @@ public class DefaultVisibilityService implements VisibilityService {
             return ValidationResult.allow();
         }
         boolean isRead = VisibilityConstants.ACTION_READ.equals(action);
-        if (isPermitted(identity, isRead, resource)) {
+        if (isPermitted(identity, isRead, apiType, resource)) {
             return ValidationResult.allow();
         }
         return ValidationResult
@@ -111,7 +112,8 @@ public class DefaultVisibilityService implements VisibilityService {
         return NAME;
     }
     
-    private boolean isPermitted(String currentUser, boolean isRead, VisibilityResource candidate) {
+    private boolean isPermitted(String currentUser, boolean isRead, String apiType,
+        VisibilityResource candidate) {
         if (isOwner(currentUser, candidate)) {
             return true;
         }
@@ -119,7 +121,7 @@ public class DefaultVisibilityService implements VisibilityService {
             return true;
         }
         String action = isRead ? VisibilityConstants.ACTION_READ : VisibilityConstants.ACTION_WRITE;
-        return checkResourcePermission(candidate, action);
+        return checkResourcePermission(currentUser, apiType, candidate, action);
     }
     
     private boolean isOwner(String currentUser, VisibilityResource resource) {
@@ -133,16 +135,17 @@ public class DefaultVisibilityService implements VisibilityService {
             + res.getResourceName();
     }
     
-    private boolean checkResourcePermission(VisibilityResource res, String action) {
+    private boolean checkResourcePermission(String identity, String apiType,
+        VisibilityResource res, String action) {
         String resourceId = buildResourceIdentifier(res);
         Resource resource = new Resource("", "", resourceId, SignType.SPECIFIED, new Properties());
         Permission permission = new Permission(resource, action);
         try {
-            Optional<AuthPluginService> authService = findAuthPluginService();
+            Optional<AuthPluginService> authService = findAuthPluginService(apiType);
             if (authService.isPresent()) {
-                IdentityContext identity =
-                    RequestContextHolder.getContext().getAuthContext().getIdentityContext();
-                return authService.get().validateAuthority(identity, permission).isSuccess();
+                IdentityContext context = permissionIdentity(identity, authService.get());
+                return context != null
+                    && authService.get().validateAuthority(context, permission).isSuccess();
             }
             return false;
         } catch (Exception e) {
@@ -154,8 +157,36 @@ public class DefaultVisibilityService implements VisibilityService {
         }
     }
     
-    private Optional<AuthPluginService> findAuthPluginService() {
+    private IdentityContext permissionIdentity(String identity, AuthPluginService service) {
+        if (StringUtils.isBlank(identity) || isAnonymousIdentity(identity)) {
+            return null;
+        }
+        if (service instanceof AbstractNacosAuthPluginService) {
+            // The SPI identity was authenticated at the entry point. Re-evaluate current roles
+            // without retaining credentials or borrowing another request's cached admin flag.
+            IdentityContext context = new IdentityContext();
+            context.setParameter(AuthConstants.NACOS_USER_KEY, new NacosUser(identity));
+            context.setParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+                identity);
+            return context;
+        }
+        // Foreign plugins may need their own authenticated context; never invent one for them.
+        IdentityContext context =
+            RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        return context != null && identity.equals(context.getParameter(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID)) ? context
+                : null;
+    }
+    
+    private Optional<AuthPluginService> findAuthPluginService(String apiType) {
         NacosAuthConfigHolder holder = NacosAuthConfigHolder.getInstance();
+        if (StringUtils.isNotBlank(apiType)) {
+            NacosAuthConfig config = holder.getNacosAuthConfigByScope(apiType);
+            return config == null || !config.isAuthEnabled() ? Optional.empty()
+                : AuthPluginManager.getInstance()
+                    .findAuthServiceSpiImpl(config.getNacosAuthSystemType());
+        }
         for (NacosAuthConfig config : holder.getAllNacosAuthConfig()) {
             if (config.isAuthEnabled()) {
                 return AuthPluginManager.getInstance()

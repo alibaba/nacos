@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.service.a2a.CanonicalA2aEndpointOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
@@ -103,8 +104,8 @@ public class A2aRuntimeSnapshotComparator {
         }
         endpoint.setSupportTls(Boolean.parseBoolean(tls));
         endpoint.setVersion(version);
-        endpoint.setProtocolVersion(metadata.get(
-            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        endpoint
+            .setProtocolVersion(metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
         endpoint.setTenant(metadata.get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
         endpoint.setProtocol(required(metadata, Constants.Agent.AGENT_ENDPOINT_PROTOCOL_KEY));
         endpoint.setQuery(metadata.get(Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
@@ -114,8 +115,7 @@ public class A2aRuntimeSnapshotComparator {
         canonical.setHealthy(source.isHealthy());
         canonical.setWeight(source.getWeight());
         canonical.getMetadata().putAll(publicMetadata(metadata));
-        return snapshot(AgentRuntimeEndpointMapper.fromInstance(canonical),
-            canonical.getMetadata());
+        return snapshot(AgentRuntimeEndpointMapper.fromInstance(canonical));
     }
     
     private SnapshotEntry normalizeCanonical(Instance source, String version) {
@@ -131,17 +131,19 @@ public class A2aRuntimeSnapshotComparator {
         if (!version.equals(runtimeVersion) || !('[' + version + ']').equals(versionRange)) {
             return null;
         }
-        return snapshot(item, source.getMetadata());
+        return snapshot(item);
     }
     
-    private SnapshotEntry snapshot(Endpoint item,
-        Map<String, String> rawMetadata) {
-        Endpoint endpoint = item;
-        return new SnapshotEntry(endpoint.getUri(), endpoint.getTransport(),
-            endpoint.getPriority(), endpoint.getWeight(), endpoint.getMetadata(),
-            valueOrEmpty(rawMetadata.get(
-                Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY)),
-            valueOrEmpty(rawMetadata.get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY)),
+    private SnapshotEntry snapshot(Endpoint item) {
+        Map<String, String> metadata = new LinkedHashMap<>(item.getMetadata() == null
+            ? Collections.emptyMap() : item.getMetadata());
+        // Compare compatibility fields separately: historical empty strings also mean absent.
+        metadata.remove(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY);
+        metadata.remove(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY);
+        return new SnapshotEntry(item.getUri(), item.getTransport(),
+            item.getPriority(), item.getWeight(), metadata,
+            valueOrEmpty(A2aEndpointUtils.protocolVersion(item.getMetadata(), null)),
+            valueOrEmpty(A2aEndpointUtils.tenant(item.getMetadata(), null)),
             item.getEnabled(), item.getHealthy());
     }
     

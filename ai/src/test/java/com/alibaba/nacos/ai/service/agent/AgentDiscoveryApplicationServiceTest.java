@@ -75,6 +75,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -118,10 +122,51 @@ class AgentDiscoveryApplicationServiceTest {
     private AgentDiscoveryApplicationService service;
     
     @BeforeEach
-    void setUp() {
+    void setUp() throws NacosException {
+        lenient().when(runtimeRegistryService.getRuntimeEndpointSet(
+            anyString(), anyString(), anyString(),
+            anyList()))
+            .thenAnswer(invocation -> endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
+                Collections.emptyList()));
+        lenient().when(runtimeRegistryService.getCurrentRuntimeEndpointSet(
+            anyString(), anyString(), anyString(),
+            anyList()))
+            .thenAnswer(invocation -> endpointSet(EndpointSource.RUNTIME, RUNTIME_REVISION,
+                Collections.emptyList()));
         service = new AgentDiscoveryApplicationService(operationService, persistenceService,
             resourceManager, runtimeRegistryService, searchService,
             new AgentSearchModeResolver(() -> AgentSearchMode.SCAN.name()));
+    }
+    
+    @Test
+    void testDiscoverCopiesCurrentMetadataWithoutAdditionalQueries() throws NacosException {
+        AgentSummary agent = enabledAgent();
+        agent.setDescription("Current catalog description");
+        agent.setTags(new ArrayList<String>(Arrays.asList("research", "chat")));
+        stubDiscover(agent, DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
+            Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), null)));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setProtocols(Collections.singletonList("other"));
+        AgentDiscoveryResult result = service.discover(discoveryRequest(VERSION, null, filter));
+        assertEquals(agent.getDescription(), result.getDescription());
+        assertEquals(agent.getTags(), result.getTags());
+        assertEquals(DIGEST, result.getContentDigest());
+        assertTrue(result.getCallInterfaces().isEmpty());
+        agent.getTags().clear();
+        assertEquals(Arrays.asList("research", "chat"), result.getTags());
+        verify(operationService, times(1)).getAgent(NAMESPACE_ID, AGENT_NAME);
+        verify(persistenceService, never()).getAgent(anyString(), anyString());
+        verifyNoInteractions(searchService, runtimeRegistryService);
+    }
+    
+    @Test
+    void testDiscoverOmitsEmptyCatalogTags() throws NacosException {
+        AgentSummary agent = enabledAgent();
+        agent.setTags(Collections.<String>emptyList());
+        stubDiscover(agent, DIGEST, Collections.<AgentCallInterface>emptyList());
+        AgentDiscoveryResult result = service.discover(discoveryRequest(VERSION, null, null));
+        assertNull(result.getDescription());
+        assertNull(result.getTags());
     }
     
     @Test
@@ -447,6 +492,22 @@ class AgentDiscoveryApplicationServiceTest {
     }
     
     @Test
+    void testModelD01DefaultDiscoveryStillUsesSelectedDefinitionProtocols() throws NacosException {
+        // Characterize the separately tracked MODEL-D01 limitation; this is not the desired
+        // protocol union contract and must not be counted as its compatibility coverage.
+        AgentSummary agent = enabledAgent();
+        agent.getVersionInfo().setOnlineVersions(Arrays.asList(
+            catalog(VERSION, null, "a2a"), catalog("1.0.0", null, "custom")));
+        stubDiscover(agent, DIGEST, Collections.singletonList(callInterface("a2a", "1.0",
+            Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED), null)));
+        AgentDiscoveryResult result = service.discover(discoveryRequest(null, null, null));
+        assertEquals(1, result.getCallInterfaces().size());
+        assertEquals("a2a", result.getCallInterfaces().get(0).getProtocol());
+        verify(runtimeRegistryService, never()).getRuntimeEndpointSet(eq(NAMESPACE_ID),
+            eq(AGENT_NAME), eq("custom"), anyList());
+    }
+    
+    @Test
     void testDiscoverSeparatesDefaultOnlinePoolFromExplicitLatest() throws NacosException {
         AgentSummary agent = enabledAgent();
         agent.getVersionInfo().setOnlineVersions(Arrays.asList(
@@ -554,12 +615,45 @@ class AgentDiscoveryApplicationServiceTest {
         AgentDiscoveryResult result = service.discover(discoveryRequest(VERSION, null, null));
         assertEquals(1, result.getCallInterfaces().size());
         AgentCallInterface discovered = result.getCallInterfaces().get(0);
-        assertEquals(1, discovered.getEndpointSets().size());
+        assertEquals(2, discovered.getEndpointSets().size());
         EndpointSet declared = discovered.getEndpointSets().get(0);
         assertEquals(EndpointSource.DECLARED, declared.getSource());
         assertEquals(DIGEST, declared.getSourceRevision());
         assertTrue(declared.getEndpoints().isEmpty());
         assertNull(discovered.getEndpointSourceOrder());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testSourceOrderIsAPreferenceAndFiltersCanSelectEitherSource(boolean runtimeFirst)
+        throws NacosException {
+        List<EndpointSource> order = runtimeFirst
+            ? Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED)
+            : Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME);
+        stubDiscover(DIGEST, Collections.singletonList(callInterface("a2a", "1.0", order,
+            Collections
+                .singletonList(endpoint("https://declared.example.com", "http", 0, null, null)))));
+        AgentDiscoveryResult all = service.discover(discoveryRequest(VERSION, null, null));
+        assertEquals(order,
+            Arrays.asList(all.getCallInterfaces().get(0).getEndpointSets().get(0).getSource(),
+                all.getCallInterfaces().get(0).getEndpointSets().get(1).getSource()));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        AgentDiscoveryResult runtime = service.discover(discoveryRequest(VERSION, null, filter));
+        assertEquals(1, runtime.getCallInterfaces().get(0).getEndpointSets().size());
+        assertEquals(EndpointSource.RUNTIME,
+            runtime.getCallInterfaces().get(0).getEndpointSets().get(0).getSource());
+        assertTrue(
+            runtime.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().isEmpty());
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.DECLARED));
+        assertEquals(1,
+            service.discover(discoveryRequest(VERSION, null, filter)).getCallInterfaces()
+                .get(0).getEndpointSets().get(0).getEndpoints().size());
+        filter.setEndpointSources(Arrays.asList(order.get(1), order.get(0)));
+        AgentDiscoveryResult selectedBoth =
+            service.discover(discoveryRequest(VERSION, null, filter));
+        assertEquals(order.get(0),
+            selectedBoth.getCallInterfaces().get(0).getEndpointSets().get(0).getSource());
     }
     
     @Test
@@ -610,6 +704,8 @@ class AgentDiscoveryApplicationServiceTest {
     void testInternalProjectionUsesPersistenceAfterAdmissionAndMatchesDiscover()
         throws NacosException {
         AgentSummary agent = enabledAgent();
+        agent.setDescription("Shared current metadata");
+        agent.setTags(Arrays.asList("chat", "research"));
         AgentDiscoveryRequest request = discoveryRequest(VERSION, null, null);
         when(operationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
@@ -628,6 +724,8 @@ class AgentDiscoveryApplicationServiceTest {
         AgentDiscoveryResult authorized = service.discover(request);
         AgentDiscoveryResult internal = service.projectCurrentFact(request);
         
+        assertEquals("Shared current metadata", internal.getDescription());
+        assertEquals(Arrays.asList("chat", "research"), internal.getTags());
         assertEquals(AgentDiscoveryCanonicalizer.fingerprint(authorized),
             AgentDiscoveryCanonicalizer.fingerprint(internal));
         verify(operationService).getAgent(NAMESPACE_ID, AGENT_NAME);
@@ -843,7 +941,10 @@ class AgentDiscoveryApplicationServiceTest {
         result.setProtocolVersion(protocolVersion);
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(Collections.singletonMap("name", "demo"));
-        result.setEndpointSourceOrder(sources);
+        result.setEndpointSourceOrder(sources.size() == 1
+            ? Arrays.asList(sources.get(0), sources.get(0) == EndpointSource.RUNTIME
+                ? EndpointSource.DECLARED : EndpointSource.RUNTIME)
+            : sources);
         
         EndpointSet declaredSet1 = new EndpointSet();
         declaredSet1.setSource(EndpointSource.DECLARED);

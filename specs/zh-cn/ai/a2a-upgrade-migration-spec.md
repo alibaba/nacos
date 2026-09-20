@@ -49,6 +49,25 @@ AgentCard Adapter 是长期能力，不随本迁移删除。
 `AUTO` 不执行请求级 fallback、合并读取或定义双写。每个旧 A2A 请求只选择一个完整定义权威。
 Runtime 双物化是独立的连接态兼容行为，不创建第二个定义权威。
 
+### 外部 RAD 迁移门禁
+
+当节点的有效 A2A 权威仍为历史链路时，原生 RAD Client 的 Search、Discover、Publish、
+完整 Endpoint Register，以及 Watch 初次建立和后续业务读取统一拒绝，返回 HTTP 409 /
+`AGENT_MIGRATION_IN_PROGRESS (50105)`；gRPC 保留相同 detail 错误码。该门禁在绑定层认证、
+必要输入检查之后、业务写入或新 owner 创建之前执行，也覆盖尚未投影的名称和无关标准 Agent。
+不能据此降级成“不支持 RAD”或自动改走旧协议。
+
+有效模式沿用 A2A 的解析：LEGACY、AUTO 无计划、AUTO/SYNCING、AUTO/QUIESCING 拒绝；
+全新 CANONICAL 和已观察永久 CANONICAL 终态放行。不能将没有 Marker 等同于就绪。
+能力查询仍返回实现能力；整份 Endpoint Deregister、本地取消/关闭以及已有合法 owner 的
+心跳保留既有身份和归属检查。需要 Register 提交剩余列表的 SDK 局部注销仍返回 50105，
+不改变已确认缓存，也不能扩大为整份删除。拒绝的 Register/Watch 不创建 owner 或补注册。
+HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50105 的 TERMINATED，
+后续 Discover 也受门禁。迁移完成后由调用者显式重新发起业务/订阅。
+
+门禁仅用于外部 RAD binding，不加入共享领域服务。旧 A2A wire、Admin/Console、内部迁移、
+索引和投影继续沿用已有规则，避免阻断迁移自身。旧 API 的 QUIESCING 写屏障保持不变。
+
 ## 2. 配置与内部状态
 
 ### 2.1 配置

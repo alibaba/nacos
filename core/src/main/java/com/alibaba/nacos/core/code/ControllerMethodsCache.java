@@ -33,6 +33,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.context.WebApplicationContext;
@@ -138,6 +139,9 @@ public class ControllerMethodsCache {
                 return null;
             }
             return ((HandlerMethod) handler.getHandler()).getMethod();
+        } catch (HttpRequestMethodNotSupportedException e) {
+            // No business handler exists. Let MVC produce its normal 405 response.
+            return null;
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR,
                 "Failed to resolve Spring MVC controller method", e);
@@ -169,6 +173,9 @@ public class ControllerMethodsCache {
     private Method getMethodFromLegacyCache(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
+        if (RequestMethod.HEAD.name().equals(httpMethod)) {
+            httpMethod = RequestMethod.GET.name();
+        }
         String urlKey = httpMethod + REQUEST_PATH_SEPARATOR
             + stripContextPath(path, resolveContextPath(request));
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);

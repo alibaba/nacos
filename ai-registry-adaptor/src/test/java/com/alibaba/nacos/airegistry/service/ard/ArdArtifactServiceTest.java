@@ -238,7 +238,7 @@ class ArdArtifactServiceTest {
         AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setDescriptorMediaType("application/json");
-        result.setEndpointSourceOrder(List.of(EndpointSource.RUNTIME));
+        result.setEndpointSourceOrder(List.of(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         result.setNativeDescriptor(descriptor);
         return result;
     }

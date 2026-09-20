@@ -20,7 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aEndpointChildPublisherManager.ChildPublisher;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
-import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -35,7 +35,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Locale;
 
 /**
  * Adapts legacy exact-Version A2A Endpoint operations to the canonical RAD Runtime layout.
@@ -178,31 +177,9 @@ public class CanonicalA2aEndpointOperationService {
     }
     
     private Instance toInstance(AgentEndpoint source) {
-        if (StringUtils.isBlank(source.getAddress())) {
-            throw new IllegalArgumentException("Legacy A2A Endpoint address must not be empty");
-        }
-        Endpoint endpoint = new Endpoint();
-        endpoint.setUri(composeUri(source));
-        endpoint.setTransport(source.getTransport());
+        Endpoint endpoint = A2aEndpointUtils.toEndpoint(source);
         return AgentRuntimeEndpointMapper.toLegacyA2aInstance(endpoint, source.getVersion(),
             source.getProtocolVersion(), source.getTenant());
-    }
-    
-    private String composeUri(AgentEndpoint endpoint) {
-        String protocol = StringUtils.isBlank(endpoint.getProtocol())
-            ? AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL : endpoint.getProtocol();
-        if (AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL.equalsIgnoreCase(protocol)
-            && endpoint.isSupportTls()) {
-            protocol = "https";
-        }
-        String address = endpoint.getAddress();
-        String host = address != null && address.indexOf(':') >= 0 && !address.startsWith("[")
-            ? '[' + address + ']' : address;
-        String path = StringUtils.isBlank(endpoint.getPath()) ? ""
-            : endpoint.getPath().startsWith("/") ? endpoint.getPath() : '/' + endpoint.getPath();
-        String query = StringUtils.isBlank(endpoint.getQuery()) ? "" : '?' + endpoint.getQuery();
-        return protocol.toLowerCase(Locale.ROOT) + "://" + host + ':'
-            + endpoint.getPort() + path + query;
     }
     
     private NacosApiException invalidEndpoint(String message) {

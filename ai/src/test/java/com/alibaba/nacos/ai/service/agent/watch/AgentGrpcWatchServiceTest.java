@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -70,6 +72,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AgentGrpcWatchServiceTest {
+    
+    private final AgentClientMigrationGuard migrationGuard = mock(AgentClientMigrationGuard.class);
     
     private static final String CONNECTION_ID = "connection";
     
@@ -226,7 +230,7 @@ class AgentGrpcWatchServiceTest {
         assertEquals(1, service.connectionSize(CONNECTION_ID));
         assertThrows(IllegalArgumentException.class,
             () -> new AgentGrpcWatchService(projectionService, discoveryService,
-                ownerEligibilityChecker, rpcPushService, connectionManager,
+                ownerEligibilityChecker, rpcPushService, connectionManager, migrationGuard,
                 new AgentGrpcWatchRegistry(), 0, 10L, 1, Runnable::run));
     }
     
@@ -483,7 +487,8 @@ class AgentGrpcWatchServiceTest {
                 Constants.Agent.MAX_WATCHES_PER_CLIENT_CONFIG_KEY, Integer.class,
                 Constants.Agent.DEFAULT_MAX_WATCHES_PER_CLIENT)).thenReturn(7);
             AgentGrpcWatchService configured = new AgentGrpcWatchService(projectionService,
-                discoveryService, ownerEligibilityChecker, rpcPushService, connectionManager);
+                discoveryService, ownerEligibilityChecker, rpcPushService, connectionManager,
+                migrationGuard);
             try {
                 for (int index = 0; index < 7; index++) {
                     configured.subscribe(CONNECTION_ID,
@@ -549,9 +554,26 @@ class AgentGrpcWatchServiceTest {
         verify(projectionService).release(AgentProjectionTestFixtures.key("agent"));
     }
     
+    @Test
+    void testMigrationRejectsAdmissionAndLaterDelivery() throws Exception {
+        String fingerprint = subscribeWithInitialState("agent", "watch");
+        NacosApiException migrating = new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "migration");
+        org.mockito.Mockito.doThrow(migrating).when(migrationGuard).checkReady();
+        assertEquals(migrating, assertThrows(NacosApiException.class,
+            () -> service.subscribe(CONNECTION_ID, request("watch", "agent", fingerprint))));
+        fireUpdate("agent");
+        PushRecord push = pushes.poll(5L, TimeUnit.SECONDS);
+        assertNotNull(push);
+        assertEquals(AgentWatchEventType.TERMINATED, push.request.getEventType());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), push.request.getErrorCode());
+        push.callback.onSuccess();
+        waitUntil(() -> service.size() == 0);
+    }
+    
     private void createService(int capacity) {
         service = new AgentGrpcWatchService(projectionService, discoveryService,
-            ownerEligibilityChecker, rpcPushService, connectionManager,
+            ownerEligibilityChecker, rpcPushService, connectionManager, migrationGuard,
             new AgentGrpcWatchRegistry(), capacity, 10L, 2, Runnable::run);
         service.start();
     }

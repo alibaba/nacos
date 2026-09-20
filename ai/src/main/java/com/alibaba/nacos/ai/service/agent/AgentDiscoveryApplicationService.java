@@ -345,6 +345,9 @@ public class AgentDiscoveryApplicationService {
         AgentDiscoveryResult result = new AgentDiscoveryResult();
         result.setNamespaceId(namespaceId);
         result.setAgentName(reference.getAgentName());
+        result.setDescription(agent.getDescription());
+        result.setTags(agent.getTags() == null || agent.getTags().isEmpty() ? null
+            : copy(agent.getTags()));
         result.setVersion(version);
         result.setContentDigest(detail.getContentDigest());
         result.setCallInterfaces(resolveCallInterfaces(namespaceId, reference.getAgentName(),

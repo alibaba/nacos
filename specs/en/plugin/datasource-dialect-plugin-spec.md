@@ -73,7 +73,25 @@ Dialect implementations provide `DatabaseDialect`.
 | `getPageLastNum(page, pageSize)` | Return second pagination parameter. |
 | `getReturnPrimaryKeys()` | Return generated key columns. |
 | `getFunction(functionName)` | Map logical function names to dialect SQL functions. |
+| `getDefaultDriverClassName()` | Return the default JDBC driver class for the dialect, or `null` when the dialect provides none. The default returns `null`. |
 | `isDuplicateKeyException(throwable)` | Classify whether a datasource throwable is a duplicate unique-key conflict. The default recognizes a Spring `DuplicateKeyException` in the cause chain; dialects may override for driver-specific detection. |
+
+`getDefaultDriverClassName()` lets a dialect plugin carry the driver knowledge for
+its own database, so selecting the dialect via
+`nacos.plugin.datasource-dialect.type` is enough for the external datasource to
+pick a matching driver. The datasource module consults it only when the driver
+class is empty after binding both legacy and canonical pool configuration. An
+explicit driver configured through either key always wins and bypasses the
+default-driver getter entirely, even if that getter would throw an exception.
+Canonical driver configuration takes precedence over its legacy alias. When the
+selected dialect cannot be resolved, is disabled, or returns `null`/blank, the datasource module keeps
+its MySQL driver compatibility default. The built-in `mysql`, `postgresql`,
+`oracle`, and `derby` dialects provide `com.mysql.cj.jdbc.Driver`,
+`org.postgresql.Driver`, `oracle.jdbc.OracleDriver`, and
+`org.apache.derby.jdbc.EmbeddedDriver` respectively. Providing a default driver
+does not bundle the driver jar; deployments must still place the driver on the
+classpath or under `${nacos.home}/plugins`. The driver compatibility fallback
+does not replace the selected dialect or relax its startup validation.
 
 `isDuplicateKeyException(throwable)` is the single entry point config repositories
 use to decide whether a failed insert was a duplicate unique-key conflict. The
@@ -150,6 +168,11 @@ The dialect selector supplies bootstrap selection and requires restart.
 Persisted state entries for this exclusive type do not replace the static
 selection, and the runtime status API must reject selection changes.
 
+External datasource default-driver lookup uses the datasource type already
+resolved during service initialization, including canonical/legacy selector
+precedence. Reloading connection pools reuses that resolved type rather than
+reading the selector again from the environment.
+
 When neither the standard selector nor its legacy alias is configured, the
 selection follows the server storage default: standalone mode and cluster mode
 with `-DembeddedStorage=true` select `derby`; ordinary cluster mode selects
@@ -206,7 +229,7 @@ The stable datasource module settings are:
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` or kebab-case equivalent | Hikari idle timeout in milliseconds; default `600000`. |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` or kebab-case equivalent | Hikari maximum pool size; default `20`. |
 | `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` or kebab-case equivalent | Hikari minimum idle connections; default `2`. |
-| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` or kebab-case equivalent | JDBC driver class. Blank uses the MySQL driver compatibility default and is not inferred from the dialect, so it MUST be set explicitly for any non-MySQL dialect such as `postgresql` or `oracle`. |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` or kebab-case equivalent | JDBC driver class. Blank uses the default provided by the selected dialect plugin via `getDefaultDriverClassName()`; when the dialect provides none, the MySQL driver compatibility default applies. Set it explicitly to override the dialect default or when using a dialect plugin that does not provide one. |
 | `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` or kebab-case equivalent | Connection test query. Blank uses `SELECT 1`. |
 | `nacos.plugin.datasource.db.query-timeout` | JVM property `QUERYTIMEOUT` | JDBC query timeout in seconds; default `3`. |
 

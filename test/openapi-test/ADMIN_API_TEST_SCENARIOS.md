@@ -122,6 +122,27 @@ standalone profile has no deterministic Agent review Pipeline.
 | `AgentSpecAdminApiOpenApiITCase` | `GET,DELETE /v3/admin/ai/agentspecs`<br>`GET /v3/admin/ai/agentspecs/list`<br>`GET /v3/admin/ai/agentspecs/version`<br>`GET /v3/admin/ai/agentspecs/version/meta`<br>`POST,PUT,DELETE /v3/admin/ai/agentspecs/draft`<br>`POST /v3/admin/ai/agentspecs/submit`<br>`POST /v3/admin/ai/agentspecs/publish`<br>`POST /v3/admin/ai/agentspecs/force-publish`<br>`POST /v3/admin/ai/agentspecs/redraft`<br>`POST /v3/admin/ai/agentspecs/online`<br>`POST /v3/admin/ai/agentspecs/offline`<br>`PUT /v3/admin/ai/agentspecs/labels`<br>`PUT /v3/admin/ai/agentspecs/biz-tags`<br>`PUT /v3/admin/ai/agentspecs/scope` | Covered | Exercises AgentSpec draft/create/update/delete/fork, submit, reviewing-state repeat-submit idempotency, force-publish, metadata, version/meta, labels, server-managed latest label preservation, publish-parameter compatibility, bizTags, scope, online/offline latest maintenance, list, and delete; covers defaults, search/scope filters, version validation, absent resources, and controlled workflow errors. |
 | `AgentSpecUploadAdminApiOpenApiITCase` | `POST /v3/admin/ai/agentspecs/upload` | Covered | Uploads single and batch AgentSpec ZIPs, validates manifest/resources, overwrite behavior, next version generation, and partial batch handling; covers empty/malformed ZIP, missing manifest, invalid targetVersion, and upload error envelopes. |
 
+## Config detail schema regression (#15853)
+
+`ConfigHistoryAdminApiOpenApiITCase.testSchemaInCurrentAndHistoricalDetails`
+verifies the following workflow against a standalone server:
+
+| Scenario | Expected result |
+| --- | --- |
+| Publish without schema, then query current detail | `schema` is omitted or JSON null. |
+| Publish two different schema/content versions | Current detail returns the latest stored schema. |
+| Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
+| Query an older history record without schema | `schema` is omitted or JSON null. |
+| Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
+| Publish an explicit empty schema | Current detail preserves the empty string. |
+
+Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTest`;
+public publish APIs cannot create these legacy/corrupt history records. Existing
+required-parameter, missing-history, and identity-mismatch cases remain applicable.
+
+The inherited `ConfigGrayInfo` response also omits `schema` or returns null for beta
+configurations; the existing beta and gray query ITs assert this boundary.
+
 ## Agent model consolidation
 
 AgentAdminApiOpenApiITCase.testDefaultNamespaceCrudOverviewListAndVersionReads additionally checks raw HTTP JSON after model consolidation: inherited provider/icon metadata remain present, Agent summaries omit extensions and callInterfaces, and Version summaries omit namespaceId/agentName/callInterfaces while preserving author/digest. Existing HTTP field names and scenario status stay unchanged.
@@ -162,3 +183,8 @@ JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 ena
 | No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
 | Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
 | CAS conflict / retry exhaustion | Recompute against current version / controlled resource conflict. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+C11 migration regression uses an isolated released 3.2.4 SDK for historical-wire
+mutations and the current SDK for RAD admission/terminal assertions. ARD reads in
+`A2aMigrationAdminApiOpenApiITCase` use the explicit Client identity. Normal Admin,
+QUIESCING, terminal-marker and restart reports remain separate; see
+the SDK scenario and coverage records for final execution.

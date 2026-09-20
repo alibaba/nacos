@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -59,6 +60,7 @@ public class ConfigGrayAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         assertEquals(groupName, gray.get("groupName").asText(), gray.toString());
         assertEquals(DEFAULT_NAMESPACE, gray.get("namespaceId").asText(), gray.toString());
         assertEquals(content, gray.get("content").asText(), gray.toString());
+        assertFalse(gray.hasNonNull("schema"), gray.toString());
         assertEquals(md5(content), gray.get("md5").asText(), gray.toString());
         assertEquals(grayName, gray.get("grayName").asText(), gray.toString());
         assertTrue(gray.get("grayRule").asText().contains("\"type\":\"tagv2\""), gray.toString());

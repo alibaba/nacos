@@ -431,6 +431,27 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
+    /**
+     * Post a form with an explicit policy for automatic HTTP body replay.
+     *
+     * @param url target URL
+     * @param header request headers
+     * @param bodyValues form fields
+     * @param responseType response type
+     * @param bodyRepeatable whether the HTTP implementation may replay the body
+     * @param <T> response data type
+     * @return the HTTP result
+     * @throws Exception when the request fails, including an uncertain write outcome
+     */
+    public <T> HttpRestResult<T> postForm(String url, Header header,
+        Map<String, String> bodyValues, Type responseType, boolean bodyRepeatable)
+        throws Exception {
+        RequestHttpEntity entity = new RequestHttpEntity(null,
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), null, bodyValues,
+            bodyRepeatable);
+        return execute(url, HttpMethod.POST, entity, responseType);
+    }
+    
     public <T> HttpRestResult<T> postFile(String url, HttpClientConfig config, Header header,
         File file, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, file);

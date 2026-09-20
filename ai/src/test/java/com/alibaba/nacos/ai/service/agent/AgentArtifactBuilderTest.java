@@ -88,7 +88,7 @@ class AgentArtifactBuilderTest {
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
         result.setDescriptorMediaType("application/json");
-        result.setEndpointSourceOrder(List.of(EndpointSource.DECLARED));
+        result.setEndpointSourceOrder(List.of(EndpointSource.DECLARED, EndpointSource.RUNTIME));
         return result;
     }
     

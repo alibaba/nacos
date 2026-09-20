@@ -30,6 +30,7 @@ scenario registries.
 
 | Source | Operation | Normalized `@Secured` tuple | Resource parser | Authorization coverage |
 | --- | --- | --- | --- | --- |
+| `ai` | `AiCapabilityClientController#getCapabilities` | `action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API, tags = Constants.Tag.ONLY_IDENTITY, parser = AiCapabilityHttpResourceParser.class` | `AiCapabilityHttpResourceParser` | Direct: `AiCapabilitiesClientOpenApiITCase` |
 | `ai` | `A2aAdminController#registerAgent` | `action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API` | `AiHttpResourceParser` | Parser-family equivalent: `ModuleAuthorizationITCase` |
 | `ai` | `A2aAdminController#getAgentCard` | `action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API` | `AiHttpResourceParser` | Parser-family equivalent: `ModuleAuthorizationITCase` |
 | `ai` | `A2aAdminController#updateAgentCard` | `action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API` | `AiHttpResourceParser` | Parser-family equivalent: `ModuleAuthorizationITCase` |

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.ai.utils;
 
 import java.util.List;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -51,16 +50,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class AgentModelUtilsTest {
     
     @Test
-    void registrationIgnoresServerFieldsWithoutChangingCallerObject() throws NacosException {
+    void registrationCopiesBindingsHealthAndEnabledWithoutChangingCallerObject()
+        throws NacosException {
         Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://example.com/a2a");
         endpoint.setTransport("JSONRPC");
         endpoint.setHealthy(false);
         endpoint.setEnabled(false);
-        endpoint.setState(RuntimeEndpointState.DISABLED);
         RuntimeVersionBinding forged = new RuntimeVersionBinding();
         forged.setRuntimeVersion("9.0.0");
-        forged.setVersionRange("ignored");
+        forged.setVersionRange(null);
         endpoint.setBindings(Collections.singletonList(forged));
         AgentEndpointRegistrationBatch request =
             new AgentEndpointRegistrationBatch();
@@ -72,11 +71,12 @@ class AgentModelUtilsTest {
             AgentModelUtils.copyRegistrationBatch(request, "public");
         Endpoint copy = result.getEndpoints().get(0);
         assertEquals(Boolean.FALSE, copy.getHealthy());
-        assertNull(copy.getBindings());
-        assertNull(copy.getState());
-        assertEquals(true, copy.getEnabled());
+        assertEquals("9.0.0", copy.getBindings().get(0).getRuntimeVersion());
+        assertEquals("[9.0.0]", copy.getBindings().get(0).getVersionRange());
+        assertNotSame(forged, copy.getBindings().get(0));
+        assertEquals(false, copy.getEnabled());
         assertEquals("9.0.0", endpoint.getBindings().get(0).getRuntimeVersion());
-        assertEquals(RuntimeEndpointState.DISABLED, endpoint.getState());
+        assertEquals(Boolean.FALSE, endpoint.getEnabled());
         assertEquals("https://example.com/a2a", endpoint.getUri());
     }
     
@@ -223,6 +223,9 @@ class AgentModelUtilsTest {
         assertEquals(Double.valueOf(1D), result.getEndpoints().get(0).getWeight());
         assertNotSame(source.getEndpoints(), result.getEndpoints());
         assertNotSame(metadata, result.getEndpoints().get(0).getMetadata());
+        assertEquals("[1.0.0]",
+            result.getEndpoints().get(0).getBindings().get(0).getVersionRange());
+        assertNull(endpoint.getBindings());
         
         endpoint.setUri("http://other:80");
         metadata.clear();

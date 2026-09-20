@@ -320,3 +320,14 @@ polling, and shuts down listener execution after preventing new callbacks.
   should share common observability fields.
 - Multi-language SDKs should document which local cache and redo behaviors they
   support and where they intentionally differ from Java.
+
+### 8.5 Adapted A2A Runtime Intent
+
+When A2A uses RAD, the publication state additionally retains per-exact-Version
+reference snapshots and per-Endpoint continuous ranges. This state is committed,
+rolled back, replayed and removed together with the existing complete Batch and
+sticky owner transport; it is not a second redo cache. Same-publication native
+RAD/A2A source exclusion follows the [A2A Agent Spec](../ai/a2a-agent-spec.md).
+The gRPC task delegates managed publications to that same serialized owner.
+Expected snapshot identity prevents old work from overwriting a newer write;
+completed/rejected replay reconciles only its own current redo record.

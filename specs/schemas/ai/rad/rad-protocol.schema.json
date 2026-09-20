@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nacos.io/schemas/ai/rad/rad-protocol.schema.json",
   "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
-  "title": "Nacos Remote Agent Discovery (RAD) Protocol 0.3.0",
+  "title": "Nacos Remote Agent Discovery (RAD) Protocol 0.5.0",
   "description": "Definition bundle for RAD Search, Discover, Watch snapshots, and Runtime Endpoint publication. Select an explicit x-entrypoints reference for validation.",
   "x-status": "experimental",
-  "x-protocol-version": "0.3.0",
+  "x-protocol-version": "0.5.0",
   "x-entrypoints": {
     "AgentSearchRequest": "#/$defs/AgentSearchRequest",
     "AgentCatalogPage": "#/$defs/AgentCatalogPage",
@@ -165,9 +165,19 @@
           }
         },
         {
-          "not": {
-            "pattern": "^__nacos\\.agent\\.endpoint\\."
-          }
+          "anyOf": [
+            {
+              "enum": [
+                "__nacos.agent.endpoint.protocolVersion__",
+                "__nacos.agent.endpoint.tenant__"
+              ]
+            },
+            {
+              "not": {
+                "pattern": "^__nacos\\.agent\\.endpoint\\."
+              }
+            }
+          ]
         }
       ]
     },
@@ -180,6 +190,18 @@
       "additionalProperties": {
         "type": "string",
         "maxLength": 256
+      },
+      "properties": {
+        "__nacos.agent.endpoint.protocolVersion__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[!-~]+$"
+        },
+        "__nacos.agent.endpoint.tenant__": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "AgentProvider": {
@@ -708,7 +730,7 @@
                   "null"
                 ]
               },
-              "description": "Ignored on input. Nacos derives bindings from the enclosing runtimeVersion and versionRange."
+              "description": "Ignored for deregistration; only uri and transport form the removal key."
             },
             {
               "type": "null"
@@ -718,22 +740,6 @@
         "enabled": {
           "type": "boolean",
           "default": true
-        },
-        "state": {
-          "anyOf": [
-            {
-              "type": "string",
-              "enum": [
-                "AVAILABLE",
-                "DISABLED",
-                "UNHEALTHY"
-              ],
-              "description": "Ignored on input. Maintained by Nacos."
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "priority": {
           "type": "integer",
@@ -801,38 +807,21 @@
           "anyOf": [
             {
               "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
               "items": {
-                "type": [
-                  "object",
-                  "null"
-                ]
-              },
-              "description": "Ignored on input. Nacos derives bindings from the enclosing runtimeVersion and versionRange."
+                "$ref": "#/$defs/RuntimeVersionBindingInput"
+              }
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "description": "One optional input binding; absent/null inherits Batch defaults. Query bindings may contain several publisher contributions."
         },
         "enabled": {
           "type": "boolean",
           "default": true
-        },
-        "state": {
-          "anyOf": [
-            {
-              "type": "string",
-              "enum": [
-                "AVAILABLE",
-                "DISABLED",
-                "UNHEALTHY"
-              ],
-              "description": "Ignored on input. Maintained by Nacos."
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "healthy": {
           "type": "boolean",
@@ -888,61 +877,11 @@
           "description": "Defaults to true on reads. Not persisted in the version definition.",
           "const": true
         },
-        "state": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "AVAILABLE",
-            "DISABLED",
-            "UNHEALTHY",
-            null
-          ]
-        },
         "bindings": {
           "type": "null",
           "description": "No runtime bindings for declared addresses."
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "required": [
-              "state"
-            ],
-            "properties": {
-              "state": {
-                "type": "string"
-              }
-            }
-          },
-          "then": {
-            "oneOf": [
-              {
-                "properties": {
-                  "state": {
-                    "const": "AVAILABLE"
-                  },
-                  "healthy": {
-                    "const": true
-                  }
-                }
-              },
-              {
-                "properties": {
-                  "state": {
-                    "const": "UNHEALTHY"
-                  },
-                  "healthy": {
-                    "const": false
-                  }
-                }
-              }
-            ]
-          }
-        }
-      ]
+      }
     },
     "RuntimeVersionBinding": {
       "type": "object",
@@ -1015,58 +954,8 @@
           "type": "boolean",
           "default": true,
           "const": true
-        },
-        "state": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "AVAILABLE",
-            "DISABLED",
-            "UNHEALTHY",
-            null
-          ]
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "required": [
-              "state"
-            ],
-            "properties": {
-              "state": {
-                "type": "string"
-              }
-            }
-          },
-          "then": {
-            "oneOf": [
-              {
-                "properties": {
-                  "state": {
-                    "const": "AVAILABLE"
-                  },
-                  "healthy": {
-                    "const": true
-                  }
-                }
-              },
-              {
-                "properties": {
-                  "state": {
-                    "const": "UNHEALTHY"
-                  },
-                  "healthy": {
-                    "const": false
-                  }
-                }
-              }
-            ]
-          }
-        }
-      ]
+      }
     },
     "DeclaredEndpointSet": {
       "type": "object",
@@ -1163,6 +1052,33 @@
           "items": {
             "$ref": "#/$defs/AgentCallInterface"
           }
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/Tag"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -1172,7 +1088,6 @@
       "required": [
         "namespaceId",
         "agentName",
-        "runtimeVersion",
         "protocol",
         "endpoints"
       ],
@@ -1184,13 +1099,20 @@
           "$ref": "#/$defs/AgentName"
         },
         "runtimeVersion": {
-          "$ref": "#/$defs/AgentVersion"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "versionRange": {
           "anyOf": [
             {
               "$ref": "#/$defs/VersionRange",
-              "description": "When omitted, the effective canonical value is [runtimeVersion]."
+              "description": "Optional default; omitted endpoint and batch range resolve to the exact effective endpoint runtimeVersion."
             },
             {
               "type": "null"
@@ -1282,7 +1204,34 @@
           "description": "Unused in this view; may be omitted or explicitly null."
         }
       }
+    },
+    "RuntimeVersionBindingInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "runtimeVersion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "versionRange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "description": "Fields independently inherit Batch defaults; final runtimeVersion is required and must belong to the effective range."
     }
   },
-  "x-schema-version": "0.3.0"
+  "x-schema-version": "0.5.0"
 }

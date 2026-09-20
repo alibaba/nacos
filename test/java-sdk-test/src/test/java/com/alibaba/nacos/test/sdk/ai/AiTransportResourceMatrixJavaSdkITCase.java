@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
@@ -55,7 +56,6 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -147,11 +147,18 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         verifySkill(service, maintainer, AgentTransportMode.HTTP);
         verifyAgentSpec(service, maintainer, AgentTransportMode.HTTP);
         String absent = randomServiceName("http-only-a2a");
-        NacosRuntimeException legacy = assertThrows(NacosRuntimeException.class, () -> service.getAgentCard(absent));
-        assertEquals(NacosException.SERVER_ERROR, legacy.getErrCode(), legacy.toString());
-        NacosRuntimeException child = assertThrows(NacosRuntimeException.class, () -> service.agent().getAgentCard(absent));
+        NacosException legacy = assertThrows(NacosException.class, () -> service.getAgentCard(absent));
+        assertEquals(migrationBlocked() ? ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()
+                : NacosException.NOT_FOUND, legacy.getErrCode(), legacy.toString());
+        NacosException child = assertThrows(NacosException.class, () -> service.agent().getAgentCard(absent));
         assertEquals(legacy.getErrCode(), child.getErrCode());
-        assertNotNull(service.agent().searchAgents(new AgentSearchRequest()));
+        if (migrationBlocked()) {
+            assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                assertThrows(NacosException.class,
+                    () -> service.agent().searchAgents(new AgentSearchRequest())).getErrCode());
+        } else {
+            assertNotNull(service.agent().searchAgents(new AgentSearchRequest()));
+        }
     }
 
     @Test
@@ -331,6 +338,12 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
     private void verifyAgent(AiService service, AiMaintainerService maintainer,
             AgentTransportMode mode) throws Exception {
         String agentName = randomServiceName("transport-" + mode.getValue() + "-agent");
+        if (migrationBlocked()) {
+            assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                assertThrows(NacosException.class,
+                    () -> service.agent().publishAgent(agentRequest(agentName, mode))).getErrCode());
+            return;
+        }
         addCleanup(() -> maintainer.agent().deleteAgent(Constants.DEFAULT_NAMESPACE_ID,
                 agentName));
 
@@ -494,6 +507,24 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         namingService.deregisterInstance(serviceName, groupName, instance);
         waitUntil(mode + " ordinary Naming instance should be removed",
                 () -> namingService.getAllInstances(serviceName, groupName).isEmpty());
+    }
+
+    private boolean migrationBlocked() {
+        return "blocked".equals(System.getProperty("nacos.agent.migration.gate"));
+    }
+
+    @Override
+    protected AiService createAiService(Properties properties) throws Exception {
+        if (!migrationBlocked()) {
+            return super.createAiService(properties);
+        }
+        AiService service = createAiServiceWithoutReadiness(properties);
+        waitUntil("RAD reports migration authority after connection", () -> {
+            NacosException error = assertThrows(NacosException.class,
+                () -> service.agent().searchAgents(new AgentSearchRequest()));
+            return error.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode();
+        });
+        return service;
     }
 
     private AiService createAiService(AgentTransportMode mode) throws Exception {

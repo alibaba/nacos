@@ -59,6 +59,8 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -120,6 +122,35 @@ class AiGrpcClientAgentTest {
     @AfterEach
     void tearDown() throws NacosException {
         client.shutdown();
+    }
+    
+    @Test
+    void connectionLossBeforeFirstSendStillRetainsCompletePublicationForRedo() throws Exception {
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setAgentName("agent-a");
+        batch.setProtocol("a2a");
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class, () -> client.registerAgentEndpoints("public", batch))
+                .getErrCode());
+        verify(redoService).cacheAgentEndpointPublication("public", batch);
+        verify(redoService, never()).discardAgentEndpointPublication(any());
+        verify(rpcClient, never()).request(any());
+    }
+    
+    @Test
+    void definiteUnsupportedDoesNotRetainAnInitialPublicationRedo() throws Exception {
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+        batch.setAgentName("agent-a");
+        batch.setProtocol("a2a");
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
+            assertThrows(NacosException.class, () -> client.registerAgentEndpoints("public", batch))
+                .getErrCode());
+        verify(redoService).cacheAgentEndpointPublication("public", batch);
+        verify(redoService).discardAgentEndpointPublication(any());
+        verify(rpcClient, never()).request(any());
     }
     
     @Test
@@ -218,12 +249,13 @@ class AiGrpcClientAgentTest {
         AgentVersionDetail expected = new AgentVersionDetail();
         AgentPublishRpcResponse response = new AgentPublishRpcResponse();
         response.setVersionDetail(expected);
-        when(rpcClient.request(any(AgentPublishRpcRequest.class))).thenReturn(response);
+        when(rpcClient.requestOnce(any(AgentPublishRpcRequest.class),
+            org.mockito.ArgumentMatchers.anyLong())).thenReturn(response);
         
         assertSame(expected, client.publishAgent(publication));
         ArgumentCaptor<AgentPublishRpcRequest> request =
             ArgumentCaptor.forClass(AgentPublishRpcRequest.class);
-        verify(rpcClient).request(request.capture());
+        verify(rpcClient).requestOnce(request.capture(), org.mockito.ArgumentMatchers.anyLong());
         assertEquals("public", request.getValue().getNamespaceId());
         assertSame(publication, request.getValue().getPublishRequest());
         assertEquals("alice", request.getValue().getHeader("identity"));
@@ -248,7 +280,7 @@ class AiGrpcClientAgentTest {
         when(rpcClient.isRunning()).thenReturn(true);
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
             .thenReturn(AbilityStatus.UNKNOWN, AbilityStatus.NOT_SUPPORTED);
-        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
+        assertEquals(NacosException.SERVER_ERROR,
             assertThrows(NacosException.class,
                 () -> client.searchAgents("public", new AgentSearchRequest())).getErrCode());
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
@@ -275,24 +307,42 @@ class AiGrpcClientAgentTest {
         assertSame(batch, request.getValue().getRegistrationBatch());
     }
     
-    @Test
-    void nonRetryableRegisterFailureRestoresPreviousRedoIntent() throws Exception {
+    @ParameterizedTest
+    @EnumSource(value = ErrorCode.class,
+        names = {"PARAMETER_VALIDATE_ERROR", "AGENT_MIGRATION_IN_PROGRESS"})
+    void nonRetryableRegisterFailureRestoresPreviousRedoIntent(ErrorCode code) throws Exception {
         support(AbilityKey.SERVER_RAD_V1);
         AgentEndpointRegistrationBatch previous = registrationBatch("http://old/a");
         AgentEndpointRegistrationBatch replacement = registrationBatch("http://new/a");
         when(redoService.getAgentEndpointPublication(PUBLICATION_KEY)).thenReturn(previous);
         when(redoService.isAgentEndpointPublicationRegistered(PUBLICATION_KEY)).thenReturn(true);
         when(rpcClient.request(any(AgentEndpointRegisterRpcRequest.class)))
-            .thenReturn(error(ErrorCode.PARAMETER_VALIDATE_ERROR));
+            .thenReturn(error(code));
         
-        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
-            () -> client.registerAgentEndpoints("public", replacement)).getErrCode());
+        assertEquals(code == ErrorCode.PARAMETER_VALIDATE_ERROR ? NacosException.INVALID_PARAM
+            : code.getCode().intValue(),
+            assertThrows(NacosException.class,
+                () -> client.registerAgentEndpoints("public", replacement)).getErrCode());
         
         InOrder order = inOrder(redoService);
         order.verify(redoService).cacheAgentEndpointPublication("public", replacement);
         order.verify(redoService).discardAgentEndpointPublication(PUBLICATION_KEY);
         order.verify(redoService).cacheAgentEndpointPublication("public", previous);
         order.verify(redoService).agentEndpointPublicationRegistered(PUBLICATION_KEY);
+    }
+    
+    @Test
+    void responseLossKeepsGrpcPublicationRedoPending() throws Exception {
+        support(AbilityKey.SERVER_RAD_V1);
+        AgentEndpointRegistrationBatch batch = registrationBatch("http://one/a");
+        NacosException failure =
+            new NacosException(NacosException.HTTP_CLIENT_ERROR_CODE, "response lost");
+        when(rpcClient.request(any(AgentEndpointRegisterRpcRequest.class))).thenThrow(failure);
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> client.registerAgentEndpoints("public", batch)));
+        verify(redoService).cacheAgentEndpointPublication("public", batch);
+        verify(redoService, never()).discardAgentEndpointPublication(PUBLICATION_KEY);
+        verify(redoService, never()).agentEndpointPublicationRegistered(PUBLICATION_KEY);
     }
     
     @Test

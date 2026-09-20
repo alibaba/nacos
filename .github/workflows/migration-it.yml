@@ -240,6 +240,19 @@ jobs:
             -Dit.test=A2aMigrationAdminApiOpenApiITCase \
             -Dnacos.a2a.migration.cutover.phase=syncing
 
+      - name: Verify Native RAD Migration Admission
+        run: |
+          mvn -B -pl test/openapi-test verify -Pintegration-test \
+            -DskipTests=false \
+            -Dit.test=AgentMigrationClientOpenApiITCase \
+            -Dnacos.agent.migration.gate=blocked
+
+      - name: Resolve Isolated Released A2A SDK
+        run: |
+          mvn -B -f test/java-sdk-test/src/test/compatibility/pom.xml \
+            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
+            -Dmdep.outputFile="$GITHUB_WORKSPACE/target/ai-compatibility/legacy-classpath.txt"
+
       - name: Run Historical A2A Migration Java SDK IT
         run: |
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
@@ -253,7 +266,8 @@ jobs:
         run: |
           mvn -B -pl test/java-sdk-test clean verify -Pjava-sdk-integration-test \
             -DskipTests=false \
-            -Dit.test=AiTransportResourceMatrixJavaSdkITCase
+            -Dit.test=AiTransportResourceMatrixJavaSdkITCase \
+            -Dnacos.agent.migration.gate=blocked
 
       - name: Install Historical A2A Cutover Blocker
         run: |
