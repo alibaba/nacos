@@ -119,6 +119,8 @@ HTTP controller-method resolution rules:
   disabled by default. While enabled, it must parse the request URI and context path consistently
   before removing the context path, including when either value contains percent-encoded
   characters.
+- The legacy annotation cache resolves `HEAD` requests against the corresponding `GET`
+  mapping, retaining its parameter conditions and leaving the servlet request method unchanged.
 
 ## 4. gRPC Request Filter Model
 
