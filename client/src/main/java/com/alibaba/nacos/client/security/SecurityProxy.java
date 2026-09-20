@@ -48,6 +48,8 @@ public class SecurityProxy implements Closeable {
     
     private ClientAuthPluginManager clientAuthPluginManager;
     
+    private final Subscriber<ServerListChangeEvent> serverListChangeSubscriber;
+    
     /**
      * Construct from serverListManager, nacosRestTemplate, init client auth plugin.
      *
@@ -58,7 +60,7 @@ public class SecurityProxy implements Closeable {
         NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
-        NotifyCenter.registerSubscriber(new Subscriber<ServerListChangeEvent>() {
+        serverListChangeSubscriber = new Subscriber<ServerListChangeEvent>() {
             
             @Override
             public void onEvent(ServerListChangeEvent event) {
@@ -69,7 +71,8 @@ public class SecurityProxy implements Closeable {
             public Class<? extends Event> subscribeType() {
                 return ServerListChangeEvent.class;
             }
-        });
+        };
+        NotifyCenter.registerSubscriber(serverListChangeSubscriber);
     }
     
     /**
@@ -107,6 +110,7 @@ public class SecurityProxy implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
+        NotifyCenter.deregisterSubscriber(serverListChangeSubscriber);
         clientAuthPluginManager.shutdown();
     }
     
