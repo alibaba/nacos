@@ -6,7 +6,6 @@ export type AgentScope = 'PUBLIC' | 'PRIVATE';
 
 export type EndpointSource = 'RUNTIME' | 'DECLARED';
 
-export type RuntimeEndpointState = 'AVAILABLE' | 'DISABLED' | 'UNHEALTHY';
 
 export interface AgentProvider {
   name: string;
@@ -49,9 +48,8 @@ export interface AgentEndpoint {
   /** Omitted input defaults to true; runtime reads reflect current health. */
   healthy?: boolean;
   bindings?: RuntimeVersionBinding[] | null;
-  /** Maintained by Nacos; defaults to true. */
+  /** Runtime registration defaults to true; Naming operational overrides take precedence. */
   enabled?: boolean;
-  state?: RuntimeEndpointState | null;
 }
 
 export interface AgentCallInterface {

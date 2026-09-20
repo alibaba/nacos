@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -146,17 +147,11 @@ public final class AgentModelUtils {
         result.setVersionRange(source.getVersionRange());
         result.setProtocol(source.getProtocol());
         try {
-            result.setEndpoints(canonicalizeEndpoints(source.getEndpoints()));
+            RadModelValidator.validate(namespaceId, source);
+            result.setEndpoints(canonicalizeEndpoints(source));
         } catch (IllegalArgumentException e) {
             throw invalid(e.getMessage());
         }
-        validate(new Validation() {
-            
-            @Override
-            public void run() {
-                RadModelValidator.validate(namespaceId, result);
-            }
-        });
         return result;
     }
     
@@ -235,13 +230,14 @@ public final class AgentModelUtils {
         return source == null ? null : new ArrayList<>(source);
     }
     
-    private static List<Endpoint> canonicalizeEndpoints(List<Endpoint> source) {
-        if (source == null) {
-            return null;
-        }
-        List<Endpoint> result = new ArrayList<Endpoint>(source.size());
-        for (Endpoint endpoint : source) {
-            result.add(EndpointCanonicalizer.canonicalize(copyEndpoint(endpoint)));
+    private static List<Endpoint> canonicalizeEndpoints(AgentEndpointRegistrationBatch source) {
+        List<Endpoint> result = new ArrayList<Endpoint>(source.getEndpoints().size());
+        for (Endpoint endpoint : source.getEndpoints()) {
+            Endpoint copy = EndpointCanonicalizer.canonicalize(copyEndpoint(endpoint));
+            copy.setBindings(Collections.singletonList(
+                EndpointCanonicalizer.canonicalizeRuntimeBinding(endpoint,
+                    source.getRuntimeVersion(), source.getVersionRange())));
+            result.add(copy);
         }
         return result;
     }
@@ -269,6 +265,7 @@ public final class AgentModelUtils {
         result
             .setMetadata(source.getMetadata() == null ? null : new HashMap<>(source.getMetadata()));
         result.setHealthy(source.getHealthy());
+        result.setEnabled(source.getEnabled());
         return result;
     }
     

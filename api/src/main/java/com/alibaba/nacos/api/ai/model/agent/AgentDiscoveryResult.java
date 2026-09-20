@@ -32,6 +32,12 @@ public class AgentDiscoveryResult implements Serializable {
     
     private String agentName;
     
+    /** Current Agent catalog description, independent of the selected Version. */
+    private String description;
+    
+    /** Current public catalog tags; order has no discovery meaning. */
+    private List<String> tags;
+    
     private String version;
     
     private String contentDigest;
@@ -52,6 +58,22 @@ public class AgentDiscoveryResult implements Serializable {
     
     public void setAgentName(String agentName) {
         this.agentName = agentName;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public List<String> getTags() {
+        return tags;
+    }
+    
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
     
     public String getVersion() {

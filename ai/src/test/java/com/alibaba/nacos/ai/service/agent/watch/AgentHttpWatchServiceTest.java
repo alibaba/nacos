@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -57,6 +58,11 @@ import static org.mockito.Mockito.when;
 
 class AgentHttpWatchServiceTest {
     
+    private final AgentClientMigrationGuard migrationGuard = mock(AgentClientMigrationGuard.class);
+    
+    private final AgentWatchOwnerEligibilityChecker ownerEligibilityChecker =
+        mock(AgentWatchOwnerEligibilityChecker.class);
+    
     private AgentProjectionService projectionService;
     
     private AgentHttpClientLifecycleService lifecycleService;
@@ -71,6 +77,8 @@ class AgentHttpWatchServiceTest {
     
     @BeforeEach
     void setUp() {
+        when(ownerEligibilityChecker.evaluate(any(), any()))
+            .thenReturn(AgentWatchOwnerEligibility.ALLOWED);
         projectionService = mock(AgentProjectionService.class);
         lifecycleService = mock(AgentHttpClientLifecycleService.class);
         registry = new AgentHttpWatchRegistry();
@@ -89,6 +97,31 @@ class AgentHttpWatchServiceTest {
     @AfterEach
     void tearDown() {
         visibilityHelper.close();
+    }
+    
+    @Test
+    void unchangedProjectionRechecksCapturedOwnerAndInvalidatesOnlyDeniedItem() throws Exception {
+        AgentWatchBatchRequest request = request(1L, item("watch", "agent", "same"));
+        AgentProjectionKey key = key(request, 0);
+        states.put(key, available("same"));
+        DeferredResult<Result<AgentWatchBatchResponse>> response =
+            service.watch("client", "AI", request, 10);
+        assertFalse(response.hasResult());
+        when(ownerEligibilityChecker.evaluate(any(), any())).thenAnswer(invocation -> {
+            AgentWatchOwnerContext owner = invocation.getArgument(0);
+            assertEquals("alice", owner.getIdentity());
+            assertEquals("OPEN_API", owner.getApiType());
+            return AgentWatchOwnerEligibility.DENIED;
+        });
+        visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity)
+            .thenReturn("different-thread");
+        service.onProjectionUpdate(update(key, available("same")));
+        @SuppressWarnings("unchecked")
+        Result<AgentWatchBatchResponse> result =
+            (Result<AgentWatchBatchResponse>) response.getResult();
+        assertEquals(Collections.singletonList("watch"),
+            result.getData().getChangedClientWatchIds());
+        assertEquals(0, service.size());
     }
     
     @Test
@@ -253,7 +286,7 @@ class AgentHttpWatchServiceTest {
         try {
             EnvUtil.setEnvironment(new MockEnvironment());
             AgentHttpWatchService configured = new AgentHttpWatchService(projectionService,
-                lifecycleService, DataSize.ofKilobytes(2));
+                lifecycleService, migrationGuard, ownerEligibilityChecker, DataSize.ofKilobytes(2));
             configured.start();
             configured.shutdown();
         } finally {
@@ -301,21 +334,31 @@ class AgentHttpWatchServiceTest {
     @Test
     void testConstructorRejectsInvalidLimits() {
         assertThrows(IllegalArgumentException.class,
-            () -> new AgentHttpWatchService(projectionService, lifecycleService, registry,
+            () -> new AgentHttpWatchService(projectionService, lifecycleService, migrationGuard,
+                ownerEligibilityChecker,
+                registry,
                 0, 1, 1L, 1L, Runnable::run));
         assertThrows(IllegalArgumentException.class,
-            () -> new AgentHttpWatchService(projectionService, lifecycleService, registry,
+            () -> new AgentHttpWatchService(projectionService, lifecycleService, migrationGuard,
+                ownerEligibilityChecker,
+                registry,
                 1, 0, 1L, 1L, Runnable::run));
         assertThrows(IllegalArgumentException.class,
-            () -> new AgentHttpWatchService(projectionService, lifecycleService, registry,
+            () -> new AgentHttpWatchService(projectionService, lifecycleService, migrationGuard,
+                ownerEligibilityChecker,
+                registry,
                 1, 1, 0L, 1L, Runnable::run));
         assertThrows(IllegalArgumentException.class,
-            () -> new AgentHttpWatchService(projectionService, lifecycleService, registry,
+            () -> new AgentHttpWatchService(projectionService, lifecycleService, migrationGuard,
+                ownerEligibilityChecker,
+                registry,
                 1, 1, 1L, 0L, Runnable::run));
     }
     
     private AgentHttpWatchService service(java.util.concurrent.Executor executor) {
-        return new AgentHttpWatchService(projectionService, lifecycleService, registry,
+        return new AgentHttpWatchService(projectionService, lifecycleService, migrationGuard,
+            ownerEligibilityChecker,
+            registry,
             3, 2, 1000L, 1000L, executor);
     }
     

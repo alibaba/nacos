@@ -53,7 +53,6 @@ class AgentVersionContentSerializerTest {
         Endpoint endpoint = set.getEndpoints().get(0);
         endpoint.setHealthy(false);
         endpoint.setEnabled(false);
-        endpoint.setState(com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState.DISABLED);
         com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding forged =
             new com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding();
         forged.setRuntimeVersion("9.0.0");
@@ -70,7 +69,6 @@ class AgentVersionContentSerializerTest {
         assertNull(restored.getEndpoints().get(0).getBindings());
         assertTrue(restored.getEndpoints().get(0).getEnabled());
         assertTrue(restored.getEndpoints().get(0).getHealthy());
-        assertNull(restored.getEndpoints().get(0).getState());
         assertEquals("ignored", set.getSourceRevision());
         set.setSource(EndpointSource.RUNTIME);
         assertThrows(IllegalArgumentException.class,
@@ -376,7 +374,7 @@ class AgentVersionContentSerializerTest {
         String setPrefix = "{\"kind\":\"AgentVersionContent\",\"schemaVersion\":1,"
             + "\"callInterfaces\":[{\"protocol\":\"custom\","
             + "\"descriptorMediaType\":\"application/json\",\"nativeDescriptor\":{},"
-            + "\"endpointSourceOrder\":[\"DECLARED\"],\"endpointSets\":";
+            + "\"endpointSourceOrder\":[\"DECLARED\",\"RUNTIME\"],\"endpointSets\":";
         assertDecodeRejected(setPrefix + "{}}]}");
         assertDecodeRejected(setPrefix + "[null]}]}");
         assertDecodeRejected(setPrefix + "[{\"source\":\"DECLARED\"}]}]}");
@@ -384,7 +382,7 @@ class AgentVersionContentSerializerTest {
         assertDecodeRejected("{\"kind\":\"AgentVersionContent\",\"schemaVersion\":1,"
             + "\"callInterfaces\":[{\"protocol\":\"a2a\","
             + "\"descriptorMediaType\":\"application/json\","
-            + "\"nativeDescriptor\":{},\"endpointSourceOrder\":[\"DECLARED\"],"
+            + "\"nativeDescriptor\":{},\"endpointSourceOrder\":[\"DECLARED\",\"RUNTIME\"],"
             + "\"endpointSets\":[{\"source\":\"DECLARED\",\"endpoints\":[1]}]}]}");
     }
     
@@ -446,7 +444,8 @@ class AgentVersionContentSerializerTest {
         result.setProtocol(protocol);
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(Collections.singletonMap("name", protocol));
-        result.setEndpointSourceOrder(Collections.singletonList(EndpointSource.DECLARED));
+        result.setEndpointSourceOrder(
+            java.util.Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME));
         if (endpointUri != null) {
             
             EndpointSet declaredSet4 = new EndpointSet();

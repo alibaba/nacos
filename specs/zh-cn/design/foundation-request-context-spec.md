@@ -98,6 +98,10 @@ HTTP Controller 方法解析规则：
 - 旧注解缓存必须将 `HEAD` 请求解析到对应的 `GET` 映射，保留该映射的参数条件，
   且不得修改 Servlet request 中的原始请求方法。
 
+方法解析遇到 HTTP method 不匹配时没有业务 handler，应交由 Spring MVC 返回 405，
+不能将正常的方法拒绝包装为 500；其他未预期的解析失败仍保持报错。HEAD 解析为 GET
+的同一个 handler，沿用其身份校验；框架生成的 OPTIONS 仅暴露允许的方法。
+
 ## 4. gRPC 请求过滤模型
 
 gRPC 业务请求由 `GrpcRequestAcceptor` 接收，解析为 `Request` 对象，匹配到 `RequestHandler`，

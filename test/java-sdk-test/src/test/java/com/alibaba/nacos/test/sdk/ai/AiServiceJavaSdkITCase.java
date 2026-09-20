@@ -343,7 +343,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(version, detail.getVersion(), detail.toString());
         assertEquals(AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, detail.getRegistrationType(),
                 detail.toString());
-        assertTrue(detail.isLatestVersion(), detail.toString());
+        assertNull(detail.isLatestVersion(), detail.toString());
 
         AtomicReference<AgentCardDetailInfo> callback = new AtomicReference<>();
         AbstractNacosAgentCardListener listener = new AbstractNacosAgentCardListener() {
@@ -379,7 +379,7 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(agentName, detail.getName(), detail.toString());
         assertEquals(version, detail.getVersion(), detail.toString());
         assertEquals("Java SDK IT agent", detail.getDescription(), detail.toString());
-        assertTrue(detail.isLatestVersion(), detail.toString());
+        assertNull(detail.isLatestVersion(), detail.toString());
     }
 
     @Test
@@ -397,8 +397,12 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         aiService.releaseAgentCard(buildAgentCard(agentName, secondVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, false);
         assertEquals(firstVersion, aiService.getAgentCard(agentName).getVersion());
-        assertEquals(secondVersion, aiService.getAgentCard(agentName, secondVersion).getVersion());
+        assertEquals("draft", maintainer.getAgentVersion(agentName, secondVersion).getStatus());
+        assertThrows(NacosException.class, () -> aiService.getAgentCard(agentName, secondVersion));
 
+        aiService.releaseAgentCard(buildAgentCard(agentName, secondVersion),
+                AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        assertEquals(secondVersion, aiService.getAgentCard(agentName).getVersion());
         aiService.releaseAgentCard(buildAgentCard(agentName, thirdVersion),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
         assertEquals(thirdVersion, aiService.getAgentCard(agentName).getVersion());

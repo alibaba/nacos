@@ -134,13 +134,26 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertExternalErrorShape(suffix);
     }
     
-    @Test
-    public void testPublicAgentIndexAndUnifiedArtifacts() throws Exception {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    public void testPublicAgentIndexAndUnifiedArtifacts(boolean clientPublication) throws Exception {
         String agentName = randomAiName("ard-public-model");
-        publishPublicAgent(agentName, "0.9.0");
-        publishNextAgentVersion(agentName, "1.0.0",
-                Arrays.asList(a2aCallInterface(agentName, "1.0.0"),
-                        customCallInterface(agentName, "1.0.0")));
+        if (clientPublication) {
+            addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
+            for (String version : new String[] {"0.9.0", "1.0.0"}) {
+                Map<String, Object> request = agentInitialDraftRequest(null, agentName, version);
+                request.put("callInterfaces", Arrays.asList(a2aCallInterface(agentName, version),
+                        customCallInterface(agentName, version)));
+                request.put("autoSubmit", !"0.9.0".equals(version));
+                JsonNode published = postFormOk(nacosPath("/v3/client/ai/agents"), agentForm(request)).get("data");
+                assertEquals("online", published.get("status").asText());
+            }
+        } else {
+            publishPublicAgent(agentName, "0.9.0");
+            publishNextAgentVersion(agentName, "1.0.0",
+                    Arrays.asList(a2aCallInterface(agentName, "1.0.0"),
+                            customCallInterface(agentName, "1.0.0")));
+        }
         JsonNode nacosSearch = awaitSearch(searchRequest(agentName, TYPE_NACOS_AGENT),
                 Set.of(agentName));
         JsonNode nacosResult = findResource(nacosSearch.get("results"), agentName);

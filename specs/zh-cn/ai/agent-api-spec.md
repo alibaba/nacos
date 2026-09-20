@@ -87,6 +87,25 @@ Resource 当前 `editingVersion` 且仍为 `draft` 状态时更新。列表使�
 HTTP 状态与 `Result.code` 使用通用 v3 异常映射；gRPC Response 暴露等价错误类别。
 `HTTP_CLIENT_NOT_FOUND` 固定为 `50404`，不得与普通 `RESOURCE_NOT_FOUND` 混用。
 
+### 外部 RAD 迁移门禁
+
+当节点的有效 A2A 权威仍为历史链路时，原生 RAD Client 的 Search、Discover、Publish、
+完整 Endpoint Register，以及 Watch 初次建立和后续业务读取统一拒绝，返回 HTTP 409 /
+`AGENT_MIGRATION_IN_PROGRESS (50105)`；gRPC 保留相同 detail 错误码。该门禁在绑定层认证、
+必要输入检查之后、业务写入或新 owner 创建之前执行，也覆盖尚未投影的名称和无关标准 Agent。
+不能据此降级成“不支持 RAD”或自动改走旧协议。
+
+有效模式沿用 A2A 的解析：LEGACY、AUTO 无计划、AUTO/SYNCING、AUTO/QUIESCING 拒绝；
+全新 CANONICAL 和已观察永久 CANONICAL 终态放行。不能将没有 Marker 等同于就绪。
+能力查询仍返回实现能力；整份 Endpoint Deregister、本地取消/关闭以及已有合法 owner 的
+心跳保留既有身份和归属检查。需要 Register 提交剩余列表的 SDK 局部注销仍返回 50105，
+不改变已确认缓存，也不能扩大为整份删除。拒绝的 Register/Watch 不创建 owner 或补注册。
+HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50105 的 TERMINATED，
+后续 Discover 也受门禁。迁移完成后由调用者显式重新发起业务/订阅。
+
+门禁仅用于外部 RAD binding，不加入共享领域服务。旧 A2A wire、Admin/Console、内部迁移、
+索引和投影继续沿用已有规则，避免阻断迁移自身。旧 API 的 QUIESCING 写屏障保持不变。
+
 ## 2. Client API
 
 ### 2.1 Java SDK 契约
@@ -149,8 +168,8 @@ Byte 硬上限仍然生效。Server 与 SDK 限制相互独立；直接调用方
 
 一个 Registration Batch 是该 SDK Publisher 在
 `(namespaceId, agentName, protocol)` 下的完整期望状态。Register 完整替换此前
-Batch 及其唯一的 `runtimeVersion` 和 `versionRange`，未提交的 Endpoint 会被删除。
-SDK 将该完整 Batch 保存为 redo 意图。
+Batch 以及各 Endpoint 展开后的 runtimeVersion 和 versionRange，未提交的 Endpoint 会被删除。
+Batch 字段作为可选默认值逐字段继承，最后才补精确范围并校验；SDK 深复制完整生效 Batch 作为 redo 意图。
 
 一个 SDK 实例默认对全部完整意图中的 Endpoint Publication 条目使用 100 的软水位，Client
 配置键 `nacosAiAgentEndpointMaxPublications` 可修改本地水位。操作前条目数低于水位时，
@@ -166,18 +185,18 @@ Publication 注销。现有 `A2aService.releaseAgentCard` 必须通过兼容 Ada
 `publishAgent` 是 namespace-bound 的可选定义发布步骤。`AgentPublishRequest` 与
 `AgentDraftCreateRequest` 是 `model.agent.base.AbstractAgentDraftRequest` 的并列子类，
 共享 Version 内容、`basedOnVersion`、作者、变更说明和首次 Agent 元数据字段；
-只有 Client 请求增加默认值为 `false` 的 `autoSubmit`。调用方不能提交 namespace；Proxy
-复制 Request 后使用 SDK namespace，且不得修改调用方对象。`autoSubmit=false` 只创建或
-返回等价 draft；`autoSubmit=true` 在创建 draft 后执行普通 submit Pipeline，并返回最终可观察到的
-`reviewing`、`reviewed` 或 `online` Version。该操作不是 force-publish，注册 Endpoint 也不会
-隐式创建定义。
+只有 Client 请求增加默认 false 的 autoSubmit；调用方 namespace 由 SDK 实例提供，Request 防御性复制。
 
-同一 namespace、Agent 和精确 Version 的等价重试必须收敛：draft 重试保持幂等，
-`autoSubmit=true` 在先前请求已把等价内容推进到 `reviewing`、`reviewed` 或 `online` 时返回现有
-Version；draft 后以相同 Request 改为 `autoSubmit=true` 必须继续 submit。内容、作者、变更说明
-或调用方显式提供的首次元数据不等价时返回冲突。已推进 Version 上的
-`autoSubmit=false`、以及 `offline` Version 上的任一代码式发布均返回非法状态或冲突。Submit
-失败不得补偿删除已创建 draft。
+Client 新建版本时若当前没有任何版本，成功创建后强制普通 submit；Admin/Console 首次创建仍为草稿。
+已有当前可编辑 DRAFT 完整替换定义（包括协议、作者、变更说明），只按本次 autoSubmit 决定提交；
+不覆盖既有 Agent 展示信息、owner、scope。其他已有状态 reviewing/reviewed/online/offline 在完成
+基本输入校验、身份/WRITE/可见性检查及迁移门禁后 no-op，不改变 latest，不读取 basedOnVersion 内容。
+后续缺失版本仍按 autoSubmit；callInterfaces 与 basedOnVersion 二选一，复制时完整替换。
+创建/更新/submit 每步只尝试一次，失败直接返回，不补读恢复成功、不发布 redo、不跨服务器或 transport
+重放不确定请求，也不补偿删除已落库草稿。HTTP 实现内部的透明重试同样不允许，Agent 发布请求体必须标记为不可重放。调用方之后主动再调用，按当时状态处理。
+普通提交可能进入 reviewing/reviewed/online，不是 force-publish。复用原有草稿存储和状态检查，
+本轮不增加跨存储事务或并发草稿 CAS 保证；通用存储一致性另行设计，既有失败边界见 Agent 存储规范。
+Admin/旧 A2A wire 的约束保持不变。
 
 Search 和完整注册分别使用根包 `AgentSearchRequest`、`AgentEndpointRegistrationBatch`，
 只包含业务字段，不含 namespace 字段或访问器。局部注销使用
@@ -651,10 +670,10 @@ Layout 和替换范围，不改写到新的无 Version Agent Naming Service；�
 
 ## 地址模型统一的验收
 
-模型统一同时影响 Client 注册/发布、Admin/Maintainer、Console 与旧 A2A 内部转换。healthy 可写范围建议为 Runtime 注册/完整替换，缺省 true；输入中的 bindings、enabled/state 和观测时间忽略。HTTP、gRPC 与两种 SDK JSON adapter 必须一致；命名空间、鉴权、错误和查询/订阅行为保持。
+模型统一同时影响 Client 注册/发布、Admin/Maintainer、Console 与旧 A2A 内部转换。healthy/enabled 均允许 Runtime 注册/完整替换写入，缺省 true、显式 null 非法；输入 bindings 按 Batch 默认字段展开为每 Endpoint 一条；EndpointSet revision 和观测时间由服务端维护。HTTP、gRPC 与两种 SDK JSON adapter 必须一致；命名空间、鉴权、错误和查询/订阅行为保持。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
 
 ### Agent JSON 输出契约
 
-Agent form/model 的可选 null 输出交由序列化器处理。各 binding 接受共享 Endpoint 默认值；注销仅读取 uri/transport，其他字段不改变删除键。遵循 RAD/管理 Schema 0.3.0 和 [JSON 回归矩阵](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)，覆盖 HTTP、gRPC、两种 SDK JSON adapter、合并与独立 Console。
+Agent form/model 的可选 null 输出交由序列化器处理。各 binding 接受共享 Endpoint 默认值；注销仅读取 uri/transport，其他字段不改变删除键。遵循 RAD/管理 Schema 0.5.0 和 [JSON 回归矩阵](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)，覆盖 HTTP、gRPC、两种 SDK JSON adapter、合并与独立 Console。

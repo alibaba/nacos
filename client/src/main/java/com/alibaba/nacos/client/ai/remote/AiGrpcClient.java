@@ -118,6 +118,7 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
@@ -145,6 +146,8 @@ public class AiGrpcClient implements AiClientProxy {
     private final AiGrpcRedoService redoService;
     
     private final NacosClientProperties properties;
+    
+    private volatile Consumer<AgentEndpointPublicationRedoData> agentEndpointPublicationRedoHandler;
     
     private volatile BiConsumer<String, AgentEndpointRegistrationBatch> agentEndpointPublicationCapacityRejectedHandler =
         (namespace, batch) -> {
@@ -180,6 +183,49 @@ public class AiGrpcClient implements AiClientProxy {
     public void setAgentEndpointPublicationCapacityRejectedHandler(
         BiConsumer<String, AgentEndpointRegistrationBatch> handler) {
         this.agentEndpointPublicationCapacityRejectedHandler = handler;
+    }
+    
+    /**
+     * Bind RAD replay to the publication manager that serializes new writes and reconnect replay.
+     * @param handler replay owner; absent for a standalone internal transport
+     */
+    public void setAgentEndpointPublicationRedoHandler(
+        Consumer<AgentEndpointPublicationRedoData> handler) {
+        this.agentEndpointPublicationRedoHandler = handler;
+    }
+    
+    /**
+     * Dispatch a replay snapshot to its SDK publication owner when one is installed.
+     * @param redoData expected replay snapshot
+     * @return whether the manager owns this replay
+     */
+    public boolean dispatchAgentEndpointPublicationRedo(AgentEndpointPublicationRedoData redoData) {
+        Consumer<AgentEndpointPublicationRedoData> handler = agentEndpointPublicationRedoHandler;
+        if (handler == null) {
+            return false;
+        }
+        if (isEnable()) {
+            handler.accept(redoData);
+        }
+        return true;
+    }
+    
+    /**
+     * Reconcile a rejected/completed replay without sending another request.
+     * Called under the owning publication manager's write monitor.
+     * @param expected snapshot that was replayed
+     * @param replacement restored intent, or null after removal
+     */
+    public void reconcileAgentEndpointPublicationRedo(AgentEndpointPublicationRedoData expected,
+        AgentEndpointPublicationRedoData replacement) {
+        if (redoService.getAgentEndpointPublication(expected.getKey()) != expected.get()) {
+            return;
+        }
+        redoService.discardAgentEndpointPublication(expected.getKey());
+        if (replacement != null) {
+            redoService.cachedRedoData(replacement.getKey(), replacement,
+                AgentEndpointRegistrationBatch.class);
+        }
     }
     
     private GrpcClientConfig buildGrpcClientConfig(NacosClientProperties properties) {
@@ -770,7 +816,6 @@ public class AiGrpcClient implements AiClientProxy {
     public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
         AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         String key = AgentEndpointPublicationRedoData.keyOf(namespaceId,
             batch.getAgentName(), batch.getProtocol());
         AgentEndpointRegistrationBatch previous =
@@ -912,6 +957,16 @@ public class AiGrpcClient implements AiClientProxy {
         agentCardCacheHolder.removeAgentCardUpdateTask(agentName, version);
     }
     
+    /**
+     * Return the main address of the current negotiated binding.
+     * @return main address, or null while disconnected
+     */
+    public String getCurrentServerAddress() {
+        com.alibaba.nacos.common.remote.client.RpcClient.ServerInfo server =
+            rpcClient.isRunning() ? rpcClient.getCurrentServer() : null;
+        return server == null ? null : server.getServerIp() + ":" + server.getServerPort();
+    }
+    
     public boolean isEnable() {
         return rpcClient.isRunning();
     }
@@ -923,7 +978,18 @@ public class AiGrpcClient implements AiClientProxy {
      * @return true if supported, otherwise false
      */
     public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
-        return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
+        return getServerAbility(abilityKey) == AbilityStatus.SUPPORTED;
+    }
+    
+    /**
+     * Read connection-scoped evidence without interpreting an absent connection as unsupported.
+     *
+     * @param abilityKey ability key
+     * @return negotiated status, or unknown before negotiation
+     */
+    public AbilityStatus getServerAbility(AbilityKey abilityKey) {
+        AbilityStatus status = rpcClient.getConnectionAbility(abilityKey);
+        return status == null ? AbilityStatus.UNKNOWN : status;
     }
     
     /**
@@ -976,6 +1042,14 @@ public class AiGrpcClient implements AiClientProxy {
                     + featureName + " ability.");
         }
         AbilityStatus abilityStatus = rpcClient.getConnectionAbility(abilityKey);
+        if ((abilityKey == AbilityKey.SERVER_RAD_V1
+            || abilityKey == AbilityKey.SERVER_RAD_WATCH_V1)
+            && (abilityStatus == null || abilityStatus == AbilityStatus.UNKNOWN)
+            && rpcClient.getConnectionAbility(
+                AbilityKey.SERVER_AGENT_REGISTRY) != AbilityStatus.SUPPORTED) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Unable to determine " + featureName + " from the current gRPC negotiation.");
+        }
         if (AbilityStatus.SUPPORTED != abilityStatus) {
             throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
                 "Request Nacos server does not support " + featureName + " feature.");
@@ -993,8 +1067,10 @@ public class AiGrpcClient implements AiClientProxy {
             agentEndpointPublicationCapacityRejectedHandler.accept(namespaceId, previous);
             return;
         }
-        if (exception.getErrCode() >= NacosException.SERVER_ERROR
-            || exception.getErrCode() == NacosException.HTTP_CLIENT_ERROR_CODE) {
+        if (exception.getErrCode() != ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()
+            && exception.getErrCode() != NacosException.SERVER_NOT_IMPLEMENTED
+            && (exception.getErrCode() >= NacosException.SERVER_ERROR
+                || exception.getErrCode() == NacosException.HTTP_CLIENT_ERROR_CODE)) {
             return;
         }
         redoService.discardAgentEndpointPublication(key);
@@ -1073,8 +1149,10 @@ public class AiGrpcClient implements AiClientProxy {
                         request.getClass().getSimpleName()));
             }
             
-            response = requestTimeout < 0 ? rpcClient.request(request)
-                : rpcClient.request(request, requestTimeout);
+            response = request instanceof AgentPublishRpcRequest
+                ? rpcClient.requestOnce(request, requestTimeout)
+                : requestTimeout < 0 ? rpcClient.request(request)
+                    : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 // If the 403 login operation is triggered, refresh the accessToken of the client
                 int errorCode = request instanceof AbstractAgentClientRpcRequest

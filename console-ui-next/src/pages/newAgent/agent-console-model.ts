@@ -36,9 +36,7 @@ export type StructuredProtocolEditorKind = Exclude<ProtocolEditorKind, 'raw'>;
 
 export type EndpointSourceMode =
   | 'declared-runtime'
-  | 'runtime-declared'
-  | 'declared-only'
-  | 'runtime-only';
+  | 'runtime-declared';
 
 export interface DeclaredEndpointEditorValue {
   uri: string;
@@ -171,34 +169,26 @@ function endpointSourceOrder(mode: EndpointSourceMode): AgentCallInterface['endp
       return ['DECLARED', 'RUNTIME'];
     case 'runtime-declared':
       return ['RUNTIME', 'DECLARED'];
-    case 'declared-only':
-      return ['DECLARED'];
-    case 'runtime-only':
-      return ['RUNTIME'];
   }
 }
 
 function endpointSourceMode(
   order: AgentCallInterface['endpointSourceOrder'],
 ): EndpointSourceMode {
-  const key = (order || []).join(',');
+  const key = Array.isArray(order) ? order.join(',') : '';
   switch (key) {
     case 'RUNTIME,DECLARED':
       return 'runtime-declared';
-    case 'DECLARED':
-      return 'declared-only';
-    case 'RUNTIME':
-      return 'runtime-only';
-    default:
+    case 'DECLARED,RUNTIME':
       return 'declared-runtime';
+    default:
+      throw new Error('endpointSourceOrder must contain both DECLARED and RUNTIME');
   }
 }
 
 export type EndpointSourceLabelKey =
   | 'agent.endpointSourceDeclaredFirst'
-  | 'agent.endpointSourceRuntimeFirst'
-  | 'agent.endpointSourceDeclaredOnly'
-  | 'agent.endpointSourceRuntimeOnly';
+  | 'agent.endpointSourceRuntimeFirst';
 
 export function endpointSourceModeLabelKey(mode: EndpointSourceMode): EndpointSourceLabelKey {
   switch (mode) {
@@ -206,16 +196,16 @@ export function endpointSourceModeLabelKey(mode: EndpointSourceMode): EndpointSo
       return 'agent.endpointSourceDeclaredFirst';
     case 'runtime-declared':
       return 'agent.endpointSourceRuntimeFirst';
-    case 'declared-only':
-      return 'agent.endpointSourceDeclaredOnly';
-    case 'runtime-only':
-      return 'agent.endpointSourceRuntimeOnly';
   }
 }
 
 export function endpointSourceOrderLabelKey(
   order: AgentCallInterface['endpointSourceOrder'],
-): EndpointSourceLabelKey {
+): EndpointSourceLabelKey | null {
+  const key = Array.isArray(order) ? order.join(',') : '';
+  if (key !== 'DECLARED,RUNTIME' && key !== 'RUNTIME,DECLARED') {
+    return null;
+  }
   return endpointSourceModeLabelKey(endpointSourceMode(order));
 }
 
@@ -500,6 +490,12 @@ function serializeCallInterfaces(
   );
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error('callInterfaces must be a non-empty JSON array');
+  }
+  for (const callInterface of parsed) {
+    if (!isObject(callInterface)) {
+      throw new Error('callInterface must be a JSON object');
+    }
+    endpointSourceMode(callInterface.endpointSourceOrder as AgentCallInterface['endpointSourceOrder']);
   }
   return JSON.stringify(parsed);
 }
@@ -787,10 +783,6 @@ export function getProtocols(callInterfaces: AgentCallInterface[]): string[] {
   return [...new Set(callInterfaces.map((item) => item.protocol))];
 }
 
-export function usesRuntimeSource(callInterface: AgentCallInterface | undefined): boolean {
-  return callInterface?.endpointSourceOrder?.includes('RUNTIME') === true;
-}
-
 export function runtimeCacheKey(version: string, protocol: string): string {
   return `${version}@@${protocol}`;
 }
@@ -806,4 +798,12 @@ export function namingDetailPath(ref: NamingServiceRef): string {
 
 export function declaredEndpointsOf(callInterface?: AgentCallInterface) {
   return callInterface?.endpointSets?.find((set) => set.source === 'DECLARED')?.endpoints || [];
+}
+
+/** Endpoint state is derived from the two effective server flags. */
+export function runtimeEndpointStatus(endpoint: { enabled?: boolean; healthy?: boolean }): string {
+  if (endpoint.enabled === false) {
+    return 'DISABLED';
+  }
+  return endpoint.healthy === false ? 'UNHEALTHY' : 'AVAILABLE';
 }

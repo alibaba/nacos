@@ -78,7 +78,7 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEquals(1D, mapper.readTree(json).get("weight").asDouble());
         assertTrue(mapper.readTree(json).get("healthy").asBoolean());
         assertTrue(mapper.readTree(json).get("enabled").asBoolean());
-        assertTrue(mapper.readTree(json).get("state").isNull());
+        assertFalse(mapper.readTree(json).has("state"));
         
         Endpoint deserialized = mapper.readValue(json, Endpoint.class);
         assertEquals("https://example.com/agent", deserialized.getUri());
@@ -124,7 +124,6 @@ class AgentContractModelTest extends BasicRequestTest {
     @Test
     void testDefaultEnumWireValuesAreExact() throws JsonProcessingException {
         assertEquals("\"RUNTIME\"", mapper.writeValueAsString(EndpointSource.RUNTIME));
-        assertEquals("\"UNHEALTHY\"", mapper.writeValueAsString(RuntimeEndpointState.UNHEALTHY));
         
         assertThrows(JsonProcessingException.class,
             () -> mapper.readValue("\"runtime\"", EndpointSource.class));
@@ -133,7 +132,7 @@ class AgentContractModelTest extends BasicRequestTest {
     @Test
     void testNativeDescriptorNullIsBoundForControllerValidation() throws JsonProcessingException {
         String json = "{\"protocol\":\"a2a\",\"descriptorMediaType\":\"application/json\","
-            + "\"nativeDescriptor\":null,\"endpointSourceOrder\":[\"DECLARED\"]}";
+            + "\"nativeDescriptor\":null,\"endpointSourceOrder\":[\"DECLARED\",\"RUNTIME\"]}";
         
         AgentCallInterface callInterface =
             mapper.readValue(json, AgentCallInterface.class);
@@ -256,7 +255,6 @@ class AgentContractModelTest extends BasicRequestTest {
         binding.setVersionRange("[1.0.0,2.0.0)");
         Endpoint item = newEndpoint("https://runtime.example.com:443/a2a", true);
         item.setBindings(Collections.singletonList(binding));
-        item.setState(RuntimeEndpointState.AVAILABLE);
         item.setEnabled(true);
         item.setHealthy(true);
         
@@ -290,7 +288,6 @@ class AgentContractModelTest extends BasicRequestTest {
         assertEndpoint(restoredItem, true);
         assertEquals("1.0.6", restoredItem.getBindings().get(0).getRuntimeVersion());
         assertEquals("[1.0.0,2.0.0)", restoredItem.getBindings().get(0).getVersionRange());
-        assertEquals(RuntimeEndpointState.AVAILABLE, restoredItem.getState());
         assertEquals(Boolean.TRUE, restoredItem.getEnabled());
         assertEquals(Boolean.TRUE, restoredItem.getHealthy());
         assertEquals(Long.valueOf(2L),
@@ -561,7 +558,7 @@ class AgentContractModelTest extends BasicRequestTest {
         String common = "\"protocol\":\"a2a\",\"protocolVersion\":\"1.0.0\","
             + "\"descriptorMediaType\":\"application/json\","
             + "\"nativeDescriptor\":{\"name\":\"demo\"}";
-        String definition = "{" + common + ",\"endpointSourceOrder\":[\"DECLARED\"],"
+        String definition = "{" + common + ",\"endpointSourceOrder\":[\"DECLARED\",\"RUNTIME\"],"
             + "\"endpointSets\":[{\"source\":\"DECLARED\",\"endpoints\":[{"
             + "\"uri\":\"https://example.com/a2a\",\"transport\":\"JSON-RPC\"}]}]}";
         String discovery = "{" + common + ",\"endpointSets\":[{\"source\":\"DECLARED\","

@@ -33,20 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Integration tests for code-first Agent publication under
- * {@code POST /nacos/v3/client/ai/agents}.
+ * Standalone integration scenarios for Client Agent definition publication.
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: draft-only publication, equivalent retry, auto-submit resume,
- *     direct and inherited Version evolution, and HTTP/Admin/Console/RAD/legacy A2A projection
- *     all converge on one canonical definition.</li>
- *     <li>Boundary/validation: default and custom namespaces remain isolated; Form JSON fields,
- *     direct-versus-inherited content, and first-Version inheritance are validated; publishing a
- *     definition never creates a Runtime Endpoint.</li>
- *     <li>Exception/error handling: conflicting content or initial metadata, draft-only retry of
- *     an advanced Version, retry of an offline Version, malformed JSON, and missing identity are
- *     returned as controlled 4xx envelopes.</li>
+ *     <li>Expected capability: first-Version ordinary submit, complete draft replacement,
+ *     later-Version flag handling, non-draft no-op, and management/discovery projections.</li>
+ *     <li>Boundary/validation: direct or inherited content, namespace isolation, caller immutability,
+ *     independent Endpoint registration and unchanged management draft creation.</li>
+ *     <li>Exception/error handling: invalid identities and content sources are controlled errors;
+ *     offline no-op preserves immutable content. Fault injection and write races are covered by
+ *     domain/transport and real transactional unit tests.</li>
  * </ul>
  *
  * @author Nacos
@@ -60,21 +57,38 @@ public class AgentPublishClientOpenApiITCase extends AgentClientOpenApiBaseITCas
     private static final String VERSION_THREE = "3.0.0";
 
     @Test
-    public void testDraftResumeRetryAndCrossSurfaceProjection() throws Exception {
+    public void testRejectsInvalidSourceDefinitionsBeforeCreatingAgent() throws Exception {
+        for (String order : new String[] {"null", "[]", "[\"RUNTIME\"]", "[\"DECLARED\"]",
+                "[\"RUNTIME\",\"RUNTIME\"]", "[\"UNKNOWN\",\"DECLARED\"]"}) {
+            String agentName = randomAiName("invalid-source");
+            String interfaces = "[{\"protocol\":\"custom\",\"descriptorMediaType\":\"application/json\","
+                    + "\"nativeDescriptor\":{},\"endpointSourceOrder\":" + order + "}]";
+            Map<String, String> form = new LinkedHashMap<>();
+            form.put("agentName", agentName);
+            form.put("version", VERSION_ONE);
+            form.put("callInterfaces", interfaces);
+            assertError(postFormRaw(AGENT_CLIENT_PATH, form), 400,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+            assertError(postFormRaw(ADMIN_AGENT_PATH + "/draft", form), 400,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+            assertError(getRaw(ADMIN_AGENT_PATH, agentIdentityQuery(null, agentName)), 404,
+                    ErrorCode.RESOURCE_NOT_FOUND, "not found");
+        }
+    }
+
+    @Test
+    public void testFirstVersionSubmitAndNonDraftNoopAcrossSurfaces() throws Exception {
         String agentName = randomAiName("agent-client-publish");
         Map<String, Object> request = legacyCompatibleRequest(null, agentName, VERSION_ONE,
                 "initial");
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
 
         JsonNode draft = publish(request, false);
-        assertEquals("draft", draft.get("status").asText(), draft.toString());
+        assertEquals("online", draft.get("status").asText(), draft.toString());
         assertEquals(DEFAULT_NAMESPACE, draft.get("namespaceId").asText(), draft.toString());
         String digest = draft.get("contentDigest").asText();
         assertTrue(digest.startsWith("sha256:"), draft.toString());
         assertEquals(digest, publish(request, false).get("contentDigest").asText());
-        assertError(getRaw(AGENT_CLIENT_PATH,
-                Query.newInstance().addParam("agentName", agentName)), 404,
-                ErrorCode.RESOURCE_NOT_FOUND, "not discoverable");
 
         JsonNode online = publish(request, true);
         assertEquals("online", online.get("status").asText(), online.toString());
@@ -107,20 +121,50 @@ public class AgentPublishClientOpenApiITCase extends AgentClientOpenApiBaseITCas
         assertEquals(VERSION_ONE, legacy.get("version").asText(), legacy.toString());
         assertEquals(2, legacy.get("supportedInterfaces").size(), legacy.toString());
 
-        assertError(postFormRaw(AGENT_CLIENT_PATH, publishForm(request, false)), 400,
-                ErrorCode.ILLEGAL_STATE, "status must be draft");
+        assertEquals(digest, publish(request, false).get("contentDigest").asText());
 
         Map<String, Object> conflictingContent = legacyCompatibleRequest(null, agentName,
                 VERSION_ONE, "different-content");
-        assertError(postFormRaw(AGENT_CLIENT_PATH,
-                publishForm(conflictingContent, true)), 409,
-                ErrorCode.RESOURCE_CONFLICT, "different content");
+        assertEquals(digest, publish(conflictingContent, true).get("contentDigest").asText());
 
         Map<String, Object> conflictingMetadata = new LinkedHashMap<>(request);
         conflictingMetadata.put("description", "different initial metadata");
-        assertError(postFormRaw(AGENT_CLIENT_PATH,
-                publishForm(conflictingMetadata, true)), 409,
-                ErrorCode.RESOURCE_CONFLICT, "initial metadata");
+        assertEquals(digest, publish(conflictingMetadata, true).get("contentDigest").asText());
+        assertEquals(request.get("description"), getJsonOk(ADMIN_AGENT_PATH, agentIdentityQuery(null, agentName))
+                .get("data").get("agent").get("description").asText());
+    }
+
+    @Test
+    public void testAdminDraftReplacementAndLaterVersionFlag() throws Exception {
+        String name = randomAiName("client-draft-replace");
+        Map<String, Object> initial = legacyCompatibleRequest(null, name, VERSION_ONE, "admin");
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, name));
+        JsonNode draft = postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(initial)).get("data");
+        assertEquals("draft", draft.get("status").asText());
+        if (AUTH_ENABLED) {
+            Query grant = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                    .addParam("resourceType", "agent").addParam("resourceName", name)
+                    .addParam("username", identityUsername(AuthIdentity.CLIENT_READ_WRITE))
+                    .addParam("action", "rw");
+            postFormOk(nacosPath("/v3/auth/visibility"), grant);
+            addCleanup(() -> deleteQuietly(nacosPath("/v3/auth/visibility"), grant));
+        }
+        Map<String, Object> replacement = legacyCompatibleRequest(null, name, VERSION_ONE, "replacement");
+        replacement.put("author", "replacement-author");
+        JsonNode changed = publish(replacement, false);
+        assertEquals("draft", changed.get("status").asText());
+        assertEquals("replacement-author", changed.get("author").asText());
+        assertFalse(draft.get("contentDigest").equals(changed.get("contentDigest")));
+        assertError(getRaw(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", name)), 404,
+                ErrorCode.RESOURCE_NOT_FOUND, "not discoverable");
+        assertEquals("online", publish(replacement, true).get("status").asText());
+        Map<String, Object> later = legacyCompatibleRequest(null, name, VERSION_TWO, "later");
+        assertEquals("draft", publish(later, false).get("status").asText());
+        assertEquals(VERSION_ONE, getJsonOk(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", name))
+                .get("data").get("version").asText());
+        assertEquals("online", publish(later, true).get("status").asText());
+        assertEquals(VERSION_TWO, getJsonOk(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", name))
+                .get("data").get("version").asText());
     }
 
     @Test
@@ -179,8 +223,7 @@ public class AgentPublishClientOpenApiITCase extends AgentClientOpenApiBaseITCas
 
         postFormOk(ADMIN_AGENT_PATH + "/offline",
                 agentForm(agentVersionCommand(namespaceId, agentName, VERSION_TWO)));
-        assertError(postFormRaw(AGENT_CLIENT_PATH, publishForm(direct, true)), 400,
-                ErrorCode.ILLEGAL_STATE, "submitted state");
+        assertEquals("offline", publish(direct, true).get("status").asText());
     }
 
     @Test

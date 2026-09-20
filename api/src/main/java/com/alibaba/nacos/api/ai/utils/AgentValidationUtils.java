@@ -116,6 +116,17 @@ public final class AgentValidationUtils {
     }
     
     /**
+     * Compare exact versions using the shared, case-sensitive RAD version rules.
+     * @param left first version
+     * @param right second version
+     * @return negative, zero or positive when left precedes, equals or follows right
+     * @throws IllegalArgumentException when either version is invalid
+     */
+    public static int compareVersions(String left, String right) {
+        return AgentVersion.parse(left).compareTo(AgentVersion.parse(right));
+    }
+    
+    /**
      * Validate an Agent version range.
      *
      * @param versionRange version range text
@@ -250,6 +261,9 @@ public final class AgentValidationUtils {
                 || isReservedMetadataKey(key)) {
                 throw new IllegalArgumentException("Invalid Endpoint metadata key: " + key);
             }
+            if (AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION.equals(key)) {
+                validateProtocolVersion(value);
+            }
             if (value == null || codePointLength(value) > MAX_METADATA_VALUE_LENGTH) {
                 throw new IllegalArgumentException(
                     "Invalid Endpoint metadata value for key: " + key);
@@ -261,7 +275,9 @@ public final class AgentValidationUtils {
         return "preserved.heart.beat.interval".equals(key)
             || "preserved.heart.beat.timeout".equals(key)
             || "preserved.ip.delete.timeout".equals(key)
-            || key.startsWith(INTERNAL_ENDPOINT_METADATA_PREFIX);
+            || key.startsWith(INTERNAL_ENDPOINT_METADATA_PREFIX)
+                && !AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION.equals(key)
+                && !AiConstants.A2a.ENDPOINT_TENANT.equals(key);
     }
     
     private static int codePointLength(String value) {

@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -44,6 +45,81 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EndpointCanonicalizerTest {
     
+    @ParameterizedTest
+    @CsvSource(value = {
+        "1.0.0;NULL;NULL;NULL;1.0.0;[1.0.0]",
+        "1.0.0;NULL;2.0.0;NULL;2.0.0;[2.0.0]",
+        "1.0.0;[1.0.0,2.0.0];2.0.0;NULL;2.0.0;[1.0.0,2.0.0]",
+        "1.0.0;[1.0.0,2.0.0);2.0.0;[2.0.0];2.0.0;[2.0.0]",
+        "1.0.0;NULL;NULL;[1.0.0,2.0.0];1.0.0;[1.0.0,2.0.0]",
+        "NULL;NULL;2.0.0;[2.0.0,2.0.0];2.0.0;[2.0.0]"
+    }, delimiter = ';', nullValues = "NULL")
+    void shouldResolveBindingFieldsBeforeApplyingExactDefault(String batchVersion,
+        String batchRange, String endpointVersion, String endpointRange,
+        String expectedVersion, String expectedRange) {
+        Endpoint source = endpoint("https://example.com/a", "HTTP");
+        RuntimeVersionBinding input = new RuntimeVersionBinding();
+        input.setRuntimeVersion(endpointVersion);
+        input.setVersionRange(endpointRange);
+        source.setBindings(Collections.singletonList(input));
+        RuntimeVersionBinding result = EndpointCanonicalizer.canonicalizeRuntimeBinding(
+            source, batchVersion, batchRange);
+        assertEquals(expectedVersion, result.getRuntimeVersion());
+        assertEquals(expectedRange, result.getVersionRange());
+        assertNotSame(input, result);
+        assertEquals(endpointVersion, input.getRuntimeVersion());
+        assertEquals(endpointRange, input.getVersionRange());
+    }
+    
+    @Test
+    void shouldRejectInvalidInputBindingWithoutFallingBackToBatch() {
+        Endpoint source = endpoint("https://example.com/a", "HTTP");
+        source.setBindings(Collections.emptyList());
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0", null));
+        source.setBindings(Collections.singletonList(null));
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0", null));
+        RuntimeVersionBinding input = new RuntimeVersionBinding();
+        source.setBindings(Arrays.asList(input, input));
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0", null));
+        source.setBindings(Collections.singletonList(input));
+        input.setRuntimeVersion("");
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0", null));
+        input.setRuntimeVersion("2.0.0");
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0",
+                "[1.0.0,2.0.0)"));
+        input.setVersionRange("");
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, "1.0.0", "[2.0.0]"));
+        source.setBindings(null);
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(source, null, "[1.0.0]"));
+        assertThrows(IllegalArgumentException.class,
+            () -> EndpointCanonicalizer.canonicalizeRuntimeBinding(null, "1.0.0", null));
+        RuntimeVersionBinding inherited = EndpointCanonicalizer.canonicalizeRuntimeBinding(
+            source, "1.0.0", null);
+        assertEquals("[1.0.0]", inherited.getVersionRange());
+        assertNull(source.getBindings());
+    }
+    
+    @Test
+    void shouldRejectNullPriorityAndWeightInsteadOfSilentlyDefaulting() {
+        Endpoint source = endpoint("https://example.com/a", "HTTP");
+        source.setPriority(null);
+        assertEquals("Endpoint priority must not be null",
+            assertThrows(IllegalArgumentException.class,
+                () -> EndpointCanonicalizer.canonicalize(source)).getMessage());
+        source.setPriority(0);
+        source.setWeight(null);
+        assertEquals("Endpoint weight must not be null",
+            assertThrows(IllegalArgumentException.class,
+                () -> EndpointCanonicalizer.canonicalize(source)).getMessage());
+    }
+    
     @Test
     void shouldDeepCopyRuntimeBindingsAndManagementState() {
         Endpoint source = endpoint("HTTPS://Example.COM/a", "JSONRPC");
@@ -53,11 +129,9 @@ class EndpointCanonicalizerTest {
         source.setBindings(Collections.singletonList(binding));
         source.setHealthy(false);
         source.setEnabled(true);
-        source.setState(RuntimeEndpointState.UNHEALTHY);
         Endpoint copy = EndpointCanonicalizer.canonicalize(source);
         assertEquals(Boolean.FALSE, copy.getHealthy());
         assertEquals(Boolean.TRUE, copy.getEnabled());
-        assertEquals(RuntimeEndpointState.UNHEALTHY, copy.getState());
         assertEquals("[1.0.0]", copy.getBindings().get(0).getVersionRange());
         copy.getBindings().get(0).setVersionRange("[2.0.0]");
         assertEquals("[1.0.0]", source.getBindings().get(0).getVersionRange());

@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -274,6 +275,37 @@ class HttpAgentWatchTransportTest {
             new TestCallback());
         requestExecutor.runNext();
         assertEquals(1, mismatch.unavailable);
+    }
+    
+    @Test
+    void migrationRejectionTerminatesIntentWithoutRetryOrFallback() throws Exception {
+        TestCallback callback = new TestCallback();
+        TestLifecycleListener lifecycle = new TestLifecycleListener();
+        transport.setLifecycleListener(lifecycle);
+        client.failure = new NacosException(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            "migration");
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
+        requestExecutor.runNext();
+        assertTrue(callback.terminal);
+        assertEquals(0, lifecycle.unavailable);
+        assertNull(retryTask.get());
+    }
+    
+    @Test
+    void capacityRejectionWithoutPendingAdditionFallsBackWithoutDroppingAcknowledgedWatch()
+        throws Exception {
+        TestCallback callback = new TestCallback();
+        TestLifecycleListener lifecycle = new TestLifecycleListener();
+        transport.setLifecycleListener(lifecycle);
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
+        requestExecutor.runUntilRequests(client, 1, 10);
+        client.failure = new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "capacity changed");
+        requestExecutor.runUntilRequests(client, 2, 10);
+        assertEquals(1, lifecycle.unavailable);
+        assertEquals(0, callback.unavailable);
+        assertNull(retryTask.get());
+        assertFalse(transport.isAvailable());
     }
     
     @Test

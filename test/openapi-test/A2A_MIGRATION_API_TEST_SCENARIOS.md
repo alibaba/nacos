@@ -38,6 +38,10 @@ runs only in the dedicated `.github/workflows/migration-it.yml` workflow.
   leaves deliberately malformed fixtures isolated from other suites.
 - Runtime, reconnect, redo, and directed cluster portions are assigned to the
   Java SDK matrix rather than duplicated as HTTP-only internal assertions.
+- Run cross-surface assertions with both authentication configurations: the
+  dedicated migration workflow disables authentication and sends anonymous ARD
+  requests; auth-enabled regression fixtures use an ordinary Client identity for
+  ARD and reserve Admin credentials for fixture/control operations.
 
 ## Standalone Matrix
 

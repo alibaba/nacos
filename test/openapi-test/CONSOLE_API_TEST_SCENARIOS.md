@@ -188,3 +188,9 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
 全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
+
+C11 repeats the complete AI Console class set against the final artifact's
+independent Console deployment. Agent Runtime assertions require enabled/healthy
+and absence of the removed state field. These executions do not change the
+API-surface denominator; final outcomes and prior intermittent Prompt observations
+are recorded separately in the SDK scenario and coverage records.

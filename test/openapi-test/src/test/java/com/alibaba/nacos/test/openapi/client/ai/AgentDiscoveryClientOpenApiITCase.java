@@ -103,6 +103,100 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
     }
     
     @Test
+    public void testDiscoverCurrentMetadataForOldVersionAndEmptyProjection() throws Exception {
+        String agentName = randomAiName("agent-discovery-metadata");
+        publishAgent(agentName, "1.0.0");
+        postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(
+                agentDraftCreateRequest(null, agentName, "2.0.0", "1.0.0")));
+        postFormOk(ADMIN_AGENT_PATH + "/force-publish", agentForm(
+                agentVersionCommand(null, agentName, "2.0.0")));
+        Query oldVersion = Query.newInstance().addParam("agentName", agentName)
+                .addParam("version", "1.0.0");
+        JsonNode before = discoverRawMetadata(oldVersion);
+        Map<String, Object> update = agentUpdateRequest(null, agentName, "metadata");
+        update.put("description", "Current public description: 问答与检索");
+        update.put("tags", Arrays.asList("chat", "research"));
+        putFormOk(ADMIN_AGENT_PATH, agentForm(update));
+
+        JsonNode current = discoverRawMetadata(oldVersion);
+        assertEquals("1.0.0", current.path("version").asText());
+        assertEquals(update.get("description"), current.path("description").asText());
+        assertEquals(JacksonUtils.toObj(JacksonUtils.toJson(update.get("tags"))),
+                current.get("tags"));
+        assertEquals(before.get("contentDigest"), current.get("contentDigest"));
+        assertEquals(before.get("callInterfaces"), current.get("callInterfaces"),
+                "catalog updates must not change native descriptors or source revisions");
+        for (String excluded : Arrays.asList("displayName", "iconUrl", "provider", "owner",
+                "scope", "status", "metaVersion")) {
+            assertFalse(current.has(excluded), current.toString());
+        }
+        JsonNode latest = discoverRawMetadata(
+                Query.newInstance().addParam("agentName", agentName));
+        assertEquals("2.0.0", latest.path("version").asText());
+        assertEquals(current.get("description"), latest.get("description"));
+        assertEquals(current.get("tags"), latest.get("tags"));
+        JsonNode filtered = discoverRawMetadata(
+                Query.newInstance().addParam("agentName", agentName)
+                        .addParam("protocol", "missing-protocol"));
+        assertEquals(0, filtered.path("callInterfaces").size());
+        assertEquals(current.get("description"), filtered.get("description"));
+        assertEquals(current.get("tags"), filtered.get("tags"));
+
+        update.remove("description");
+        update.put("tags", Collections.emptyList());
+        putFormOk(ADMIN_AGENT_PATH, agentForm(update));
+        JsonNode cleared = discoverRawMetadata(oldVersion);
+        assertFalse(cleared.hasNonNull("description"), cleared.toString());
+        assertFalse(cleared.hasNonNull("tags"), cleared.toString());
+        assertEquals(before.get("contentDigest"), cleared.get("contentDigest"));
+        assertEquals(before.get("callInterfaces"), cleared.get("callInterfaces"));
+    }
+
+    private JsonNode discoverRawMetadata(Query query) throws Exception {
+        // Assert the wire payload without the shared REST template's response re-encoding.
+        HttpResponse response = getRaw(AGENT_CLIENT_PATH, query);
+        assertEquals(200, response.code(), response.body());
+        JsonNode root = JacksonUtils.toObj(response.body());
+        assertSuccess(root);
+        return root.get("data");
+    }
+
+    @Test
+    public void testSourcePreferenceAndExplicitSelection() throws Exception {
+        for (boolean runtimeFirst : new boolean[] {true, false}) {
+            String agentName = randomAiName("source-preference");
+            java.util.List<String> order = runtimeFirst ? java.util.Arrays.asList("RUNTIME", "DECLARED")
+                    : java.util.Arrays.asList("DECLARED", "RUNTIME");
+            Map<String, Object> request = agentInitialDraftRequest(null, agentName, "1.0.0");
+            request.put("callInterfaces", Collections.singletonList(Map.of("protocol", "custom",
+                    "descriptorMediaType", "application/json", "nativeDescriptor", Map.of("method", "invoke"),
+                    "endpointSourceOrder", order, "endpointSets", Collections.singletonList(Map.of(
+                            "source", "DECLARED", "endpoints", Collections.singletonList(Map.of(
+                                    "uri", "https://example.com/declared", "transport", "HTTP")))))));
+            postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(request));
+            addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
+            postFormOk(ADMIN_AGENT_PATH + "/force-publish", agentForm(agentVersionCommand(null, agentName, "1.0.0")));
+            Query identity = Query.newInstance().addParam("agentName", agentName);
+            JsonNode sets = getJsonOk(AGENT_CLIENT_PATH, identity).at("/data/callInterfaces/0/endpointSets");
+            assertEquals(2, sets.size());
+            assertEquals(order.get(0), sets.get(0).path("source").asText());
+            JsonNode runtime = getJsonOk(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", agentName)
+                    .addParam("endpointSource", "RUNTIME")).at("/data/callInterfaces/0/endpointSets");
+            assertEquals(1, runtime.size());
+            assertEquals("RUNTIME", runtime.get(0).path("source").asText());
+            assertEquals(0, runtime.get(0).path("endpoints").size());
+            JsonNode declared = getJsonOk(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", agentName)
+                    .addParam("endpointSource", "DECLARED")).at("/data/callInterfaces/0/endpointSets");
+            assertEquals(1, declared.size());
+            assertEquals(1, declared.get(0).path("endpoints").size());
+            JsonNode both = getJsonOk(AGENT_CLIENT_PATH, Query.newInstance().addParam("agentName", agentName)
+                    .addParam("endpointSource", order.get(1) + "," + order.get(0)))
+                    .at("/data/callInterfaces/0/endpointSets");
+            assertEquals(sets, both, "filter order must not change source preference");
+        }
+    }
+
+    @Test
     public void testSearchAndDiscoverValidationAndNotFound() throws Exception {
         String absentName = randomAiName("agent-client-absent");
         JsonNode empty = waitForSearch(Query.newInstance()

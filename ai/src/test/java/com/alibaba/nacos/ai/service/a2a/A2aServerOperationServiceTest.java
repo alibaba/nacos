@@ -104,6 +104,25 @@ class A2aServerOperationServiceTest {
     }
     
     @Test
+    void testCanonicalIpv6ProjectionWithSharedReservedMetadata() throws NacosException {
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME))
+            .thenReturn(agent(VERSION, true, VERSION));
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
+        Instance ipv6 = instance("[2001:db8::1]", 8080, "HTTP+JSON", "1.0", "1", false);
+        ipv6.getMetadata().put("__nacos.agent.endpoint.tenant__", "native-tenant");
+        ServiceInfo info = new ServiceInfo();
+        info.setHosts(Collections.singletonList(ipv6));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(info);
+        AgentCardDetailInfo result = service.getAgentCardForClient(NAMESPACE_ID, AGENT_NAME,
+            VERSION, "SERVICE");
+        assertEquals("http://[2001:db8::1]:8080", result.getUrl());
+        assertEquals("1.0", result.getProtocolVersion());
+        assertEquals("native-tenant", result.getSupportedInterfaces().get(0).getTenant());
+        assertEquals(result.getSupportedInterfaces(), result.getAdditionalInterfaces());
+    }
+    
+    @Test
     void testPublicConstructor() {
         assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage,
             new A2aCanonicalDefinitionConverter()));

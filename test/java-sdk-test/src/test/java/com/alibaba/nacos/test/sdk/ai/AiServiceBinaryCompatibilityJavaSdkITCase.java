@@ -123,7 +123,9 @@ class AiServiceBinaryCompatibilityJavaSdkITCase extends JavaSdkBaseITCase {
         String runtime = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
         if (oldSdk) {
             // Resolve the released SDK's own dependency tree in a standalone fixture POM.
-            runtime = new String(Files.readAllBytes(LIBRARIES.resolve("legacy-classpath.txt")),
+            Path legacyClasspath = Paths.get(System.getProperty("nacos.ai.compatibility.classpath-file",
+                "../../target/ai-compatibility/legacy-classpath.txt"));
+            runtime = new String(Files.readAllBytes(legacyClasspath),
                 StandardCharsets.UTF_8).trim();
         }
         String classpath = CLASSES.toAbsolutePath() + File.pathSeparator + runtime;

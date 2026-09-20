@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nacos.io/schemas/ai/rad/watch/rad-watch-binding.schema.json",
   "$comment": "Copyright 1999-2026 Alibaba Group Holding Ltd. Licensed under the Apache License, Version 2.0.",
-  "title": "Nacos RAD Watch Binding 0.3.0",
+  "title": "Nacos RAD Watch Binding 0.5.0",
   "description": "Definition bundle for the Nacos gRPC hint and HTTP batch-long-poll bindings. Wire notifications never contain AgentDiscoveryResult. Select an explicit x-entrypoints reference for validation.",
   "x-status": "experimental",
-  "x-binding-version": "0.3.0",
+  "x-binding-version": "0.5.0",
   "x-entrypoints": {
     "AgentSubscribeRpcRequest": "#/$defs/AgentSubscribeRpcRequest",
     "AgentSubscribeRpcResponse": "#/$defs/AgentSubscribeRpcResponse",
@@ -313,5 +313,5 @@
       ]
     }
   },
-  "x-schema-version": "0.3.0"
+  "x-schema-version": "0.5.0"
 }

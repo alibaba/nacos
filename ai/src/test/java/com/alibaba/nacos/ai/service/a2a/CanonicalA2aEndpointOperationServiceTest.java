@@ -119,9 +119,9 @@ class CanonicalA2aEndpointOperationServiceTest {
         assertEquals("tenant=nacos", firstInstance.getMetadata().get(
             Constants.Agent.AGENT_ENDPOINT_QUERY_KEY));
         assertEquals("0.3", firstInstance.getMetadata().get(
-            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+            "__nacos.agent.endpoint.protocolVersion__"));
         assertEquals("tenant-a", firstInstance.getMetadata().get(
-            Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
+            "__nacos.agent.endpoint.tenant__"));
         assertEquals("[1.0.0]", firstInstance.getMetadata().get(
             Constants.Agent.AGENT_ENDPOINT_VERSION_RANGE_KEY));
     }

@@ -16,6 +16,13 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import com.alibaba.nacos.ai.form.agent.client.AgentDiscoveryForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointDeregistrationForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointRegistrationForm;
@@ -58,6 +65,8 @@ import static org.mockito.Mockito.when;
 
 class AgentClientControllerTest {
     
+    private final AgentClientMigrationGuard migrationGuard = mock(AgentClientMigrationGuard.class);
+    
     private AgentDiscoveryApplicationService discoveryService;
     
     private AgentHttpClientLifecycleService lifecycleService;
@@ -75,7 +84,31 @@ class AgentClientControllerTest {
         publishService = mock(AgentPublishApplicationService.class);
         watchService = mock(AgentHttpWatchService.class);
         controller = new AgentClientController(discoveryService, lifecycleService,
-            publishService, watchService);
+            publishService, watchService, migrationGuard);
+    }
+    
+    @Test
+    void testMigrationRejectsBusinessBeforeSideEffectsAndAllowsCleanup() throws Exception {
+        NacosApiException migrating = new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "migration");
+        doThrow(migrating).when(migrationGuard).checkReady();
+        AgentDiscoveryForm discovery = mock(AgentDiscoveryForm.class);
+        when(discovery.toRequest()).thenReturn(new AgentDiscoveryRequest());
+        assertSame(migrating, assertThrows(NacosApiException.class,
+            () -> controller.discover(discovery, "client")));
+        assertSame(migrating, assertThrows(NacosApiException.class,
+            () -> controller.search(mock(AgentSearchForm.class), "client")));
+        assertSame(migrating, assertThrows(NacosApiException.class,
+            () -> controller.publish(mock(AgentPublishForm.class))));
+        assertSame(migrating, assertThrows(NacosApiException.class,
+            () -> controller.registerEndpoints(mock(AgentEndpointRegistrationForm.class),
+                "client", "AI")));
+        assertSame(migrating, assertThrows(NacosApiException.class,
+            () -> controller.watch(mock(AgentWatchBatchForm.class), "client", "AI")));
+        verifyNoInteractions(discoveryService, publishService, lifecycleService, watchService);
+        controller.deregisterEndpoints(mock(AgentEndpointDeregistrationForm.class), "client", "AI");
+        controller.heartbeat("client", "AI");
+        verify(lifecycleService).heartbeat("client", "AI");
     }
     
     @Test

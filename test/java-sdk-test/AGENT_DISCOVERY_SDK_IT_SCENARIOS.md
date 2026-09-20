@@ -358,3 +358,60 @@ JSON-01/03：shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespa
 [本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
 
 共享监听器用例 `shouldShareCanonicalPollingIntentAndIsolateListeners` 使用 PUBLIC Agent，继续验证空 Filter/无 Filter 的同一意图、完整快照一致、抛异常监听器隔离和部分取消订阅。原私有 fixture 在本轮复现服务端异步 `TERMINATED/-404`（DAUTH-F05），因此该项通过不代表私有授权 Watch 已修复；原始失败日志保留在本轮验证记录中。
+
+### C07 A2A/RAD metadata interoperation
+
+`AgentDiscoveryServiceJavaSdkITCase.shouldInteroperateA2aMetadataWithRadAndChangeRevision`
+uses two public SDK instances. Legacy Card publication and Endpoint registration are
+observed with native RAD discovery in HTTP/GRPC/AUTO modes. Tenant-only and protocol-version-only
+changes must alter Runtime revision; tenant also changes the complete discovery fingerprint.
+After legacy cleanup, native RAD metadata is projected back into a complete old Card, including
+an unhealthy endpoint, stored URL preference and both complete interface arrays.
+Run with default and Jackson 3 SDK adapters. This proves current public interoperation,
+not the C10 A2A-to-RAD facade routing, which remains pending.
+
+C07 execution: 74 external cases passed (11 SDK cases per JSON adapter, 34 HTTP cases,
+18 independent-Console cases), with authentication enabled and no skips. See
+ADAPTATION_VALIDATION.md for artifact hashes and component-test evidence. The legacy
+SDK facade still uses the old wire; public A2A-to-RAD routing is validated in C10.
+
+### C08 staged Endpoint-intent coverage
+
+The A2A-to-RAD merger is an internal component until C10. C08 UTs cover per-Version
+replacement, continuous retained ranges, conflicts, source ownership, rollback,
+unknown writes, serialized reconnect replay and shutdown. Native public SDK IT
+regression covers bindings, multi-item removal, namespace/publisher isolation,
+capacity and HTTP cleanup on HTTP/gRPC/AUTO and both JSON adapters. These runs
+do not claim public legacy-to-RAD routing coverage before C10. Final execution:
+15 SDK cases per JSON adapter and 7 HTTP cases passed with real identities,
+no skips; 716 default-adapter UTs and 81 Jackson 3 UTs passed. One existing MCP
+Disabled UT is recorded separately. See ADAPTATION_VALIDATION.md.
+
+### A2A/RAD C09: Watch adapter and explicit identity
+
+- Restore all seven DAUTH-F05 Agent discovery methods. The existing-target fingerprint
+  case now explicitly changes the Agent to PRIVATE and runs HTTP and GRPC as a granted
+  non-owner, so default PUBLIC visibility cannot mask the identity regression.
+- Retain complete snapshot, duplicate suppression, version/latest evolution, server capacity,
+  source preference, partial removal, HTTP batch and cancellation assertions.
+- Native synchronous subscribe returns its initial snapshot; it does not promise an initial
+  SNAPSHOT callback. The scope-invalidation test accepts that return value and still requires
+  a real unavailable event, no stale data and not-found detail after visibility loss.
+- The internal A2A adapter is exercised with the real Watch manager in UT. Old public A2A
+  methods remain on legacy wire until C10; this stage does not claim public A2A RAD routing.
+- Re-enabled standalone restart and pinned-cluster cases require their directed fixtures.
+  Their execution status is recorded separately from ordinary Watch IT in the C11 matrix.
+
+### Discover 公共描述与标签（本轮范围）
+
+仅扩展已有 Discover/Watch 响应，不增加 API surface，覆盖率分母不变。
+`AgentDiscoveryServiceJavaSdkITCase#shouldWatchCurrentMetadataForAnExactOldVersion`
+覆盖 HTTP/gRPC/auto：旧版本订阅首次返回当前 description/tags、分别修改描述与标签的回调、
+标签换序不通知、空过滤仍返回元数据、清空字段及取消订阅；同时断言 contentDigest、
+nativeDescriptor 和 Endpoint sourceRevision 不变。默认与 Jackson 3 adapter 均执行。
+公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+集群专项复用 `shouldConvergePinnedNodeDefinitionAndRuntimeChanges`：从节点 B 更新
+description/tags，要求固定在节点 A 的 gRPC/HTTP Watch 收到相同完整快照，
+并与 A/B 两节点 Discover 指纹一致；版本与 contentDigest 保持不变。
+该场景在 Derby+Raft 和 MySQL 三节点夹具中分别执行。

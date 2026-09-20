@@ -459,6 +459,20 @@ class AiRedoScheduledTaskTest {
         return agentEndpointRedoData;
     }
     
+    @Test
+    void managedPublicationReplayDoesNotAlsoUseTheStandaloneRedoPath() throws Exception {
+        AgentEndpointPublicationRedoData data =
+            buildAgentEndpointPublicationRedoData("register", RedoData.RedoType.REGISTER);
+        when(aiGrpcRedoService.findAgentEndpointPublicationRedoData())
+            .thenReturn(Collections.singleton(data));
+        when(aiGrpcRedoService.isConnected()).thenReturn(true);
+        when(aiGrpcClient.dispatchAgentEndpointPublicationRedo(data)).thenReturn(true);
+        task.run();
+        verify(aiGrpcClient).dispatchAgentEndpointPublicationRedo(data);
+        verify(aiGrpcClient, never()).doRegisterAgentEndpoints(any(), any(), any());
+        verify(aiGrpcClient, never()).doDeregisterAgentEndpoints(any(), any(), any(), any());
+    }
+    
     private AgentEndpointPublicationRedoData buildAgentEndpointPublicationRedoData(String key,
         RedoData.RedoType redoType) {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();

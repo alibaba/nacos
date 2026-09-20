@@ -115,10 +115,16 @@ public final class AgentDiscoveryCanonicalizer {
         AgentDiscoveryResult result = new AgentDiscoveryResult();
         result.setNamespaceId(defaultNamespace(source.getNamespaceId()));
         result.setAgentName(source.getAgentName());
+        result.setDescription(source.getDescription());
+        result.setTags(source.getTags() == null || source.getTags().isEmpty() ? null
+            : new ArrayList<String>(source.getTags()));
         result.setVersion(source.getVersion());
         result.setContentDigest(source.getContentDigest());
         result.setCallInterfaces(copyCallInterfaces(source.getCallInterfaces()));
         RadModelValidator.validate(result);
+        if (result.getTags() != null) {
+            Collections.sort(result.getTags());
+        }
         return result;
     }
     
@@ -281,7 +287,6 @@ public final class AgentDiscoveryCanonicalizer {
             copy.setMetadata(canonical.getMetadata());
             copy.setHealthy(canonical.getHealthy());
             copy.setEnabled(canonical.getEnabled());
-            copy.setState(canonical.getState());
             copy.setBindings(copyBindings(each.getBindings()));
             result.add(copy);
         }
@@ -418,6 +423,12 @@ public final class AgentDiscoveryCanonicalizer {
         frame.put("agentName", result.getAgentName());
         frame.put("callInterfaces", callInterfaceFrames(result.getCallInterfaces()));
         frame.put("contentDigest", result.getContentDigest());
+        if (result.getDescription() != null) {
+            frame.put("description", result.getDescription());
+        }
+        if (result.getTags() != null) {
+            frame.put("tags", result.getTags());
+        }
         frame.put("namespaceId", result.getNamespaceId());
         frame.put("version", result.getVersion());
         return frame;

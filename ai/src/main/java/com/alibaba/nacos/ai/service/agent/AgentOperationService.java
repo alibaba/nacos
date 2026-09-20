@@ -285,21 +285,84 @@ public class AgentOperationService {
     }
     
     /**
-     * Create a draft from an application publication using the same content workflow as Admin.
+     * Apply Client publication rules through the existing draft creation and update paths.
      *
-     * @param namespaceId namespace identifier
-     * @param request client publication request
-     * @return verified draft detail
-     * @throws NacosException when creation fails
+     * @param namespaceId namespace
+     * @param request Client publication request
+     * @return definition result and whether no Version existed before creation
+     * @throws NacosException when authorization, validation or the write fails
      */
-    public AgentVersionDetail createDraftFromPublication(String namespaceId,
+    public PublicationResult writeDraftFromPublication(String namespaceId,
         AgentPublishRequest request) throws NacosException {
         if (request == null) {
-            throw new IllegalArgumentException("Agent draft request must not be null");
+            throw new IllegalArgumentException("Agent publish request must not be null");
         }
         AgentValidationUtils.validateNamespaceId(namespaceId);
         request.validate();
-        return createValidatedDraft(namespaceId, request);
+        String agentName = request.getAgentName();
+        AiResource meta = resourceManager.findMeta(namespaceId, agentName, RESOURCE_TYPE);
+        AgentVersionDetail current = null;
+        if (meta != null) {
+            VisibilityHelper.checkWritableResource(meta);
+            checkMigrationMutable(meta);
+            try {
+                current = persistenceService.getAgentVersion(namespaceId, agentName,
+                    request.getVersion());
+            } catch (NacosException e) {
+                if (e.getErrCode() != NacosException.NOT_FOUND) {
+                    throw e;
+                }
+            }
+        }
+        if (current != null
+            && !AiConstants.Agent.VERSION_STATUS_DRAFT.equals(current.getStatus())) {
+            return new PublicationResult(current, false);
+        }
+        AgentVersionDetail draft = toDraft(request);
+        boolean first = false;
+        AgentVersionDetail result;
+        if (current != null) {
+            if (draft.getCallInterfaces() == null) {
+                draft.setCallInterfaces(persistenceService.getAgentVersion(namespaceId, agentName,
+                    request.getBasedOnVersion()).getCallInterfaces());
+            }
+            result = persistenceService.updateDraftFromPublication(namespaceId, agentName, draft);
+        } else if (meta == null) {
+            requireInitialDraftContent(request);
+            first = true;
+            result = persistenceService.createInitialDraftForPublication(
+                toInitialAgent(namespaceId, request), draft);
+        } else {
+            first = persistenceService.listAgentVersions(namespaceId, agentName, null, 1, 1)
+                .getTotalCount() == 0;
+            result = persistenceService.createDraft(namespaceId, agentName, draft,
+                request.getBasedOnVersion(), false);
+        }
+        scheduleAgentIndexMaintenance(namespaceId, agentName,
+            meta == null ? AiResourceChangeOperation.CREATE : AiResourceChangeOperation.UPDATE,
+            true);
+        return new PublicationResult(result, first);
+    }
+    
+    /** Result of a Client draft write, before optional submission. */
+    public static final class PublicationResult {
+        
+        private final AgentVersionDetail version;
+        
+        private final boolean firstVersion;
+        
+        public PublicationResult(AgentVersionDetail version, boolean firstVersion) {
+            this.version = version;
+            this.firstVersion = firstVersion;
+        }
+        
+        public AgentVersionDetail getVersion() {
+            return version;
+        }
+        
+        public boolean isFirstVersion() {
+            return firstVersion;
+        }
     }
     
     private AgentVersionDetail createValidatedDraft(String namespaceId,

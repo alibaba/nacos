@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
-  AlertTriangle,
   ArrowLeft,
   Bot,
   CheckCircle2,
@@ -72,7 +71,7 @@ import {
   getVersionActions,
   namingDetailPath,
   runtimeCacheKey,
-  usesRuntimeSource,
+  runtimeEndpointStatus,
 } from '../newAgent/agent-console-model';
 
 type LifecycleAction = 'submit' | 'publish' | 'forcePublish' | 'redraft' | 'online' | 'offline';
@@ -235,6 +234,7 @@ export default function AgentDetailPage() {
   const selectedInterface = currentVersion?.callInterfaces.find(
     (item) => item.protocol === selectedProtocol,
   );
+  const sourceOrderLabelKey = endpointSourceOrderLabelKey(selectedInterface?.endpointSourceOrder);
   const runtimeView = currentVersion && selectedProtocol
     ? runtimeCache[runtimeCacheKey(currentVersion.version, selectedProtocol)]
     : undefined;
@@ -639,9 +639,7 @@ export default function AgentDetailPage() {
                             />
                             <Info
                               label={t('agent.sourceOrder')}
-                              value={t(endpointSourceOrderLabelKey(
-                                selectedInterface.endpointSourceOrder,
-                              ))}
+                              value={sourceOrderLabelKey ? t(sourceOrderLabelKey) : '-'}
                             />
                           </div>
                           </div>
@@ -717,12 +715,6 @@ export default function AgentDetailPage() {
                 </Button>
               </div>
               <CardContent className="p-5 space-y-4">
-                {!usesRuntimeSource(selectedInterface) && (
-                  <div className="flex gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    {t('agent.runtimeSourceDisabled')}
-                  </div>
-                )}
                 {runtimeLoading && !runtimeView ? (
                   <Skeleton className="h-24 w-full" />
                 ) : (runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints || []).length === 0 ? (
@@ -733,7 +725,7 @@ export default function AgentDetailPage() {
                       <div key={`${item.uri}@@${item.transport}`} className="rounded-lg border p-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-sm break-all">{item.uri}</span>
-                          <Badge>{item.state}</Badge>
+                          <Badge>{runtimeEndpointStatus(item)}</Badge>
                           <Badge variant="outline">{item.transport}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">

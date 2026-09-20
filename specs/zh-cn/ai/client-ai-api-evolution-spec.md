@@ -18,25 +18,19 @@
 
 | 项目 | 值 |
 | --- | --- |
-| 状态 | 第一步接口/transport 已实现并同步主规范；第 3、4、6 节仍为待实施草案 |
-| 更新 | 2026-09-11 |
+| 状态 | 资源接口、模型整合与 A2A/RAD 适配已实现 |
+| 更新 | 2026-09-20 |
 | 范围 | 子服务入口、资源 transport、A2A/RAD 能力发现与兼容决策、Agent/RAD Java 模型收敛 |
 
-本提案区分第一步已实现契约与后续兼容设计；后续条款不替代当前行为。详细设计见
-[API 设计](../../../Codex/design/nacos-3.3-client-ai-api/README.md)、
-[A2A 决策](../../../Codex/design/nacos-3.3-client-ai-api/A2A_ROUTING.md)和
-[IT 矩阵](../../../Codex/design/nacos-3.3-client-ai-api/COMPATIBILITY_IT.md)。
+本文记录已实现的 Client API 演进。具体行为和验收覆盖见
+[A2A 兼容契约](a2a-agent-spec.md)、[RAD 协议](rad-protocol-spec.md)和
+[SDK 场景矩阵](../../../test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md)。
 
-## 0. 当前阶段约束
+## 0. 当前阶段边界
 
-本次已收敛为第一步：接口委托、资源 transport 和对应 UT/Java SDK IT，细节见
-[第一步计划](../../../Codex/design/nacos-3.3-client-ai-api/PHASE1_PLAN.md)。旧 A2A 在新旧服务端
-上均固定现有 gRPC，与 agent/global 的 grpc/http/auto 设置无关；这些配置第一步只控制新 Agent/RAD。
-getter 不触发连接，实际 A2A 调用保留 requireGrpcClient 的按需启动和重连需求。
-
-第 3、4 节的 HTTP capabilities、完整兼容能力、A2A→RAD、版本 owner/旧字段/release 适配
-全部留后续，不是第一步门禁。第一步不改服务端 API、迁移算法或旧 A2A 业务实现。
-原生 HTTP 的缺功能响应保持现状，不引入探测或统一改写为 unsupported。
+资源接口、transport 覆盖和模型整合均已实现。首次能力解析确认支持 RAD 时，
+旧 A2A 操作改走 RAD；旧服务端仍走历史 gRPC，客户端实例内固定选定的 A2A 模式。
+第 3–5 节定义能力发现、适配与验证，第 6 节保留模型演进记录。
 
 ## 1. 对主规范的修订关系
 
@@ -46,8 +40,9 @@ getter 不触发连接，实际 A2A 调用保留 requireGrpcClient 的按需启�
 | [SDK](../sdk/sdk-spec.md) §5 | MCP 入口统一为 mcp()，总 transport 增加资源 override |
 | [Agent API](agent-api-spec.md) §2.1–2.2 | AgentService 承接 A2A 和 AgentDiscoveryService；无 RAD 时新能力不可用 |
 | [客户端能力协商](../client/client-ability-negotiation-spec.md) | 补 HTTP binding 能力发现；区分能力、可达性及业务前置条件 |
-| [A2A 兼容](a2a-agent-spec.md) | 新 binding 适配仍执行全部旧契约，迁移权威继续在服务端判断 |
-| [HTTP API 范围](../http-api/v3-api-surface.md) | 待实施 Client capabilities 入口；尚未加入已实现路径清单 |
+| [A2A 兼容](a2a-agent-spec.md) | 新SDK采用明确的查询/发布降级；旧wire及迁移保护保持 |
+| [RAD](rad-protocol-spec.md)、[Agent 存储](agent-storage-spec.md)、[Agent 管理](agent-management-spec.md) | O1：逐 Endpoint 生效绑定、Batch 字段默认值、enabled 可写及删除冗余 state；Console 同步派生标签 |
+| [HTTP API 范围](../http-api/v3-api-surface.md) | Client capabilities 入口，遵循标准仅身份认证流程 |
 
 ## 2. 接口和 transport 目标
 
@@ -74,7 +69,8 @@ Search/Discover/Watch/publication/publish 不允许模拟为旧 API。显式 GRP
 单 binding 能力退化，不自动改用 HTTP。
 
 Prompt 的直接查询和订阅轮询共用薄路由代理；AUTO 根据当前连接选择，连接类失败可 HTTP，
-不新增当前不存在的 Prompt 能力位。Agent/MCP/Prompt 各自记录 AUTO 状态，共享连接只有在
+第一步未新增 Prompt gRPC 能力位；第3节的 HTTP prompt 声明不改变此事实。
+Agent/MCP/Prompt 各自记录 AUTO 状态，共享连接只有在
 无强制 GRPC/旧 A2A 需求、未曾连接、失败达原阈值且已使用 AUTO 资源均 HTTP 成功时才可暂停
 初始重连；未使用资源首次使用时恢复必要探测，曾连接后的断线恢复规则不变。
 
@@ -82,77 +78,226 @@ Prompt 的直接查询和订阅轮询共用薄路由代理；AUTO 根据当前�
 一个资源的 HTTP 成功不能停止另一个强制 GRPC 资源的重连。有状态 publication 保留协议和 owner，
 写入结果未知时不跨协议/transport 重放。
 
-## 3. HTTP 能力发现目标（后续阶段）
+## 3. HTTP 能力发现
 
-拟增加 `GET /v3/client/ai/capabilities`，返回 `Result<T>`；data 包含
-`schemaVersion=1` 和 `capabilities` 布尔 Map。首批键为 `radV1`、`radWatchV1`、
-拟新增的 `a2aCompatV1`。只声明响应节点 HTTP binding 的实际支持，不声明整个集群或 gRPC 可达性。
+拟增加 GET /v3/client/ai/capabilities，Result.data 包含 schemaVersion=1 和 capabilities。
+已确认同时声明五个 boolean 键：radV1、mcp、skill、prompt、agentSpec。
+它们只表示响应节点的对应 Client HTTP binding，不表示 gRPC 支持/可达性、资源权限或管理能力。
+MCP/Agent 已有 HTTP/gRPC 路径；Prompt 查询也有两种路径；Skill/AgentSpec 当前相关 SDK 路径仅 HTTP。
+基础声明涵盖对应的 Client 查询/搜索，以及 Agent/MCP 的发布和 Endpoint 生命周期；
+不推导所有未来增强操作。具体映射见能力设计表。
+已有 agent 指历史 A2A，不能替代 radV1；新 HTTP 键不直接填入 gRPC 能力表。
+接口不接收业务资源参数，不读取资源/索引、不续租；依据已实现/装配的 binding 声明，空库也可返回 true。
+不为四个既有资源增加强制能力探测前置步骤；旧服务器缺接口或缺键时保持原有调用路径。
+取消 a2aCompatV1 提案。Watch 内部协商只影响 Watch transport，不增加 A2A/RAD 模式门槛。
 
-`a2aCompatV1` 表示完整旧 A2A 语义已在新 binding 中适配，包括各迁移阶段；gRPC 使用对应的
-拟议 `SERVER_A2A_COMPAT_V1`。只具备基础 RAD 的实现不得声明完整适配能力。
-声明 true/false 分别为 SUPPORTED/NOT_SUPPORTED，字段缺失或声明不可解析为 UNKNOWN。
+gRPC 使用当前连接 SERVER_RAD_V1；HTTP-only 不等待 gRPC，直接取 HTTP 能力。
+每个键的有效true/false分别表示支持/不支持；缺字段/错误类型仅该键为UNKNOWN，其他合法键保留。
+主结构非法或未知schema才令整个响应为UNKNOWN；忽略未知可选键，不把缺键当false。
+404/405、认证失败、网络失败和业务not-found均不能单独证明无RAD。
+能力缓存按实际目标/context/transport/身份隔离，换连接或身份刷新；不缓存权限/迁移写许可。
 
-能力入口不依赖业务资源存在，不要求 Admin 或具体 Agent 权限；遵循明确的 Client 身份策略，
-匿名 Client 策略需同步兼容。它不创建 Client/Publisher，不续租、不扫描数据，不输出迁移写许可。
+### 3.1 仅验证身份
 
-404/405、网关页面、网络错误、401/403 不推导为“无 RAD”。无此入口的既有 RAD HTTP 实现，
-仍可处理用户明确调用的新 Agent 方法；这是实际请求，不是写探测，也不允许转成旧 A2A。
-旧方法的自动转换则必须具有完整适配证据，否则保留原 A2A 路径或受控失败。
+能力接口属于 OPEN_API / AI / READ，使用 ONLY_IDENTITY，不使用 ALLOW_ANONYMOUS。
+有效普通用户即使没有任何资源权限也能读取；缺失/无效/过期身份被拒绝。
+具备能力查询权限不授予后续Agent读写权限。使用普通Client凭据和端口，不依赖Admin/Console。
 
-能力按当前目标和 transport 保存；gRPC 重新连接必须刷新，HTTP 缓存有界并关联实际地址、
-context path 和身份。单次响应不能代表不透明负载均衡池的全部后端；新 binding 应部署在能力一致
-或有明确黏性的后端池，否则允许受控失败。业务处理节点仍需执行全部权威校验。
+复用HTTP Filter的validateIdentity后跳过validateAuthority。拟使用显式非资源parser，
+保留AI类型、action和身份标签，不根据查询参数派生namespace/group/Agent。
+不把DefaultResourceParser.class误当显式覆盖，也不以去除Secured实现身份接口。
+当前Filter拒绝形状为HTTP403 + Result ACCESS_DENIED；不无依据改成插件内部401。
 
-## 4. 迁移与错误目标（后续阶段）
+O6 已确认（2026-09-17）：能力接口遵循标准 Client auth 流程，默认/true 时按所选插件规则
+校验身份，显式 false 按总开关放行；不另设强制身份验证。保持 ONLY_IDENTITY，不校验具体资源权限，
+不添加 ALLOW_ANONYMOUS。Admin/Console 开关不替代 Client 开关。
+插件启用条件、插件缺失/未激活及内部身份分支均沿用现有框架，不为能力接口新增检查或配置错误处理。
+验证应区分“校验成功”和“标准流程跳过”，后者不能计为身份验证证据。
 
-基础能力是软件契约声明，不能将 `radV1` 与 CANONICAL 等同。完整 A2A 适配通过既有
-`A2aCompatibilityOperationService` 及 Endpoint 兼容路径处理，不在 Client 复制迁移状态机：
+完整请求、无副作用、缓存及认证矩阵见
+[A2A 兼容契约](a2a-agent-spec.md)。
 
-- LEGACY/SYNCING：旧定义继续历史权威；Runtime 使用对应旧/镜像语义。新 RAD 读取标准当前事实，
-  不承诺未完成迁移的历史定义已全部可见。
-- QUIESCING：历史定义写拒绝，读取和 Runtime 按现有规则继续。迁移来源资源的通用写受原 guard
-  保护；独立标准 Agent 不因这项规则被全部禁用。
-- CANONICAL：服务端执行 canonical 兼容行为，仍保持旧 release/latest/多版本 publisher 的契约。
+## 4. A2A / RAD 映射
 
-保留 `AGENT_MIGRATION_IN_PROGRESS=50105` 的机器可读含义，区别于
-`SERVER_NOT_IMPLEMENTED=501` 和网络错误。现有 HTTP 错误映射尚未保证保留所有业务 detail，
-实施时只补必要绑定的映射，不以文案解析决策，不因迁移冲突切协议，也不增加无限重试。
+### 4.1 路由及降级
 
-接口拆分、能力入口和完整 A2A 适配可分阶段交付。实际缺口对应的最小支持和 owner 生命周期
-尚待定稿；完成前不得声称完整旧 A2A 已支持纯 HTTP 或开启完整适配能力位。
+- 首次确认RAD支持：旧A2A与新Agent远端操作调用RAD，按agent资源配置选择transport。
+- 首次选旧A2A的实例保持全部旧方法走旧gRPC，重连/升级/迁移完成不自动转RAD；重启或重新实例化再判断。
+- 底层能力正常刷新；既有旧应用保持A2A链路，服务端负责迁移适配；不新增运行中启用原生RAD的交接机制。
+- RAD不支持：旧A2A强制旧gRPC；AgentDiscoveryService与publishAgent远端方法unsupported。
+- 全部不可达：明确连接错误。能力UNKNOWN不包装为“版本过低”。
+- 继承的getAgentCard仍是旧A2A方法，AiService直调与agent()行为一致。
+- 本地unsubscribe/shutdown不依赖远端能力。
+- 业务权限/参数/冲突/容量/迁移错误不触发旧协议fallback；结果未知的写不跨owner重放。
 
-### 4.1 客户端转换优先与已核实的限制
+### 4.2 查询和Watch
 
-本提案不要求每个旧方法新增兼容 RPC。详见
-[客户端转换边界](../../../Codex/design/nacos-3.3-client-ai-api/CLIENT_MAPPING.md)：
+以下映射适用于已选RAD模式；旧模式实例保留原查询、注册redo及轮询生命周期。
 
-- 旧 Endpoint 的 URI/TLS/path/query/transport 和 exact version 可转换为现有 RAD Endpoint/Batch。
-  单条为完整单元素批次；旧批量完整覆盖；owner 隔离后旧注销可由 Client 清空完整版本意图。
-- 多个 exact version 在一个标准 publisher 中不能同时独立保存：版本是 batch 内容而非身份。
-  单纯修改 Client map key 或合并批次无效；可用独立真实连接/HTTP 身份解决，但会扩大生命周期
-  管理，或在共享连接下补逻辑 owner 支持。此选择仍待定，不能声称任何 Client 方案都不可行。
-- 未过滤来源的 endpointSets 保留顺序及空来源，可恢复旧转换定义的 registrationType；原设计中
-  “空 Endpoint 时来源顺序丢失”的判断撤回。exact 查询的 latestVersion 可通过额外查询取得，
-  但不保证两次读属于同一快照，必须约定竞态和失败行为。
-- 旧 Endpoint 的 protocolVersion/tenant 目前只存在于保留 metadata，标准 RAD 不接受/返回
-  这些键。新 SDK 私有普通 metadata 约定不能解决真实旧 SDK 双向互通；需最小映射/暴露支持
-  或保留旧路径，不能从定义的 protocolVersion 或本地缓存伪造其他发布者的字段。
-- 订阅回调及缺失恢复可复用 Client 原轮询与监听器；不要求改成 RAD Watch，完整 GET 字段仍是
-  前提。旧保留字段不在 RAD 指纹中，不承诺其变化能通过原生 Watch 被感知。
-- 旧 release 的直接 online、setAsLatest=false 和重复 online 无条件 no-op 无法由现有普通
-  publish 完整表达；保留对应服务端写契约。迁移历史权威及 mirror/shadow 亦不能靠 DTO 转换补齐。
+旧查询未指定version使用显式label=latest，只选择a2a；从nativeDescriptor还原Card，
+SERVICE使用Runtime地址，无运行地址回退声明Card。完整endpointSets来源顺序用于registrationType。
+latestVersion在latest查询为true，exact查询固定null，不再补查latest。
+订阅优先复用RAD Watch和同一投影；无Watch能力时才RAD Discover轮询。
+初始缺失、恢复、取消重订阅、F/R入口监听共享及shutdown必须验证。
 
-完整适配能力位只声明最终契约，不规定所有转换必须放在 Server。不得因本节澄清而修改通用 RAD
-的版本范围、metadata、publish 或 publisher 语义；任何必要扩展应单独定稿并保持旧业务实现。
+O4 已确认、待实现（2026-09-17）：endpointSourceOrder 仅表示默认推荐优先级，不是来源开关。
+定义必须恰好包含 RUNTIME 和 DECLARED 各一次，仅允许两种排列；取消单来源定义和对应 UI 模式。
+两种来源都可以查询，但实际地址可为空，不要求发布定义时已有运行时注册。
+未指定 endpointSources 时按推荐顺序返回两个 Set，保留空 Set，不只返回首个有地址的来源。
+显式 endpointSources=[RUNTIME] 或 [DECLARED] 时，只返回所选来源，不受定义优先级限制；
+没有匹配地址仍是该来源空 Set，不自动加入另一来源。Filter 同时选两种来源仍保持定义推荐顺序，
+Filter 数组表达集合而非新的优先级。Discover/Watch 的版本、权限、可见性和其他过滤规则不变。
+
+A2A URL/SERVICE 定义转换已分别输出 [DECLARED,RUNTIME]/[RUNTIME,DECLARED]，继续沿用。
+旧 getAgentCard 不指定类型时按推荐顺序选择，显式类型决定本次投影；读取完整来源顺序后
+恢复返回的存储 registrationType。SERVICE 无匹配 Runtime 时仍沿用旧 Card 回退，
+该兼容行为不扩展到原生单来源 Filter。网络/权限错误不能转为回退成功。
+本结论取代“原生定义排除 Runtime 时接受旧 SERVICE 降级”的未采纳建议。
+
+实施必须同步定义校验、Discover/Watch、管理/内部存储 Schema 及 Artifact 引用，
+Console 新建/编辑选择器、EndpointSourceMode、双向转换、JSON 校验、详情标签/来源禁用提示和 i18n。
+管理 Runtime 查询不受默认优先级限制。只取消定义中的单来源模式，不删除 EndpointSource 枚举值，
+不取消查询单来源 Filter，也不改变版本存储只包含声明地址的规则。
+不增加 BETA 存储升级逻辑或静默重写已发布摘要；既有单来源 fixture 按新契约调整。
+详见 [A2A 兼容契约](a2a-agent-spec.md)
+和 [SDK 场景矩阵](../../../test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md)。
+
+### 4.3 Client发布
+
+只有本次从“没有任何Version”成功新建首版，Client API才强制自动submit，
+Admin/Console不改变创建草稿和显式提交行为。旧release将setAsLatest映射为autoSubmit；
+后续新建版本及已有可编辑DRAFT一律按本次标志：false留DRAFT，true普通Pipeline。
+已有DRAFT即使是唯一版本、由Admin创建或上次首版提交失败，也不再判首版。
+原生publishAgent使用同一Client发布流程。已有可编辑DRAFT完整替换定义；
+REVIEWING/REVIEWED/ONLINE/OFFLINE均成功no-op，不覆盖内容或重新上线。
+普通submit可能等待审核，实际上线才成为latest；权限和迁移保护仍然执行。
+旧server/旧wire release继续历史行为，不因新客户端选择RAD而改写。
+
+首版判断统计全部状态，全部版本删除后由调用方主动新建按当前空状态处理，
+不新增历史标记。服务端通过既有持久化流程核实首版及可编辑状态；并发冲突或读取后资源消失直接报错，
+不自动重建、重新读取后重跑发布流程。创建、更新、submit失败直接返回错误，
+不自动再次写入，也不以recoverEquivalent事后补读把失败转为成功；移除现有这层发布恢复行为。
+不补偿删除已保存草稿，异常也不保证服务端未生效。响应丢失报告结果未知，不跨transport重放发布。
+调用方之后主动再次调用是新调用：已有DRAFT按标志，非DRAFT no-op；不自动续提之前失败的首版。
+该发布约束不改变Endpoint redo和Watch重连。
+
+A2A release与原生Client publish都完整覆盖可编辑草稿定义，包括整个callInterfaces列表；
+不按protocol或nativeDescriptor字段合并，遗漏协议移除。比如[a2a, protocolB]被仅含a2a的请求
+替换后，只剩新a2a。不增加合并模式或调用来源标记。已有Agent owner/scope等治理属性不因此更新。
+callInterfaces/basedOnVersion保持二选一，源版本解析成完整定义后使用同一替换规则；
+作者和变更说明沿用相应创建/更新入口的既有字段规则。
+具体状态表、失败边界见 [A2A 兼容契约](a2a-agent-spec.md)，
+细分验收见 [SDK 场景矩阵](../../../test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md)。
+
+### 4.4 Endpoint和A2A扩展
+
+A2A适配层缓存各精确版本的原始注册，按Endpoint身份归并后完整提交；
+旧注销删除该版本整份意图，保留其他版本，空时注销整份publication。
+同址其他内容一致可归并，不同host/port/transport形成不同Endpoint。
+
+O1 已确认、待实现：版本绑定归属 Endpoint，复用 bindings/RuntimeVersionBinding；
+Batch 保留 runtimeVersion/versionRange 作为批量默认值，不增加分组模型。
+每组绑定逐字段继承：runtimeVersion 优先 Endpoint，缺失取 Batch；versionRange 优先 Endpoint，
+缺失取 Batch，两层均未提供时才补 `[生效 runtimeVersion]`。Endpoint 未提供 bindings/null
+时使用 Batch 默认字段生成绑定；空列表、null 列表项和空字符串不作为缺省输入接受。
+先继承、再补默认、最后逐 Endpoint 校验：必须存在合法 runtimeVersion，范围必须包含该版本；
+失败整批拒绝，不改变原注册。不能先把 Batch 缺失范围补成 `[Batch.runtimeVersion]`，
+也不能自动扩大范围或替换为精确范围以通过校验。
+例如 Batch 范围 `[1.0.0,2.0.0)` 配 Endpoint 版本 2.0.0 必须拒绝；闭区间
+`[1.0.0,2.0.0]` 则可继承成功。Endpoint 可只覆盖任一字段，不要求整组覆盖。
+同批所有 Endpoint 使用相同版本时仍只填写 Batch；全部自带完整绑定时无需 Batch 默认字段。
+展开使用独立副本，缓存/注销/redo 使用生效绑定，直接 HTTP 与 SDK/gRPC 共享同一契约。
+
+Runtime 注册接受 enabled，与 healthy 一样缺省 true、非 null。禁用贡献保留在管理查询，
+发现排除该贡献；其他发布者不受影响。心跳不改 enabled，Naming 运维 metadata 保持既有覆盖优先级。
+删除 Endpoint.state/RuntimeEndpointState 及冗余校验，Console 使用 enabled/healthy 派生标签：
+禁用优先，其次不健康，最后可用；同步前端类型与三个展示分支测试。
+EndpointSet.sourceRevision/lastUpdatedTime 仍由服务端生成，声明地址的默认值及存储规则不扩大。
+
+O2 已确认、待实现：每 Publisher/Endpoint 注册一条生效绑定；查询仍聚合多个 Publisher 的绑定。
+新 SDK 的 A2A 同址同内容注册使用连续闭区间，runtimeVersion 取当前有效注册版本的最大值，
+按 RAD SemVer 比较；范围内未单独注册的定义版本也可在满足发现前提时命中。
+注销只撤销目标版本的注册引用，仍有其他引用时不收缩已声明范围，也不挖洞。
+例如 1.0.0/1.2.0 同址形成 [1.0.0,1.2.0]，仅注销 1.0.0 后范围保持；
+仅注销最高版本时 runtimeVersion 按剩余引用更新，范围仍保持。
+最后引用删除才移除 Endpoint 并清理范围记录；重新注册开启新的范围。
+同址存续期间新增范围外版本扩展范围，重复注册不累加引用次数，列表替换撤销引用遵循同一规则。
+缓存同时保存有效引用及生效绑定，redo 不得仅按剩余版本重建范围；确定失败不提交新的缓存状态。
+原生 RAD 仍按完整 Batch 显式替换，可直接调整范围；旧服务器/旧 SDK wire 保持精确版本隔离。
+不增加区间并集/离散集合语法，Naming Instance 沿用单对版本 metadata。
+同实例同 Agent/protocol 的存活 Runtime publication 不混用 A2A 与原生 RAD 写：首次有效写选择
+来源，第二来源在写前受控拒绝；确定失败不占用，未知保留 owner，最后注销确认后释放。
+不同范围、只读和定义发布不受此限制，不新增通用 owner 框架。
+
+tenant和Endpoint protocolVersion由A2A适配层自动注入公开metadata，统一键为
+`__nacos.agent.endpoint.tenant__`和`__nacos.agent.endpoint.protocolVersion__`；读取/Watch自动还原，缺协议版本沿用CallInterface回退。
+Naming 和公开 Endpoint metadata 复用同一套历史 Nacos 保留键，不引入别名优先级；
+仅这两个兼容保留键允许写入，其他内部控制键仍禁止外部输入。非法值拒绝，值变更参与指纹。
+不修改定义协议版本；直接RAD的Util/Builder暂缓。
+
+### 4.5 迁移与规范变更边界
+
+Client不复制迁移状态机，实际请求由服务端guard决定；不把SYNCING/QUIESCING当无RAD。
+保留50105等机器可读detail；新RAD路径和未切流历史资源的权威/镜像关系仍需定向验证。
+旧SDK服务端适配照常回归。此版本提案允许上述明确的Client发布/查询语义变化，
+取代早期“所有旧语义无损”的前提。
+
+O5 当前代码核查（保护缺口待实现补足）：迁移来源定义完整投影后可被 RAD 读取，但切流前旧定义仍为主，
+查询可能尚未可见或落后。已有 mutation guard 只拒绝已标记迁移来源的定义写；
+尚未投影的同名历史资源不受该检查完整保护，新建标准定义可能与之后对账冲突。
+原生 RAD Endpoint 注册只写标准 Runtime，不进入旧 A2A 的历史主写/标准镜像 Router；
+不能保证迁移中旧消费者能看到新地址，通用范围也不能直接展开为旧精确版本 Shadow。
+用户已明确不能限制 SDK 升级顺序，撤回先完成迁移再升级的前提。
+O5 已确定本阶段采用实例保留策略：首次可靠识别旧服务端并选择旧 A2A 后，同一 AiService
+实例的扁平/子服务全部旧方法继续旧 gRPC，直到业务重启或重新实例化。重连到新节点及迁移完成
+均不自动转 RAD；保留旧 Endpoint redo/注销、轮询及 listener，不转换为 O2 Batch 或 RAD Watch。
+既有应用能在旧服务端正常运行时使用旧 A2A；原生 Agent API 在旧服务端不支持。
+本轮保持旧接口及服务端适配，不为运行中混用两套 API 增加交接流程；底层能力刷新和其他资源保持原行为。
+超时、认证失败、HTTP 404 或缺 radV1 key 本身不能固定旧模式；未决时保持真实错误及 UNKNOWN，
+并发首次调用共享模式决定。保留旧模式后仅 HTTP 可达仍报旧 gRPC 连接错误。
+新实例重新判断，原实例模式不受影响；不自动搬运注册/订阅，关闭和重新登记沿用正常生命周期。
+已选 RAD 的请求不因业务错误反向 fallback，有状态请求仍遵循原 owner 和结果未知约束。
+最终复核已确认节点级统一门禁：有效 A2A 权威仍为历史模式时，统一拒绝新 RAD 业务，
+包括无关标准资源，不进行逐资源历史查询。Search、Discover、Publish、Register/完整替换、
+Watch 新建及后续业务读取均保留 AGENT_MIGRATION_IN_PROGRESS（50105），SDK 透传；
+不要求客户端等待迁移、双写或回退旧 API。写在业务副作用前拒绝，读取不伪装成功空结果。
+能力查询保留，radV1 不因迁移变 false；整份注销/本地取消/关闭及合法 owner 续租按既有规则保留。
+SDK 局部注销若需 Register 剩余列表则仍返回50105，保持原注册/缓存，不得自动扩大删除；
+不得借心跳/清理新建 Client/Publisher 或补注册，不影响共享 MCP。HTTP/gRPC 原鉴权顺序不变。
+复用有效模式及终态优先级：显式 LEGACY、AUTO 无计划或非终态拒绝；全新 CANONICAL 与终态
+放行，再执行正常资源/业务检查。不能仅以 Marker 缺失或 resolveConfigured() 的 null 判断放行。
+门禁放在原生 RAD 外部 binding 和后续 Watch 授权读取路径，不误拦旧 wire、Admin/Console、
+内部迁移或索引；其既有 guard 仍有效。所有原生 RAD 业务入口遵循相同的准入规则。
+无需迁移就绪位或切换定时器；旧链路原有迁移写屏障仍生效，不承诺迁移期所有旧请求成功。
+本轮保留旧 A2A 接口及链路兼容，后续数个大版本推广后再单独评估移除；不绑定移除版本。
+临时历史存储迁移组件的移除计划不等于旧公共接口和标准 AgentCard 适配器的移除。
+客户端实例首次解析能力后选择旧 A2A 或 RAD 链路。
+详见
+[A2A 兼容契约](a2a-agent-spec.md)。
+
+对应改动：本规范、Agent API的Client publish、A2A新SDK映射、RAD注册与公开metadata、
+Agent Storage/Management 的绑定和状态规则、客户端能力协商及HTTP授权规范。
+中英文主规范、迁移保护契约、RAD/管理/内部存储 Schema、Artifact 引用及契约测试
+共同定义已实现的行为。
+详细边界见 [A2A 兼容契约](a2a-agent-spec.md)。
 
 ## 5. 验证门禁
 
-第一步使用 PHASE1_PLAN 的 P01–P16：接口/default/旧字节码、混合资源模式、Skill/AgentSpec
-HTTP 退化、旧 A2A 固定 gRPC、共享连接/owner/监听生命周期和必要旧 wire 回归。第一步没有新
-HTTP API，不新增对应 OpenAPI 场景；更新 SDK 场景和覆盖表，使用默认及 Jackson 3 组合验证。
+[Java SDK 场景](../../../test/java-sdk-test/JAVA_SDK_IT_SCENARIOS.md)、
+[Client HTTP 场景](../../../test/openapi-test/CLIENT_API_TEST_SCENARIOS.md)和
+[迁移场景](../../../test/java-sdk-test/A2A_MIGRATION_SDK_IT_SCENARIOS.md)
+覆盖 18 个 A2A、10 个原生 Agent 签名、其他 AI 回归及 8 个受影响 HTTP 操作。
+分别验证 HTTP、gRPC、AUTO→gRPC、AUTO→HTTP、旧扁平与资源入口、两种 JSON adapter、
+以及不支持 RAD 的真实旧服务端。
 
-后续再使用完整 A/D 矩阵验证能力发现、A2A 新 binding、迁移竞态等；HTTP 能力接口实施时补
-OpenAPI IT。所有新项在实施前保持 Pending，不修改已实现覆盖率。
+能力接口验证无资源授权身份、无效/缺失身份、匿名 AI 隔离、不续租和凭据缓存隔离。
+Admin/Console 首版草稿不得自动提交。旧字节码、旧 SDK 进程、真实重启、跨节点 Watch
+及迁移必须使用对应的专用环境；条件跳过不计为通过。既有无关禁用项和 Derby 集群
+Search 迁移切流缺口在覆盖记录中明确保留。
+
+行为变更同步主规范、Schema 和测试，阶段验证后再执行完整受影响矩阵。
+RAD、Watch、管理和 Artifact 公开 Schema 使用固定路径与统一契约版号 0.5.0；
+payload schemaVersion 保留独立含义。
 
 ## 6. Agent / RAD Java 模型收敛提案
 

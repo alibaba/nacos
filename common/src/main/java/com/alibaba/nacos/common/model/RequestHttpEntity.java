@@ -37,6 +37,8 @@ public class RequestHttpEntity {
     
     private final Object body;
     
+    private final boolean bodyRepeatable;
+    
     public RequestHttpEntity(Header header, Query query) {
         this(null, header, query);
     }
@@ -59,10 +61,25 @@ public class RequestHttpEntity {
     
     public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query,
         Object body) {
+        this(httpClientConfig, header, query, body, true);
+    }
+    
+    /**
+     * Create an entity with an explicit synchronous body replay policy.
+     *
+     * @param httpClientConfig request configuration
+     * @param header request headers
+     * @param query request query
+     * @param body request body
+     * @param bodyRepeatable whether the HTTP implementation may replay the body
+     */
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query,
+        Object body, boolean bodyRepeatable) {
         handleHeader(header);
         this.httpClientConfig = httpClientConfig;
         this.query = query;
         this.body = body;
+        this.bodyRepeatable = bodyRepeatable;
     }
     
     private void handleHeader(Header header) {
@@ -82,6 +99,15 @@ public class RequestHttpEntity {
     
     public Object getBody() {
         return body;
+    }
+    
+    /**
+     * Whether the synchronous HTTP implementation may replay this request body.
+     *
+     * @return true for the existing default behavior
+     */
+    public boolean isBodyRepeatable() {
+        return bodyRepeatable;
     }
     
     public HttpClientConfig getHttpClientConfig() {

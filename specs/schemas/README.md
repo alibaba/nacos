@@ -94,10 +94,10 @@ and internal storage `v1` are separate version domains.
 
 | Schema | Version | Status | Purpose |
 | --- | --- | --- | --- |
-| `ai/rad/rad-protocol.schema.json` | `0.3.0` | Experimental | Shared Endpoint effective defaults and optional reference nulls. |
-| `ai/rad/watch/rad-watch-binding.schema.json` | `0.3.0` | Experimental | Watch binding references RAD 0.3.0 and permits absent optional references as null. |
-| `ai/agent/agent-management.schema.json` | `0.3.0` | Experimental | Annotation-independent Agent management models and Endpoint defaults. |
-| `ai/agent/agent-artifact.schema.json` | `0.3.0` | Experimental | Artifact references management 0.3.0; payload schemaVersion remains 1.0. |
+| `ai/rad/rad-protocol.schema.json` | `0.5.0` | Experimental | Discover adds current Agent description/tags; Watch compares tags as a set. |
+| `ai/rad/watch/rad-watch-binding.schema.json` | `0.5.0` | Experimental | Watch binding references RAD 0.5.0 and permits absent optional references as null. |
+| `ai/agent/agent-management.schema.json` | `0.5.0` | Experimental | Annotation-independent Agent management models and Endpoint defaults. |
+| `ai/agent/agent-artifact.schema.json` | `0.5.0` | Experimental | Artifact references management 0.5.0; payload schemaVersion remains 1.0. |
 | `ai/agent/internal/v1/agent-storage.schema.json` | `1` | Internal experimental | Agent resource extension, version content and storage pointer, Naming projection, codecs, composers, and digest contracts. |
 | `ai/mcp/internal/v1/mcp-resource-ext.schema.json` | `1` | Internal experimental | MCP Resource extension containing the deprecated physical-storage and legacy-API UUID alias. |
 | `ai/mcp/internal/v1/mcp-version-storage.schema.json` | `1` | Internal experimental | MCP Version storage pointers to unchanged Server, Tools, and Resources Config objects. |

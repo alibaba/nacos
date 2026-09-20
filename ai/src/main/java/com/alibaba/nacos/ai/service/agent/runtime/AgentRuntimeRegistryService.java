@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
@@ -102,7 +101,7 @@ public class AgentRuntimeRegistryService {
      * Replace one publisher's complete Runtime Endpoint batch.
      *
      * @param publisherId Naming client identity
-     * @param batch complete batch for one Agent, protocol, and shared Version values
+     * @param batch complete batch for one Agent and protocol, with per-Endpoint Version bindings
      * @throws NacosException when Naming rejects the batch
      */
     public void register(String publisherId, String namespaceId,
@@ -111,8 +110,10 @@ public class AgentRuntimeRegistryService {
         RadModelValidator.validate(namespaceId, batch);
         List<Instance> instances = new ArrayList<Instance>(batch.getEndpoints().size());
         for (Endpoint endpoint : batch.getEndpoints()) {
+            RuntimeVersionBinding binding = EndpointCanonicalizer.canonicalizeRuntimeBinding(
+                endpoint, batch.getRuntimeVersion(), batch.getVersionRange());
             instances.add(AgentRuntimeEndpointMapper.toInstance(endpoint,
-                batch.getRuntimeVersion(), batch.getVersionRange()));
+                binding.getRuntimeVersion(), binding.getVersionRange()));
         }
         NamingUtils.batchCheckInstanceIsLegal(instances);
         Service service = composeService(namespaceId, batch.getAgentName(),
@@ -383,17 +384,6 @@ public class AgentRuntimeRegistryService {
         current.setBindings(new ArrayList<RuntimeVersionBinding>(bindings));
         current.setEnabled(current.getEnabled() || contribution.getEnabled());
         current.setHealthy(current.getHealthy() || contribution.getHealthy());
-        current.setState(runtimeState(current.getEnabled(), current.getHealthy()));
-    }
-    
-    private RuntimeEndpointState runtimeState(boolean enabled, boolean healthy) {
-        if (!enabled) {
-            return RuntimeEndpointState.DISABLED;
-        }
-        if (!healthy) {
-            return RuntimeEndpointState.UNHEALTHY;
-        }
-        return RuntimeEndpointState.AVAILABLE;
     }
     
     private void validateCapacity(int size) throws NacosException {
@@ -460,7 +450,7 @@ public class AgentRuntimeRegistryService {
         Endpoint second = EndpointCanonicalizer.canonicalize(right);
         return first.getUri().equals(second.getUri())
             && first.getTransport().equals(second.getTransport())
-            && first.getPriority() == second.getPriority()
+            && Objects.equals(first.getPriority(), second.getPriority())
             && sameWeight(first.getWeight(), second.getWeight())
             && Objects.equals(first.getMetadata(), second.getMetadata());
     }

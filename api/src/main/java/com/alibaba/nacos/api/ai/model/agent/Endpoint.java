@@ -34,23 +34,21 @@ public class Endpoint implements Serializable {
     private String transport;
     
     /** Lower values have higher priority; defaults to the minimum priority value, zero. */
-    private int priority;
+    private Integer priority = 0;
     
     /** Relative weight among endpoints at the same priority; defaults to one. */
-    private double weight = 1D;
+    private Double weight = 1D;
     
     private Map<String, String> metadata;
     
     /** Registration health defaults to true; runtime reads return the current health. */
-    private boolean healthy = true;
+    private Boolean healthy = true;
     
-    /** Nacos-maintained fields. Ignored when submitted in a write request. */
+    /** One optional registration binding; query results may aggregate several publishers. */
     private List<RuntimeVersionBinding> bindings;
     
-    /** Whether the endpoint is enabled; maintained by Nacos and defaults to true. */
-    private boolean enabled = true;
-    
-    private RuntimeEndpointState state;
+    /** Registration enablement defaults to true; Naming operational overrides take precedence. */
+    private Boolean enabled = true;
     
     public String getUri() {
         return uri;
@@ -68,19 +66,19 @@ public class Endpoint implements Serializable {
         this.transport = transport;
     }
     
-    public int getPriority() {
+    public Integer getPriority() {
         return priority;
     }
     
-    public void setPriority(int priority) {
+    public void setPriority(Integer priority) {
         this.priority = priority;
     }
     
-    public double getWeight() {
+    public Double getWeight() {
         return weight;
     }
     
-    public void setWeight(double weight) {
+    public void setWeight(Double weight) {
         this.weight = weight;
     }
     
@@ -92,11 +90,11 @@ public class Endpoint implements Serializable {
         this.metadata = metadata;
     }
     
-    public boolean getHealthy() {
+    public Boolean getHealthy() {
         return healthy;
     }
     
-    public void setHealthy(boolean healthy) {
+    public void setHealthy(Boolean healthy) {
         this.healthy = healthy;
     }
     
@@ -108,19 +106,12 @@ public class Endpoint implements Serializable {
         this.bindings = bindings;
     }
     
-    public boolean getEnabled() {
+    public Boolean getEnabled() {
         return enabled;
     }
     
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
     
-    public RuntimeEndpointState getState() {
-        return state;
-    }
-    
-    public void setState(RuntimeEndpointState state) {
-        this.state = state;
-    }
 }
