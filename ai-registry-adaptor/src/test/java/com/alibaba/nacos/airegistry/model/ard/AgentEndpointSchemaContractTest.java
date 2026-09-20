@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.AgentArtifactBuilder;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -95,6 +96,89 @@ class AgentEndpointSchemaContractTest {
     }
     
     @Test
+    void shouldValidateDiscoveryMetadataWithOptionalAndBoundedFields() throws Exception {
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setNamespaceId("public");
+        result.setAgentName("metadata-demo");
+        result.setVersion("1.0.0");
+        result.setContentDigest("sha256:" + "0".repeat(64));
+        result.setCallInterfaces(Collections.emptyList());
+        assertValid(RAD, "AgentDiscoveryResult", MAPPER.valueToTree(result));
+        assertValid(RAD, "AgentDiscoveryResult", MAPPER.readTree(JsonUtils.toJson(result)));
+        result.setDescription("问答与检索");
+        result.setTags(Collections.singletonList("chat"));
+        assertValid(RAD, "AgentDiscoveryResult", MAPPER.valueToTree(result));
+        String json = JsonUtils.toJson(result);
+        assertValid(RAD, "AgentDiscoveryResult", MAPPER.readTree(json));
+        AgentDiscoveryResult restored = JsonUtils.toObj(json, AgentDiscoveryResult.class);
+        assertEquals(result.getDescription(), restored.getDescription());
+        assertEquals(result.getTags(), restored.getTags());
+        
+        ObjectNode payload = MAPPER.valueToTree(result);
+        payload.put("description", "d".repeat(2048));
+        var tags = payload.putArray("tags");
+        for (int i = 0; i < 32; i++) {
+            tags.add("t".repeat(62) + String.format("%02d", i));
+        }
+        assertValid(RAD, "AgentDiscoveryResult", payload);
+        payload.put("description", "d".repeat(2049));
+        assertInvalid(RAD, "AgentDiscoveryResult", payload);
+        payload.putNull("description");
+        tags.add("overflow");
+        assertInvalid(RAD, "AgentDiscoveryResult", payload);
+        for (String invalid : new String[] {"[]", "[\"chat\",\"chat\"]", "[null]", "[\"\"]",
+            "[\"" + "t".repeat(65) + "\"]", "\"chat\""}) {
+            payload.set("tags", MAPPER.readTree(invalid));
+            assertInvalid(RAD, "AgentDiscoveryResult", payload);
+        }
+        payload.putNull("tags");
+        assertValid(RAD, "AgentDiscoveryResult", payload);
+        payload.put("provider", "not part of discovery");
+        assertInvalid(RAD, "AgentDiscoveryResult", payload);
+    }
+    
+    @Test
+    void shouldValidatePublicA2aMetadataConsistently() {
+        ObjectNode metadata = MAPPER.createObjectNode();
+        metadata.put("__nacos.agent.endpoint.protocolVersion__", "1.0");
+        metadata.put("__nacos.agent.endpoint.tenant__", "");
+        for (String schema : new String[] {RAD, MANAGEMENT, STORAGE}) {
+            String definition = STORAGE.equals(schema) ? "EndpointMetadata" : "Metadata";
+            assertValid(schema, definition, metadata);
+            for (String invalid : new String[] {"", "bad version", "x".repeat(65)}) {
+                metadata.put("__nacos.agent.endpoint.protocolVersion__", invalid);
+                assertInvalid(schema, definition, metadata);
+            }
+            metadata.putNull("__nacos.agent.endpoint.protocolVersion__");
+            assertInvalid(schema, definition, metadata);
+            metadata.put("__nacos.agent.endpoint.protocolVersion__", "1.0");
+            metadata.put("__nacos.agent.endpoint.tenant__", "t".repeat(257));
+            assertInvalid(schema, definition, metadata);
+            metadata.put("__nacos.agent.endpoint.tenant__", "");
+            metadata.put("__nacos.agent.endpoint.path__", "spoof");
+            assertInvalid(schema, definition, metadata);
+            metadata.remove("__nacos.agent.endpoint.path__");
+        }
+    }
+    
+    @Test
+    void shouldDistinguishRegistrationBindingCardinalityFromQueryBindings() throws Exception {
+        ObjectNode endpoint = (ObjectNode) MAPPER.readTree("{\"uri\":\"http://localhost:80/a\","
+            + "\"transport\":\"HTTP\",\"bindings\":[{\"runtimeVersion\":\"2.0.0\"}]}");
+        assertValid(RAD, "PublicationEndpoint", endpoint);
+        endpoint.set("bindings", MAPPER.readTree("[{}]"));
+        assertValid(RAD, "PublicationEndpoint", endpoint);
+        for (String invalid : new String[] {"[]", "[null]", "[{},{}]",
+            "[{\"runtimeVersion\":\"\"}]", "[{\"versionRange\":\"bad\"}]"}) {
+            endpoint.set("bindings", MAPPER.readTree(invalid));
+            assertInvalid(RAD, "PublicationEndpoint", endpoint);
+            assertValid(RAD, "EndpointKey", endpoint);
+        }
+        endpoint.putNull("bindings");
+        assertValid(RAD, "PublicationEndpoint", endpoint);
+    }
+    
+    @Test
     void shouldValidateDefinitionStorageAndArtifactAndRejectRuntimeContamination()
         throws Exception {
         JsonNode definition = MAPPER.readTree(DEFINITION);
@@ -127,12 +211,32 @@ class AgentEndpointSchemaContractTest {
     }
     
     @Test
+    void shouldRequireBothDefinitionSourcesButAllowSingleSourceFilter() throws Exception {
+        ObjectNode definition = (ObjectNode) MAPPER.readTree(DEFINITION);
+        for (String order : new String[] {"[]", "null", "[\"RUNTIME\"]", "[\"DECLARED\"]",
+            "[\"RUNTIME\",\"RUNTIME\"]"}) {
+            definition.set("endpointSourceOrder", MAPPER.readTree(order));
+            assertInvalid(MANAGEMENT, "AgentCallInterface", definition);
+            assertInvalid(STORAGE, "AgentCallInterface", definition);
+        }
+        for (String order : new String[] {"[\"RUNTIME\",\"DECLARED\"]",
+            "[\"DECLARED\",\"RUNTIME\"]"}) {
+            definition.set("endpointSourceOrder", MAPPER.readTree(order));
+            assertValid(MANAGEMENT, "AgentCallInterface", definition);
+            assertValid(STORAGE, "AgentCallInterface", definition);
+        }
+        ObjectNode filter = MAPPER.createObjectNode();
+        filter.putArray("endpointSources").add("RUNTIME");
+        assertValid(RAD, "AgentDiscoveryFilter", filter);
+    }
+    
+    @Test
     void shouldValidateRuntimeViewsAndSharedEndpointStatus()
         throws Exception {
         ObjectNode endpoint =
             (ObjectNode) MAPPER.readTree("{\"uri\":\"https://example.com:443/rpc\","
                 + "\"transport\":\"HTTP\",\"priority\":0,\"weight\":1.0,\"healthy\":false,"
-                + "\"enabled\":true,\"state\":\"UNHEALTHY\","
+                + "\"enabled\":true,"
                 + "\"bindings\":[{\"runtimeVersion\":\"1.0.0\",\"versionRange\":\"[1.0.0]\"}]}");
         ObjectNode set = MAPPER.createObjectNode();
         set.put("source", "RUNTIME");
@@ -155,18 +259,17 @@ class AgentEndpointSchemaContractTest {
         set.remove("lastUpdatedTime");
         set.put("sourceRevision", "murmur3-x64-128-v1:0123456789abcdef0123456789abcdef");
         endpoint.remove("enabled");
-        endpoint.remove("state");
         assertValid(RAD, "AgentCallInterface", callInterface);
         endpoint.put("state", "UNHEALTHY");
-        assertValid(RAD, "AgentCallInterface", callInterface);
+        assertInvalid(RAD, "AgentCallInterface", callInterface);
     }
     
     @Test
     void shouldAcceptPublicationHealthAndSharedDeregistrationFields()
         throws Exception {
         ObjectNode endpoint = (ObjectNode) MAPPER.readTree("{\"uri\":\"https://example.com/rpc\","
-            + "\"transport\":\"HTTP\",\"healthy\":false,\"enabled\":false,\"state\":\"DISABLED\","
-            + "\"bindings\":[{\"runtimeVersion\":\"9.0.0\",\"versionRange\":\"ignored\"}]}");
+            + "\"transport\":\"HTTP\",\"healthy\":false,\"enabled\":false,"
+            + "\"bindings\":[{\"runtimeVersion\":\"9.0.0\",\"versionRange\":\"[9.0.0]\"}]}");
         assertValid(RAD, "PublicationEndpoint", endpoint);
         assertValid(RAD, "EndpointKey", endpoint);
         endpoint.remove("healthy");
@@ -184,7 +287,7 @@ class AgentEndpointSchemaContractTest {
         Endpoint endpoint = definition.getEndpointSets().get(0).getEndpoints().get(0);
         ObjectNode json = MAPPER.valueToTree(endpoint);
         assertTrue(json.get("bindings").isNull());
-        assertTrue(json.get("state").isNull());
+        assertFalse(json.has("state"));
         assertValid(RAD, "DeclaredEndpoint", json);
         com.alibaba.nacos.api.ai.model.agent.AgentSummary summary =
             new com.alibaba.nacos.api.ai.model.agent.AgentSummary();

@@ -18,11 +18,17 @@ package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
+import com.alibaba.nacos.ai.remote.handler.agent.AgentEndpointRegisterRpcRequestHandler;
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
+import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -37,6 +43,8 @@ import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationSer
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -89,6 +99,34 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void testMixedEndpointVersionsAreNormalizedBeforeOneAtomicNamingWrite() throws Exception {
+        Endpoint first = endpoint("https://one.example.com/agent", "json-rpc");
+        Endpoint second = endpoint("https://two.example.com/agent", "json-rpc");
+        RuntimeVersionBinding binding = new RuntimeVersionBinding();
+        binding.setRuntimeVersion("2.0.0");
+        second.setBindings(Collections.singletonList(binding));
+        AgentEndpointRegistrationBatch batch = registration("1.0.0", "[1.0.0,2.0.0)",
+            Arrays.asList(first, second));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.register(PUBLISHER_ID, NAMESPACE_ID, batch));
+        verify(clientOperationService, never()).batchRegisterInstance(any(), any(), any());
+        batch.setVersionRange("[1.0.0,2.0.0]");
+        registryService.register(PUBLISHER_ID, NAMESPACE_ID, batch);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Instance>> captor = ArgumentCaptor.forClass(List.class);
+        verify(clientOperationService).batchRegisterInstance(eq(expectedService()),
+            captor.capture(), eq(PUBLISHER_ID));
+        assertEquals("1.0.0", captor.getValue().get(0).getMetadata()
+            .get(Constants.Agent.AGENT_ENDPOINT_VERSION_KEY));
+        assertEquals("2.0.0", captor.getValue().get(1).getMetadata()
+            .get(Constants.Agent.AGENT_ENDPOINT_VERSION_KEY));
+        assertEquals("[1.0.0,2.0.0]", captor.getValue().get(1).getMetadata()
+            .get(Constants.Agent.AGENT_ENDPOINT_VERSION_RANGE_KEY));
+        assertNull(first.getBindings());
+        assertNull(binding.getVersionRange());
+    }
+    
+    @Test
     void testRegisterDelegatesCompleteBatchToNaming() throws NacosException {
         AgentEndpointRegistrationBatch batch = registration("1.0.0",
             "[1.0.0,2.0.0)", Arrays.asList(
@@ -113,15 +151,32 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
-    void testDirectRegistrationKeepsReportedHealthAndIgnoresManagementFields()
+    void testRawRpcNullScalarsReturnParameterErrorBeforeNamingWrites() throws Exception {
+        AgentEndpointRegisterRpcRequestHandler handler = new AgentEndpointRegisterRpcRequestHandler(
+            registryService, mock(AgentClientMigrationGuard.class));
+        RequestMeta meta = mock(RequestMeta.class);
+        when(meta.getConnectionId()).thenReturn(PUBLISHER_ID);
+        for (String field : new String[] {"priority", "weight", "healthy", "enabled"}) {
+            String json = "{\"registrationBatch\":{\"agentName\":\"demo\","
+                + "\"protocol\":\"a2a\",\"runtimeVersion\":\"1.0.0\",\"endpoints\":[{"
+                + "\"uri\":\"https://example.com/rpc\",\"transport\":\"HTTP\",\""
+                + field + "\":null}]}}";
+            AgentEndpointOperationResponse response = handler.handle(
+                JsonUtils.toObj(json, AgentEndpointRegisterRpcRequest.class), meta);
+            assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), response.getErrorCode());
+        }
+        verify(clientOperationService, never()).batchRegisterInstance(any(), any(), any());
+    }
+    
+    @Test
+    void testDirectRegistrationKeepsHealthEnabledAndResolvedBinding()
         throws NacosException {
         Endpoint endpoint = endpoint("https://example.com/agent", "json-rpc");
         endpoint.setHealthy(false);
         endpoint.setEnabled(false);
-        endpoint.setState(RuntimeEndpointState.DISABLED);
         RuntimeVersionBinding forged = new RuntimeVersionBinding();
-        forged.setRuntimeVersion("9.0.0");
-        forged.setVersionRange("ignored");
+        forged.setRuntimeVersion("1.2.0");
+        forged.setVersionRange(null);
         endpoint.setBindings(Collections.singletonList(forged));
         registryService.register(PUBLISHER_ID, NAMESPACE_ID, registration("1.0.0", "[1.0.0,2.0.0)",
             Collections.singletonList(endpoint)));
@@ -132,14 +187,14 @@ class AgentRuntimeRegistryServiceTest {
             captor.capture(), eq(PUBLISHER_ID));
         Instance stored = captor.getValue().get(0);
         assertFalse(stored.isHealthy());
-        assertTrue(stored.isEnabled());
-        assertEquals("1.0.0", stored.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_VERSION_KEY));
+        assertFalse(stored.isEnabled());
+        assertEquals("1.2.0", stored.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_VERSION_KEY));
         assertEquals("[1.0.0,2.0.0)",
             stored.getMetadata().get(Constants.Agent.AGENT_ENDPOINT_VERSION_RANGE_KEY));
         Endpoint decoded = AgentRuntimeEndpointMapper.fromInstance(stored);
-        assertEquals(RuntimeEndpointState.UNHEALTHY, decoded.getState());
-        assertEquals("1.0.0", decoded.getBindings().get(0).getRuntimeVersion());
-        assertEquals("ignored", endpoint.getBindings().get(0).getVersionRange());
+        assertEquals(Boolean.FALSE, decoded.getHealthy());
+        assertEquals("1.2.0", decoded.getBindings().get(0).getRuntimeVersion());
+        assertNull(endpoint.getBindings().get(0).getVersionRange());
         assertFalse(endpoint.getEnabled());
     }
     
@@ -228,7 +283,7 @@ class AgentRuntimeRegistryServiceTest {
         assertEquals(1, selected.getBindings().size());
         assertEquals("1.0.0", selected.getBindings().get(0).getRuntimeVersion());
         assertFalse(selected.getHealthy());
-        assertEquals(RuntimeEndpointState.UNHEALTHY, selected.getState());
+        assertEquals(Boolean.FALSE, selected.getHealthy());
     }
     
     @Test
@@ -257,6 +312,49 @@ class AgentRuntimeRegistryServiceTest {
             endpointSet.getEndpoints().get(0).getMetadata().get("region"));
     }
     
+    @ParameterizedTest
+    @ValueSource(ints = {0, 128, Integer.MAX_VALUE})
+    void testEqualPrioritiesAggregateAcrossPublishers(int priority) throws NacosException {
+        Endpoint endpoint = endpoint("https://example.com/agent", "json-rpc");
+        endpoint.setPriority(priority);
+        when(serviceStorage.getData(expectedService())).thenReturn(serviceInfo(10L,
+            instance(endpoint, "1.0.0", "[1.0.0]", true, false),
+            instance(endpoint, "2.0.0", "[2.0.0]", true, true)));
+        
+        Endpoint management = registryService.getRuntimeEndpointSnapshot(
+            NAMESPACE_ID, AGENT_NAME, PROTOCOL, null)
+            .getCallInterface().getEndpointSets().get(0).getEndpoints().get(0);
+        EndpointSet discovery = registryService.getRuntimeEndpointSet(NAMESPACE_ID,
+            AGENT_NAME, PROTOCOL, Arrays.asList("1.0.0", "2.0.0"));
+        
+        assertEquals(priority, management.getPriority());
+        assertEquals(2, management.getBindings().size());
+        assertEquals(1, discovery.getEndpoints().size());
+        assertEquals(priority, discovery.getEndpoints().get(0).getPriority());
+        assertEquals(2, discovery.getEndpoints().get(0).getBindings().size());
+        assertTrue(discovery.getEndpoints().get(0).getHealthy());
+    }
+    
+    @Test
+    void testDifferentPrioritiesRemainConflictingAcrossPublishers() {
+        Endpoint first = endpoint("https://example.com/agent", "json-rpc");
+        first.setPriority(128);
+        Endpoint second = endpoint("https://example.com/agent", "json-rpc");
+        second.setPriority(129);
+        when(serviceStorage.getData(expectedService())).thenReturn(serviceInfo(10L,
+            instance(first, "1.0.0", "[1.0.0]", true, true),
+            instance(second, "2.0.0", "[2.0.0]", true, true)));
+        
+        assertEquals(NacosException.CONFLICT, assertThrows(NacosApiException.class,
+            () -> registryService.getRuntimeEndpointSnapshot(
+                NAMESPACE_ID, AGENT_NAME, PROTOCOL, null))
+            .getErrCode());
+        assertEquals(NacosException.CONFLICT, assertThrows(NacosApiException.class,
+            () -> registryService.getRuntimeEndpointSet(NAMESPACE_ID, AGENT_NAME,
+                PROTOCOL, Arrays.asList("1.0.0", "2.0.0")))
+            .getErrCode());
+    }
+    
     @Test
     void testRuntimeEndpointSetUsesNamingEnabledAndHealthState() throws NacosException {
         Endpoint disabled = endpoint("https://disabled.example.com/agent", "json-rpc");
@@ -277,12 +375,12 @@ class AgentRuntimeRegistryServiceTest {
             registryService.getRuntimeEndpointSet(
                 NAMESPACE_ID, AGENT_NAME, PROTOCOL, "1.0.0");
         
-        assertEquals(RuntimeEndpointState.DISABLED,
-            snapshotItem(snapshot, "https://disabled.example.com:443/agent").getState());
-        assertEquals(RuntimeEndpointState.UNHEALTHY,
-            snapshotItem(snapshot, "https://unhealthy.example.com:443/agent").getState());
-        assertEquals(RuntimeEndpointState.AVAILABLE,
-            snapshotItem(snapshot, "https://healthy.example.com:443/agent").getState());
+        assertEquals(Boolean.FALSE,
+            snapshotItem(snapshot, "https://disabled.example.com:443/agent").getEnabled());
+        assertEquals(Boolean.FALSE,
+            snapshotItem(snapshot, "https://unhealthy.example.com:443/agent").getHealthy());
+        assertEquals(Boolean.TRUE,
+            snapshotItem(snapshot, "https://healthy.example.com:443/agent").getHealthy());
         assertEquals(EndpointSource.RUNTIME, result.getSource());
         assertEquals(2, result.getEndpoints().size());
         assertEquals("https://unhealthy.example.com:443/agent",
@@ -309,8 +407,8 @@ class AgentRuntimeRegistryServiceTest {
             .getEnabled());
         assertTrue(snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0)
             .getHealthy());
-        assertEquals(RuntimeEndpointState.AVAILABLE,
-            snapshot.getCallInterface().getEndpointSets().get(0).getEndpoints().get(0).getState());
+        assertEquals(Boolean.TRUE, snapshot.getCallInterface().getEndpointSets().get(0)
+            .getEndpoints().get(0).getHealthy());
         assertEquals(1, endpointSet.getEndpoints().size());
         assertFalse(endpointSet.getEndpoints().get(0).getHealthy());
     }

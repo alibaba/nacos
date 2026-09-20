@@ -318,13 +318,11 @@ publisherIdentity
 + namespaceId + agentName + protocol
 ```
 
-Naming stores exactly one `BatchInstancePublishInfo` for that Client and
-Service. Its Instances carry one shared `runtimeVersion` and canonical
-`versionRange`. A later registration replaces that complete record, including
-the shared Version fields. The first release therefore allows one singular
-`runtimeVersion` and `versionRange` pair per publisher, Agent, and protocol.
-Supporting multiple pairs requires a future complete-snapshot wire model, not
-a server-side read-merge-write loop.
+Naming stores exactly one `BatchInstancePublishInfo` for that Client and Service.
+Each Instance carries its Endpoint's resolved runtimeVersion and canonical versionRange.
+Batch fields are only input defaults; all Endpoints are normalized and validated before
+replacement. A later registration replaces the complete record. Different Endpoints
+within the same batch may carry different pairs; no read-merge-write is introduced.
 
 The Agent layer does not inspect the previous publisher record, depend directly
 on `ClientServiceIndexesManager`, add a service lock, or scan other publishers
@@ -350,8 +348,8 @@ __nacos.agent.endpoint.versionRange__  = canonicalVersionRange
 ```
 
 There is no serialized `bindings` metadata value. `RuntimeVersionBinding`
-objects and public `bindings[]` arrays are created only while reading the
-Naming Service projection. Bindings are deduplicated and sorted in ascending
+objects carry one input binding per Endpoint. Public query `bindings[]` arrays
+aggregate the Naming Service projection across publishers. Bindings are deduplicated and sorted in ascending
 Agent SemVer order by `runtimeVersion`, then in ascending case-sensitive string
 order by `versionRange`.
 
@@ -398,7 +396,7 @@ healthy and false only when all are unhealthy.
 Heartbeat-only and publisher-count-only changes do not change the public
 projection.
 
-`enabled` is an independent Naming operational state and is not overwritten by
+`enabled` is a publisher input with Naming operational overrides; it is not overwritten by
 heartbeats. Agent Endpoint metadata must not set Naming heartbeat interval,
 heartbeat timeout, or instance-delete timeout keys. Explicit deregistration,
 publisher loss, or Naming cleanup ends runtime state. Agent disable, Version
@@ -468,7 +466,7 @@ it against `clusterName`; it must not infer the public transport by decoding `cl
 | URI path | `__nacos.agent.endpoint.path__`. |
 | normalized transport | `__nacos.agent.endpoint.transport__`. |
 | URI scheme | `__nacos.agent.endpoint.protocol__`. |
-| legacy A2A protocol version | Optional `__nacos.agent.endpoint.protocolVersion__`. |
+| legacy A2A protocol version | `__nacos.agent.endpoint.protocolVersion__`. |
 | HTTPS state | `__nacos.agent.endpoint.supportTls__`. |
 | raw URI query | `__nacos.agent.endpoint.query__`. |
 | native tenant, when present | `__nacos.agent.endpoint.tenant__`. |
@@ -479,16 +477,20 @@ it against `clusterName`; it must not infer the public transport by decoding `cl
 | public Endpoint metadata | Remaining `Instance.metadata`. |
 | runtime state | `Instance.enabled`, `Instance.healthy`, `ephemeral=true`. |
 
-User metadata must not override any `__nacos.agent.endpoint.*__` key. The server
+User metadata must not override `__nacos.agent.endpoint.*__` control keys,
+except the two A2A compatibility keys for protocolVersion and tenant. The server
 constructs and validates the complete Naming metadata before accepting a
 publication. Missing range input is canonicalized before writing
 `versionRange`.
 
-`__nacos.agent.endpoint.protocolVersion__` is a legacy-only compatibility fact.
-It is excluded from public RAD Endpoint metadata and Runtime revision input.
-When projecting an old A2A response, the compatibility adapter prefers this
-value and falls back to the target CallInterface `protocolVersion` when it is
-absent.
+Canonical A2A publications reuse the historical Nacos-owned metadata keys
+`__nacos.agent.endpoint.protocolVersion__` and `__nacos.agent.endpoint.tenant__`.
+There is no separate alias or key-precedence rule. Endpoint projections preserve
+these two keys and include their values in Runtime revisions. Other reserved
+keys stay internal. Missing protocol version falls back to the target
+CallInterface; tenant is not invented. Historical empty protocol versions are
+normalized to absence on reads; new Endpoint input requires a nonempty value
+when the protocolVersion key is present. An empty tenant remains a valid value.
 
 The public natural key maps to service, cluster, IP, and port. Path and query
 remain payload metadata. No Version appears in serviceName or clusterName, so
@@ -652,8 +654,7 @@ result. `sourceRevision` is computed from the resulting public Endpoint set.
 
 An AI Storage provider guarantees atomic bytes for one StorageKey and the read
 consistency it declares. Agent Registry owns orchestration across Resource,
-Version, Storage pointer, digest, and derived catalog. It performs validation,
-idempotent retry, and failure compensation. Publish must reread content and
+Version, Storage pointer, digest, and derived catalog. It performs validation and cross-store failure handling. Publish must reread content and
 validate the digest.
 
 A draft update validates that the target Version equals the Resource's current
@@ -666,7 +667,9 @@ capability and must be designed and adopted consistently by Agent, Prompt,
 Skill, and AgentSpec.
 
 A successful Storage write followed by a failed metadata write produces an
-observable incomplete operation that is retried or cleaned as orphan content.
+observable incomplete operation. Client publication reports it without automatic
+retry; unreferenced content may require cleanup. An uncertain outcome must not
+trigger deletion of a possibly referenced object.
 Digest mismatch must never return unverified content. `versionCatalog` and
 Resource version summaries are rebuildable derived data; their consistency is
 not delegated to Storage providers.
@@ -756,3 +759,17 @@ The shared models and schemas follow the agreed endpoint contract. See the [endp
 ### Annotation-independent public Endpoint projection
 
 Public Endpoint defaults and nullable response references do not widen AgentVersionContent. Serialize only uri, transport, effective priority/weight and metadata for declared addresses. Read-back constructs healthy/enabled=true without persisting those fields; changes to submitted state/health leave stored bytes and contentDigest unchanged. Internal storage schema v1 is unchanged. Artifact public serialization follows its updated schema while contentDigest continues to identify stored definition bytes.
+
+Definition storage requires both endpoint sources in the declared preference order. Reject single-source orders before writes and when validating reads; BETA storage migration is out of scope.
+
+### Client publication scope (C05)
+
+Client publication reuses the existing stable-key content storage and draft workflow.
+It adds first-Version ordinary submit, complete editable-draft replacement and non-draft
+no-op behavior. It does not introduce unique write keys, content-object garbage collection,
+Agent-specific multi-row CAS transactions, or a storage visibility wait policy.
+First-Version detection reads the persisted Version collection, including every status;
+it is not a new atomic concurrent-creation guarantee. Existing cross-store and concurrent
+draft-write limitations remain for a separate shared AI Resource storage design.
+
+Historical empty protocol versions mean absent; empty tenant values are preserved.

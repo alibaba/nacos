@@ -57,6 +57,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
     @Test
+    public void testRejectsSingleSourceDefinitionBeforeCreatingAgent() throws Exception {
+        for (String source : List.of("RUNTIME", "DECLARED")) {
+            String agentName = randomAiName("console-invalid-source");
+            Map<String, Object> request = agentInitialDraftRequest(null, agentName, "1.0.0");
+            request.put("callInterfaces", List.of(Map.of("protocol", "custom",
+                    "descriptorMediaType", "application/json", "nativeDescriptor", Map.of(),
+                    "endpointSourceOrder", List.of(source))));
+            assertError(postFormRaw(CONSOLE_AGENT_PATH + "/draft", agentForm(request)), 400,
+                    com.alibaba.nacos.api.model.v2.ErrorCode.PARAMETER_VALIDATE_ERROR, "endpointSourceOrder");
+            assertError(getRaw(CONSOLE_AGENT_PATH, agentIdentityQuery(null, agentName)), 404,
+                    com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND, "not found");
+        }
+    }
+
+    @Test
     public void testUnifiedDefinitionAndNonEmptyRuntimeAcrossConsoleDeploymentModes()
             throws Exception {
         String agentName = randomAiName("console-endpoint-model");
@@ -111,7 +126,11 @@ public class AgentConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals("http://127.0.0.1:29003/runtime", endpoint.path("uri").asText());
         assertFalse(endpoint.path("healthy").asBoolean(true), view.toString());
         assertTrue(endpoint.path("enabled").asBoolean(), view.toString());
-        assertEquals("UNHEALTHY", endpoint.path("state").asText());
+        assertTrue(endpoint.hasNonNull("healthy"), endpoint.toString());
+        assertTrue(endpoint.hasNonNull("enabled"), endpoint.toString());
+        assertFalse(endpoint.path("healthy").asBoolean(), endpoint.toString());
+        assertTrue(endpoint.path("enabled").asBoolean(), endpoint.toString());
+        assertFalse(endpoint.has("state"), endpoint.toString());
         assertEquals("[1.0.0]", endpoint.at("/bindings/0/versionRange").asText());
         assertFalse(endpoint.has("endpoint"), view.toString());
         assertFalse(callInterface.hasNonNull("nativeDescriptor"), view.toString());

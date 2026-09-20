@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.constant;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 /**
  * Nacos AI Server Constants.
  *
@@ -224,7 +226,7 @@ public class Constants {
             AGENT_ENDPOINT_METADATA_PREFIX + "protocol__";
         
         public static final String AGENT_ENDPOINT_PROTOCOL_VERSION_KEY =
-            AGENT_ENDPOINT_METADATA_PREFIX + "protocolVersion__";
+            AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION;
         
         public static final String AGENT_ENDPOINT_SUPPORT_TLS_KEY =
             AGENT_ENDPOINT_METADATA_PREFIX + "supportTls__";
@@ -233,7 +235,7 @@ public class Constants {
             AGENT_ENDPOINT_METADATA_PREFIX + "query__";
         
         public static final String AGENT_ENDPOINT_TENANT_KEY =
-            AGENT_ENDPOINT_METADATA_PREFIX + "tenant__";
+            AiConstants.A2a.ENDPOINT_TENANT;
         
         public static final String AGENT_ENDPOINT_VERSION_KEY =
             AGENT_ENDPOINT_METADATA_PREFIX + "version__";

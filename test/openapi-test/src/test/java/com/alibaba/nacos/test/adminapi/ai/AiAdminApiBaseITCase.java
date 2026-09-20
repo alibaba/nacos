@@ -600,7 +600,7 @@ public abstract class AiAdminApiBaseITCase extends OpenApiBaseITCase {
         callInterface.put("protocolVersion", "1.0");
         callInterface.put("descriptorMediaType", "application/json");
         callInterface.put("nativeDescriptor", descriptor);
-        callInterface.put("endpointSourceOrder", Collections.singletonList("RUNTIME"));
+        callInterface.put("endpointSourceOrder", java.util.Arrays.asList("RUNTIME", "DECLARED"));
         return callInterface;
     }
 

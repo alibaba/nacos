@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
@@ -42,7 +41,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Recursive domain validation for RAD 0.3.0 public models.
+ * Recursive domain validation for RAD public models.
  *
  * @author Nacos
  */
@@ -318,6 +317,8 @@ public final class RadModelValidator {
         requireNonNull(result, "AgentDiscoveryResult");
         AgentValidationUtils.validateNamespaceId(result.getNamespaceId());
         AgentValidationUtils.validateAgentName(result.getAgentName());
+        validateOptionalLength(result.getDescription(), 2048, "description");
+        validateTags(result.getTags(), "tags");
         AgentValidationUtils.validateVersion(result.getVersion());
         AgentValidationUtils.validateContentDigest(result.getContentDigest());
         List<AgentCallInterface> callInterfaces = result.getCallInterfaces();
@@ -343,17 +344,20 @@ public final class RadModelValidator {
         requireNonNull(batch, "AgentEndpointRegistrationBatch");
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(batch.getAgentName());
-        AgentVersion runtimeVersion = AgentVersion.parse(batch.getRuntimeVersion());
         AgentValidationUtils.validateProtocol(batch.getProtocol());
-        AgentVersionRange range = batch.getVersionRange() == null
-            ? AgentVersionRange.exact(runtimeVersion)
-            : AgentVersionRange.parse(batch.getVersionRange());
-        if (!range.contains(runtimeVersion)) {
-            throw invalid("versionRange must contain runtimeVersion");
+        if (batch.getRuntimeVersion() != null) {
+            AgentVersion.parse(batch.getRuntimeVersion());
+        }
+        if (batch.getVersionRange() != null) {
+            AgentVersionRange.parse(batch.getVersionRange());
         }
         requireNonEmptyArray(batch.getEndpoints(), MAX_BATCH_ENDPOINTS, "endpoints");
         validateEndpointBatch(batch.getEndpoints(), namespaceId, batch.getAgentName(),
             batch.getProtocol(), false, false);
+        for (Endpoint endpoint : batch.getEndpoints()) {
+            EndpointCanonicalizer.canonicalizeRuntimeBinding(endpoint, batch.getRuntimeVersion(),
+                batch.getVersionRange());
+        }
     }
     
     /**
@@ -477,11 +481,6 @@ public final class RadModelValidator {
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
         if (requireCanonicalOutput && !endpoint.getEnabled()) {
             throw invalid("Discovery Endpoint must be enabled");
-        }
-        if (requireCanonicalOutput && endpoint.getState() != null
-            && endpoint.getState() != (endpoint.getHealthy() ? RuntimeEndpointState.AVAILABLE
-                : RuntimeEndpointState.UNHEALTHY)) {
-            throw invalid("Discovery Endpoint state must match effective health");
         }
         if (requireCanonicalOutput
             && (!canonical.getUri().equals(endpoint.getUri())

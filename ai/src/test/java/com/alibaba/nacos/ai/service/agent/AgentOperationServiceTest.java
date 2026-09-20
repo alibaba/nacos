@@ -230,15 +230,16 @@ class AgentOperationServiceTest {
         request.setExtensions(Collections.<String, Object>singletonMap("x-team", "ai"));
         request.setAutoSubmit(true);
         AgentVersionDetail expected = new AgentVersionDetail();
-        when(persistenceService.createInitialDraft(any(AgentSummary.class),
+        when(persistenceService.createInitialDraftForPublication(any(AgentSummary.class),
             any(AgentVersionDetail.class))).thenReturn(expected);
         
-        assertSame(expected, service.createDraftFromPublication(NAMESPACE_ID, request));
+        assertSame(expected, service.writeDraftFromPublication(NAMESPACE_ID, request).getVersion());
         
         ArgumentCaptor<AgentSummary> agent = ArgumentCaptor.forClass(AgentSummary.class);
         ArgumentCaptor<AgentVersionDetail> draft =
             ArgumentCaptor.forClass(AgentVersionDetail.class);
-        verify(persistenceService).createInitialDraft(agent.capture(), draft.capture());
+        verify(persistenceService).createInitialDraftForPublication(agent.capture(),
+            draft.capture());
         assertEquals(NAMESPACE_ID, agent.getValue().getNamespaceId());
         assertEquals("Client Agent", agent.getValue().getDisplayName());
         assertEquals(request.getExtensions(), agent.getValue().getExtensions());
@@ -247,15 +248,121 @@ class AgentOperationServiceTest {
         assertEquals(VERSION, draft.getValue().getVersion());
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 5})
+    void testPublicationCountsEveryStoredVersionBeforeCreation(int count) throws Exception {
+        AiResource meta = meta(null, null);
+        stubPublicationMeta(meta);
+        AgentPublishRequest request = publicationRequest();
+        request.setDisplayName("ignored for existing Agent");
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "missing"));
+        Page<AgentVersionSummary> page = new Page<>();
+        page.setTotalCount(count);
+        when(persistenceService.listAgentVersions(NAMESPACE_ID, AGENT_NAME, null, 1, 1))
+            .thenReturn(page);
+        AgentVersionDetail created = new AgentVersionDetail();
+        when(persistenceService.createDraft(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            any(AgentVersionDetail.class), org.mockito.ArgumentMatchers.isNull(), eq(false)))
+            .thenReturn(created);
+        AgentOperationService.PublicationResult result =
+            service.writeDraftFromPublication(NAMESPACE_ID, request);
+        assertSame(created, result.getVersion());
+        assertEquals(count == 0, result.isFirstVersion());
+        visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(
+        strings = {"reviewing", "reviewed", "online", "offline"})
+    void testPublicationLeavesNonDraftUntouchedAndDoesNotLoadCopySource(String status)
+        throws Exception {
+        AiResource meta = meta(null, null);
+        stubPublicationMeta(meta);
+        AgentPublishRequest request = publicationRequest();
+        request.setCallInterfaces(null);
+        request.setBasedOnVersion("2.0.0");
+        AgentVersionDetail current = new AgentVersionDetail();
+        current.setStatus(status);
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(current);
+        assertSame(current, service.writeDraftFromPublication(NAMESPACE_ID, request).getVersion());
+        verify(persistenceService).getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
+        org.mockito.Mockito.verifyNoMoreInteractions(persistenceService);
+        verifyNoInteractions(indexMaintenanceService);
+        visibilityHelper.verify(() -> VisibilityHelper.checkWritableResource(meta));
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void testPublicationReplacesDraftFromDirectOrCopiedContent(boolean copy) throws Exception {
+        stubPublicationMeta(meta(VERSION, null));
+        AgentPublishRequest request = publicationRequest();
+        AgentVersionDetail current = new AgentVersionDetail();
+        current.setStatus("draft");
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(current);
+        java.util.List<AgentCallInterface> expected = request.getCallInterfaces();
+        if (copy) {
+            request.setCallInterfaces(null);
+            request.setBasedOnVersion("2.0.0");
+            AgentVersionDetail source = new AgentVersionDetail();
+            source.setCallInterfaces(expected);
+            when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, "2.0.0"))
+                .thenReturn(source);
+        }
+        when(persistenceService.updateDraftFromPublication(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            any(AgentVersionDetail.class))).thenReturn(current);
+        AgentOperationService.PublicationResult result =
+            service.writeDraftFromPublication(NAMESPACE_ID, request);
+        assertFalse(result.isFirstVersion());
+        ArgumentCaptor<AgentVersionDetail> captor =
+            ArgumentCaptor.forClass(AgentVersionDetail.class);
+        verify(persistenceService).updateDraftFromPublication(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            captor.capture());
+        assertEquals(expected, captor.getValue().getCallInterfaces());
+        assertEquals(request.getAuthor(), captor.getValue().getAuthor());
+        assertEquals(copy, request.getCallInterfaces() == null);
+        verify(persistenceService, never()).listAgentVersions(anyString(), anyString(),
+            org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.anyInt(),
+            org.mockito.ArgumentMatchers.anyInt());
+    }
+    
+    @Test
+    void testPublicationReadFailureDoesNotCreateOrRecover() throws Exception {
+        stubPublicationMeta(meta(null, null));
+        NacosException failure = new NacosException(500, "unreadable definition");
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenThrow(failure);
+        assertSame(failure, assertThrows(NacosException.class,
+            () -> service.writeDraftFromPublication(NAMESPACE_ID, publicationRequest())));
+        verify(persistenceService).getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
+        org.mockito.Mockito.verifyNoMoreInteractions(persistenceService);
+    }
+    
+    private void stubPublicationMeta(AiResource meta) {
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+    }
+    
+    private AgentPublishRequest publicationRequest() {
+        AgentPublishRequest request = new AgentPublishRequest();
+        request.setAgentName(AGENT_NAME);
+        request.setVersion(VERSION);
+        request.setAuthor("client-author");
+        request.setCallInterfaces(draftRequest().getCallInterfaces());
+        return request;
+    }
+    
     @Test
     void testClientPublicationRejectsMissingRequestAndInvalidDraftSource() {
         assertThrows(IllegalArgumentException.class,
-            () -> service.createDraftFromPublication(NAMESPACE_ID, null));
+            () -> service.writeDraftFromPublication(NAMESPACE_ID, null));
         AgentPublishRequest request = new AgentPublishRequest();
         request.setAgentName(AGENT_NAME);
         request.setVersion(VERSION);
         assertThrows(IllegalArgumentException.class,
-            () -> service.createDraftFromPublication(NAMESPACE_ID, request));
+            () -> service.writeDraftFromPublication(NAMESPACE_ID, request));
     }
     
     @Test

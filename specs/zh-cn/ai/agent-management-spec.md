@@ -259,7 +259,7 @@ Reconciliation 按 [AI 资源检索规范](ai-resource-search-spec.md)最终收�
 | `protocolVersion` | 否 | 快速协议协商值；不作为接口身份。 |
 | `descriptorMediaType` | 是 | `nativeDescriptor` 的媒体类型。 |
 | `nativeDescriptor` | 是 | 完整协议原生 descriptor。 |
-| `endpointSourceOrder[]` | 是 | `RUNTIME` 和 `DECLARED` 的非空有序集合。 |
+| `endpointSourceOrder[]` | 是 | 恰好包含 `RUNTIME` 和 `DECLARED` 各一次，顺序表示推荐偏好。 |
 | `endpointSets[]` | 否 | 至多一个 DECLARED Set，包含 Adapter 派生的静态 Endpoint。 |
 
 规范 protocol token 匹配 `[A-Za-z0-9][A-Za-z0-9-]{0,31}`，并按大小写敏感比较。
@@ -271,11 +271,13 @@ Endpoint 的接口是 SDK 默认选择候选。
 `endpointSourceOrder` 不包含重复项，语义如下：
 
 - `[RUNTIME, DECLARED]` 优先使用运行时地址，并以声明地址作为后备；
-- `[DECLARED, RUNTIME]` 优先使用声明地址；
-- `[RUNTIME]` 或 `[DECLARED]` 在普通发现中只允许对应来源。
+- `[DECLARED, RUNTIME]` 优先使用声明地址。
 
-来源顺序属于单个 CallInterface，而不是整个 Version。它不阻止运行时发布。即使某个
-CallInterface 不包含 `RUNTIME`，管控查询仍可查看 Runtime Endpoint。
+单来源、空、null、重复项及未知值均非法。
+
+来源顺序属于单个 CallInterface，而不是整个 Version，仅表达默认推荐偏好。它不限制来源可达性或 Runtime 发布。
+发现 Filter 可以单选任一来源；无 Filter 返回两个 Set 并保留空 Set。Filter 数组顺序不覆盖定义顺序，
+管理始终可以查询 Runtime Endpoint。
 
 ### 5.2 Endpoint 值对象
 
@@ -316,13 +318,12 @@ callInterface {
   endpointSets[] {
     source = RUNTIME, lastUpdatedTime,
     endpoints[] { uri, transport, priority, weight, metadata,
-      bindings[] { runtimeVersion, versionRange }, state, enabled, healthy }
+      bindings[] { runtimeVersion, versionRange }, enabled, healthy }
   }
 }
-state = AVAILABLE | DISABLED | UNHEALTHY
 ```
 
-状态按顺序判定：`enabled=false` 为 `DISABLED`；否则 `healthy=false` 为 `UNHEALTHY`；
+Console 展示状态由两个布尔值推导，不返回 state 字段。按顺序判定：`enabled=false` 为 `DISABLED`；否则 `healthy=false` 为 `UNHEALTHY`；
 其他项为 `AVAILABLE`。`lastUpdatedTime` 使用本次构建 Snapshot 的 Naming `ServiceInfo.lastRefTime`，
 因此同一 Snapshot 的全部 item 共享同一个 Service 投影观察时间。它不是单个 Endpoint 的分布式事实或
 缓存校验器；Naming 每次重建该 Service 投影时都可能改变它。跨节点相等性和 Watch 去重使用由内容
@@ -346,17 +347,16 @@ Runtime 查询在 callInterface 下返回恰好一个 RUNTIME Set，空结果也
 定义，省略 descriptor。外层 RuntimeEndpointSnapshot 保留身份和可选 version，Console 另保留
 namingServiceRef。删除嵌套的 SnapshotItem 地址包装。
 
-管理返回 enabled/state，将 Naming 观察时间统一放到 EndpointSet；本轮管理结果省略 sourceRevision。
-Discover/Watch 必须返回 sourceRevision，endpointSourceOrder 和观察时间省略或为 null；Endpoint 输出 enabled=true，state 可选，非空时必须与 healthy 一致。
+管理返回 enabled，将 Naming 观察时间统一放到 EndpointSet；本轮管理结果省略 sourceRevision。
+Discover/Watch 必须返回 sourceRevision，endpointSourceOrder 和观察时间省略或为 null；Endpoint 输出 enabled=true，不再包含派生的 state 字段。
 其过滤、bindings 并集、来源顺序、空 Set 和判等规则保持。共用类型不意味着合并 API，也不意味着
 管理和发现共用同一个贡献筛选算法。
 
 ### 6.2 写入政策与定义存储
 
-Runtime 注册/完整替换接受 healthy，缺省 true，表示当前贡献的上报健康值，不是永久健康开关。
+Runtime 注册/完整替换接受 healthy/enabled，均缺省 true，显式 null 非法；healthy 表示当前贡献的上报健康值，不是永久健康开关。
 ACTIVE HTTP heartbeat 保留显式上报值；后续继续遵循现有 Naming 活性及恢复规则。
-DECLARED 接受但不持久化 healthy/管理状态，读取返回 healthy/enabled=true；注销仅读取自然键业务字段，忽略共享 Endpoint 其他属性。提交的 bindings、enabled/state 和观测值
-被忽略，bindings 由批次 runtimeVersion/versionRange 生成；定义提交的 sourceRevision 也忽略。
+DECLARED 接受但不持久化 healthy/管理状态，读取返回 healthy/enabled=true；注销仅读取自然键业务字段，忽略共享 Endpoint 其他属性。输入 bindings 逐字段继承 Batch 默认值；EndpointSet revision 和观测值由服务端维护。定义提交的 sourceRevision 忽略。
 非法 JSON 类型、身份、URI、metadata、批次版本仍报错。只调用 Java setter 不发送请求。
 
 内部保留 AgentVersionContent 容器，成员复用统一类型。存储显式投影完整定义和声明地址，排除
@@ -437,8 +437,8 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 [Agent API 规范 — Java 模型绑定](./agent-api-spec.md#java-模型绑定)。
 该组织方式不重命名协议/schema 概念，不改变存储或发现语义。
 
-### 序列化器无关的公开模型（Schema 0.3.0）
+### 序列化器无关的公开模型（Schema 0.5.0）
 
-可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled/state 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
+可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
 
-采用[管理 Schema 0.3.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.3.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。
+采用[管理 Schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。

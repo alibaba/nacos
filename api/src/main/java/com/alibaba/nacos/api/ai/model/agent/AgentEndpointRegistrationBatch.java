@@ -35,8 +35,10 @@ public class AgentEndpointRegistrationBatch implements Serializable {
     
     private List<Endpoint> endpoints;
     
+    /** Default runtime Version for Endpoints that do not override this field. */
     private String runtimeVersion;
     
+    /** Default range; absent values resolve to each Endpoint's effective exact Version. */
     private String versionRange;
     
     public String getAgentName() {

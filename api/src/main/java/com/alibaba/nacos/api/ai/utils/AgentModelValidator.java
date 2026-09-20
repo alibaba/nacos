@@ -28,7 +28,6 @@ import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.model.Page;
 
@@ -516,8 +515,9 @@ public final class AgentModelValidator {
     
     private static void validateEndpointSourceOrder(List<EndpointSource> sourceOrder) {
         requireNonNull(sourceOrder, "endpointSourceOrder");
-        if (sourceOrder.isEmpty() || sourceOrder.size() > EndpointSource.values().length) {
-            throw new IllegalArgumentException("endpointSourceOrder must contain 1 or 2 sources");
+        if (sourceOrder.size() != EndpointSource.values().length) {
+            throw new IllegalArgumentException(
+                "endpointSourceOrder must contain both DECLARED and RUNTIME");
         }
         Set<EndpointSource> uniqueSources = new HashSet<EndpointSource>();
         for (EndpointSource source : sourceOrder) {
@@ -568,8 +568,6 @@ public final class AgentModelValidator {
         for (RuntimeVersionBinding binding : bindings) {
             validateRuntimeVersionBinding(binding, selectedVersion, bindingKeys);
         }
-        requireNonNull(item.getState(), "runtime Endpoint state");
-        validateRuntimeEndpointState(item);
     }
     
     private static void validateRuntimeVersionBinding(RuntimeVersionBinding binding,
@@ -591,21 +589,6 @@ public final class AgentModelValidator {
         String bindingKey = runtimeVersion + "\u0000" + versionRange.getValue();
         if (!bindingKeys.add(bindingKey)) {
             throw new IllegalArgumentException("Duplicate Runtime Version binding");
-        }
-    }
-    
-    private static void validateRuntimeEndpointState(Endpoint item) {
-        RuntimeEndpointState expected;
-        if (!item.getEnabled()) {
-            expected = RuntimeEndpointState.DISABLED;
-        } else if (!item.getHealthy()) {
-            expected = RuntimeEndpointState.UNHEALTHY;
-        } else {
-            expected = RuntimeEndpointState.AVAILABLE;
-        }
-        if (item.getState() != expected) {
-            throw new IllegalArgumentException(
-                "Runtime Endpoint state must be " + expected.name());
         }
     }
     

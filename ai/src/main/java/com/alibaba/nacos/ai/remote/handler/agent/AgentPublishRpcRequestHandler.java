@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.agent;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
@@ -43,9 +44,13 @@ import org.springframework.stereotype.Component;
 public class AgentPublishRpcRequestHandler
     extends RequestHandler<AgentPublishRpcRequest, AgentPublishRpcResponse> {
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentPublishApplicationService publishService;
     
-    public AgentPublishRpcRequestHandler(AgentPublishApplicationService publishService) {
+    public AgentPublishRpcRequestHandler(AgentPublishApplicationService publishService,
+        AgentClientMigrationGuard migrationGuard) {
+        this.migrationGuard = migrationGuard;
         this.publishService = publishService;
     }
     
@@ -59,6 +64,7 @@ public class AgentPublishRpcRequestHandler
         try {
             AgentPublishRequest publishRequest = requireRequest(request.getPublishRequest());
             String namespaceId = NamespaceUtil.processNamespaceParameter(request.getNamespaceId());
+            migrationGuard.checkReady();
             response.setVersionDetail(publishService.publish(namespaceId, publishRequest));
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);

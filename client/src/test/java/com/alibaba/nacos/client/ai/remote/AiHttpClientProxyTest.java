@@ -17,6 +17,15 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+import com.alibaba.nacos.common.http.HttpClientConfig;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import java.net.SocketTimeoutException;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.never;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -47,6 +56,8 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -404,6 +415,136 @@ class AiHttpClientProxyTest {
             zos.closeEntry();
         }
         return baos.toByteArray();
+    }
+    
+    @Test
+    void shouldReadCapabilitiesWithoutLifecycleHeadersOrResourceScope() throws Exception {
+        prepareCapabilityResponse(200, "{\"code\":0,\"data\":{\"schemaVersion\":1,"
+            + "\"capabilities\":{\"radV1\":true}}}");
+        assertEquals(AbilityStatus.SUPPORTED,
+            httpClientProxy.getCapabilities("127.0.0.1:8848").get("radV1"));
+        httpClientProxy.getCapabilities("127.0.0.1:8848");
+        ArgumentCaptor<Header> header = ArgumentCaptor.forClass(Header.class);
+        verify(nacosRestTemplate).get(eq("http://127.0.0.1:8848/nacos/v3/client/ai/capabilities"),
+            any(HttpClientConfig.class), header.capture(), eq(Query.EMPTY), eq(String.class));
+        assertEquals("token", header.getValue().getValue("Authorization"));
+        assertNull(header.getValue().getValue("X-Nacos-Client-Id"));
+        ArgumentCaptor<RequestResource> resource = ArgumentCaptor.forClass(RequestResource.class);
+        verify(securityProxy, times(2)).getIdentityContext(resource.capture());
+        assertEquals("", resource.getValue().getNamespace());
+        assertEquals("", resource.getValue().getGroup());
+        assertEquals("", resource.getValue().getResource());
+        verify(serverListManager, never()).getServerList();
+        httpClientProxy.invalidateCapabilities();
+        httpClientProxy.getCapabilities("127.0.0.1:8848");
+        verify(nacosRestTemplate, times(2)).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {404, 405})
+    void shouldTreatMissingCapabilityRouteAsUnknown(int status) throws Exception {
+        prepareCapabilityResponse(status, "not found");
+        assertEquals(AbilityStatus.UNKNOWN,
+            httpClientProxy.getCapabilities("127.0.0.1:8848").get("radV1"));
+        verify(nacosRestTemplate).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403, 500, 503})
+    void shouldPreserveErrorsWithoutTryingAnotherServerOrCachingFailure(int status)
+        throws Exception {
+        prepareCapabilityResponse(status, "rejected");
+        for (int i = 0; i < 2; i++) {
+            assertEquals(status, assertThrows(NacosException.class,
+                () -> httpClientProxy.getCapabilities("127.0.0.1:8848")).getErrCode());
+        }
+        verify(nacosRestTemplate, times(2)).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+        verify(serverListManager, never()).getServerList();
+    }
+    
+    @Test
+    void shouldReportUnreachableHttpWithoutCapabilityDowngrade() throws Exception {
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(Collections.emptyMap());
+        doThrow(new SocketTimeoutException("timeout")).when(nacosRestTemplate).get(anyString(),
+            any(HttpClientConfig.class), any(Header.class), any(Query.class), eq(String.class));
+        NacosException error = assertThrows(NacosException.class,
+            () -> httpClientProxy.getCapabilities("127.0.0.1:8848"));
+        assertEquals(NacosException.SERVER_ERROR, error.getErrCode());
+        assertTrue(error.getMessage().contains("Cannot reach AI HTTP capability endpoint"));
+        verify(nacosRestTemplate).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @Test
+    void capabilityProbeRetriesConnectionFailureOnNextTarget() throws Exception {
+        prepareCapabilityResponse(200, "{\"code\":0,\"data\":{\"schemaVersion\":1,"
+            + "\"capabilities\":{\"radV1\":true}}}");
+        when(serverListManager.getServerList())
+            .thenReturn(Arrays.asList("first:8848", "second:8848"));
+        doThrow(new java.net.ConnectException("refused")).when(nacosRestTemplate)
+            .get(eq("http://first:8848/nacos/v3/client/ai/capabilities"),
+                any(HttpClientConfig.class),
+                any(Header.class), any(Query.class), eq(String.class));
+        assertEquals(AbilityStatus.SUPPORTED, httpClientProxy.getCapabilities().get("radV1"));
+        verify(nacosRestTemplate).get(eq("http://second:8848/nacos/v3/client/ai/capabilities"),
+            any(HttpClientConfig.class), any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403, 500})
+    void capabilityBusinessErrorDoesNotTryAnotherTarget(int code) throws Exception {
+        prepareCapabilityResponse(code, "rejected");
+        when(serverListManager.getServerList())
+            .thenReturn(Arrays.asList("first:8848", "second:8848"));
+        assertEquals(code, assertThrows(NacosException.class,
+            () -> httpClientProxy.getCapabilities()).getErrCode());
+        verify(nacosRestTemplate, times(1)).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @Test
+    void capabilityTlsFailureAndNoTargetsAreExplicit() throws Exception {
+        when(serverListManager.getServerList()).thenReturn(Collections.emptyList());
+        assertEquals(NacosException.CLIENT_DISCONNECT, assertThrows(NacosException.class,
+            () -> httpClientProxy.getCapabilities()).getErrCode());
+        when(serverListManager.getServerList())
+            .thenReturn(Arrays.asList("first:8848", "second:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        javax.net.ssl.SSLHandshakeException tls =
+            new javax.net.ssl.SSLHandshakeException("certificate");
+        doThrow(tls).when(nacosRestTemplate).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+        assertSame(tls, assertThrows(NacosException.class,
+            () -> httpClientProxy.getCapabilities()).getCause());
+        verify(nacosRestTemplate, times(1)).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
+    }
+    
+    @Test
+    void legacyEvidenceRequiresSoleMatchingMainAddress() {
+        when(serverListManager.getServerList())
+            .thenReturn(Collections.singletonList("https://one:8848"));
+        assertTrue(httpClientProxy.isOnlyServer("one:8848"));
+        assertFalse(httpClientProxy.isOnlyServer(null));
+        assertFalse(httpClientProxy.isOnlyServer("two:8848"));
+        when(serverListManager.getServerList()).thenReturn(Arrays.asList("one:8848", "two:8848"));
+        assertFalse(httpClientProxy.isOnlyServer("one:8848"));
+    }
+    
+    private void prepareCapabilityResponse(int status, String body) throws Exception {
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any()))
+            .thenReturn(Collections.singletonMap("Authorization", "token"));
+        HttpRestResult<String> result = new HttpRestResult<>();
+        result.setCode(status);
+        result.setData(body);
+        result.setMessage(body);
+        doReturn(result).when(nacosRestTemplate).get(anyString(), any(HttpClientConfig.class),
+            any(Header.class), any(Query.class), eq(String.class));
     }
     
     private AiHttpClientProxy createProxyWithMocks() throws Exception {

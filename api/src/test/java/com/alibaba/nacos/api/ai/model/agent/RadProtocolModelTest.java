@@ -39,6 +39,24 @@ class RadProtocolModelTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Test
+    void shouldRoundTripDiscoveryCatalogMetadata() throws Exception {
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setAgentName("metadata-demo");
+        result.setDescription("问答与检索");
+        result.setTags(Arrays.asList("chat", "research"));
+        AgentDiscoveryResult restored = objectMapper.readValue(
+            objectMapper.writeValueAsBytes(result), AgentDiscoveryResult.class);
+        assertEquals(result.getDescription(), restored.getDescription());
+        assertEquals(result.getTags(), restored.getTags());
+        result.setDescription(null);
+        result.setTags(null);
+        restored = objectMapper.readValue(
+            objectMapper.writeValueAsBytes(result), AgentDiscoveryResult.class);
+        assertNull(restored.getDescription());
+        assertNull(restored.getTags());
+    }
+    
+    @Test
     void shouldRoundTripSearchRequestAndCatalogPage() throws Exception {
         AgentSearchRequest request = new AgentSearchRequest();
         request.setAgentNameContains("Order Agent");

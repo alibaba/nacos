@@ -61,6 +61,9 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
             AgentEndpointPublicationRedoData redoData =
                 (AgentEndpointPublicationRedoData) each;
             try {
+                if (aiGrpcClient.dispatchAgentEndpointPublicationRedo(redoData)) {
+                    continue;
+                }
                 redoForAgentEndpointPublication(redoData);
             } catch (NacosException e) {
                 if (isPublicationCapacityRejected(e)) {

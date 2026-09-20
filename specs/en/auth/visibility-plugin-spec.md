@@ -236,6 +236,19 @@ These endpoints are plugin-owned auth APIs and must use `ApiType.ADMIN_API`.
 The default implementation does not expose a management-side grant-list
 endpoint.
 
+### Explicit Identity During Asynchronous Checks
+
+The `identity` supplied to `validateVisibility` is the server-authenticated caller captured
+at the authorized entry point, not an identity accepted directly from an arbitrary request
+parameter. Asynchronous checks must use that identity rather than a thread-local request.
+The default implementation selects auth by the supplied API scope. For the built-in Nacos
+and derived auth implementations, it creates a credential-free user identity and evaluates
+current roles and permissions; it does not copy another request's user or cached admin flag.
+Existing role-cache and token revocation guarantees remain unchanged.
+For an unrelated auth implementation whose identity cannot be reconstructed, delegation
+requires its matching authenticated request context; absence or mismatch fails closed.
+This rule does not add authentication bypasses or persist credentials in Watch state.
+
 ## API Requirements
 
 Any API that returns visibility-aware resources must:

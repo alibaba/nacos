@@ -145,7 +145,48 @@ class AgentPersistenceServiceTest {
     }
     
     @Test
-    void testCreateClaimsVersionBeforeStorageAndPublishesResourceLast() throws NacosException {
+    void testClientCreationReturnsUncertainInsertWithoutRecovery() throws Exception {
+        stubPrepare();
+        IllegalStateException failure = new IllegalStateException("uncertain insert");
+        when(versionPersistService.insert(any(AiResourceVersion.class))).thenThrow(failure);
+        assertThrows(NacosException.class,
+            () -> service.createInitialDraftForPublication(agent, initialDraft));
+        verify(versionPersistService).find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION);
+        verify(storageService, never()).save(any(PreparedAgentVersionWrite.class));
+        verify(resourcePersistService, never()).insert(any(AiResource.class));
+    }
+    
+    @Test
+    void testClientResourceInsertFailureDoesNotRecoverOrDeleteContent() throws Exception {
+        stubPrepare();
+        when(versionPersistService.insert(any(AiResourceVersion.class))).thenReturn(VERSION_ID);
+        when(resourcePersistService.insert(any(AiResource.class)))
+            .thenThrow(new IllegalStateException("uncertain Resource insert"));
+        assertThrows(NacosException.class,
+            () -> service.createInitialDraftForPublication(agent, initialDraft));
+        verify(resourcePersistService).find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT);
+        verify(storageService).save(prepared);
+        verify(storageService, never()).delete(any(AgentVersionStorageDescriptor.class));
+    }
+    
+    @Test
+    void testClientCreationDoesNotAdoptConcurrentEquivalentVersion() throws Exception {
+        stubPrepare();
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+        NacosException failure = assertThrows(NacosException.class,
+            () -> service.createInitialDraftForPublication(agent, initialDraft));
+        assertEquals(NacosException.CONFLICT, failure.getErrCode());
+        verify(versionPersistService, never()).insert(any(AiResourceVersion.class));
+        verify(storageService, never()).save(any(PreparedAgentVersionWrite.class));
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void testCreateClaimsVersionBeforeStorageAndPublishesResourceLast(boolean client)
+        throws NacosException {
         AtomicReference<AiResource> persistedResource = new AtomicReference<AiResource>();
         AtomicReference<AiResourceVersion> persistedVersion =
             new AtomicReference<AiResourceVersion>();
@@ -166,7 +207,9 @@ class AgentPersistenceServiceTest {
             return RESOURCE_ID;
         });
         
-        AgentVersionDetail result = service.createInitialDraft(agent, initialDraft);
+        AgentVersionDetail result =
+            (client ? service.createInitialDraftForPublication(agent, initialDraft)
+                : service.createInitialDraft(agent, initialDraft));
         
         assertCreatedDetail(result);
         assertPersistedResource(persistedResource.get());
@@ -965,6 +1008,46 @@ class AgentPersistenceServiceTest {
         order.verify(versionPersistService).updateStorageAndDesc(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
             "Updated draft");
+        order.verify(storageService).load(any(AgentVersionStorageDescriptor.class));
+    }
+    
+    @Test
+    void testClientDraftReplacementUsesSameStorageKeyAndUpdatesAuthor()
+        throws NacosException {
+        AgentVersionContent replacement = replacementContent();
+        PreparedAgentVersionWrite replacementWrite = replacementWrite(replacement);
+        AiResourceVersion updated = updatedVersion(replacementWrite, "Updated draft");
+        stubDraftUpdatePreparation(replacementWrite);
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion(), updated);
+        when(versionPersistService.updateContent(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft", "client-author")).thenReturn(1);
+        when(storageService.load(any(AgentVersionStorageDescriptor.class)))
+            .thenReturn(replacement);
+        
+        AgentVersionDetail request = newInitialDraft();
+        request.setCallInterfaces(replacement.getCallInterfaces());
+        request.setChangeDescription("Updated draft");
+        request.setAuthor("client-author");
+        AgentVersionDetail result =
+            service.updateDraftFromPublication(NAMESPACE_ID, AGENT_NAME, request);
+        assertEquals(prepared.getDescriptor().getKey(), replacementWrite.getDescriptor().getKey());
+        verify(storageService, never()).delete(any(AgentVersionStorageDescriptor.class));
+        
+        assertEquals("0.4", result.getCallInterfaces().get(0).getProtocolVersion());
+        assertEquals("Updated draft", result.getChangeDescription());
+        assertEquals(replacementWrite.getDescriptor().getContentDigest(),
+            result.getContentDigest());
+        InOrder order = inOrder(versionPersistService, storageService);
+        order.verify(storageService).prepare(any(AgentVersionStorageDescriptor.class),
+            any(AgentVersionContent.class));
+        order.verify(storageService).save(replacementWrite);
+        order.verify(versionPersistService).updateContent(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION, updated.getStorage(),
+            "Updated draft", "client-author");
         order.verify(storageService).load(any(AgentVersionStorageDescriptor.class));
     }
     

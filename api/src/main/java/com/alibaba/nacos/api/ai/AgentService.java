@@ -32,8 +32,9 @@ public interface AgentService extends A2aService, AgentDiscoveryService {
     /**
      * Publish one exact Agent Version from application code.
      *
-     * <p>The AiService namespace is used automatically. By default this creates a draft;
-     * {@link AgentPublishRequest#isAutoSubmit()} requests the ordinary submit pipeline and never
+     * <p>The AiService namespace is used automatically. A newly created first Version is submitted
+     * automatically; other drafts use
+     * {@link AgentPublishRequest#isAutoSubmit()}. Submission uses the ordinary pipeline and never
      * force-publishes a Version.</p>
      *
      * @param request Agent definition publication request

@@ -33,7 +33,6 @@ import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +50,56 @@ class RadModelValidatorTest {
     
     private static final String RUNTIME_REVISION =
         "murmur3-x64-128-v1:0123456789abcdef0123456789abcdef";
+    
+    @Test
+    void shouldValidateOptionalDiscoveryCatalogMetadata() {
+        AgentDiscoveryResult result = newValidDiscoveryResult();
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
+        result.setDescription(repeat('a', 2048));
+        ArrayList<String> tags = new ArrayList<String>();
+        for (int i = 0; i < 32; i++) {
+            tags.add(i + repeat('x', 62));
+        }
+        result.setTags(tags);
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
+        result.setDescription(repeat('a', 2049));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setDescription(null);
+        tags.add("overflow");
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setTags(Collections.singletonList(repeat('a', 65)));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setTags(Arrays.asList("duplicate", "duplicate"));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setTags(Collections.singletonList(""));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setTags(Collections.<String>singletonList(null));
+        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
+        result.setTags(null);
+        assertDoesNotThrow(() -> RadModelValidator.validate(result));
+    }
+    
+    @Test
+    void shouldAllowEndpointBindingsWithoutBatchDefaultsAndRejectMalformedDefaults() {
+        AgentEndpointRegistrationBatch batch = newValidRegistrationBatch();
+        batch.setRuntimeVersion(null);
+        batch.setVersionRange(null);
+        for (Endpoint endpoint : batch.getEndpoints()) {
+            endpoint.setBindings(Collections.singletonList(newBinding("2.0.0", "[2.0.0]")));
+        }
+        assertDoesNotThrow(() -> RadModelValidator.validate("public", batch));
+        batch.setRuntimeVersion("");
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate("public", batch));
+        batch.setRuntimeVersion(null);
+        batch.setVersionRange("");
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate("public", batch));
+        batch.setVersionRange(null);
+        batch.getEndpoints().get(0).setBindings(Collections.emptyList());
+        assertThrows(IllegalArgumentException.class,
+            () -> RadModelValidator.validate("public", batch));
+    }
     
     @Test
     void shouldAcceptExplicitRegistrationHealth() {
@@ -76,11 +125,6 @@ class RadModelValidatorTest {
         endpoint.setEnabled(false);
         assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
         endpoint.setEnabled(true);
-        endpoint.setState(RuntimeEndpointState.UNHEALTHY);
-        assertThrows(IllegalArgumentException.class, () -> RadModelValidator.validate(result));
-        endpoint.setState(RuntimeEndpointState.AVAILABLE);
-        assertDoesNotThrow(() -> RadModelValidator.validate(result));
-        endpoint.setState(null);
         assertDoesNotThrow(() -> RadModelValidator.validate(result));
     }
     
@@ -213,7 +257,6 @@ class RadModelValidatorTest {
         endpoints.get(0).setPriority(-1);
         endpoints.get(0).setHealthy(false);
         endpoints.get(0).setEnabled(false);
-        endpoints.get(0).setState(RuntimeEndpointState.DISABLED);
         assertDoesNotThrow(() -> RadModelValidator.validateDeregistration(
             "public", "Demo Agent", "a2a", endpoints));
     }

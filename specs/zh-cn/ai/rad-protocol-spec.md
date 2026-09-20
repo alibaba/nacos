@@ -18,8 +18,8 @@
 
 | 项目 | 值 |
 |---|---|
-| 状态 | 实验性；对协议版本 `0.3.0` 具有规范性 |
-| 协议版本 | `0.3.0` |
+| 状态 | 实验性；对协议版本 `0.5.0` 具有规范性 |
+| 协议版本 | `0.5.0` |
 | 范围 | Remote Agent 搜索、发现、订阅和运行时端点发布 |
 | 目标 | 通过少量稳定对象返回 Agent 调用描述和当前可用地址 |
 
@@ -39,7 +39,7 @@ RAD 返回调用远程 Agent 所需的元数据，但不代理调用，也不定
 
 ### 1.1 操作
 
-RAD 0.3.0 定义五个操作：
+RAD 0.5.0 定义五个操作：
 
 | 操作 | 输入 | 输出 | 语义 |
 |---|---|---|---|
@@ -55,7 +55,7 @@ Binding 可以只投递变化提示，并要求 Consumer 执行一次经过鉴�
 
 ### 1.2 范围外内容
 
-RAD 0.3.0 不定义 Agent 管理生命周期、客户端连接与重连、内部存储、历史兼容、
+RAD 0.5.0 不定义 Agent 管理生命周期、客户端连接与重连、内部存储、历史兼容、
 MCP、调用代理、凭据、重试或负载均衡。Agent 资源和版本语义由
 [Agent 管理规范](./agent-management-spec.md)定义。
 
@@ -98,7 +98,7 @@ Agent 版本采用 `MAJOR.MINOR.PATCH[-PRERELEASE]`，总长不超过 64 个字�
 核心数值标识不得包含前导零。Prerelease 标识由 `.` 分隔，每一项匹配
 `[0-9A-Za-z-]+`；只包含数字的 Prerelease 标识不得带前导零，除非它恰好是 `0`。
 
-RAD 0.3.0 不接受 build metadata。版本身份和比较均大小写敏感，顺序遵循 SemVer
+RAD 0.5.0 不接受 build metadata。版本身份和比较均大小写敏感，顺序遵循 SemVer
 优先级，不得先将版本转换为固定宽度整数。
 
 ### 2.4 版本范围
@@ -114,7 +114,7 @@ Agent 版本，比较使用 RAD SemVer，而不是 Maven `ComparableVersion`。
 | `[1.0.0,)` | `version >= 1.0.0` |
 | `(,2.0.0)` | `version < 2.0.0` |
 
-RAD 0.3.0 只接受一个精确版本或一个连续区间，不接受多个版本或区间的并集。表达式
+RAD 0.5.0 只接受一个精确版本或一个连续区间，不接受多个版本或区间的并集。表达式
 不得包含空格，并且至少包含一个边界。缺失下界时使用 `(`，缺失上界时使用 `)`。
 
 上下界都存在时，下界必须早于上界。只有两端均为闭区间时才允许上下界相等，此时
@@ -124,7 +124,7 @@ RAD 0.3.0 只接受一个精确版本或一个连续区间，不接受多个版�
 
 ### 2.5 协议版本协商
 
-Binding 通过其文档或 Nacos 能力协商声明支持 RAD 0.3.0。RAD 根消息本身不携带
+Binding 通过其文档或 Nacos 能力协商声明支持 RAD 0.5.0。RAD 根消息本身不携带
 协议版本或 Schema 版本字段。
 
 ## 3. 公共模型
@@ -235,12 +235,11 @@ Filter 的全部字段都是可选字段：
 | `weight` | 否 | 同一 Priority 内的权重，数字 `0..10000`，缺省为 `1` |
 | `metadata` | 否 | 最多 32 个扁平字符串键值 |
 | `healthy` | 生效值 | 非 null boolean，缺省 true；Runtime 返回当前聚合健康，Declared 仅假定可用，不代表探活。 |
-| `enabled` | 生效值 | 非 null boolean，缺省 true；由 Nacos 维护，发现排除 disabled runtime 地址。 |
-| `state` | 否 | Nacos 维护；发现结果非空时 AVAILABLE/UNHEALTHY 必须与 healthy 一致。 |
+| `enabled` | 生效值 | 非 null boolean，缺省 true；Runtime 注册允许指定，Naming 运维覆盖优先；发现排除 disabled contribution。 |
 
 上下文规则：
 
-- Register 允许提交 `healthy`，缺省 true。提交的 bindings 和管理字段忽略，绑定以批次字段为准。
+- Register 允许提交 `healthy` 和 `enabled`，均缺省 true、显式 null 非法。bindings 按第 3.12 节继承 Batch 默认值；EndpointSet revision 和观测时间由服务端维护。
 - `DECLARED` Endpoint 返回生效值 `healthy=true`、`enabled=true`，不表示探活结果，也不进入版本定义存储。
 - `RUNTIME` 发现结果中的 Endpoint 必须包含 `healthy`。
 - Deregister 只读取 `uri` 和 `transport`，忽略共享 Endpoint 的其他属性；允许直接传入查询得到的 Endpoint。它们是公开对象中代表 Endpoint
@@ -300,6 +299,7 @@ EndpointSet {
 ```text
 AgentDiscoveryResult
 ├── namespaceId / agentName / version / contentDigest
+├── description? / tags?
 └── callInterfaces[] AgentCallInterface
     ├── protocol / protocolVersion?
     ├── descriptorMediaType / nativeDescriptor
@@ -320,7 +320,12 @@ AgentDiscoveryResult
 - `nativeDescriptor` 可以是任意非 null JSON 值。
 - `descriptorMediaType` 描述 `nativeDescriptor`。
 - `endpointSets[]` 是本次发现快照的权威地址，`nativeDescriptor` 中的地址不得覆盖它。
-- 结果不返回展示字段、Owner、Scope、Extensions 或发布者身份。
+- `description`、`tags` 来自当前 Agent 公共元数据，查询旧的精确版本时也是如此；
+  与所选版本的 nativeDescriptor 描述独立。描述可选、最多 2048 字符；标签可选、
+  大小写敏感且不重复，最多 32 个，每个 1..64 字符，无标签时省略或返回 null。
+  即使过滤后 callInterfaces 为空，仍返回这些公共字段。
+- 结果不返回 displayName、iconUrl、provider、Owner、Scope、Extensions 或发布者身份。
+  复用当前链路已经读取的 Agent 元数据，不增加查询。
 
 ### 3.11 Digest 与 Revision
 
@@ -349,19 +354,29 @@ protocol、source 和选择器语义：
 `AgentEndpointRegistrationBatch` 包含：
 
 ```text
-namespaceId / agentName / runtimeVersion / protocol
-versionRange?            # 缺省为精确范围 [runtimeVersion]
-endpoints[]              # 1..1000
+namespaceId / agentName / protocol
+runtimeVersion? / versionRange?    # 每个 Endpoint 的逐字段默认值
+endpoints[]                       # 1..1000，每个 Endpoint 可输入一条绑定
 ```
 
-`runtimeVersion` 是实际部署的实现版本。`versionRange` 描述该部署可以服务的 Agent
-版本。字段缺失时，服务端将其规范化为 `[runtimeVersion]`。`runtimeVersion` 必须包含
-在生效范围内。
+每个 Endpoint 只有一条生效绑定。bindings 缺省或 null 时继承 Batch；提供列表时必须恰好含一个
+非 null 对象，空列表、多条绑定、null 列表项均拒绝。逐字段计算：
 
-对于同一 Publisher 和 `(namespaceId, agentName, protocol)`，该数组是完整的期望
-Endpoint Batch。Register 完整替换此前 Batch，未提交的 Endpoint 会被删除。因此同一
-Publisher 在该范围内同时只有一个有效 `runtimeVersion` 和 `versionRange`；修改其中
-任一值都是完整替换，不是内部 Group 更新。
+```text
+runtimeVersion = Endpoint.binding.runtimeVersion ?? Batch.runtimeVersion
+versionRange   = Endpoint.binding.versionRange ?? Batch.versionRange
+                 ?? exact(runtimeVersion)
+```
+
+仅缺省/null 表示继承，空字符串非法；提供的 Batch 默认字段本身须语法合法。最终 runtimeVersion
+必须存在且被生效范围包含。不能在 Endpoint 覆盖前补 Batch 精确范围：2.0.0 可以继承
+[1.0.0,2.0.0]，不能继承 [1.0.0,2.0.0)；Batch 无范围时才补 [2.0.0]。
+
+每个 Publisher 对 `(namespaceId, agentName, protocol)` 提交完整期望快照；全部 Endpoint 的
+生效绑定通过校验后才原子替换，任一非法则原发布不变。不同 Endpoint 可以携带不同版本对。
+输入每 Endpoint 仅一条，查询仍可聚合多个 Publisher 的多条绑定。SDK 深复制并保存展开后的
+绑定用于局部注销、缓存和 redo；HTTP/gRPC 服务端共用同一规则，不依赖 SDK 预处理。
+预注册仍不要求 Agent/Version 存在。
 
 `AgentEndpointDeregistrationBatch` 包含：
 
@@ -507,6 +522,10 @@ Nacos Watch Binding 的 Fingerprint 格式为
 Canonical JSON 编码的完整公开 `AgentDiscoveryResult`。保留本规范定义的公开数组顺序，
 Object/Map Key 排序；排除内部 Owner、Connection、Heartbeat、Task 和 Timestamp 字段。
 
+description 和 tags 参与发现指纹；tags 按字符串值排序后比较，单纯调整顺序不触发回调，
+缺省与 null 等价。元数据修改复用已有资源失效通知，仅在公开投影变化时通知订阅者；
+不改变 contentDigest 或 Endpoint sourceRevision。0.5.0 中这两个字段都缺省时，指纹保持原值。
+
 ## 7. Register 与 Deregister
 
 ### 7.1 校验与预注册
@@ -539,8 +558,8 @@ Agent 和 Version 定义不拥有 Publication 生命周期。定义的创建、�
 (namespaceId, agentName, protocol)
 ```
 
-`runtimeVersion` 和 `versionRange` 是整份 Batch 共享的内容，不属于额外的 Publication
-身份，也不形成服务端管理的 Binding Group。
+Batch 的 `runtimeVersion` 和 `versionRange` 是可选默认值，每个 Endpoint 展开成一组生效值；
+不属于额外的 Publication 身份，也不形成服务端管理的 Binding Group。
 
 规则：
 
@@ -569,8 +588,8 @@ Batch 的既有和请求条目数执行每 Client 软水位判断；该检查与
 Publisher Transport 提供不透明的发布者身份和存活语义，发布者身份不进入发现结果。
 
 每个 Publisher 对一个 `(namespaceId, agentName, protocol)` Naming Service 最多
-贡献一份完整 Batch，并且该 Batch 只有一组 singular `runtimeVersion` 和 `versionRange`。
-不同 Publisher 可以贡献不同 pair。Nacos 读取路径从 Naming `ServiceStorage` 加载完整内部
+贡献一份完整 Batch；其中每个 Endpoint 只有一组 singular `runtimeVersion` 和 `versionRange`，
+不同 Endpoint 和不同 Publisher 可以贡献不同 pair。Nacos 读取路径从 Naming `ServiceStorage` 加载完整内部
 Service 投影，保留 Range 命中目标 Version 的 Contribution，再按公开 Endpoint 自然键聚合
 查询时 Binding。Agent 代码不直接遍历 Naming Client Index。
 
@@ -652,17 +671,23 @@ Descriptor、URI 和 Metadata 都是不可信输入，不得保存明文凭据�
 连接归属、发布者身份、心跳或内部路由信息。Endpoint Metadata 不得使用 Nacos 内部
 保留 Key。
 
+
+HTTP Watch 在初次比较及异步协调时，还使用捕获的非敏感 owner 身份重新检查各投影的读取可见性。
+即使共享内容指纹未改变，owner 被拒绝或结果不确定时也仅返回对应的 opaque changed item id，
+由后续 Discover 决定错误或业务内容。可见性判断不写入共享投影或指纹，仍可读的用户在指纹相同
+时继续等待。这不改变 HTTP 请求级鉴权边界，同时避免权限变化后客户端一直静默保留旧内容。
+
 ## 12. Schema 与演进
 
-RAD、Watch binding、Agent 管理和 Agent Artifact 使用同一个公开契约发布版本 `0.3.0`，
+RAD、Watch binding、Agent 管理和 Agent Artifact 使用同一个公开契约发布版本 `0.5.0`，
 配套 Schema 及相互引用必须同步选择该版本。公开 Schema 使用不带版本目录的固定路径，
 历史修订保留在 Git 中。需要可复现校验时，必须从同一个固定 Git tag 或 commit 读取整组
 Schema。Artifact payload 的 `schemaVersion` 和内部存储版本继续保留各自含义。
 
 规范性领域配套文件是
-[RAD 0.3.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json)。
+[RAD 0.5.0 JSON Schema](../../schemas/ai/rad/rad-protocol.schema.json)。
 实验性的 Nacos 传输信封由独立的
-[RAD Watch Binding 0.3.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
+[RAD Watch Binding 0.5.0 JSON Schema](../../schemas/ai/rad/watch/rad-watch-binding.schema.json)
 定义，不扩展不可变的 RAD 根消息集合。两者都使用 JSON Schema Draft 2020-12。普通
 对象使用严格属性集合，只有 Metadata Map 和 `nativeDescriptor` 是开放内容。Schema
 Default 只是注解，生效值由实现物化。
@@ -767,7 +792,7 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 
 ## 地址模型统一的验收
 
-Runtime 注册/完整替换的 healthy 由禁止提交调整为接受当前健康值；bindings、管理状态、观测时间由 Nacos 维护，提交时忽略。采用上述 Endpoint 生效默认值；RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
+Runtime 注册/完整替换接受 healthy/enabled；bindings 按 Batch 默认值展开为每 Endpoint 一条；EndpointSet revision 和观测时间由 Nacos 维护。采用上述 Endpoint 生效默认值；RUNTIME 输出 healthy/bindings 必填、三层结构与 Watch 比较语义保持。实施时同步输入 Schema 和 SDK/HTTP/gRPC 校验。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
 
@@ -780,6 +805,12 @@ HTTP 参数或 gRPC 信封与业务模型组合后才是完整逻辑请求。Sch
 
 ### Agent JSON 模型不依赖序列化注解
 
-Agent 模型不再携带 Jackson inclusion/ignore 注解。可选引用字段由序列化器决定省略或输出 null，两者均表示未提供；发现/Search 仍禁止携带非空的管理专用内容。Endpoint 四个标量始终有生效值：priority=0、weight=1、healthy=true、enabled=true，priority 越小越优先。AgentVersionInfo 的 onlineCnt()（缺省 0）和 latestVersion()（缺省 null）仅为 Java 辅助方法，不新增 JSON 字段。Endpoint state 与 health/enabled 语义重复，不新增指纹分量。
+Agent 模型不再携带 Jackson inclusion/ignore 注解。可选引用字段由序列化器决定省略或输出 null，两者均表示未提供；发现/Search 仍禁止携带非空的管理专用内容。Endpoint 四个标量始终有生效值：priority=0、weight=1、healthy=true、enabled=true，priority 越小越优先。AgentVersionInfo 的 onlineCnt()（缺省 0）和 latestVersion()（缺省 null）仅为 Java 辅助方法，不新增 JSON 字段。Endpoint 不包含 state；Console 按 enabled=false、healthy=false、其余依次显示 DISABLED、UNHEALTHY、AVAILABLE，不新增指纹分量。
 
 nativeDescriptor 仍是解析后的 JSON 值，不是原始字符串。本次保持现有序列化器政策，包括定义存储时过滤对象 null 成员，不承诺任意协议 JSON 的逐字节保留。发现指纹使用存储读回的 descriptor 和规范化语义字段，不依赖传输 JSON 的字段顺序。
+
+注册保留 disabled contribution，供管理查询读取。发现先排除各 disabled contribution，再聚合健康和 bindings，其他 Publisher 仍可使同一自然键可发现。完整替换可以重新启用贡献；heartbeat 不覆盖 enabled，Naming 运维覆盖保持原优先级。移除 Endpoint.state 和 RuntimeEndpointState。
+
+定义 endpointSourceOrder 必须恰好包含 DECLARED/RUNTIME 各一次，仅表示推荐顺序。Discover/Watch 未传来源 Filter 时按定义顺序返回两个 Set，保留空 Set；Filter 可以单选任一来源，同时选两种时仍使用定义顺序。显式选择 RUNTIME 且无匹配地址时保留空 Set，不补入 DECLARED。
+
+公开 Endpoint metadata 使用 `__nacos.agent.endpoint.protocolVersion__`（非空可打印 ASCII，最多 64 字符）与 `__nacos.agent.endpoint.tenant__`（最多 256 字符，允许显式空串）支持 A2A 兼容。有效值参与 Runtime source revision 与发现指纹。直接复用历史 Nacos 保留键；Endpoint metadata 仅允许这两个兼容保留键，其他控制键仍禁止写入，非法输入直接拒绝。

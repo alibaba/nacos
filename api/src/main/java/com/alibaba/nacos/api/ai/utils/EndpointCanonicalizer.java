@@ -46,6 +46,46 @@ public final class EndpointCanonicalizer {
     }
     
     /**
+     * Resolve one registration binding by inheriting each missing field from the Batch.
+     *
+     * @param endpoint source Endpoint, with zero or one explicit input binding
+     * @param defaultRuntimeVersion optional Batch runtime Version
+     * @param defaultVersionRange optional Batch compatible Version range
+     * @return independent binding with a required Version and canonical containing range
+     * @throws IllegalArgumentException when cardinality or the effective binding is invalid
+     */
+    public static RuntimeVersionBinding canonicalizeRuntimeBinding(Endpoint endpoint,
+        String defaultRuntimeVersion, String defaultVersionRange) {
+        if (endpoint == null) {
+            throw new IllegalArgumentException("Endpoint must not be null");
+        }
+        String runtimeVersion = defaultRuntimeVersion;
+        String versionRange = defaultVersionRange;
+        if (endpoint.getBindings() != null) {
+            if (endpoint.getBindings().size() != 1 || endpoint.getBindings().get(0) == null) {
+                throw new IllegalArgumentException("Registration bindings must contain one item");
+            }
+            RuntimeVersionBinding input = endpoint.getBindings().get(0);
+            if (input.getRuntimeVersion() != null) {
+                runtimeVersion = input.getRuntimeVersion();
+            }
+            if (input.getVersionRange() != null) {
+                versionRange = input.getVersionRange();
+            }
+        }
+        AgentVersion version = AgentVersion.parse(runtimeVersion);
+        AgentVersionRange range = versionRange == null ? AgentVersionRange.exact(version)
+            : AgentVersionRange.parse(versionRange);
+        if (!range.contains(version)) {
+            throw new IllegalArgumentException("versionRange must contain runtimeVersion");
+        }
+        RuntimeVersionBinding result = new RuntimeVersionBinding();
+        result.setRuntimeVersion(runtimeVersion);
+        result.setVersionRange(range.getValue());
+        return result;
+    }
+    
+    /**
      * Return a canonical copy of an Endpoint. Defaults are materialized and metadata keys are sorted.
      *
      * @param endpoint source Endpoint
@@ -59,6 +99,18 @@ public final class EndpointCanonicalizer {
         CanonicalEndpointUri canonicalUri = parseUri(endpoint.getUri());
         AgentValidationUtils.validateTransport(endpoint.getTransport());
         
+        if (endpoint.getPriority() == null) {
+            throw new IllegalArgumentException("Endpoint priority must not be null");
+        }
+        if (endpoint.getWeight() == null) {
+            throw new IllegalArgumentException("Endpoint weight must not be null");
+        }
+        if (endpoint.getHealthy() == null) {
+            throw new IllegalArgumentException("Endpoint healthy must not be null");
+        }
+        if (endpoint.getEnabled() == null) {
+            throw new IllegalArgumentException("Endpoint enabled must not be null");
+        }
         int priority = endpoint.getPriority();
         if (priority < 0) {
             throw new IllegalArgumentException("Endpoint priority must not be negative");
@@ -76,7 +128,6 @@ public final class EndpointCanonicalizer {
         result.setWeight(weight);
         result.setHealthy(endpoint.getHealthy());
         result.setEnabled(endpoint.getEnabled());
-        result.setState(endpoint.getState());
         if (endpoint.getBindings() != null) {
             result.setBindings(new ArrayList<RuntimeVersionBinding>());
             for (RuntimeVersionBinding binding : endpoint.getBindings()) {

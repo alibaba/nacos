@@ -32,6 +32,8 @@ import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -917,11 +919,12 @@ class AgentWatchManagerTest {
         assertEquals(0, manager.intentCount());
     }
     
-    @Test
-    void pendingTerminalDiscoverFailureRemovesIntentAndNotifiesListener() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {403, 50105})
+    void pendingTerminalDiscoverFailureRemovesIntentAndNotifiesListener(int code) throws Exception {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenThrow(notFound("missing"))
-            .thenThrow(new NacosException(NacosException.NO_RIGHT, "denied"));
+            .thenThrow(new NacosException(code, "denied"));
         TestListener listener = new TestListener(null);
         manager.subscribe(reference("agent-a"), null, listener);
         
@@ -930,7 +933,7 @@ class AgentWatchManagerTest {
         runCallback(1);
         
         assertEvent(listener, 0, NacosAgentDiscoveryEventType.UNAVAILABLE,
-            NacosException.NO_RIGHT);
+            code);
         assertEquals(0, manager.intentCount());
         assertEquals(0, manager.subscriptionCount());
     }
@@ -1184,6 +1187,61 @@ class AgentWatchManagerTest {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(null);
         assertNull(manager.subscribe(reference("agent-a"), null, new TestListener(null)));
         assertEquals(1, manager.intentCount());
+    }
+    
+    @Test
+    void lateEnqueuedSnapshotCannotOverwriteNewerInitialDelivery() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        manager.subscribe(reference, null, listener);
+        java.lang.reflect.Field field = AgentWatchManager.class.getDeclaredField("intentsById");
+        field.setAccessible(true);
+        Map<?, ?> intents = (Map<?, ?>) field.get(manager);
+        Object intent = intents.values().iterator().next();
+        // Capture the handoff between snapshot creation under the manager lock and dispatch.
+        java.lang.reflect.Method capture = AgentWatchManager.class.getDeclaredMethod(
+            "snapshotNotifications", intent.getClass());
+        capture.setAccessible(true);
+        List<?> late = (List<?>) capture.invoke(manager, intent);
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "different", false);
+        scheduled.remove(0).run();
+        manager.notifyCurrent(reference, null, listener);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        int delivered = listener.events.size();
+        java.lang.reflect.Method dispatch =
+            AgentWatchManager.class.getDeclaredMethod("dispatch", List.class);
+        dispatch.setAccessible(true);
+        dispatch.invoke(manager, late);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(delivered, listener.events.size());
+        assertTrue(listener.events.stream()
+            .allMatch(event -> "2.0.0".equals(event.getAgentDiscoveryResult().getVersion())));
+    }
+    
+    @Test
+    void initialDeliveryHonorsRemovalAndDoesNotNotifyOtherListener() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A));
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        TestListener other = new TestListener(null);
+        manager.subscribe(reference, null, listener);
+        manager.subscribe(reference, null, other);
+        manager.notifyCurrent(reference, null, listener);
+        manager.unsubscribe(reference, null, listener);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertTrue(listener.events.isEmpty());
+        assertTrue(other.events.isEmpty());
+        manager.notifyCurrent(reference, null, listener);
+        assertTrue(callbacks.isEmpty());
     }
     
     private void runScheduled(int index) {

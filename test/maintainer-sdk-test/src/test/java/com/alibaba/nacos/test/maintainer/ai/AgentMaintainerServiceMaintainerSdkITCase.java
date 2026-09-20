@@ -400,7 +400,7 @@ class AgentMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase 
         result.setProtocolVersion("1.0");
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor(descriptor);
-        result.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
+        result.setEndpointSourceOrder(java.util.Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         return result;
     }
     

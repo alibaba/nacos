@@ -148,6 +148,8 @@ class EmbeddedAiResourceVersionPersistServiceImplTest {
         assertEquals(0, service.updateStatus("public", "skill-a", "skill", "1.0.0",
             "published"));
         assertEquals(0, service.updateStorage("public", "skill-a", "skill", "1.0.0", "{}"));
+        assertEquals(0,
+            service.updateContent("public", "skill-a", "skill", "1.0.0", "{}", "desc", "writer"));
         assertEquals(0, service.updateStorageAndDesc("public", "skill-a", "skill", "1.0.0",
             "{}", "desc"));
         assertEquals(0, service.updatePublishPipelineInfo("public", "skill-a", "skill",
@@ -175,6 +177,17 @@ class EmbeddedAiResourceVersionPersistServiceImplTest {
             1L));
         assertEquals(1, service.updateStorageMd5("public", "skill-a", "skill", "1.0.0",
             "md5"));
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void updateContentShouldUseOrdinaryEmbeddedUpdate(boolean success) {
+        when(databaseOperate.queryOne(anyString(), any(Object[].class),
+            eq(AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER))).thenReturn(newVersion());
+        when(databaseOperate.blockUpdate()).thenReturn(success);
+        assertEquals(success ? 1 : 0,
+            service.updateContent("public", "agent", "agent", "1.0.0", "{}", "desc", "writer"));
+        Mockito.verify(databaseOperate).blockUpdate();
     }
     
     private static AiResourceVersion newVersion() {

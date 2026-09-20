@@ -23,12 +23,16 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -39,13 +43,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -56,6 +63,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -297,4 +305,58 @@ class JdkHttpClientRequestTest {
         field.setAccessible(true);
         return (HttpURLConnection) field.get(actual);
     }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testResponseLossOnlyReplaysRepeatableBodies(boolean repeatable) throws Exception {
+        AtomicInteger received = new AtomicInteger();
+        HttpServer server = HttpServer.create(
+            new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/publish", exchange -> {
+            IoUtils.toString(exchange.getRequestBody(), "UTF-8");
+            if (received.incrementAndGet() > 1) {
+                byte[] response = "ok".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+            }
+            exchange.close();
+        });
+        server.start();
+        try (JdkHttpClientRequest request = new JdkHttpClientRequest(HttpClientConfig.builder()
+            .setConTimeOutMillis(2000).setReadTimeOutMillis(2000).build())) {
+            RequestHttpEntity entity = new RequestHttpEntity(null,
+                Header.newInstance().setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                null, Collections.singletonMap("name", "Agent & 中文"), repeatable);
+            HttpClientResponse response = request.execute(URI.create("http://127.0.0.1:"
+                + server.getAddress().getPort() + "/publish"), "POST", entity);
+            try {
+                if (repeatable) {
+                    assertEquals(200, response.getStatusCode());
+                    assertEquals(2, received.get());
+                } else {
+                    assertThrows(IOException.class, response::getStatusCode);
+                    assertEquals(1, received.get());
+                }
+            } finally {
+                response.close();
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+    
+    @Test
+    void testNonRepeatableBodyUsesEncodedByteLengthWithoutChangingNextRequest() throws Exception {
+        Header header = Header.newInstance().setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        Map<String, String> form = Collections.singletonMap("name", "中文 & agent");
+        RequestHttpEntity entity = new RequestHttpEntity(null, header, null, form, false);
+        httpClientRequest.execute(uri, "POST", entity);
+        int length = HttpUtils.encodingParams(form, StandardCharsets.UTF_8.name())
+            .getBytes(StandardCharsets.UTF_8).length;
+        verify(connection).setFixedLengthStreamingMode(length);
+        clearInvocations(connection);
+        httpClientRequest.execute(uri, "POST", new RequestHttpEntity(header, form));
+        verify(connection, never()).setFixedLengthStreamingMode(anyInt());
+    }
+    
 }

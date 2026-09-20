@@ -96,6 +96,10 @@ HTTP Controller 方法解析规则：
   不一致，因此默认必须关闭。启用旧解析器时，必须在移除 context path 前使用一致的方式解析
   request URI 和 context path，包括任一值包含百分号编码字符的情况。
 
+方法解析遇到 HTTP method 不匹配时没有业务 handler，应交由 Spring MVC 返回 405，
+不能将正常的方法拒绝包装为 500；其他未预期的解析失败仍保持报错。HEAD 解析为 GET
+的同一个 handler，沿用其身份校验；框架生成的 OPTIONS 仅暴露允许的方法。
+
 ## 4. gRPC 请求过滤模型
 
 gRPC 业务请求由 `GrpcRequestAcceptor` 接收，解析为 `Request` 对象，匹配到 `RequestHandler`，

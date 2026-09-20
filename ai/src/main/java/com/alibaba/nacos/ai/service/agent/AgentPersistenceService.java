@@ -140,9 +140,21 @@ public class AgentPersistenceService {
             AiConstants.Agent.VERSION_STATUS_ONLINE, resourceSource);
     }
     
+    AgentVersionDetail createInitialDraftForPublication(AgentSummary agent,
+        AgentVersionDetail initialDraft) throws NacosException {
+        return createInitialVersion(agent, initialDraft, AiConstants.Agent.VERSION_STATUS_DRAFT,
+            RESOURCE_SOURCE_LOCAL, false);
+    }
+    
     private AgentVersionDetail createInitialVersion(AgentSummary agent,
         AgentVersionDetail initialVersion, String status, String resourceSource)
         throws NacosException {
+        return createInitialVersion(agent, initialVersion, status, resourceSource, true);
+    }
+    
+    private AgentVersionDetail createInitialVersion(AgentSummary agent,
+        AgentVersionDetail initialVersion, String status, String resourceSource,
+        boolean recoverEquivalent) throws NacosException {
         validateCreateInputs(agent, initialVersion, status);
         Map<String, List<String>> onlineVersionProtocols =
             Collections.<String, List<String>>emptyMap();
@@ -178,12 +190,12 @@ public class AgentPersistenceService {
             AiResource existingResource = resourcePersistService.find(resourceRow.getNamespaceId(),
                 resourceRow.getName(), resourceRow.getType());
             if (existingResource != null) {
-                if (!sameResource(existingResource, resourceRow)) {
+                if (!recoverEquivalent || !sameResource(existingResource, resourceRow)) {
                     throw conflict("Agent already exists: " + resourceRow.getName(), null);
                 }
             }
             
-            claimVersion(versionRow);
+            claimVersion(versionRow, recoverEquivalent);
             storageService.save(prepared);
             
             if (existingResource == null) {
@@ -194,6 +206,9 @@ public class AgentPersistenceService {
                             "Agent Resource insert returned an invalid id");
                     }
                 } catch (RuntimeException insertFailure) {
+                    if (!recoverEquivalent) {
+                        throw mapResourceInsertFailure(resourceRow, insertFailure);
+                    }
                     AiResource recoveredResource;
                     try {
                         recoveredResource = resourcePersistService.find(
@@ -374,6 +389,12 @@ public class AgentPersistenceService {
         }
     }
     
+    AgentVersionDetail updateDraftFromPublication(String namespaceId, String agentName,
+        AgentVersionDetail draft) throws NacosException {
+        return updateDraft(namespaceId, agentName, draft.getVersion(), draft.getCallInterfaces(),
+            draft.getChangeDescription(), draft.getAuthor(), true);
+    }
+    
     /**
      * Replace one draft Version.
      *
@@ -393,6 +414,13 @@ public class AgentPersistenceService {
     public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
         List<AgentCallInterface> callInterfaces, String changeDescription)
         throws NacosException {
+        return updateDraft(namespaceId, agentName, version, callInterfaces, changeDescription,
+            null, false);
+    }
+    
+    private AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
+        List<AgentCallInterface> callInterfaces, String changeDescription, String author,
+        boolean replaceAuthor) throws NacosException {
         validateDraftUpdateInputs(namespaceId, agentName, version, callInterfaces,
             changeDescription);
         try {
@@ -410,8 +438,12 @@ public class AgentPersistenceService {
             validateUpdatedDraft(currentRow, targetDescriptor, callInterfaces,
                 changeDescription);
             storageService.save(prepared);
-            int updated = versionPersistService.updateStorageAndDesc(namespaceId, agentName,
-                Constants.Agent.RESOURCE_TYPE_AGENT, version, targetStorage, changeDescription);
+            int updated = replaceAuthor
+                ? versionPersistService.updateContent(namespaceId, agentName,
+                    Constants.Agent.RESOURCE_TYPE_AGENT, version, targetStorage, changeDescription,
+                    author)
+                : versionPersistService.updateStorageAndDesc(namespaceId, agentName,
+                    Constants.Agent.RESOURCE_TYPE_AGENT, version, targetStorage, changeDescription);
             if (updated != 1) {
                 throw serverError("Agent draft Version row was not updated: " + agentName + '@'
                     + version, null);
@@ -434,6 +466,12 @@ public class AgentPersistenceService {
      */
     public AgentVersionDetail createDraft(String namespaceId, String agentName,
         AgentVersionDetail draft, String basedOnVersion) throws NacosException {
+        return createDraft(namespaceId, agentName, draft, basedOnVersion, true);
+    }
+    
+    AgentVersionDetail createDraft(String namespaceId, String agentName,
+        AgentVersionDetail draft, String basedOnVersion, boolean recoverEquivalent)
+        throws NacosException {
         validateSubsequentDraftInputs(namespaceId, agentName, draft, basedOnVersion);
         try {
             AgentSummary currentAgent = getAgent(namespaceId, agentName);
@@ -451,7 +489,8 @@ public class AgentPersistenceService {
                 normalizeSubsequentDraft(namespaceId, agentName, draft, callInterfaces,
                     prepared.getDescriptor());
             AgentModelValidator.validateVersionDetail(normalizedDraft);
-            claimVersion(toVersionRow(normalizedDraft, prepared.getDescriptor()));
+            claimVersion(toVersionRow(normalizedDraft, prepared.getDescriptor()),
+                recoverEquivalent);
             storageService.save(prepared);
             markEditingVersion(namespaceId, agentName, draft.getVersion());
             return getAgentVersion(namespaceId, agentName, draft.getVersion());
@@ -1390,10 +1429,15 @@ public class AgentPersistenceService {
     }
     
     private void claimVersion(AiResourceVersion version) throws NacosException {
+        claimVersion(version, true);
+    }
+    
+    private void claimVersion(AiResourceVersion version, boolean recoverEquivalent)
+        throws NacosException {
         AiResourceVersion existingVersion = versionPersistService.find(version.getNamespaceId(),
             version.getName(), version.getType(), version.getVersion());
         if (existingVersion != null) {
-            if (sameVersion(existingVersion, version)) {
+            if (recoverEquivalent && sameVersion(existingVersion, version)) {
                 return;
             }
             throw conflict(versionConflictMessage(version), null);
@@ -1404,6 +1448,9 @@ public class AgentPersistenceService {
                 throw new IllegalStateException("Agent Version insert returned an invalid id");
             }
         } catch (RuntimeException insertFailure) {
+            if (!recoverEquivalent) {
+                throw mapVersionInsertFailure(version, insertFailure);
+            }
             final AiResourceVersion recoveredVersion;
             try {
                 recoveredVersion = versionPersistService.find(version.getNamespaceId(),

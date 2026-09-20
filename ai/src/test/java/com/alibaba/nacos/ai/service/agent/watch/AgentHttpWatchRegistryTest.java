@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import static org.mockito.Mockito.mock;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
@@ -36,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentHttpWatchRegistryTest {
+    
+    private final AgentClientMigrationGuard migrationGuard = mock(AgentClientMigrationGuard.class);
     
     @Test
     void testReplacementSoftWatermarkAndCapacityReuse() throws Exception {
@@ -156,6 +160,6 @@ class AgentHttpWatchRegistryTest {
         }
         return new AgentHttpWatchWaiter(owner, generation, 1000L, items, bytes,
             ignored -> {
-            });
+            }, migrationGuard, (context, key) -> AgentWatchOwnerEligibility.ALLOWED);
     }
 }

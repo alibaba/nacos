@@ -52,6 +52,32 @@ class AgentDiscoveryCanonicalizerTest {
         "murmur3-x64-128-v1:0123456789abcdef0123456789abcdef";
     
     @Test
+    void catalogMetadataChangesFingerprintWithoutChangingVersionContent() {
+        AgentDiscoveryResult result = fullResult();
+        String absent = AgentDiscoveryCanonicalizer.fingerprint(result);
+        result.setTags(Collections.<String>emptyList());
+        assertEquals(absent, AgentDiscoveryCanonicalizer.fingerprint(result));
+        result.setDescription("Question answering");
+        result.setTags(new ArrayList<String>(Arrays.asList("research", "chat")));
+        String described = AgentDiscoveryCanonicalizer.fingerprint(result);
+        assertNotEquals(absent, described);
+        AgentDiscoveryResult copy = AgentDiscoveryCanonicalizer.canonicalizeResult(result);
+        assertEquals("Question answering", copy.getDescription());
+        assertEquals(Arrays.asList("chat", "research"), copy.getTags());
+        assertEquals(Arrays.asList("research", "chat"), result.getTags());
+        assertNotSame(result.getTags(), copy.getTags());
+        result.setTags(Arrays.asList("chat", "research"));
+        assertEquals(described, AgentDiscoveryCanonicalizer.fingerprint(result));
+        result.setTags(Collections.singletonList("chat"));
+        assertNotEquals(described, AgentDiscoveryCanonicalizer.fingerprint(result));
+        result.setTags(Arrays.asList("chat", "research"));
+        result.setDescription("Updated description");
+        assertNotEquals(described, AgentDiscoveryCanonicalizer.fingerprint(result));
+        assertEquals(copy.getContentDigest(), result.getContentDigest());
+        assertEquals(described, AgentDiscoveryCanonicalizer.fingerprint(copy));
+    }
+    
+    @Test
     void canonicalRequestDefaultsNamespaceAndPreservesSelectorSemantics() {
         AgentDiscoveryRequest omitted = request(null, null, null, null);
         AgentDiscoveryRequest exact = request("tenant", "1.2.3", null, null);

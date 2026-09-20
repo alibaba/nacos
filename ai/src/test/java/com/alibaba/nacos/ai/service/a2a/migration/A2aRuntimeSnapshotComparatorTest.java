@@ -46,6 +46,20 @@ class A2aRuntimeSnapshotComparatorTest {
     }
     
     @Test
+    void shouldUseIdenticalReservedKeysAndNormalizeHistoricalEmptyProtocolVersion()
+        throws Exception {
+        AgentEndpoint endpoint = endpoint("1.0.0", "127.0.0.1", 8080, false);
+        Instance historical = legacy(endpoint);
+        Instance canonical = canonical(endpoint, historical);
+        assertTrue(comparator.equivalent(Collections.singletonList(historical),
+            Collections.singletonList(canonical), "1.0.0"));
+        canonical.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY,
+            "bad version");
+        assertThrows(IllegalArgumentException.class, () -> comparator.equivalent(
+            Collections.singletonList(historical), Collections.singletonList(canonical), "1.0.0"));
+    }
+    
+    @Test
     void shouldCompareCompletePublicRuntimeSemanticsRegardlessOfOrder() throws Exception {
         AgentEndpoint first = endpoint("1.0.0", "2001:db8::1", 8080, true);
         first.setProtocolVersion("0.3");
@@ -89,11 +103,11 @@ class A2aRuntimeSnapshotComparatorTest {
         assertTrue(comparator.equivalent(Collections.singletonList(historical),
             Collections.singletonList(canonical), "1.0.0"));
         
-        canonical.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "1.0");
+        canonical.getMetadata().put("__nacos.agent.endpoint.protocolVersion__", "1.0");
         assertFalse(comparator.equivalent(Collections.singletonList(historical),
             Collections.singletonList(canonical), "1.0.0"));
         canonical = canonical(endpoint, historical);
-        canonical.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, "tenant-b");
+        canonical.getMetadata().put("__nacos.agent.endpoint.tenant__", "tenant-b");
         assertFalse(comparator.equivalent(Collections.singletonList(historical),
             Collections.singletonList(canonical), "1.0.0"));
         canonical = canonical(endpoint, historical);

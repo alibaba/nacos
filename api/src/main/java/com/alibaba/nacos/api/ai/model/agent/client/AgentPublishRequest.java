@@ -19,7 +19,8 @@ package com.alibaba.nacos.api.ai.model.agent.client;
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentDraftRequest;
 
 /**
- * Client definition publication; autoSubmit defaults to false and uses ordinary submit.
+ * Client definition publication; a new first Version is submitted automatically.
+ * Other drafts follow autoSubmit (default false); existing non-drafts remain unchanged.
  *
  * @author Nacos
  * @since 3.3.0

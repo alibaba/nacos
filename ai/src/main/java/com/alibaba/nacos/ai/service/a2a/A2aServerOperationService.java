@@ -30,9 +30,9 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
-import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
+import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -423,10 +423,9 @@ public class A2aServerOperationService implements A2aOperationService {
         }
         List<AgentInterface> interfaces = new ArrayList<AgentInterface>(hosts.size());
         for (Instance instance : hosts) {
-            AgentInterface agentInterface = AgentCardUtil.buildAgentInterface(instance);
-            if (StringUtils.isBlank(agentInterface.getProtocolVersion())) {
-                agentInterface.setProtocolVersion(callInterface.getProtocolVersion());
-            }
+            AgentInterface agentInterface = A2aEndpointUtils.toAgentInterface(
+                AgentRuntimeEndpointMapper.fromInstance(instance),
+                callInterface.getProtocolVersion());
             interfaces.add(agentInterface);
         }
         AgentInterface preferred = selectPreferred(interfaces, card.getPreferredTransport());
@@ -450,11 +449,8 @@ public class A2aServerOperationService implements A2aOperationService {
     }
     
     private String endpointNaturalKey(String namespaceId, String agentName, Instance instance) {
-        AgentInterface agentInterface = AgentCardUtil.buildAgentInterface(instance);
-        Endpoint endpoint = new Endpoint();
-        endpoint.setUri(agentInterface.getUrl());
-        endpoint.setTransport(agentInterface.getProtocolBinding());
-        return EndpointNaturalKey.of(namespaceId, agentName, A2A_PROTOCOL, endpoint).toString();
+        return EndpointNaturalKey.of(namespaceId, agentName, A2A_PROTOCOL,
+            AgentRuntimeEndpointMapper.fromInstance(instance)).toString();
     }
     
     private Map<String, String> metadata(Instance instance) {

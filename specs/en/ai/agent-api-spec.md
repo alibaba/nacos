@@ -95,6 +95,30 @@ HTTP status and `Result.code` use the common v3 exception mapping. gRPC
 responses expose equivalent error categories. `HTTP_CLIENT_NOT_FOUND` is fixed
 at `50404`; it must not alias ordinary `RESOURCE_NOT_FOUND`.
 
+### External RAD migration admission
+
+While the node's effective A2A authority is historical, native RAD Client Search, Discover,
+Publish, complete Endpoint Register, and Watch admission/subsequent business reads MUST reject
+with HTTP 409 / `AGENT_MIGRATION_IN_PROGRESS (50105)`. gRPC preserves the same detail code.
+The binding checks admission after authentication and necessary input checks, before business
+mutation or owner creation. Unprojected names and unrelated standard Agents are also fenced.
+This is neither unsupported RAD nor a reason to fall back to the legacy protocol.
+
+Reuse A2A effective-mode resolution: LEGACY, AUTO without a plan, AUTO/SYNCING and AUTO/QUIESCING
+reject; fresh CANONICAL and an observed permanent CANONICAL marker allow access. A missing
+marker alone does not prove readiness. Capability queries still advertise implementation support.
+Whole-publication Deregister, local cancellation/shutdown, and existing legitimate owner heartbeats
+retain their normal authentication/ownership checks. SDK partial deregistration that Registers a
+remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
+whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
+Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
+50105, and subsequent Discover is also fenced. Callers explicitly invoke or subscribe again after
+cutover.
+
+Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
+Admin/Console, migration, indexing and internal projection retain their existing rules so migration
+cannot fence itself. The historical QUIESCING mutation barrier remains unchanged.
+
 ## 2. Client API
 
 ### 2.1 Java SDK Contract
@@ -171,8 +195,9 @@ because they repeat the unchanged Discover request.
 
 One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
-including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
-removed. The SDK stores that complete batch as redo intent.
+including each Endpoint's resolved `runtimeVersion` and `versionRange`; omitted Endpoints
+are removed. Batch fields are optional per-field defaults, resolved before exact-range fallback
+and validation. The SDK stores a deep copy of the complete normalized batch as redo intent.
 
 One SDK instance has a soft watermark of 100 Endpoint publication entries
 across all retained complete intents by default;
@@ -198,22 +223,30 @@ through the compatibility adapter.
 `model.agent.base.AbstractAgentDraftRequest`, which holds Version content,
 `basedOnVersion`, author, change description, and initial Agent metadata fields.
 Only the Client request adds `autoSubmit`, whose default is `false`.
-The caller does not supply a namespace. The proxy copies the request, uses the
-SDK namespace, and never mutates the caller's object. `autoSubmit=false` only
-creates or returns an equivalent draft. `autoSubmit=true` runs the ordinary
-submit Pipeline after draft creation and returns the final observable
-`reviewing`, `reviewed`, or `online` Version. It is not force-publish and
-endpoint registration never creates a definition implicitly.
+The caller does not supply a namespace. The proxy defensively copies the request.
+The Client publication service uses the following rules:
 
-Equivalent retries for the same namespace, Agent, and exact Version converge.
-A draft retry is idempotent. When an earlier `autoSubmit=true` request already
-advanced equivalent content to `reviewing`, `reviewed`, or `online`, the retry
-returns the existing Version. The same request may resume an existing draft by
-changing only `autoSubmit` to `true`. Different content, author, change
-description, or explicitly supplied initial metadata is a conflict.
-`autoSubmit=false` against an advanced Version, and either mode against an
-`offline` Version, returns illegal state or conflict. A submit failure does not
-compensate by deleting the created draft.
+- Creating a Version when the Agent currently has no Versions forces ordinary submit,
+  even with autoSubmit=false. Creating an Admin/Console draft does not force submit.
+- A current editable DRAFT is completely replaced, including protocols, author and change
+  description. Its existence never counts as a new first Version; only this call's autoSubmit
+  controls submit. Existing Agent presentation, owner and scope remain unchanged.
+- Any existing REVIEWING, REVIEWED, ONLINE or OFFLINE Version is a no-op after request
+  validation, identity/WRITE/visibility checks and the migration gate. Different valid content
+  does not overwrite that Version or change latest; no-op does not load basedOnVersion content.
+- Later missing Versions use autoSubmit normally. Direct content and basedOnVersion remain
+  mutually exclusive; copied content replaces the entire definition.
+- Creation, replacement and submit are single attempts. A failure is returned directly,
+  including an uncertain write outcome; there is no equivalent-content recovery, publication
+  redo, cross-server HTTP retry or cross-transport replay. This includes transparent retries
+  inside the HTTP implementation: the Agent publication body is non-repeatable. A later explicit
+  caller invocation uses then-current state. Failure never compensates by deleting a saved draft.
+
+Only the ordinary Pipeline runs; automatic submit is not force-publish. It can result in
+reviewing/reviewed/online. Endpoint registration never implicitly creates a definition.
+Publication reuses the existing draft storage and state checks. It does not introduce a new
+cross-store transaction or concurrent-draft CAS guarantee; those shared storage concerns
+are outside this compatibility change. See Agent Storage for the existing failure boundaries.
 
 Search and complete registration use root-package `AgentSearchRequest` and
 `AgentEndpointRegistrationBatch`, containing business fields without namespace accessors.
@@ -809,10 +842,10 @@ separate specification and must not be inferred from this API-only contract.
 
 ## Endpoint Consolidation Acceptance
 
-Consolidation affects Client registration/publication, Admin/Maintainer, Console, and internal legacy A2A conversion. The proposed writable healthy scope is Runtime registration/complete replacement, defaulting to true; ignore submitted bindings, enabled/state, and observations. HTTP, gRPC, and both SDK JSON adapters must agree while preserving namespace, authorization, error, query, and subscription behavior.
+Consolidation affects Client registration/publication, Admin/Maintainer, Console, and internal legacy A2A conversion. Runtime registration/complete replacement accept healthy and enabled, both defaulting to true and rejecting explicit null; resolve one input binding per Endpoint using Batch defaults. EndpointSet revisions and observations remain server-maintained. HTTP, gRPC, and both SDK JSON adapters must agree while preserving namespace, authorization, error, query, and subscription behavior.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
 
 ### Agent JSON inclusion contract
 
-The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.3.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.
+The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.5.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.

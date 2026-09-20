@@ -38,6 +38,8 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
@@ -88,6 +90,93 @@ class DefaultVisibilityServiceTest {
         RequestContextHolder.removeContext();
         com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(null);
         ApplicationUtils.injectContext(null);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"absent", "alice", "bob"})
+    void explicitIdentityUsesCurrentPermissionsWithoutBorrowingThreadCredentials(String threadUser)
+        throws Exception {
+        NacosAuthConfigHolder holder = mock(NacosAuthConfigHolder.class);
+        NacosAuthConfig config = mock(NacosAuthConfig.class);
+        when(holder.getNacosAuthConfigByScope("OPEN_API")).thenReturn(config);
+        when(config.isAuthEnabled()).thenReturn(true);
+        when(config.getNacosAuthSystemType()).thenReturn("nacos");
+        AuthPluginManager plugins = mock(AuthPluginManager.class);
+        AbstractNacosAuthPluginService auth = mock(AbstractNacosAuthPluginService.class);
+        when(plugins.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.of(auth));
+        if (!"absent".equals(threadUser)) {
+            NacosUser user = new NacosUser(threadUser, "never-copy-token");
+            user.setGlobalAdmin("alice".equals(threadUser));
+            IdentityContext current = new IdentityContext();
+            current.setParameter(AuthConstants.NACOS_USER_KEY, user);
+            RequestContextHolder.getContext().getAuthContext().setIdentityContext(current);
+        }
+        java.util.concurrent.atomic.AtomicBoolean granted =
+            new java.util.concurrent.atomic.AtomicBoolean(true);
+        when(auth.validateAuthority(any(IdentityContext.class), any(Permission.class)))
+            .thenAnswer(invocation -> {
+                IdentityContext context = invocation.getArgument(0);
+                NacosUser user = (NacosUser) context.getParameter(AuthConstants.NACOS_USER_KEY);
+                assertEquals("bob", user.getUserName());
+                assertFalse(user.isGlobalAdmin());
+                assertNull(user.getToken());
+                AuthResult result = new AuthResult();
+                result.setSuccess(granted.get());
+                return result;
+            });
+        try (MockedStatic<NacosAuthConfigHolder> configs = mockStatic(NacosAuthConfigHolder.class);
+            MockedStatic<AuthPluginManager> managers = mockStatic(AuthPluginManager.class)) {
+            configs.when(NacosAuthConfigHolder::getInstance).thenReturn(holder);
+            managers.when(AuthPluginManager::getInstance).thenReturn(plugins);
+            DefaultVisibilityService service = new DefaultVisibilityService();
+            TestResource resource =
+                new TestResource("public", "private-agent", "agent", "PRIVATE", "alice");
+            assertTrue(service.validateVisibility("bob", "r", "OPEN_API", resource).isAllowed());
+            granted.set(false);
+            assertFalse(service.validateVisibility("bob", "r", "OPEN_API", resource).isAllowed());
+            assertFalse(service.validateVisibility("bob", "w", "OPEN_API", resource).isAllowed());
+            assertFalse(service.validateVisibility("", "r", "OPEN_API", resource).isAllowed());
+            assertFalse(service.validateVisibility(AuthConstants.ANONYMOUS_USER, "r", "OPEN_API",
+                resource).isAllowed());
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"absent", "alice", "bob"})
+    void foreignPluginOnlyReceivesItsMatchingAuthenticatedContext(String threadUser)
+        throws Exception {
+        NacosAuthConfigHolder holder = mock(NacosAuthConfigHolder.class);
+        NacosAuthConfig config = mock(NacosAuthConfig.class);
+        when(holder.getNacosAuthConfigByScope("OPEN_API")).thenReturn(config);
+        when(config.isAuthEnabled()).thenReturn(true);
+        when(config.getNacosAuthSystemType()).thenReturn("foreign");
+        AuthPluginManager plugins = mock(AuthPluginManager.class);
+        AuthPluginService auth = mock(AuthPluginService.class);
+        when(plugins.findAuthServiceSpiImpl("foreign")).thenReturn(Optional.of(auth));
+        IdentityContext context = new IdentityContext();
+        if (!"absent".equals(threadUser)) {
+            context.setParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, threadUser);
+            RequestContextHolder.getContext().getAuthContext().setIdentityContext(context);
+        }
+        if ("bob".equals(threadUser)) {
+            when(auth.validateAuthority(org.mockito.ArgumentMatchers.same(context),
+                any(Permission.class)))
+                .thenReturn(AuthResult.successResult("bob"));
+        }
+        try (MockedStatic<NacosAuthConfigHolder> configs = mockStatic(NacosAuthConfigHolder.class);
+            MockedStatic<AuthPluginManager> managers = mockStatic(AuthPluginManager.class)) {
+            configs.when(NacosAuthConfigHolder::getInstance).thenReturn(holder);
+            managers.when(AuthPluginManager::getInstance).thenReturn(plugins);
+            TestResource resource =
+                new TestResource("public", "private-agent", "agent", "PRIVATE", "owner");
+            assertEquals("bob".equals(threadUser), new DefaultVisibilityService()
+                .validateVisibility("bob", "r", "OPEN_API", resource).isAllowed());
+            if (!"bob".equals(threadUser)) {
+                org.mockito.Mockito.verifyNoInteractions(auth);
+            }
+            org.mockito.Mockito.verify(holder, org.mockito.Mockito.never()).getAllNacosAuthConfig();
+        }
     }
     
     @Test
@@ -184,6 +273,8 @@ class DefaultVisibilityServiceTest {
         AuthResult allowed = new AuthResult();
         allowed.setSuccess(true);
         IdentityContext identityContext = new IdentityContext();
+        identityContext.setParameter(
+            com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, "bob");
         RequestContextHolder.getContext().getAuthContext().setIdentityContext(identityContext);
         when(authService.validateAuthority(any(IdentityContext.class), any(Permission.class)))
             .thenReturn(allowed);

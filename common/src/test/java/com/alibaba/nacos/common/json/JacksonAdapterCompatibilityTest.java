@@ -16,7 +16,13 @@
 
 package com.alibaba.nacos.common.json;
 
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
+import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
+import com.alibaba.nacos.api.ai.utils.RadModelValidator;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapter;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapterNames;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +35,8 @@ import java.util.ServiceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class JacksonAdapterCompatibilityTest {
     
@@ -72,6 +80,39 @@ class JacksonAdapterCompatibilityTest {
         assertEquals(NacosJsonAdapterNames.JACKSON3, JsonUtils.selectedAdapterName());
         assertEquals(new SampleModel("nacos"),
             JsonUtils.toObj("{\"name\":\"nacos\",\"unknown\":\"ignored\"}", SampleModel.class));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void testEndpointWireDefaultsAndExplicitNull(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        assertEquals(adapterName, JsonUtils.selectedAdapterName());
+        String key = "\"uri\":\"https://example.com/rpc\",\"transport\":\"HTTP\"";
+        Endpoint defaults = JsonUtils.toObj("{" + key + "}", Endpoint.class);
+        assertEquals(0, defaults.getPriority());
+        assertEquals(1D, defaults.getWeight());
+        assertTrue(defaults.getHealthy());
+        assertTrue(defaults.getEnabled());
+        Endpoint disabled = JsonUtils.toObj("{" + key
+            + ",\"enabled\":false,\"healthy\":false}", Endpoint.class);
+        assertFalse(EndpointCanonicalizer.canonicalize(disabled).getEnabled());
+        assertFalse(disabled.getHealthy());
+        assertFalse(JsonUtils.toJson(disabled).contains("\"state\""));
+        for (String field : new String[] {"priority", "weight", "healthy", "enabled"}) {
+            String endpointJson = "{" + key + ",\"" + field + "\":null}";
+            Endpoint invalid = JsonUtils.toObj(endpointJson, Endpoint.class);
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> EndpointCanonicalizer.canonicalize(invalid));
+            assertTrue(error.getMessage().contains(field));
+            String rpcJson = "{\"namespaceId\":\"public\",\"registrationBatch\":{"
+                + "\"agentName\":\"demo\",\"protocol\":\"a2a\",\"runtimeVersion\":\"1.0.0\","
+                + "\"endpoints\":[" + endpointJson + "]}}";
+            AgentEndpointRegisterRpcRequest request = JsonUtils.toObj(rpcJson,
+                AgentEndpointRegisterRpcRequest.class);
+            assertThrows(IllegalArgumentException.class,
+                () -> RadModelValidator.validate("public", request.getRegistrationBatch()));
+        }
     }
     
     private Map<String, NacosJsonAdapter> loadAdapters() {

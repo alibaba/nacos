@@ -31,6 +31,7 @@ import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.HttpEntityWrapper;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -87,6 +88,15 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
         
+        if (!requestHttpEntity.isBodyRepeatable() && httpRequestBase.getEntity() != null) {
+            httpRequestBase.setEntity(new HttpEntityWrapper(httpRequestBase.getEntity()) {
+                
+                @Override
+                public boolean isRepeatable() {
+                    return false;
+                }
+            });
+        }
         mergeDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig(), defaultConfig);
         return httpRequestBase;
     }

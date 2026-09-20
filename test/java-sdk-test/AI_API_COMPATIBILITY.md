@@ -71,8 +71,9 @@ auth-disabled, isolated 3.2.4 server** externally and add
 belongs to the harness and must be discarded after the run. This row skips
 when the address is omitted; it must not be described as a pass then.
 
-Run `clean` before the wrapper if needed, not as a wrapper argument: the wrapper
-resolves historical dependencies into `target` before invoking the IT lifecycle.
+The wrapper resolves historical dependencies into repository-level `target`
+before invoking the IT lifecycle. A module `clean` does not remove that classpath;
+resolve it again after cleaning the repository root.
 The compatibility profile is opt-in, so the ordinary required SDK suite does
 not download historical dependencies or start extra SDK JVMs.
 
@@ -86,8 +87,8 @@ API jar used by `javac`.
 
 The wrapper retains these generated artifacts:
 
-- `target/compatibility-libs/legacy-dependency-tree.txt`: exact resolved versions.
-- `target/compatibility-libs/legacy-classpath.txt`: actual released-SDK classpath.
+- repository `target/ai-compatibility/legacy-dependency-tree.txt`: exact resolved versions.
+- repository `target/ai-compatibility/legacy-classpath.txt`: actual released-SDK classpath.
 - `target/compatibility-classes`: old-API bytecode reused by both SDK runs.
 - `target/failsafe-reports/legacy-*.log`: child output and SDK code source.
 - `target/failsafe-reports/TEST-*.xml`: pass/failure/skip evidence.
@@ -99,9 +100,63 @@ resource recovery, unchanged-content suppression, cross-entry cancellation,
 resubscription, ZIP contents, and repeated shutdown. Maintainer calls only
 prepare/clean fixtures; all assertions use the ordinary Client identity.
 
-This fixture does not enable A2A-to-RAD conversion. Old A2A stays on old gRPC in
-every resource mode. Existing `DAUTH-F04`/`DAUTH-F05` exclusions and gated
-standalone-restart, cluster, and migration-state suites remain explicitly
-separate. A representative 3.2.4 smoke is not evidence for all historical
-versions, all resource APIs, or SYNCING/QUIESCING/cutover states. Per-run evidence
-is recorded in `Codex/design/nacos-3.3-client-ai-api/VALIDATION.md`.
+The current SDK now adapts all A2A methods to RAD when supported. The released
+3.2.4 SDK still exercises legacy gRPC; these are distinct compatibility assertions.
+`LegacyA2aProcess` extends the isolated released-SDK fixture for gated migration IT.
+It accepts ordered public A2A operations from `LegacyA2aClient`, keeps one real client
+alive across steps and reconnects, and reports its actual SDK code source. Neither
+fixture modifies SDK private state or emulates Nacos in the test process. Resolve
+the repository-level `target/ai-compatibility/legacy-classpath.txt` with the wrapper
+before enabling migration fixtures. It survives module `clean`; a custom path can be
+provided through `nacos.ai.compatibility.classpath-file`. No historical
+dependencies are required by ordinary non-migration SDK tests.
+
+The complete adaptation scenario and final execution evidence are tracked in
+`Codex/design/nacos-3.3-client-ai-api/COMPATIBILITY_IT.md` and
+the applicable API/SDK scenario tables. Compilation, gated skips, and ordinary new-server runs
+are not evidence for SYNCING/QUIESCING, cluster or restart scenarios.
+
+## Observed transport and failure fixtures
+
+`ai-transport-fixture.py` forwards loopback HTTP and optionally the corresponding
+gRPC port (`main + 1000`). It records HTTP method/path/status, TCP byte counts and
+allowlisted protobuf request type counts. It does not record query strings,
+headers or bodies. The gRPC observation is limited to the uncompressed plaintext
+loopback fixture; it is not a general TLS or HTTP/2 decoder.
+
+For example, with a disposable RAD server on 18868:
+
+```bash
+python3 test/java-sdk-test/ai-transport-fixture.py \
+  --port 28876 --upstream-port 18868 --grpc --log /tmp/rad-both.jsonl
+```
+
+Run another proxy on 28877 without `--grpc` for HTTP-only scenarios. Explicit
+HTTP and AUTO-to-HTTP must use this second address; first verify that 29877 is
+closed. `A2aRadRoutingJavaSdkITCase#allSignaturesOnObservedTransport` takes
+`nacos.ai.adaptation.observed-address` and `nacos.ai.adaptation.observed-mode`.
+Use `nacos.ai.adaptation.management-address` when fixture setup targets a different
+server from the ordinary IT main address. Each invocation tests both facade and
+resource entrypoints, including later-version and Runtime subscription updates.
+
+| Fixture | Test / input | Required evidence |
+| --- | --- | --- |
+| RAD HTTP / gRPC / AUTO-gRPC / AUTO-HTTP | `allSignaturesOnObservedTransport`; both JSON adapter profiles | All signatures succeed; gRPC records RAD request types and no historical A2A request types; HTTP cases have Agent HTTP operations and no gRPC bytes. |
+| Unreachable main and gRPC ports | `unavailableServerNeverBecomesUnsupportedAndLocalCleanupWorks`; `nacos.ai.adaptation.unreachable-address` | Three modes report connection errors rather than old-version unsupported; cancellation and repeated shutdown work. |
+| Released old server through HTTP-only proxy | `oldHttpWithoutNegotiationDoesNotInventRadUnsupported`; `nacos.ai.adaptation.old-http-only-address` | HTTP 404 alone does not prove a negative RAD capability; three modes fail explicitly without inventing old-version evidence. |
+| Capability/auth on new node, business on old node | Proxy `--capability-upstream-port`; `differentCapabilityAndBusinessMembersNeverCauseLegacyFallback`; `nacos.ai.adaptation.mixed-address` | Capability succeeds, RAD business returns 404, no legacy write fallback, old exact-Version content remains unchanged. |
+| No Watch binding | Server `nacos.core.ability.radWatchV1=false`, proxy `--reject-watch`, observed-transport test | gRPC/HTTP/AUTO continue native RAD Discover polling; real later Card and Runtime changes arrive. HTTP Watch attempts return 501; auth/business failures are not used as fallback evidence. |
+
+Keep each proxy's log separate and compare only the time window of its test.
+Run lifecycle/migration fixtures through their explicit enable properties; do not
+count the same methods skipped by the ordinary suite as executed coverage.
+
+The proxy also supports `--drop-first-agent-publish-response`: after forwarding a
+successful publication it closes the connection before sending the first response
+for that Agent. `lostPublishResponseIsNotReplayedAndExplicitRetryUsesStoredState`
+uses `nacos.ai.adaptation.lost-publish-address` to exercise facade, resource and
+native publication. Each first call must fail despite the stored ONLINE Version;
+one explicit subsequent call is a no-op. The external observer must see exactly
+two publish requests per Agent, one dropped response, and no automatic replay.
+Resource names are retained only as in-memory hashes for this fault injector and
+are not included in the observation log.

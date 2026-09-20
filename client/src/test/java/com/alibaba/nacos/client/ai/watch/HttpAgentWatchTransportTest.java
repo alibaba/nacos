@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -274,6 +275,20 @@ class HttpAgentWatchTransportTest {
             new TestCallback());
         requestExecutor.runNext();
         assertEquals(1, mismatch.unavailable);
+    }
+    
+    @Test
+    void migrationRejectionTerminatesIntentWithoutRetryOrFallback() throws Exception {
+        TestCallback callback = new TestCallback();
+        TestLifecycleListener lifecycle = new TestLifecycleListener();
+        transport.setLifecycleListener(lifecycle);
+        client.failure = new NacosException(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            "migration");
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
+        requestExecutor.runNext();
+        assertTrue(callback.terminal);
+        assertEquals(0, lifecycle.unavailable);
+        assertNull(retryTask.get());
     }
     
     @Test

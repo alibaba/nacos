@@ -71,3 +71,20 @@ CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [�
 ### 2026-09-15 JSON 门面替换 review
 
 Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。
+
+## C09 恢复记录（2026-09-17）
+
+DAUTH-F05 的显式身份校验已在本轮 A2A/RAD C09 修复；所有七项 Agent Discovery
+方法及 Scope Watch 方法已移除该编号的 Disabled，可靠性脚本也已恢复对应入口。
+此外，HTTP Watch 在权限或 scope 变化而共享 fingerprint 不变时返回受影响的 opaque ID，
+由后续 Discover 执行资源授权。当前用例分别断言 HTTP 404 和 gRPC RESOURCE_NOT_FOUND(-404)。
+普通测试和重启/集群 fixture 的执行证据分开登记；恢复入口不等于可靠性验证通过。
+以上替代本文历史段落中“仍 Disabled”的当前状态描述，历史失败记录保持。
+最终阶段结果见 [SDK scenario matrix](JAVA_SDK_IT_SCENARIOS.md)。
+
+### A2A/RAD review 范围收敛
+
+Client 发布契约仍为首版普通提交、已有 DRAFT 完整覆盖、非 DRAFT no-op；Admin/Console 保持原有流程。
+本轮移除独立存储对象和 Agent 专用 CAS 加固，不新增跨存储或并发原子性保证；历史事务测试不计入当前覆盖。
+公开 API 场景集合未增删，覆盖率分母不变；本轮执行证据及限制见
+[既有存储边界](../../specs/zh-cn/ai/agent-storage-spec.md)。

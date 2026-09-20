@@ -129,8 +129,8 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
         deleteConfig(CUTOVER_BLOCKER_DATA_ID, HISTORICAL_AGENT_GROUP, DEFAULT_NAMESPACE);
         JsonNode quiescing = awaitMigrationState("QUIESCING");
         // Hold this generation after proving the SYNCING -> QUIESCING transition. The
-        // following Java SDK process releases the blocker only after both HTTP and gRPC
-        // subscriptions are active, so this test does not depend on Maven startup speed.
+        // following Java SDK process releases the blocker only after HTTP and gRPC admission
+        // rejection is verified, so this test does not depend on Maven startup speed.
         postFormOk(ADMIN_CONFIG_PATH, configForm(CUTOVER_BLOCKER_DATA_ID,
                 HISTORICAL_AGENT_GROUP, DEFAULT_NAMESPACE, "{"));
         JsonNode completedAt = quiescing.path("completedAt");
@@ -429,7 +429,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
             throws Exception {
         JsonNode last = null;
         for (int retry = 0; retry <= MAX_RETRIES; retry++) {
-            JsonNode dedicated = getJsonOk(AGENT_SEARCH_PATH,
+            HttpResponse searchResponse = getRaw(AGENT_SEARCH_PATH,
                     Query.newInstance().addParam("namespaceId", namespaceId)
                             .addParam("agentNameContains", agentName)
                             .addParam("pageNo", "1").addParam("pageSize", "10"));
@@ -440,11 +440,27 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
             HttpResponse discoveryResponse = getRaw(AGENT_CLIENT_PATH,
                     Query.newInstance().addParam("namespaceId", namespaceId)
                             .addParam("agentName", agentName));
+            boolean canonical = "verify".equals(System.getProperty(CUTOVER_PHASE_PROPERTY));
+            JsonNode dedicated;
+            if (canonical) {
+                assertEquals(200, searchResponse.code(), searchResponse.body());
+                dedicated = JacksonUtils.toObj(searchResponse.body());
+            } else {
+                assertError(searchResponse, 409, ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+                        "historical A2A");
+                assertError(discoveryResponse, 409, ErrorCode.AGENT_MIGRATION_IN_PROGRESS,
+                        "historical A2A");
+                // Management still observes internal migration/index convergence.
+                dedicated = getJsonOk(ADMIN_AGENT_PATH + "/list",
+                        Query.newInstance().addParam("namespaceId", namespaceId)
+                                .addParam("agentName", agentName)
+                                .addParam("pageNo", "1").addParam("pageSize", "100"));
+            }
             JsonNode catalog = getArdCatalog(namespaceId);
             last = dedicated;
             if (containsDedicatedAgent(dedicated, agentName)
                     && containsGenericAgent(generic, agentName)
-                    && isDiscovered(discoveryResponse, agentName, version)
+                    && (!canonical || isDiscovered(discoveryResponse, agentName, version))
                     && containsArdAgent(catalog, agentName)) {
                 JsonNode console = getConsoleJsonOk(Constants.Agent.CONSOLE_PATH,
                         agentIdentityQuery(namespaceId, agentName)).get("data");
@@ -454,7 +470,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
             }
             retry();
         }
-        fail("Canonical Search/RAD/ARD projections did not converge: " + last);
+        fail("Canonical Management/Search/ARD projections did not converge: " + last);
     }
 
     private void awaitCanonicalAbsent(String agentName, String namespaceId) throws Exception {
@@ -462,11 +478,11 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
         for (int retry = 0; retry <= MAX_RETRIES; retry++) {
             HttpResponse overview = getRaw(ADMIN_AGENT_PATH,
                     agentIdentityQuery(namespaceId, agentName));
-            lastSearch = getJsonOk(AGENT_SEARCH_PATH,
+            lastSearch = getJsonOk(GENERIC_SEARCH_PATH,
                     Query.newInstance().addParam("namespaceId", namespaceId)
-                            .addParam("agentNameContains", agentName)
-                            .addParam("pageNo", "1").addParam("pageSize", "10"));
-            if (overview.code() == 404 && !containsDedicatedAgent(lastSearch, agentName)) {
+                            .addParam("query", agentName).addParam("resourceTypes", "agent")
+                            .addParam("limit", "10"));
+            if (overview.code() == 404 && !containsGenericAgent(lastSearch, agentName)) {
                 return;
             }
             retry();
@@ -561,7 +577,7 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private JsonNode getArdCatalog(String namespaceId) throws Exception {
         Query query = Query.newInstance().addParam("namespaceId", namespaceId);
         HttpResponse response = executeRaw(new HttpGet(ARD_BASE_URL
-                + "/v3/ai/ard/ai-catalog.json?" + query.toQueryUrl()));
+                + "/v3/ai/ard/ai-catalog.json?" + query.toQueryUrl()), AuthIdentity.CLIENT_READ_WRITE);
         if (response.code() != 200) {
             return JacksonUtils.toObj("{}");
         }
