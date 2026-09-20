@@ -169,6 +169,9 @@ public class ControllerMethodsCache {
     private Method getMethodFromLegacyCache(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
+        if (RequestMethod.HEAD.name().equals(httpMethod)) {
+            httpMethod = RequestMethod.GET.name();
+        }
         String urlKey = httpMethod + REQUEST_PATH_SEPARATOR
             + stripContextPath(path, resolveContextPath(request));
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
