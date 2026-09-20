@@ -577,7 +577,8 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private JsonNode getArdCatalog(String namespaceId) throws Exception {
         Query query = Query.newInstance().addParam("namespaceId", namespaceId);
         HttpResponse response = executeRaw(new HttpGet(ARD_BASE_URL
-                + "/v3/ai/ard/ai-catalog.json?" + query.toQueryUrl()), AuthIdentity.CLIENT_READ_WRITE);
+                + "/v3/ai/ard/ai-catalog.json?" + query.toQueryUrl()),
+                AUTH_ENABLED ? AuthIdentity.CLIENT_READ_WRITE : AuthIdentity.ANONYMOUS);
         if (response.code() != 200) {
             return JacksonUtils.toObj("{}");
         }

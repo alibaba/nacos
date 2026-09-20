@@ -570,7 +570,10 @@ The final artifact reruns the complete OpenAPI suite and the AI Console suite
 against a separately deployed Console. `AgentConsoleApiOpenApiITCase` now checks
 that unified Runtime endpoints expose enabled/healthy without the removed state.
 `A2aMigrationAdminApiOpenApiITCase` sends an explicit ordinary Client identity to
-ARD; admin credentials are used only for fixture/control operations. Historical
+ARD when authentication is enabled, and anonymous requests when it is disabled
+as in the dedicated migration workflow. Admin credentials are used only for
+fixture/control operations. Both authentication configurations are covered by
+the focused cross-surface regression. Historical
 reconciliation, malformed-source recovery, QUIESCING and terminal cross-surface
 assertions remain distinct from the normal canonical suite.
 
