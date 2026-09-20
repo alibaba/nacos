@@ -152,6 +152,7 @@ public class NacosLockService implements LockService {
             lockGrpcClient.shutdown();
             watchdog.shutdown();
             serverListManager.shutdown();
+            securityProxy.shutdown();
             if (null != executorService) {
                 executorService.shutdown();
                 try {
