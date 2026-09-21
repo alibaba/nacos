@@ -395,7 +395,10 @@ Skill frontmatter (#15345) is covered on Admin and Console lists through draft
 creation/update, draft deletion, publish and version online/offline transitions.
 Both Skill API scenario matrices record null/legacy behavior and deterministic
 CAS coverage in service unit tests. Lists must not load per-item versions or
-package storage. Historical backfill and frontmatter search are out of scope.
+package storage. HTTP IT verifies generated reserved fields and an untruncated
+projection; service unit tests cover custom-field priority and all snapshot
+limits while preserving complete version metadata. Historical backfill and
+frontmatter search are out of scope. Existing `pageSize` behavior is unchanged.
 
 ## Config detail schema (#15853)
 

@@ -56,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -224,6 +225,82 @@ class SkillFrontMatterTest {
     }
     
     @Test
+    void snapshotStoresOnlyCustomFieldsAndResponseBuildsReservedFields() throws Exception {
+        create("one", "1.0.0", "Display");
+        Map<String, String> versionFrontMatter = versionFrontMatter("one", "1.0.0");
+        assertEquals("one", versionFrontMatter.get("name"));
+        assertEquals("Description", versionFrontMatter.get("description"));
+        
+        Map<String, Object> ext = JacksonUtils.toObj(resources.get("one").getExt(), Map.class);
+        Map<String, String> cached = cachedFrontMatter(ext);
+        assertFalse(cached.containsKey("name"));
+        assertFalse(cached.containsKey("description"));
+        assertFalse(cached.containsKey("version"));
+        cached.put("name", "cached-name");
+        cached.put("description", "cached-description");
+        cached.put("version", "cached-version");
+        resources.get("one").setExt(JacksonUtils.toJson(ext));
+        
+        SkillSummary summary = summary("one");
+        assertEquals("one", summary.getFrontMatter().get("name"));
+        assertEquals(summary.getDescription(), summary.getFrontMatter().get("description"));
+        assertEquals("1.0.0", summary.getFrontMatter().get("version"));
+        assertEquals(Boolean.FALSE, summary.getFrontMatterTruncated());
+    }
+    
+    @Test
+    void snapshotLimitsEntriesAndPrioritizesStandardFields() throws Exception {
+        StringBuilder markdown = frontMatterHeader("one");
+        for (int i = 0; i < 70; i++) {
+            markdown.append("custom-").append(i).append(": value-").append(i).append('\n');
+        }
+        markdown.append("alias: Preferred alias\nlicense: Apache-2.0\n")
+            .append("compatibility: Nacos 3.x\nallowed-tools: Read Write\n")
+            .append("metadata:\n  preferred: preferred value\n")
+            .append("---\nInstructions\n");
+        service.createDraft("public", "one", null, "1.0.0", skill("one", markdown), null);
+        
+        Map<String, Object> ext = JacksonUtils.toObj(resources.get("one").getExt(), Map.class);
+        Map<String, String> cached = cachedFrontMatter(ext);
+        assertEquals(64, cached.size());
+        assertEquals("Preferred alias", cached.get("alias"));
+        assertEquals("Apache-2.0", cached.get("license"));
+        assertEquals("Nacos 3.x", cached.get("compatibility"));
+        assertEquals("Read Write", cached.get("allowed-tools"));
+        assertEquals("preferred value", cached.get("metadata.preferred"));
+        assertTrue(cached.keySet().stream().filter(key -> key.startsWith("custom-")).count() <= 59);
+        SkillSummary summary = summary("one");
+        assertEquals(Boolean.TRUE, summary.getFrontMatterTruncated());
+        assertEquals(67, summary.getFrontMatter().size());
+    }
+    
+    @Test
+    void snapshotLimitsKeysValuesAndSerializedSizeWithoutChangingVersionMetadata()
+        throws Exception {
+        String longValue = repeat('x', 1100);
+        String longKey = repeat('k', 129);
+        StringBuilder markdown = frontMatterHeader("one").append("alias: ")
+            .append(longValue).append('\n').append(longKey).append(": omitted\n");
+        for (int i = 0; i < 30; i++) {
+            markdown.append("large-").append(i).append(": ").append(longValue).append('\n');
+        }
+        markdown.append("---\nInstructions\n");
+        service.createDraft("public", "one", null, "1.0.0", skill("one", markdown), null);
+        
+        Map<String, String> complete = versionFrontMatter("one", "1.0.0");
+        assertEquals(1100, complete.get("alias").length());
+        assertEquals("omitted", complete.get(longKey));
+        Map<String, Object> ext = JacksonUtils.toObj(resources.get("one").getExt(), Map.class);
+        Map<String, String> cached = cachedFrontMatter(ext);
+        assertTrue(
+            JacksonUtils.toJson(cached).getBytes(StandardCharsets.UTF_8).length <= 16 * 1024);
+        assertFalse(cached.containsKey(longKey));
+        assertEquals(1024, cached.get("alias").length());
+        assertTrue(cached.get("alias").endsWith("..."));
+        assertEquals(Boolean.TRUE, summary("one").getFrontMatterTruncated());
+    }
+    
+    @Test
     void onlineDraftPublishAndOnlineOfflineFallback() throws Exception {
         create("one", "1.0.0", "Published");
         service.forcePublish("public", "one", "1.0.0", true);
@@ -290,7 +367,9 @@ class SkillFrontMatterTest {
             service.listSkills("public", null, null, 1, 100).getPageItems();
         assertEquals(100, summaries.size());
         assertNull(summaries.get(0).getFrontMatter());
+        assertNull(summaries.get(0).getFrontMatterTruncated());
         assertNull(summaries.get(1).getFrontMatter());
+        assertNull(summaries.get(1).getFrontMatterTruncated());
         assertEquals("Alias 99", summaries.get(99).getFrontMatter().get("alias"));
         verify(metas).list(any(QueryCondition.class), eq(1), eq(100));
         verify(rows, never()).find(anyString(), anyString(), anyString(), anyString());
@@ -383,12 +462,41 @@ class SkillFrontMatterTest {
     }
     
     private static Skill skill(String name, String alias) {
+        return skill(name, frontMatterHeader(name).append("alias: ").append(alias)
+            .append("\n---\nInstructions\n"));
+    }
+    
+    private static Skill skill(String name, StringBuilder markdown) {
         Skill skill = new Skill();
         skill.setName(name);
         skill.setDescription("Description");
-        skill.setSkillMd("---\nname: " + name + "\ndescription: Description\nalias: " + alias
-            + "\n---\nInstructions\n");
+        skill.setSkillMd(markdown.toString());
         return skill;
+    }
+    
+    private static StringBuilder frontMatterHeader(String name) {
+        return new StringBuilder("---\nname: ").append(name)
+            .append("\ndescription: Description\n");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, String> versionFrontMatter(String name, String version) {
+        Map<String, Object> descriptor = JacksonUtils.toObj(
+            versions.get(key(name, version)).getStorage(), Map.class);
+        return (Map<String, String>) descriptor.get("frontMatter");
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> cachedFrontMatter(Map<String, Object> ext) {
+        return (Map<String, String>) ext.get("frontMatter");
+    }
+    
+    private static String repeat(char value, int count) {
+        StringBuilder result = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            result.append(value);
+        }
+        return result.toString();
     }
     
     private static String key(String name, String version) {

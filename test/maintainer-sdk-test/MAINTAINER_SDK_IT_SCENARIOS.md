@@ -116,5 +116,7 @@ performed. This validates the strengthened business-error assertions without upg
 
 Skill frontmatter (#15345): `AiMaintainerServiceMaintainerSdkITCase` verifies
 that metadata detail and list deserialization retain parsed frontmatter after
-content update, publication and version offline/online. Historical responses may
-omit frontmatter or return null; API model round-trip unit tests cover that boundary.
+content update, publication and version offline/online, including the generated
+description and `frontMatterTruncated=false` for a complete projection. Historical
+responses may omit frontmatter and the truncation flag or return null; API model
+round-trip unit tests cover that boundary.

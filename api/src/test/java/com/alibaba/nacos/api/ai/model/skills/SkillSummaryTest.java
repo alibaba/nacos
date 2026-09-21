@@ -195,10 +195,14 @@ class SkillSummaryTest extends BasicRequestTest {
         frontMatter.put("alias", "Display name");
         frontMatter.put("metadata.version", "1.0.0");
         summary.setFrontMatter(frontMatter);
+        summary.setFrontMatterTruncated(true);
         SkillSummary restored =
             mapper.readValue(mapper.writeValueAsString(summary), SkillSummary.class);
         assertEquals(frontMatter, restored.getFrontMatter());
-        assertNull(mapper.readValue("{}", SkillSummary.class).getFrontMatter());
+        assertTrue(restored.getFrontMatterTruncated());
+        SkillSummary legacy = mapper.readValue("{}", SkillSummary.class);
+        assertNull(legacy.getFrontMatter());
+        assertNull(legacy.getFrontMatterTruncated());
     }
     
 }

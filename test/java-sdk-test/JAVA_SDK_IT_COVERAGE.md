@@ -186,7 +186,8 @@ No Client SDK coverage status is upgraded by those results.
 Agent/MCP visibility additions: `AgentPublishJavaSdkITCase` and `McpHttpClientJavaSdkITCase` verify HTTP/gRPC default-public creation, separate READ-only consumers, private/public transitions, and Agent publication retry preserving PRIVATE. No Client SDK signature changes are introduced. The additional `shouldInvalidateWatchAfterScopeBecomesPrivate` regression is disabled with `DAUTH-F05`: auth-enabled HTTP Watch failed to produce the initial snapshot before any scope mutation. Its UNAVAILABLE/error/payload assertions remain intact for restoration after the independent identity fix. Existing restart and environment-gated coverage remain unchanged.
 
 Skill frontmatter (#15345) impact analysis: the additive `SkillSummary.frontMatter`
-field belongs to Admin/Console and Maintainer SDK list/metadata responses.
+and `SkillSummary.frontMatterTruncated` fields belong to Admin/Console and Maintainer
+SDK list/metadata responses.
 Runtime `SkillService` downloads and subscribes to ZIP bytes, so its return values,
 listener, lifecycle and exception contracts are unchanged. External SDK coverage for the new
 field is in `test/maintainer-sdk-test` (`AiMaintainerServiceMaintainerSdkITCase`);

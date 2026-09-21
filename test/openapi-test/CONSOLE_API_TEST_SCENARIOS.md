@@ -193,7 +193,8 @@ CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Create/update draft | List returns parsed name, version and custom alias from saved SKILL.md. | `testSkillFrontMatterLifecycle` |
+| Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |
+| Bounded custom projection | Resource snapshot excludes reserved fields, prioritizes standard fields, and enforces entry/key/value/serialized-size limits with an explicit truncation flag; complete version metadata remains unchanged. | Service unit tests; standalone IT does not inspect internal metadata rows. |
 | Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
 | Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
 | No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |

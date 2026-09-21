@@ -136,6 +136,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String FRONT_MATTER_VERSION = "frontMatterVersion";
     
+    private static final String FRONT_MATTER_TRUNCATED = "frontMatterTruncated";
+    
+    private static final int FRONT_MATTER_CUSTOM_FIELD_MAX_COUNT = 64;
+    
+    private static final int FRONT_MATTER_CUSTOM_KEY_MAX_BYTES = 128;
+    
+    private static final int FRONT_MATTER_CUSTOM_VALUE_MAX_CHARACTERS = 1024;
+    
+    private static final int FRONT_MATTER_CUSTOM_SNAPSHOT_MAX_BYTES = 16 * 1024;
+    
+    private static final String FRONT_MATTER_TRUNCATION_SUFFIX = "...";
+    
     private static final String SCOPE_SKILL = "skill";
     
     private static final Pattern SHORT_SEMVER_VERSION_PATTERN =
@@ -993,7 +1005,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setNamespaceId(namespaceId);
         detail.setName(skillName);
         detail.setDescription(meta.getDesc());
-        detail.setFrontMatter(readDisplayFrontMatter(meta));
+        applyDisplayFrontMatter(detail, meta);
         detail.setOwner(meta.getOwner());
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setBizTags(meta.getBizTags());
@@ -1129,7 +1141,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setNamespaceId(namespaceId);
             item.setName(meta.getName());
             item.setDescription(meta.getDesc());
-            item.setFrontMatter(readDisplayFrontMatter(meta));
+            applyDisplayFrontMatter(item, meta);
             item.setOwner(meta.getOwner());
             item.setEnable(
                 AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
@@ -1710,9 +1722,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 Map<String, Object> updatedExt = new LinkedHashMap<>(ext);
                 updatedExt.remove(FRONT_MATTER);
                 updatedExt.remove(FRONT_MATTER_VERSION);
+                updatedExt.remove(FRONT_MATTER_TRUNCATED);
                 if (frontMatter != null) {
-                    updatedExt.put(FRONT_MATTER, frontMatter);
+                    FrontMatterSnapshot snapshot = buildFrontMatterSnapshot(frontMatter);
+                    updatedExt.put(FRONT_MATTER, snapshot.customFields);
                     updatedExt.put(FRONT_MATTER_VERSION, displayVersion);
+                    updatedExt.put(FRONT_MATTER_TRUNCATED, snapshot.truncated);
                 }
                 if (ext.equals(updatedExt)) {
                     return;
@@ -1752,12 +1767,96 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             : info.getReviewingVersion();
     }
     
-    private static Map<String, String> readDisplayFrontMatter(AiResource meta) {
+    private static void applyDisplayFrontMatter(SkillSummary summary, AiResource meta) {
         Map<String, Object> ext = parseMetadata(meta.getExt());
         String displayVersion = resolveDisplayVersion(meta);
-        return displayVersion != null
-            && Objects.equals(displayVersion, ext.get(FRONT_MATTER_VERSION))
-                ? readFrontMatter(ext) : null;
+        if (displayVersion == null
+            || !Objects.equals(displayVersion, ext.get(FRONT_MATTER_VERSION))) {
+            return;
+        }
+        Map<String, String> customFields = readFrontMatter(ext);
+        if (customFields == null) {
+            return;
+        }
+        Map<String, String> frontMatter = new LinkedHashMap<>(customFields.size() + 3);
+        frontMatter.put("name", summary.getName());
+        frontMatter.put("description", summary.getDescription());
+        frontMatter.put("version", displayVersion);
+        customFields.forEach((key, value) -> {
+            if (!isReservedFrontMatterField(key)) {
+                frontMatter.put(key, value);
+            }
+        });
+        summary.setFrontMatter(frontMatter);
+        summary.setFrontMatterTruncated(Boolean.TRUE.equals(ext.get(FRONT_MATTER_TRUNCATED)));
+    }
+    
+    private static FrontMatterSnapshot buildFrontMatterSnapshot(
+        Map<String, String> frontMatter) {
+        List<Map.Entry<String, String>> entries = new ArrayList<>(frontMatter.size());
+        frontMatter.entrySet().forEach(entry -> {
+            if (!isReservedFrontMatterField(entry.getKey())) {
+                entries.add(entry);
+            }
+        });
+        entries.sort((left, right) -> Integer.compare(frontMatterPriority(left.getKey()),
+            frontMatterPriority(right.getKey())));
+        Map<String, String> customFields = new LinkedHashMap<>();
+        boolean truncated = false;
+        for (Map.Entry<String, String> entry : entries) {
+            if (customFields.size() >= FRONT_MATTER_CUSTOM_FIELD_MAX_COUNT) {
+                truncated = true;
+                break;
+            }
+            String key = entry.getKey();
+            if (key.getBytes(StandardCharsets.UTF_8).length > FRONT_MATTER_CUSTOM_KEY_MAX_BYTES) {
+                truncated = true;
+                continue;
+            }
+            String value = truncateFrontMatterValue(entry.getValue());
+            if (!value.equals(entry.getValue())) {
+                truncated = true;
+            }
+            customFields.put(key, value);
+            if (JacksonUtils.toJson(customFields)
+                .getBytes(StandardCharsets.UTF_8).length > FRONT_MATTER_CUSTOM_SNAPSHOT_MAX_BYTES) {
+                customFields.remove(key);
+                truncated = true;
+                break;
+            }
+        }
+        return new FrontMatterSnapshot(customFields, truncated);
+    }
+    
+    private static String truncateFrontMatterValue(String value) {
+        int characterCount = value.codePointCount(0, value.length());
+        if (characterCount <= FRONT_MATTER_CUSTOM_VALUE_MAX_CHARACTERS) {
+            return value;
+        }
+        int retainedCharacters = FRONT_MATTER_CUSTOM_VALUE_MAX_CHARACTERS
+            - FRONT_MATTER_TRUNCATION_SUFFIX.length();
+        int endIndex = value.offsetByCodePoints(0, retainedCharacters);
+        return value.substring(0, endIndex) + FRONT_MATTER_TRUNCATION_SUFFIX;
+    }
+    
+    private static int frontMatterPriority(String key) {
+        if ("alias".equals(key)) {
+            return 0;
+        }
+        if ("license".equals(key)) {
+            return 1;
+        }
+        if ("compatibility".equals(key)) {
+            return 2;
+        }
+        if ("allowed-tools".equals(key)) {
+            return 3;
+        }
+        return key.startsWith("metadata.") ? 4 : 5;
+    }
+    
+    private static boolean isReservedFrontMatterField(String key) {
+        return "name".equals(key) || "description".equals(key) || "version".equals(key);
     }
     
     private static Map<String, String> readFrontMatter(Map<String, Object> metadata) {
@@ -1772,6 +1871,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         });
         return result;
+    }
+    
+    private static final class FrontMatterSnapshot {
+        
+        private final Map<String, String> customFields;
+        
+        private final boolean truncated;
+        
+        private FrontMatterSnapshot(Map<String, String> customFields, boolean truncated) {
+            this.customFields = customFields;
+            this.truncated = truncated;
+        }
     }
     
     @SuppressWarnings("unchecked")

@@ -272,6 +272,8 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode item = findByName(page, "name", name);
         assertFalse(item.isMissingNode(), page.toString());
         assertTrue(!item.has("frontMatter") || item.get("frontMatter").isNull(), item.toString());
+        assertTrue(!item.has("frontMatterTruncated")
+                || item.get("frontMatterTruncated").isNull(), item.toString());
     }
 
     private Map<String, String> frontMatterForm(String name, String alias) {
@@ -292,10 +294,14 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue(frontMatter.isObject(), item.toString());
         assertEquals(alias, frontMatter.path("alias").asText(), item.toString());
         assertEquals(name, frontMatter.path("name").asText(), item.toString());
+        assertEquals(item.path("description").asText(),
+                frontMatter.path("description").asText(), item.toString());
         assertEquals(version, frontMatter.path("version").asText(), item.toString());
         assertEquals("custom-value", frontMatter.path("metadata.custom").asText(), item.toString());
+        assertFalse(item.path("frontMatterTruncated").asBoolean(true), item.toString());
         JsonNode detail = getJsonOk(ADMIN_SKILL_PATH, skillQuery(name)).get("data");
         assertEquals(frontMatter, detail.get("frontMatter"), detail.toString());
+        assertFalse(detail.path("frontMatterTruncated").asBoolean(true), detail.toString());
     }
 
     private void assertSkillListContains(Query query, String skillName) throws Exception {

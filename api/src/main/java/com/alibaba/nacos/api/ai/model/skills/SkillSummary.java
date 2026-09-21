@@ -63,6 +63,12 @@ public class SkillSummary extends SkillBasicInfo {
     private Map<String, String> frontMatter;
     
     /**
+     * Whether custom fields were omitted or shortened in the frontmatter response projection.
+     * Null when frontmatter is unavailable.
+     */
+    private Boolean frontMatterTruncated;
+    
+    /**
      * The version currently being edited (draft).
      */
     private String editingVersion;
@@ -134,13 +140,21 @@ public class SkillSummary extends SkillBasicInfo {
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-
+    
     public Map<String, String> getFrontMatter() {
         return frontMatter;
     }
-
+    
     public void setFrontMatter(Map<String, String> frontMatter) {
         this.frontMatter = frontMatter;
+    }
+    
+    public Boolean getFrontMatterTruncated() {
+        return frontMatterTruncated;
+    }
+    
+    public void setFrontMatterTruncated(Boolean frontMatterTruncated) {
+        this.frontMatterTruncated = frontMatterTruncated;
     }
     
     public String getEditingVersion() {
