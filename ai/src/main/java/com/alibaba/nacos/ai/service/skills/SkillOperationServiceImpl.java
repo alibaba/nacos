@@ -1890,8 +1890,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (StringUtils.isBlank(json)) {
             return new LinkedHashMap<>();
         }
-        Map<String, Object> result = JacksonUtils.toObj(json, Map.class);
-        return result == null ? new LinkedHashMap<>() : result;
+        try {
+            Map<String, Object> result = JacksonUtils.toObj(json, Map.class);
+            return result == null ? new LinkedHashMap<>() : result;
+        } catch (Exception ignored) {
+            return new LinkedHashMap<>();
+        }
     }
     
     /**

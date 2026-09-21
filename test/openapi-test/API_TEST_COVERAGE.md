@@ -397,8 +397,10 @@ Both Skill API scenario matrices record null/legacy behavior and deterministic
 CAS coverage in service unit tests. Lists must not load per-item versions or
 package storage. HTTP IT verifies generated reserved fields and an untruncated
 projection; service unit tests cover custom-field priority and all snapshot
-limits while preserving complete version metadata. Historical backfill and
-frontmatter search are out of scope. Existing `pageSize` behavior is unchanged.
+limits while preserving complete version metadata. They also verify that malformed
+historical `ai_resource.ext` metadata cannot fail list or detail requests.
+Historical backfill and frontmatter search are out of scope. Existing `pageSize`
+behavior is unchanged.
 
 ## Config detail schema (#15853)
 

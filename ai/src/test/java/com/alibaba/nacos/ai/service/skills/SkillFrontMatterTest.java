@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -342,6 +343,28 @@ class SkillFrontMatterTest {
         service.updateDraft("public", skill("one", "Updated"), null);
         assertEquals("Updated", summary("one").getFrontMatter().get("alias"));
         verify(storage, never()).get(any());
+    }
+    
+    @Test
+    void malformedHistoricalMetadataDoesNotFailListOrDetail() throws Exception {
+        create("one", "1.0.0", "Legacy");
+        create("two", "1.0.0", "Available");
+        resources.get("one").setExt("{malformed");
+        
+        List<SkillSummary> summaries =
+            service.listSkills("public", null, null, 1, 100).getPageItems();
+        SkillSummary malformed = summaries.stream().filter(item -> "one".equals(item.getName()))
+            .findFirst().orElseThrow();
+        SkillSummary available = summaries.stream().filter(item -> "two".equals(item.getName()))
+            .findFirst().orElseThrow();
+        assertNull(malformed.getFrontMatter());
+        assertNull(malformed.getFrontMatterTruncated());
+        assertEquals("Available", available.getFrontMatter().get("alias"));
+        
+        SkillMeta detail = service.getSkillDetail("public", "one");
+        assertEquals("one", detail.getName());
+        assertNull(detail.getFrontMatter());
+        assertNull(detail.getFrontMatterTruncated());
     }
     
     @Test

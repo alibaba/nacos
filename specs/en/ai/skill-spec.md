@@ -251,6 +251,9 @@ Historical versions without this metadata remain readable and may return null.
 There is no migration, bootstrap repair or list-time backfill. Newly updating
 historical content populates metadata for the updated version only; merely
 publishing or toggling an untouched historical version does not parse its files.
+Malformed historical `ai_resource.ext` values are treated as unavailable
+metadata: list and metadata detail requests remain successful and return null
+frontmatter rather than propagating JSON deserialization failures.
 
 ## 5. Lifecycle
 
