@@ -87,6 +87,11 @@ public class PropertyKeyConst {
     
     public static final String ENABLE_REMOTE_SYNC_CONFIG = "enableRemoteSyncConfig";
     
+    /**
+     * Whether the client stores remote configuration snapshots on the local file system.
+     */
+    public static final String CONFIG_SNAPSHOT_ENABLED = "nacos.config.snapshot.enabled";
+    
     public static final String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
     
     public static final String NAMING_CACHE_REGISTRY_DIR = "namingCacheRegistryDir";

@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 
 /**
  * Snapshot switch.
@@ -28,7 +30,11 @@ public class SnapShotSwitch {
     /**
      * whether use local cache.
      */
-    private static Boolean isSnapShot = true;
+    private static Boolean isSnapShot;
+    
+    static {
+        initSnapshotSwitch();
+    }
     
     public static Boolean getIsSnapShot() {
         return isSnapShot;
@@ -37,6 +43,14 @@ public class SnapShotSwitch {
     public static void setIsSnapShot(Boolean isSnapShot) {
         SnapShotSwitch.isSnapShot = isSnapShot;
         LocalConfigInfoProcessor.cleanAllSnapshot();
+    }
+    
+    static void initSnapshotSwitch() {
+        isSnapShot = NacosClientProperties.PROTOTYPE
+            .getBoolean(PropertyKeyConst.CONFIG_SNAPSHOT_ENABLED, true);
+        if (!isSnapShot) {
+            LocalConfigInfoProcessor.cleanAllSnapshot();
+        }
     }
     
 }
