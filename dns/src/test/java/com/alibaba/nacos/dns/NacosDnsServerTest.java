@@ -246,4 +246,27 @@ class NacosDnsServerTest {
             s.close();
         }
     }
+    
+    /**
+     * Non-Nacos domains with forwarding disabled must return NXDOMAIN.
+     */
+    @Test
+    void testNonNacosDomainReturnsNxDomainWhenForwardDisabled() throws Exception {
+        mockInstances(1);
+        server.start();
+        int port = getListeningPort();
+        Thread.sleep(200);
+        
+        SimpleResolver resolver = new SimpleResolver("127.0.0.1");
+        resolver.setPort(port);
+        resolver.setTCP(false);
+        
+        Name queryName = Name.fromConstantString("www.google.com.");
+        Record question = Record.newRecord(queryName, Type.A, DClass.IN);
+        Message query = Message.newQuery(question);
+        Message response = resolver.send(query);
+        
+        assertEquals(org.xbill.DNS.Rcode.NXDOMAIN, response.getHeader().getRcode(),
+            "Non-Nacos domain should return NXDOMAIN when forwarding is disabled");
+    }
 }

@@ -367,6 +367,12 @@ class NacosDnsQueryHandlerTest {
         assertEquals(9090, srv.getPort());
         assertEquals(5, srv.getWeight());
         assertEquals(0, srv.getPriority());
+        
+        // Verify glue A record in additional section
+        List<Record> additional = response.getSection(Section.ADDITIONAL);
+        assertEquals(1, additional.size(), "SRV response should include glue A record");
+        assertEquals(Type.A, additional.get(0).getType());
+        assertEquals(srv.getTarget(), additional.get(0).getName());
     }
     
     @Test
@@ -412,5 +418,75 @@ class NacosDnsQueryHandlerTest {
         assertFalse(handler.matchesSuffix("www.google.com"));
         assertFalse(handler.matchesSuffix("nacos"));
         assertFalse(handler.matchesSuffix(null));
+    }
+    
+    // ---- SRV edge cases ----
+    
+    @Test
+    void testSrvQueryDefaultWeightWhenZero() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(9090);
+        inst.setWeight(0);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        org.xbill.DNS.SRVRecord srv =
+            (org.xbill.DNS.SRVRecord) response.getSection(Section.ANSWER).get(0);
+        assertEquals(1, srv.getWeight(), "Weight should default to 1 when instance weight is 0");
+    }
+    
+    @Test
+    void testSrvQueryIncludesGlueRecordsInAdditional() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(8080);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(1, response.getSection(Section.ANSWER).size());
+        assertEquals(1, response.getSection(Section.ADDITIONAL).size(),
+            "SRV response should include glue A record in additional section");
+        Record glue = response.getSection(Section.ADDITIONAL).get(0);
+        assertEquals(Type.A, glue.getType());
+    }
+    
+    @Test
+    void testSrvQueryNoHealthyInstancesReturnsNxDomain() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", false, true);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
+    }
+    
+    // ---- Non-Nacos domain (forwarding path is in Server, handler returns NXDOMAIN) ----
+    
+    @Test
+    void testNonNacosDomainReturnsNxDomain() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("www.google.com.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
     }
 }
