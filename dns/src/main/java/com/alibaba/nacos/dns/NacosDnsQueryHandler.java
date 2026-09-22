@@ -101,10 +101,17 @@ public class NacosDnsQueryHandler {
      * @return the DNS response message
      */
     public Message handleQuery(Message query) {
-        metrics.recordQuery();
         long startTime = System.nanoTime();
         try {
             return doHandleQuery(query);
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error handling DNS query", e);
+            metrics.recordFailed();
+            Message error = new Message(query.getHeader().getID());
+            error.getHeader().setFlag(Flags.QR);
+            error.getHeader().setFlag(Flags.RA);
+            error.getHeader().setRcode(Rcode.SERVFAIL);
+            return error;
         } finally {
             metrics.getQueryTimer().record(System.nanoTime() - startTime,
                 java.util.concurrent.TimeUnit.NANOSECONDS);
@@ -198,7 +205,9 @@ public class NacosDnsQueryHandler {
     
     /**
      * Handle SRV queries. Each healthy instance becomes an SRV record with
-     * priority=0, weight=instance.weight, port=instance.port, target=instance.ip.
+     * priority=0, weight=instance.weight, port=instance.port, and a synthetic
+     * target hostname. Corresponding A/AAAA records are added to the additional
+     * section so clients can resolve targets without extra queries.
      */
     private void handleSrvQuery(Message response, Record question, List<Instance> instances) {
         Collections.shuffle(instances);
@@ -207,13 +216,54 @@ public class NacosDnsQueryHandler {
         Name queryName = question.getName();
         for (int i = 0; i < limit; i++) {
             Instance inst = instances.get(i);
+            InetAddress addr = parseIpAddress(inst.getIp());
+            if (addr == null) {
+                continue;
+            }
+            int port = inst.getPort();
+            if (port < 0 || port > 65535) {
+                LOGGER.warn("Skipping instance with invalid port: {}", port);
+                continue;
+            }
             int weight = inst.getWeight() > 0 ? (int) inst.getWeight() : SRV_DEFAULT_WEIGHT;
-            Name target = Name.fromConstantString(inst.getIp().replace('.', '-') + "."
-                + properties.getDomainSuffix() + ".");
+            Name target = buildSrvTargetName(addr);
             SRVRecord srv = new SRVRecord(queryName, DClass.IN, properties.getTtl(),
-                SRV_DEFAULT_PRIORITY, weight, inst.getPort(), target);
+                SRV_DEFAULT_PRIORITY, weight, port, target);
             response.addRecord(srv, Section.ANSWER);
+            
+            // Add glue record in additional section
+            Record glue;
+            if (addr.getAddress().length == 4) {
+                glue = new ARecord(target, DClass.IN, properties.getTtl(), addr);
+            } else {
+                glue = new AAAARecord(target, DClass.IN, properties.getTtl(), addr);
+            }
+            response.addRecord(glue, Section.ADDITIONAL);
         }
+    }
+    
+    /**
+     * Build a synthetic target hostname for an SRV record from an IP address.
+     * IPv4: 10.0.0.1 -> 10-0-0-1.nacos.
+     * IPv6: uses full expanded form with hyphens, e.g. 2001-0db8-0000-0000-0000-0000-0000-0001.nacos.
+     */
+    private Name buildSrvTargetName(InetAddress addr) {
+        String ipPart;
+        if (addr.getAddress().length == 4) {
+            ipPart = addr.getHostAddress().replace('.', '-');
+        } else {
+            // IPv6: expand to full form to avoid leading/trailing hyphens from "::"
+            byte[] b = addr.getAddress();
+            StringBuilder sb = new StringBuilder(39);
+            for (int i = 0; i < 8; i++) {
+                if (i > 0) {
+                    sb.append('-');
+                }
+                sb.append(String.format("%02x%02x", b[i * 2], b[i * 2 + 1]));
+            }
+            ipPart = sb.toString();
+        }
+        return Name.fromConstantString(ipPart + "." + properties.getDomainSuffix() + ".");
     }
     
     /**
@@ -277,12 +327,54 @@ public class NacosDnsQueryHandler {
     
     /**
      * Parse an IP string into InetAddress without performing a DNS lookup.
+     * Returns null if the string is not a valid IP address.
      */
     private InetAddress parseIpAddress(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return null;
+        }
         try {
-            return InetAddress.getByName(ip);
+            // Use getByAddress with parsed bytes to avoid any DNS resolution
+            byte[] addr = parseIpBytes(ip);
+            if (addr == null) {
+                return null;
+            }
+            return InetAddress.getByAddress(addr);
         } catch (UnknownHostException e) {
             LOGGER.warn("Invalid IP address: {}", ip);
+            return null;
+        }
+    }
+    
+    /**
+     * Parse an IP string to raw bytes without DNS lookup.
+     * Supports IPv4 (dotted decimal) and IPv6 (colon hex).
+     */
+    private byte[] parseIpBytes(String ip) {
+        // IPv4: four octets separated by dots
+        if (ip.indexOf(':') < 0) {
+            String[] parts = ip.split("\\.");
+            if (parts.length != 4) {
+                return null;
+            }
+            byte[] bytes = new byte[4];
+            for (int i = 0; i < 4; i++) {
+                try {
+                    int val = Integer.parseInt(parts[i]);
+                    if (val < 0 || val > 255) {
+                        return null;
+                    }
+                    bytes[i] = (byte) val;
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+            return bytes;
+        }
+        // IPv6: strings containing ':' are IP literals, getByName parses them without DNS
+        try {
+            return InetAddress.getByName(ip).getAddress();
+        } catch (UnknownHostException e) {
             return null;
         }
     }

@@ -281,8 +281,10 @@ public class NacosDnsServer {
      * Resolve a DNS query: handle Nacos-suffix domains locally, forward others if enabled.
      */
     private Message resolveQuery(Message query) {
+        metrics.recordQuery();
         Record question = query.getQuestion();
-        if (question != null && queryHandler.matchesSuffix(question.getName().toString(true))) {
+        if (question != null && question.getName() != null
+            && queryHandler.matchesSuffix(question.getName().toString(true))) {
             return queryHandler.handleQuery(query);
         }
         
@@ -327,15 +329,16 @@ public class NacosDnsServer {
             while (running) {
                 Socket clientSocket = tcpSocket.accept();
                 
-                // Enforce connection limit
-                if (activeTcpConnections.get() >= MAX_TCP_CONNECTIONS) {
+                // Atomically enforce connection limit
+                int current = activeTcpConnections.incrementAndGet();
+                if (current > MAX_TCP_CONNECTIONS) {
+                    activeTcpConnections.decrementAndGet();
                     LOGGER.warn("Too many TCP connections ({}), rejecting {}",
-                        activeTcpConnections.get(), clientSocket.getRemoteSocketAddress());
+                        current - 1, clientSocket.getRemoteSocketAddress());
                     clientSocket.close();
                     continue;
                 }
                 
-                activeTcpConnections.incrementAndGet();
                 try {
                     tcpWorkerPool.submit(() -> {
                         try {
