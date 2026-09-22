@@ -23,6 +23,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
+import org.xbill.DNS.Rcode;
+import org.xbill.DNS.Record;
 import org.xbill.DNS.Section;
 
 import jakarta.annotation.PreDestroy;
@@ -87,6 +89,8 @@ public class NacosDnsServer {
     
     private final NacosDnsProperties properties;
     private final NacosDnsQueryHandler queryHandler;
+    private final NacosDnsForwarder forwarder;
+    private final NacosDnsMetrics metrics;
     
     /** Dedicated listener threads (non-daemon, short-lived). */
     private Thread udpListenerThread;
@@ -104,9 +108,12 @@ public class NacosDnsServer {
     private final AtomicInteger activeTcpConnections = new AtomicInteger(0);
     
     public NacosDnsServer(NacosDnsProperties properties,
-        NacosDnsQueryHandler queryHandler) {
+        NacosDnsQueryHandler queryHandler, NacosDnsForwarder forwarder,
+        NacosDnsMetrics metrics) {
         this.properties = properties;
         this.queryHandler = queryHandler;
+        this.forwarder = forwarder;
+        this.metrics = metrics;
     }
     
     /**
@@ -248,7 +255,7 @@ public class NacosDnsServer {
     private void handleUdpQuery(byte[] queryData, InetAddress clientAddr, int clientPort) {
         try {
             Message query = new Message(queryData);
-            Message response = queryHandler.handleQuery(query);
+            Message response = resolveQuery(query);
             
             byte[] responseData = response.toWire();
             // Truncate if response exceeds standard UDP size to prevent amplification
@@ -268,6 +275,34 @@ public class NacosDnsServer {
         } catch (Exception e) {
             LOGGER.debug("Error handling UDP DNS query from {}:{}", clientAddr, clientPort, e);
         }
+    }
+    
+    /**
+     * Resolve a DNS query: handle Nacos-suffix domains locally, forward others if enabled.
+     */
+    private Message resolveQuery(Message query) {
+        Record question = query.getQuestion();
+        if (question != null && queryHandler.matchesSuffix(question.getName().toString(true))) {
+            return queryHandler.handleQuery(query);
+        }
+        
+        // Try forwarding to upstream DNS
+        Message forwarded = forwarder.forward(query);
+        if (forwarded != null) {
+            metrics.recordForwarded();
+            return forwarded;
+        }
+        
+        // Fallback: return NXDOMAIN
+        Message response = new Message(query.getHeader().getID());
+        response.getHeader().setFlag(Flags.QR);
+        response.getHeader().setFlag(Flags.RA);
+        response.getHeader().setRcode(Rcode.NXDOMAIN);
+        if (question != null) {
+            response.addRecord(question, Section.QUESTION);
+        }
+        metrics.recordFailed();
+        return response;
     }
     
     /**
@@ -381,7 +416,7 @@ public class NacosDnsServer {
                 }
                 
                 Message query = new Message(queryData);
-                Message response = queryHandler.handleQuery(query);
+                Message response = resolveQuery(query);
                 
                 byte[] responseData = response.toWire();
                 synchronized (out) {

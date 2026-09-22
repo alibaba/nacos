@@ -30,6 +30,7 @@ import org.xbill.DNS.Message;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
 import org.xbill.DNS.Section;
 import org.xbill.DNS.Type;
 
@@ -48,6 +49,8 @@ import java.util.stream.Collectors;
  *   <li>{serviceName}.nacos - uses default group</li>
  * </ul>
  *
+ * <p>Supported record types: A, AAAA, SRV.
+ *
  * @author Nacos
  */
 @Component
@@ -58,13 +61,37 @@ public class NacosDnsQueryHandler {
     /** Maximum number of answer records to include in a response. */
     private static final int MAX_ANSWER_RECORDS = 20;
     
+    /** Default SRV priority. */
+    private static final int SRV_DEFAULT_PRIORITY = 0;
+    
+    /** Default SRV weight when instance weight is not set. */
+    private static final int SRV_DEFAULT_WEIGHT = 1;
+    
     private final InstanceOperatorClientImpl instanceOperator;
     private final NacosDnsProperties properties;
+    private final NacosDnsMetrics metrics;
     
     public NacosDnsQueryHandler(InstanceOperatorClientImpl instanceOperator,
-        NacosDnsProperties properties) {
+        NacosDnsProperties properties, NacosDnsMetrics metrics) {
         this.instanceOperator = instanceOperator;
         this.properties = properties;
+        this.metrics = metrics;
+    }
+    
+    /**
+     * Check whether a domain matches the configured Nacos suffix.
+     *
+     * @param domain the domain name (without trailing dot)
+     * @return true if the domain should be resolved locally
+     */
+    public boolean matchesSuffix(String domain) {
+        if (domain == null) {
+            return false;
+        }
+        if (domain.endsWith(".")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        return domain.endsWith("." + properties.getDomainSuffix());
     }
     
     /**
@@ -74,6 +101,17 @@ public class NacosDnsQueryHandler {
      * @return the DNS response message
      */
     public Message handleQuery(Message query) {
+        metrics.recordQuery();
+        long startTime = System.nanoTime();
+        try {
+            return doHandleQuery(query);
+        } finally {
+            metrics.getQueryTimer().record(System.nanoTime() - startTime,
+                java.util.concurrent.TimeUnit.NANOSECONDS);
+        }
+    }
+    
+    private Message doHandleQuery(Message query) {
         Message response = new Message(query.getHeader().getID());
         response.getHeader().setFlag(Flags.QR);
         response.getHeader().setFlag(Flags.RA);
@@ -81,12 +119,14 @@ public class NacosDnsQueryHandler {
         Record question = query.getQuestion();
         if (question == null) {
             response.getHeader().setRcode(Rcode.FORMERR);
+            metrics.recordFailed();
             return response;
         }
         
         // Only answer IN class queries
         if (question.getDClass() != DClass.IN) {
             response.getHeader().setRcode(Rcode.REFUSED);
+            metrics.recordFailed();
             return response;
         }
         
@@ -95,41 +135,54 @@ public class NacosDnsQueryHandler {
         
         LOGGER.debug("DNS query: domain={}, type={}", domain, Type.string(type));
         
-        // Only support A record and AAAA record for now
-        if (type != Type.A && type != Type.AAAA) {
+        // Support A, AAAA, and SRV record types
+        if (type != Type.A && type != Type.AAAA && type != Type.SRV) {
             response.getHeader().setRcode(Rcode.NOTIMP);
+            metrics.recordFailed();
             return response;
         }
         
-        // Parse domain and look up service
-        List<InetAddress> addresses = resolveToAddresses(domain);
+        // Parse domain and look up service instances
+        List<Instance> instances = resolveInstances(domain);
         
-        if (addresses == null || addresses.isEmpty()) {
+        if (instances == null || instances.isEmpty()) {
             response.getHeader().setRcode(Rcode.NXDOMAIN);
+            metrics.recordFailed();
             return response;
         }
         
+        response.addRecord(question, Section.QUESTION);
+        
+        if (type == Type.SRV) {
+            handleSrvQuery(response, question, instances);
+        } else {
+            handleAddressQuery(response, question, instances, type);
+        }
+        
+        metrics.recordSuccess();
+        return response;
+    }
+    
+    /**
+     * Handle A or AAAA address queries.
+     */
+    private void handleAddressQuery(Message response, Record question,
+        List<Instance> instances, int type) {
         // Filter addresses by requested record type first, then shuffle and limit.
-        // This ensures mixed IPv4/IPv6 deployments don't return empty answers.
-        List<InetAddress> matching = addresses.stream()
+        List<InetAddress> matching = instances.stream()
+            .map(inst -> parseIpAddress(inst.getIp()))
+            .filter(addr -> addr != null)
             .filter(addr -> (type == Type.A && addr.getAddress().length == 4)
                 || (type == Type.AAAA && addr.getAddress().length == 16))
             .collect(Collectors.toList());
         
         if (matching.isEmpty()) {
-            response.getHeader().setRcode(Rcode.NOERROR);
-            response.addRecord(question, Section.QUESTION);
-            return response;
+            return;
         }
         
-        // Shuffle matching addresses for basic round-robin, then cap at MAX_ANSWER_RECORDS
         Collections.shuffle(matching);
         int limit = Math.min(matching.size(), MAX_ANSWER_RECORDS);
         
-        // Add question section
-        response.addRecord(question, Section.QUESTION);
-        
-        // Add answer records
         Name queryName = question.getName();
         for (int i = 0; i < limit; i++) {
             InetAddress addr = matching.get(i);
@@ -141,14 +194,32 @@ public class NacosDnsQueryHandler {
             }
             response.addRecord(record, Section.ANSWER);
         }
-        
-        return response;
     }
     
     /**
-     * Resolve a domain name to a list of IP addresses from Nacos service instances.
+     * Handle SRV queries. Each healthy instance becomes an SRV record with
+     * priority=0, weight=instance.weight, port=instance.port, target=instance.ip.
      */
-    private List<InetAddress> resolveToAddresses(String domain) {
+    private void handleSrvQuery(Message response, Record question, List<Instance> instances) {
+        Collections.shuffle(instances);
+        int limit = Math.min(instances.size(), MAX_ANSWER_RECORDS);
+        
+        Name queryName = question.getName();
+        for (int i = 0; i < limit; i++) {
+            Instance inst = instances.get(i);
+            int weight = inst.getWeight() > 0 ? (int) inst.getWeight() : SRV_DEFAULT_WEIGHT;
+            Name target = Name.fromConstantString(inst.getIp().replace('.', '-') + "."
+                + properties.getDomainSuffix() + ".");
+            SRVRecord srv = new SRVRecord(queryName, DClass.IN, properties.getTtl(),
+                SRV_DEFAULT_PRIORITY, weight, inst.getPort(), target);
+            response.addRecord(srv, Section.ANSWER);
+        }
+    }
+    
+    /**
+     * Resolve a domain name to a list of healthy Nacos service instances.
+     */
+    private List<Instance> resolveInstances(String domain) {
         // Remove trailing dot
         if (domain.endsWith(".")) {
             domain = domain.substring(0, domain.length() - 1);
@@ -196,8 +267,6 @@ public class NacosDnsQueryHandler {
             return serviceInfo.getHosts().stream()
                 .filter(Instance::isEnabled)
                 .filter(Instance::isHealthy)
-                .map(inst -> parseIpAddress(inst.getIp()))
-                .filter(addr -> addr != null)
                 .collect(Collectors.toList());
             
         } catch (Exception e) {

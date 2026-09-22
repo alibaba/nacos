@@ -18,6 +18,9 @@ package com.alibaba.nacos.dns;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Configuration properties for Nacos DNS server.
  *
@@ -56,6 +59,21 @@ public class NacosDnsProperties {
      * DNS TTL (time to live) for A records in seconds.
      */
     private long ttl = 60;
+    
+    /**
+     * Whether to forward queries that don't match the Nacos domain suffix to upstream DNS servers.
+     */
+    private boolean forwardEnabled = false;
+    
+    /**
+     * Upstream DNS server addresses for forwarding (e.g., "8.8.8.8", "114.114.114.114").
+     */
+    private List<String> forwardServers = new ArrayList<>();
+    
+    /**
+     * Timeout in milliseconds for forwarded DNS queries.
+     */
+    private int forwardTimeoutMs = 3000;
     
     public boolean isEnabled() {
         return enabled;
@@ -103,5 +121,29 @@ public class NacosDnsProperties {
     
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+    
+    public boolean isForwardEnabled() {
+        return forwardEnabled;
+    }
+    
+    public void setForwardEnabled(boolean forwardEnabled) {
+        this.forwardEnabled = forwardEnabled;
+    }
+    
+    public List<String> getForwardServers() {
+        return forwardServers;
+    }
+    
+    public void setForwardServers(List<String> forwardServers) {
+        this.forwardServers = forwardServers;
+    }
+    
+    public int getForwardTimeoutMs() {
+        return forwardTimeoutMs;
+    }
+    
+    public void setForwardTimeoutMs(int forwardTimeoutMs) {
+        this.forwardTimeoutMs = forwardTimeoutMs;
     }
 }

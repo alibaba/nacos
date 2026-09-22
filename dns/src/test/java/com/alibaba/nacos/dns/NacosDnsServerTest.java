@@ -19,6 +19,8 @@ package com.alibaba.nacos.dns;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,8 +72,12 @@ class NacosDnsServerTest {
         properties.setTtl(60);
         
         instanceOperator = mock(InstanceOperatorClientImpl.class);
-        NacosDnsQueryHandler queryHandler = new NacosDnsQueryHandler(instanceOperator, properties);
-        server = new NacosDnsServer(properties, queryHandler);
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(properties);
+        NacosDnsQueryHandler queryHandler =
+            new NacosDnsQueryHandler(instanceOperator, properties, metrics);
+        server = new NacosDnsServer(properties, queryHandler, forwarder, metrics);
     }
     
     @AfterEach
