@@ -318,6 +318,9 @@
     "subscriberName": "订阅者",
     "subscribeCount": "订阅数",
     "clusters": "集群",
+    "address": "地址",
+    "clientVersion": "客户端版本",
+    "appName": "归属应用",
     "totalSubscribers": "共 {{total}} 个订阅者",
     "metadataInvalid": "元数据格式不正确，请输入有效的 JSON",
     "serviceNameRequired": "服务名不能为空"

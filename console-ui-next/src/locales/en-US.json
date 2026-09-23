@@ -318,6 +318,9 @@
     "subscriberName": "Subscriber",
     "subscribeCount": "Subscribe Count",
     "clusters": "Clusters",
+    "address": "Address",
+    "clientVersion": "Client Version",
+    "appName": "Application",
     "totalSubscribers": "{{total}} subscribers",
     "metadataInvalid": "Invalid metadata, please enter valid JSON",
     "serviceNameRequired": "Service name is required"
