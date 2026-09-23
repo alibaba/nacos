@@ -189,6 +189,18 @@ Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详
 全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
 CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
 
+### Skill frontmatter response scenarios (#15345)
+
+| Scenario | Expected result | Coverage |
+| --- | --- | --- |
+| Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |
+| Bounded custom projection | Resource snapshot excludes reserved fields, prioritizes standard fields, and enforces entry/key/value/serialized-size limits with an explicit truncation flag; complete version metadata remains unchanged. | Service unit tests; standalone IT does not inspect internal metadata rows. |
+| Malformed historical metadata | List and detail remain available and return null frontmatter when `ai_resource.ext` is malformed. | Service unit test; standalone IT cannot seed malformed internal metadata through the public API. |
+| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
+| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
+| CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
 C11 repeats the complete AI Console class set against the final artifact's
 independent Console deployment. Agent Runtime assertions require enabled/healthy
 and absence of the removed state field. These executions do not change the

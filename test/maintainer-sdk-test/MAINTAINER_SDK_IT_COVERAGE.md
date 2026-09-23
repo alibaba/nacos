@@ -137,3 +137,10 @@ See [validation evidence](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERR
 Verified on 2026-09-16: both adapters discovered 46 cases, with 44 passed, zero failures/errors,
 and two existing skips each (DAUTH-F04 and the opt-in real restart scenario). No recovery test was
 performed. This validates the strengthened business-error assertions without upgrading unrelated coverage gaps.
+
+Skill frontmatter (#15345): `AiMaintainerServiceMaintainerSdkITCase` verifies
+that metadata detail and list deserialization retain parsed frontmatter after
+content update, publication and version offline/online, including the generated
+description and `frontMatterTruncated=false` for a complete projection. Historical
+responses may omit frontmatter and the truncation flag or return null; API model
+round-trip unit tests cover that boundary.
