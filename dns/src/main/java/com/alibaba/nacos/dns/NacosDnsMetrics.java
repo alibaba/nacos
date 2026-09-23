@@ -19,7 +19,7 @@ package com.alibaba.nacos.dns;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.stereotype.Component;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,6 +27,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Metrics collector for the Nacos DNS server.
+ *
+ * <p>This class is optional: when no {@link MeterRegistry} is available (e.g.
+ * actuator not on classpath), a {@link SimpleMeterRegistry} is used internally
+ * so the DNS server functions without any monitoring backend.
  *
  * <p>Exposes the following metrics:
  * <ul>
@@ -38,12 +42,11 @@ import java.util.concurrent.TimeUnit;
  *       {@code type} (A/AAAA/SRV/UNKNOWN) and {@code rcode} (NOERROR/NXDOMAIN/SERVFAIL/...)</li>
  * </ul>
  *
- * <p>Tag cardinality is bounded: type has at most 4 values and rcode uses the
+ * <p>Tag cardinality is bounded: type has at most 5 values and rcode uses the
  * standard DNS response code names. Domain names are never used as tags.
  *
  * @author Nacos
  */
-@Component
 public class NacosDnsMetrics {
     
     private final MeterRegistry registry;
@@ -51,7 +54,7 @@ public class NacosDnsMetrics {
     private final ConcurrentMap<String, Timer> timers = new ConcurrentHashMap<>();
     
     public NacosDnsMetrics(MeterRegistry registry) {
-        this.registry = registry;
+        this.registry = registry != null ? registry : new SimpleMeterRegistry();
     }
     
     private Counter counter(String name, String description) {
