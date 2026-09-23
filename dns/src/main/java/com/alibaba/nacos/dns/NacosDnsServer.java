@@ -27,6 +27,7 @@ import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.Section;
 
+import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 
 import java.io.DataInputStream;
@@ -290,13 +291,13 @@ public class NacosDnsServer {
         }
         
         // Forwarding path: timed separately with type/rcode tags
-        long startTime = System.nanoTime();
         String type = queryHandler.extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
         Message forwarded = forwarder.forward(query);
         if (forwarded != null) {
             metrics.recordForwarded();
             String rcode = Rcode.string(forwarded.getHeader().getRcode());
-            metrics.recordQueryDuration(System.nanoTime() - startTime, type, rcode);
+            metrics.stopSample(sample, type, rcode);
             return forwarded;
         }
         
@@ -309,7 +310,7 @@ public class NacosDnsServer {
             response.addRecord(question, Section.QUESTION);
         }
         metrics.recordFailed();
-        metrics.recordQueryDuration(System.nanoTime() - startTime, type, "NXDOMAIN");
+        metrics.stopSample(sample, type, "NXDOMAIN");
         return response;
     }
     

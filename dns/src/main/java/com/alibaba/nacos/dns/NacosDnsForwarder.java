@@ -20,8 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.xbill.DNS.Message;
+import org.xbill.DNS.Record;
 import org.xbill.DNS.SimpleResolver;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -33,6 +35,9 @@ import java.util.List;
 public class NacosDnsForwarder {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosDnsForwarder.class);
+    
+    /** Minimum forward timeout in milliseconds. Prevents zero/infinite waits from misconfiguration. */
+    private static final int MIN_FORWARD_TIMEOUT_MS = 100;
     
     private final NacosDnsProperties properties;
     
@@ -60,7 +65,9 @@ public class NacosDnsForwarder {
         for (String server : servers) {
             try {
                 SimpleResolver resolver = new SimpleResolver(server);
-                resolver.setTimeout(properties.getForwardTimeoutMs() / 1000);
+                // Clamp to minimum: Duration.ZERO means infinite wait in dnsjava
+                int timeoutMs = Math.max(properties.getForwardTimeoutMs(), MIN_FORWARD_TIMEOUT_MS);
+                resolver.setTimeout(Duration.ofMillis(timeoutMs));
                 Message response = resolver.send(query);
                 if (response != null) {
                     LOGGER.debug("Forwarded query to {} successfully", server);
@@ -71,7 +78,9 @@ public class NacosDnsForwarder {
             }
         }
         
-        LOGGER.warn("All upstream DNS servers failed for query {}", query.getQuestion());
+        Record question = query.getQuestion();
+        LOGGER.warn("All upstream DNS servers failed for query {}",
+            question != null ? question.getName() : "unknown");
         return null;
     }
 }

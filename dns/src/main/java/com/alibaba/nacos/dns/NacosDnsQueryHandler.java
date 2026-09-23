@@ -19,6 +19,7 @@ package com.alibaba.nacos.dns;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -101,8 +102,8 @@ public class NacosDnsQueryHandler {
      * @return the DNS response message
      */
     public Message handleQuery(Message query) {
-        long startTime = System.nanoTime();
         String type = extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
         String rcode = "SERVFAIL";
         try {
             Message response = doHandleQuery(query);
@@ -118,7 +119,7 @@ public class NacosDnsQueryHandler {
             rcode = "SERVFAIL";
             return error;
         } finally {
-            metrics.recordQueryDuration(System.nanoTime() - startTime, type, rcode);
+            metrics.stopSample(sample, type, rcode);
         }
     }
     

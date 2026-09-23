@@ -23,7 +23,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Metrics collector for the Nacos DNS server.
@@ -99,13 +98,26 @@ public class NacosDnsMetrics {
     }
     
     /**
-     * Record query processing duration with type and rcode tags.
+     * Start a Micrometer {@link Timer.Sample} for measuring query duration.
+     * Call {@link #stopSample(Timer.Sample, String, String)} with the resolved
+     * type and rcode to record into the correct tagged timer.
      *
-     * @param durationNanos elapsed time in nanoseconds
-     * @param type          query record type string (bounded cardinality)
-     * @param rcode         response code string (bounded cardinality)
+     * @return the active sample
      */
-    public void recordQueryDuration(long durationNanos, String type, String rcode) {
-        durationTimer(type, rcode).record(durationNanos, TimeUnit.NANOSECONDS);
+    public Timer.Sample startSample() {
+        return Timer.start(registry);
+    }
+    
+    /**
+     * Stop a previously started sample and record its duration into the tagged timer.
+     *
+     * @param sample the sample started by {@link #startSample()}
+     * @param type   query record type (bounded cardinality)
+     * @param rcode  response code name (bounded cardinality)
+     */
+    public void stopSample(Timer.Sample sample, String type, String rcode) {
+        if (sample != null) {
+            sample.stop(durationTimer(type, rcode));
+        }
     }
 }
