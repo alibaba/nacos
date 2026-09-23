@@ -285,13 +285,18 @@ public class NacosDnsServer {
         Record question = query.getQuestion();
         if (question != null && question.getName() != null
             && queryHandler.matchesSuffix(question.getName().toString(true))) {
+            // Local queries are timed inside queryHandler.handleQuery() with type/rcode tags
             return queryHandler.handleQuery(query);
         }
         
-        // Try forwarding to upstream DNS
+        // Forwarding path: timed separately with type/rcode tags
+        long startTime = System.nanoTime();
+        String type = queryHandler.extractQueryType(query);
         Message forwarded = forwarder.forward(query);
         if (forwarded != null) {
             metrics.recordForwarded();
+            String rcode = Rcode.string(forwarded.getHeader().getRcode());
+            metrics.recordQueryDuration(System.nanoTime() - startTime, type, rcode);
             return forwarded;
         }
         
@@ -304,6 +309,7 @@ public class NacosDnsServer {
             response.addRecord(question, Section.QUESTION);
         }
         metrics.recordFailed();
+        metrics.recordQueryDuration(System.nanoTime() - startTime, type, "NXDOMAIN");
         return response;
     }
     

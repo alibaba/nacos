@@ -102,8 +102,12 @@ public class NacosDnsQueryHandler {
      */
     public Message handleQuery(Message query) {
         long startTime = System.nanoTime();
+        String type = extractQueryType(query);
+        String rcode = "SERVFAIL";
         try {
-            return doHandleQuery(query);
+            Message response = doHandleQuery(query);
+            rcode = Rcode.string(response.getHeader().getRcode());
+            return response;
         } catch (Exception e) {
             LOGGER.error("Unexpected error handling DNS query", e);
             metrics.recordFailed();
@@ -111,11 +115,27 @@ public class NacosDnsQueryHandler {
             error.getHeader().setFlag(Flags.QR);
             error.getHeader().setFlag(Flags.RA);
             error.getHeader().setRcode(Rcode.SERVFAIL);
+            rcode = "SERVFAIL";
             return error;
         } finally {
-            metrics.getQueryTimer().record(System.nanoTime() - startTime,
-                java.util.concurrent.TimeUnit.NANOSECONDS);
+            metrics.recordQueryDuration(System.nanoTime() - startTime, type, rcode);
         }
+    }
+    
+    /**
+     * Extract query record type as a bounded-cardinality tag value.
+     * Supported types return their name (A, AAAA, SRV); everything else maps to OTHER.
+     */
+    String extractQueryType(Message query) {
+        Record question = query.getQuestion();
+        if (question == null) {
+            return "UNKNOWN";
+        }
+        int type = question.getType();
+        if (type == Type.A || type == Type.AAAA || type == Type.SRV) {
+            return Type.string(type);
+        }
+        return "OTHER";
     }
     
     private Message doHandleQuery(Message query) {

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Metrics collector for the Nacos DNS server.
@@ -33,8 +34,12 @@ import java.util.concurrent.ConcurrentMap;
  *   <li>nacos.dns.queries.success - queries answered successfully</li>
  *   <li>nacos.dns.queries.forwarded - queries forwarded to upstream</li>
  *   <li>nacos.dns.queries.failed - queries that failed</li>
- *   <li>nacos.dns.query.duration - query processing duration timer</li>
+ *   <li>nacos.dns.query.duration - query processing duration timer, tagged by
+ *       {@code type} (A/AAAA/SRV/UNKNOWN) and {@code rcode} (NOERROR/NXDOMAIN/SERVFAIL/...)</li>
  * </ul>
+ *
+ * <p>Tag cardinality is bounded: type has at most 4 values and rcode uses the
+ * standard DNS response code names. Domain names are never used as tags.
  *
  * @author Nacos
  */
@@ -43,18 +48,31 @@ public class NacosDnsMetrics {
     
     private final MeterRegistry registry;
     private final ConcurrentMap<String, Counter> counters = new ConcurrentHashMap<>();
-    private final Timer queryTimer;
+    private final ConcurrentMap<String, Timer> timers = new ConcurrentHashMap<>();
     
     public NacosDnsMetrics(MeterRegistry registry) {
         this.registry = registry;
-        this.queryTimer = Timer.builder("nacos.dns.query.duration")
-            .description("DNS query processing duration")
-            .register(registry);
     }
     
     private Counter counter(String name, String description) {
         return counters.computeIfAbsent(name,
             k -> Counter.builder(k).description(description).register(registry));
+    }
+    
+    /**
+     * Get or create a tagged timer for query duration.
+     *
+     * @param type  query record type (A, AAAA, SRV, UNKNOWN) — bounded cardinality
+     * @param rcode DNS response code name (NOERROR, NXDOMAIN, SERVFAIL, ...) — bounded cardinality
+     * @return the tagged Timer
+     */
+    private Timer durationTimer(String type, String rcode) {
+        String key = type + "|" + rcode;
+        return timers.computeIfAbsent(key, k -> Timer.builder("nacos.dns.query.duration")
+            .description("DNS query processing duration")
+            .tag("type", type)
+            .tag("rcode", rcode)
+            .register(registry));
     }
     
     /** Record a received query. */
@@ -77,8 +95,14 @@ public class NacosDnsMetrics {
         counter("nacos.dns.queries.failed", "Queries that failed").increment();
     }
     
-    /** Get the query timer for recording duration. */
-    public Timer getQueryTimer() {
-        return queryTimer;
+    /**
+     * Record query processing duration with type and rcode tags.
+     *
+     * @param durationNanos elapsed time in nanoseconds
+     * @param type          query record type string (bounded cardinality)
+     * @param rcode         response code string (bounded cardinality)
+     */
+    public void recordQueryDuration(long durationNanos, String type, String rcode) {
+        durationTimer(type, rcode).record(durationNanos, TimeUnit.NANOSECONDS);
     }
 }
