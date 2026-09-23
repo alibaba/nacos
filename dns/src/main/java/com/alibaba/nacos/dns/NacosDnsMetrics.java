@@ -51,6 +51,7 @@ public class NacosDnsMetrics {
     private final MeterRegistry registry;
     private final ConcurrentMap<String, Counter> counters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Timer> timers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Timer> forwardTimers = new ConcurrentHashMap<>();
     
     public NacosDnsMetrics(MeterRegistry registry) {
         this.registry = registry != null ? registry : new SimpleMeterRegistry();
@@ -118,6 +119,51 @@ public class NacosDnsMetrics {
     public void stopSample(Timer.Sample sample, String type, String rcode) {
         if (sample != null) {
             sample.stop(durationTimer(type, rcode));
+        }
+    }
+    
+    // ---- Forward-specific metrics ----
+    
+    /** Record a forward query attempt. */
+    public void recordForwardQuery() {
+        counter("nacos.dns.forward.queries.total", "Total DNS forward attempts").increment();
+    }
+    
+    /** Record a successful forward response. */
+    public void recordForwardSuccess() {
+        counter("nacos.dns.forward.queries.success", "Successful DNS forward responses")
+            .increment();
+    }
+    
+    /** Record a failed forward attempt (all upstreams failed). */
+    public void recordForwardFail() {
+        counter("nacos.dns.forward.queries.failed", "Failed DNS forward attempts").increment();
+    }
+    
+    /**
+     * Start a sample for forward duration, tagged by upstream server and result.
+     */
+    public Timer.Sample startForwardSample() {
+        return Timer.start(registry);
+    }
+    
+    /**
+     * Stop a forward sample and record into the tagged timer.
+     *
+     * @param sample the sample
+     * @param server upstream server identifier (bounded by configured server list)
+     * @param result "success" or "failure"
+     */
+    public void stopForwardSample(Timer.Sample sample, String server, String result) {
+        if (sample != null) {
+            String key = "forward|" + server + "|" + result;
+            Timer timer = forwardTimers.computeIfAbsent(key,
+                k -> Timer.builder("nacos.dns.forward.duration")
+                    .description("DNS forward request duration")
+                    .tag("server", server)
+                    .tag("result", result)
+                    .register(registry));
+            sample.stop(timer);
         }
     }
 }

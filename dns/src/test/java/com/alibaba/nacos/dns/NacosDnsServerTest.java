@@ -74,7 +74,7 @@ class NacosDnsServerTest {
         instanceOperator = mock(InstanceOperatorClientImpl.class);
         MeterRegistry registry = new SimpleMeterRegistry();
         NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
-        NacosDnsForwarder forwarder = new NacosDnsForwarder(properties);
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(properties, metrics);
         NacosDnsQueryHandler queryHandler =
             new NacosDnsQueryHandler(instanceOperator, properties, metrics);
         server = new NacosDnsServer(properties, queryHandler, forwarder, metrics);
@@ -268,5 +268,65 @@ class NacosDnsServerTest {
         
         assertEquals(org.xbill.DNS.Rcode.NXDOMAIN, response.getHeader().getRcode(),
             "Non-Nacos domain should return NXDOMAIN when forwarding is disabled");
+    }
+    
+    /**
+     * Upstream forward failure must return SERVFAIL, not NXDOMAIN.
+     * This prevents transient upstream failures from poisoning client negative caches
+     * (P0 review item #2).
+     */
+    @Test
+    void testUpstreamFailureReturnsServfailNotNxdomain() throws Exception {
+        // Build a server with a forwarder that always reports UPSTREAM_FAILURE
+        NacosDnsProperties props = new NacosDnsProperties();
+        props.setEnabled(true);
+        props.setPort(0);
+        props.setDomainSuffix("nacos");
+        props.setForwardEnabled(true);
+        props.setForwardServers(List.of("127.0.0.1:9999"));
+        
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        NacosDnsForwarder failingForwarder = new NacosDnsForwarder(props, metrics) {
+            
+            @Override
+            public NacosDnsForwarder.ForwardResult forward(Message query) {
+                return new NacosDnsForwarder.ForwardResult(
+                    NacosDnsForwarder.ForwardStatus.UPSTREAM_FAILURE, null, null);
+            }
+        };
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(instanceOperator, props, metrics);
+        NacosDnsServer srv = new NacosDnsServer(props, handler, failingForwarder, metrics);
+        try {
+            srv.start();
+            int port = -1;
+            Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
+            f.setAccessible(true);
+            for (int i = 0; i < 100; i++) {
+                DatagramSocket sock = (DatagramSocket) f.get(srv);
+                if (sock != null && sock.getLocalPort() > 0) {
+                    port = sock.getLocalPort();
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(port > 0, "server should be listening");
+            Thread.sleep(200);
+            
+            SimpleResolver resolver = new SimpleResolver("127.0.0.1");
+            resolver.setPort(port);
+            resolver.setTCP(false);
+            resolver.setTimeout(5);
+            
+            Name queryName = Name.fromConstantString("www.google.com.");
+            Record question = Record.newRecord(queryName, Type.A, DClass.IN);
+            Message query = Message.newQuery(question);
+            Message response = resolver.send(query);
+            
+            assertEquals(org.xbill.DNS.Rcode.SERVFAIL, response.getHeader().getRcode(),
+                "Upstream failure must return SERVFAIL, not NXDOMAIN");
+        } finally {
+            srv.stop();
+        }
     }
 }

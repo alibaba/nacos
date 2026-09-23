@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -151,18 +152,22 @@ public class NacosDnsServer {
         
         // Bind UDP first to get the actual port (supports port=0 for ephemeral)
         try {
-            udpSocket = new DatagramSocket(properties.getPort());
+            udpSocket = new DatagramSocket(
+                new InetSocketAddress(properties.getBindAddress(), properties.getPort()));
         } catch (IOException e) {
-            LOGGER.error("Failed to bind UDP socket on port {}", properties.getPort(), e);
+            LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
+                properties.getPort(), e);
             return;
         }
         int actualPort = udpSocket.getLocalPort();
         
-        // Bind TCP to the same port
+        // Bind TCP to the same address and port
         try {
-            tcpSocket = new ServerSocket(actualPort);
+            tcpSocket = new ServerSocket(actualPort, 50,
+                InetAddress.getByName(properties.getBindAddress()));
         } catch (IOException e) {
-            LOGGER.error("Failed to bind TCP socket on port {}", actualPort, e);
+            LOGGER.error("Failed to bind TCP socket on {}:{}", properties.getBindAddress(),
+                actualPort, e);
             udpSocket.close();
             udpWorkerPool.shutdownNow();
             tcpWorkerPool.shutdownNow();
@@ -293,24 +298,42 @@ public class NacosDnsServer {
         // Forwarding path: timed separately with type/rcode tags
         String type = queryHandler.extractQueryType(query);
         Timer.Sample sample = metrics.startSample();
-        Message forwarded = forwarder.forward(query);
-        if (forwarded != null) {
-            metrics.recordForwarded();
-            String rcode = Rcode.string(forwarded.getHeader().getRcode());
-            metrics.stopSample(sample, type, rcode);
-            return forwarded;
-        }
         
-        // Fallback: return NXDOMAIN
+        NacosDnsForwarder.ForwardResult result = forwarder.forward(query);
+        switch (result.getStatus()) {
+            case SUCCESS:
+                Message upstream = result.getResponse();
+                String rcode = Rcode.string(upstream.getHeader().getRcode());
+                metrics.stopSample(sample, type, rcode);
+                return upstream;
+            case UPSTREAM_FAILURE:
+                // Upstream failed — return SERVFAIL, NOT NXDOMAIN, to avoid
+                // poisoning client negative caches for transient failures.
+                metrics.stopSample(sample, type, "SERVFAIL");
+                return buildErrorResponse(query, question, Rcode.SERVFAIL);
+            case DISABLED:
+            case NO_SERVERS:
+            case INTERNAL_SUFFIX:
+            default:
+                // Forwarding not configured or not applicable — domain doesn't exist locally
+                metrics.recordFailed();
+                metrics.stopSample(sample, type, "NXDOMAIN");
+                return buildErrorResponse(query, question, Rcode.NXDOMAIN);
+        }
+    }
+    
+    /**
+     * Build a minimal error response with the given rcode.
+     */
+    private Message buildErrorResponse(Message query, Record question, int rcode) {
         Message response = new Message(query.getHeader().getID());
         response.getHeader().setFlag(Flags.QR);
-        response.getHeader().setFlag(Flags.RA);
-        response.getHeader().setRcode(Rcode.NXDOMAIN);
+        // Do NOT set RA (Recursion Available): this is a conditional forwarder,
+        // not an open recursive resolver.
+        response.getHeader().setRcode(rcode);
         if (question != null) {
             response.addRecord(question, Section.QUESTION);
         }
-        metrics.recordFailed();
-        metrics.stopSample(sample, type, "NXDOMAIN");
         return response;
     }
     

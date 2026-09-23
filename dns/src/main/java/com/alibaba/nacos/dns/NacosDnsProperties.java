@@ -40,6 +40,12 @@ public class NacosDnsProperties {
     private int port = 5353;
     
     /**
+     * DNS server bind address. Default is 127.0.0.1 to prevent open resolver abuse.
+     * Set to 0.0.0.0 only on trusted internal networks with proper firewall rules.
+     */
+    private String bindAddress = "127.0.0.1";
+    
+    /**
      * DNS domain suffix for Nacos services.
      * Example: service-name.group-name.nacos
      */
@@ -89,6 +95,14 @@ public class NacosDnsProperties {
     
     public void setPort(int port) {
         this.port = port;
+    }
+    
+    public String getBindAddress() {
+        return bindAddress;
+    }
+    
+    public void setBindAddress(String bindAddress) {
+        this.bindAddress = bindAddress;
     }
     
     public String getDomainSuffix() {
