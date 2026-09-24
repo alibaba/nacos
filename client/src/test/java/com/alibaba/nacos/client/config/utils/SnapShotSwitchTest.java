@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,7 @@ class SnapShotSwitchTest {
     
     @AfterEach
     void resetSnapshotSwitch() {
-        System.clearProperty(PropertyKeyConst.CONFIG_SNAPSHOT_ENABLED);
+        System.clearProperty("configSnapshotEnabled");
         SnapShotSwitch.setIsSnapShot(true);
     }
     
@@ -47,11 +46,11 @@ class SnapShotSwitchTest {
     
     @Test
     void testInitSnapshotSwitchFromClientProperty() {
-        System.setProperty(PropertyKeyConst.CONFIG_SNAPSHOT_ENABLED, "false");
+        System.setProperty("configSnapshotEnabled", "false");
         SnapShotSwitch.initSnapshotSwitch();
         assertFalse(SnapShotSwitch.getIsSnapShot());
         
-        System.setProperty(PropertyKeyConst.CONFIG_SNAPSHOT_ENABLED, "true");
+        System.setProperty("configSnapshotEnabled", "true");
         SnapShotSwitch.initSnapshotSwitch();
         assertTrue(SnapShotSwitch.getIsSnapShot());
     }

@@ -90,7 +90,7 @@ public class PropertyKeyConst {
     /**
      * Whether the client stores remote configuration snapshots on the local file system.
      */
-    public static final String CONFIG_SNAPSHOT_ENABLED = "nacos.config.snapshot.enabled";
+    public static final String CONFIG_SNAPSHOT_ENABLED = "configSnapshotEnabled";
     
     public static final String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
     
