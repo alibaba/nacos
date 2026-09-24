@@ -145,7 +145,9 @@ Rules:
   events so derived indexes and push views can be rebuilt;
 - verify uses client id and revision and may schedule repair from the source
   node;
-- snapshot contains the current ephemeral client sync data set.
+- snapshot contains the current ephemeral client sync data set except
+  connection-based clients, which are repaired through verify-triggered
+  repair.
 
 Naming Distro transport is carried by
 `DistroDataRequest` / `DistroDataResponse` over the

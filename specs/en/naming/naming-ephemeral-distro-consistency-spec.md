@@ -96,9 +96,12 @@ a matching revision refreshes the target-side liveness observation; a mismatch
 requires repair.
 
 Snapshot transfer is anti-entropy for the whole Naming ephemeral Distro data
-type. A snapshot contains all responsible ephemeral clients from the source
-node. Loading a snapshot must process each client with the same sync-data
-application rules as normal `ADD` or `CHANGE`.
+type. A snapshot contains all ephemeral clients from the source node except
+connection-based clients. A connection-based client is exclusively written by
+the node holding its live gRPC connection and must not enter snapshots;
+missing connection-based clients on the receiving node are repaired through
+verify-triggered repair. Loading a snapshot must process each client with the
+same sync-data application rules as normal `ADD` or `CHANGE`.
 
 ## 6. Expiration And Cleanup
 
