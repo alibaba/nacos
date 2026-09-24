@@ -64,7 +64,7 @@
         <dependency>
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-core</artifactId>
-            <version>1.0.7</version>
+            <version>2.0.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.networknt</groupId>
@@ -75,7 +75,26 @@
         <dependency>
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-extensions-studio</artifactId>
-            <version>1.0.7</version>
+            <version>2.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-model-dashscope</artifactId>
+            <version>2.0.3</version>
+            <exclusions>
+                <!--
+                  dashscope-sdk-java is only referenced by DashScopeMultiModalTool, which Copilot
+                  does not use: Copilot talks to DashScope through DashScopeChatModel, whose HTTP
+                  client delegates to the agentscope-core OkHttpTransport. Keeping this transitive
+                  dependency would drag in okhttp-sse 4.12.0, which is binary incompatible with the
+                  okhttp 5.3.2 already mediated onto the runtime classpath (okhttp3.internal.Util
+                  was removed in 5.x), so it is excluded as unused, hazardous weight.
+                -->
+                <exclusion>
+                    <groupId>com.alibaba</groupId>
+                    <artifactId>dashscope-sdk-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 
