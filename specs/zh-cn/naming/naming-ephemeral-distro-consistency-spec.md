@@ -81,8 +81,10 @@ client，必须返回 verify failure，使源节点向该目标发送完整 clie
 Revision `0` 可以被视为兼容数据。对于当前协议数据，revision 匹配会刷新目标侧 liveness 观察；
 revision 不匹配必须触发 repair。
 
-Snapshot transfer 是针对整个 Naming ephemeral Distro data type 的 anti-entropy。Snapshot 包含源节点
-负责的全部 ephemeral clients。加载 snapshot 时，必须对每个 client 使用与普通 `ADD` 或 `CHANGE`
+Snapshot transfer 是针对整个 Naming ephemeral Distro data type 的 anti-entropy。Snapshot 包含源
+节点除 connection-based client 外的全部 ephemeral clients。Connection-based client 由持有存活
+gRPC 连接的节点独占写入，不得进入 snapshot；接收节点上缺失的 connection-based client 通过
+verify 失败触发的 repair 补偿。加载 snapshot 时，必须对每个 client 使用与普通 `ADD` 或 `CHANGE`
 相同的 sync-data apply 规则。
 
 ## 6. 过期与清理
