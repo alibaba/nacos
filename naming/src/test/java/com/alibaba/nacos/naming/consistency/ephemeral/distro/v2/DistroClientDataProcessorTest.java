@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
@@ -41,6 +42,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -374,6 +376,28 @@ class DistroClientDataProcessorTest {
         DistroData actual = distroClientDataProcessor.getDatumSnapshot();
         assertEquals(DataOperation.SNAPSHOT.name(), actual.getDistroKey().getResourceKey());
         assertEquals(DistroClientDataProcessor.TYPE, actual.getDistroKey().getResourceType());
+        // connection based client should be excluded from snapshot
+        ArgumentCaptor<ClientSyncDatumSnapshot> captor =
+                ArgumentCaptor.forClass(ClientSyncDatumSnapshot.class);
+        verify(serializer).serialize(captor.capture());
+        assertTrue(captor.getValue().getClientSyncDataList().isEmpty());
+    }
+
+    @Test
+    void testGetDatumSnapshotIncludeNonConnectionBasedClient() {
+        Client ipPortClient = new IpPortBasedClient("1.1.1.1:80#true", true);
+        Client ipPortClient2 = new IpPortBasedClient("2.2.2.2:80#true", true);
+        when(clientManager.allClientId())
+                .thenReturn(Arrays.asList("1.1.1.1:80#true", "2.2.2.2:80#true"));
+        when(clientManager.getClient("1.1.1.1:80#true")).thenReturn(ipPortClient);
+        when(clientManager.getClient("2.2.2.2:80#true")).thenReturn(ipPortClient2);
+
+        distroClientDataProcessor.getDatumSnapshot();
+
+        ArgumentCaptor<ClientSyncDatumSnapshot> captor =
+                ArgumentCaptor.forClass(ClientSyncDatumSnapshot.class);
+        verify(serializer).serialize(captor.capture());
+        assertEquals(2, captor.getValue().getClientSyncDataList().size());
     }
     
     @Test
