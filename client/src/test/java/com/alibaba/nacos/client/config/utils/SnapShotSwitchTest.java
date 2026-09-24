@@ -18,12 +18,19 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SnapShotSwitchTest {
+    
+    @AfterEach
+    void resetSnapshotSwitch() {
+        System.clearProperty("configSnapshotEnabled");
+        SnapShotSwitch.setIsSnapShot(true);
+    }
     
     @Test
     void testGetIsSnapShot() {
@@ -34,6 +41,17 @@ class SnapShotSwitchTest {
         assertFalse(SnapShotSwitch.getIsSnapShot());
         
         SnapShotSwitch.setIsSnapShot(true);
+        assertTrue(SnapShotSwitch.getIsSnapShot());
+    }
+    
+    @Test
+    void testInitSnapshotSwitchFromClientProperty() {
+        System.setProperty("configSnapshotEnabled", "false");
+        SnapShotSwitch.initSnapshotSwitch();
+        assertFalse(SnapShotSwitch.getIsSnapShot());
+        
+        System.setProperty("configSnapshotEnabled", "true");
+        SnapShotSwitch.initSnapshotSwitch();
         assertTrue(SnapShotSwitch.getIsSnapShot());
     }
     
