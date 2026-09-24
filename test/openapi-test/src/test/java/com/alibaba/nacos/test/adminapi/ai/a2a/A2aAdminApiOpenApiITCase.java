@@ -173,7 +173,7 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                     canonicalOverview.toString());
             assertEquals("PUBLIC", canonicalAgent.get("scope").asText(),
                     canonicalOverview.toString());
-            assertEquals(1, canonicalAgent.get("versionInfo").get("onlineCnt").asInt(),
+            assertEquals(1, canonicalAgent.get("versionInfo").get("onlineVersions").size(),
                     canonicalOverview.toString());
             assertEquals(firstVersion,
                     canonicalAgent.get("versionInfo").get("labels").get("latest").asText(),
@@ -187,7 +187,7 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
                     canonicalVersion.get("callInterfaces").get(0).get("protocol").asText(),
                     canonicalVersion.toString());
             assertEquals(2,
-                    canonicalVersion.get("callInterfaces").get(0).get("declaredEndpoints").size(),
+                    canonicalVersion.get("callInterfaces").get(0).get("endpointSets").get(0).get("endpoints").size(),
                     canonicalVersion.toString());
 
             JsonNode updated = updateAgentCard(legacyAgentName, secondVersion,
@@ -374,9 +374,13 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         callInterface.put("nativeDescriptor",
                 JacksonUtils.toObj(buildV1AgentCard(agentName, version, "1.0"), Map.class));
         callInterface.put("endpointSourceOrder", Arrays.asList("DECLARED", "RUNTIME"));
-        callInterface.put("declaredEndpoints", Arrays.asList(
+
+        Map<String, Object> declaredSet1 = new LinkedHashMap<>();
+        declaredSet1.put("source", "DECLARED");
+        declaredSet1.put("endpoints", Arrays.asList(
                 declaredEndpoint(agentName, "jsonrpc", "JSONRPC"),
                 declaredEndpoint(agentName, "grpc", "GRPC")));
+        callInterface.put("endpointSets", java.util.Collections.singletonList(declaredSet1));
         result.put("callInterfaces", Collections.singletonList(callInterface));
         return result;
     }

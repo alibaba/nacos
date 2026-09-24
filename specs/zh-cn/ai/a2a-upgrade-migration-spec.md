@@ -49,6 +49,25 @@ AgentCard Adapter 是长期能力，不随本迁移删除。
 `AUTO` 不执行请求级 fallback、合并读取或定义双写。每个旧 A2A 请求只选择一个完整定义权威。
 Runtime 双物化是独立的连接态兼容行为，不创建第二个定义权威。
 
+### 外部 RAD 迁移门禁
+
+当节点的有效 A2A 权威仍为历史链路时，原生 RAD Client 的 Search、Discover、Publish、
+完整 Endpoint Register，以及 Watch 初次建立和后续业务读取统一拒绝，返回 HTTP 409 /
+`AGENT_MIGRATION_IN_PROGRESS (50105)`；gRPC 保留相同 detail 错误码。该门禁在绑定层认证、
+必要输入检查之后、业务写入或新 owner 创建之前执行，也覆盖尚未投影的名称和无关标准 Agent。
+不能据此降级成“不支持 RAD”或自动改走旧协议。
+
+有效模式沿用 A2A 的解析：LEGACY、AUTO 无计划、AUTO/SYNCING、AUTO/QUIESCING 拒绝；
+全新 CANONICAL 和已观察永久 CANONICAL 终态放行。不能将没有 Marker 等同于就绪。
+能力查询仍返回实现能力；整份 Endpoint Deregister、本地取消/关闭以及已有合法 owner 的
+心跳保留既有身份和归属检查。需要 Register 提交剩余列表的 SDK 局部注销仍返回 50105，
+不改变已确认缓存，也不能扩大为整份删除。拒绝的 Register/Watch 不创建 owner 或补注册。
+HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50105 的 TERMINATED，
+后续 Discover 也受门禁。迁移完成后由调用者显式重新发起业务/订阅。
+
+门禁仅用于外部 RAD binding，不加入共享领域服务。旧 A2A wire、Admin/Console、内部迁移、
+索引和投影继续沿用已有规则，避免阻断迁移自身。旧 API 的 QUIESCING 写屏障保持不变。
+
 ## 2. 配置与内部状态
 
 ### 2.1 配置
@@ -405,3 +424,9 @@ Shadow 及其配置计划在 Nacos 4.0 删除。删除时不得改写已经标�
 `M-CL-01..10`。矩阵覆盖完整迁移、历史并发 Mutation、非法/冲突数据、Crash Recovery、跨接口读取、
 两套 Runtime Layout、Shadow On/Off、Reconnect/Redo、Quiescing 可用性、混合 Member 滚动升级、
 跨节点对账、Leader/Owner 重启、ACK/Marker 传播、负载均衡读取、回滚边界和全部无关资源回归。
+
+## 地址模型统一的验收
+
+本轮不改变迁移状态机或历史 A2A 公开模型，但转换器、Storage 读回、Runtime 比较器和 Search gate 依赖的地址模型将统一。必须用新结构验证正常 SYNCING/QUIESCING/终态和两种 shadow 策略，不能因不支持 BETA 升级而省略历史 A2A 迁移回归；故障恢复和集群注入按本轮约定延期。
+
+统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。

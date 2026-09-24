@@ -198,3 +198,57 @@ migration/runtime classes have no missed executable U6 line; the focused child
 publisher class reached 109/109 lines. `AiGrpcClientTest`, OpenAPI/Java SDK test
 compilation, Spotless, Checkstyle, SpotBugs, RAT, and all 27 workflow shell
 blocks also passed.
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 模型统一后的正常迁移回归
+
+独立新数据目录实际执行 LEGACY、AUTO/SYNCING、QUIESCING 和 CANONICAL 正常流程；shadow=true/false 两种策略的同连接 Watch、端点替换/注销及终态跨面投影均通过。迁移配置开关显式启用，未将跳过算为通过；准备阶段清理了 LEGACY 基线遗留的测试定义，细节与各方法结果见模型统一验证记录。真实故障恢复和三节点场景仍延期。
+
+## C11 adaptation regression (2026-09-17)
+
+The current SDK chooses RAD on a RAD-capable migration node and therefore receives
+its explicit migration gate. Historical-wire assertions now use `LegacyA2aClient`
+and `LegacyA2aProcess` with the isolated, released 3.2.4 dependency tree. Current
+SDK instances separately assert facade/resource/native admission and post-cutover
+Watch. Before cutover, internal projection assertions read through the authorized
+management API; they do not bypass the new Client gate.
+
+Resolve `target/ai-compatibility/legacy-classpath.txt` at repository scope before
+these opt-in tests; module `clean` must not remove it. The migration workflow and
+`run-ai-api-compatibility.sh` perform this resolution. The child JVM reports its
+actual 3.2.4 SDK code source and uses only public interfaces. Jackson 3 profiles
+exercise the current SDK and assertions; the released SDK retains its released
+serialization implementation.
+
+The released 3.2.4 SDK has one Endpoint redo entry per Agent name. Registering two
+Versions through one released instance overwrites that local redo entry; the C11
+real-restart experiment reproduced loss of the first Version and its bytecode
+confirms this key. The directed released-SDK restart fixture therefore retains
+one released instance per exact Version. Both original instances survive the same
+server restart and must restore their respective canonical/historical layouts;
+deregistering one still must not affect the other. This does not claim to fix the
+released SDK. Current-SDK multi-Version redo in one instance is separately asserted
+by `A2aRadRoutingJavaSdkITCase#legacyInstancesRemainLegacyWhenAddressReconnectsToRadServer`.
+
+Historical U4–U6 `Verified` records above are not automatically C11 results. The
+new artifact, executed methods, shadow policy and standalone/cluster boundaries
+are recorded in the SDK scenario and coverage records and
+the applicable API/SDK scenario tables; pending or gated methods are never counted as passes.
+
+After observing CANONICAL in Config, the cluster fixture explicitly waits for
+native Discover admission on every reader before subscribing; local migration-mode
+refresh can lag Config observation. This caller-side wait does not add SDK replay.
+The cluster cutover fixture waits for Distro convergence on all pinned readers
+after the first gRPC/HTTP callbacks, then retains the exact definition/Endpoint
+assertions and duplicate-callback checks. Two callbacks do not prove every replica
+has already converged. Its management cleanup uses the administrator identity;
+ordinary SDK calls keep the Client identity before and after cutover.
+
+C11 distinguishes embedded cluster change/restart validation from external-MySQL
+migration cutover. An additional embedded cutover attempt found node-local Search
+documents/tasks despite shared Config readiness; it is not counted as passing.
+See [cluster fixture boundaries](../DEFAULT_AUTH_RELIABILITY_IT.md)
+for data evidence, impact, and the separate persistence-consistency work required.

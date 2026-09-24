@@ -20,10 +20,10 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -32,6 +32,8 @@ import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -917,11 +919,12 @@ class AgentWatchManagerTest {
         assertEquals(0, manager.intentCount());
     }
     
-    @Test
-    void pendingTerminalDiscoverFailureRemovesIntentAndNotifiesListener() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {403, 50105})
+    void pendingTerminalDiscoverFailureRemovesIntentAndNotifiesListener(int code) throws Exception {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
             .thenThrow(notFound("missing"))
-            .thenThrow(new NacosException(NacosException.NO_RIGHT, "denied"));
+            .thenThrow(new NacosException(code, "denied"));
         TestListener listener = new TestListener(null);
         manager.subscribe(reference("agent-a"), null, listener);
         
@@ -930,7 +933,7 @@ class AgentWatchManagerTest {
         runCallback(1);
         
         assertEvent(listener, 0, NacosAgentDiscoveryEventType.UNAVAILABLE,
-            NacosException.NO_RIGHT);
+            code);
         assertEquals(0, manager.intentCount());
         assertEquals(0, manager.subscriptionCount());
     }
@@ -1184,6 +1187,121 @@ class AgentWatchManagerTest {
         when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(null);
         assertNull(manager.subscribe(reference("agent-a"), null, new TestListener(null)));
         assertEquals(1, manager.intentCount());
+    }
+    
+    @Test
+    void lateEnqueuedSnapshotCannotOverwriteNewerInitialDelivery() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        manager.subscribe(reference, null, listener);
+        java.lang.reflect.Field field = AgentWatchManager.class.getDeclaredField("intentsById");
+        field.setAccessible(true);
+        Map<?, ?> intents = (Map<?, ?>) field.get(manager);
+        Object intent = intents.values().iterator().next();
+        // Capture the handoff between snapshot creation under the manager lock and dispatch.
+        java.lang.reflect.Method capture = AgentWatchManager.class.getDeclaredMethod(
+            "snapshotNotifications", intent.getClass());
+        capture.setAccessible(true);
+        List<?> late = (List<?>) capture.invoke(manager, intent);
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "different", false);
+        scheduled.remove(0).run();
+        manager.notifyCurrent(reference, null, listener);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        int delivered = listener.events.size();
+        java.lang.reflect.Method dispatch =
+            AgentWatchManager.class.getDeclaredMethod("dispatch", List.class);
+        dispatch.setAccessible(true);
+        dispatch.invoke(manager, late);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(delivered, listener.events.size());
+        assertTrue(listener.events.stream()
+            .allMatch(event -> "2.0.0".equals(event.getAgentDiscoveryResult().getVersion())));
+    }
+    
+    @Test
+    void initialDeliveryHonorsRemovalAndDoesNotNotifyOtherListener() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A));
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        TestListener other = new TestListener(null);
+        manager.subscribe(reference, null, listener);
+        manager.subscribe(reference, null, other);
+        manager.notifyCurrent(reference, null, listener);
+        manager.unsubscribe(reference, null, listener);
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertTrue(listener.events.isEmpty());
+        assertTrue(other.events.isEmpty());
+        manager.notifyCurrent(reference, null, listener);
+        assertTrue(callbacks.isEmpty());
+    }
+    
+    @Test
+    void currentNotificationAndMembershipRespectAbsentPendingAndClosedIntents() throws Exception {
+        AgentReference reference = reference("agent-a");
+        TestListener listener = new TestListener(null);
+        AgentDiscoveryRequest request = new AgentDiscoveryRequest();
+        request.setNamespaceId("public");
+        request.setReference(reference);
+        assertFalse(manager.containsListener(request, listener));
+        manager.notifyCurrent(reference, null, listener);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(null);
+        assertNull(manager.subscribe(reference, null, listener));
+        assertTrue(manager.containsListener(request, listener));
+        assertFalse(manager.containsListener(request, new TestListener(null)));
+        int queued = callbacks.size();
+        manager.notifyCurrent(reference, null, listener);
+        assertEquals(queued, callbacks.size());
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(1, listener.events.size());
+        assertNull(listener.events.get(0).getAgentDiscoveryResult());
+        manager.shutdown();
+        assertFalse(manager.containsListener(request, listener));
+        manager.notifyCurrent(reference, null, listener);
+        assertTrue(callbacks.isEmpty());
+    }
+    
+    @Test
+    void initialMigrationRejectionDoesNotCreatePendingRetryOrCallback() throws Exception {
+        NacosException failure = new NacosException(50105, "migration");
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenThrow(failure);
+        assertEquals(50105, assertThrows(NacosException.class,
+            () -> manager.subscribe(reference("agent-a"), null, new TestListener(null)))
+            .getErrCode());
+        assertEquals(0, manager.intentCount());
+        assertTrue(scheduled.isEmpty());
+        assertTrue(callbacks.isEmpty());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {50105, NacosException.NO_RIGHT, NacosException.OVER_THRESHOLD,
+        NacosException.CLIENT_OVER_THRESHOLD, NacosException.INVALID_PARAM,
+        NacosException.CLIENT_INVALID_PARAM})
+    void terminalRejectionDuringRefreshTerminatesWatchInsteadOfRetrying(int code) throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A))
+            .thenThrow(new NacosException(code, "terminal rejection"));
+        TestListener listener = new TestListener(null);
+        manager.subscribe(reference("agent-a"), null, listener);
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "different", false);
+        scheduled.remove(0).run();
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+        assertEquals(0, manager.intentCount());
+        assertEquals(1, listener.events.size());
+        assertEquals(Integer.valueOf(code), listener.events.get(0).getErrorCode());
+        assertTrue(scheduled.isEmpty());
     }
     
     private void runScheduled(int index) {

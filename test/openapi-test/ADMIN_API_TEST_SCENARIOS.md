@@ -121,3 +121,72 @@ standalone profile has no deterministic Agent review Pipeline.
 | `SkillUploadAdminApiOpenApiITCase` | `POST /v3/admin/ai/skills/upload`<br>`POST /v3/admin/ai/skills/upload/precheck`<br>`POST /v3/admin/ai/skills/upload/batch` | Covered | Uploads single and batch Skill ZIPs as the global administrator; verifies ZIP-and-namespace-only server-side precheck, owner, maximum published version (online or offline), predicted target version, single-code reporting, archive entry paths, distinct `NOT_A_SKILL`/`INVALID_SKILL` results, legacy batch `succeeded`/`failed` fields, and per-item `success`, `errorCode`, and `errorMessage` in `results`; validates overwrite behavior, next version generation, version normalization/fallback, upload-time first-available version-source selection when a higher-priority candidate is occupied, partial batch handling, empty/malformed ZIP, and upload error envelopes. Permission-denied owner and error-code reporting remains covered by the focused service test until a direct multi-identity multipart scenario is added. |
 | `AgentSpecAdminApiOpenApiITCase` | `GET,DELETE /v3/admin/ai/agentspecs`<br>`GET /v3/admin/ai/agentspecs/list`<br>`GET /v3/admin/ai/agentspecs/version`<br>`GET /v3/admin/ai/agentspecs/version/meta`<br>`POST,PUT,DELETE /v3/admin/ai/agentspecs/draft`<br>`POST /v3/admin/ai/agentspecs/submit`<br>`POST /v3/admin/ai/agentspecs/publish`<br>`POST /v3/admin/ai/agentspecs/force-publish`<br>`POST /v3/admin/ai/agentspecs/redraft`<br>`POST /v3/admin/ai/agentspecs/online`<br>`POST /v3/admin/ai/agentspecs/offline`<br>`PUT /v3/admin/ai/agentspecs/labels`<br>`PUT /v3/admin/ai/agentspecs/biz-tags`<br>`PUT /v3/admin/ai/agentspecs/scope` | Covered | Exercises AgentSpec draft/create/update/delete/fork, submit, reviewing-state repeat-submit idempotency, force-publish, metadata, version/meta, labels, server-managed latest label preservation, publish-parameter compatibility, bizTags, scope, online/offline latest maintenance, list, and delete; covers defaults, search/scope filters, version validation, absent resources, and controlled workflow errors. |
 | `AgentSpecUploadAdminApiOpenApiITCase` | `POST /v3/admin/ai/agentspecs/upload` | Covered | Uploads single and batch AgentSpec ZIPs, validates manifest/resources, overwrite behavior, next version generation, and partial batch handling; covers empty/malformed ZIP, missing manifest, invalid targetVersion, and upload error envelopes. |
+
+## Config detail schema regression (#15853)
+
+`ConfigHistoryAdminApiOpenApiITCase.testSchemaInCurrentAndHistoricalDetails`
+verifies the following workflow against a standalone server:
+
+| Scenario | Expected result |
+| --- | --- |
+| Publish without schema, then query current detail | `schema` is omitted or JSON null. |
+| Publish two different schema/content versions | Current detail returns the latest stored schema. |
+| Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
+| Query an older history record without schema | `schema` is omitted or JSON null. |
+| Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
+| Publish an explicit empty schema | Current detail preserves the empty string. |
+
+Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTest`;
+public publish APIs cannot create these legacy/corrupt history records. Existing
+required-parameter, missing-history, and identity-mismatch cases remain applicable.
+
+The inherited `ConfigGrayInfo` response also omits `schema` or returns null for beta
+configurations; the existing beta and gray query ITs assert this boundary.
+
+## Agent model consolidation
+
+AgentAdminApiOpenApiITCase.testDefaultNamespaceCrudOverviewListAndVersionReads additionally checks raw HTTP JSON after model consolidation: inherited provider/icon metadata remain present, Agent summaries omit extensions and callInterfaces, and Version summaries omit namespaceId/agentName/callInterfaces while preserving author/digest. Existing HTTP field names and scenario status stay unchanged.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent Admin 响应移除并列 versionCatalog 和存储式 onlineCnt，在线目录合入 versionInfo；详情/列表 extensions 边界、版本生命周期和标签回归不变。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。
+
+
+### 2026-09-15 请求整合回归
+
+Agent 管理 Request 迁到 model.agent.admin，HTTP Form 及路径/参数不变；草稿、元数据、标签、版本操作、运行地址、索引和 Artifact 既有场景继续执行。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 enabled/healthy/state，管理可选引用字段允许 null，Artifact 对齐新 Schema。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+### Skill frontmatter response scenarios (#15345)
+
+| Scenario | Expected result | Coverage |
+| --- | --- | --- |
+| Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |
+| Bounded custom projection | Resource snapshot excludes reserved fields, prioritizes standard fields, and enforces entry/key/value/serialized-size limits with an explicit truncation flag; complete version metadata remains unchanged. | Service unit tests; standalone IT does not inspect internal metadata rows. |
+| Malformed historical metadata | List and detail remain available and return null frontmatter when `ai_resource.ext` is malformed. | Service unit test; standalone IT cannot seed malformed internal metadata through the public API. |
+| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
+| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
+| CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+C11 migration regression uses an isolated released 3.2.4 SDK for historical-wire
+mutations and the current SDK for RAD admission/terminal assertions. ARD reads in
+`A2aMigrationAdminApiOpenApiITCase` use the explicit Client identity. Normal Admin,
+QUIESCING, terminal-marker and restart reports remain separate; see
+the SDK scenario and coverage records for final execution.

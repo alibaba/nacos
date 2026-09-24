@@ -30,6 +30,13 @@ import java.util.Collection;
 /**
  * Nacos AI A2A client service interface.
  *
+ * <p>From 3.3.0, an instance selecting a RAD-capable server adapts these operations to RAD
+ * using the Agent transport configuration. A legacy selection remains on old A2A gRPC until
+ * the AiService is recreated. With RAD, an exact-Version Card leaves latestVersion unknown;
+ * a latest query returns true. Existing drafts are replaced and optionally submitted, while
+ * non-draft Versions are unchanged. Endpoint deregistration removes this instance's complete
+ * registration intent for the specified Version. Subscriptions use RAD Watch when available.</p>
+ *
  * @author xiweng.yy
  */
 public interface A2aService {
@@ -79,7 +86,8 @@ public interface A2aService {
      * Release new agent card or new version with default service type endpoint.
      *
      * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
+     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
      * exist, This API will release new version. If current t agent card not exist, This API will release new agent
      * card.
      * </p>
@@ -96,7 +104,8 @@ public interface A2aService {
      * Release new agent card or new version.
      *
      * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
+     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
      * exist, This API will release new version. If current t agent card not exist, This API will release new agent
      * card.
      * </p>
@@ -116,7 +125,8 @@ public interface A2aService {
      * Release new agent card or new version.
      *
      * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
+     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
      * exist, This API will release new version. If current t agent card not exist, This API will release new agent
      * card.
      * </p>

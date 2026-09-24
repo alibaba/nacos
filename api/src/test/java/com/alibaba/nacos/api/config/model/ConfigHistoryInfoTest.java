@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.api.config.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,6 +52,19 @@ class ConfigHistoryInfoTest {
         mockBasicInfo(basicInfo, createTime, modifyTime);
         mockBasicInfo(detailInfo, createTime, modifyTime);
         mockDetailInfo(detailInfo);
+    }
+    
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "schema text", "{\"type\":\"object\"}\n"})
+    void testSchemaRoundTrip(String schema) throws JsonProcessingException {
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        detailInfo.setSchema(schema);
+        String json = mapper.writeValueAsString(detailInfo);
+        assertEquals(schema != null, mapper.readTree(json).has("schema"));
+        ConfigHistoryDetailInfo result = mapper.readValue(json, ConfigHistoryDetailInfo.class);
+        assertEquals(schema, result.getSchema());
+        assertEquals(detailInfo.getExtInfo(), result.getExtInfo());
     }
     
     private void mockBasicInfo(ConfigHistoryBasicInfo basicInfo, long createTime, long modifyTime) {

@@ -29,6 +29,9 @@ import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
@@ -36,6 +39,7 @@ import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,6 +107,47 @@ class ResponseUtilTest {
         assertEquals(configAllInfo.getCreateTime(), configDetailInfo.getCreateTime());
         assertEquals(configAllInfo.getModifyTime(), configDetailInfo.getModifyTime());
         assertEquals(configAllInfo.getConfigTags(), configDetailInfo.getConfigTags());
+        assertEquals(configAllInfo.getSchema(), configDetailInfo.getSchema());
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    void testTransferConfigDetailPreservesAbsentOrEmptySchema(String schema) {
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setSchema(schema);
+        assertEquals(schema, ResponseUtil.transferToConfigDetailInfo(configAllInfo).getSchema());
+    }
+    
+    @Test
+    void testTransferHistoryDetailExtractsStoredSchema() {
+        ConfigHistoryInfo historyInfo = mockConfigHistoryInfo();
+        String extInfo = "{\"c_schema\":\" schema text \",\"type\":\"text\"}";
+        historyInfo.setExtInfo(extInfo);
+        ConfigHistoryDetailInfo result =
+            ResponseUtil.transferToConfigHistoryDetailInfo(historyInfo);
+        assertEquals(" schema text ", result.getSchema());
+        assertEquals(extInfo, result.getExtInfo());
+    }
+    
+    @Test
+    void testTransferHistoryDetailPreservesEmptySchema() {
+        ConfigHistoryInfo historyInfo = mockConfigHistoryInfo();
+        historyInfo.setExtInfo("{\"c_schema\":\"\"}");
+        assertEquals("", ResponseUtil.transferToConfigHistoryDetailInfo(historyInfo).getSchema());
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "{}", "null", "[]", "invalid json", "{", "{\"c_schema\":null}",
+        "{\"c_schema\":123}", "{\"c_schema\":{}}", "{\"schema\":\"wrong key\"}"})
+    void testTransferHistoryDetailWithoutTextSchema(String extInfo) {
+        ConfigHistoryInfo historyInfo = mockConfigHistoryInfo();
+        historyInfo.setExtInfo(extInfo);
+        ConfigHistoryDetailInfo result =
+            ResponseUtil.transferToConfigHistoryDetailInfo(historyInfo);
+        assertNull(result.getSchema());
+        assertEquals(extInfo, result.getExtInfo());
+        assertEquals(historyInfo.getContent(), result.getContent());
     }
     
     @Test

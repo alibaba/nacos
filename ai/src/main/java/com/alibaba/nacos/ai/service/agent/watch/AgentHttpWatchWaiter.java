@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.model.v2.Result;
 import org.slf4j.Logger;
@@ -43,6 +45,12 @@ final class AgentHttpWatchWaiter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentHttpWatchWaiter.class);
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
+    private final AgentWatchOwnerEligibilityChecker ownerEligibilityChecker;
+    
+    private final AgentWatchOwnerContext ownerContext;
+    
     private final String waiterId = UUID.randomUUID().toString();
     
     private final AgentHttpWatchOwnerKey ownerKey;
@@ -65,7 +73,12 @@ final class AgentHttpWatchWaiter {
     
     AgentHttpWatchWaiter(AgentHttpWatchOwnerKey ownerKey, long generation, long timeoutMillis,
         List<AgentWatchBatchItem> items, int payloadBytes,
-        Consumer<AgentHttpWatchWaiter> cleanup) {
+        Consumer<AgentHttpWatchWaiter> cleanup, AgentClientMigrationGuard migrationGuard,
+        AgentWatchOwnerEligibilityChecker ownerEligibilityChecker) {
+        this.migrationGuard = migrationGuard;
+        this.ownerEligibilityChecker = ownerEligibilityChecker;
+        this.ownerContext = new AgentWatchOwnerContext(ownerKey.getIdentity(),
+            com.alibaba.nacos.api.common.ApiType.OPEN_API.name());
         this.ownerKey = ownerKey;
         this.generation = generation;
         this.itemCount = items.size();
@@ -89,7 +102,7 @@ final class AgentHttpWatchWaiter {
             return false;
         }
         List<String> changedIds = new ArrayList<String>(candidates.size());
-        addChangedIds(candidates, state, changedIds);
+        addChangedIds(key, candidates, state, changedIds);
         return completeChanged(changedIds, trigger);
     }
     
@@ -101,7 +114,7 @@ final class AgentHttpWatchWaiter {
         String trigger) {
         List<String> changedIds = new ArrayList<String>(itemCount);
         for (Map.Entry<AgentProjectionKey, List<Observation>> entry : observations.entrySet()) {
-            addChangedIds(entry.getValue(), states.get(entry.getKey()), changedIds);
+            addChangedIds(entry.getKey(), entry.getValue(), states.get(entry.getKey()), changedIds);
         }
         return completeChanged(changedIds, trigger);
     }
@@ -161,14 +174,24 @@ final class AgentHttpWatchWaiter {
             return false;
         }
         cleanup.accept(this);
-        deferredResult.setResult(Result.success(response));
+        try {
+            migrationGuard.checkReady();
+            deferredResult.setResult(Result.success(response));
+        } catch (NacosApiException e) {
+            deferredResult.setErrorResult(e);
+        }
         return true;
     }
     
-    private void addChangedIds(List<Observation> candidates, AgentProjectionState state,
+    private void addChangedIds(AgentProjectionKey key, List<Observation> candidates,
+        AgentProjectionState state,
         List<String> changedIds) {
+        // Visibility is not in the shared fingerprint. An opaque invalidation makes the
+        // client's next Discover recheck its own authorization without sharing owner state.
+        boolean readable = ownerEligibilityChecker.evaluate(ownerContext,
+            key) == AgentWatchOwnerEligibility.ALLOWED;
         for (Observation each : candidates) {
-            if (state == null || !state.isAvailable()
+            if (!readable || state == null || !state.isAvailable()
                 || !each.fingerprint.equals(state.getFingerprint())) {
                 changedIds.add(each.clientWatchId);
             }

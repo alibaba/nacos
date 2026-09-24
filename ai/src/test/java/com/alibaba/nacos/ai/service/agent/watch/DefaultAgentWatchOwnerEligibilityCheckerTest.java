@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.agent.watch;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class DefaultAgentWatchOwnerEligibilityCheckerTest {
     @Test
     void testAllowedAndDeniedVisibilityUseCapturedOwnerContext() throws Exception {
         AgentPersistenceService persistenceService = mock(AgentPersistenceService.class);
-        Agent agent = agent();
+        AgentSummary agent = agent();
         when(persistenceService.getAgent("public", "projection-agent")).thenReturn(agent);
         DefaultAgentWatchOwnerEligibilityChecker checker =
             new DefaultAgentWatchOwnerEligibilityChecker(persistenceService);
@@ -92,8 +92,8 @@ class DefaultAgentWatchOwnerEligibilityCheckerTest {
         assertEquals(AgentWatchOwnerEligibility.UNCERTAIN, checker.evaluate(owner, key));
     }
     
-    private Agent agent() {
-        Agent result = new Agent();
+    private AgentSummary agent() {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId("public");
         result.setAgentName("projection-agent");
         result.setOwner("owner");

@@ -23,13 +23,12 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentExtension;
 import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -67,12 +66,12 @@ public class AgentSearchIndexProjector {
      * @param latest exact common-latest online Version
      * @return complete document, chunk, and facet projection
      */
-    public AiResourceIndexProjection project(Agent agent, AgentVersionDetail latest) {
+    public AiResourceIndexProjection project(AgentSummary agent, AgentVersionDetail latest) {
         if (agent == null || latest == null) {
             throw new IllegalArgumentException("Agent and latest Version must not be null");
         }
         AgentCard a2aCard = AgentArtifactBuilder.findA2aAgentCard(agent.getAgentName(), latest);
-        List<String> protocols = collectProtocols(agent.getVersionCatalog());
+        List<String> protocols = collectProtocols(agent.getVersionInfo());
         List<String> latestProtocols = collectLatestProtocols(latest);
         List<String> artifactKinds = artifactKinds(a2aCard);
         AiResourceSearchDocument document = buildDocument(agent, latest, protocols,
@@ -81,7 +80,7 @@ public class AgentSearchIndexProjector {
             AiResourceSearchConstants.CHUNK_TYPE_AGENT_CONTENT);
     }
     
-    private AiResourceSearchDocument buildDocument(Agent agent, AgentVersionDetail latest,
+    private AiResourceSearchDocument buildDocument(AgentSummary agent, AgentVersionDetail latest,
         List<String> protocols, List<String> latestProtocols, List<String> artifactKinds,
         AgentCard a2aCard) {
         AiResourceSearchDocument result = new AiResourceSearchDocument();
@@ -92,11 +91,11 @@ public class AgentSearchIndexProjector {
         result.setDisplayName(StringUtils.isBlank(agent.getDisplayName())
             ? agent.getAgentName() : agent.getDisplayName());
         result.setDescription(agent.getDescription());
-        result.setTags(JacksonUtils.toJson(nullToEmpty(agent.getTags())));
-        result.setCapabilities(JacksonUtils.toJson(capabilities(latest, a2aCard)));
-        result.setRepresentativeQueries(JacksonUtils.toJson(
+        result.setTags(JsonUtils.toJson(nullToEmpty(agent.getTags())));
+        result.setCapabilities(JsonUtils.toJson(capabilities(latest, a2aCard)));
+        result.setRepresentativeQueries(JsonUtils.toJson(
             representativeQueries(agent, a2aCard)));
-        result.setMetadata(JacksonUtils.toJson(metadata(agent, latest, protocols,
+        result.setMetadata(JsonUtils.toJson(metadata(agent, latest, protocols,
             latestProtocols, artifactKinds)));
         result.setSourceDigest(sourceDigest(agent, latest, artifactKinds));
         result.setStatus(AiResourceSearchConstants.STATUS_ENABLED);
@@ -109,7 +108,7 @@ public class AgentSearchIndexProjector {
         return result;
     }
     
-    private Map<String, Object> metadata(Agent agent, AgentVersionDetail latest,
+    private Map<String, Object> metadata(AgentSummary agent, AgentVersionDetail latest,
         List<String> protocols, List<String> latestProtocols, List<String> artifactKinds) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("namespaceId", agent.getNamespaceId());
@@ -124,19 +123,43 @@ public class AgentSearchIndexProjector {
         result.put("artifactKinds", artifactKinds);
         result.put("primaryArtifactKind", primaryArtifactKind(latestProtocols, artifactKinds));
         result.put("contentDigest", latest.getContentDigest());
-        result.put("versionCatalog", agent.getVersionCatalog());
+        result.put("versionCatalog", catalogProjection(agent.getVersionInfo()));
         putIfPresent(result, "scope", agent.getScope());
         putIfPresent(result, "owner", agent.getOwner());
         result.put("projectionVersion", PROJECTION_VERSION);
         return result;
     }
     
-    private List<String> collectProtocols(AgentVersionCatalog catalog) {
+    private Map<String, Object> catalogProjection(AgentVersionInfo info) {
+        if (info == null) {
+            return null;
+        }
+        Map<String, Object> catalog = new LinkedHashMap<>();
+        putIfPresent(catalog, "latestVersion", info.latestVersion());
+        if (info.getOnlineVersions() != null) {
+            List<Map<String, Object>> versions = new ArrayList<>();
+            for (AgentVersionSummary version : info.getOnlineVersions()) {
+                if (version == null) {
+                    versions.add(null);
+                    continue;
+                }
+                Map<String, Object> entry = new LinkedHashMap<>();
+                putIfPresent(entry, "version", version.getVersion());
+                putIfPresent(entry, "labels", version.getLabels());
+                putIfPresent(entry, "protocols", version.getProtocols());
+                versions.add(entry);
+            }
+            catalog.put("onlineVersions", versions);
+        }
+        return catalog;
+    }
+    
+    private List<String> collectProtocols(AgentVersionInfo catalog) {
         if (catalog == null || catalog.getOnlineVersions() == null) {
             return Collections.emptyList();
         }
         Set<String> result = new LinkedHashSet<>();
-        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+        for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             if (entry == null || entry.getProtocols() == null) {
                 continue;
             }
@@ -221,7 +244,7 @@ public class AgentSearchIndexProjector {
         }
     }
     
-    private List<String> representativeQueries(Agent agent, AgentCard card) {
+    private List<String> representativeQueries(AgentSummary agent, AgentCard card) {
         Set<String> result = new LinkedHashSet<>();
         addIfNotBlank(result, agent.getAgentName());
         addIfNotBlank(result, agent.getDisplayName());
@@ -301,7 +324,7 @@ public class AgentSearchIndexProjector {
         }
     }
     
-    private String sourceDigest(Agent agent, AgentVersionDetail latest,
+    private String sourceDigest(AgentSummary agent, AgentVersionDetail latest,
         List<String> artifactKinds) {
         Map<String, Object> source = new LinkedHashMap<>();
         source.put("status", agent.getStatus());
@@ -312,7 +335,7 @@ public class AgentSearchIndexProjector {
         source.put("tags", agent.getTags());
         source.put("scope", agent.getScope());
         source.put("owner", agent.getOwner());
-        source.put("versionCatalog", agent.getVersionCatalog());
+        source.put("versionCatalog", catalogProjection(agent.getVersionInfo()));
         source.put("latestVersion", latest.getVersion());
         source.put("contentDigest", latest.getContentDigest());
         source.put("artifactKinds", artifactKinds);

@@ -21,6 +21,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.lock.core.NLock;
 import com.alibaba.nacos.client.lock.core.NLockFactory;
 import com.alibaba.nacos.client.lock.remote.grpc.LockGrpcClient;
+import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.notify.DefaultSharePublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +35,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,5 +78,21 @@ class NacosLockServiceTest {
         NLock nLock = NLockFactory.getLock("test");
         lockService.unLock(nLock);
         verify(lockGrpcClient).unLock(nLock);
+    }
+    
+    @Test
+    void testShutdownDeregisterServerListChangeSubscriber() throws Exception {
+        Field securityProxyField = NacosLockService.class.getDeclaredField("securityProxy");
+        securityProxyField.setAccessible(true);
+        SecurityProxy securityProxy = (SecurityProxy) securityProxyField.get(lockService);
+        Field subscriberField =
+            SecurityProxy.class.getDeclaredField("serverListChangeSubscriber");
+        subscriberField.setAccessible(true);
+        Subscriber<?> subscriber = (Subscriber<?>) subscriberField.get(securityProxy);
+        DefaultSharePublisher sharePublisher =
+            (DefaultSharePublisher) NotifyCenter.getSharePublisher();
+        assertTrue(sharePublisher.getSubscribers().contains(subscriber));
+        lockService.shutdown();
+        assertFalse(sharePublisher.getSubscribers().contains(subscriber));
     }
 }

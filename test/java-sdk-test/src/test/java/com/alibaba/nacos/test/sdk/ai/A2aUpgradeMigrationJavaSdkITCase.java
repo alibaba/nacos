@@ -27,12 +27,14 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigFactory;
@@ -43,6 +45,9 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
@@ -70,10 +75,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Real-client integration scenarios for temporary Nacos 3.0-3.2 A2A Runtime migration.
  *
- * <p>The dedicated workflow runs this class against an {@code AUTO/SYNCING} server. Each old
- * {@link AiService} Endpoint publication must be represented by both the historical exact-Version
+ * <p>The dedicated workflow runs this class against an {@code AUTO/SYNCING} server. Each
+ * released 3.2.4 SDK Endpoint publication must be represented by both the historical exact-Version
  * Naming service and the canonical RAD Runtime service while consuming one logical capacity
- * reservation.</p>
+ * reservation. Current SDK instances independently verify RAD admission and post-cutover
+ * discovery. The released SDK runs in an isolated JVM with its own dependencies.</p>
  *
  * @author Nacos
  */
@@ -141,9 +147,148 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String CLUSTER_NODE_C_ADDRESS_PROPERTY =
         "nacos.a2a.migration.cluster.node-c.address";
 
+    private final Map<AiService, LegacyA2aClient> legacyClients = new IdentityHashMap<>();
+
+    private final Map<AiService, AgentMaintainerService> managementReaders = new IdentityHashMap<>();
+
+    private boolean historicalAuthority = Boolean.getBoolean("nacos.a2a.migration.legacy.enabled")
+        || Boolean.getBoolean(SYNCING_ENABLED_PROPERTY)
+        || Boolean.getBoolean(CUTOVER_ENABLED_PROPERTY)
+        || Boolean.getBoolean(CLUSTER_RUNTIME_ENABLED_PROPERTY)
+        || Boolean.getBoolean(CLUSTER_CUTOVER_ENABLED_PROPERTY);
+
+    @Override
+    protected AiService createAiService(Properties properties) throws Exception {
+        AiService result = createAiServiceWithoutReadiness(properties);
+        waitUntil("migration SDK connects with explicit authority outcome", () -> {
+            try {
+                result.agent().searchAgents(new AgentSearchRequest());
+                return !historicalAuthority;
+            } catch (NacosException e) {
+                if (historicalAuthority
+                    && e.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
+                    return true;
+                }
+                throw e;
+            }
+        });
+        Properties management = maintainerProperties();
+        management.setProperty(PropertyKeyConst.SERVER_ADDR,
+            properties.getProperty(PropertyKeyConst.SERVER_ADDR));
+        management.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        managementReaders.put(result,
+            AiMaintainerFactory.createAiMaintainerService(management).agent());
+        LegacyA2aClient legacy = new LegacyA2aClient(properties);
+        legacyClients.put(result, legacy);
+        addCleanup(legacy::shutdown);
+        return result;
+    }
+
+    private LegacyA2aClient legacy(AiService service) {
+        return legacyClients.get(service);
+    }
+
+    private AgentDiscoveryResult migrationProjection(AiService service, AgentReference reference)
+        throws NacosException {
+        if (!historicalAuthority) {
+            return service.agent().discoverAgent(reference);
+        }
+        // The migration's internal mirror is inspected through the management API, never
+        // through a RAD route that must be fenced while historical authority remains active.
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setVersion(reference.getVersion());
+        result.setCallInterfaces(Collections.singletonList(managementReaders.get(service)
+            .getRuntimeEndpoints(reference.getAgentName(), A2A_PROTOCOL, reference.getVersion())
+            .getCallInterface()));
+        return result;
+    }
+
+    private void assertRadFenced(AiService service, AgentReference reference) {
+        // A new SDK sees RAD capability even in migration: its A2A facade is fenced too.
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> service.agent().getAgentCard(reference.getAgentName())).getErrCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class, () -> service.getAgentCard(reference.getAgentName()))
+                .getErrCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class, () -> service.agent().discoverAgent(reference))
+                .getErrCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> service.agent().searchAgents(new AgentSearchRequest())).getErrCode());
+    }
+
     private static final long RECONNECT_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(2);
 
     private static final long EXTERNAL_CONTROL_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
+    @Test
+    @EnabledIfSystemProperty(named = "nacos.a2a.migration.legacy.enabled", matches = "true")
+    void shouldKeepLegacyWireAvailableWhileNativeRadIsFenced() throws Exception {
+        for (String mode : new String[] {"grpc", "http", "auto"}) {
+            AiService service = createAiService(transportProperties(mode));
+            String agentName = randomUnencodedAgentName("migration-legacy-" + mode);
+            releaseVersions(service, createA2aMaintainerService(), agentName, VERSION_ONE);
+            assertEquals(VERSION_ONE, legacy(service).getAgentCard(agentName).getVersion());
+            assertRadFenced(service, reference(agentName, VERSION_ONE));
+            AgentEndpoint endpoint = endpoint(VERSION_ONE, randomPort(), "/legacy-only");
+            legacy(service).registerAgentEndpoint(agentName, endpoint);
+            addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, endpoint));
+            NamingService naming = createNamingService();
+            waitUntil("legacy Naming publication", () -> historicalInstances(naming, agentName,
+                VERSION_ONE).size() == 1);
+            legacy(service).deregisterAgentEndpoint(agentName, endpoint);
+            waitUntil("legacy Naming cleanup", () -> historicalInstances(naming, agentName,
+                VERSION_ONE).isEmpty());
+        }
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = SYNCING_ENABLED_PROPERTY, matches = "true")
+    void shouldRejectAllNativeBusinessMethodsWithoutChangingLegacyEndpoints() throws Exception {
+        for (String mode : new String[] {"grpc", "http"}) {
+            AiService service = createAiService(transportProperties(mode));
+            A2aMaintainerService maintainer = createA2aMaintainerService();
+            String agentName = randomUnencodedAgentName("migration-fence-" + mode);
+            releaseVersions(service, maintainer, agentName, VERSION_ONE);
+            AgentEndpoint oldEndpoint = endpoint(VERSION_ONE, randomPort(), "/legacy-owner");
+            legacy(service).registerAgentEndpoint(agentName, oldEndpoint);
+            addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, oldEndpoint));
+            assertEquals(VERSION_ONE, legacy(service).getAgentCard(agentName).getVersion());
+            AgentReference ref = reference(agentName, VERSION_ONE);
+            assertRadFenced(service, ref);
+            AgentPublishRequest publication = new AgentPublishRequest();
+            publication.setAgentName(agentName);
+            publication.setVersion(VERSION_TWO);
+            publication.setBasedOnVersion(VERSION_ONE);
+            assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                assertThrows(NacosException.class,
+                    () -> service.agent().publishAgent(publication)).getErrCode());
+            Endpoint endpoint = new Endpoint();
+            endpoint.setUri("http://127.0.0.1:18180/rejected");
+            endpoint.setTransport("HTTP+JSON");
+            AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
+            batch.setAgentName(agentName);
+            batch.setProtocol(A2A_PROTOCOL);
+            batch.setRuntimeVersion(VERSION_ONE);
+            batch.setEndpoints(Collections.singletonList(endpoint));
+            assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                assertThrows(NacosException.class,
+                    () -> service.agent().registerAgentEndpoints(batch)).getErrCode());
+            RecordingListener listener = new RecordingListener();
+            assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                assertThrows(NacosException.class,
+                    () -> service.agent().subscribeAgent(ref, listener)).getErrCode());
+            service.agent().unsubscribeAgent(ref, listener);
+            NamingService naming = createNamingService();
+            awaitLayouts(service, naming, agentName, VERSION_ONE, 1);
+            assertLayoutUris(service, naming, agentName, VERSION_ONE,
+                Collections.singletonList(uri(oldEndpoint)));
+            legacy(service).deregisterAgentEndpoint(agentName, oldEndpoint);
+            awaitLayouts(service, naming, agentName, VERSION_ONE, 0);
+        }
+    }
 
     @Test
     @EnabledIfSystemProperty(named = CUTOVER_ENABLED_PROPERTY, matches = "true")
@@ -161,47 +306,59 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         AiService httpService = createAiService(transportProperties(
             AiConstants.AI_TRANSPORT_MODE_HTTP));
         NamingService namingService = createNamingService();
-        assertEquals(VERSION_ONE, grpcService.getAgentCard(CUTOVER_AGENT).getVersion());
-        assertEquals(VERSION_ONE, httpService.getAgentCard(CUTOVER_AGENT).getVersion());
+        assertEquals(VERSION_ONE, legacy(grpcService).getAgentCard(CUTOVER_AGENT).getVersion());
+        assertEquals(VERSION_ONE, legacy(httpService).getAgentCard(CUTOVER_AGENT).getVersion());
 
         NacosException fenced = assertThrows(NacosException.class,
-            () -> grpcService.releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
+            () -> legacy(grpcService).releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true));
         assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(), fenced.getErrCode(),
             fenced.toString());
 
         AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/quiescing-initial");
-        grpcService.registerAgentEndpoint(CUTOVER_AGENT, initial);
+        legacy(grpcService).registerAgentEndpoint(CUTOVER_AGENT, initial);
         awaitRuntimeEndpoint(grpcService, CUTOVER_AGENT, VERSION_ONE, uri(initial));
 
         AgentReference reference = reference(CUTOVER_AGENT, VERSION_ONE);
         RecordingListener grpcListener = new RecordingListener();
         RecordingListener httpListener = new RecordingListener();
-        assertTrue(containsRuntimeEndpoint(grpcService.agent().subscribeAgent(reference, grpcListener),
-            uri(initial)));
-        assertTrue(containsRuntimeEndpoint(httpService.agent().subscribeAgent(reference, httpListener),
-            uri(initial)));
+        assertRadFenced(grpcService, reference);
+        assertRadFenced(httpService, reference);
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> grpcService.agent().subscribeAgent(reference, grpcListener)).getErrCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> httpService.agent().subscribeAgent(reference, httpListener)).getErrCode());
         addCleanup(() -> grpcService.agent().unsubscribeAgent(reference, grpcListener));
         addCleanup(() -> httpService.agent().unsubscribeAgent(reference, httpListener));
 
         AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
             "/quiescing-replacement");
-        grpcService.registerAgentEndpoint(CUTOVER_AGENT,
+        legacy(grpcService).registerAgentEndpoint(CUTOVER_AGENT,
             Collections.singletonList(replacement));
-        assertWatchEndpoint(grpcListener, uri(replacement), "gRPC");
-        assertWatchEndpoint(httpListener, uri(replacement), "HTTP");
+        assertRadFenced(grpcService, reference);
+        assertRadFenced(httpService, reference);
         awaitLayouts(grpcService, namingService, CUTOVER_AGENT, VERSION_ONE, 1);
         assertEquals("QUIESCING", awaitMigrationState(migrationConfigService, "QUIESCING"));
 
         assertTrue(configService.removeConfig(CUTOVER_BLOCKER_DATA_ID,
             HISTORICAL_AGENT_GROUP), "the Java SDK cutover phase must release its hold");
         assertEquals("CANONICAL", awaitMigrationState(migrationConfigService, "CANONICAL"));
+        historicalAuthority = false;
+        // The HTTP preparation creates this resource as administrator. Grant the ordinary
+        // client write visibility before exercising its post-migration publication.
+        grantClientReadWriteVisibility(Constants.DEFAULT_NAMESPACE_ID, "agent", CUTOVER_AGENT);
+        assertTrue(containsRuntimeEndpoint(grpcService.agent().subscribeAgent(reference, grpcListener),
+            uri(replacement)));
+        assertTrue(containsRuntimeEndpoint(httpService.agent().subscribeAgent(reference, httpListener),
+            uri(replacement)));
         assertEquals(shadowEnabled, currentLegacyNamingShadow(migrationConfigService));
         AgentEndpoint terminalReplacement = endpoint(VERSION_ONE, randomPort(),
             "/terminal-replacement");
         awaitTerminalLayout(grpcService, namingService, CUTOVER_AGENT, terminalReplacement,
             shadowEnabled);
-        addCleanup(() -> grpcService.deregisterAgentEndpoint(CUTOVER_AGENT,
+        addCleanup(() -> legacy(grpcService).deregisterAgentEndpoint(CUTOVER_AGENT,
             terminalReplacement));
         assertWatchEndpoint(grpcListener, uri(terminalReplacement), "terminal gRPC");
         assertWatchEndpoint(httpListener, uri(terminalReplacement), "terminal HTTP");
@@ -210,20 +367,20 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         assertNoDuplicateEndpointEvent(httpListener, uri(terminalReplacement),
             "terminal HTTP");
 
-        grpcService.deregisterAgentEndpoint(CUTOVER_AGENT, terminalReplacement);
+        legacy(grpcService).deregisterAgentEndpoint(CUTOVER_AGENT, terminalReplacement);
         awaitRuntimeAndHistoricalCounts(grpcService, namingService, CUTOVER_AGENT,
             VERSION_ONE, 0, 0);
-        grpcService.releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
+        legacy(grpcService).releaseAgentCard(agentCard(CUTOVER_AGENT, VERSION_TWO),
             AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
         waitUntil("terminal legacy facade should publish canonical Version 2",
-            () -> VERSION_TWO.equals(grpcService.getAgentCard(CUTOVER_AGENT).getVersion()));
+            () -> VERSION_TWO.equals(legacy(grpcService).getAgentCard(CUTOVER_AGENT).getVersion()));
         assertEquals(VERSION_TWO,
-            grpcService.agent().discoverAgent(reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
-        AgentSearchQuery search = new AgentSearchQuery();
+            migrationProjection(grpcService, reference(CUTOVER_AGENT, VERSION_TWO)).getVersion());
+        AgentSearchRequest search = new AgentSearchRequest();
         search.setAgentNameContains(CUTOVER_AGENT);
         waitUntil("terminal Agent should remain searchable", () -> grpcService.agent().searchAgents(search).getPageItems().stream()
             .anyMatch(each -> CUTOVER_AGENT.equals(each.getAgentName())
-                && VERSION_TWO.equals(each.getLatestVersion())));
+                && VERSION_TWO.equals(each.getVersionInfo().latestVersion())));
     }
 
     @Test
@@ -239,13 +396,13 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String agentName = randomUnencodedAgentName("migration-terminal-rollback");
         releaseVersions(service, maintainer, agentName, VERSION_ONE);
 
-        assertEquals(VERSION_ONE, service.getAgentCard(agentName).getVersion());
+        assertEquals(VERSION_ONE, legacy(service).getAgentCard(agentName).getVersion());
         assertEquals(VERSION_ONE,
-            service.agent().discoverAgent(reference(agentName, VERSION_ONE)).getVersion());
+            migrationProjection(service, reference(agentName, VERSION_ONE)).getVersion());
         AgentEndpoint endpoint = endpoint(VERSION_ONE, randomPort(), "/terminal-legacy-mode");
         awaitTerminalLayout(service, namingService, agentName, endpoint, shadowEnabled);
-        addCleanup(() -> service.deregisterAgentEndpoint(agentName, endpoint));
-        service.deregisterAgentEndpoint(agentName, endpoint);
+        addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, endpoint));
+        legacy(service).deregisterAgentEndpoint(agentName, endpoint);
         awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 0, 0);
         assertEquals("CANONICAL", awaitMigrationState(configService, "CANONICAL"));
     }
@@ -266,36 +423,37 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String overflowAgent = randomUnencodedAgentName("migration-overflow");
         releaseVersions(service, maintainer, agentName, VERSION_ONE, VERSION_TWO);
         releaseVersions(service, maintainer, overflowAgent, VERSION_ONE);
+        assertRadFenced(service, reference(agentName, VERSION_ONE));
 
         AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/initial");
-        service.registerAgentEndpoint(agentName, initial);
-        addCleanup(() -> service.deregisterAgentEndpoint(agentName, initial));
+        legacy(service).registerAgentEndpoint(agentName, initial);
+        addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, initial));
         awaitLayouts(service, namingService, agentName, VERSION_ONE, 1);
 
         AgentEndpoint first = endpoint(VERSION_ONE, randomPort(), "/batch-first");
         AgentEndpoint second = endpoint(VERSION_ONE, randomPort(), "/batch-second");
         List<AgentEndpoint> replacement = Arrays.asList(first, second);
-        service.registerAgentEndpoint(agentName, replacement);
+        legacy(service).registerAgentEndpoint(agentName, replacement);
         awaitLayouts(service, namingService, agentName, VERSION_ONE, 2);
         assertLayoutUris(service, namingService, agentName, VERSION_ONE,
             Arrays.asList(uri(first), uri(second)));
 
         AgentEndpoint versionTwo = endpoint(VERSION_TWO, randomPort(), "/version-two");
-        service.registerAgentEndpoint(agentName, versionTwo);
-        addCleanup(() -> service.deregisterAgentEndpoint(agentName, versionTwo));
+        legacy(service).registerAgentEndpoint(agentName, versionTwo);
+        addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, versionTwo));
         awaitLayouts(service, namingService, agentName, VERSION_TWO, 1);
         awaitLayouts(service, namingService, agentName, VERSION_ONE, 2);
 
         AgentEndpoint rejectedEndpoint = endpoint(VERSION_ONE, randomPort(), "/rejected");
         NacosException rejected = assertThrows(NacosException.class,
-            () -> service.registerAgentEndpoint(overflowAgent, rejectedEndpoint));
+            () -> legacy(service).registerAgentEndpoint(overflowAgent, rejectedEndpoint));
         assertEquals(NacosException.OVER_THRESHOLD, rejected.getErrCode());
         assertTrue(rejected.getMessage().contains("publication limit"), rejected.getMessage());
 
-        service.deregisterAgentEndpoint(agentName, first);
+        legacy(service).deregisterAgentEndpoint(agentName, first);
         awaitLayouts(service, namingService, agentName, VERSION_ONE, 0);
-        service.registerAgentEndpoint(overflowAgent, rejectedEndpoint);
-        addCleanup(() -> service.deregisterAgentEndpoint(overflowAgent, rejectedEndpoint));
+        legacy(service).registerAgentEndpoint(overflowAgent, rejectedEndpoint);
+        addCleanup(() -> legacy(service).deregisterAgentEndpoint(overflowAgent, rejectedEndpoint));
         awaitLayouts(service, namingService, overflowAgent, VERSION_ONE, 1);
         assertLayoutUris(service, namingService, overflowAgent, VERSION_ONE,
             Collections.singletonList(uri(rejectedEndpoint)));
@@ -312,14 +470,15 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         releaseVersions(definitionClient, maintainer, agentName, VERSION_ONE);
         AgentEndpoint endpoint = endpoint(VERSION_ONE, randomPort(), "/disconnect");
 
-        publisher.registerAgentEndpoint(agentName, endpoint);
+        legacy(publisher).registerAgentEndpoint(agentName, endpoint);
         awaitLayouts(definitionClient, namingService, agentName, VERSION_ONE, 1);
+        legacy(publisher).shutdown();
         publisher.shutdown();
         awaitLayouts(definitionClient, namingService, agentName, VERSION_ONE, 0);
 
         AiService replacementPublisher = createAiService();
-        replacementPublisher.registerAgentEndpoint(agentName, endpoint);
-        addCleanup(() -> replacementPublisher.deregisterAgentEndpoint(agentName, endpoint));
+        legacy(replacementPublisher).registerAgentEndpoint(agentName, endpoint);
+        addCleanup(() -> legacy(replacementPublisher).deregisterAgentEndpoint(agentName, endpoint));
         awaitLayouts(definitionClient, namingService, agentName, VERSION_ONE, 1);
     }
 
@@ -346,10 +505,13 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         releaseVersions(service, maintainer, agentName, VERSION_ONE, VERSION_TWO);
         AgentEndpoint first = endpoint(VERSION_ONE, randomPort(), "/before-restart");
         AgentEndpoint second = endpoint(VERSION_TWO, randomPort(), "/before-restart-vtwo");
-        service.registerAgentEndpoint(agentName, first);
-        service.registerAgentEndpoint(agentName, second);
-        addCleanup(() -> service.deregisterAgentEndpoint(agentName, first));
-        addCleanup(() -> service.deregisterAgentEndpoint(agentName, second));
+        legacy(service).registerAgentEndpoint(agentName, first);
+        // Released 3.2.4 caches one redo entry per Agent name. Keep each Version in its
+        // own released client; current-SDK multi-Version redo is verified by routing IT.
+        AiService secondPublisher = createAiService();
+        legacy(secondPublisher).registerAgentEndpoint(agentName, second);
+        addCleanup(() -> legacy(service).deregisterAgentEndpoint(agentName, first));
+        addCleanup(() -> legacy(secondPublisher).deregisterAgentEndpoint(agentName, second));
         awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 1,
             expectedHistorical);
         awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_TWO, 1,
@@ -367,7 +529,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         assertConfiguredLayoutUris(service, namingService, agentName, VERSION_TWO,
             Collections.singletonList(uri(second)), shadowEnabled);
 
-        service.deregisterAgentEndpoint(agentName, first);
+        legacy(service).deregisterAgentEndpoint(agentName, first);
         awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_ONE, 0, 0);
         awaitRuntimeAndHistoricalCounts(service, namingService, agentName, VERSION_TWO, 1,
             expectedHistorical);
@@ -397,29 +559,29 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         releaseVersions(publisherA, maintainerA, agentName, VERSION_ONE, VERSION_TWO);
 
         AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/cluster-initial");
-        publisherA.registerAgentEndpoint(agentName, initial);
-        addCleanup(() -> publisherA.deregisterAgentEndpoint(agentName, initial));
+        legacy(publisherA).registerAgentEndpoint(agentName, initial);
+        addCleanup(() -> legacy(publisherA).deregisterAgentEndpoint(agentName, initial));
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 1);
         assertClusterLayoutUris(readers, namingReaders, agentName, VERSION_ONE,
             Collections.singletonList(uri(initial)));
 
         AgentEndpoint first = endpoint(VERSION_ONE, randomPort(), "/cluster-replaced-first");
         AgentEndpoint second = endpoint(VERSION_ONE, randomPort(), "/cluster-replaced-second");
-        publisherA.registerAgentEndpoint(agentName, Arrays.asList(first, second));
+        legacy(publisherA).registerAgentEndpoint(agentName, Arrays.asList(first, second));
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 2);
         assertClusterLayoutUris(readers, namingReaders, agentName, VERSION_ONE,
             Arrays.asList(uri(first), uri(second)));
 
         AgentEndpoint versionTwo = endpoint(VERSION_TWO, randomPort(), "/cluster-version-two");
-        publisherA.registerAgentEndpoint(agentName, versionTwo);
-        addCleanup(() -> publisherA.deregisterAgentEndpoint(agentName, versionTwo));
+        legacy(publisherA).registerAgentEndpoint(agentName, versionTwo);
+        addCleanup(() -> legacy(publisherA).deregisterAgentEndpoint(agentName, versionTwo));
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 1);
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 2);
 
-        publisherA.deregisterAgentEndpoint(agentName, first);
+        legacy(publisherA).deregisterAgentEndpoint(agentName, first);
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_ONE, 0);
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 1);
-        publisherA.deregisterAgentEndpoint(agentName, versionTwo);
+        legacy(publisherA).deregisterAgentEndpoint(agentName, versionTwo);
         awaitClusterLayouts(readers, namingReaders, agentName, VERSION_TWO, 0);
     }
 
@@ -461,18 +623,22 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String agentName = randomUnencodedAgentName("migration-cluster-cutover");
         releaseVersions(readerA, maintainerA, agentName, VERSION_ONE);
         AgentEndpoint initial = endpoint(VERSION_ONE, randomPort(), "/cluster-cutover-initial");
-        readerA.registerAgentEndpoint(agentName, initial);
-        addCleanup(() -> readerA.deregisterAgentEndpoint(agentName, initial));
+        legacy(readerA).registerAgentEndpoint(agentName, initial);
+        addCleanup(() -> legacy(readerA).deregisterAgentEndpoint(agentName, initial));
         awaitClusterRuntime(readers, agentName, VERSION_ONE, uri(initial));
         assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(initial));
 
         AgentReference reference = reference(agentName, VERSION_ONE);
         RecordingListener grpcListener = new RecordingListener();
         RecordingListener httpListener = new RecordingListener();
-        assertTrue(containsRuntimeEndpoint(readerA.agent().subscribeAgent(reference, grpcListener),
-            uri(initial)));
-        assertTrue(containsRuntimeEndpoint(
-            loadBalancedReader.agent().subscribeAgent(reference, httpListener), uri(initial)));
+        assertRadFenced(readerA, reference);
+        assertRadFenced(loadBalancedReader, reference);
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> readerA.agent().subscribeAgent(reference, grpcListener)).getErrCode());
+        assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+            assertThrows(NacosException.class,
+                () -> loadBalancedReader.agent().subscribeAgent(reference, httpListener)).getErrCode());
         addCleanup(() -> readerA.agent().unsubscribeAgent(reference, grpcListener));
         addCleanup(() -> loadBalancedReader.agent().unsubscribeAgent(reference, httpListener));
         writeMarker(ready, agentName);
@@ -480,25 +646,36 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitForMarker(nodeCUpgraded,
             "the external fixture upgrades the third migration-capable member");
         assertClusterMigrationStateAtOrPastQuiescing(configReaders);
+        assertClusterMigrationState(configReaders, "CANONICAL");
+        historicalAuthority = false;
+        // Config observation can precede each node's migration-mode refresh. The caller
+        // explicitly waits for native admission before creating the post-cutover Watches.
+        awaitClusterRuntime(readers, agentName, VERSION_ONE, uri(initial));
+        assertTrue(containsRuntimeEndpoint(readerA.agent().subscribeAgent(reference, grpcListener),
+            uri(initial)));
+        assertTrue(containsRuntimeEndpoint(
+            loadBalancedReader.agent().subscribeAgent(reference, httpListener), uri(initial)));
         AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
             "/cluster-cutover-replacement");
-        readerA.registerAgentEndpoint(agentName, Collections.singletonList(replacement));
+        legacy(readerA).registerAgentEndpoint(agentName, Collections.singletonList(replacement));
         assertWatchEndpoint(grpcListener, uri(replacement), "cluster gRPC");
         assertWatchEndpoint(httpListener, uri(replacement), "cluster HTTP");
+        // A Watch refresh can precede Distro propagation to the other pinned readers.
+        awaitClusterRuntime(readers, agentName, VERSION_ONE, uri(replacement));
         assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(replacement));
         assertNoDuplicateEndpointEvent(grpcListener, uri(replacement), "cluster gRPC");
         assertNoDuplicateEndpointEvent(httpListener, uri(replacement), "cluster HTTP");
 
         assertClusterMigrationState(configReaders, "CANONICAL");
         assertClusterDefinitionAndRuntime(readers, agentName, VERSION_ONE, uri(replacement));
-        readerA.deregisterAgentEndpoint(agentName, replacement);
+        legacy(readerA).deregisterAgentEndpoint(agentName, replacement);
         awaitClusterRuntimeCount(readers, agentName, VERSION_ONE, 0);
     }
 
     private void releaseVersions(AiService service, A2aMaintainerService maintainer,
         String agentName, String... versions) throws Exception {
         for (int i = 0; i < versions.length; i++) {
-            service.releaseAgentCard(agentCard(agentName, versions[i]),
+            legacy(service).releaseAgentCard(agentCard(agentName, versions[i]),
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, i == 0);
         }
         addCleanup(() -> maintainer.deleteAgent(agentName, Constants.DEFAULT_NAMESPACE_ID));
@@ -535,7 +712,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         String version, int expected) throws Exception {
         waitUntil("both migration Runtime layouts should contain " + expected + " Endpoints",
             () -> historicalInstances(namingService, agentName, version).size() == expected
-                && runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
+                && runtimeEndpoints(migrationProjection(service, reference(agentName, version)))
                     .size() == expected);
     }
 
@@ -547,7 +724,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
                 + instance.getMetadata().get("__nacos.agent.endpoint.path__"));
         }
         List<String> canonical = new ArrayList<String>();
-        for (Endpoint endpoint : runtimeEndpoints(service.agent().discoverAgent(
+        for (Endpoint endpoint : runtimeEndpoints(migrationProjection(service, 
             reference(agentName, version)))) {
             canonical.add(endpoint.getUri());
         }
@@ -601,7 +778,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         List<NamingService> namingServices, String agentName, String version, int expected)
         throws NacosException {
         for (AiService service : services) {
-            if (runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
+            if (runtimeEndpoints(migrationProjection(service, reference(agentName, version)))
                 .size() != expected) {
                 return false;
             }
@@ -628,7 +805,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("all cluster members should expose Runtime Endpoint " + expectedUri,
             () -> {
                 for (AiService service : services) {
-                    if (!containsRuntimeEndpoint(service.agent().discoverAgent(
+                    if (!containsRuntimeEndpoint(migrationProjection(service, 
                         reference(agentName, version)), expectedUri)) {
                         return false;
                     }
@@ -642,7 +819,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntilLong("all cluster members should expose " + expected + " Runtime Endpoints",
             () -> {
                 for (AiService service : services) {
-                    if (runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
+                    if (runtimeEndpoints(migrationProjection(service, reference(agentName, version)))
                         .size() != expected) {
                         return false;
                     }
@@ -654,8 +831,8 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private void assertClusterDefinitionAndRuntime(List<AiService> services, String agentName,
         String version, String expectedUri) throws Exception {
         for (AiService service : services) {
-            assertEquals(version, service.getAgentCard(agentName).getVersion());
-            AgentDiscoveryResult discovered = service.agent().discoverAgent(
+            assertEquals(version, legacy(service).getAgentCard(agentName).getVersion());
+            AgentDiscoveryResult discovered = migrationProjection(service, 
                 reference(agentName, version));
             assertEquals(version, discovered.getVersion());
             assertTrue(containsRuntimeEndpoint(discovered, expectedUri),
@@ -672,7 +849,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         if (result == null || result.getCallInterfaces() == null) {
             return Collections.emptyList();
         }
-        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : result.getCallInterfaces()) {
             if (!A2A_PROTOCOL.equals(callInterface.getProtocol())
                 || callInterface.getEndpointSets() == null) {
                 continue;
@@ -738,14 +915,14 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private void awaitRuntimeEndpoint(AiService service, String agentName, String version,
         String endpointUri) throws Exception {
         waitUntil("Runtime Endpoint should become discoverable during cutover",
-            () -> containsRuntimeEndpoint(service.agent().discoverAgent(reference(agentName, version)),
+            () -> containsRuntimeEndpoint(migrationProjection(service, reference(agentName, version)),
                 endpointUri));
     }
 
     private void awaitRuntimeEndpointCount(AiService service, String agentName, String version,
         int expected) throws Exception {
         waitUntil("Runtime Endpoint count should converge to " + expected,
-            () -> runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
+            () -> runtimeEndpoints(migrationProjection(service, reference(agentName, version)))
                 .size() == expected);
     }
 
@@ -755,7 +932,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         List<String> expectedUris = Collections.singletonList(uri(endpoint));
         waitUntilLong("terminal Runtime layouts should honor frozen shadow=" + shadowEnabled,
             () -> {
-                service.registerAgentEndpoint(agentName,
+                legacy(service).registerAgentEndpoint(agentName,
                     Collections.singletonList(endpoint));
                 return expectedUris.equals(runtimeUris(service, agentName,
                     endpoint.getVersion()))
@@ -778,7 +955,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         NamingService namingService, String agentName, String version, int expectedRuntime,
         int expectedHistorical) throws Exception {
         waitUntilLong("Runtime and historical Endpoint counts should converge",
-            () -> runtimeEndpoints(service.agent().discoverAgent(reference(agentName, version)))
+            () -> runtimeEndpoints(migrationProjection(service, reference(agentName, version)))
                 .size() == expectedRuntime
                 && historicalInstances(namingService, agentName, version)
                     .size() == expectedHistorical);
@@ -787,7 +964,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     private List<String> runtimeUris(AiService service, String agentName, String version)
         throws NacosException {
         List<String> result = new ArrayList<String>();
-        for (Endpoint endpoint : runtimeEndpoints(service.agent().discoverAgent(
+        for (Endpoint endpoint : runtimeEndpoints(migrationProjection(service, 
             reference(agentName, version)))) {
             result.add(endpoint.getUri());
         }
@@ -889,7 +1066,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
 
     private A2aMaintainerService createA2aMaintainerServiceAt(String serverAddress)
         throws NacosException {
-        Properties properties = sdkProperties(serverAddress);
+        // Cluster migration may change the canonical owner; fixture cleanup uses admin identity.
+        Properties properties = maintainerProperties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddress);
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties).a2a();
     }
@@ -914,7 +1093,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private ConfigService createMigrationConfigServiceAt(String serverAddress) throws Exception {
-        Properties properties = sdkProperties(serverAddress);
+        // Migration markers are fixture control data, read with the explicit admin identity.
+        Properties properties = maintainerProperties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddress);
         properties.setProperty(PropertyKeyConst.NAMESPACE, MIGRATION_INTERNAL_NAMESPACE);
         ConfigService result = ConfigFactory.createConfigService(properties);
         addCleanup(result::shutDown);
@@ -924,7 +1105,7 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private Properties sdkProperties(String serverAddress) {
-        Properties result = new Properties();
+        Properties result = super.sdkProperties();
         result.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddress);
         return result;
     }

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -32,8 +32,9 @@ public interface AgentService extends A2aService, AgentDiscoveryService {
     /**
      * Publish one exact Agent Version from application code.
      *
-     * <p>The AiService namespace is used automatically. By default this creates a draft;
-     * {@link AgentPublishRequest#isAutoSubmit()} requests the ordinary submit pipeline and never
+     * <p>The AiService namespace is used automatically. A newly created first Version is submitted
+     * automatically; other drafts use
+     * {@link AgentPublishRequest#isAutoSubmit()}. Submission uses the ordinary pipeline and never
      * force-publishes a Version.</p>
      *
      * @param request Agent definition publication request
@@ -41,7 +42,8 @@ public interface AgentService extends A2aService, AgentDiscoveryService {
      * @throws NacosException when validation, publication, or submit fails
      */
     @Since("3.3.0")
-    default AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    default AgentVersionDetail publishAgent(AgentPublishRequest request)
+        throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "Agent publication is not implemented by this AgentService.");
     }

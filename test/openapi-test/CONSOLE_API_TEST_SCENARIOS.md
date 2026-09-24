@@ -125,3 +125,84 @@ The console API IT set was validated with:
 
 The full console IT verification ran 75 tests with no failures.
 The Agent Console API verification ran 2 tests with no failures.
+
+## Config detail schema regression (#15853)
+
+`ConfigHistoryConsoleApiOpenApiITCase.testSchemaInCurrentAndHistoricalDetails`
+verifies the following workflow against a standalone server:
+
+| Scenario | Expected result |
+| --- | --- |
+| Publish without schema, then query current detail | `schema` is omitted or JSON null. |
+| Publish two different schema/content versions | Current detail returns the latest stored schema. |
+| Query history detail and previous version | `schema` belongs to the selected historical content, not the current config. |
+| Query an older history record without schema | `schema` is omitted or JSON null. |
+| Read historical `extInfo` | Original extension remains available and contains the historical `c_schema`. |
+| Publish an explicit empty schema | Current detail preserves the empty string. |
+
+Malformed extension JSON and non-text `c_schema` are covered by `ResponseUtilTest`;
+public publish APIs cannot create these legacy/corrupt history records. Existing
+required-parameter, missing-history, and identity-mismatch cases remain applicable.
+
+The inherited `ConfigGrayInfo` response also omits `schema` or returns null for beta
+configurations; the existing beta query IT asserts this boundary.
+
+### Agent 元数据模型合并（2026-09-14）
+
+Agent Console 消费相同 AgentSummary/versionInfo 新结构，保持版本详情与 Runtime 查询分开；固定地址/运行地址模型本轮不变。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### EP-14 双部署成功流程（2026-09-15）
+
+`testUnifiedDefinitionAndNonEmptyRuntimeAcrossConsoleDeploymentModes` 在合并 Console 和独立 Console 各执行一次：创建并发布自定义协议定义，直接向服务端 Client API 注册 `healthy=false` 的非空运行地址，再由 Console 读取统一模型、Naming 跳转引用和观察时间，最后复制版本并核对声明地址及摘要。Client 写请求使用服务端 BASE_URL，不能发到 Console 端口。两种部署均通过。
+
+独立 Console 的既有 A2A/Agent 错误断言有三处失败：远程 ClientHttpProxy 对业务错误重试，最终返回通用 `30000`，丢失原错误码。相关生产代码本轮未改；保留原断言，成功流程另行验证，不能据此将独立部署的错误映射标为通过。详情见上述验证记录。
+
+
+### 2026-09-15 请求整合回归
+
+Agent Console 复用改名后的 Admin Request，现有合并部署和独立 remote Console 场景都需执行，包括定义复制、非空 Runtime 和错误映射。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-04/08：合并/独立 Console 返回的 Runtime CallInterface 无 descriptor 事实，可省略或 null；保持现有错误码断言，CONSOLE-ERR-01 继续单独登记。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+## CONSOLE-ERR-01 错误透传回归（2026-09-16）
+
+复用 AgentConsoleApiOpenApiITCase 和 A2aConsoleApiOpenApiITCase 原14项，在合并和独立
+Console 各执行一遍，保留原400/404及23000/20004/50100断言、错误详情和成功副作用验证。
+共享 Maintainer 代理的修改另回归 Config/Naming 代表流程；不新增覆盖行、不提升覆盖比例。
+独立部署使用 nacos.deployment.type=console，nacos.console.port 指向该独立进程；Client
+写入仍使用服务端端口。CI 自动运行独立部署仍是后续任务。
+
+结果见 [Console 错误透传验证](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md)。
+
+实测：合并22项通过；独立21项通过、1项既有 Naming cluster 失败。Agent/A2A 两种部署各14项
+全部通过，三项原错误码问题已消除。旧构件对照复现三项原失败及相同 Naming 失败，后者登记为
+CONSOLE-NAMING-01；不放宽断言，不将其计为通过。详见上述验证记录。
+
+### Skill frontmatter response scenarios (#15345)
+
+| Scenario | Expected result | Coverage |
+| --- | --- | --- |
+| Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |
+| Bounded custom projection | Resource snapshot excludes reserved fields, prioritizes standard fields, and enforces entry/key/value/serialized-size limits with an explicit truncation flag; complete version metadata remains unchanged. | Service unit tests; standalone IT does not inspect internal metadata rows. |
+| Malformed historical metadata | List and detail remain available and return null frontmatter when `ai_resource.ext` is malformed. | Service unit test; standalone IT cannot seed malformed internal metadata through the public API. |
+| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
+| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
+| CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
+C11 repeats the complete AI Console class set against the final artifact's
+independent Console deployment. Agent Runtime assertions require enabled/healthy
+and absence of the removed state field. These executions do not change the
+API-surface denominator; final outcomes and prior intermittent Prompt observations
+are recorded separately in the SDK scenario and coverage records.

@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.constant.AiConstants.Capability;
+import com.alibaba.nacos.client.ai.remote.capability.AiCapabilityCache;
+import com.alibaba.nacos.client.ai.remote.capability.AiCapabilitySnapshot;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -27,15 +30,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -140,6 +143,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     
     private final ScheduledThreadPoolExecutor executorService;
     
+    private final AiCapabilityCache capabilityCache = new AiCapabilityCache();
+    
     private final String httpClientId = UUID.randomUUID().toString();
     
     AiHttpClientProxy() {
@@ -150,8 +155,89 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         this.executorService = null;
     }
     
+    /**
+     * Check that legacy negotiation belongs to the sole configured HTTP target.
+     * @param address negotiated main address
+     * @return false for multiple targets or a different/gateway address
+     */
+    public boolean isOnlyServer(String address) {
+        List<String> servers = serverListManager.getServerList();
+        return address != null && servers.size() == 1
+            && (address.equals(servers.get(0))
+                || (HTTP_PREFIX + address).equals(servers.get(0))
+                || (HTTPS_PREFIX + address).equals(servers.get(0)));
+    }
+    
+    /**
+     * Read one reachable configured HTTP binding, retrying only connection failures.
+     * @return target-scoped evidence; missing endpoints remain unknown
+     * @throws NacosException for identity, protocol, or connectivity errors
+     */
+    public AiCapabilitySnapshot getCapabilities() throws NacosException {
+        List<String> servers = serverListManager.getServerList();
+        if (servers.isEmpty()) {
+            throw new NacosException(NacosException.CLIENT_DISCONNECT,
+                "Cannot reach AI server: no server address is available.");
+        }
+        NacosException last = null;
+        for (String server : servers) {
+            try {
+                return getCapabilities(server);
+            } catch (NacosException e) {
+                if (!(e.getCause() instanceof java.io.IOException)
+                    || e.getCause() instanceof javax.net.ssl.SSLException) {
+                    throw e;
+                }
+                last = e;
+            }
+        }
+        throw last;
+    }
+    
+    /**
+     * Read the selected HTTP binding's capabilities, without registering a Client or probing gRPC.
+     *
+     * @param server exact target address from the server list
+     * @return target and identity scoped evidence
+     * @throws NacosException for authentication or connectivity failure
+     */
+    public AiCapabilitySnapshot getCapabilities(String server) throws NacosException {
+        String url = buildUrl(server, Capability.CLIENT_PATH);
+        RequestResource resource = RequestResource.aiBuilder().setNamespace("").setGroup("")
+            .setResource("").build();
+        Map<String, String> identity = new HashMap<>(securityProxy.getIdentityContext(resource));
+        return capabilityCache.get(url, identity, () -> {
+            Header header = Header.newInstance();
+            header.addAll(identity);
+            HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(3000)
+                .setReadTimeOutMillis(3000).build();
+            try {
+                HttpRestResult<String> response = nacosRestTemplate.get(url, config, header,
+                    Query.EMPTY, String.class);
+                if (response.getCode() == HttpURLConnection.HTTP_NOT_FOUND
+                    || response.getCode() == HttpURLConnection.HTTP_BAD_METHOD) {
+                    return AiCapabilitySnapshot.unknown();
+                }
+                return AiCapabilitySnapshot.parse(resolveAgentResponse(response));
+            } catch (NacosException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new NacosException(NacosException.SERVER_ERROR,
+                    "Cannot reach AI HTTP capability endpoint at " + url, e);
+            }
+        });
+    }
+    
+    /**
+     * Drop stale binding evidence after reconnect.
+     */
+    public void invalidateCapabilities() {
+        capabilityCache.invalidate();
+    }
+    
     @Override
-    public AgentVersionDetail publishAgent(AgentPublishRequest request) throws NacosException {
+    public AgentVersionDetail publishAgent(AgentPublishRequest request)
+        throws NacosException {
         Map<String, String> form = new HashMap<String, String>();
         form.put("namespaceId", namespaceId);
         form.put("agentName", request.getAgentName());
@@ -169,7 +255,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         form.put("autoSubmit", String.valueOf(request.isAutoSubmit()));
         String response = requestAgentApi(AGENT_CLIENT_PATH, AgentHttpMethod.POST,
             Collections.<QueryParameter>emptyList(), form,
-            buildAgentResource(request.getAgentName()));
+            buildAgentResource(request.getAgentName()), false);
         Result<AgentVersionDetail> result = JsonUtils.toObj(response,
             new NacosTypeReference<Result<AgentVersionDetail>>() {
             });
@@ -193,10 +279,10 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     }
     
     @Override
-    public Page<AgentCatalogEntry> searchAgents(AgentSearchRequest request)
+    public Page<AgentSummary> searchAgents(String namespaceId, AgentSearchRequest request)
         throws NacosException {
         List<QueryParameter> parameters = new ArrayList<QueryParameter>();
-        addParameter(parameters, "namespaceId", request.getNamespaceId());
+        addParameter(parameters, "namespaceId", namespaceId);
         addParameter(parameters, "agentNameContains", request.getAgentNameContains());
         addParameters(parameters, "tagsAll", request.getTagsAll());
         addParameters(parameters, "protocolsAny", request.getProtocolsAny());
@@ -204,8 +290,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         addParameter(parameters, "pageSize", request.getPageSize());
         String response = requestAgentApi(AGENT_SEARCH_PATH, AgentHttpMethod.GET, parameters,
             Collections.<String, String>emptyMap(), buildAgentResource(null));
-        Result<Page<AgentCatalogEntry>> result = JsonUtils.toObj(response,
-            new NacosTypeReference<Result<Page<AgentCatalogEntry>>>() {
+        Result<Page<AgentSummary>> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<Page<AgentSummary>>>() {
             });
         return requireSuccess(result);
     }
@@ -244,12 +330,15 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     }
     
     @Override
-    public ClientLivenessInfo registerAgentEndpoints(AgentEndpointRegistrationBatch batch)
+    public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
         Map<String, String> form = new HashMap<String, String>();
-        form.put("namespaceId", batch.getNamespaceId());
+        form.put("namespaceId", namespaceId);
         form.put("agentName", batch.getAgentName());
-        form.put("runtimeVersion", batch.getRuntimeVersion());
+        if (batch.getRuntimeVersion() != null) {
+            form.put("runtimeVersion", batch.getRuntimeVersion());
+        }
         if (batch.getVersionRange() != null) {
             form.put("versionRange", batch.getVersionRange());
         }
@@ -587,7 +676,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
             try {
                 return callAgentServer(api, method, parameters, form, server, resource);
             } catch (NacosException e) {
-                if (isPublicationCapacityRejected(e)) {
+                if (!replaySafe || isPublicationCapacityRejected(e)
+                    || e.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
                     throw e;
                 }
                 exception = e;
@@ -612,7 +702,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
             try {
                 return callAgentWatchServer(form, server, timeoutMillis);
             } catch (NacosException e) {
-                if (isWatchCapacityRejected(e)) {
+                if (isWatchCapacityRejected(e)
+                    || e.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
                     throw e;
                 }
                 exception = e;
@@ -663,7 +754,9 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
             if (AgentHttpMethod.GET == method) {
                 restResult = nacosRestTemplate.get(url, header, Query.EMPTY, String.class);
             } else if (AgentHttpMethod.POST == method) {
-                restResult = nacosRestTemplate.postForm(url, header, form, String.class);
+                restResult = AGENT_CLIENT_PATH.equals(api)
+                    ? nacosRestTemplate.postForm(url, header, form, String.class, false)
+                    : nacosRestTemplate.postForm(url, header, form, String.class);
             } else if (AgentHttpMethod.DELETE == method) {
                 restResult = nacosRestTemplate.delete(url, header,
                     Query.newInstance().initParams(form), String.class);
@@ -706,8 +799,9 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
                     throw new NacosApiException(NacosException.OVER_THRESHOLD,
                         ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, errorMessage);
                 }
-                int errorCode = ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
-                    ? result.getCode() : restResult.getCode();
+                int errorCode = (ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
+                    || ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode().equals(result.getCode()))
+                        ? result.getCode() : restResult.getCode();
                 throw new NacosException(errorCode, errorMessage);
             }
         } catch (NacosException e) {
@@ -1036,6 +1130,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     
     @Override
     public void shutdown() throws NacosException {
+        capabilityCache.close();
         serverListManager.shutdown();
         if (securityProxy != null) {
             securityProxy.shutdown();

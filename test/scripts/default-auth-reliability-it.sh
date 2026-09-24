@@ -760,9 +760,10 @@ run_standalone_suite() {
         'LockServiceJavaSdkITCase#shouldReconnectOriginalClientsAndResetConnectionScopedLockAfterRealServerRestart' \
         nacos.lock.reconnect.enabled nacos.lock.reconnect.control.dir \
         lock-restart "${nacos_home}" 8848 8080 9080
-    record_disabled_scenario agent-restart DAUTH-F05 \
+    run_restart_test test/java-sdk-test java-sdk-integration-test \
         'AgentDiscoveryServiceJavaSdkITCase#shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart' \
-        'authorized gRPC Watch cannot resume after a real server restart'
+        nacos.agent.reconnect.enabled nacos.agent.reconnect.control.dir \
+        agent-restart "${nacos_home}" 8848 8080 9080
     run_restart_test test/maintainer-sdk-test maintainer-sdk-integration-test \
         'AuthEnabledMaintainerSdkITCase#shouldRecoverOriginalMaintainerAndAvoidDuplicateNamespaceAfterRealServerRestart' \
         nacos.maintainer.reconnect.enabled nacos.maintainer.reconnect.control.dir \
@@ -795,9 +796,7 @@ run_cluster_suite() {
     verify_dynamic_auth_scope_consistency
     verify_token_expiry
     verify_revocation_cache_convergence
-    record_disabled_scenario agent-cluster-change DAUTH-F05 \
-        'AgentDiscoveryServiceJavaSdkITCase#shouldConvergePinnedNodeDefinitionAndRuntimeChanges' \
-        'authorized pinned client cannot read the initial Agent definition from the cluster'
+    run_cluster_change_test "${member_list}"
     run_cluster_rolling_test "${member_list}"
     run_cluster_peer_restart_test "${member_list}"
     stop_server cluster-c

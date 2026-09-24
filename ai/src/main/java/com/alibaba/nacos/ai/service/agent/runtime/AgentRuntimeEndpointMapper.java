@@ -18,9 +18,9 @@ package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.identity.RadAsciiAgentIdCodec;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
@@ -106,8 +106,8 @@ public final class AgentRuntimeEndpointMapper {
         result.setPort(EndpointCanonicalizer.effectivePort(canonical.getUri()));
         result.setClusterName(RadAsciiAgentIdCodec.encode(canonical.getTransport()));
         result.setWeight(canonical.getWeight());
-        result.setEnabled(true);
-        result.setHealthy(true);
+        result.setEnabled(endpoint.getEnabled());
+        result.setHealthy(endpoint.getHealthy());
         result.setEphemeral(true);
         result.setMetadata(metadata);
         return result;
@@ -116,8 +116,8 @@ public final class AgentRuntimeEndpointMapper {
     /**
      * Convert one legacy A2A Endpoint into the canonical Runtime Naming layout.
      *
-     * <p>The legacy protocol version and tenant remain compatibility-only reserved metadata.
-     * They are intentionally excluded from the public RAD Endpoint metadata and revision.</p>
+     * <p>Effective protocol version and tenant are compatibility metadata under the historical
+     * Nacos reserved keys and participate in RAD revisions.</p>
      *
      * @param endpoint public Endpoint converted from the legacy A2A model
      * @param runtimeVersion exact legacy Agent Version
@@ -129,11 +129,11 @@ public final class AgentRuntimeEndpointMapper {
         String protocolVersion, String tenant) {
         Instance result = toInstance(endpoint, runtimeVersion, null);
         if (protocolVersion != null && !protocolVersion.isEmpty()) {
-            result.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY,
+            result.getMetadata().putIfAbsent(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION,
                 protocolVersion);
         }
-        if (tenant != null && !tenant.isEmpty()) {
-            result.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, tenant);
+        if (tenant != null) {
+            result.getMetadata().putIfAbsent(AiConstants.A2a.ENDPOINT_TENANT, tenant);
         }
         validateLegacyMetadata(result.getMetadata());
         validateCompleteMetadata(result.getMetadata());
@@ -148,7 +148,7 @@ public final class AgentRuntimeEndpointMapper {
      * @return {@code true} when any persisted binding contains the Version
      */
     public static boolean supportsVersion(Instance instance, String version) {
-        RuntimeEndpointSnapshotItem item = fromInstance(instance, 0L);
+        Endpoint item = fromInstance(instance);
         for (RuntimeVersionBinding binding : item.getBindings()) {
             if (RuntimeVersionRangeSupport.contains(binding.getVersionRange(), version)) {
                 return true;
@@ -161,11 +161,9 @@ public final class AgentRuntimeEndpointMapper {
      * Convert one Naming ServiceStorage instance into a Runtime Endpoint contribution.
      *
      * @param instance Naming instance with operational metadata already applied
-     * @param lastUpdatedTime Naming ServiceInfo observation time
      * @return validated single-contribution management item
      */
-    public static RuntimeEndpointSnapshotItem fromInstance(Instance instance,
-        long lastUpdatedTime) {
+    public static Endpoint fromInstance(Instance instance) {
         if (instance == null) {
             throw new IllegalArgumentException("Naming instance must not be null");
         }
@@ -231,20 +229,19 @@ public final class AgentRuntimeEndpointMapper {
         RuntimeVersionBinding binding = new RuntimeVersionBinding();
         binding.setRuntimeVersion(runtimeVersion);
         binding.setVersionRange(versionRange);
-        RuntimeEndpointSnapshotItem result = new RuntimeEndpointSnapshotItem();
-        result.setEndpoint(canonical);
+        Endpoint result = canonical;
         result.setBindings(new ArrayList<RuntimeVersionBinding>(
             Collections.singletonList(binding)));
         result.setEnabled(instance.isEnabled());
         result.setHealthy(instance.isHealthy());
-        result.setState(runtimeState(instance.isEnabled(), instance.isHealthy()));
-        result.setLastUpdatedTime(lastUpdatedTime);
         return result;
     }
     
     private static Endpoint canonicalPayload(Endpoint endpoint) {
         Endpoint canonical = EndpointCanonicalizer.canonicalize(endpoint);
-        canonical.setHealthy(null);
+        canonical.setHealthy(true);
+        canonical.setBindings(null);
+        canonical.setEnabled(true);
         return canonical;
     }
     
@@ -324,15 +321,11 @@ public final class AgentRuntimeEndpointMapper {
     }
     
     private static void validateLegacyMetadata(Map<String, String> metadata) {
-        String protocolVersion =
-            metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY);
+        String protocolVersion = metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY);
         if (protocolVersion != null && !protocolVersion.isEmpty()) {
             AgentValidationUtils.validateProtocolVersion(protocolVersion);
         }
-        String tenant = metadata.get(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY);
-        if (tenant != null && tenant.length() > 256) {
-            throw new IllegalArgumentException("Invalid Agent Endpoint tenant");
-        }
+        A2aEndpointUtils.tenant(metadata, null);
     }
     
     private static Map<String, String> publicMetadata(Map<String, String> metadata) {
@@ -341,6 +334,14 @@ public final class AgentRuntimeEndpointMapper {
             if (!entry.getKey().startsWith(Constants.Agent.AGENT_ENDPOINT_METADATA_PREFIX)) {
                 result.put(entry.getKey(), entry.getValue());
             }
+        }
+        String protocolVersion = metadata.get(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY);
+        String tenant = A2aEndpointUtils.tenant(metadata, null);
+        if (protocolVersion != null && !protocolVersion.isEmpty()) {
+            result.put(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION, protocolVersion);
+        }
+        if (tenant != null) {
+            result.put(AiConstants.A2a.ENDPOINT_TENANT, tenant);
         }
         AgentValidationUtils.validateEndpointMetadata(result);
         validateNamingControlKeys(result);
@@ -396,13 +397,4 @@ public final class AgentRuntimeEndpointMapper {
         return value == null ? "" : value;
     }
     
-    private static RuntimeEndpointState runtimeState(boolean enabled, boolean healthy) {
-        if (!enabled) {
-            return RuntimeEndpointState.DISABLED;
-        }
-        if (!healthy) {
-            return RuntimeEndpointState.UNHEALTHY;
-        }
-        return RuntimeEndpointState.AVAILABLE;
-    }
 }

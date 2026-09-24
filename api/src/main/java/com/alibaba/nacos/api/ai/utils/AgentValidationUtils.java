@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.utils;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -111,6 +113,17 @@ public final class AgentValidationUtils {
      */
     public static void validateVersion(String version) {
         AgentVersion.parse(version);
+    }
+    
+    /**
+     * Compare exact versions using the shared, case-sensitive RAD version rules.
+     * @param left first version
+     * @param right second version
+     * @return negative, zero or positive when left precedes, equals or follows right
+     * @throws IllegalArgumentException when either version is invalid
+     */
+    public static int compareVersions(String left, String right) {
+        return AgentVersion.parse(left).compareTo(AgentVersion.parse(right));
     }
     
     /**
@@ -248,6 +261,9 @@ public final class AgentValidationUtils {
                 || isReservedMetadataKey(key)) {
                 throw new IllegalArgumentException("Invalid Endpoint metadata key: " + key);
             }
+            if (AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION.equals(key)) {
+                validateProtocolVersion(value);
+            }
             if (value == null || codePointLength(value) > MAX_METADATA_VALUE_LENGTH) {
                 throw new IllegalArgumentException(
                     "Invalid Endpoint metadata value for key: " + key);
@@ -259,7 +275,9 @@ public final class AgentValidationUtils {
         return "preserved.heart.beat.interval".equals(key)
             || "preserved.heart.beat.timeout".equals(key)
             || "preserved.ip.delete.timeout".equals(key)
-            || key.startsWith(INTERNAL_ENDPOINT_METADATA_PREFIX);
+            || key.startsWith(INTERNAL_ENDPOINT_METADATA_PREFIX)
+                && !AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION.equals(key)
+                && !AiConstants.A2a.ENDPOINT_TENANT.equals(key);
     }
     
     private static int codePointLength(String value) {
@@ -273,5 +291,51 @@ public final class AgentValidationUtils {
                 throw new IllegalArgumentException("Invalid " + fieldName + ": " + value);
             }
         }
+    }
+    
+    /**
+     * Validate a draft identity and its exclusive content source.
+     *
+     * @param agentName Agent name
+     * @param version exact version
+     * @param directContent whether call interfaces are supplied
+     * @param basedOnVersion optional source version
+     */
+    public static void validateDraft(String agentName, String version, boolean directContent,
+        String basedOnVersion) {
+        validateAgentName(agentName);
+        validateVersion(version);
+        boolean copiedContent = !isDraftSourceBlank(basedOnVersion);
+        if (directContent == copiedContent) {
+            throw new IllegalArgumentException(
+                "Agent draft must contain either callInterfaces or basedOnVersion");
+        }
+        if (copiedContent) {
+            validateVersion(basedOnVersion);
+        }
+    }
+    
+    /**
+     * Validate the writable Agent resource status.
+     *
+     * @param status requested status
+     */
+    public static void validateWritableStatus(String status) {
+        if (!AiConstants.Agent.RESOURCE_STATUS_ENABLE.equals(status)
+            && !AiConstants.Agent.RESOURCE_STATUS_DISABLE.equals(status)) {
+            throw new IllegalArgumentException("Invalid Agent resource status: " + status);
+        }
+    }
+    
+    private static boolean isDraftSourceBlank(String value) {
+        if (value == null) {
+            return true;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (!Character.isWhitespace(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

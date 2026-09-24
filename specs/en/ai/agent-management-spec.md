@@ -145,8 +145,7 @@ The Agent resource contains the following fields:
 | `status` | Yes | `enable` or `disable`. |
 | `owner` | Yes | Management owner. |
 | `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` in this version. |
-| `versionInfo` | Read-only | Shared editing, reviewing, online-count, and label summary. |
-| `versionCatalog` | Read-only | Compact catalog of online versions and protocols. |
+| `versionInfo` | Read-only | editingVersion, reviewingVersion, complete labels and onlineVersions[]. |
 | `metaVersion` | Read-only | Monotonic metadata revision shared with the AI Resource model. The initial Agent Admin API does not expose a conditional-write parameter. |
 | `createTime`, `updateTime` | Read-only | Audit timestamps. |
 
@@ -164,9 +163,12 @@ The following invariants apply:
   descriptor only when the Agent is first created. Later descriptor updates
   do not overwrite independently governed Agent metadata.
 
-`versionCatalog` contains `latestVersion` and `onlineVersions[]`. Each online
-entry contains only `version`, `labels[]`, and `protocols[]`. It is derived by
-the server and is not a client-writable fact.
+`versionInfo.onlineVersions[]` uses the catalog projection of AgentVersionSummary, containing
+version, labels[] and protocols[]. Resolve latest from labels["latest"] and derive the count from
+the online list. The complete label map may retain non-online targets; entries project online
+labels only. Public models no longer contain a parallel versionCatalog or a separate onlineCnt.
+Explicit converters preserve the internal version_info and ext.versionCatalog storage formats;
+do not replace them by serializing the public DTO directly.
 
 ## 4. Agent Version And Lifecycle
 
@@ -295,8 +297,8 @@ Each item contains:
 | `protocolVersion` | No | Fast protocol negotiation value; not interface identity. |
 | `descriptorMediaType` | Yes | Media type of `nativeDescriptor`. |
 | `nativeDescriptor` | Yes | Complete protocol-native descriptor. |
-| `endpointSourceOrder[]` | Yes | Non-empty ordered set of `RUNTIME` and `DECLARED`. |
-| `declaredEndpoints[]` | No | Static endpoint projection derived by the adapter. |
+| `endpointSourceOrder[]` | Yes | Both `RUNTIME` and `DECLARED`, exactly once, in preferred order. |
+| `endpointSets[]` | No | At most one DECLARED Set containing the static endpoint projection. |
 
 The canonical protocol token matches
 `[A-Za-z0-9][A-Za-z0-9-]{0,31}` and is compared case-sensitively. The same
@@ -312,12 +314,14 @@ meanings:
 
 - `[RUNTIME, DECLARED]` prefers live addresses and keeps declared addresses as
   fallback;
-- `[DECLARED, RUNTIME]` prefers declared addresses;
-- `[RUNTIME]` or `[DECLARED]` allows only that source in ordinary discovery.
+- `[DECLARED, RUNTIME]` prefers declared addresses.
+
+Single-source, empty, null, duplicate, and unknown orders are invalid.
 
 Source order belongs to one CallInterface, not to the whole Version. It does
-not prevent runtime publication. Management queries may inspect Runtime
-Endpoints even when a CallInterface omits `RUNTIME`.
+not restrict source availability or runtime publication. A discovery filter can select either
+source regardless of preference; no filter returns both Sets, including empty Sets. Filter array
+order never overrides definition order. Management always permits Runtime queries.
 
 ### 5.2 Endpoint Value Object
 
@@ -333,7 +337,7 @@ The URI has a non-empty scheme and host. Its port is explicit or can be derived
 as a valid `1..65535` default for the scheme. DNS hosts use a case-insensitive
 canonical form; IP literals use stable IPv4 or IPv6 representation.
 
-An adapter derives and validates `declaredEndpoints` from
+An adapter derives and validates `endpointSets[source=DECLARED].endpoints` from
 `nativeDescriptor`. Clients must not edit the two representations
 independently. When the same natural endpoint occurs more than once, the first
 descriptor occurrence determines list position while the native descriptor
@@ -354,15 +358,18 @@ Management APIs use bounded views rather than one unbounded aggregate:
 `RuntimeEndpointSnapshot` is not paged. It contains:
 
 ```text
-namespaceId / agentName / protocol / version?
-items[] {
-  endpoint, bindings[] { runtimeVersion, versionRange },
-  state, enabled, healthy, lastUpdatedTime
+namespaceId / agentName / version?
+callInterface {
+  protocol,
+  endpointSets[] {
+    source = RUNTIME, lastUpdatedTime,
+    endpoints[] { uri, transport, priority, weight, metadata,
+      bindings[] { runtimeVersion, versionRange }, enabled, healthy }
+  }
 }
-state = AVAILABLE | DISABLED | UNHEALTHY
 ```
 
-State evaluation is ordered: `enabled=false` is `DISABLED`; otherwise
+Console derives display status from the two booleans; no state property is returned. Evaluation is ordered: `enabled=false` is `DISABLED`; otherwise
 `healthy=false` is `UNHEALTHY`; all other items are `AVAILABLE`.
 `lastUpdatedTime` is the `lastRefTime` of the Naming `ServiceInfo` projection
 from which the snapshot was built. All items from one snapshot therefore share
@@ -375,7 +382,7 @@ projection. Cross-node equality and watch deduplication use the content-derived
 item per natural Endpoint key for that protocol and all of its Version
 bindings. With `version`, it retains only bindings matching the supplied
 Version and omits an item when no binding remains. Missing instances produce
-an empty `items[]`.
+an empty `callInterface.endpointSets[0].endpoints[]`.
 The snapshot does not apply `endpointSourceOrder` and does not claim that an
 item is discoverable. A console combines Version detail and snapshots only as
 separate read facts.
@@ -384,6 +391,47 @@ RAD catalog, discovery, and watch objects are data-plane views and are defined
 only by the [RAD Protocol Spec](rad-protocol-spec.md). In particular,
 `AgentDiscoveryResult` combines one online Version definition with permitted
 DECLARED and RUNTIME Endpoint sets; it is never stored as a fact.
+
+### 6.1 Shared Models and Query Boundaries
+
+Management and discovery use the same concrete Java hierarchy:
+`AgentCallInterface → EndpointSet → Endpoint`. Source belongs to EndpointSet.
+Definitions contain only DECLARED Sets and retain the complete endpointSourceOrder,
+including RUNTIME preferences. Runtime queries return exactly one RUNTIME Set under
+callInterface, even when empty; they require no Agent definition and omit descriptors.
+The outer RuntimeEndpointSnapshot retains identity and optional version selection;
+Console additionally retains namingServiceRef. No nested SnapshotItem remains.
+
+Management includes enabled and puts the Naming observation time once on EndpointSet.
+Management sourceRevision is omitted in this iteration. Discover/Watch require sourceRevision
+and omit endpointSourceOrder and observations (or serialize them as null). Endpoints include enabled=true; the redundant state property is absent. Their filtering, binding unions,
+source order, empty Sets and equality rules remain unchanged. Shared types do not merge queries
+or make management and discovery use the same contribution-filtering algorithm.
+
+### 6.2 Write Policy and Definition Storage
+
+Runtime registration and complete replacement accept healthy and enabled, both defaulting to true; explicit null is rejected. This reports
+current contribution health; it does not override subsequent Naming liveness permanently.
+Active HTTP heartbeats preserve explicitly reported health. Existing recovery liveness rules
+continue to apply. DECLARED accepts but does not persist health or management state, and returns default healthy/enabled=true. Deregistration reads only natural-key
+business fields and ignores other shared Endpoint properties. Each Endpoint input binding inherits Batch defaults field by field. EndpointSet revision and observation values are maintained by the server. Definition input sourceRevision
+is ignored. Malformed JSON types and invalid identity, URI, metadata or batch versions remain errors.
+Java setters alone do not send any write.
+
+AgentVersionContent remains an internal envelope with shared concrete members. Storage explicitly
+projects complete definitions and declared addresses, excluding runtime fields, health, revisions
+and observations. Read validation follows the same new shape. BETA storage/export compatibility
+is out of scope. The digest covers the exact saved bytes; derived references agree with that digest.
+Artifact exports the same definition structure after projection; native A2A AgentCard stays unchanged.
+Write normalization removes managed fields; read copies preserve the fields allowed by their view.
+
+### 6.3 Acceptance
+
+The [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)
+tracks 16 groups spanning contracts, storage, runtime, Watch, legacy A2A, migration, index, artifacts,
+Console and transport bindings. Passing execution evidence is recorded separately from planned cases.
+Historical A2A migration remains in scope; real fault recovery and cluster fault injection stay deferred.
+The default-discovery protocol union issue MODEL-D01 is recorded separately and is not changed here.
 
 ## 7. Capacity And Security
 
@@ -460,3 +508,13 @@ Agent and AgentSpec resources may reference each other through a general
 resource relation, but neither owns the other's lifecycle. This version does
 not add Agent-specific `sourceRef`, `defaultInterfaceId`, `interfaceId`,
 `descriptorDigest`, or random Endpoint identifiers.
+
+Java binding: the shared Agent/RAD package, abstract field bases and concrete model boundaries
+follow [Agent API Spec — Java model binding](./agent-api-spec.md#java-model-binding).
+This organization does not rename protocol/schema concepts or change storage and discovery semantics.
+
+### Serializer-independent public models (Schema 0.5.0)
+
+Optional reference properties may be absent or null, without adding new business meaning. Endpoint priority/weight/healthy/enabled are non-null effective values: 0/1/true/true, respectively. Priority sorts ascending. Definition storage remains an explicit projection and excludes health, bindings, enabled and observations. Management runtime queries retain current Naming health and enabled. Java derived version helpers are onlineCnt()/latestVersion(); JSON remains labels plus onlineVersions.
+
+Use [management schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json). [Artifact schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) references that public shape; the artifact payload schemaVersion remains 1.0. Historical schema revisions are retained in Git tags/commits.

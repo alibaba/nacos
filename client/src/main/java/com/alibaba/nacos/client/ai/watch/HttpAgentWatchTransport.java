@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.client.ai.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -330,12 +330,20 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     private void handleFailure(long requestGeneration, NacosException exception) {
         WireLifecycleListener listener = null;
         WireWatch rejectedAddition = null;
+        List<WireWatch> migrationRejected = new ArrayList<WireWatch>();
         synchronized (this) {
             if (!acceptResponse(requestGeneration)) {
                 return;
             }
             currentRequest = null;
-            if (isCapacity(exception) && !pendingAdditions.isEmpty()) {
+            if (exception.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
+                migrationRejected.addAll(watches.values());
+                watches.clear();
+                pendingAdditions.clear();
+                awaitingRefresh.clear();
+                cancel(retryFuture);
+                retryFuture = null;
+            } else if (isCapacity(exception) && !pendingAdditions.isEmpty()) {
                 String rejectedId = latestPendingAddition();
                 pendingAdditions.remove(rejectedId);
                 awaitingRefresh.remove(rejectedId);
@@ -355,6 +363,9 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             + "errorType={}, consecutiveFailures={}, fallback={}", requestGeneration,
             exception.getErrCode(), exception.getClass().getSimpleName(), consecutiveFailures,
             listener != null);
+        for (WireWatch watch : migrationRejected) {
+            watch.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
+        }
         if (rejectedAddition != null) {
             rejectedAddition.callback.unavailable(exception.getErrCode(),
                 exception.getErrMsg(), true);

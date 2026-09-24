@@ -19,10 +19,10 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -100,6 +100,8 @@ public class AgentWatchManager implements Closeable {
         new LinkedHashMap<String, WatchIntent>();
     
     private int subscriptionCount;
+    
+    private long notificationSequence;
     
     private boolean closed;
     
@@ -239,6 +241,36 @@ public class AgentWatchManager implements Closeable {
                 waitingListenerAdded);
         }
         return initializeSynchronously(initialization);
+    }
+    
+    /**
+     * Enqueue the current snapshot through the existing serialized listener dispatcher.
+     * Used by the legacy Card bridge, whose contract includes an initial callback.
+     */
+    void notifyCurrent(AgentReference reference, AgentDiscoveryFilter filter,
+        AbstractNacosAgentDiscoveryListener listener) throws NacosException {
+        String key =
+            AgentDiscoveryCanonicalizer.canonicalRequestKey(canonicalRequest(reference, filter));
+        ListenerNotification notification;
+        synchronized (this) {
+            WatchIntent intent = intentsByKey.get(key);
+            if (closed || intent == null || intent.current == null
+                || !intent.listeners.containsKey(listener)) {
+                return;
+            }
+            notification = new ListenerNotification(intent, intent.listeners.get(listener),
+                new NacosAgentDiscoveryEvent(copy(intent.current)), true, ++notificationSequence);
+        }
+        dispatch(notification);
+    }
+    
+    boolean containsListener(AgentDiscoveryRequest request,
+        AbstractNacosAgentDiscoveryListener listener) {
+        String key = AgentDiscoveryCanonicalizer.canonicalRequestKey(request);
+        synchronized (this) {
+            WatchIntent intent = intentsByKey.get(key);
+            return !closed && intent != null && intent.listeners.containsKey(listener);
+        }
     }
     
     private AgentDiscoveryResult initializeSynchronously(WatchIntent intent)
@@ -777,7 +809,7 @@ public class AgentWatchManager implements Closeable {
         List<ListenerNotification> result = new ArrayList<ListenerNotification>();
         for (ListenerRegistration listener : intent.listeners.values()) {
             result.add(new ListenerNotification(intent, listener,
-                new NacosAgentDiscoveryEvent(copy(intent.current)), true));
+                new NacosAgentDiscoveryEvent(copy(intent.current)), true, ++notificationSequence));
         }
         return result;
     }
@@ -787,7 +819,8 @@ public class AgentWatchManager implements Closeable {
         List<ListenerNotification> result = new ArrayList<ListenerNotification>();
         NacosAgentDiscoveryEvent event = unavailable(exception);
         for (ListenerRegistration listener : intent.listeners.values()) {
-            result.add(new ListenerNotification(intent, listener, event, requireActive));
+            result.add(new ListenerNotification(intent, listener, event, requireActive,
+                ++notificationSequence));
         }
         return result;
     }
@@ -821,6 +854,10 @@ public class AgentWatchManager implements Closeable {
                     || intentsById.get(notification.intent.clientWatchId) != notification.intent)) {
                 return;
             }
+            if (notification.sequence <= notification.listener.lastDeliveredSequence) {
+                return;
+            }
+            notification.listener.lastDeliveredSequence = notification.sequence;
         }
         try {
             notification.listener.listener.onEvent(notification.event);
@@ -910,7 +947,8 @@ public class AgentWatchManager implements Closeable {
     
     private boolean isTerminal(NacosException exception) {
         int code = exception.getErrCode();
-        return code == NacosException.NO_RIGHT || code == NacosException.OVER_THRESHOLD
+        return code == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()
+            || code == NacosException.NO_RIGHT || code == NacosException.OVER_THRESHOLD
             || code == NacosException.CLIENT_OVER_THRESHOLD
             || code == NacosException.INVALID_PARAM
             || code == NacosException.CLIENT_INVALID_PARAM;
@@ -1126,6 +1164,8 @@ public class AgentWatchManager implements Closeable {
         
         private boolean dispatching;
         
+        private long lastDeliveredSequence;
+        
         private ListenerRegistration(AbstractNacosAgentDiscoveryListener listener) {
             this.listener = listener;
         }
@@ -1220,12 +1260,15 @@ public class AgentWatchManager implements Closeable {
         
         private final boolean requireActive;
         
+        private final long sequence;
+        
         private ListenerNotification(WatchIntent intent, ListenerRegistration listener,
-            NacosAgentDiscoveryEvent event, boolean requireActive) {
+            NacosAgentDiscoveryEvent event, boolean requireActive, long sequence) {
             this.intent = intent;
             this.listener = listener;
             this.event = event;
             this.requireActive = requireActive;
+            this.sequence = sequence;
         }
     }
     

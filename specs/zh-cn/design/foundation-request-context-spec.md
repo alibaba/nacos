@@ -95,6 +95,12 @@ HTTP Controller 方法解析规则：
   解析器。旧解析器从 3.3.0 起废弃，计划在 3.4.0 移除，且可能与 Spring MVC 路径匹配结果
   不一致，因此默认必须关闭。启用旧解析器时，必须在移除 context path 前使用一致的方式解析
   request URI 和 context path，包括任一值包含百分号编码字符的情况。
+- 旧注解缓存必须将 `HEAD` 请求解析到对应的 `GET` 映射，保留该映射的参数条件，
+  且不得修改 Servlet request 中的原始请求方法。
+
+方法解析遇到 HTTP method 不匹配时没有业务 handler，应交由 Spring MVC 返回 405，
+不能将正常的方法拒绝包装为 500；其他未预期的解析失败仍保持报错。HEAD 解析为 GET
+的同一个 handler，沿用其身份校验；框架生成的 OPTIONS 仅暴露允许的方法。
 
 ## 4. gRPC 请求过滤模型
 

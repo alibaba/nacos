@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import java.util.LinkedHashMap;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeEndpointMapper;
@@ -25,12 +26,10 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -105,6 +104,25 @@ class A2aServerOperationServiceTest {
     }
     
     @Test
+    void testCanonicalIpv6ProjectionWithSharedReservedMetadata() throws NacosException {
+        when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME))
+            .thenReturn(agent(VERSION, true, VERSION));
+        when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
+            .thenReturn(versionDetail(VERSION, true));
+        Instance ipv6 = instance("[2001:db8::1]", 8080, "HTTP+JSON", "1.0", "1", false);
+        ipv6.getMetadata().put("__nacos.agent.endpoint.tenant__", "native-tenant");
+        ServiceInfo info = new ServiceInfo();
+        info.setHosts(Collections.singletonList(ipv6));
+        when(serviceStorage.getData(any(Service.class))).thenReturn(info);
+        AgentCardDetailInfo result = service.getAgentCardForClient(NAMESPACE_ID, AGENT_NAME,
+            VERSION, "SERVICE");
+        assertEquals("http://[2001:db8::1]:8080", result.getUrl());
+        assertEquals("1.0", result.getProtocolVersion());
+        assertEquals("native-tenant", result.getSupportedInterfaces().get(0).getTenant());
+        assertEquals(result.getSupportedInterfaces(), result.getAdditionalInterfaces());
+    }
+    
+    @Test
     void testPublicConstructor() {
         assertNotNull(new A2aServerOperationService(agentOperationService, serviceStorage,
             new A2aCanonicalDefinitionConverter()));
@@ -137,7 +155,7 @@ class A2aServerOperationServiceTest {
         assertInstanceOf(Map.class, callInterface.getNativeDescriptor());
         assertEquals(Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME),
             callInterface.getEndpointSourceOrder());
-        assertEquals(1, callInterface.getDeclaredEndpoints().size());
+        assertEquals(1, callInterface.getEndpointSets().get(0).getEndpoints().size());
         assertNull(card.getAdditionalInterfaces());
     }
     
@@ -170,7 +188,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testUpdateInheritsExactAndLatestRegistrationTypes() throws NacosException {
-        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        AgentSummary agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, true));
@@ -200,7 +218,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testUpdateWithoutInheritableVersionDefaultsToUrl() throws NacosException {
-        Agent agent = agent(null, false);
+        AgentSummary agent = agent(null, false);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
@@ -250,7 +268,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testManagementAndClientReadProjectLatestUrlCard() throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, false));
@@ -270,7 +288,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testClientReadHidesDisabledAgentButManagementCanReadIt() throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         agent.setStatus(AiConstants.Agent.RESOURCE_STATUS_DISABLE);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -312,13 +330,13 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testReadRejectsMissingOrNonProjectableVersion() throws NacosException {
-        Agent noA2a = agent(VERSION, false, VERSION);
+        AgentSummary noA2a = agent(VERSION, false, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(noA2a);
         assertEquals(ErrorCode.AGENT_NOT_FOUND.getCode(), assertThrows(NacosApiException.class,
             () -> service.getAgentCard(NAMESPACE_ID, AGENT_NAME, VERSION, null))
             .getDetailErrCode());
         
-        Agent a2a = agent(VERSION, true, VERSION);
+        AgentSummary a2a = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(a2a);
         assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(),
             assertThrows(NacosApiException.class,
@@ -341,7 +359,7 @@ class A2aServerOperationServiceTest {
     @Test
     void testReadMapsVersionStorageAndDescriptorFailuresToLegacyNotFound()
         throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         NacosApiException missing = new NacosApiException(NacosException.NOT_FOUND,
             ErrorCode.AGENT_VERSION_NOT_FOUND, "missing");
@@ -379,7 +397,7 @@ class A2aServerOperationServiceTest {
     @Test
     void testServiceProjectionFiltersAndStablyOrdersRuntimeEndpoints()
         throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, true));
@@ -419,7 +437,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testServiceProjectionFallsBackToDeclaredEndpoints() throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, true));
@@ -440,7 +458,7 @@ class A2aServerOperationServiceTest {
     @Test
     void testServiceProjectionUsesFirstRuntimeWhenPreferredTransportIsAbsent()
         throws NacosException {
-        Agent agent = agent(VERSION, true, VERSION);
+        AgentSummary agent = agent(VERSION, true, VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.getVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionDetail(VERSION, true));
@@ -525,7 +543,7 @@ class A2aServerOperationServiceTest {
     @Test
     void testListAgentVersionsScansAllRowsAndKeepsOnlyCataloguedA2aVersions()
         throws NacosException {
-        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        AgentSummary agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         List<AgentVersionSummary> firstPage = new ArrayList<AgentVersionSummary>();
         firstPage.add(versionSummary(VERSION, 1000L, 2000L));
@@ -549,7 +567,7 @@ class A2aServerOperationServiceTest {
     
     @Test
     void testListAgentVersionsSkipsCataloguedVersionWithoutSummary() throws NacosException {
-        Agent agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
+        AgentSummary agent = agent(SECOND_VERSION, true, VERSION, SECOND_VERSION);
         when(agentOperationService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(agentOperationService.listVersions(NAMESPACE_ID, AGENT_NAME,
             AiConstants.Agent.VERSION_STATUS_ONLINE, 1, 100))
@@ -616,30 +634,33 @@ class A2aServerOperationServiceTest {
         return result;
     }
     
-    private Agent agent(String latest, boolean a2a, String... versions) {
-        Agent result = new Agent();
+    private AgentSummary agent(String latest, boolean a2a, String... versions) {
+        AgentSummary result = new AgentSummary();
+        result.setVersionInfo(new AgentVersionInfo());
         result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(AGENT_NAME);
         result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
-        result.setVersionCatalog(catalog(latest, a2a, versions));
+        result.setVersionInfo(catalog(latest, a2a, versions));
         return result;
     }
     
     private AgentSummary summary(String name, String latest, boolean a2a, String... versions) {
         AgentSummary result = new AgentSummary();
+        result.setVersionInfo(new AgentVersionInfo());
         result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(name);
         result.setStatus(AiConstants.Agent.RESOURCE_STATUS_ENABLE);
-        result.setVersionCatalog(catalog(latest, a2a, versions));
+        result.setVersionInfo(catalog(latest, a2a, versions));
         return result;
     }
     
-    private AgentVersionCatalog catalog(String latest, boolean a2a, String... versions) {
-        AgentVersionCatalog result = new AgentVersionCatalog();
-        result.setLatestVersion(latest);
-        List<AgentVersionCatalogEntry> entries = new ArrayList<AgentVersionCatalogEntry>();
+    private AgentVersionInfo catalog(String latest, boolean a2a, String... versions) {
+        AgentVersionInfo result = new AgentVersionInfo();
+        result.setLabels(new LinkedHashMap<String, String>(
+            Collections.singletonMap("latest", latest)));
+        List<AgentVersionSummary> entries = new ArrayList<AgentVersionSummary>();
         for (String version : versions) {
-            AgentVersionCatalogEntry entry = new AgentVersionCatalogEntry();
+            AgentVersionSummary entry = new AgentVersionSummary();
             entry.setVersion(version);
             entry.setProtocols(a2a ? Collections.singletonList("a2a")
                 : Collections.singletonList("custom"));

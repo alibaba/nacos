@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchEventType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.ServerRequest;
 

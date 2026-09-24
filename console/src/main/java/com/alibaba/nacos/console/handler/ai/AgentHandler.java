@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -44,7 +43,8 @@ public interface AgentHandler {
     /**
      * Replace writable Agent metadata.
      */
-    Agent updateAgent(String namespaceId, AgentUpdateRequest request) throws NacosException;
+    AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
+        throws NacosException;
     
     /**
      * Update one Agent Resource visibility scope.
@@ -137,6 +137,6 @@ public interface AgentHandler {
     /**
      * Replace custom Agent labels.
      */
-    Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException;
 }

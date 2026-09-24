@@ -73,7 +73,7 @@ class AgentVersionContentTest {
         assertEquals("a2a", restoredInterface.getProtocol());
         assertEquals("application/json", restoredInterface.getDescriptorMediaType());
         assertEquals("descriptor", restoredInterface.getNativeDescriptor());
-        assertEquals(Collections.singletonList(EndpointSource.RUNTIME),
+        assertEquals(java.util.Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
             restoredInterface.getEndpointSourceOrder());
     }
     
@@ -82,7 +82,8 @@ class AgentVersionContentTest {
         result.setProtocol("a2a");
         result.setDescriptorMediaType("application/json");
         result.setNativeDescriptor("descriptor");
-        result.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
+        result.setEndpointSourceOrder(
+            java.util.Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         return result;
     }
 }

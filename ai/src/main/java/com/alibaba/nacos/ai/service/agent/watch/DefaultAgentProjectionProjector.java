@@ -19,8 +19,8 @@ package com.alibaba.nacos.ai.service.agent.watch;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -76,7 +76,7 @@ public class DefaultAgentProjectionProjector implements AgentProjectionProjector
     
     private Set<Service> dependencies(AgentDiscoveryResult result) {
         Set<Service> dependencies = new LinkedHashSet<Service>();
-        for (AgentDiscoveryCallInterface callInterface : result.getCallInterfaces()) {
+        for (AgentCallInterface callInterface : result.getCallInterfaces()) {
             // A declared protocol is also a prospective Runtime dependency. Retaining it before
             // the first Endpoint exists lets a Watch observe creation of that Naming service.
             dependencies.add(Service.newService(result.getNamespaceId(),

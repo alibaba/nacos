@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.agent;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
@@ -42,9 +43,13 @@ import org.springframework.stereotype.Component;
 public class AgentDiscoveryRpcRequestHandler
     extends RequestHandler<AgentDiscoveryRpcRequest, AgentDiscoveryResponse> {
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentDiscoveryApplicationService discoveryService;
     
-    public AgentDiscoveryRpcRequestHandler(AgentDiscoveryApplicationService discoveryService) {
+    public AgentDiscoveryRpcRequestHandler(AgentDiscoveryApplicationService discoveryService,
+        AgentClientMigrationGuard migrationGuard) {
+        this.migrationGuard = migrationGuard;
         this.discoveryService = discoveryService;
     }
     
@@ -59,6 +64,7 @@ public class AgentDiscoveryRpcRequestHandler
             requireRequest(request.getDiscoveryRequest(), "discoveryRequest");
             request.getDiscoveryRequest().setNamespaceId(NamespaceUtil.processNamespaceParameter(
                 request.getDiscoveryRequest().getNamespaceId()));
+            migrationGuard.checkReady();
             response.setDiscoveryResult(
                 discoveryService.discover(request.getDiscoveryRequest()));
         } catch (Exception e) {

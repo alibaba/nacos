@@ -87,6 +87,7 @@ class NacosConfigMaintainerServiceImplTest {
         expectedConfig.setGroupName(Constants.DEFAULT_GROUP);
         expectedConfig.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         
+        expectedConfig.setSchema("schema text");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(expectedConfig)));
         
@@ -98,6 +99,7 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedConfig.getSchema(), result.getSchema());
         assertEquals(dataId, result.getDataId());
         assertEquals(Constants.DEFAULT_GROUP, result.getGroupName());
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, result.getNamespaceId());
@@ -576,6 +578,7 @@ class NacosConfigMaintainerServiceImplTest {
         ConfigHistoryDetailInfo expectedConfig = new ConfigHistoryDetailInfo();
         expectedConfig.setCreateTime(System.currentTimeMillis());
         expectedConfig.setModifyTime(System.currentTimeMillis());
+        expectedConfig.setSchema("schema text");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult
             .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedConfig)));
@@ -589,6 +592,7 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedConfig.getSchema(), result.getSchema());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
@@ -603,6 +607,7 @@ class NacosConfigMaintainerServiceImplTest {
         ConfigHistoryDetailInfo expectedConfig = new ConfigHistoryDetailInfo();
         expectedConfig.setCreateTime(System.currentTimeMillis());
         expectedConfig.setModifyTime(System.currentTimeMillis());
+        expectedConfig.setSchema("schema text");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult
             .setData(new ObjectMapper().writeValueAsString(new Result<>(expectedConfig)));
@@ -616,6 +621,7 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
+        assertEquals(expectedConfig.getSchema(), result.getSchema());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

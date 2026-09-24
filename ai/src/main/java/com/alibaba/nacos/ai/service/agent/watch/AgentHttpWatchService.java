@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -65,11 +66,15 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
     
     private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentProjectionService projectionService;
     
     private final AgentHttpClientLifecycleService clientLifecycleService;
     
     private final AgentHttpWatchRegistry registry;
+    
+    private final AgentWatchOwnerEligibilityChecker ownerEligibilityChecker;
     
     private final int maxItemsPerClient;
     
@@ -88,8 +93,11 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
     @Autowired
     public AgentHttpWatchService(AgentProjectionService projectionService,
         AgentHttpClientLifecycleService clientLifecycleService,
+        AgentClientMigrationGuard migrationGuard,
+        AgentWatchOwnerEligibilityChecker ownerEligibilityChecker,
         @Value("${server.tomcat.max-http-form-post-size:2MB}") DataSize maxRequestBytes) {
-        this(projectionService, clientLifecycleService, new AgentHttpWatchRegistry(),
+        this(projectionService, clientLifecycleService, migrationGuard, ownerEligibilityChecker,
+            new AgentHttpWatchRegistry(),
             resolveMaxItemsPerClient(), resolveMaxWaitersPerNode(),
             resolveMaxActiveBytesPerNode(),
             Math.min(resolveMaxRequestBytes(), maxRequestBytes.toBytes()),
@@ -97,13 +105,18 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
     }
     
     AgentHttpWatchService(AgentProjectionService projectionService,
-        AgentHttpClientLifecycleService clientLifecycleService, AgentHttpWatchRegistry registry,
+        AgentHttpClientLifecycleService clientLifecycleService,
+        AgentClientMigrationGuard migrationGuard,
+        AgentWatchOwnerEligibilityChecker ownerEligibilityChecker,
+        AgentHttpWatchRegistry registry,
         int maxItemsPerClient, int maxWaitersPerNode, long maxActiveBytesPerNode,
         long maxRequestBytes, Executor notificationExecutor) {
         if (maxItemsPerClient < 1 || maxWaitersPerNode < 1 || maxActiveBytesPerNode < 1L
             || maxRequestBytes < 1L) {
             throw new IllegalArgumentException("Agent HTTP Watch capacity limits must be positive");
         }
+        this.migrationGuard = migrationGuard;
+        this.ownerEligibilityChecker = ownerEligibilityChecker;
         this.projectionService = projectionService;
         this.clientLifecycleService = clientLifecycleService;
         this.registry = registry;
@@ -145,6 +158,7 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
                 maxRequestBytes);
             throw capacity("Agent HTTP Watch request exceeds the configured request-byte limit.");
         }
+        migrationGuard.checkReady();
         String namespaceId = request.getWatches().get(0).getDiscoveryRequest().getNamespaceId();
         clientLifecycleService.renewForWatch(externalClientId, requestModule, namespaceId);
         AgentHttpWatchOwnerKey ownerKey = new AgentHttpWatchOwnerKey(externalClientId,
@@ -164,7 +178,7 @@ public class AgentHttpWatchService implements AgentProjectionUpdateListener {
         }
         AgentHttpWatchWaiter waiter = new AgentHttpWatchWaiter(ownerKey,
             request.getGeneration(), request.getTimeoutMillis(), request.getWatches(), payloadBytes,
-            this::cleanup);
+            this::cleanup, migrationGuard, ownerEligibilityChecker);
         try {
             AgentHttpWatchRegistry.Registration registration;
             synchronized (lifecycleLock) {

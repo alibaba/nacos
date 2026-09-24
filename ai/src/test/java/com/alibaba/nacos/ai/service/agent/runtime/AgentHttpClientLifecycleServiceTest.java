@@ -18,8 +18,8 @@ package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.runtime.AiHttpClientLifecycleService;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -134,14 +134,14 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.clientConnected(eq(INTERNAL_CLIENT_ID), any(ClientAttributes.class)))
             .thenReturn(true);
         when(clientManager.renewPublisher(INTERNAL_CLIENT_ID)).thenReturn(true);
-        AgentEndpointRegistrationBatch batch = batch("team");
+        AgentEndpointRegistrationBatch batch = batch();
         
-        ClientLivenessInfo actual = service.register(EXTERNAL_CLIENT_ID, "ai", batch);
+        ClientLivenessInfo actual = service.register(EXTERNAL_CLIENT_ID, "ai", "team", batch);
         
         assertEquals(5000L, actual.getHeartbeatIntervalMillis());
         assertEquals(15000L, actual.getUnhealthyTimeoutMillis());
         assertEquals(30000L, actual.getExpireTimeoutMillis());
-        verify(runtimeRegistryService).register(INTERNAL_CLIENT_ID, batch);
+        verify(runtimeRegistryService).register(INTERNAL_CLIENT_ID, "team", batch);
         ArgumentCaptor<ClientAttributes> attributes = ArgumentCaptor.forClass(
             ClientAttributes.class);
         verify(clientManager).clientConnected(eq(INTERNAL_CLIENT_ID), attributes.capture());
@@ -160,7 +160,7 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.renewPublisher(INTERNAL_CLIENT_ID)).thenReturn(true);
         AtomicReference<String> mcpPublisher = new AtomicReference<>();
         
-        service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"));
+        service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch());
         sharedService.register(EXTERNAL_CLIENT_ID, "AI", "team", mcpPublisher::set);
         
         assertEquals(INTERNAL_CLIENT_ID, mcpPublisher.get());
@@ -175,7 +175,7 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(client);
         when(clientManager.renewPublisher(INTERNAL_CLIENT_ID)).thenReturn(true);
         
-        service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"));
+        service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch());
         
         assertEquals("alice", client.getClientAttributes().getClientAttribute(
             "httpClientIdentity"));
@@ -189,12 +189,12 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.clientConnected(eq(INTERNAL_CLIENT_ID), any(ClientAttributes.class)))
             .thenReturn(false);
         assertClientNotFound(assertThrows(NacosApiException.class,
-            () -> service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"))));
+            () -> service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch())));
         
         when(clientManager.clientConnected(eq(INTERNAL_CLIENT_ID), any(ClientAttributes.class)))
             .thenReturn(true);
         assertClientNotFound(assertThrows(NacosApiException.class,
-            () -> service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"))));
+            () -> service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch())));
     }
     
     @Test
@@ -204,7 +204,7 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(client);
         
         assertClientNotFound(assertThrows(NacosApiException.class,
-            () -> service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"))));
+            () -> service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch())));
     }
     
     @Test
@@ -212,11 +212,11 @@ class AgentHttpClientLifecycleServiceTest {
         HttpConnectionBasedClient client = client("alice", "team");
         when(clientManager.getClient(INTERNAL_CLIENT_ID)).thenReturn(client);
         NacosException failure = new NacosException(500, "failed");
-        doThrow(failure).when(runtimeRegistryService).register(eq(INTERNAL_CLIENT_ID),
+        doThrow(failure).when(runtimeRegistryService).register(eq(INTERNAL_CLIENT_ID), eq("team"),
             any(AgentEndpointRegistrationBatch.class));
         
         NacosException actual = assertThrows(NacosException.class,
-            () -> service.register(EXTERNAL_CLIENT_ID, "AI", batch("team")));
+            () -> service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch()));
         
         assertSame(failure, actual);
         verify(clientManager).disconnectIfEmpty(INTERNAL_CLIENT_ID);
@@ -228,7 +228,7 @@ class AgentHttpClientLifecycleServiceTest {
         when(clientManager.renewPublisher(INTERNAL_CLIENT_ID)).thenReturn(false);
         
         assertClientNotFound(assertThrows(NacosApiException.class,
-            () -> service.register(EXTERNAL_CLIENT_ID, "AI", batch("team"))));
+            () -> service.register(EXTERNAL_CLIENT_ID, "AI", "team", batch())));
         verify(clientManager).disconnectIfEmpty(INTERNAL_CLIENT_ID);
     }
     
@@ -301,9 +301,8 @@ class AgentHttpClientLifecycleServiceTest {
         return new HttpConnectionBasedClient(INTERNAL_CLIENT_ID, attributes);
     }
     
-    private AgentEndpointRegistrationBatch batch(String namespaceId) {
+    private AgentEndpointRegistrationBatch batch() {
         AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
-        result.setNamespaceId(namespaceId);
         return result;
     }
     

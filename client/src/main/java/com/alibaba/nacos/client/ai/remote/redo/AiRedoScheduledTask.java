@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.ai.remote.redo;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -61,11 +61,14 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
             AgentEndpointPublicationRedoData redoData =
                 (AgentEndpointPublicationRedoData) each;
             try {
+                if (aiGrpcClient.dispatchAgentEndpointPublicationRedo(redoData)) {
+                    continue;
+                }
                 redoForAgentEndpointPublication(redoData);
             } catch (NacosException e) {
                 if (isPublicationCapacityRejected(e)) {
                     aiGrpcClient.discardAgentEndpointPublicationAfterCapacityRejection(
-                        redoData.getKey(), redoData.get());
+                        redoData.getNamespaceId(), redoData.getKey(), redoData.get());
                 }
                 LOGGER.error("Redo Agent Endpoint publication operation {} for {} failed.",
                     each.getRedoType(), redoData.getKey(), e);
@@ -80,12 +83,13 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         }
         switch (redoData.getRedoType()) {
             case REGISTER:
-                aiGrpcClient.doRegisterAgentEndpoints(redoData.getKey(), redoData.get());
+                aiGrpcClient.doRegisterAgentEndpoints(redoData.getKey(), redoData.getNamespaceId(),
+                    redoData.get());
                 break;
             case UNREGISTER:
                 AgentEndpointRegistrationBatch batch = redoData.get();
                 aiGrpcClient.doDeregisterAgentEndpoints(redoData.getKey(),
-                    batch.getNamespaceId(), batch.getAgentName(), batch.getProtocol());
+                    redoData.getNamespaceId(), batch.getAgentName(), batch.getProtocol());
                 break;
             case REMOVE:
                 getRedoService().removeAgentEndpointPublication(redoData.getKey());

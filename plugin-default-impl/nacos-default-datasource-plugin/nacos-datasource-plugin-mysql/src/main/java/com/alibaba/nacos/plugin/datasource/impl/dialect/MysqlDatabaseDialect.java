@@ -26,9 +26,16 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunction
  */
 public class MysqlDatabaseDialect extends AbstractDatabaseDialect {
     
+    static final String DEFAULT_DRIVER_CLASS_NAME = "com.mysql.cj.jdbc.Driver";
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.MYSQL;
+    }
+    
+    @Override
+    public String getDefaultDriverClassName() {
+        return DEFAULT_DRIVER_CLASS_NAME;
     }
     
     @Override

@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchEventType;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchEventType;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryNotifyRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentSubscribeRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
@@ -84,6 +85,8 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
     private static final Pattern FINGERPRINT_PATTERN = Pattern.compile(
         Pattern.quote(AgentDiscoveryCanonicalizer.ALGORITHM_ID) + ":[0-9a-f]{64}");
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentProjectionService projectionService;
     
     private final AgentDiscoveryApplicationService discoveryService;
@@ -108,9 +111,11 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
     public AgentGrpcWatchService(AgentProjectionService projectionService,
         AgentDiscoveryApplicationService discoveryService,
         AgentWatchOwnerEligibilityChecker ownerEligibilityChecker,
-        RpcPushService rpcPushService, ConnectionManager connectionManager) {
+        RpcPushService rpcPushService, ConnectionManager connectionManager,
+        AgentClientMigrationGuard migrationGuard) {
         this(projectionService, discoveryService, ownerEligibilityChecker, rpcPushService,
-            connectionManager, new AgentGrpcWatchRegistry(), resolveMaxWatchesPerConnection(),
+            connectionManager, migrationGuard, new AgentGrpcWatchRegistry(),
+            resolveMaxWatchesPerConnection(),
             DEFAULT_RETRY_DELAY_MILLIS, Math.max(2, ThreadUtils.getSuitableThreadCount(1)),
             GlobalExecutor::executeByCommon);
     }
@@ -119,12 +124,14 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
         AgentDiscoveryApplicationService discoveryService,
         AgentWatchOwnerEligibilityChecker ownerEligibilityChecker,
         RpcPushService rpcPushService, ConnectionManager connectionManager,
-        AgentGrpcWatchRegistry registry, int maxWatchesPerConnection, long retryDelayMillis,
+        AgentClientMigrationGuard migrationGuard, AgentGrpcWatchRegistry registry,
+        int maxWatchesPerConnection, long retryDelayMillis,
         int workerCount, Executor callbackExecutor) {
         if (maxWatchesPerConnection < 1) {
             throw new IllegalArgumentException(Constants.Agent.MAX_WATCHES_PER_CLIENT_CONFIG_KEY
                 + " must be greater than 0");
         }
+        this.migrationGuard = migrationGuard;
         this.projectionService = projectionService;
         this.discoveryService = discoveryService;
         this.ownerEligibilityChecker = ownerEligibilityChecker;
@@ -154,6 +161,7 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
     public AgentSubscribeRpcResponse subscribe(String connectionId,
         AgentSubscribeRpcRequest request) throws NacosException {
         validateSubscribeRequest(request);
+        migrationGuard.checkReady();
         AgentDiscoveryRequest canonical =
             AgentDiscoveryCanonicalizer.canonicalizeRequest(request.getDiscoveryRequest());
         AgentProjectionKey projectionKey = AgentProjectionKey.of(canonical);
@@ -363,6 +371,11 @@ public class AgentGrpcWatchService extends ClientConnectionEventListener
         }
         if (eligibility == AgentWatchOwnerEligibility.UNCERTAIN) {
             return revalidate(watch.getWatchKey());
+        }
+        try {
+            migrationGuard.checkReady();
+        } catch (NacosApiException e) {
+            return terminated(watch.getWatchKey(), e.getDetailErrCode());
         }
         switch (state.getStatus()) {
             case AVAILABLE:

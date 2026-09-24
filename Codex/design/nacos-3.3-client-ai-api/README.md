@@ -20,6 +20,8 @@
 
 目标是在 3.3 发布前收敛 Client AI API：按资源获取子服务、按资源选择 transport、保留已发布的扁平 API，并让 Agent 承接旧 A2A。兼容验证方案见 [COMPATIBILITY_IT.md](COMPATIBILITY_IT.md)。
 
+2026-09-11 修订：[Agent/RAD 模型全量核查与收敛方案](MODEL_CONSOLIDATION.md)覆盖现有 43 个文件，改为统一 `model.agent`、RAD 定义优先，并将仅用于字段共享的 abstract 类放入 `model.agent.base`。文档包含具体 Client/Admin 命名、协议/存储边界及 M01–M15 UT/IT 计划；忽略 BETA Java 兼容壳，已落地本地未提交试改版，独立于后续 A2A/RAD 路由转换。验证进展见 [MODEL_VALIDATION.md](MODEL_VALIDATION.md)。
+
 **当前实施范围已收敛为第一步：接口委托、资源 transport、对应 UT/IT。旧 A2A 在所有服务器上继续使用现有 gRPC；不实现 A2A→RAD、HTTP 能力入口或新兼容能力位。** 详细范围、风险、测试门禁和 commit 划分以 [PHASE1_PLAN.md](PHASE1_PLAN.md) 为准。第 5 节及 A2A 专题文件保留为后续研究，不是第一步的实施要求。
 
 本次评审修订：getter 统一为 `mcp()`；无 RAD 的服务端只支持 Agent 中的旧 A2A API；HTTP 能力发现、失败分类与迁移阶段决策细化于 [A2A_ROUTING.md](A2A_ROUTING.md)。相应规范修订提案见 [中文](../../../specs/zh-cn/ai/client-ai-api-evolution-spec.md) / [English](../../../specs/en/ai/client-ai-api-evolution-spec.md)；其中第一步已写入主规范，HTTP 能力发现与 A2A/RAD 转换仍未实现。
@@ -255,3 +257,7 @@ gRPC 使用当前连接的 `SERVER_RAD_V1`；HTTP 使用拟新增的轻量 Clien
 - [AgentGrpcTransport](../../../client/src/main/java/com/alibaba/nacos/client/ai/remote/AgentGrpcTransport.java)、[McpTransportRouter](../../../client/src/main/java/com/alibaba/nacos/client/ai/remote/McpTransportRouter.java)、[AiGrpcClient](../../../client/src/main/java/com/alibaba/nacos/client/ai/remote/AiGrpcClient.java)。
 - [A2A 兼容规范](../../../specs/zh-cn/ai/a2a-agent-spec.md)、[Agent API 规范](../../../specs/zh-cn/ai/agent-api-spec.md)、[RAD 规范](../../../specs/zh-cn/ai/rad-protocol-spec.md)。
 - [A2aCompatibilityOperationService](../../../ai/src/main/java/com/alibaba/nacos/ai/service/a2a/A2aCompatibilityOperationService.java)、[A2aServerOperationService](../../../ai/src/main/java/com/alibaba/nacos/ai/service/a2a/A2aServerOperationService.java)、[AgentPublishApplicationService](../../../ai/src/main/java/com/alibaba/nacos/ai/service/agent/AgentPublishApplicationService.java)。
+
+## 8. 当前地址模型整合与测试设计
+
+模型统一方向、存储/内部迁移/索引/Artifact 联动以及改造前的完整测试机制，见 [MODEL_ENDPOINT_TEST_PLAN.md](MODEL_ENDPOINT_TEST_PLAN.md)。本轮仅设计；healthy 可写与 Nacos 维护字段忽略列为独立行为变化，尚未实施、测试或提交。

@@ -155,6 +155,46 @@ Client Facade 为 `GET /v3/client/ai/skills/search`；它接受 `query`、可重
 
 存储扩展规则由 [AI 存储插件规范](../plugin/ai-storage-plugin-spec.md)定义。
 
+### 4.1 管理列表 frontmatter
+
+Admin 和 Console 的 Skill 列表及元数据详情响应提供可空的
+`frontMatter: Map<String, String>` 和 `frontMatterTruncated: Boolean`
+（响应序列化器可以省略 null 字段）。值沿用现有 Skill frontmatter 解析器的字符串表示，
+包括展开后的 `metadata.*` 键。本次不增加 frontmatter 搜索，也不修改包解析规则。
+
+展示版本优先使用服务端维护的 `latest`，其次是 `editingVersion`，最后是
+`reviewingVersion`。编辑草稿不能覆盖已上线版本的 frontmatter；没有展示版本时返回 null。
+
+新增或更新内容时，在版本存储描述符中保存完整的解析后 `frontMatter`。上传、覆盖上传、
+创建/更新/派生草稿及新增内置 Skill 均从实际保存的 SKILL.md 内容提取这些字段；
+版本级 frontmatter 不截断。
+
+`ai_resource.ext` 仅保存受限的展示快照 `frontMatter`、`frontMatterVersion` 和
+`frontMatterTruncated`，并保留无关扩展键。快照只包含自定义字段，保留字段 `name`、
+`description` 和 `version` 不进入快照。标记版本与展示版本匹配时，响应分别从
+`SkillSummary.name`、`SkillSummary.description` 和已解析的展示版本生成这三个字段，
+再合并缓存的自定义字段，缓存内容不得覆盖生成值。
+
+自定义字段快照最多包含 64 项；键最多 128 个 UTF-8 字节；值最多 1024 个字符，
+超长值保留前 1021 个字符并追加 `...`；序列化后的 Map 最多 16 KiB。超长键直接省略。
+`alias`、`license`、`compatibility`、`allowed-tools` 和展开后的 `metadata.*` 优先于
+其他自定义字段；达到项目数或字节预算后可以省略剩余低优先级字段。发生任何键省略或值截断时
+`frontMatterTruncated` 为 true，投影完整时为 false；frontmatter 不可用时为 null 或省略。
+
+发布、强制发布、退回编辑、删除草稿和版本上下线通过版本元数据更新快照，不读取包文件。
+编辑其他版本时复用未变化的展示快照。现有列表 `pageSize` 行为保持不变。
+
+快照使用元数据 CAS 写入；冲突后必须重新读取资源行、选择展示版本并读取相应元数据。
+快照刷新采用尽力而为语义：重试耗尽或刷新失败时记录日志，不得使已经完成的生命周期操作失败。
+列表和元数据详情从同一资源行比较 `frontMatterVersion` 与展示版本，
+不匹配时返回 null，不为 frontmatter 额外查询版本表或存储。
+
+没有这些元数据的历史版本保持可读，frontmatter 可以返回 null；不进行迁移、bootstrap 修复或
+列表查询时回填。更新历史内容只为被更新版本生成元数据，单纯发布或切换未经更新的历史版本
+不会重新解析其文件。
+历史 `ai_resource.ext` 内容损坏时按元数据不可用处理：列表和元数据详情请求继续成功，
+frontmatter 返回 null，不向调用方传播 JSON 反序列化异常。
+
 ## 5. 生命周期
 
 Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.md)：

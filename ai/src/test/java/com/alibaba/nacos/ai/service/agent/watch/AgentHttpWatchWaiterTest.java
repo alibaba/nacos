@@ -16,10 +16,16 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.model.v2.Result;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +42,50 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentHttpWatchWaiterTest {
+    
+    private final AgentClientMigrationGuard migrationGuard = mock(AgentClientMigrationGuard.class);
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(AgentWatchOwnerEligibility.class)
+    void sameFingerprintOnlyWaitsForAnEligibleOwner(AgentWatchOwnerEligibility eligibility) {
+        AtomicInteger cleanups = new AtomicInteger();
+        AgentWatchBatchItem first = item("first", "agent-a", "same");
+        AgentWatchBatchItem second = item("second", "agent-b", "same");
+        AgentProjectionKey firstKey = AgentProjectionKey.of(first.getDiscoveryRequest());
+        AgentProjectionKey secondKey = AgentProjectionKey.of(second.getDiscoveryRequest());
+        AgentHttpWatchWaiter waiter = new AgentHttpWatchWaiter(
+            new AgentHttpWatchOwnerKey("client", "alice", "public"), 9L, 1000L,
+            Arrays.asList(first, second), 10, ignored -> cleanups.incrementAndGet(), migrationGuard,
+            (owner, key) -> firstKey.equals(key) ? eligibility
+                : AgentWatchOwnerEligibility.ALLOWED);
+        Map<AgentProjectionKey, AgentProjectionState> states = new LinkedHashMap<>();
+        states.put(firstKey, AgentProjectionState.available("same", Collections.emptySet(), 1L));
+        states.put(secondKey, AgentProjectionState.available("same", Collections.emptySet(), 1L));
+        assertEquals(eligibility != AgentWatchOwnerEligibility.ALLOWED,
+            waiter.completeIfChanged(states));
+        if (eligibility != AgentWatchOwnerEligibility.ALLOWED) {
+            assertEquals(Collections.singletonList("first"),
+                result(waiter).getChangedClientWatchIds());
+            assertEquals(1, cleanups.get());
+        } else {
+            assertFalse(waiter.getDeferredResult().hasResult());
+        }
+    }
+    
+    @Test
+    void missingProjectionInvalidatesOnlyItsOpaqueId() {
+        AtomicInteger cleanups = new AtomicInteger();
+        AgentWatchBatchItem missing = item("missing", "agent-a", "same");
+        AgentWatchBatchItem retained = item("retained", "agent-b", "same");
+        AgentHttpWatchWaiter waiter = waiter(Arrays.asList(missing, retained), cleanups);
+        Map<AgentProjectionKey, AgentProjectionState> states = Collections.singletonMap(
+            AgentProjectionKey.of(retained.getDiscoveryRequest()),
+            AgentProjectionState.available("same", Collections.emptySet(), 1L));
+        assertTrue(waiter.completeIfChanged(states));
+        assertEquals(Collections.singletonList("missing"),
+            result(waiter).getChangedClientWatchIds());
+        assertEquals(1, cleanups.get());
+    }
     
     @Test
     void testChangedResponseContainsOnlyOpaqueIdsAndCleansOnce() {
@@ -136,6 +186,20 @@ class AgentHttpWatchWaiterTest {
         assertEquals(0, cleanups.get());
     }
     
+    @Test
+    void testMigrationTransitionRejectsCompletionAndReleasesOnce() throws Exception {
+        AtomicInteger cleanups = new AtomicInteger();
+        AgentHttpWatchWaiter waiter = waiter(java.util.Collections.singletonList(
+            item("watch", "agent", "old")), cleanups);
+        NacosApiException migrating = new NacosApiException(NacosException.CONFLICT,
+            ErrorCode.AGENT_MIGRATION_IN_PROGRESS, "migration");
+        doThrow(migrating).when(migrationGuard).checkReady();
+        assertTrue(waiter.timeout());
+        assertEquals(migrating, waiter.getDeferredResult().getResult());
+        assertFalse(waiter.cancel());
+        assertEquals(1, cleanups.get());
+    }
+    
     @SuppressWarnings("unchecked")
     private AgentWatchBatchResponse result(AgentHttpWatchWaiter waiter) {
         Result<AgentWatchBatchResponse> wrapped =
@@ -146,7 +210,8 @@ class AgentHttpWatchWaiterTest {
     private AgentHttpWatchWaiter waiter(java.util.List<AgentWatchBatchItem> items,
         AtomicInteger cleanups) {
         return new AgentHttpWatchWaiter(new AgentHttpWatchOwnerKey("client", "alice", "public"),
-            9L, 1000L, items, 27, ignored -> cleanups.incrementAndGet());
+            9L, 1000L, items, 27, ignored -> cleanups.incrementAndGet(), migrationGuard,
+            (owner, key) -> AgentWatchOwnerEligibility.ALLOWED);
     }
     
     private AgentWatchBatchItem item(String id, String agentName, String fingerprint) {

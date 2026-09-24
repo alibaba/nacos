@@ -19,7 +19,7 @@ package com.alibaba.nacos.test.sdk;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -148,7 +148,7 @@ public abstract class JavaSdkBaseITCase {
 
     protected AiService createAiService(Properties properties) throws Exception {
         AiService service = createAiServiceWithoutReadiness(properties);
-        AgentSearchQuery probe = new AgentSearchQuery();
+        AgentSearchRequest probe = new AgentSearchRequest();
         probe.setAgentNameContains(AI_CONNECTION_PROBE);
         probe.setPageNo(1);
         probe.setPageSize(1);

@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -52,6 +53,22 @@ public class ConfigExtInfoUtil {
     }
     
     private ConfigExtInfoUtil() {
+    }
+    
+    /**
+     * Read schema text from the selected history record's extension.
+     */
+    public static String getSchemaFromExtInfo(String extInfo) {
+        if (StringUtils.isBlank(extInfo)) {
+            return null;
+        }
+        try {
+            JsonNode schema = OBJECT_MAPPER.readTree(extInfo).path("c_schema");
+            return schema.isTextual() ? schema.textValue() : null;
+        } catch (JsonProcessingException ex) {
+            LOGGER.warn("Failed to parse schema from config history extension");
+            return null;
+        }
     }
     
     /**

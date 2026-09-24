@@ -1035,8 +1035,6 @@ function EndpointSourceSelect({
       options={([
         'declared-runtime',
         'runtime-declared',
-        'declared-only',
-        'runtime-only',
       ] as EndpointSourceMode[]).map((mode) => ({
         value: mode,
         label: t(endpointSourceModeLabelKey(mode)),

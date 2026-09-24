@@ -152,7 +152,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private synchronized void initialize(String jdbcUrl) {
         DataSourcePoolProperties poolProperties =
-            DataSourcePoolProperties.build(EnvUtil.getEnvironment());
+            DataSourcePoolProperties.build(EnvUtil.getEnvironment(),
+                DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT);
         poolProperties.setDriverClassName(jdbcDriverName);
         poolProperties.setJdbcUrl(jdbcUrl);
         poolProperties.setUsername(userName);

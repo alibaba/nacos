@@ -33,6 +33,19 @@ public class ConfigDetailInfo extends ConfigBasicInfo {
     
     private String createIp;
     
+    /**
+     * Optional schema text; null when absent.
+     */
+    private String schema;
+    
+    public String getSchema() {
+        return schema;
+    }
+    
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+    
     public String getContent() {
         return content;
     }

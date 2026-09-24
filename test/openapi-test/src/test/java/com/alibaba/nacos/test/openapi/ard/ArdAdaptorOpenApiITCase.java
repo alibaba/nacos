@@ -134,6 +134,61 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertExternalErrorShape(suffix);
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    public void testPublicAgentIndexAndUnifiedArtifacts(boolean clientPublication) throws Exception {
+        String agentName = randomAiName("ard-public-model");
+        if (clientPublication) {
+            addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
+            for (String version : new String[] {"0.9.0", "1.0.0"}) {
+                Map<String, Object> request = agentInitialDraftRequest(null, agentName, version);
+                request.put("callInterfaces", Arrays.asList(a2aCallInterface(agentName, version),
+                        customCallInterface(agentName, version)));
+                request.put("autoSubmit", !"0.9.0".equals(version));
+                JsonNode published = postFormOk(nacosPath("/v3/client/ai/agents"), agentForm(request)).get("data");
+                assertEquals("online", published.get("status").asText());
+            }
+        } else {
+            publishPublicAgent(agentName, "0.9.0");
+            publishNextAgentVersion(agentName, "1.0.0",
+                    Arrays.asList(a2aCallInterface(agentName, "1.0.0"),
+                            customCallInterface(agentName, "1.0.0")));
+        }
+        JsonNode nacosSearch = awaitSearch(searchRequest(agentName, TYPE_NACOS_AGENT),
+                Set.of(agentName));
+        JsonNode nacosResult = findResource(nacosSearch.get("results"), agentName);
+        JsonNode a2aSearch = awaitSearch(searchRequest(agentName, TYPE_A2A), Set.of(agentName));
+        JsonNode a2aResult = findResource(a2aSearch.get("results"), agentName);
+        assertAgentArtifacts(a2aResult, nacosResult, agentName);
+        JsonNode artifact = JacksonUtils.toObj(new String(
+                ardGetBytesOk(nacosResult.get("url").asText()).body(), StandardCharsets.UTF_8));
+        JsonNode detail = getJsonOk(ADMIN_AGENT_PATH + "/version",
+                agentVersionIdentityQuery(DEFAULT_NAMESPACE, agentName, "1.0.0")).get("data");
+        assertEquals(detail.get("contentDigest"), artifact.get("contentDigest"));
+        for (JsonNode callInterface : artifact.get("callInterfaces")) {
+            assertFalse(callInterface.has("declaredEndpoints"), callInterface.toString());
+            assertEquals(1, callInterface.get("endpointSets").size(), callInterface.toString());
+            JsonNode set = callInterface.get("endpointSets").get(0);
+            assertEquals("DECLARED", set.get("source").asText(), set.toString());
+            assertFalse(set.hasNonNull("sourceRevision"), set.toString());
+            assertFalse(set.hasNonNull("lastUpdatedTime"), set.toString());
+            assertTrue(set.get("endpoints").size() > 0, set.toString());
+            for (JsonNode endpoint : set.get("endpoints")) {
+                assertTrue(endpoint.path("healthy").asBoolean(), endpoint.toString());
+                assertTrue(endpoint.path("enabled").asBoolean(), endpoint.toString());
+                assertEquals(0, endpoint.path("priority").asInt());
+                assertEquals(1D, endpoint.path("weight").asDouble());
+                for (String field : Arrays.asList("bindings", "state", "endpoint")) {
+                    assertFalse(endpoint.hasNonNull(field), endpoint.toString());
+                }
+            }
+        }
+        postFormOk(ADMIN_AGENT_PATH + "/offline",
+                agentForm(agentVersionCommand(null, agentName, "1.0.0")));
+        HttpResponse offline = executeExternalRaw(new HttpGet(nacosResult.get("url").asText()));
+        assertEquals(404, offline.code(), offline.body());
+    }
+
     private ArdFixture publishFixture(String suffix) throws Exception {
         ArdFixture fixture = new ArdFixture();
         fixture.pureA2aAgent = "oit-ard-a2a-" + suffix;
@@ -213,9 +268,13 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         result.put("nativeDescriptor",
                 JacksonUtils.toObj(buildV1AgentCard(agentName, version, "1.0"), Map.class));
         result.put("endpointSourceOrder", Arrays.asList("DECLARED", "RUNTIME"));
-        result.put("declaredEndpoints", Arrays.asList(
+
+        Map<String, Object> declaredSet1 = new LinkedHashMap<>();
+        declaredSet1.put("source", "DECLARED");
+        declaredSet1.put("endpoints", Arrays.asList(
                 declaredEndpoint(agentName, "jsonrpc", "JSONRPC"),
                 declaredEndpoint(agentName, "grpc", "GRPC")));
+        result.put("endpointSets", java.util.Collections.singletonList(declaredSet1));
         return result;
     }
     
@@ -230,8 +289,11 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         result.put("descriptorMediaType", "application/json");
         result.put("nativeDescriptor", descriptor);
         result.put("endpointSourceOrder", Arrays.asList("DECLARED", "RUNTIME"));
-        result.put("declaredEndpoints",
-                Collections.singletonList(declaredEndpoint(agentName, "custom", "HTTP")));
+
+        Map<String, Object> declaredSet2 = new LinkedHashMap<>();
+        declaredSet2.put("source", "DECLARED");
+        declaredSet2.put("endpoints", Collections.singletonList(declaredEndpoint(agentName, "custom", "HTTP")));
+        result.put("endpointSets", java.util.Collections.singletonList(declaredSet2));
         return result;
     }
     

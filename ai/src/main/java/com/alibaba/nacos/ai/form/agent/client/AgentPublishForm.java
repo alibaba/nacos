@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.ai.form.agent.client;
 
-import com.alibaba.nacos.ai.form.agent.admin.AgentDraftCreateForm;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.ai.form.agent.admin.AbstractAgentDraftForm;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -30,7 +29,7 @@ import java.io.Serial;
  *
  * @author Nacos
  */
-public class AgentPublishForm extends AgentDraftCreateForm {
+public class AgentPublishForm extends AbstractAgentDraftForm {
     
     @Serial
     private static final long serialVersionUID = 1L;
@@ -51,22 +50,10 @@ public class AgentPublishForm extends AgentDraftCreateForm {
      * @return validated Agent publication request
      * @throws NacosApiException when a JSON-valued Form field is invalid
      */
-    @Override
     public AgentPublishRequest toRequest() throws NacosApiException {
-        AgentDraftCreateRequest source = super.toRequest();
         AgentPublishRequest result = new AgentPublishRequest();
-        result.setAgentName(source.getAgentName());
-        result.setDisplayName(source.getDisplayName());
-        result.setDescription(source.getDescription());
-        result.setIconUrl(source.getIconUrl());
-        result.setProvider(source.getProvider());
-        result.setTags(source.getTags());
-        result.setExtensions(source.getExtensions());
-        result.setVersion(source.getVersion());
-        result.setCallInterfaces(source.getCallInterfaces());
-        result.setAuthor(source.getAuthor());
-        result.setChangeDescription(source.getChangeDescription());
-        result.setBasedOnVersion(source.getBasedOnVersion());
+        fillRequest(result);
+        result.validate();
         result.setAutoSubmit(parseAutoSubmit());
         return result;
     }

@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.io.Serializable;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Shared endpoint value used by declared and runtime Agent views.
  *
  * @author Nacos
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Endpoint implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -35,13 +33,22 @@ public class Endpoint implements Serializable {
     
     private String transport;
     
-    private Integer priority;
+    /** Lower values have higher priority; defaults to the minimum priority value, zero. */
+    private Integer priority = 0;
     
-    private Double weight;
+    /** Relative weight among endpoints at the same priority; defaults to one. */
+    private Double weight = 1D;
     
     private Map<String, String> metadata;
     
-    private Boolean healthy;
+    /** Registration health defaults to true; runtime reads return the current health. */
+    private Boolean healthy = true;
+    
+    /** One optional registration binding; query results may aggregate several publishers. */
+    private List<RuntimeVersionBinding> bindings;
+    
+    /** Registration enablement defaults to true; Naming operational overrides take precedence. */
+    private Boolean enabled = true;
     
     public String getUri() {
         return uri;
@@ -89,6 +96,22 @@ public class Endpoint implements Serializable {
     
     public void setHealthy(Boolean healthy) {
         this.healthy = healthy;
+    }
+    
+    public List<RuntimeVersionBinding> getBindings() {
+        return bindings;
+    }
+    
+    public void setBindings(List<RuntimeVersionBinding> bindings) {
+        this.bindings = bindings;
+    }
+    
+    public Boolean getEnabled() {
+        return enabled;
+    }
+    
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
     
 }

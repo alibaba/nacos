@@ -157,9 +157,9 @@ export default function SubscriberListPage() {
                 <TableRow>
                   <TableHead className="pl-6">{t('service.groupName')}</TableHead>
                   <TableHead>{t('service.serviceName')}</TableHead>
-                  <TableHead>{t('service.subscriberName')}</TableHead>
-                  <TableHead>{t('service.subscribeCount')}</TableHead>
-                  <TableHead className="pr-6">{t('service.clusters')}</TableHead>
+                  <TableHead>{t('service.address')}</TableHead>
+                  <TableHead>{t('service.clientVersion')}</TableHead>
+                  <TableHead className="pr-6">{t('service.appName')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,9 +167,9 @@ export default function SubscriberListPage() {
                   <TableRow key={idx}>
                     <TableCell className="pl-6">{sub.groupName}</TableCell>
                     <TableCell>{sub.serviceName}</TableCell>
-                    <TableCell className="font-medium">{sub.subscriberName}</TableCell>
-                    <TableCell>{sub.subscribeCount}</TableCell>
-                    <TableCell className="pr-6">{sub.clusters || '-'}</TableCell>
+                    <TableCell className="font-medium">{sub.address || '-'}</TableCell>
+                    <TableCell>{sub.agent || '-'}</TableCell>
+                    <TableCell className="pr-6">{sub.appName || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.form.agent.client;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.utils.RadModelValidator;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
@@ -63,13 +63,12 @@ public class AgentSearchForm implements NacosForm {
     public AgentSearchRequest toRequest() {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         AgentSearchRequest result = new AgentSearchRequest();
-        result.setNamespaceId(namespaceId);
         result.setAgentNameContains(agentNameContains);
         result.setTagsAll(tagsAll);
         result.setProtocolsAny(protocolsAny);
         result.setPageNo(pageNo);
         result.setPageSize(pageSize);
-        RadModelValidator.validate(result);
+        RadModelValidator.validate(namespaceId, result);
         return result;
     }
     

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 
 import java.net.IDN;
 import java.net.URI;
@@ -41,11 +42,47 @@ public final class EndpointCanonicalizer {
     
     private static final int MAX_PORT = 65535;
     
-    private static final int DEFAULT_PRIORITY = 0;
-    
-    private static final double DEFAULT_WEIGHT = 1D;
-    
     private EndpointCanonicalizer() {
+    }
+    
+    /**
+     * Resolve one registration binding by inheriting each missing field from the Batch.
+     *
+     * @param endpoint source Endpoint, with zero or one explicit input binding
+     * @param defaultRuntimeVersion optional Batch runtime Version
+     * @param defaultVersionRange optional Batch compatible Version range
+     * @return independent binding with a required Version and canonical containing range
+     * @throws IllegalArgumentException when cardinality or the effective binding is invalid
+     */
+    public static RuntimeVersionBinding canonicalizeRuntimeBinding(Endpoint endpoint,
+        String defaultRuntimeVersion, String defaultVersionRange) {
+        if (endpoint == null) {
+            throw new IllegalArgumentException("Endpoint must not be null");
+        }
+        String runtimeVersion = defaultRuntimeVersion;
+        String versionRange = defaultVersionRange;
+        if (endpoint.getBindings() != null) {
+            if (endpoint.getBindings().size() != 1 || endpoint.getBindings().get(0) == null) {
+                throw new IllegalArgumentException("Registration bindings must contain one item");
+            }
+            RuntimeVersionBinding input = endpoint.getBindings().get(0);
+            if (input.getRuntimeVersion() != null) {
+                runtimeVersion = input.getRuntimeVersion();
+            }
+            if (input.getVersionRange() != null) {
+                versionRange = input.getVersionRange();
+            }
+        }
+        AgentVersion version = AgentVersion.parse(runtimeVersion);
+        AgentVersionRange range = versionRange == null ? AgentVersionRange.exact(version)
+            : AgentVersionRange.parse(versionRange);
+        if (!range.contains(version)) {
+            throw new IllegalArgumentException("versionRange must contain runtimeVersion");
+        }
+        RuntimeVersionBinding result = new RuntimeVersionBinding();
+        result.setRuntimeVersion(runtimeVersion);
+        result.setVersionRange(range.getValue());
+        return result;
     }
     
     /**
@@ -62,16 +99,24 @@ public final class EndpointCanonicalizer {
         CanonicalEndpointUri canonicalUri = parseUri(endpoint.getUri());
         AgentValidationUtils.validateTransport(endpoint.getTransport());
         
-        Integer priority = endpoint.getPriority();
-        if (priority == null) {
-            priority = DEFAULT_PRIORITY;
-        } else if (priority < 0) {
+        if (endpoint.getPriority() == null) {
+            throw new IllegalArgumentException("Endpoint priority must not be null");
+        }
+        if (endpoint.getWeight() == null) {
+            throw new IllegalArgumentException("Endpoint weight must not be null");
+        }
+        if (endpoint.getHealthy() == null) {
+            throw new IllegalArgumentException("Endpoint healthy must not be null");
+        }
+        if (endpoint.getEnabled() == null) {
+            throw new IllegalArgumentException("Endpoint enabled must not be null");
+        }
+        int priority = endpoint.getPriority();
+        if (priority < 0) {
             throw new IllegalArgumentException("Endpoint priority must not be negative");
         }
-        Double weight = endpoint.getWeight();
-        if (weight == null) {
-            weight = DEFAULT_WEIGHT;
-        } else if (weight.isNaN() || weight.isInfinite() || weight < 0D || weight > 10000D) {
+        double weight = endpoint.getWeight();
+        if (Double.isNaN(weight) || Double.isInfinite(weight) || weight < 0D || weight > 10000D) {
             throw new IllegalArgumentException("Endpoint weight must be between 0 and 10000");
         }
         AgentValidationUtils.validateEndpointMetadata(endpoint.getMetadata());
@@ -82,6 +127,20 @@ public final class EndpointCanonicalizer {
         result.setPriority(priority);
         result.setWeight(weight);
         result.setHealthy(endpoint.getHealthy());
+        result.setEnabled(endpoint.getEnabled());
+        if (endpoint.getBindings() != null) {
+            result.setBindings(new ArrayList<RuntimeVersionBinding>());
+            for (RuntimeVersionBinding binding : endpoint.getBindings()) {
+                if (binding == null) {
+                    result.getBindings().add(null);
+                } else {
+                    RuntimeVersionBinding copy = new RuntimeVersionBinding();
+                    copy.setRuntimeVersion(binding.getRuntimeVersion());
+                    copy.setVersionRange(binding.getVersionRange());
+                    result.getBindings().add(copy);
+                }
+            }
+        }
         if (endpoint.getMetadata() != null && !endpoint.getMetadata().isEmpty()) {
             Map<String, String> sorted = new TreeMap<String, String>(endpoint.getMetadata());
             result.setMetadata(new LinkedHashMap<String, String>(sorted));

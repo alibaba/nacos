@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.listener;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertSame;

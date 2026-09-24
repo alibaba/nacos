@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.agent.client.AgentDiscoveryForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointDeregistrationForm;
@@ -28,16 +29,16 @@ import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
 import com.alibaba.nacos.ai.service.agent.AgentPublishApplicationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentHttpClientLifecycleService;
 import com.alibaba.nacos.ai.service.agent.watch.AgentHttpWatchService;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
-import com.alibaba.nacos.api.ai.model.rad.AgentCatalogEntry;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
@@ -70,6 +71,8 @@ import org.springframework.web.context.request.async.DeferredResult;
 @ExtractorManager.Extractor(httpExtractor = AgentClientHttpParamExtractor.class)
 public class AgentClientController {
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentDiscoveryApplicationService discoveryService;
     
     private final AgentHttpClientLifecycleService clientLifecycleService;
@@ -80,7 +83,9 @@ public class AgentClientController {
     
     public AgentClientController(AgentDiscoveryApplicationService discoveryService,
         AgentHttpClientLifecycleService clientLifecycleService,
-        AgentPublishApplicationService publishService, AgentHttpWatchService watchService) {
+        AgentPublishApplicationService publishService, AgentHttpWatchService watchService,
+        AgentClientMigrationGuard migrationGuard) {
+        this.migrationGuard = migrationGuard;
         this.discoveryService = discoveryService;
         this.clientLifecycleService = clientLifecycleService;
         this.publishService = publishService;
@@ -95,6 +100,7 @@ public class AgentClientController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.OPEN_API)
     public Result<AgentVersionDetail> publish(AgentPublishForm form) throws NacosException {
         AgentPublishRequest request = form.toRequest();
+        migrationGuard.checkReady();
         return Result.success(publishService.publish(form.getNamespaceId(), request));
     }
     
@@ -104,13 +110,14 @@ public class AgentClientController {
     @Since("3.3.0")
     @GetMapping("/search")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Page<AgentCatalogEntry>> search(AgentSearchForm form,
+    public Result<Page<AgentSummary>> search(AgentSearchForm form,
         @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
             required = false) String clientId)
         throws NacosException {
         AgentSearchRequest request = form.toRequest();
-        clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
-        return Result.success(discoveryService.search(request));
+        migrationGuard.checkReady();
+        clientLifecycleService.renewForQuery(clientId, form.getNamespaceId());
+        return Result.success(discoveryService.search(form.getNamespaceId(), request));
     }
     
     /**
@@ -124,6 +131,7 @@ public class AgentClientController {
             required = false) String clientId)
         throws NacosException {
         AgentDiscoveryRequest request = form.toRequest();
+        migrationGuard.checkReady();
         clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
         return Result.success(discoveryService.discover(request));
     }
@@ -141,6 +149,7 @@ public class AgentClientController {
             required = false) String requestModule)
         throws NacosException {
         AgentWatchBatchRequest request = form.toRequest();
+        migrationGuard.checkReady();
         return watchService.watch(clientId, requestModule, request,
             form.getWatchPayloadBytes());
     }
@@ -158,7 +167,9 @@ public class AgentClientController {
             required = false) String requestModule)
         throws NacosException {
         AgentEndpointRegistrationBatch batch = form.toRequest();
-        return Result.success(clientLifecycleService.register(clientId, requestModule, batch));
+        migrationGuard.checkReady();
+        return Result.success(
+            clientLifecycleService.register(clientId, requestModule, form.getNamespaceId(), batch));
     }
     
     /**

@@ -242,6 +242,25 @@ public class EmbeddedAiResourceVersionPersistServiceImpl
     }
     
     @Override
+    public int updateContent(String namespaceId, String name, String type, String version,
+        String storage, String desc, String author) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
+        AiResourceVersionMapper mapper =
+            mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql =
+            mapper.update(Arrays.asList("storage", "c_desc", "author", "gmt_modified@NOW()"),
+                Arrays.asList("namespace_id", "name", "type", "version"));
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+            new Object[] {storage, desc, author, normalizeNamespaceId(namespaceId), name, type,
+                version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
+    }
+    
+    @Override
     public int updateStorageMd5(String namespaceId, String name, String type, String version,
         String contentMd5) {
         AiResourceVersion existed = find(namespaceId, name, type, version);

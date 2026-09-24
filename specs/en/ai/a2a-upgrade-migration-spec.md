@@ -57,6 +57,30 @@ dual writes. It selects one complete definition authority for every legacy A2A
 request. Runtime dual materialization is a separate connection-state
 compatibility behavior and never creates a second definition authority.
 
+### External RAD migration admission
+
+While the node's effective A2A authority is historical, native RAD Client Search, Discover,
+Publish, complete Endpoint Register, and Watch admission/subsequent business reads MUST reject
+with HTTP 409 / `AGENT_MIGRATION_IN_PROGRESS (50105)`. gRPC preserves the same detail code.
+The binding checks admission after authentication and necessary input checks, before business
+mutation or owner creation. Unprojected names and unrelated standard Agents are also fenced.
+This is neither unsupported RAD nor a reason to fall back to the legacy protocol.
+
+Reuse A2A effective-mode resolution: LEGACY, AUTO without a plan, AUTO/SYNCING and AUTO/QUIESCING
+reject; fresh CANONICAL and an observed permanent CANONICAL marker allow access. A missing
+marker alone does not prove readiness. Capability queries still advertise implementation support.
+Whole-publication Deregister, local cancellation/shutdown, and existing legitimate owner heartbeats
+retain their normal authentication/ownership checks. SDK partial deregistration that Registers a
+remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
+whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
+Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
+50105, and subsequent Discover is also fenced. Callers explicitly invoke or subscribe again after
+cutover.
+
+Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
+Admin/Console, migration, indexing and internal projection retain their existing rules so migration
+cannot fence itself. The historical QUIESCING mutation barrier remains unchanged.
+
 ## 2. Configuration And Internal State
 
 ### 2.1 Configuration
@@ -509,3 +533,9 @@ cross-surface reads, both Runtime layouts, shadow on/off, reconnect/redo,
 quiescing availability, rolling mixed members, cross-node reconciliation,
 leader/owner restart, ACK/marker propagation, load-balanced reads, rollback
 boundaries, and all unrelated resource regressions.
+
+## Endpoint Consolidation Acceptance
+
+This iteration does not change the migration state machine or historical A2A public models, but consolidates address models used by converters, storage read-back, runtime comparison, and Search gates. Validate normal SYNCING/QUIESCING/terminal flows and both shadow policies with the new structure. Excluding BETA upgrades does not waive historical A2A migration regression; failure recovery and cluster injection remain deferred for this iteration.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
