@@ -122,13 +122,19 @@ export interface InstanceDeleteData {
 
 // ===== Subscriber =====
 
+/**
+ * Matches com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo returned by
+ * GET /v3/console/ns/service/subscribers.
+ */
 export interface SubscriberInfo {
-  subscriberName: string;
+  namespaceId: string;
   groupName: string;
   serviceName: string;
-  namespaceId: string;
-  subscribeCount: number;
-  clusters: string;
+  ip: string;
+  port: number;
+  agent: string;
+  appName: string;
+  address: string;
 }
 
 export interface SubscriberListResponse {
