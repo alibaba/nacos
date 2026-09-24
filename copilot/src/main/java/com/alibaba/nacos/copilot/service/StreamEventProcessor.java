@@ -54,11 +54,6 @@ public class StreamEventProcessor {
             return textContent;
         }
         
-        Object content = msg.getContent();
-        if (content instanceof String) {
-            return (String) content;
-        }
-        
         return null;
     }
     
