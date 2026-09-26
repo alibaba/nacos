@@ -19,6 +19,8 @@ package com.alibaba.nacos.dns;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Flags;
@@ -34,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -56,6 +59,11 @@ class NacosDnsQueryHandlerTest {
         properties.setNamespace("");
         properties.setTtl(60);
         return properties;
+    }
+    
+    private NacosDnsMetrics buildMetrics() {
+        MeterRegistry registry = new SimpleMeterRegistry();
+        return new NacosDnsMetrics(registry);
     }
     
     private Message buildQuery(String domain, int type, int dclass) {
@@ -96,7 +104,8 @@ class NacosDnsQueryHandlerTest {
     
     @Test
     void testNullQuestionReturnsFormErr() {
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(null, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(null, buildProperties(), buildMetrics());
         Message query = new Message();
         Message response = handler.handleQuery(query);
         assertEquals(Rcode.FORMERR, response.getHeader().getRcode());
@@ -104,7 +113,8 @@ class NacosDnsQueryHandlerTest {
     
     @Test
     void testNonInClassReturnsRefused() {
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(null, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(null, buildProperties(), buildMetrics());
         Message query = buildQuery("test.nacos.", Type.A, DClass.CH);
         Message response = handler.handleQuery(query);
         assertEquals(Rcode.REFUSED, response.getHeader().getRcode());
@@ -112,7 +122,8 @@ class NacosDnsQueryHandlerTest {
     
     @Test
     void testNonAQueryTypeReturnsNotImplemented() {
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(null, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(null, buildProperties(), buildMetrics());
         Message query = buildQuery("test.nacos.", Type.MX, DClass.IN);
         Message response = handler.handleQuery(query);
         assertEquals(Rcode.NOTIMP, response.getHeader().getRcode());
@@ -124,7 +135,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(Arrays.asList(buildInstance("192.168.1.1", true, true))));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("test.nacos.", Type.AAAA, DClass.IN);
         Message response = handler.handleQuery(query);
         // Only IPv4 instance, AAAA answer section should be empty but rcode NOERROR
@@ -136,7 +148,8 @@ class NacosDnsQueryHandlerTest {
     
     @Test
     void testDomainSuffixMismatchReturnsNxDomain() {
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(null, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(null, buildProperties(), buildMetrics());
         Message query = buildQuery("test.example.com.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
@@ -149,7 +162,8 @@ class NacosDnsQueryHandlerTest {
             eq("test-service"), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(Arrays.asList(buildInstance("10.0.0.1", true, true))));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("test-service.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -166,7 +180,8 @@ class NacosDnsQueryHandlerTest {
             eq("my-service"), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(Arrays.asList(buildInstance("10.0.0.2", true, true))));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("my-service.my-group.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -187,7 +202,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(hosts));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -202,7 +218,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(Arrays.asList(buildInstance("10.0.0.1", false, true))));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -215,7 +232,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(null);
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -228,7 +246,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenThrow(new RuntimeException("naming backend error"));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -247,7 +266,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(hosts));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -265,12 +285,14 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(Arrays.asList(buildInstance("10.0.0.1", true, true))));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
         assertTrue(response.getHeader().getFlag(Flags.QR), "response should set QR flag");
-        assertTrue(response.getHeader().getFlag(Flags.RA), "response should set RA flag");
+        assertFalse(response.getHeader().getFlag(Flags.RA),
+            "conditional forwarder must not advertise recursion available");
     }
     
     // ---- Mixed IPv4/IPv6 regression tests (review #7) ----
@@ -287,7 +309,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(hosts));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.AAAA, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -310,7 +333,8 @@ class NacosDnsQueryHandlerTest {
         when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
             .thenReturn(buildServiceInfo(hosts));
         
-        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(op, buildProperties());
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
         Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -319,5 +343,172 @@ class NacosDnsQueryHandlerTest {
             "A query should return the single IPv4 address even when 100 IPv6 exist");
         Record r = response.getSection(Section.ANSWER).get(0);
         assertEquals(Type.A, r.getType());
+    }
+    
+    // ---- SRV record tests ----
+    
+    @Test
+    void testSrvQueryReturnsRecordsWithPortAndWeight() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(9090);
+        inst.setWeight(5);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        assertEquals(1, response.getSection(Section.ANSWER).size());
+        org.xbill.DNS.SRVRecord srv =
+            (org.xbill.DNS.SRVRecord) response.getSection(Section.ANSWER).get(0);
+        assertEquals(9090, srv.getPort());
+        assertEquals(5, srv.getWeight());
+        assertEquals(0, srv.getPriority());
+        
+        // Verify glue A record in additional section
+        List<Record> additional = response.getSection(Section.ADDITIONAL);
+        assertEquals(1, additional.size(), "SRV response should include glue A record");
+        assertEquals(Type.A, additional.get(0).getType());
+        assertEquals(srv.getTarget(), additional.get(0).getName());
+    }
+    
+    @Test
+    void testSrvQueryMultipleInstancesCapped() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        List<Instance> hosts = new ArrayList<>();
+        for (int i = 1; i <= 30; i++) {
+            Instance inst = buildInstance("10.0." + (i / 256) + "." + (i % 256), true, true);
+            inst.setPort(8080 + i);
+            hosts.add(inst);
+        }
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(hosts));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        assertTrue(response.getSection(Section.ANSWER).size() <= 20,
+            "SRV records should be capped at 20");
+        for (Record r : response.getSection(Section.ANSWER)) {
+            assertEquals(Type.SRV, r.getType());
+        }
+    }
+    
+    // ---- matchesSuffix tests ----
+    
+    @Test
+    void testMatchesSuffix() {
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(
+            mock(InstanceOperatorClientImpl.class), buildProperties(), buildMetrics());
+        assertTrue(handler.matchesSuffix("svc.nacos"));
+        assertTrue(handler.matchesSuffix("svc.group.nacos"));
+        assertTrue(handler.matchesSuffix("svc.nacos."));
+    }
+    
+    @Test
+    void testDoesNotMatchSuffix() {
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(
+            mock(InstanceOperatorClientImpl.class), buildProperties(), buildMetrics());
+        assertFalse(handler.matchesSuffix("www.google.com"));
+        assertFalse(handler.matchesSuffix("nacos"));
+        assertFalse(handler.matchesSuffix(null));
+    }
+    
+    // ---- SRV edge cases ----
+    
+    @Test
+    void testSrvQueryDefaultWeightWhenZero() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(9090);
+        inst.setWeight(0);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        org.xbill.DNS.SRVRecord srv =
+            (org.xbill.DNS.SRVRecord) response.getSection(Section.ANSWER).get(0);
+        assertEquals(1, srv.getWeight(), "Weight should default to 1 when instance weight is 0");
+    }
+    
+    @Test
+    void testSrvQueryWeightExceedsMaxIsClampedNotServfail() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(9090);
+        inst.setWeight(100000); // exceeds DNS SRV 16-bit max (65535)
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Out-of-range weight must be clamped, not cause SERVFAIL");
+        org.xbill.DNS.SRVRecord srv =
+            (org.xbill.DNS.SRVRecord) response.getSection(Section.ANSWER).get(0);
+        assertEquals(65535, srv.getWeight(), "Weight should be clamped to 65535");
+    }
+    
+    @Test
+    void testSrvQueryIncludesGlueRecordsInAdditional() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(8080);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(1, response.getSection(Section.ANSWER).size());
+        assertEquals(1, response.getSection(Section.ADDITIONAL).size(),
+            "SRV response should include glue A record in additional section");
+        Record glue = response.getSection(Section.ADDITIONAL).get(0);
+        assertEquals(Type.A, glue.getType());
+    }
+    
+    @Test
+    void testSrvQueryNoHealthyInstancesReturnsNxDomain() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", false, true);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
+    }
+    
+    // ---- Non-Nacos domain (forwarding path is in Server, handler returns NXDOMAIN) ----
+    
+    @Test
+    void testNonNacosDomainReturnsNxDomain() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("www.google.com.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
     }
 }

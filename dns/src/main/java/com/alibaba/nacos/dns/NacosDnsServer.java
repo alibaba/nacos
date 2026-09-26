@@ -23,8 +23,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
+import org.xbill.DNS.Rcode;
+import org.xbill.DNS.Record;
 import org.xbill.DNS.Section;
 
+import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 
 import java.io.DataInputStream;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -76,6 +80,9 @@ public class NacosDnsServer {
     /** TCP read timeout in milliseconds. */
     private static final int TCP_SOCKET_TIMEOUT_MS = 5000;
     
+    /** Maximum DNS message size over TCP (RFC 1035: 16-bit length prefix). */
+    private static final int TCP_MAX_MESSAGE_SIZE = 65535;
+    
     /** Maximum concurrent TCP connections. */
     private static final int MAX_TCP_CONNECTIONS = 64;
     
@@ -87,6 +94,8 @@ public class NacosDnsServer {
     
     private final NacosDnsProperties properties;
     private final NacosDnsQueryHandler queryHandler;
+    private final NacosDnsForwarder forwarder;
+    private final NacosDnsMetrics metrics;
     
     /** Dedicated listener threads (non-daemon, short-lived). */
     private Thread udpListenerThread;
@@ -104,9 +113,12 @@ public class NacosDnsServer {
     private final AtomicInteger activeTcpConnections = new AtomicInteger(0);
     
     public NacosDnsServer(NacosDnsProperties properties,
-        NacosDnsQueryHandler queryHandler) {
+        NacosDnsQueryHandler queryHandler, NacosDnsForwarder forwarder,
+        NacosDnsMetrics metrics) {
         this.properties = properties;
         this.queryHandler = queryHandler;
+        this.forwarder = forwarder;
+        this.metrics = metrics;
     }
     
     /**
@@ -119,6 +131,30 @@ public class NacosDnsServer {
             return;
         }
         
+        // Bind sockets first: if binding fails, no thread pools have been created yet,
+        // so no cleanup is needed. UDP is bound first to resolve the actual port
+        // (supports port=0 for ephemeral), then TCP uses the same port.
+        try {
+            udpSocket = new DatagramSocket(
+                new InetSocketAddress(properties.getBindAddress(), properties.getPort()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
+                properties.getPort(), e);
+            return;
+        }
+        int actualPort = udpSocket.getLocalPort();
+        
+        try {
+            tcpSocket = new ServerSocket(actualPort, 50,
+                InetAddress.getByName(properties.getBindAddress()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind TCP socket on {}:{}", properties.getBindAddress(),
+                actualPort, e);
+            udpSocket.close();
+            return;
+        }
+        
+        // Both sockets bound successfully — now create worker pools and start listeners.
         udpWorkerPool = new ThreadPoolExecutor(
             UDP_WORKER_THREADS, UDP_WORKER_THREADS,
             0L, TimeUnit.MILLISECONDS,
@@ -140,26 +176,6 @@ public class NacosDnsServer {
                 return t;
             },
             new ThreadPoolExecutor.AbortPolicy());
-        
-        // Bind UDP first to get the actual port (supports port=0 for ephemeral)
-        try {
-            udpSocket = new DatagramSocket(properties.getPort());
-        } catch (IOException e) {
-            LOGGER.error("Failed to bind UDP socket on port {}", properties.getPort(), e);
-            return;
-        }
-        int actualPort = udpSocket.getLocalPort();
-        
-        // Bind TCP to the same port
-        try {
-            tcpSocket = new ServerSocket(actualPort);
-        } catch (IOException e) {
-            LOGGER.error("Failed to bind TCP socket on port {}", actualPort, e);
-            udpSocket.close();
-            udpWorkerPool.shutdownNow();
-            tcpWorkerPool.shutdownNow();
-            return;
-        }
         
         running = true;
         
@@ -248,7 +264,7 @@ public class NacosDnsServer {
     private void handleUdpQuery(byte[] queryData, InetAddress clientAddr, int clientPort) {
         try {
             Message query = new Message(queryData);
-            Message response = queryHandler.handleQuery(query);
+            Message response = resolveQuery(query);
             
             byte[] responseData = response.toWire();
             // Truncate if response exceeds standard UDP size to prevent amplification
@@ -257,7 +273,8 @@ public class NacosDnsServer {
                 responseData = response.toWire();
                 if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
                     // Fallback: send only header + question (still valid truncated response)
-                    responseData = buildTruncatedResponse(query);
+                    responseData = buildTruncatedResponse(query,
+                        response.getHeader().getRcode());
                 }
             }
             
@@ -271,13 +288,69 @@ public class NacosDnsServer {
     }
     
     /**
-     * Build a minimal truncated response (header + question only).
+     * Resolve a DNS query: handle Nacos-suffix domains locally, forward others if enabled.
      */
-    private byte[] buildTruncatedResponse(Message query) throws IOException {
+    private Message resolveQuery(Message query) {
+        metrics.recordQuery();
+        Record question = query.getQuestion();
+        if (question != null && question.getName() != null
+            && queryHandler.matchesSuffix(question.getName().toString(true))) {
+            // Local queries are timed inside queryHandler.handleQuery() with type/rcode tags
+            return queryHandler.handleQuery(query);
+        }
+        
+        // Forwarding path: timed separately with type/rcode tags
+        String type = queryHandler.extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
+        
+        NacosDnsForwarder.ForwardResult result = forwarder.forward(query);
+        switch (result.getStatus()) {
+            case SUCCESS:
+                Message upstream = result.getResponse();
+                String rcode = Rcode.string(upstream.getHeader().getRcode());
+                metrics.stopSample(sample, type, rcode);
+                return upstream;
+            case UPSTREAM_FAILURE:
+                // Upstream failed — return SERVFAIL, NOT NXDOMAIN, to avoid
+                // poisoning client negative caches for transient failures.
+                metrics.stopSample(sample, type, "SERVFAIL");
+                return buildErrorResponse(query, question, Rcode.SERVFAIL);
+            case DISABLED:
+            case NO_SERVERS:
+            case INTERNAL_SUFFIX:
+            default:
+                // Forwarding not configured or not applicable — domain doesn't exist locally
+                metrics.recordFailed();
+                metrics.stopSample(sample, type, "NXDOMAIN");
+                return buildErrorResponse(query, question, Rcode.NXDOMAIN);
+        }
+    }
+    
+    /**
+     * Build a minimal error response with the given rcode.
+     */
+    private Message buildErrorResponse(Message query, Record question, int rcode) {
+        Message response = new Message(query.getHeader().getID());
+        response.getHeader().setFlag(Flags.QR);
+        // Do NOT set RA (Recursion Available): this is a conditional forwarder,
+        // not an open recursive resolver.
+        response.getHeader().setRcode(rcode);
+        if (question != null) {
+            response.addRecord(question, Section.QUESTION);
+        }
+        return response;
+    }
+    
+    /**
+     * Build a minimal truncated response (header + question only), preserving the
+     * original rcode so NXDOMAIN/SERVFAIL is not silently rewritten to NOERROR.
+     */
+    private byte[] buildTruncatedResponse(Message query, int rcode) throws IOException {
         Message truncated = new Message(query.getHeader().getID());
         truncated.getHeader().setFlag(Flags.QR);
         truncated.getHeader().setFlag(Flags.TC);
-        truncated.getHeader().setFlag(Flags.RA);
+        // Do NOT set RA: this is a conditional forwarder, not an open recursive resolver.
+        truncated.getHeader().setRcode(rcode);
         truncated.addRecord(query.getQuestion(), Section.QUESTION);
         return truncated.toWire();
     }
@@ -292,15 +365,16 @@ public class NacosDnsServer {
             while (running) {
                 Socket clientSocket = tcpSocket.accept();
                 
-                // Enforce connection limit
-                if (activeTcpConnections.get() >= MAX_TCP_CONNECTIONS) {
+                // Atomically enforce connection limit
+                int current = activeTcpConnections.incrementAndGet();
+                if (current > MAX_TCP_CONNECTIONS) {
+                    activeTcpConnections.decrementAndGet();
                     LOGGER.warn("Too many TCP connections ({}), rejecting {}",
-                        activeTcpConnections.get(), clientSocket.getRemoteSocketAddress());
+                        current - 1, clientSocket.getRemoteSocketAddress());
                     clientSocket.close();
                     continue;
                 }
                 
-                activeTcpConnections.incrementAndGet();
                 try {
                     tcpWorkerPool.submit(() -> {
                         try {
@@ -359,7 +433,7 @@ public class NacosDnsServer {
                 }
                 
                 int length = (b0 << 8) | b1;
-                if (length <= 0 || length > UDP_RECEIVE_BUFFER_SIZE) {
+                if (length <= 0 || length > TCP_MAX_MESSAGE_SIZE) {
                     break;
                 }
                 
@@ -381,7 +455,7 @@ public class NacosDnsServer {
                 }
                 
                 Message query = new Message(queryData);
-                Message response = queryHandler.handleQuery(query);
+                Message response = resolveQuery(query);
                 
                 byte[] responseData = response.toWire();
                 synchronized (out) {

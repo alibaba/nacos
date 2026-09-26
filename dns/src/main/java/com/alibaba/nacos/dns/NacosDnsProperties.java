@@ -18,6 +18,11 @@ package com.alibaba.nacos.dns;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import jakarta.annotation.PostConstruct;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Configuration properties for Nacos DNS server.
  *
@@ -35,6 +40,12 @@ public class NacosDnsProperties {
      * DNS server listen port. Default is 5353 to avoid conflict with system DNS port 53.
      */
     private int port = 5353;
+    
+    /**
+     * DNS server bind address. Default is 127.0.0.1 to prevent open resolver abuse.
+     * Set to 0.0.0.0 only on trusted internal networks with proper firewall rules.
+     */
+    private String bindAddress = "127.0.0.1";
     
     /**
      * DNS domain suffix for Nacos services.
@@ -57,6 +68,43 @@ public class NacosDnsProperties {
      */
     private long ttl = 60;
     
+    /**
+     * Whether to forward queries that don't match the Nacos domain suffix to upstream DNS servers.
+     */
+    private boolean forwardEnabled = false;
+    
+    /**
+     * Upstream DNS server addresses for forwarding (e.g., "8.8.8.8", "114.114.114.114").
+     */
+    private List<String> forwardServers = new ArrayList<>();
+    
+    /**
+     * Timeout in milliseconds for forwarded DNS queries.
+     */
+    private int forwardTimeoutMs = 3000;
+    
+    /**
+     * Fail-fast validation when DNS is enabled.
+     */
+    @PostConstruct
+    public void validate() {
+        if (!enabled) {
+            return;
+        }
+        if (domainSuffix == null || domainSuffix.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.domain-suffix must not be empty when DNS is enabled");
+        }
+        if (port < 0 || port > 65535) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.port must be in [0, 65535], got: " + port);
+        }
+        if (ttl < 0) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.ttl must not be negative, got: " + ttl);
+        }
+    }
+    
     public boolean isEnabled() {
         return enabled;
     }
@@ -71,6 +119,14 @@ public class NacosDnsProperties {
     
     public void setPort(int port) {
         this.port = port;
+    }
+    
+    public String getBindAddress() {
+        return bindAddress;
+    }
+    
+    public void setBindAddress(String bindAddress) {
+        this.bindAddress = bindAddress;
     }
     
     public String getDomainSuffix() {
@@ -103,5 +159,29 @@ public class NacosDnsProperties {
     
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+    
+    public boolean isForwardEnabled() {
+        return forwardEnabled;
+    }
+    
+    public void setForwardEnabled(boolean forwardEnabled) {
+        this.forwardEnabled = forwardEnabled;
+    }
+    
+    public List<String> getForwardServers() {
+        return forwardServers;
+    }
+    
+    public void setForwardServers(List<String> forwardServers) {
+        this.forwardServers = forwardServers;
+    }
+    
+    public int getForwardTimeoutMs() {
+        return forwardTimeoutMs;
+    }
+    
+    public void setForwardTimeoutMs(int forwardTimeoutMs) {
+        this.forwardTimeoutMs = forwardTimeoutMs;
     }
 }
