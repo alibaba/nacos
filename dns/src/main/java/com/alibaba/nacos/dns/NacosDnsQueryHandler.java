@@ -117,7 +117,7 @@ public class NacosDnsQueryHandler {
             metrics.recordFailed();
             Message error = new Message(query.getHeader().getID());
             error.getHeader().setFlag(Flags.QR);
-            error.getHeader().setFlag(Flags.RA);
+            // Do NOT set RA: this is a conditional forwarder, not an open recursive resolver.
             error.getHeader().setRcode(Rcode.SERVFAIL);
             rcode = "SERVFAIL";
             return error;
@@ -145,7 +145,7 @@ public class NacosDnsQueryHandler {
     private Message doHandleQuery(Message query) {
         Message response = new Message(query.getHeader().getID());
         response.getHeader().setFlag(Flags.QR);
-        response.getHeader().setFlag(Flags.RA);
+        // Do NOT set RA: this is a conditional forwarder, not an open recursive resolver.
         
         Record question = query.getQuestion();
         if (question == null) {

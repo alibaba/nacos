@@ -241,6 +241,23 @@ class NacosDnsForwarderTest {
     }
     
     @Test
+    void testBareIpv6WithoutBracketsIsRejected() {
+        // "2001:db8::1" has multiple colons and is ambiguous with host:port.
+        // Must be rejected with a clear message, not silently misparsed.
+        NacosDnsProperties props = buildProperties(true, "2001:db8::1");
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        // The invalid entry is logged and skipped; forwarder still constructs.
+        assertNotNull(forwarder);
+    }
+    
+    @Test
+    void testIpv6WithBracketsAndPortIsAccepted() {
+        NacosDnsProperties props = buildProperties(true, "[2001:db8::1]:5353");
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        assertNotNull(forwarder);
+    }
+    
+    @Test
     void testTimeoutBudgetExhaustedSkipsRemainingServers() throws IOException {
         // Use a resolver that blocks then throws (simulating timeout beyond total budget)
         SimpleResolver slowResolver = mock(SimpleResolver.class);

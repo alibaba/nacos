@@ -291,7 +291,8 @@ class NacosDnsQueryHandlerTest {
         Message response = handler.handleQuery(query);
         
         assertTrue(response.getHeader().getFlag(Flags.QR), "response should set QR flag");
-        assertTrue(response.getHeader().getFlag(Flags.RA), "response should set RA flag");
+        assertFalse(response.getHeader().getFlag(Flags.RA),
+            "conditional forwarder must not advertise recursion available");
     }
     
     // ---- Mixed IPv4/IPv6 regression tests (review #7) ----

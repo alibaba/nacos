@@ -80,6 +80,9 @@ public class NacosDnsServer {
     /** TCP read timeout in milliseconds. */
     private static final int TCP_SOCKET_TIMEOUT_MS = 5000;
     
+    /** Maximum DNS message size over TCP (RFC 1035: 16-bit length prefix). */
+    private static final int TCP_MAX_MESSAGE_SIZE = 65535;
+    
     /** Maximum concurrent TCP connections. */
     private static final int MAX_TCP_CONNECTIONS = 64;
     
@@ -272,7 +275,8 @@ public class NacosDnsServer {
                 responseData = response.toWire();
                 if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
                     // Fallback: send only header + question (still valid truncated response)
-                    responseData = buildTruncatedResponse(query);
+                    responseData = buildTruncatedResponse(query,
+                        response.getHeader().getRcode());
                 }
             }
             
@@ -340,13 +344,15 @@ public class NacosDnsServer {
     }
     
     /**
-     * Build a minimal truncated response (header + question only).
+     * Build a minimal truncated response (header + question only), preserving the
+     * original rcode so NXDOMAIN/SERVFAIL is not silently rewritten to NOERROR.
      */
-    private byte[] buildTruncatedResponse(Message query) throws IOException {
+    private byte[] buildTruncatedResponse(Message query, int rcode) throws IOException {
         Message truncated = new Message(query.getHeader().getID());
         truncated.getHeader().setFlag(Flags.QR);
         truncated.getHeader().setFlag(Flags.TC);
-        truncated.getHeader().setFlag(Flags.RA);
+        // Do NOT set RA: this is a conditional forwarder, not an open recursive resolver.
+        truncated.getHeader().setRcode(rcode);
         truncated.addRecord(query.getQuestion(), Section.QUESTION);
         return truncated.toWire();
     }
@@ -429,7 +435,7 @@ public class NacosDnsServer {
                 }
                 
                 int length = (b0 << 8) | b1;
-                if (length <= 0 || length > UDP_RECEIVE_BUFFER_SIZE) {
+                if (length <= 0 || length > TCP_MAX_MESSAGE_SIZE) {
                     break;
                 }
                 

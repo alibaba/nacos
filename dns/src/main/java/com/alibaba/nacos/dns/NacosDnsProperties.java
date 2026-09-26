@@ -18,6 +18,8 @@ package com.alibaba.nacos.dns;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import jakarta.annotation.PostConstruct;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +82,28 @@ public class NacosDnsProperties {
      * Timeout in milliseconds for forwarded DNS queries.
      */
     private int forwardTimeoutMs = 3000;
+    
+    /**
+     * Fail-fast validation when DNS is enabled.
+     */
+    @PostConstruct
+    public void validate() {
+        if (!enabled) {
+            return;
+        }
+        if (domainSuffix == null || domainSuffix.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.domain-suffix must not be empty when DNS is enabled");
+        }
+        if (port < 0 || port > 65535) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.port must be in [0, 65535], got: " + port);
+        }
+        if (ttl < 0) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.ttl must not be negative, got: " + ttl);
+        }
+    }
     
     public boolean isEnabled() {
         return enabled;

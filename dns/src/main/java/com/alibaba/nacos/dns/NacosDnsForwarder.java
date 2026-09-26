@@ -29,8 +29,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Forwards DNS queries that don't match the Nacos domain suffix to upstream DNS servers.
@@ -63,7 +61,6 @@ public class NacosDnsForwarder {
     private final NacosDnsProperties properties;
     private final NacosDnsMetrics metrics;
     private final List<ServerAddress> servers;
-    private final ConcurrentMap<String, SimpleResolver> resolverCache = new ConcurrentHashMap<>();
     
     public NacosDnsForwarder(NacosDnsProperties properties, NacosDnsMetrics metrics) {
         this.properties = properties;
@@ -159,7 +156,10 @@ public class NacosDnsForwarder {
             
             int timeoutMs = (int) Math.min(perServerTimeoutMs(), remaining);
             try {
-                SimpleResolver resolver = getOrCreateResolver(addr);
+                // Create a fresh SimpleResolver per request: setTimeout mutates shared
+                // state, so a cached resolver would race between concurrent queries with
+                // different remaining-time budgets. Upstream count is small; cost is fine.
+                SimpleResolver resolver = createResolver(addr.host(), addr.port());
                 resolver.setTimeout(Duration.ofMillis(timeoutMs));
                 Message response = resolver.send(query);
                 
@@ -209,23 +209,13 @@ public class NacosDnsForwarder {
     }
     
     /**
-     * Total time budget: cap at per-server timeout to prevent unbounded fan-out.
-     * With N servers, each gets at most budget/N effectively via remaining-time slicing.
+     * Total time budget for all upstream attempts: 2× per-server timeout.
+     * This allows one full attempt plus a fallback without blocking workers too long.
+     * Remaining-time slicing in the loop ensures each upstream uses at most
+     * min(per-server timeout, remaining budget).
      */
     private long totalBudgetMs() {
-        // Allow up to 2× per-server timeout as the overall budget, so at least one
-        // full attempt plus a fallback can fit without blocking workers too long.
-        return Math.max(perServerTimeoutMs() * 2L, perServerTimeoutMs());
-    }
-    
-    private SimpleResolver getOrCreateResolver(ServerAddress addr) throws UnknownHostException {
-        return resolverCache.computeIfAbsent(addr.cacheKey(), k -> {
-            try {
-                return createResolver(addr.host(), addr.port());
-            } catch (UnknownHostException e) {
-                throw new RuntimeException("Failed to resolve upstream DNS server: " + addr, e);
-            }
-        });
+        return perServerTimeoutMs() * 2L;
     }
     
     /**
@@ -275,6 +265,13 @@ public class NacosDnsForwarder {
             }
             return new ServerAddress(host, port);
         }
+        // Bare IPv6 (e.g. "2001:db8::1") has multiple colons and is ambiguous with
+        // host:port. Require bracket notation for a clear error.
+        long colonCount = spec.chars().filter(c -> c == ':').count();
+        if (colonCount > 1) {
+            throw new IllegalArgumentException(
+                "Bare IPv6 address must use bracket notation [ipv6]:port, e.g. [2001:db8::1]:53");
+        }
         int colon = spec.lastIndexOf(':');
         if (colon > 0) {
             String host = spec.substring(0, colon);
@@ -296,10 +293,6 @@ public class NacosDnsForwarder {
      * Parsed upstream server address.
      */
     private record ServerAddress(String host, int port) {
-        
-        String cacheKey() {
-            return host + ":" + port;
-        }
         
         @Override
         public String toString() {
