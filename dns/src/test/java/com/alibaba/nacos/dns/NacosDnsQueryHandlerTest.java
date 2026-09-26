@@ -443,6 +443,27 @@ class NacosDnsQueryHandlerTest {
     }
     
     @Test
+    void testSrvQueryWeightExceedsMaxIsClampedNotServfail() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.1", true, true);
+        inst.setPort(9090);
+        inst.setWeight(100000); // exceeds DNS SRV 16-bit max (65535)
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.SRV, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Out-of-range weight must be clamped, not cause SERVFAIL");
+        org.xbill.DNS.SRVRecord srv =
+            (org.xbill.DNS.SRVRecord) response.getSection(Section.ANSWER).get(0);
+        assertEquals(65535, srv.getWeight(), "Weight should be clamped to 65535");
+    }
+    
+    @Test
     void testSrvQueryIncludesGlueRecordsInAdditional() {
         InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
         Instance inst = buildInstance("10.0.0.1", true, true);

@@ -68,6 +68,9 @@ public class NacosDnsQueryHandler {
     /** Default SRV weight when instance weight is not set. */
     private static final int SRV_DEFAULT_WEIGHT = 1;
     
+    /** DNS SRV weight is a 16-bit unsigned field (0–65535). */
+    private static final int SRV_MAX_WEIGHT = 65535;
+    
     private final InstanceOperatorClientImpl instanceOperator;
     private final NacosDnsProperties properties;
     private final NacosDnsMetrics metrics;
@@ -246,7 +249,17 @@ public class NacosDnsQueryHandler {
                 LOGGER.warn("Skipping instance with invalid port: {}", port);
                 continue;
             }
-            int weight = inst.getWeight() > 0 ? (int) inst.getWeight() : SRV_DEFAULT_WEIGHT;
+            double rawWeight = inst.getWeight();
+            int weight;
+            if (rawWeight <= 0) {
+                weight = SRV_DEFAULT_WEIGHT;
+            } else if (rawWeight > SRV_MAX_WEIGHT) {
+                weight = SRV_MAX_WEIGHT;
+                LOGGER.warn("Clamping SRV weight from {} to {} for instance {}",
+                    rawWeight, SRV_MAX_WEIGHT, inst.getIp());
+            } else {
+                weight = (int) rawWeight;
+            }
             Name target = buildSrvTargetName(addr);
             SRVRecord srv = new SRVRecord(queryName, DClass.IN, properties.getTtl(),
                 SRV_DEFAULT_PRIORITY, weight, port, target);

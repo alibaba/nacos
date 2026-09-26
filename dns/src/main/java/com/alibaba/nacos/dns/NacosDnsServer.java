@@ -157,6 +157,8 @@ public class NacosDnsServer {
         } catch (IOException e) {
             LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
                 properties.getPort(), e);
+            udpWorkerPool.shutdownNow();
+            tcpWorkerPool.shutdownNow();
             return;
         }
         int actualPort = udpSocket.getLocalPort();
