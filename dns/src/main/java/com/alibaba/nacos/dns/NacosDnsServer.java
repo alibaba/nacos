@@ -131,6 +131,30 @@ public class NacosDnsServer {
             return;
         }
         
+        // Bind sockets first: if binding fails, no thread pools have been created yet,
+        // so no cleanup is needed. UDP is bound first to resolve the actual port
+        // (supports port=0 for ephemeral), then TCP uses the same port.
+        try {
+            udpSocket = new DatagramSocket(
+                new InetSocketAddress(properties.getBindAddress(), properties.getPort()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
+                properties.getPort(), e);
+            return;
+        }
+        int actualPort = udpSocket.getLocalPort();
+        
+        try {
+            tcpSocket = new ServerSocket(actualPort, 50,
+                InetAddress.getByName(properties.getBindAddress()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind TCP socket on {}:{}", properties.getBindAddress(),
+                actualPort, e);
+            udpSocket.close();
+            return;
+        }
+        
+        // Both sockets bound successfully — now create worker pools and start listeners.
         udpWorkerPool = new ThreadPoolExecutor(
             UDP_WORKER_THREADS, UDP_WORKER_THREADS,
             0L, TimeUnit.MILLISECONDS,
@@ -152,32 +176,6 @@ public class NacosDnsServer {
                 return t;
             },
             new ThreadPoolExecutor.AbortPolicy());
-        
-        // Bind UDP first to get the actual port (supports port=0 for ephemeral)
-        try {
-            udpSocket = new DatagramSocket(
-                new InetSocketAddress(properties.getBindAddress(), properties.getPort()));
-        } catch (IOException e) {
-            LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
-                properties.getPort(), e);
-            udpWorkerPool.shutdownNow();
-            tcpWorkerPool.shutdownNow();
-            return;
-        }
-        int actualPort = udpSocket.getLocalPort();
-        
-        // Bind TCP to the same address and port
-        try {
-            tcpSocket = new ServerSocket(actualPort, 50,
-                InetAddress.getByName(properties.getBindAddress()));
-        } catch (IOException e) {
-            LOGGER.error("Failed to bind TCP socket on {}:{}", properties.getBindAddress(),
-                actualPort, e);
-            udpSocket.close();
-            udpWorkerPool.shutdownNow();
-            tcpWorkerPool.shutdownNow();
-            return;
-        }
         
         running = true;
         
