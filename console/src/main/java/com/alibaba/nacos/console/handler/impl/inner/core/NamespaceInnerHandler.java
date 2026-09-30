@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
@@ -65,7 +66,7 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     }
     
     @Override
-    public Boolean deleteNamespace(String namespaceId) {
+    public Boolean deleteNamespace(String namespaceId) throws NacosApiException {
         return namespaceOperationService.removeNamespace(namespaceId);
     }
     
