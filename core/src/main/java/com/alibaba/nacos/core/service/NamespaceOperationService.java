@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.service;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.response.Namespace;
@@ -116,7 +117,7 @@ public class NamespaceOperationService {
             }
             result = new Namespace(namespaceId, tenantInfo.getTenantName(),
                 tenantInfo.getTenantDesc(), DEFAULT_QUOTA,
-                0, NamespaceTypeEnum.CUSTOM.getType());
+                    0, type.getType());
         }
         NamespaceDetailInjectorHolder.getInstance().injectDetail(result);
         return result;
@@ -146,6 +147,7 @@ public class NamespaceOperationService {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc,
         NamespaceTypeEnum type) throws NacosException {
+        validateNamespaceIdForType(namespaceId, type);
         validateNamespaceNotExists(namespaceId);
         String typeString = String.valueOf(type.getType());
         namespacePersistService.insertTenantInfoAtomic(typeString, namespaceId, namespaceName,
@@ -157,7 +159,9 @@ public class NamespaceOperationService {
     /**
      * edit namespace.
      */
-    public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc) {
+    public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+            throws NacosApiException {
+        validateNamespaceIdForType(namespaceId, NamespaceTypeEnum.CUSTOM);
         namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName,
             namespaceDesc);
         return true;
@@ -166,7 +170,8 @@ public class NamespaceOperationService {
     /**
      * remove namespace.
      */
-    public Boolean removeNamespace(String namespaceId) {
+    public Boolean removeNamespace(String namespaceId) throws NacosApiException {
+        validateNamespaceIdForType(namespaceId, NamespaceTypeEnum.CUSTOM);
         namespacePersistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
         return true;
     }
@@ -196,6 +201,27 @@ public class NamespaceOperationService {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
                 ErrorCode.NAMESPACE_ALREADY_EXIST,
                 "namespaceId [" + namespaceId + "] already exist.");
+        }
+    }
+    
+    private void validateNamespaceIdForType(String namespaceId, NamespaceTypeEnum type)
+            throws NacosApiException {
+        boolean hubNamespaceId = AiConstants.Hub.NAMESPACE_ID.equals(namespaceId);
+        
+        if (NamespaceTypeEnum.AI_HUB == type) {
+            if (!hubNamespaceId) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                        ErrorCode.ILLEGAL_NAMESPACE,
+                        "AI Hub namespace must use reserved namespaceId ["
+                                + AiConstants.Hub.NAMESPACE_ID + "]");
+            }
+            return;
+        }
+        
+        if (hubNamespaceId) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.ILLEGAL_NAMESPACE,
+                    "namespaceId [" + namespaceId + "] is reserved for Nacos AI Resource Hub");
         }
     }
 }
