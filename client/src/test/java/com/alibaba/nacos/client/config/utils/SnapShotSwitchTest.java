@@ -25,7 +25,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 
@@ -103,6 +105,47 @@ class SnapShotSwitchTest {
         SnapShotSwitch.initSnapshotSwitch();
         assertTrue(SnapShotSwitch.getIsSnapShot());
         localConfigInfoProcessor.verify(LocalConfigInfoProcessor::cleanAllSnapshot, never());
+    }
+    
+    @Test
+    void testInitSnapshotSwitchKeepsSnapshotOffWhenCleanupThrowsRuntimeException() {
+        System.setProperty("configSnapshotEnabled", "false");
+        localConfigInfoProcessor.when(LocalConfigInfoProcessor::cleanAllSnapshot)
+            .thenThrow(new IllegalStateException("simulated snapshot cleanup failure"));
+        try {
+            assertDoesNotThrow(SnapShotSwitch::initSnapshotSwitch);
+            assertFalse(SnapShotSwitch.getIsSnapShot());
+            localConfigInfoProcessor.verify(LocalConfigInfoProcessor::cleanAllSnapshot);
+        } finally {
+            // Reset the failure stub so tearDown can request the setter cleanup normally.
+            localConfigInfoProcessor.reset();
+        }
+    }
+    
+    @Test
+    void testInitSnapshotSwitchKeepsSnapshotOffWhenCleanupThrowsLinkageError() {
+        System.setProperty("configSnapshotEnabled", "false");
+        localConfigInfoProcessor.when(LocalConfigInfoProcessor::cleanAllSnapshot)
+            .thenThrow(new ExceptionInInitializerError("simulated cleanup linkage failure"));
+        try {
+            assertDoesNotThrow(SnapShotSwitch::initSnapshotSwitch);
+            assertFalse(SnapShotSwitch.getIsSnapShot());
+            localConfigInfoProcessor.verify(LocalConfigInfoProcessor::cleanAllSnapshot);
+        } finally {
+            localConfigInfoProcessor.reset();
+        }
+    }
+    
+    @Test
+    void testInitSnapshotSwitchPropagatesFatalVmErrorFromCleanup() {
+        System.setProperty("configSnapshotEnabled", "false");
+        localConfigInfoProcessor.when(LocalConfigInfoProcessor::cleanAllSnapshot)
+            .thenThrow(new OutOfMemoryError("simulated fatal cleanup error"));
+        try {
+            assertThrows(OutOfMemoryError.class, SnapShotSwitch::initSnapshotSwitch);
+        } finally {
+            localConfigInfoProcessor.reset();
+        }
     }
     
 }

@@ -19,6 +19,8 @@ package com.alibaba.nacos.client.config.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.LogUtils;
+import org.slf4j.Logger;
 
 /**
  * Snapshot switch.
@@ -26,6 +28,8 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
  * @author Nacos
  */
 public class SnapShotSwitch {
+    
+    private static final Logger LOGGER = LogUtils.logger(SnapShotSwitch.class);
     
     /**
      * whether use local cache.
@@ -49,7 +53,22 @@ public class SnapShotSwitch {
         isSnapShot = NacosClientProperties.PROTOTYPE
             .getBoolean(PropertyKeyConst.CONFIG_SNAPSHOT_ENABLED, true);
         if (!isSnapShot) {
+            cleanSnapshotOnStartup();
+        }
+    }
+    
+    /**
+     * Best-effort snapshot cleanup executed while snapshots are being disabled.
+     *
+     * <p>This runs from the static initializer, so a recoverable cleanup failure must not escape as
+     * an {@code ExceptionInInitializerError} that breaks every later snapshot access. Fatal VM
+     * errors are intentionally not caught.
+     */
+    private static void cleanSnapshotOnStartup() {
+        try {
             LocalConfigInfoProcessor.cleanAllSnapshot();
+        } catch (LinkageError | RuntimeException e) {
+            LOGGER.warn("Failed to clean snapshot on startup, config snapshot stays disabled.", e);
         }
     }
     
