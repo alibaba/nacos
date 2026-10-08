@@ -58,11 +58,10 @@ class StreamEventProcessorTest {
     }
     
     @Test
-    void testGetTextContentFromContent() {
+    void testGetTextContentWithNullTextContent() {
         // Given
         Msg msg = mock(Msg.class);
         when(msg.getTextContent()).thenReturn(null);
-        when(msg.getContent()).thenReturn(null);
         
         // When
         String result = StreamEventProcessor.getTextContent(msg);
@@ -85,7 +84,6 @@ class StreamEventProcessorTest {
         // Given
         Msg msg = mock(Msg.class);
         when(msg.getTextContent()).thenReturn("");
-        when(msg.getContent()).thenReturn(null);
         
         // When
         String result = StreamEventProcessor.getTextContent(msg);

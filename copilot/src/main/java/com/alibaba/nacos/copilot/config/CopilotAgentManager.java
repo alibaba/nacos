@@ -18,8 +18,8 @@ package com.alibaba.nacos.copilot.config;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.studio.StudioManager;
+import io.agentscope.extensions.model.dashscope.DashScopeChatModel;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
