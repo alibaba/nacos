@@ -187,7 +187,7 @@ inner server-to-server rules are defined by the
 | `ServerReloadRequest` | `ServerReloadResponse` | unary | inner, cluster source | Reload server remote context on a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
 | `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner, cluster source | Query server loader metrics from a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
 | `MemberReportRequest` | `MemberReportResponse` | unary | inner, cluster source | Report member metadata and update server member state according to the [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md). |
-| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | handler exists | Query plugin availability on a node. Current code has a handler, but the payload is not listed in the core payload SPI file, so it must be registered before becoming an active gRPC contract. |
+| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | inner, cluster source | Query one plugin's registration or, with `queryAll=true`, all plugins' enabled states on a node. Both payload types are registered in the core payload SPI. |
 
 ### 7.2 Config
 
