@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -75,7 +76,7 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
     
     @Override
     public AiResourceIndexProjection project(String namespaceId, String resourceType,
-        String resourceName, String version) {
+        String resourceName, String version) throws NacosException {
         if (!RESOURCE_TYPES.contains(resourceType)) {
             return null;
         }
@@ -143,7 +144,7 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
     }
     
     private AiResourceIndexProjection projectResource(String namespaceId, String resourceType,
-        AiResource resource, String version) {
+        AiResource resource, String version) throws NacosException {
         if (resource == null) {
             return null;
         }
@@ -164,10 +165,27 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
         if (!isIndexable(resource, resourceVersion)) {
             return null;
         }
+        boolean hubResource =
+                HubNamespaceUtils.isHubNamespace(namespaceId);
+        
         AiResourceSearchDocument document =
-            documentBuilder.fromAiResource(resource, resourceVersion);
-        List<AiResourceIndexEnhancementContent> contents = loadContents(document, resourceVersion);
-        return projectionBuilder.build(document, contents, sourceChunkType(resourceType));
+                hubResource
+                        ? documentBuilder.fromHubResource(
+                        resource, resourceVersion)
+                        : documentBuilder.fromAiResource(
+                                resource, resourceVersion);
+        
+        List<AiResourceIndexEnhancementContent> contents =
+                hubResource
+                        ? Collections.emptyList()
+                        : loadContents(
+                                document,
+                                resourceVersion);
+        
+        return projectionBuilder.build(
+                document,
+                contents,
+                sourceChunkType(resourceType));
     }
     
     private List<AiResourceIndexEnhancementContent> loadContents(

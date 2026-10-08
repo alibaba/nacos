@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.ai.hub;
+package com.alibaba.nacos.ai.model.hub;
 
 /**
  * Reference descriptor for a resource shared into Nacos AI Resource Hub.
