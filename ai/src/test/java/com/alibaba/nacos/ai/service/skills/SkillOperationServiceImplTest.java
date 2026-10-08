@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.TestAiPipelineSupport;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
@@ -41,6 +42,7 @@ import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
@@ -61,6 +63,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -3354,6 +3357,108 @@ class SkillOperationServiceImplTest {
         verify(manifestService).delete(eq(namespaceId), eq(skillName));
     }
     
+    @Test
+    void testOrdinarySkillOperationsShouldRejectHubNamespace() {
+        String hubNamespaceId = AiConstants.Hub.NAMESPACE_ID;
+        
+        SkillUploadRequest uploadRequest =
+                SkillUploadRequest.builder()
+                        .namespaceId(hubNamespaceId)
+                        .build();
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.uploadSkillFromZip(uploadRequest));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.precheckUploadSkillFromZip(
+                        hubNamespaceId, null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.batchUploadSkillsFromZip(
+                        hubNamespaceId, null, false));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.bootstrapSkillFromZip(
+                        hubNamespaceId, null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.bootstrapSkillFromZip(
+                        hubNamespaceId, null, "test"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.getSkillDetail(
+                        hubNamespaceId, "find-skills-101"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.getSkillVersionDetail(
+                        hubNamespaceId, "find-skills-101", "1.0.0"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.downloadSkillVersion(
+                        hubNamespaceId, "find-skills-101", "1.0.0"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.deleteSkill(
+                        hubNamespaceId, "find-skills-101"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.listSkills(
+                        hubNamespaceId, null, null, 1, 10));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.createDraft(
+                        hubNamespaceId, "find-skills-101",
+                        null, null, null, null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.updateDraft(
+                        hubNamespaceId, null, null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.deleteDraft(
+                        hubNamespaceId, "find-skills-101"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.submit(
+                        hubNamespaceId, "find-skills-101", "1.0.0"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.publish(
+                        hubNamespaceId, "find-skills-101",
+                        "1.0.0", true));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.forcePublish(
+                        hubNamespaceId, "find-skills-101",
+                        "1.0.0", true));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.redraft(
+                        hubNamespaceId, "find-skills-101", "1.0.0"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.updateLabels(
+                        hubNamespaceId, "find-skills-101", null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.updateBizTags(
+                        hubNamespaceId, "find-skills-101", null));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.changeOnlineStatus(
+                        hubNamespaceId, "find-skills-101",
+                        "skill", null, true));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.updateScope(
+                        hubNamespaceId, "find-skills-101", "PUBLIC"));
+        
+        assertHubNamespaceRejected(
+                () -> skillOperationService.querySkill(
+                        hubNamespaceId, "find-skills-101",
+                        "1.0.0", null));
+    }
+    
     private String uploadSkill(String namespaceId, byte[] zipBytes) throws NacosException {
         return uploadSkill(namespaceId, zipBytes, false);
     }
@@ -3387,5 +3492,14 @@ class SkillOperationServiceImplTest {
             .autoPublishIfNew(autoPublishIfNew)
             .build();
         return skillOperationService.uploadSkillFromZip(request);
+    }
+    
+    private void assertHubNamespaceRejected(Executable executable) {
+        NacosApiException exception =
+                assertThrows(NacosApiException.class, executable);
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_NAMESPACE.getCode(),
+                exception.getDetailErrCode());
     }
 }
