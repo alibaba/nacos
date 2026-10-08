@@ -16,7 +16,13 @@
 
 package com.alibaba.nacos.core.cluster.remote.response;
 
+import com.alibaba.nacos.common.remote.PayloadRegistry;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,6 +35,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author WangzJi
  */
 class PluginAvailabilityResponseTest {
+    
+    @BeforeAll
+    static void initPayloadRegistry() {
+        PayloadRegistry.init();
+    }
+    
+    @Test
+    void testSinglePluginPayloadRoundTrip() {
+        PluginAvailabilityResponse response = new PluginAvailabilityResponse();
+        response.setPluginId("auth:nacos");
+        response.setAvailable(true);
+        
+        PluginAvailabilityResponse parsed =
+            (PluginAvailabilityResponse) GrpcUtils.parse(GrpcUtils.convert(response));
+        
+        assertEquals("auth:nacos", parsed.getPluginId());
+        assertTrue(parsed.isAvailable());
+        assertTrue(parsed.isSuccess());
+    }
+    
+    @Test
+    void testQueryAllPayloadRoundTrip() {
+        Map<String, Boolean> availability = new HashMap<>();
+        availability.put("auth:nacos", true);
+        availability.put("auth:ldap", false);
+        PluginAvailabilityResponse response = new PluginAvailabilityResponse();
+        response.setPluginAvailabilityMap(availability);
+        
+        PluginAvailabilityResponse parsed =
+            (PluginAvailabilityResponse) GrpcUtils.parse(GrpcUtils.convert(response));
+        
+        assertEquals(availability, parsed.getPluginAvailabilityMap());
+        assertTrue(parsed.isSuccess());
+    }
     
     @Test
     void defaultConstructorTest() {

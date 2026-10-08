@@ -171,7 +171,7 @@ inner 请求的详细规则由
 | `ServerReloadRequest` | `ServerReloadResponse` | unary | inner，cluster 来源 | 在对端重新加载远程上下文。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
 | `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner，cluster 来源 | 查询对端 server loader 指标。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
 | `MemberReportRequest` | `MemberReportResponse` | unary | inner，cluster 来源 | 按[集群成员规范](../design/foundation-cluster-membership-spec.md)上报成员信息并更新成员状态。 |
-| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | 已有 handler | 查询节点上的插件可用性。当前代码已有 handler，但 payload 未列入 core payload SPI 文件；注册前不应视为已生效的 gRPC 契约。 |
+| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | inner、cluster source | 查询节点上单个插件是否已注册，或在 `queryAll=true` 时查询全部插件的启用状态。两种 payload 均已注册到 core payload SPI。 |
 
 ### 7.2 Config
 
