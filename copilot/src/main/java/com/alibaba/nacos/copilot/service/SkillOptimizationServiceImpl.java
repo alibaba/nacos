@@ -32,8 +32,7 @@ import com.alibaba.nacos.copilot.model.ConversationMessage;
 import com.alibaba.nacos.copilot.model.SkillOptimizationRequest;
 import com.alibaba.nacos.copilot.model.SkillOptimizationResponse;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.agent.EventType;
-import io.agentscope.core.agent.StreamOptions;
+import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import reactor.core.publisher.Flux;
@@ -104,15 +103,9 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             return;
         }
         
-        // 6. Configure streaming options
-        StreamOptions streamOptions = StreamOptions.builder()
-            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-            .incremental(true)
-            .build();
-        
-        // 7. Call agent with stream response using message list
+        // 6. Call agent with stream response using message list
         // Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
-        Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(messages, streamOptions)
+        Flux<AgentEvent> eventFlux = agent.streamEvents(messages)
             .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(
