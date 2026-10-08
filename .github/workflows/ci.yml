@@ -20,15 +20,13 @@ jobs:
   ci:
     runs-on: [self-hosted, Linux, X64, nacos-ci, nacos-java]
     timeout-minutes: 60
-    env:
-      NACOS_MAVEN_REPO: /home/actions/.m2/repository
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
       - name: "Cache Maven Repos"
         uses: actions/cache@v4
         with:
-          path: ${{ env.NACOS_MAVEN_REPO }}
+          path: ~/.m2/repository
           key: ${{ runner.os }}-nacos-maven-v2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-nacos-maven-v2-
@@ -84,14 +82,14 @@ jobs:
       - name: "Check with Maven Daemon"
         run: >-
           mvnd -B '-Prelease-nacos,!dev'
-          -Dmaven.repo.local="${NACOS_MAVEN_REPO}"
+          -Dmaven.repo.local="${HOME}/.m2/repository"
           clean compile apache-rat:check spotbugs:check spotless:check
           -e
           -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build and Test with Maven Daemon"
         run: >-
           mvnd -B '-Prelease-nacos,!dev'
-          -Dmaven.repo.local="${NACOS_MAVEN_REPO}"
+          -Dmaven.repo.local="${HOME}/.m2/repository"
           install
           -Drat.skip=true -Dspotbugs.skip=true -Dcheckstyle.skip=true
           -DtrimStackTrace=false -e
