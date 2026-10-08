@@ -135,6 +135,11 @@ metadata, API-side secret masking, plugin-type execution/criticality metadata,
 critical disable rejection, exclusive restart-only selection, and OIDC restart-only update
 rejection. It also verifies local-only runtime mutation and empty-map source
 clear through refreshed detail metadata.
+The plugin Console row remains `Partial`: availability checks verify true node values and
+list-count consistency for an enabled plugin, both required parameters, and unknown-plugin
+errors. Standalone IT cannot exercise remote-member fan-out. Core regression tests verify
+the payload SPI and real request/response serialization for single-plugin and query-all
+cluster probes (issue #15836); automated multi-node aggregation remains a cluster-test gap.
 Persisted runtime mutation remains partial to avoid carrying plugin state into
 later SDK suites in the shared standalone process; persisted full-map
 replacement, source fallback, effect mode checks, same-source sensitive value

@@ -33,13 +33,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *     <li>Expected capability: list exposes discovered plugin inventory, pluginType filtering narrows results, detail
  *     returns identity, type capability, and mutable-state fields, and availability returns the cluster-node
- *     availability map.</li>
+ *     availability map with true values and counts matching the enabled plugin list entry.</li>
  *     <li>Boundary/validation: unknown pluginType list filter returns an empty list; detail/status/config/availability
  *     require plugin identity parameters; an empty config map clears the selected source, while non-configurable
  *     plugins reject config mutation.</li>
  *     <li>Exception/error handling: critical disable and exclusive runtime-switch attempts are rejected without
- *     mutation; missing plugin detail and validation errors are verified as controlled v3 envelopes.</li>
+ *     mutation; missing plugin detail/availability and validation errors are verified as controlled v3 envelopes.</li>
  * </ul>
+ * <p>The standalone server covers local availability only. Cross-node payload registration and serialization
+ * are covered by core regression tests; multi-node fan-out requires a cluster environment.</p>
  *
  * @author xiweng.yy
  */
@@ -50,7 +52,8 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         JsonNode plugins = getJsonOk(CONSOLE_PLUGIN_LIST_PATH, Query.newInstance()).get("data");
         assertTrue(plugins.size() > 0, plugins.toString());
 
-        JsonNode plugin = plugins.get(0);
+        JsonNode plugin = findByEnabled(plugins, true);
+        assertNotNull(plugin, plugins.toString());
         String pluginType = plugin.get("pluginType").asText();
         String pluginName = plugin.get("pluginName").asText();
         assertTrue(plugin.get("pluginId").asText().contains(":"), plugin.toString());
@@ -84,6 +87,13 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
                 Query.newInstance().addParam("pluginType", pluginType).addParam("pluginName", pluginName))
                 .get("data");
         assertTrue(availability.isObject(), availability.toString());
+        assertTrue(availability.size() > 0, availability.toString());
+        assertEquals(plugin.get("totalNodeCount").asInt(), availability.size(), availability.toString());
+        assertEquals(plugin.get("availableNodeCount").asInt(), availability.size(), plugin.toString());
+        for (JsonNode available : availability) {
+            assertTrue(available.isBoolean(), availability.toString());
+            assertTrue(available.asBoolean(), availability.toString());
+        }
 
         JsonNode unknownType = getJsonOk(CONSOLE_PLUGIN_LIST_PATH,
                 Query.newInstance().addParam("pluginType", "not-a-plugin-type")).get("data");
@@ -269,6 +279,12 @@ public class PluginConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase {
         assertError(getRaw(CONSOLE_PLUGIN_AVAILABILITY_PATH,
                 Query.newInstance().addParam("pluginName", "missing-plugin")), 400,
                 ErrorCode.PARAMETER_MISSING, "pluginType");
+        assertError(getRaw(CONSOLE_PLUGIN_AVAILABILITY_PATH,
+                Query.newInstance().addParam("pluginType", "auth")), 400,
+                ErrorCode.PARAMETER_MISSING, "pluginName");
+        assertError(getRaw(CONSOLE_PLUGIN_AVAILABILITY_PATH,
+                Query.newInstance().addParam("pluginType", "auth").addParam("pluginName", "missing-plugin")),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "auth:missing-plugin");
         assertError(putRaw(CONSOLE_PLUGIN_PATH + "/status",
                 Query.newInstance().addParam("pluginType", "auth").addParam("enabled", "true")),
                 400, ErrorCode.PARAMETER_MISSING, "pluginName");

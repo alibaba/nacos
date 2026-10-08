@@ -170,7 +170,7 @@ Payload 规则：
 | Server remote context | `ServerReloadRequest`, `ServerReloadResponse`, `ServerLoaderInfoRequest`, `ServerLoaderInfoResponse` | Core remote | 在其他节点重新加载 remote protocol context，或查询对端 connection 和 load 指标。 |
 | Config change sync | `ConfigChangeClusterSyncRequest`, `ConfigChangeClusterSyncResponse` | Config | 通知 peer 某个 Config 发生变化，使其刷新 dump 和 listener 可见状态。Config Notify 语义由[AP 一致性规范](foundation-ap-consistency-spec.md)定义，Config 资源语义仍由 Config 规范定义。 |
 | Naming Distro transport | `DistroDataRequest`, `DistroDataResponse` | Naming 与 Distro | 在节点间承载 Distro verify、snapshot、sync、delete 和 query 操作。Distro ownership 和收敛规则由[AP 一致性规范](foundation-ap-consistency-spec.md)以及 Naming 规范定义。 |
-| Plugin availability | `PluginAvailabilityRequest`, `PluginAvailabilityResponse` | Core plugin | 查询节点上的插件可用性。当前代码已有 handler，但未注册的 payload 不应被视为已生效的 gRPC 契约。 |
+| Plugin availability | `PluginAvailabilityRequest`, `PluginAvailabilityResponse` | Core plugin | 查询节点上单个插件是否已注册；`queryAll=true` 时返回全部插件的启用状态映射。请求和响应均注册到 core payload SPI，以支持跨节点查询。 |
 
 领域规范可以增加更多分类，但必须保持本文定义的调用方、handler、鉴权、来源和 payload 规则。
 
