@@ -124,7 +124,8 @@ Naming 使用 Distro 同步临时 client state。
 - Distro sync data 包含 client id、attributes、已发布服务、实例发布信息和批量实例数据；
 - apply Distro data 必须更新服务端 Client state，并发布 Naming 事件，使派生索引和推送视图可以重建；
 - verify 使用 client id 和 revision，并可以从源节点调度修复；
-- snapshot 包含当前临时 client sync data 集合。
+- snapshot 包含当前临时 client sync data 集合，但不包含 connection-based 的客户端数据，
+  connection-based 的客户端由 verify 触发的 repair 补偿。
 
 Naming Distro 传输通过
 `DistroDataRequest` / `DistroDataResponse` 承载，并遵循

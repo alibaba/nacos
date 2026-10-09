@@ -43,6 +43,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -435,6 +436,28 @@ class DistroClientDataProcessorTest {
         DistroData actual = distroClientDataProcessor.getDatumSnapshot();
         assertEquals(DataOperation.SNAPSHOT.name(), actual.getDistroKey().getResourceKey());
         assertEquals(DistroClientDataProcessor.TYPE, actual.getDistroKey().getResourceType());
+        // connection based client should be excluded from snapshot
+        ArgumentCaptor<ClientSyncDatumSnapshot> captor =
+            ArgumentCaptor.forClass(ClientSyncDatumSnapshot.class);
+        verify(serializer).serialize(captor.capture());
+        assertTrue(captor.getValue().getClientSyncDataList().isEmpty());
+    }
+    
+    @Test
+    void testGetDatumSnapshotIncludeNonConnectionBasedClient() {
+        Client ipPortClient = new IpPortBasedClient("1.1.1.1:80#true", true);
+        Client httpClient = new HttpConnectionBasedClient("httpClientId", new ClientAttributes());
+        when(clientManager.allClientId())
+            .thenReturn(Arrays.asList("1.1.1.1:80#true", "httpClientId"));
+        when(clientManager.getClient("1.1.1.1:80#true")).thenReturn(ipPortClient);
+        when(clientManager.getClient("httpClientId")).thenReturn(httpClient);
+        
+        distroClientDataProcessor.getDatumSnapshot();
+        
+        ArgumentCaptor<ClientSyncDatumSnapshot> captor =
+            ArgumentCaptor.forClass(ClientSyncDatumSnapshot.class);
+        verify(serializer).serialize(captor.capture());
+        assertEquals(2, captor.getValue().getClientSyncDataList().size());
     }
     
     @Test
