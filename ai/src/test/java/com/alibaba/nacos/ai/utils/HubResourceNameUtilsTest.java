@@ -54,7 +54,7 @@ class HubResourceNameUtilsTest {
         String result = HubResourceNameUtils.buildInternalName(sourceName, 101L);
         
         assertEquals(HubResourceNameUtils.MAX_RESOURCE_NAME_LENGTH,
-                result.codePointCount(0, result.length()));
+            result.length());
         assertTrue(result.endsWith("-101"));
     }
     
@@ -65,25 +65,28 @@ class HubResourceNameUtilsTest {
         String result = HubResourceNameUtils.buildInternalName(sourceName, 101L);
         
         assertEquals(HubResourceNameUtils.MAX_RESOURCE_NAME_LENGTH,
-                result.codePointCount(0, result.length()));
+            result.length());
         assertTrue(result.endsWith("-101"));
+        String oddBudgetName = HubResourceNameUtils.buildInternalName("😀".repeat(300), 10L);
+        assertEquals("😀".repeat(126) + "-10", oddBudgetName);
+        assertTrue(oddBudgetName.length() <= HubResourceNameUtils.MAX_RESOURCE_NAME_LENGTH);
     }
     
     @Test
     void testBlankSourceNameShouldFail() {
         assertThrows(IllegalArgumentException.class,
-                () -> HubResourceNameUtils.buildInternalName("", 101L));
+            () -> HubResourceNameUtils.buildInternalName("", 101L));
     }
     
     @Test
     void testNullSourceResourceIdShouldFail() {
         assertThrows(IllegalArgumentException.class,
-                () -> HubResourceNameUtils.buildInternalName("find-skills", null));
+            () -> HubResourceNameUtils.buildInternalName("find-skills", null));
     }
     
     @Test
     void testNonPositiveSourceResourceIdShouldFail() {
         assertThrows(IllegalArgumentException.class,
-                () -> HubResourceNameUtils.buildInternalName("find-skills", 0L));
+            () -> HubResourceNameUtils.buildInternalName("find-skills", 0L));
     }
 }
