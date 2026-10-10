@@ -126,6 +126,23 @@ HTTP fallback must be explicit in the domain client. A failed gRPC request must
 not automatically mutate resource state through HTTP unless the domain client
 has defined that fallback.
 
+### 5.1 HTTP Request ID
+
+The Java Client SDK's shared, Config, and Naming HTTP clients, including AI
+requests using those clients, must generate a UUID in the `Nacos-Request-Id`
+header for each request execution. SDK retries, failover attempts, and subsequent
+long polls receive new IDs; replays internal to the underlying HTTP implementation
+may retain the same ID. The SDK owns this header and replaces any existing value
+before sending, without modifying the caller's headers or shared `Header.EMPTY`.
+
+The request ID is for request correlation, not client identity, authentication, or
+idempotency. Existing `RequestId`, Client Id, and `Request-Module` headers retain
+their behavior. Servers read the header according to the
+[request context spec](../design/foundation-request-context-spec.md). Clients do
+not depend on server support or response echoing, so older servers remain
+compatible. Direct HTTP connections to external OIDC providers are outside this
+contract.
+
 ## 6. TLS
 
 Client gRPC TLS is transport infrastructure. The runtime may support:

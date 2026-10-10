@@ -88,6 +88,13 @@ public class HttpClientManager implements Closeable {
     private static class HttpClientFactory extends AbstractHttpClientFactory {
         
         @Override
+        public NacosRestTemplate createNacosRestTemplate() {
+            NacosRestTemplate template = super.createNacosRestTemplate();
+            template.getInterceptors().add(new RequestIdHttpClientRequestInterceptor());
+            return template;
+        }
+        
+        @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                 .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).build();

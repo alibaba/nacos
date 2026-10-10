@@ -362,6 +362,7 @@ public class GrpcRequestAcceptorTest {
         metadata.setClientIp("127.0.0.1");
         metadata.setConnectionId(connectId);
         HealthCheckRequest mockRequest = new HealthCheckRequest();
+        mockRequest.setRequestId(requestId);
         Payload payload = GrpcUtils.convert(mockRequest, metadata);
         
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
@@ -371,6 +372,7 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("Receive data from server: " + payload);
                 Object res = GrpcUtils.parse(payload);
                 assertTrue(res instanceof HealthCheckResponse);
+                assertEquals(requestId, RequestContextHolder.getContext().getRequestId());
                 assertEquals("unknown",
                     RequestContextHolder.getContext().getBasicContext().getApp());
             }
