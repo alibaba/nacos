@@ -17,6 +17,11 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -560,4 +565,34 @@ public interface SkillMaintainerService {
      */
     @Since("3.2.0")
     boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException;
+
+    /** Share an exact source Skill version in the Hub. */
+    @Since("3.3.0")
+    default HubShareResult shareHubSkill(HubShareSkillRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Change one active Hub share using strict metadata CAS. */
+    @Since("3.3.0")
+    default HubShareResult adjustHubShare(HubAdjustShareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Disable a Hub share with source WRITE permission. */
+    @Since("3.3.0")
+    default HubShareResult unshareHubSkill(HubUnshareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Governance-only Hub takedown; does not grant source WRITE. */
+    @Since("3.3.0")
+    default HubShareResult forceUnshareHubSkill(HubForceUnshareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
 }

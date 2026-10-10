@@ -44,9 +44,9 @@ public final class HubSkillRequestValidator {
      * Validate the source identity and explicit version of a share request.
      *
      * @param request request to validate
-     * @throws NacosException if the request shape is invalid
+     * @throws NacosApiException if the request shape is invalid
      */
-    public static void validate(HubShareSkillRequest request) throws NacosException {
+    public static void validate(HubShareSkillRequest request) throws NacosApiException {
         if (request == null) {
             throw invalid("share request is missing");
         }
@@ -65,9 +65,9 @@ public final class HubSkillRequestValidator {
      * Validate the Hub entry, expected meta version and target version.
      *
      * @param request request to validate
-     * @throws NacosException if the request shape is invalid
+     * @throws NacosApiException if the request shape is invalid
      */
-    public static void validate(HubAdjustShareRequest request) throws NacosException {
+    public static void validate(HubAdjustShareRequest request) throws NacosApiException {
         if (request == null) {
             throw invalid("adjust request is missing");
         }
@@ -80,9 +80,9 @@ public final class HubSkillRequestValidator {
      * Validate the Hub entry and expected meta version of an unshare request.
      *
      * @param request request to validate
-     * @throws NacosException if the request shape is invalid
+     * @throws NacosApiException if the request shape is invalid
      */
-    public static void validate(HubUnshareRequest request) throws NacosException {
+    public static void validate(HubUnshareRequest request) throws NacosApiException {
         if (request == null) {
             throw invalid("unshare request is missing");
         }
@@ -94,9 +94,9 @@ public final class HubSkillRequestValidator {
      * Validate the Hub entry, expected meta version and administrative reason.
      *
      * @param request request to validate
-     * @throws NacosException if the request shape is invalid
+     * @throws NacosApiException if the request shape is invalid
      */
-    public static void validate(HubForceUnshareRequest request) throws NacosException {
+    public static void validate(HubForceUnshareRequest request) throws NacosApiException {
         if (request == null) {
             throw invalid("administrative unshare request is missing");
         }
@@ -108,20 +108,20 @@ public final class HubSkillRequestValidator {
         }
     }
     
-    private static void exactVersion(String version, String field) throws NacosException {
+    private static void exactVersion(String version, String field) throws NacosApiException {
         required(version, field);
         if ("latest".equalsIgnoreCase(version.trim())) {
             throw invalid(field + " must be an explicit version, not the latest label");
         }
     }
     
-    private static void required(String value, String field) throws NacosException {
+    private static void required(String value, String field) throws NacosApiException {
         if (StringUtils.isBlank(value)) {
             throw invalid(field + " is required");
         }
     }
     
-    private static void positive(Long value, String field) throws NacosException {
+    private static void positive(Long value, String field) throws NacosApiException {
         if (value == null || value <= 0) {
             throw invalid(field + " must be positive");
         }

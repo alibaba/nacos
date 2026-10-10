@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -457,4 +462,82 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
+
+    @Override
+    public HubShareResult shareHubSkill(HubShareSkillRequest request) throws NacosException {
+        requireHubRequest(request);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("sourceNamespaceId", request.getSourceNamespaceId());
+        params.put("sourceName", request.getSourceName());
+        params.put("sourceVersion", request.getSourceVersion());
+        if (request.getExpectedSourceResourceId() != null) {
+            params.put("expectedSourceResourceId",
+                request.getExpectedSourceResourceId().toString());
+        }
+        return executeHubRequest("/share", params, request.getSourceNamespaceId(),
+            request.getSourceName());
+    }
+    
+    @Override
+    public HubShareResult adjustHubShare(HubAdjustShareRequest request) throws NacosException {
+        requireHubRequest(request);
+        Map<String, String> params = new HashMap<>(3);
+        params.put("hubEntryId", String.valueOf(request.getHubEntryId()));
+        params.put("targetVersion", request.getTargetVersion());
+        params.put("expectedMetaVersion", String.valueOf(request.getExpectedMetaVersion()));
+        return executeHubRequest("/adjust", params, "", "ai-hub/entry");
+    }
+    
+    @Override
+    public HubShareResult unshareHubSkill(HubUnshareRequest request) throws NacosException {
+        requireHubRequest(request);
+        Map<String, String> params = new HashMap<>(2);
+        params.put("hubEntryId", String.valueOf(request.getHubEntryId()));
+        params.put("expectedMetaVersion", String.valueOf(request.getExpectedMetaVersion()));
+        return executeHubRequest("/unshare", params, "", "ai-hub/entry");
+    }
+    
+    @Override
+    public HubShareResult forceUnshareHubSkill(HubForceUnshareRequest request)
+        throws NacosException {
+        requireHubRequest(request);
+        Map<String, String> params = new HashMap<>(3);
+        params.put("hubEntryId", String.valueOf(request.getHubEntryId()));
+        params.put("expectedMetaVersion", String.valueOf(request.getExpectedMetaVersion()));
+        params.put("reason", request.getReason());
+        return executeHubRequest("/force-unshare", params, "", "ai-hub/manage");
+    }
+    
+    private HubShareResult executeHubRequest(String suffix, Map<String, String> params,
+        String namespaceId, String resourceName) throws NacosException {
+        HttpRequest httpRequest =
+            buildHttpRequestBuilder(buildRequestResource(namespaceId, resourceName))
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_HUB_SKILL_ADMIN_PATH + suffix)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<HubShareResult> result;
+        try {
+            result = JsonUtils.toObj(restResult.getData(),
+                new NacosTypeReference<Result<HubShareResult>>() {
+                });
+        } catch (RuntimeException e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Invalid Hub mutation response", e);
+        }
+        if (result == null || !ErrorCode.SUCCESS.getCode().equals(result.getCode())
+            || result.getData() == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Invalid or unsuccessful Hub mutation response");
+        }
+        return result.getData();
+    }
+    
+    private void requireHubRequest(Object request) throws NacosException {
+        if (request == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Hub request is required");
+        }
+    }
+    
 }
