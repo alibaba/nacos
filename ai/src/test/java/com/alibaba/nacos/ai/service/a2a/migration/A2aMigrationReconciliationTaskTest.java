@@ -40,7 +40,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,7 +58,6 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -419,10 +420,23 @@ class A2aMigrationReconciliationTaskTest {
         when(scanner.scanPage(NAMESPACE_ID, 1, 100)).thenReturn(emptyPage());
         when(targetStore.listMigratedAgentNames(NAMESPACE_ID))
             .thenReturn(Collections.emptySet());
+        ScheduledExecutorService realExecutor =
+            (ScheduledExecutorService) ReflectionTestUtils.getField(task, "executor");
+        realExecutor.shutdownNow();
+        ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        ReflectionTestUtils.setField(task, "executor", executor);
         
         task.onApplicationEvent(event(null));
         
-        verify(namespaceOperationService, timeout(2000)).getNamespaceList();
+        ArgumentCaptor<Runnable> reconciliation = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).scheduleWithFixedDelay(reconciliation.capture(), eq(0L), eq(3600L),
+            eq(TimeUnit.SECONDS));
+        reconciliation.getValue().run();
+        
+        verify(namespaceOperationService).getNamespaceList();
+        verify(scanner).scanPage(NAMESPACE_ID, 1, 100);
+        verify(stateService).persistProgress(any());
+        verify(lease).close();
     }
     
     @Test

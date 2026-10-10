@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Naming client gprc redo service.
@@ -68,6 +69,8 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private volatile boolean connected = false;
     
+    private final AtomicLong connectionEpoch = new AtomicLong(0);
+    
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy,
         NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder,
         NacosClientProperties properties) {
@@ -95,9 +98,25 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         return connected;
     }
     
+    /**
+     * Get the current connection generation.
+     *
+     * <p>Callers should snapshot this right before sending a register request and pass it back to
+     * {@link #instanceRegistered(String, String, long)}, so that a late response from an
+     * already-disconnected connection can be detected and discarded. See issue #15876.
+     *
+     * @return current connection generation, incremented on every connect / disconnect event
+     */
+    public long getCurrentConnectionEpoch() {
+        return connectionEpoch.get();
+    }
+    
     @Override
     public void onConnected(Connection connection) {
         connected = true;
+        synchronized (registeredInstances) {
+            connectionEpoch.incrementAndGet();
+        }
         LogUtils.NAMING_LOGGER.info("Grpc connection connect");
     }
     
@@ -106,6 +125,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         connected = false;
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {
+            connectionEpoch.incrementAndGet();
             registeredInstances.values()
                 .forEach(instanceRedoData -> instanceRedoData.setRegistered(false));
         }
@@ -154,12 +174,25 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     /**
      * Instance register successfully, mark registered status as {@code true}.
      *
-     * @param serviceName service name
-     * @param groupName   group name
+     * <p>{@code connectionEpochWhenRequest} is the connection generation snapshot taken before the register
+     * request was sent. If the connection has changed by the time the response arrives, this result belongs
+     * to a dead connection and must be discarded, otherwise it would overwrite the redo mark set by
+     * {@link #onDisConnect(Connection)} and the instance would never be re-registered. See issue #15876.
+     *
+     * @param serviceName                service name
+     * @param groupName                  group name
+     * @param connectionEpochWhenRequest connection generation when the register request was sent
      */
-    public void instanceRegistered(String serviceName, String groupName) {
+    public void instanceRegistered(String serviceName, String groupName,
+        long connectionEpochWhenRequest) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
+            if (connectionEpochWhenRequest != connectionEpoch.get()) {
+                LogUtils.NAMING_LOGGER.warn(
+                    "Connection changed when register {}, ignore stale result (epoch {} -> {}) and wait for redo.",
+                    key, connectionEpochWhenRequest, connectionEpoch.get());
+                return;
+            }
             InstanceRedoData redoData = registeredInstances.get(key);
             if (null != redoData) {
                 redoData.registered();
