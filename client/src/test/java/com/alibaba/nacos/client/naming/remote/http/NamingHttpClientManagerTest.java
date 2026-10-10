@@ -19,6 +19,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.remote.RequestIdHttpClientRequestInterceptor;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
@@ -51,7 +52,10 @@ class NamingHttpClientManagerTest {
     
     @Test
     void testGetNacosRestTemplate() {
-        assertNotNull(NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        NacosRestTemplate template = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+        assertNotNull(template);
+        assertEquals(1, template.getInterceptors().stream()
+            .filter(RequestIdHttpClientRequestInterceptor.class::isInstance).count());
     }
     
     @Test

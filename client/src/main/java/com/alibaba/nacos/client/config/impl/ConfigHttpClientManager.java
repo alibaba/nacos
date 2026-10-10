@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.remote.RequestIdHttpClientRequestInterceptor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
@@ -113,6 +114,13 @@ public class ConfigHttpClientManager implements Closeable {
      * ConfigHttpClientFactory.
      */
     private static class ConfigHttpClientFactory extends AbstractHttpClientFactory {
+        
+        @Override
+        public NacosRestTemplate createNacosRestTemplate() {
+            NacosRestTemplate template = super.createNacosRestTemplate();
+            template.getInterceptors().add(new RequestIdHttpClientRequestInterceptor());
+            return template;
+        }
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
