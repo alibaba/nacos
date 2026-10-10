@@ -68,6 +68,7 @@ These cross-cutting rows do not change the public SDK-surface counts.
 | `addListener`, `getConfigAndSignListener`, `removeListener` | Initial value, later update callback, standalone `addListener`, removal stops callbacks, invalid listener input. | Covered | `getConfigAndSignListener`, standalone `addListener`, update callback, remove-listener stop behavior, and null listener rejection for add/sign/remove paths are covered. |
 | `addConfigFilter` | Filter registration effect or explicit standalone limitation. | Covered | Public SDK filter registration is covered by a transforming filter that mutates publish request content and query response content. |
 | Fuzzy watch APIs | Fixed group pattern, dataId+group pattern, matched key return, event callback, cancel behavior, invalid pattern/listener. | Covered | DataId+group pattern matching, matched group-key return, add/delete event callbacks, and cancel-stop behavior are covered. Null-listener behavior is not asserted because the Config SDK path does not currently expose a stable controlled exception contract for it. |
+| Config snapshot switch (`configSnapshotEnabled`) | Disabled snapshots remain disabled after a recoverable startup cleanup failure; fatal VM errors propagate. | Documented gap | Covered by client unit test `SnapShotSwitchTest` using controlled fault injection. Standalone SDK IT does not currently isolate this JVM-global, read-once state or inject filesystem cleanup failures. |
 
 ## NamingService
 

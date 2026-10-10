@@ -87,6 +87,14 @@ public class PropertyKeyConst {
     
     public static final String ENABLE_REMOTE_SYNC_CONFIG = "enableRemoteSyncConfig";
     
+    /**
+     * Whether the client stores remote configuration snapshots on the local file system.
+     *
+     * <p>The client reads this property once per JVM when the snapshot switch class is
+     * initialized, so changing it later in the same JVM has no effect.
+     */
+    public static final String CONFIG_SNAPSHOT_ENABLED = "configSnapshotEnabled";
+    
     public static final String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
     
     public static final String NAMING_CACHE_REGISTRY_DIR = "namingCacheRegistryDir";
