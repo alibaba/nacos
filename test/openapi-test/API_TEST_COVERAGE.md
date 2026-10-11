@@ -27,6 +27,12 @@ Its rows strengthen the existing A2A, Agent, Search, Console, and RAD surface
 coverage rather than creating new HTTP operations, so their status does not
 change the API-surface totals below.
 
+Shared HTTP `Nacos-Request-Id` propagation into the server's process-local request
+context is verified by focused `core` module tests. The
+[request metadata matrix](CLIENT_API_TEST_SCENARIOS.md#http-request-context-metadata)
+records the boundary and cleanup scenarios and why standalone API responses cannot
+assert this internal state. Endpoint coverage counts remain unchanged.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI

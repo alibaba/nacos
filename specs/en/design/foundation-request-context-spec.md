@@ -64,6 +64,15 @@ earliest servlet filter order. It sets the protocol to HTTP, uses the HTTP
 method and URI as the target, records encoding and client headers, and clears
 the context in `finally`.
 
+Before invoking downstream filters or controllers, the HTTP filter copies a
+non-blank `Nacos-Request-Id` header into `RequestContext.requestId`. If the header
+is absent or blank, it retains the UUID generated when the context was created,
+so older clients and direct HTTP callers still have a server request ID. Header
+names are read case-insensitively; the legacy `RequestId` header does not change
+this rule. The ID is only for request correlation, not authentication or
+idempotency, and need not be echoed in the response. Both normal and exceptional
+completion must clear the context so later requests cannot inherit the ID.
+
 gRPC unary requests are initialized by `GrpcRequestAcceptor` after the
 connection is validated and the payload is parsed. It uses the request id from
 the `Request`, sets the protocol to gRPC, uses the request class name as the

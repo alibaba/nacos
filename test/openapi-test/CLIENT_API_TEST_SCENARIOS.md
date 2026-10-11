@@ -25,6 +25,21 @@ for `/v3/client/**`. The branch-level coverage target is API scenario coverage:
 expected capability, boundary/validation behavior, and controlled
 exception/error handling.
 
+## HTTP Request Context Metadata
+
+`Nacos-Request-Id` is optional request metadata consumed by the shared
+`HttpRequestContextFilter` before endpoint handling. It does not change route,
+authorization, response body, or response header contracts. Standalone OpenAPI
+responses do not expose the process-local context, so these assertions belong to
+`core` module tests rather than an added diagnostic endpoint or an IT coverage count.
+
+| Scenario | Verification |
+| --- | --- |
+| Non-blank client request ID | `HttpRequestContextFilterTest` checks the downstream context uses the supplied ID. |
+| Missing, empty, or whitespace-only ID | The same test retains the server-generated UUID. |
+| Normal completion, downstream failure, and reused worker thread | The same test verifies context cleanup and no request ID leakage. |
+| Existing gRPC request ID | `GrpcRequestAcceptorTest` verifies the request ID remains available in the gRPC context. |
+
 ## Status Legend
 
 | Status | Meaning |

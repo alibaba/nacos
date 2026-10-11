@@ -52,6 +52,7 @@ public class HttpRequestContextFilter implements Filter {
         try {
             requestContext.getBasicContext().setRequestProtocol(BasicContext.HTTP_PROTOCOL);
             HttpServletRequest request = (HttpServletRequest) servletRequest;
+            setRequestId(request, requestContext);
             setRequestTarget(request, requestContext);
             setEncoding(request, requestContext);
             setAddressContext(request, requestContext);
@@ -59,6 +60,13 @@ public class HttpRequestContextFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
         } finally {
             RequestContextHolder.removeContext();
+        }
+    }
+    
+    private void setRequestId(HttpServletRequest request, RequestContext requestContext) {
+        String requestId = request.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID);
+        if (StringUtils.isNotBlank(requestId)) {
+            requestContext.setRequestId(requestId);
         }
     }
     

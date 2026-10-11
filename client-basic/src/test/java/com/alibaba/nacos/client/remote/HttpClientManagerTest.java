@@ -17,7 +17,10 @@
 package com.alibaba.nacos.client.remote;
 
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -25,10 +28,17 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 
 class HttpClientManagerTest {
@@ -56,6 +66,36 @@ class HttpClientManagerTest {
     void testGetNacosRestTemplate() {
         NacosRestTemplate template = HttpClientManager.getInstance().getNacosRestTemplate();
         assertNotNull(template);
+    }
+    
+    @Test
+    void testRequestIdsAreSentForEveryHttpMethod() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/test", exchange -> {
+            String requestId = exchange.getRequestHeaders().getFirst("Nacos-Request-Id");
+            byte[] response = String.valueOf(requestId).getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+        try {
+            NacosRestTemplate template = HttpClientManager.getInstance().getNacosRestTemplate();
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/test";
+            Header headers = Header.newInstance()
+                .addParam(HttpHeaderConsts.NACOS_REQUEST_ID, "previous-id");
+            Set<String> requestIds = new HashSet<>();
+            for (String method : new String[] {"GET", "POST", "PUT", "DELETE", "GET"}) {
+                String requestId = template.<String>exchange(url, null, headers, null, null,
+                    method, String.class).getData();
+                assertEquals(4, UUID.fromString(requestId).version());
+                assertTrue(requestIds.add(requestId));
+            }
+            assertEquals("previous-id", headers.getValue(HttpHeaderConsts.NACOS_REQUEST_ID));
+        } finally {
+            server.stop(0);
+        }
     }
     
     @Test
