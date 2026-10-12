@@ -16,349 +16,112 @@
 
 package com.alibaba.nacos.copilot.service;
 
-import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
 import com.alibaba.nacos.copilot.model.StreamResponseType;
-import io.agentscope.core.agent.Event;
-import io.agentscope.core.agent.EventType;
+import io.agentscope.core.event.AgentEndEvent;
+import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.AgentResultEvent;
+import io.agentscope.core.event.TextBlockDeltaEvent;
+import io.agentscope.core.event.TextBlockStartEvent;
+import io.agentscope.core.event.ThinkingBlockDeltaEvent;
+import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.ThinkingBlock;
+import io.agentscope.core.message.MsgRole;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Subscription;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
- * Test for StreamEventProcessor.
+ * Unit tests for {@link StreamEventProcessor} on the AgentScope 2.0.3
+ * {@code streamEvents()} typed-event model.
+ *
+ * <p>Every case builds a REAL 2.0.3 {@link AgentEvent} and asserts how it maps onto
+ * {@link StreamResponseType}: the three incremental delta events carry user-facing chunks,
+ * while lifecycle / framing / cumulative-result events are skipped.
  *
  * @author nacos
  */
 class StreamEventProcessorTest {
     
     @Test
-    void testGetTextContentFromTextContent() {
-        // Given
-        Msg msg = mock(Msg.class);
-        when(msg.getTextContent()).thenReturn("test content");
+    void testTextBlockDeltaMapsToContent() {
+        AgentEvent event = new TextBlockDeltaEvent("reply-1", "block-1", "hello ");
         
-        // When
-        String result = StreamEventProcessor.getTextContent(msg);
-        
-        // Then
-        assertEquals("test content", result);
-    }
-    
-    @Test
-    void testGetTextContentWithNullTextContent() {
-        // Given
-        Msg msg = mock(Msg.class);
-        when(msg.getTextContent()).thenReturn(null);
-        
-        // When
-        String result = StreamEventProcessor.getTextContent(msg);
-        
-        // Then
-        assertNull(result);
-    }
-    
-    @Test
-    void testGetTextContentWithNullMsg() {
-        // When
-        String result = StreamEventProcessor.getTextContent(null);
-        
-        // Then
-        assertNull(result);
-    }
-    
-    @Test
-    void testGetTextContentWithEmptyTextContent() {
-        // Given
-        Msg msg = mock(Msg.class);
-        when(msg.getTextContent()).thenReturn("");
-        
-        // When
-        String result = StreamEventProcessor.getTextContent(msg);
-        
-        // Then
-        assertNull(result);
-    }
-    
-    @Test
-    void testHasOnlyThinkBlockWithThinkBlock() {
-        // Given
-        Msg msg = mock(Msg.class);
-        ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
-        @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList =
-            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
-                .singletonList(thinkBlock);
-        when(msg.getContent()).thenReturn(contentList);
-        
-        // When
-        boolean result = StreamEventProcessor.hasOnlyThinkBlock(msg);
-        
-        // Then
-        assertTrue(result);
-    }
-    
-    @Test
-    void testHasOnlyThinkBlockWithMultipleItems() {
-        // Given
-        Msg msg = mock(Msg.class);
-        @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList = new ArrayList<>();
-        contentList.add(mock(ThinkingBlock.class));
-        when(msg.getContent()).thenReturn(contentList);
-        
-        // When
-        boolean result = StreamEventProcessor.hasOnlyThinkBlock(msg);
-        
-        // Then
-        // If list has one item, it should return true
-        // This test may need adjustment based on actual behavior
-        assertTrue(result);
-    }
-    
-    @Test
-    void testHasOnlyThinkBlockWithNullMsg() {
-        // When
-        boolean result = StreamEventProcessor.hasOnlyThinkBlock(null);
-        
-        // Then
-        assertFalse(result);
-    }
-    
-    @Test
-    void testHasOnlyThinkBlockWithNonListContent() {
-        // Given
-        Msg msg = mock(Msg.class);
-        when(msg.getContent()).thenReturn(null);
-        
-        // When
-        boolean result = StreamEventProcessor.hasOnlyThinkBlock(msg);
-        
-        // Then
-        assertFalse(result);
-    }
-    
-    @Test
-    void testGetThinkingContentWithThinkBlock() {
-        // Given
-        Msg msg = mock(Msg.class);
-        ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
-        when(thinkBlock.getThinking()).thenReturn("thinking content");
-        @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList =
-            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
-                .singletonList(thinkBlock);
-        when(msg.getContent()).thenReturn(contentList);
-        
-        // When
-        String result = StreamEventProcessor.getThinkingContent(msg);
-        
-        // Then
-        assertEquals("thinking content", result);
-    }
-    
-    @Test
-    void testGetThinkingContentWithNullMsg() {
-        // When
-        String result = StreamEventProcessor.getThinkingContent(null);
-        
-        // Then
-        assertNull(result);
-    }
-    
-    @Test
-    void testGetThinkingContentWithNonThinkBlock() {
-        // Given
-        Msg msg = mock(Msg.class);
-        when(msg.getContent()).thenReturn(Collections.emptyList());
-        
-        // When
-        String result = StreamEventProcessor.getThinkingContent(msg);
-        
-        // Then
-        assertNull(result);
-    }
-    
-    @Test
-    void testProcessEventWithToolResult() {
-        // Given
-        Event event = mock(Event.class);
-        Msg msg = mock(Msg.class);
-        when(event.isLast()).thenReturn(false);
-        when(event.getType()).thenReturn(EventType.TOOL_RESULT);
-        when(event.getMessage()).thenReturn(msg);
-        when(msg.getTextContent()).thenReturn("tool result");
-        
-        // When
         StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
         
-        // Then
-        assertNotNull(result);
-        assertEquals(StreamResponseType.TOOL_CALL, result.getType());
-        assertEquals("tool result", result.getContent());
-    }
-    
-    @Test
-    void testProcessEventWithReasoning() {
-        // Given
-        Event event = mock(Event.class);
-        Msg msg = mock(Msg.class);
-        ThinkingBlock thinkBlock = mock(ThinkingBlock.class);
-        when(thinkBlock.getThinking()).thenReturn("thinking");
-        @SuppressWarnings("unchecked")
-        List<io.agentscope.core.message.ContentBlock> contentList =
-            (List<io.agentscope.core.message.ContentBlock>) (List<?>) Collections
-                .singletonList(thinkBlock);
-        
-        when(event.isLast()).thenReturn(false);
-        when(event.getType()).thenReturn(EventType.REASONING);
-        when(event.getMessage()).thenReturn(msg);
-        when(msg.getContent()).thenReturn(contentList);
-        
-        // When
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        // Then
-        assertNotNull(result);
-        assertEquals(StreamResponseType.THINKING, result.getType());
-        assertEquals("thinking", result.getContent());
-    }
-    
-    @Test
-    void testProcessEventWithOtherEventType() {
-        // Given
-        Event event = mock(Event.class);
-        Msg msg = mock(Msg.class);
-        when(event.isLast()).thenReturn(false);
-        when(event.getType()).thenReturn(EventType.REASONING);
-        when(event.getMessage()).thenReturn(msg);
-        when(msg.getTextContent()).thenReturn("content");
-        when(msg.getContent()).thenReturn(Collections.emptyList());
-        
-        // When
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        // Then
         assertNotNull(result);
         assertEquals(StreamResponseType.CONTENT, result.getType());
-        assertEquals("content", result.getContent());
+        assertEquals("hello ", result.getContent());
     }
     
     @Test
-    void testProcessEventWithLastEvent() {
-        // Given
-        Event event = mock(Event.class);
-        when(event.isLast()).thenReturn(true);
+    void testThinkingBlockDeltaMapsToThinking() {
+        AgentEvent event = new ThinkingBlockDeltaEvent("reply-1", "block-1", "let me think");
         
-        // When
         StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
         
-        // Then
-        assertNull(result);
+        assertNotNull(result);
+        assertEquals(StreamResponseType.THINKING, result.getType());
+        assertEquals("let me think", result.getContent());
     }
     
     @Test
-    void testProcessEventWithNullMessage() {
-        // Given
-        Event event = mock(Event.class);
-        when(event.isLast()).thenReturn(false);
-        when(event.getMessage()).thenReturn(null);
+    void testToolResultTextDeltaMapsToToolCall() {
+        AgentEvent event =
+            new ToolResultTextDeltaEvent("reply-1", "call-1", "web_search", "tool output");
         
-        // When
         StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
         
-        // Then
-        assertNull(result);
+        assertNotNull(result);
+        assertEquals(StreamResponseType.TOOL_CALL, result.getType());
+        assertEquals("tool output", result.getContent());
     }
     
     @Test
-    void testProcessEventWithEmptyContent() {
-        // Given
-        Event event = mock(Event.class);
-        Msg msg = mock(Msg.class);
-        when(event.isLast()).thenReturn(false);
-        when(event.getType()).thenReturn(EventType.REASONING);
-        when(event.getMessage()).thenReturn(msg);
-        when(msg.getTextContent()).thenReturn("");
-        when(msg.getContent()).thenReturn(Collections.emptyList());
-        
-        // When
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        // Then
-        assertNull(result);
+    void testEmptyDeltaIsSkipped() {
+        assertNull(StreamEventProcessor.processEvent(new TextBlockDeltaEvent("r", "b", "")));
     }
     
     @Test
-    void testCreateSubscriber() {
-        // Given
-        StreamResponseCallback<String> callback = new StreamResponseCallback<String>() {
-            
-            @Override
-            public void onNext(String response) {
-            }
-            
-            @Override
-            public void onError(Throwable t) {
-            }
-            
-            @Override
-            public void onComplete() {
-            }
-        };
+    void testNullDeltaIsSkipped() {
+        assertNull(StreamEventProcessor.processEvent(new TextBlockDeltaEvent("r", "b", null)));
+    }
+    
+    @Test
+    void testNullEventIsSkipped() {
+        assertNull(StreamEventProcessor.processEvent(null));
+    }
+    
+    @Test
+    void testBlockStartEventIsSkipped() {
+        // Framing events carry no incremental chunk.
+        assertNull(
+            StreamEventProcessor.processEvent(new TextBlockStartEvent("reply-1", "block-1")));
+    }
+    
+    @Test
+    void testAgentEndEventIsSkipped() {
+        assertNull(StreamEventProcessor.processEvent(new AgentEndEvent("reply-1")));
+    }
+    
+    @Test
+    void testCumulativeAgentResultEventIsSkippedToAvoidDuplicateContent() {
+        // The terminal result carries the FULL cumulative message; its text was already
+        // streamed as TEXT_BLOCK_DELTA chunks, so it must be skipped (the streamEvents()
+        // analogue of the old isLast() de-duplication).
+        Msg full = Msg.builder().role(MsgRole.ASSISTANT).textContent("full accumulated answer")
+            .build();
         
-        StreamEventProcessor.ResponseBuilder<String> builder =
-            (type, content, done) -> type.getCode();
-        
-        // When
-        org.reactivestreams.Subscriber<Event> subscriber =
-            StreamEventProcessor.createSubscriber(builder, callback);
-        
-        // Then
-        assertNotNull(subscriber);
-        
-        // Test onSubscribe
-        Subscription subscription = mock(Subscription.class);
-        subscriber.onSubscribe(subscription);
-        
-        // Test onNext
-        Event event = mock(Event.class);
-        Msg msg = mock(Msg.class);
-        when(event.isLast()).thenReturn(false);
-        when(event.getType()).thenReturn(EventType.REASONING);
-        when(event.getMessage()).thenReturn(msg);
-        when(msg.getTextContent()).thenReturn("test");
-        when(msg.getContent()).thenReturn(Collections.emptyList());
-        subscriber.onNext(event);
-        
-        // Test onComplete
-        subscriber.onComplete();
+        assertNull(StreamEventProcessor.processEvent(new AgentResultEvent(full)));
     }
     
     @Test
     void testEventProcessResult() {
-        // Given
-        StreamResponseType type = StreamResponseType.CONTENT;
-        String content = "test content";
-        
-        // When
         StreamEventProcessor.EventProcessResult result =
-            new StreamEventProcessor.EventProcessResult(type, content);
+            new StreamEventProcessor.EventProcessResult(StreamResponseType.CONTENT, "test content");
         
-        // Then
-        assertEquals(type, result.getType());
-        assertEquals(content, result.getContent());
+        assertEquals(StreamResponseType.CONTENT, result.getType());
+        assertEquals("test content", result.getContent());
     }
 }

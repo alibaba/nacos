@@ -18,19 +18,18 @@ package com.alibaba.nacos.copilot.service;
 
 import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
 import com.alibaba.nacos.copilot.model.StreamResponseType;
-import io.agentscope.core.agent.EventType;
-import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.ThinkingBlock;
+import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.TextBlockDeltaEvent;
+import io.agentscope.core.event.ThinkingBlockDeltaEvent;
+import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
- * Unified stream event processor for handling AgentScope stream events.
- * Provides common logic for processing events and extracting content.
+ * Unified stream event processor for the AgentScope {@code streamEvents()} typed-event model.
+ * Maps the incremental {@link AgentEvent} deltas onto Copilot's {@link StreamResponseType}.
  *
  * @author nacos
  */
@@ -39,114 +38,40 @@ public class StreamEventProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamEventProcessor.class);
     
     /**
-     * Extract text content from Msg.
+     * Process a single typed AgentEvent and determine its response type and content.
      *
-     * @param msg message to extract content from
-     * @return text content, or null if not available
-     */
-    public static String getTextContent(Msg msg) {
-        if (msg == null) {
-            return null;
-        }
-        
-        String textContent = msg.getTextContent();
-        if (textContent != null && !textContent.isEmpty()) {
-            return textContent;
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Check if Msg contains only one thinkblock.
-     *
-     * @param msg message to check
-     * @return true if msg contains only one thinkblock, false otherwise
-     */
-    public static boolean hasOnlyThinkBlock(Msg msg) {
-        if (msg == null) {
-            return false;
-        }
-        
-        try {
-            Object content = msg.getContent();
-            if (content instanceof List) {
-                List<?> contentList = (List<?>) content;
-                return contentList.size() == 1 && contentList.get(0) instanceof ThinkingBlock;
-            }
-            return false;
-        } catch (Exception e) {
-            LOGGER.debug("Failed to check thinkblock in msg", e);
-            return false;
-        }
-    }
-    
-    /**
-     * Extract thinking content from Msg (from thinkblock).
-     *
-     * @param msg message containing thinkblock
-     * @return thinking content, or null if not available
-     */
-    public static String getThinkingContent(Msg msg) {
-        if (msg == null) {
-            return null;
-        }
-        
-        try {
-            // Get thinkblock from msg content
-            Object content = msg.getContent();
-            if (content instanceof List) {
-                List<?> contentList = (List<?>) content;
-                if (contentList.size() == 1) {
-                    Object element = contentList.get(0);
-                    if (element instanceof ThinkingBlock) {
-                        ThinkingBlock thinkBlock = (ThinkingBlock) element;
-                        return thinkBlock.getThinking();
-                    }
-                }
-            }
-            
-            return null;
-        } catch (Exception e) {
-            LOGGER.debug("Failed to extract thinking content from msg", e);
-            return null;
-        }
-    }
-    
-    /**
-     * Process a single event and determine its type and content.
+     * <p>Only the incremental delta events carry user-facing chunks. Lifecycle and framing events
+     * (agent / model-call / block start and end, tool-call framing) and the terminal cumulative
+     * {@code AgentResultEvent} are skipped: the deltas have already been streamed and the frontend
+     * accumulates them, so forwarding the cumulative result would duplicate content. This is the
+     * {@code streamEvents()} analogue of skipping the old {@code Event.isLast()} message.
      *
      * @param event the event to process
-     * @return EventProcessResult containing type and content, or null if event should be skipped
+     * @return EventProcessResult containing type and content, or null if the event should be skipped
      */
-    public static EventProcessResult processEvent(io.agentscope.core.agent.Event event) {
-        // Check if this is the last message, which contains full content
-        // If it's the last message, skip sending chunk to avoid duplicate content
-        if (event.isLast()) {
+    public static EventProcessResult processEvent(AgentEvent event) {
+        if (event == null) {
             return null;
         }
         
-        Msg msg = event.getMessage();
-        if (msg == null) {
-            return null;
-        }
+        StreamResponseType type;
+        String content;
         
-        // First determine response type based on event type and message structure
-        StreamResponseType type = StreamResponseType.CONTENT;
-        String content = null;
-        
-        if (event.getType() == EventType.TOOL_RESULT) {
-            // Tool call: get content from textContent
-            type = StreamResponseType.TOOL_CALL;
-            content = getTextContent(msg);
-        } else if (event.getType() == EventType.REASONING && hasOnlyThinkBlock(msg)) {
-            // Thinking: get content from thinkblock
-            type = StreamResponseType.THINKING;
-            content = getThinkingContent(msg);
-        } else {
-            // Final response or other content: get content from textContent
+        if (event instanceof TextBlockDeltaEvent) {
+            // Assistant text delta -> CONTENT
             type = StreamResponseType.CONTENT;
-            content = getTextContent(msg);
+            content = ((TextBlockDeltaEvent) event).getDelta();
+        } else if (event instanceof ThinkingBlockDeltaEvent) {
+            // Reasoning delta -> THINKING
+            type = StreamResponseType.THINKING;
+            content = ((ThinkingBlockDeltaEvent) event).getDelta();
+        } else if (event instanceof ToolResultTextDeltaEvent) {
+            // Tool output delta -> TOOL_CALL
+            type = StreamResponseType.TOOL_CALL;
+            content = ((ToolResultTextDeltaEvent) event).getDelta();
+        } else {
+            // Lifecycle / framing / cumulative-result events carry no incremental chunk.
+            return null;
         }
         
         // Only process if content is not empty
@@ -176,18 +101,18 @@ public class StreamEventProcessor {
     }
     
     /**
-     * Create a Subscriber for processing stream events with a generic response type.
+     * Create a Subscriber for processing {@code streamEvents()} events with a generic response type.
      *
      * @param responseBuilder builder for creating response instances
      * @param callback callback for sending responses
      * @param <T> response type
      * @return Subscriber instance
      */
-    public static <T> Subscriber<io.agentscope.core.agent.Event> createSubscriber(
+    public static <T> Subscriber<AgentEvent> createSubscriber(
         ResponseBuilder<T> responseBuilder,
         StreamResponseCallback<T> callback) {
         
-        return new Subscriber<io.agentscope.core.agent.Event>() {
+        return new Subscriber<AgentEvent>() {
             
             @Override
             public void onSubscribe(Subscription s) {
@@ -195,7 +120,7 @@ public class StreamEventProcessor {
             }
             
             @Override
-            public void onNext(io.agentscope.core.agent.Event event) {
+            public void onNext(AgentEvent event) {
                 try {
                     EventProcessResult result = processEvent(event);
                     if (result != null) {

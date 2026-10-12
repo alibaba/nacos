@@ -18,14 +18,16 @@ package com.alibaba.nacos.copilot.service;
 
 import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
 import com.alibaba.nacos.copilot.model.StreamResponseType;
-import io.agentscope.core.agent.Event;
-import io.agentscope.core.agent.EventType;
+import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.AgentResultEvent;
+import io.agentscope.core.event.TextBlockDeltaEvent;
+import io.agentscope.core.event.ThinkingBlockDeltaEvent;
+import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
-import io.agentscope.core.message.TextBlock;
-import io.agentscope.core.message.ThinkingBlock;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,189 +35,146 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
- * Compatibility verification for Copilot streaming on AgentScope 2.0.3.
+ * End-to-end verification of the Copilot streaming subscriber on the AgentScope 2.0.3
+ * {@code streamEvents()} typed-event model.
  *
- * <p>In AgentScope 2.0.3 {@link Msg#getContent()} returns a {@code List<ContentBlock>}
- * (as it already did in 1.0.7, so the {@code instanceof String} branch this upgrade
- * removed from {@code StreamEventProcessor.getTextContent()} was dead code in both
- * versions), and stream events are still delivered as {@link Event} by the retained
- * {@code stream()} API. Unlike the
- * mock-based {@link StreamEventProcessorTest}, every case here builds REAL 2.0.3
- * {@link Event} and {@link Msg} objects and drives them through {@link StreamEventProcessor},
- * so it proves that message handling, text chunks, thinking, tool results, stream end and
- * error signalling all keep working after the 1.0.7 to 2.0.3 upgrade. This is the
- * "verify existing Copilot functionality stays compatible" check requested in issue #15757.
+ * <p>Every case drives {@link StreamEventProcessor#createSubscriber} with REAL 2.0.3
+ * {@link AgentEvent} objects (not mocks) and records what reaches the
+ * {@link StreamResponseCallback}, covering: text deltas streamed as {@code CONTENT} then a
+ * terminal {@code DONE}, the cumulative {@code AgentResultEvent} skipped so content is not
+ * duplicated, tool-result deltas as {@code TOOL_CALL}, call-site {@code THINKING} filtering,
+ * and {@code onError} propagation. This is the follow-up verification for the
+ * {@code stream()} to {@code streamEvents()} migration tracked in issue #15896.
  *
  * @author nacos
  */
 class StreamEventProcessorCompatibilityTest {
     
-    private static Msg textMsg(String text) {
-        return Msg.builder()
-            .role(MsgRole.ASSISTANT)
-            .textContent(text)
-            .build();
-    }
-    
-    private static Msg thinkingOnlyMsg(String thinking) {
-        return Msg.builder()
-            .role(MsgRole.ASSISTANT)
-            .content(ThinkingBlock.builder().thinking(thinking).build())
-            .build();
-    }
-    
-    private static Msg thinkingAndTextMsg(String thinking, String text) {
-        return Msg.builder()
-            .role(MsgRole.ASSISTANT)
-            .content(ThinkingBlock.builder().thinking(thinking).build(),
-                TextBlock.builder().text(text).build())
-            .build();
-    }
-    
     @Test
-    void testGetTextContentFromRealTextMsg() {
-        assertEquals("hello world", StreamEventProcessor.getTextContent(textMsg("hello world")));
-    }
-    
-    @Test
-    void testGetTextContentNullForRealThinkingOnlyMsg() {
-        // In 2.0.3 getContent() is a List<ContentBlock>; a thinking-only message carries no
-        // TextBlock, so getTextContent must be null. This locks in that dropping the obsolete
-        // String-content fallback does not change behaviour on the real message model.
-        assertNull(StreamEventProcessor.getTextContent(thinkingOnlyMsg("pondering")));
-    }
-    
-    @Test
-    void testReasoningTextEventMapsToContent() {
-        Event event = new Event(EventType.REASONING, textMsg("answer chunk"), false);
+    void testSubscriberStreamsTextDeltasThenDone() {
+        Recorder recorder = new Recorder();
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(recordingBuilder(recorder), recorder);
         
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        assertNotNull(result);
-        assertEquals(StreamResponseType.CONTENT, result.getType());
-        assertEquals("answer chunk", result.getContent());
-    }
-    
-    @Test
-    void testThinkingOnlyEventMapsToThinking() {
-        Msg msg = thinkingOnlyMsg("let me think");
-        assertTrue(StreamEventProcessor.hasOnlyThinkBlock(msg));
-        assertEquals("let me think", StreamEventProcessor.getThinkingContent(msg));
-        
-        Event event = new Event(EventType.REASONING, msg, false);
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        assertNotNull(result);
-        assertEquals(StreamResponseType.THINKING, result.getType());
-        assertEquals("let me think", result.getContent());
-    }
-    
-    @Test
-    void testMixedThinkingAndTextEventMapsToContent() {
-        // A real 2.0.3 multi-block message ([ThinkingBlock, TextBlock]) is not "only think
-        // block", so the reasoning event must fall through to the text CONTENT branch.
-        Msg msg = thinkingAndTextMsg("thinking part", "text part");
-        assertFalse(StreamEventProcessor.hasOnlyThinkBlock(msg));
-        
-        Event event = new Event(EventType.REASONING, msg, false);
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        assertNotNull(result);
-        assertEquals(StreamResponseType.CONTENT, result.getType());
-        assertEquals("text part", result.getContent());
-    }
-    
-    @Test
-    void testToolResultEventMapsToToolCall() {
-        Event event = new Event(EventType.TOOL_RESULT, textMsg("tool output"), false);
-        
-        StreamEventProcessor.EventProcessResult result = StreamEventProcessor.processEvent(event);
-        
-        assertNotNull(result);
-        assertEquals(StreamResponseType.TOOL_CALL, result.getType());
-        assertEquals("tool output", result.getContent());
-    }
-    
-    @Test
-    void testLastEventIsSkippedToAvoidDuplicateContent() {
-        Event event = new Event(EventType.AGENT_RESULT, textMsg("full accumulated answer"), true);
-        
-        assertNull(StreamEventProcessor.processEvent(event));
-    }
-    
-    @Test
-    void testSubscriberDeliversContentChunkThenDone() {
-        List<StreamResponseType> emittedTypes = new ArrayList<>();
-        List<String> emittedContents = new ArrayList<>();
-        AtomicBoolean completed = new AtomicBoolean(false);
-        
-        StreamEventProcessor.ResponseBuilder<StreamResponseType> builder =
-            (type, content, done) -> {
-                emittedTypes.add(type);
-                emittedContents.add(content);
-                return type;
-            };
-        StreamResponseCallback<StreamResponseType> callback =
-            new RecordingCallback(completed);
-        
-        Subscriber<Event> subscriber =
-            StreamEventProcessor.createSubscriber(builder, callback);
-        subscriber.onNext(new Event(EventType.REASONING, textMsg("chunk-1"), false));
+        subscriber.onNext(new TextBlockDeltaEvent("reply-1", "block-1", "Hello"));
+        subscriber.onNext(new TextBlockDeltaEvent("reply-1", "block-1", " world"));
         subscriber.onComplete();
         
-        assertEquals(List.of(StreamResponseType.CONTENT, StreamResponseType.DONE), emittedTypes);
-        assertEquals("chunk-1", emittedContents.get(0));
-        assertTrue(completed.get());
+        assertEquals(
+            List.of(StreamResponseType.CONTENT, StreamResponseType.CONTENT,
+                StreamResponseType.DONE),
+            recorder.types);
+        assertEquals("Hello", recorder.contents.get(0));
+        assertEquals(" world", recorder.contents.get(1));
+        assertTrue(recorder.completed.get());
+    }
+    
+    @Test
+    void testSubscriberSkipsCumulativeResultEvent() {
+        Recorder recorder = new Recorder();
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(recordingBuilder(recorder), recorder);
+        
+        subscriber.onNext(new TextBlockDeltaEvent("reply-1", "block-1", "answer"));
+        // The cumulative final result must NOT produce a second CONTENT chunk.
+        subscriber.onNext(new AgentResultEvent(
+            Msg.builder().role(MsgRole.ASSISTANT).textContent("answer").build()));
+        subscriber.onComplete();
+        
+        assertEquals(List.of(StreamResponseType.CONTENT, StreamResponseType.DONE), recorder.types);
+        assertEquals("answer", recorder.contents.get(0));
+    }
+    
+    @Test
+    void testToolResultDeltaFlowsThroughSubscriber() {
+        Recorder recorder = new Recorder();
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(recordingBuilder(recorder), recorder);
+        
+        subscriber.onNext(
+            new ToolResultTextDeltaEvent("reply-1", "call-1", "web_search", "result chunk"));
+        subscriber.onComplete();
+        
+        assertEquals(List.of(StreamResponseType.TOOL_CALL, StreamResponseType.DONE),
+            recorder.types);
+        assertEquals("result chunk", recorder.contents.get(0));
+    }
+    
+    @Test
+    void testThinkingDeltaIsFilteredByResponseBuilder() {
+        // PromptOptimizationServiceImpl filters THINKING out at the builder level; verify the
+        // processor still surfaces THINKING so that filtering stays a call-site decision.
+        Recorder recorder = new Recorder();
+        StreamEventProcessor.ResponseBuilder<StreamResponseType> filteringBuilder =
+            (type, content, done) -> {
+                if (type == StreamResponseType.THINKING) {
+                    return null;
+                }
+                recorder.types.add(type);
+                recorder.contents.add(content);
+                return type;
+            };
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(filteringBuilder, recorder);
+        
+        subscriber.onNext(new ThinkingBlockDeltaEvent("reply-1", "block-1", "internal reasoning"));
+        subscriber.onComplete();
+        
+        assertEquals(List.of(StreamResponseType.DONE), recorder.types);
+        assertTrue(recorder.completed.get());
+    }
+    
+    @Test
+    void testOnSubscribeRequestsUnbounded() {
+        Recorder recorder = new Recorder();
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(recordingBuilder(recorder), recorder);
+        
+        Subscription subscription = mock(Subscription.class);
+        subscriber.onSubscribe(subscription);
+        
+        verify(subscription).request(Long.MAX_VALUE);
     }
     
     @Test
     void testSubscriberPropagatesErrorToCallback() {
-        AtomicReference<Throwable> captured = new AtomicReference<>();
-        StreamEventProcessor.ResponseBuilder<StreamResponseType> builder =
-            (type, content, done) -> type;
-        StreamResponseCallback<StreamResponseType> callback =
-            new StreamResponseCallback<StreamResponseType>() {
-                
-                @Override
-                public void onNext(StreamResponseType response) {
-                }
-                
-                @Override
-                public void onError(Throwable t) {
-                    captured.set(t);
-                }
-                
-                @Override
-                public void onComplete() {
-                }
-            };
+        Recorder recorder = new Recorder();
+        Subscriber<AgentEvent> subscriber =
+            StreamEventProcessor.createSubscriber(recordingBuilder(recorder), recorder);
         
-        Subscriber<Event> subscriber =
-            StreamEventProcessor.createSubscriber(builder, callback);
         RuntimeException failure = new RuntimeException("stream failure");
         subscriber.onError(failure);
         
-        assertSame(failure, captured.get());
+        assertSame(failure, recorder.error.get());
+    }
+    
+    private static StreamEventProcessor.ResponseBuilder<StreamResponseType> recordingBuilder(
+        Recorder recorder) {
+        return (type, content, done) -> {
+            recorder.types.add(type);
+            recorder.contents.add(content);
+            return type;
+        };
     }
     
     /**
-     * Callback that records only stream completion; content is captured via the response builder.
+     * Records everything the subscriber emits (via the response builder) plus completion and error.
      */
-    private static final class RecordingCallback
-        implements StreamResponseCallback<StreamResponseType> {
+    private static final class Recorder implements StreamResponseCallback<StreamResponseType> {
         
-        private final AtomicBoolean completed;
+        private final List<StreamResponseType> types = new ArrayList<>();
         
-        private RecordingCallback(AtomicBoolean completed) {
-            this.completed = completed;
-        }
+        private final List<String> contents = new ArrayList<>();
+        
+        private final AtomicBoolean completed = new AtomicBoolean(false);
+        
+        private final AtomicReference<Throwable> error = new AtomicReference<>();
         
         @Override
         public void onNext(StreamResponseType response) {
@@ -223,6 +182,7 @@ class StreamEventProcessorCompatibilityTest {
         
         @Override
         public void onError(Throwable t) {
+            error.set(t);
         }
         
         @Override

@@ -26,8 +26,7 @@ import com.alibaba.nacos.copilot.model.SkillGenerationRequest;
 import com.alibaba.nacos.copilot.model.SkillGenerationResponse;
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.agent.EventType;
-import io.agentscope.core.agent.StreamOptions;
+import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.message.Msg;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -88,15 +87,9 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             .textContent(userMessage)
             .build();
         
-        // 7. Configure streaming options
-        StreamOptions streamOptions = StreamOptions.builder()
-            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-            .incremental(true)
-            .build();
-        
-        // 8. Call agent with stream response
+        // 7. Call agent with stream response
         // Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
-        Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
+        Flux<AgentEvent> eventFlux = agent.streamEvents(userMsg)
             .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(

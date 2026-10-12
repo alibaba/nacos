@@ -25,8 +25,7 @@ import com.alibaba.nacos.copilot.model.PromptOptimizationRequest;
 import com.alibaba.nacos.copilot.model.PromptOptimizationResponse;
 import com.alibaba.nacos.copilot.model.StreamResponseType;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.agent.EventType;
-import io.agentscope.core.agent.StreamOptions;
+import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.message.Msg;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -80,20 +79,14 @@ public class PromptOptimizationServiceImpl implements PromptOptimizationService 
             return;
         }
         
-        // 6. Configure streaming options
-        StreamOptions streamOptions = StreamOptions.builder()
-            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-            .incremental(true)
-            .build();
-        
-        // 7. Create user message
+        // 6. Create user message
         Msg userMsg = Msg.builder()
             .textContent(userMessage)
             .build();
         
-        // 8. Call agent with stream response
+        // 7. Call agent with stream response
         // Frontend will accumulate and parse the content itself
-        Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
+        Flux<AgentEvent> eventFlux = agent.streamEvents(userMsg)
             .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(
