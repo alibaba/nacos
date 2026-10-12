@@ -598,4 +598,23 @@ class NacosDnsQueryHandlerTest {
         assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
         assertEquals(1, response.getSection(Section.ANSWER).size());
     }
+    
+    @Test
+    void testMixedCaseServiceLookupResolvesInstances() {
+        // Mixed-case domain (SVC.NACOS) must resolve instances, not return NXDOMAIN.
+        // Suffix matching is case-insensitive (RFC 4343); service/group name case
+        // is preserved for Nacos lookup.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.6", true, true);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("SVC.NACOS.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Mixed-case domain must resolve, not NXDOMAIN");
+        assertEquals(1, response.getSection(Section.ANSWER).size());
+    }
 }

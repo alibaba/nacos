@@ -333,7 +333,7 @@ public class NacosDnsQueryHandler {
             d = d.substring(0, d.length() - 1);
         }
         String suffix = "." + properties.getDomainSuffix();
-        if (!d.toLowerCase().endsWith(suffix.toLowerCase())) {
+        if (!DnsNameUtil.matchesSuffix(d, properties.getDomainSuffix())) {
             return null;
         }
         String ipPart = d.substring(0, d.length() - suffix.length());
@@ -387,15 +387,20 @@ public class NacosDnsQueryHandler {
             domain = domain.substring(0, domain.length() - 1);
         }
         
-        // Check domain suffix
+        // Check domain suffix case-insensitively (RFC 4343), but preserve the
+        // original case of the service/group part for Nacos lookup.
         String suffix = "." + properties.getDomainSuffix();
-        if (!domain.endsWith(suffix)) {
+        if (!DnsNameUtil.matchesSuffix(domain, properties.getDomainSuffix())) {
             LOGGER.debug("Domain {} does not match suffix {}", domain, suffix);
             return null;
         }
         
-        // Strip suffix
+        // Strip suffix (length is identical regardless of case)
         String servicePart = domain.substring(0, domain.length() - suffix.length());
+        if (servicePart.isEmpty()) {
+            // Bare suffix query (e.g. "nacos.") has no service name to resolve
+            return null;
+        }
         
         // Parse service name and group
         String[] parts = servicePart.split("\\.");
