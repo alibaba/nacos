@@ -22,6 +22,8 @@ import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
+import org.xbill.DNS.ARecord;
+import org.xbill.DNS.AAAARecord;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
@@ -531,5 +533,69 @@ class NacosDnsQueryHandlerTest {
             "uppercase bare suffix with trailing dot should match");
         assertFalse(handler.matchesSuffix("svc.notnacos"),
             "different suffix should not match");
+    }
+    
+    // ---- SRV target independent resolution ----
+    
+    @Test
+    void testSrvTargetIpv4AddressQueryReturnsIp() {
+        // A query for 10-0-0-1.nacos must return 10.0.0.1 directly,
+        // so clients resolving SRV targets independently can reach the instance.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("10-0-0-1.nacos.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        List<Record> answers = response.getSection(Section.ANSWER);
+        assertEquals(1, answers.size());
+        assertEquals("10.0.0.1", ((ARecord) answers.get(0)).getAddress().getHostAddress());
+    }
+    
+    @Test
+    void testSrvTargetIpv6AddressQueryReturnsIp() {
+        // AAAA query for an IPv6-encoded SRV target must return the IPv6 address.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        String target = "2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
+        Message query = buildQuery(target, Type.AAAA, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        List<Record> answers = response.getSection(Section.ANSWER);
+        assertEquals(1, answers.size());
+        assertEquals("2001:db8:0:0:0:0:0:1",
+            ((AAAARecord) answers.get(0)).getAddress().getHostAddress());
+    }
+    
+    @Test
+    void testSrvTargetWrongAddressFamilyReturnsNxdomain() {
+        // A query for an IPv6-encoded target returns NXDOMAIN (no A record for IPv6).
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        String target = "2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
+        Message query = buildQuery(target, Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
+    }
+    
+    @Test
+    void testSrvTargetThenServiceLookupStillWorks() {
+        // After adding SRV target handling, normal service lookups must still work.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("10.0.0.5", true, true);
+        when(op.listInstance(anyString(), anyString(), anyString(), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("svc.nacos.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        assertEquals(1, response.getSection(Section.ANSWER).size());
     }
 }

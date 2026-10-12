@@ -27,6 +27,7 @@ import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -78,7 +79,7 @@ class NacosDnsForwarderTest {
         return new NacosDnsForwarder(props, metrics) {
             
             @Override
-            protected SimpleResolver createResolver(String host, int port) {
+            protected SimpleResolver createResolver(InetAddress addr, int port) {
                 return resolver;
             }
         };
@@ -195,7 +196,7 @@ class NacosDnsForwarderTest {
             new NacosDnsForwarder(buildProperties(true, "1.1.1.1", "8.8.8.8"), metrics) {
                 
                 @Override
-                protected SimpleResolver createResolver(String host, int port) {
+                protected SimpleResolver createResolver(InetAddress addr, int port) {
                     return callCount.getAndIncrement() == 0 ? first : second;
                 }
             };
@@ -221,7 +222,7 @@ class NacosDnsForwarderTest {
             new NacosDnsForwarder(buildProperties(true, "1.1.1.1", "8.8.8.8"), metrics) {
                 
                 @Override
-                protected SimpleResolver createResolver(String host, int port) {
+                protected SimpleResolver createResolver(InetAddress addr, int port) {
                     return callCount.getAndIncrement() == 0 ? first : second;
                 }
             };
@@ -311,7 +312,7 @@ class NacosDnsForwarderTest {
             buildProperties(true, "1.1.1.1", "8.8.8.8", "9.9.9.9"), metrics) {
             
             @Override
-            protected SimpleResolver createResolver(String host, int port) {
+            protected SimpleResolver createResolver(InetAddress addr, int port) {
                 createCount.incrementAndGet();
                 return slowResolver;
             }

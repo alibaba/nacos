@@ -24,11 +24,15 @@ import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SimpleResolver;
 
-import java.net.UnknownHostException;
+import java.net.InetAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Forwards DNS queries that don't match the Nacos domain suffix to upstream DNS servers.
@@ -65,7 +69,8 @@ public class NacosDnsForwarder {
     public NacosDnsForwarder(NacosDnsProperties properties, NacosDnsMetrics metrics) {
         this.properties = properties;
         this.metrics = metrics;
-        this.servers = parseAndValidateServers(properties.getForwardServers());
+        this.servers = parseAndValidateServers(properties.getForwardServers(),
+            Math.max(properties.getForwardTimeoutMs(), MIN_FORWARD_TIMEOUT_MS));
     }
     
     /**
@@ -162,12 +167,21 @@ public class NacosDnsForwarder {
                 break;
             }
             
-            int timeoutMs = (int) Math.min(perServerTimeoutMs(), remaining);
             try {
-                // Create a fresh SimpleResolver per request: setTimeout mutates shared
-                // state, so a cached resolver would race between concurrent queries with
-                // different remaining-time budgets. Upstream count is small; cost is fine.
-                SimpleResolver resolver = createResolver(addr.host(), addr.port());
+                // Create a fresh SimpleResolver per request from the pre-resolved
+                // InetAddress: setTimeout mutates shared state, so a cached resolver
+                // would race between concurrent queries with different remaining-time
+                // budgets. Using the pre-resolved address avoids an uncontrolled
+                // InetAddress.getByName lookup inside the constructor.
+                SimpleResolver resolver = createResolver(addr.inetAddress(), addr.port());
+                // Recalculate remaining budget after resolver construction, so that
+                // any construction overhead is accounted for in the per-server timeout.
+                long remainingAfterConstruct = deadline - System.currentTimeMillis();
+                if (remainingAfterConstruct <= 0) {
+                    LOGGER.warn("Forward time budget exhausted during resolver setup");
+                    break;
+                }
+                int timeoutMs = (int) Math.min(perServerTimeoutMs(), remainingAfterConstruct);
                 resolver.setTimeout(Duration.ofMillis(timeoutMs));
                 Message response = resolver.send(query);
                 
@@ -203,17 +217,7 @@ public class NacosDnsForwarder {
     // ---- Internal helpers ----
     
     private boolean matchesInternalSuffix(String domain) {
-        if (domain == null) {
-            return false;
-        }
-        if (domain.endsWith(".")) {
-            domain = domain.substring(0, domain.length() - 1);
-        }
-        // DNS names are case-insensitive (RFC 4343); compare lowercased.
-        // Match both subdomains (svc.nacos) and the bare suffix itself (nacos).
-        String lower = domain.toLowerCase();
-        String suffix = properties.getDomainSuffix().toLowerCase();
-        return lower.equals(suffix) || lower.endsWith("." + suffix);
+        return DnsNameUtil.matchesSuffix(domain, properties.getDomainSuffix());
     }
     
     private int perServerTimeoutMs() {
@@ -231,11 +235,13 @@ public class NacosDnsForwarder {
     }
     
     /**
-     * Create a SimpleResolver for the given host and port. Extracted for testability —
-     * subclasses can override to return mocks.
+     * Create a SimpleResolver from a pre-resolved InetAddress. Using the address
+     * directly avoids an uncontrolled InetAddress.getByName lookup inside the
+     * SimpleResolver constructor, which would not be covered by setTimeout.
+     * Extracted for testability — subclasses can override to return mocks.
      */
-    protected SimpleResolver createResolver(String host, int port) throws UnknownHostException {
-        SimpleResolver r = new SimpleResolver(host);
+    protected SimpleResolver createResolver(InetAddress addr, int port) {
+        SimpleResolver r = new SimpleResolver(addr);
         r.setPort(port);
         return r;
     }
@@ -243,24 +249,59 @@ public class NacosDnsForwarder {
     /**
      * Parse and validate upstream server specifications at construction time (fail-fast).
      * Supports: {@code host}, {@code host:port}, {@code [ipv6]:port}.
+     * Resolves each hostname to an InetAddress with the given timeout so that
+     * per-request resolver construction does not trigger an uncontrolled DNS lookup.
      */
-    private static List<ServerAddress> parseAndValidateServers(List<String> raw) {
+    private static List<ServerAddress> parseAndValidateServers(List<String> raw,
+        int resolveTimeoutMs) {
         if (raw == null || raw.isEmpty()) {
             return Collections.emptyList();
         }
-        List<ServerAddress> result = new ArrayList<>();
-        for (String spec : raw) {
-            if (spec == null || spec.trim().isEmpty()) {
-                LOGGER.warn("Ignoring empty forward server entry");
-                continue;
+        ExecutorService resolver = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "nacos-dns-forward-resolver");
+            t.setDaemon(true);
+            return t;
+        });
+        try {
+            List<ServerAddress> result = new ArrayList<>();
+            for (String spec : raw) {
+                if (spec == null || spec.trim().isEmpty()) {
+                    LOGGER.warn("Ignoring empty forward server entry");
+                    continue;
+                }
+                try {
+                    ServerAddress parsed = parseServer(spec.trim());
+                    InetAddress addr =
+                        resolveWithTimeout(parsed.host(), resolveTimeoutMs, resolver);
+                    result.add(new ServerAddress(parsed.host(), parsed.port(), addr));
+                } catch (IllegalArgumentException e) {
+                    LOGGER.error("Invalid forward server configuration '{}': {}", spec,
+                        e.getMessage());
+                } catch (Exception e) {
+                    LOGGER.error("Failed to resolve forward server '{}': {}", spec, e.toString());
+                }
             }
-            try {
-                result.add(parseServer(spec.trim()));
-            } catch (IllegalArgumentException e) {
-                LOGGER.error("Invalid forward server configuration '{}': {}", spec, e.getMessage());
-            }
+            return Collections.unmodifiableList(result);
+        } finally {
+            resolver.shutdownNow();
         }
-        return Collections.unmodifiableList(result);
+    }
+    
+    /**
+     * Resolve a hostname to an InetAddress with a bounded timeout.
+     * InetAddress.getByName has no timeout parameter, so we run it on a
+     * separate thread and cancel if it exceeds the budget.
+     */
+    private static InetAddress resolveWithTimeout(String host, int timeoutMs, ExecutorService exec)
+        throws Exception {
+        Future<InetAddress> future = exec.submit(() -> InetAddress.getByName(host));
+        try {
+            return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            future.cancel(true);
+            throw new java.util.concurrent.TimeoutException(
+                "DNS resolution of '" + host + "' timed out after " + timeoutMs + "ms");
+        }
     }
     
     private static ServerAddress parseServer(String spec) {
@@ -275,7 +316,7 @@ public class NacosDnsForwarder {
             if (close + 1 < spec.length() && spec.charAt(close + 1) == ':') {
                 port = parsePort(spec.substring(close + 2));
             }
-            return new ServerAddress(host, port);
+            return new ServerAddress(host, port, null);
         }
         // Bare IPv6 (e.g. "2001:db8::1") has multiple colons and is ambiguous with
         // host:port. Require bracket notation for a clear error.
@@ -288,9 +329,9 @@ public class NacosDnsForwarder {
         if (colon > 0) {
             String host = spec.substring(0, colon);
             int port = parsePort(spec.substring(colon + 1));
-            return new ServerAddress(host, port);
+            return new ServerAddress(host, port, null);
         }
-        return new ServerAddress(spec, DEFAULT_DNS_PORT);
+        return new ServerAddress(spec, DEFAULT_DNS_PORT, null);
     }
     
     private static int parsePort(String s) {
@@ -302,9 +343,11 @@ public class NacosDnsForwarder {
     }
     
     /**
-     * Parsed upstream server address.
+     * Parsed upstream server address with pre-resolved InetAddress.
+     * The address is resolved at construction time so that per-request resolver
+     * construction does not trigger an uncontrolled InetAddress.getByName lookup.
      */
-    record ServerAddress(String host, int port) {
+    record ServerAddress(String host, int port, InetAddress inetAddress) {
         
         @Override
         public String toString() {

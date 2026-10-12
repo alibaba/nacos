@@ -89,17 +89,7 @@ public class NacosDnsQueryHandler {
      * @return true if the domain should be resolved locally
      */
     public boolean matchesSuffix(String domain) {
-        if (domain == null) {
-            return false;
-        }
-        if (domain.endsWith(".")) {
-            domain = domain.substring(0, domain.length() - 1);
-        }
-        // DNS names are case-insensitive (RFC 4343); compare lowercased.
-        String lower = domain.toLowerCase();
-        String suffix = properties.getDomainSuffix().toLowerCase();
-        // Match both subdomains (svc.nacos) and the bare suffix itself (nacos).
-        return lower.equals(suffix) || lower.endsWith("." + suffix);
+        return DnsNameUtil.matchesSuffix(domain, properties.getDomainSuffix());
     }
     
     /**
@@ -175,6 +165,28 @@ public class NacosDnsQueryHandler {
             response.getHeader().setRcode(Rcode.NOTIMP);
             metrics.recordFailed();
             return response;
+        }
+        
+        // SRV target names (e.g. 10-0-0-1.nacos) encode an IP address. A/AAAA
+        // queries for these names must return the encoded IP directly, so that
+        // clients resolving SRV targets independently (not via Additional section)
+        // can reach the instance.
+        if (type == Type.A || type == Type.AAAA) {
+            InetAddress targetAddr = parseSrvTargetAddress(domain);
+            if (targetAddr != null) {
+                boolean isIpv4 = targetAddr.getAddress().length == 4;
+                if ((type == Type.A && isIpv4) || (type == Type.AAAA && !isIpv4)) {
+                    response.addRecord(question, Section.QUESTION);
+                    Record answer = type == Type.A
+                        ? new ARecord(question.getName(), DClass.IN, properties.getTtl(),
+                            targetAddr)
+                        : new AAAARecord(question.getName(), DClass.IN, properties.getTtl(),
+                            targetAddr);
+                    response.addRecord(answer, Section.ANSWER);
+                    metrics.recordSuccess();
+                    return response;
+                }
+            }
         }
         
         // Parse domain and look up service instances
@@ -302,6 +314,68 @@ public class NacosDnsQueryHandler {
             ipPart = sb.toString();
         }
         return Name.fromConstantString(ipPart + "." + properties.getDomainSuffix() + ".");
+    }
+    
+    /**
+     * Parse an IP address from an SRV target name (inverse of buildSrvTargetName).
+     * IPv4: 10-0-0-1.nacos -> 10.0.0.1
+     * IPv6: 2001-0db8-...-0001.nacos -> 2001:0db8:...:0001
+     *
+     * @param domain the queried domain name (may have trailing dot)
+     * @return the parsed InetAddress, or null if the domain is not an SRV target
+     */
+    private InetAddress parseSrvTargetAddress(String domain) {
+        if (domain == null) {
+            return null;
+        }
+        String d = domain;
+        if (d.endsWith(".")) {
+            d = d.substring(0, d.length() - 1);
+        }
+        String suffix = "." + properties.getDomainSuffix();
+        if (!d.toLowerCase().endsWith(suffix.toLowerCase())) {
+            return null;
+        }
+        String ipPart = d.substring(0, d.length() - suffix.length());
+        if (ipPart.isEmpty()) {
+            return null;
+        }
+        // Try IPv4: exactly 4 hyphen-separated decimal octets
+        String[] v4 = ipPart.split("-", -1);
+        if (v4.length == 4) {
+            try {
+                byte[] bytes = new byte[4];
+                for (int i = 0; i < 4; i++) {
+                    int octet = Integer.parseInt(v4[i]);
+                    if (octet < 0 || octet > 255) {
+                        return null;
+                    }
+                    bytes[i] = (byte) octet;
+                }
+                return InetAddress.getByAddress(bytes);
+            } catch (NumberFormatException | java.net.UnknownHostException ignored) {
+                // not a valid IPv4 target, fall through to IPv6 check
+            }
+        }
+        // Try IPv6: exactly 8 hyphen-separated 16-bit hex groups
+        String[] v6 = ipPart.split("-", -1);
+        if (v6.length == 8) {
+            try {
+                byte[] bytes = new byte[16];
+                for (int i = 0; i < 8; i++) {
+                    if (v6[i].length() != 4) {
+                        return null;
+                    }
+                    int group = Integer.parseInt(v6[i], 16);
+                    bytes[i * 2] = (byte) (group >> 8);
+                    bytes[i * 2 + 1] = (byte) group;
+                }
+                return InetAddress.getByAddress(bytes);
+            } catch (NumberFormatException | java.net.UnknownHostException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
     
     /**
