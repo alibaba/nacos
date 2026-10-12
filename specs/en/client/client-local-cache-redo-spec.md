@@ -55,6 +55,15 @@ are stored separately from content snapshots. Config filters, including
 encryption filters, are applied after the selected local or remote content is
 loaded.
 
+Snapshot use is controlled by the `configSnapshotEnabled` client property, which
+defaults to `true`. The client reads this property once per JVM, when the
+snapshot switch class is initialized, so a later change in the same JVM has no
+effect. When snapshots are disabled, the client attempts the existing local
+configuration cleanup during that same initialization. A recoverable cleanup
+failure, such as a runtime or linkage error, is logged and leaves snapshots
+disabled instead of failing the switch initialization; fatal VM errors are not
+masked.
+
 Config listeners must check local failover files before sending listener checks.
 When a failover file appears, changes, or disappears, the listener state must be
 updated and listener callbacks may be triggered according to `CacheData` MD5

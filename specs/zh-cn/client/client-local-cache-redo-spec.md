@@ -50,6 +50,12 @@ snapshot 在服务端查询成功后写入，并在服务端确认 Config item �
 snapshot 与 content snapshot 分开存储。Config filter，包括 encryption filter，会在选定本地或
 远端 content 后执行。
 
+snapshot 的使用由客户端 `configSnapshotEnabled` 属性控制，默认值为 `true`。客户端在 snapshot
+switch 类初始化时每个 JVM 只读取一次该属性，因此之后在同一 JVM 内修改不会生效。当 snapshot
+被禁用时，客户端会在同一次初始化中尝试执行现有本地配置 best-effort 清理。可恢复的清理
+失败（例如 runtime 或 linkage error）只记录日志并保持 snapshot 禁用，
+不会导致 switch 初始化失败；fatal VM error 不会被掩盖。
+
 Config listener 发送 listener check 前必须检查本地 failover 文件。当 failover 文件出现、变化
 或消失时，必须更新 listener state，并可按 `CacheData` MD5 规则触发 listener callback。
 
