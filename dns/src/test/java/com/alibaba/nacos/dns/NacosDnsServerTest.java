@@ -37,10 +37,13 @@ import org.xbill.DNS.Type;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -438,6 +441,116 @@ class NacosDnsServerTest {
                 "Conditional forwarder must not set RA");
         } finally {
             srv.stop();
+        }
+    }
+    
+    /**
+     * End-to-end forwarding test with a real stub UDP upstream.
+     * The stub upstream replies with a canned NOERROR+A response; the Nacos DNS
+     * server must relay it back to the client with the correct transaction ID,
+     * question section, and answer record. This exercises the full path:
+     * client UDP -> NacosDnsServer -> forwardWorkerPool -> SimpleResolver ->
+     * stub UDP upstream -> SimpleResolver -> NacosDnsServer -> client.
+     */
+    @Test
+    void testForwardSuccessWithRealUdpUpstream() throws Exception {
+        // Start a stub DNS upstream on an ephemeral port
+        DatagramSocket upstreamSocket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"));
+        int upstreamPort = upstreamSocket.getLocalPort();
+        AtomicInteger upstreamQueries = new AtomicInteger(0);
+        Thread upstreamThread = new Thread(() -> {
+            byte[] buf = new byte[512];
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                    upstreamSocket.receive(packet);
+                    upstreamQueries.incrementAndGet();
+                    Message query = new Message(
+                        java.util.Arrays.copyOf(packet.getData(), packet.getLength()));
+                    // Build canned response: same ID, NOERROR, A record 203.0.113.10
+                    Message response = new Message(query.getHeader().getID());
+                    response.getHeader().setFlag(Flags.QR);
+                    response.getHeader().setFlag(Flags.RA);
+                    Record q = query.getQuestion();
+                    if (q != null) {
+                        response.addRecord(q, Section.QUESTION);
+                        Record answer = new ARecord(q.getName(), DClass.IN, 300,
+                            InetAddress.getByName("203.0.113.10"));
+                        response.addRecord(answer, Section.ANSWER);
+                    }
+                    byte[] respData = response.toWire();
+                    DatagramPacket resp = new DatagramPacket(respData, respData.length,
+                        packet.getAddress(), packet.getPort());
+                    upstreamSocket.send(resp);
+                } catch (Exception e) {
+                    if (!Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+                }
+            }
+        }, "stub-dns-upstream");
+        upstreamThread.setDaemon(true);
+        upstreamThread.start();
+        
+        // Configure Nacos DNS server to forward to the stub upstream
+        NacosDnsProperties props = new NacosDnsProperties();
+        props.setEnabled(true);
+        props.setPort(0);
+        props.setDomainSuffix("nacos");
+        props.setForwardEnabled(true);
+        props.setForwardServers(List.of("127.0.0.1:" + upstreamPort));
+        props.setForwardTimeoutMs(2000);
+        
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(instanceOperator, props, metrics);
+        NacosDnsServer srv = new NacosDnsServer(props, handler, forwarder, metrics);
+        
+        try {
+            srv.start();
+            int port = -1;
+            Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
+            f.setAccessible(true);
+            for (int i = 0; i < 100; i++) {
+                DatagramSocket sock = (DatagramSocket) f.get(srv);
+                if (sock != null && sock.getLocalPort() > 0) {
+                    port = sock.getLocalPort();
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(port > 0, "server should be listening");
+            Thread.sleep(200);
+            
+            // Query the Nacos DNS server for a non-Nacos domain
+            SimpleResolver resolver = new SimpleResolver("127.0.0.1");
+            resolver.setPort(port);
+            resolver.setTCP(false);
+            resolver.setTimeout(5);
+            
+            Name queryName = Name.fromConstantString("www.example.com.");
+            Record question = Record.newRecord(queryName, Type.A, DClass.IN);
+            Message query = Message.newQuery(question);
+            int queryId = query.getHeader().getID();
+            Message response = resolver.send(query);
+            
+            // Verify the response was relayed from the stub upstream
+            assertEquals(org.xbill.DNS.Rcode.NOERROR, response.getHeader().getRcode(),
+                "Forwarded success must return NOERROR");
+            assertEquals(queryId, response.getHeader().getID(),
+                "Transaction ID must be preserved end-to-end");
+            List<Record> answers = response.getSection(Section.ANSWER);
+            assertEquals(1, answers.size(), "Stub upstream A record must be relayed");
+            assertEquals("203.0.113.10",
+                ((ARecord) answers.get(0)).getAddress().getHostAddress(),
+                "Relayed answer must match stub upstream response");
+            assertEquals(1, upstreamQueries.get(),
+                "Stub upstream should have received exactly one query");
+        } finally {
+            srv.stop();
+            upstreamThread.interrupt();
+            upstreamSocket.close();
         }
     }
 }
