@@ -96,7 +96,10 @@ public class NacosDnsQueryHandler {
             domain = domain.substring(0, domain.length() - 1);
         }
         // DNS names are case-insensitive (RFC 4343); compare lowercased.
-        return domain.toLowerCase().endsWith("." + properties.getDomainSuffix().toLowerCase());
+        String lower = domain.toLowerCase();
+        String suffix = properties.getDomainSuffix().toLowerCase();
+        // Match both subdomains (svc.nacos) and the bare suffix itself (nacos).
+        return lower.equals(suffix) || lower.endsWith("." + suffix);
     }
     
     /**

@@ -129,6 +129,26 @@ class NacosDnsForwarderTest {
     }
     
     @Test
+    void testBareSuffixRejected() {
+        // Query for the bare suffix "nacos." must not be forwarded to upstream.
+        NacosDnsForwarder forwarder =
+            new NacosDnsForwarder(buildProperties(true, "8.8.8.8"), metrics);
+        NacosDnsForwarder.ForwardResult result = forwarder.forward(
+            buildQuery("nacos", Type.A));
+        assertEquals(NacosDnsForwarder.ForwardStatus.INTERNAL_SUFFIX, result.getStatus());
+    }
+    
+    @Test
+    void testInternalSuffixCaseInsensitiveRejected() {
+        // Uppercase suffix must also be recognized as internal (RFC 4343).
+        NacosDnsForwarder forwarder =
+            new NacosDnsForwarder(buildProperties(true, "8.8.8.8"), metrics);
+        NacosDnsForwarder.ForwardResult result = forwarder.forward(
+            buildQuery("SVC.NACOS", Type.A));
+        assertEquals(NacosDnsForwarder.ForwardStatus.INTERNAL_SUFFIX, result.getStatus());
+    }
+    
+    @Test
     void testSuccessfulForwardReturnsResponse() throws IOException {
         SimpleResolver mockResolver = mock(SimpleResolver.class);
         Message query = buildQuery("www.google.com", Type.A);

@@ -417,7 +417,8 @@ class NacosDnsQueryHandlerTest {
         NacosDnsQueryHandler handler = new NacosDnsQueryHandler(
             mock(InstanceOperatorClientImpl.class), buildProperties(), buildMetrics());
         assertFalse(handler.matchesSuffix("www.google.com"));
-        assertFalse(handler.matchesSuffix("nacos"));
+        // Bare suffix "nacos" now matches (review comment: must not be forwarded)
+        assertTrue(handler.matchesSuffix("nacos"));
         assertFalse(handler.matchesSuffix(null));
     }
     
@@ -524,6 +525,10 @@ class NacosDnsQueryHandlerTest {
             "uppercase domain should match lowercase suffix");
         assertTrue(handler.matchesSuffix("svc.Nacos"),
             "mixed case domain should match");
+        assertTrue(handler.matchesSuffix("nacos"),
+            "bare suffix itself should match (not forwarded)");
+        assertTrue(handler.matchesSuffix("NACOS."),
+            "uppercase bare suffix with trailing dot should match");
         assertFalse(handler.matchesSuffix("svc.notnacos"),
             "different suffix should not match");
     }
