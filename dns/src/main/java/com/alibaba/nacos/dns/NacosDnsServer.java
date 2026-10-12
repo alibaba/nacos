@@ -40,10 +40,14 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -92,6 +96,9 @@ public class NacosDnsServer {
     /** TCP worker thread pool size (separate to prevent slow TCP from blocking UDP). */
     private static final int TCP_WORKER_THREADS = 8;
     
+    /** Forward worker thread pool size (separate to prevent slow upstreams from blocking local queries). */
+    private static final int FORWARD_WORKER_THREADS = 4;
+    
     private final NacosDnsProperties properties;
     private final NacosDnsQueryHandler queryHandler;
     private final NacosDnsForwarder forwarder;
@@ -104,6 +111,7 @@ public class NacosDnsServer {
     /** Separate worker pools: UDP queries and TCP connections don't starve each other. */
     private ExecutorService udpWorkerPool;
     private ExecutorService tcpWorkerPool;
+    private ExecutorService forwardWorkerPool;
     
     private DatagramSocket udpSocket;
     private ServerSocket tcpSocket;
@@ -177,6 +185,19 @@ public class NacosDnsServer {
             },
             new ThreadPoolExecutor.AbortPolicy());
         
+        // Separate pool for upstream forwarding: a slow or down upstream cannot
+        // consume all UDP workers and starve local Nacos service lookups.
+        forwardWorkerPool = new ThreadPoolExecutor(
+            FORWARD_WORKER_THREADS, FORWARD_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(64),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-forward-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
         running = true;
         
         udpListenerThread = new Thread(this::startUdpListenerLoop, "nacos-dns-udp-listener");
@@ -222,6 +243,9 @@ public class NacosDnsServer {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+        if (forwardWorkerPool != null) {
+            forwardWorkerPool.shutdownNow();
         }
         LOGGER.info("Nacos DNS server stopped.");
     }
@@ -293,26 +317,65 @@ public class NacosDnsServer {
     private Message resolveQuery(Message query) {
         metrics.recordQuery();
         Record question = query.getQuestion();
-        if (question != null && question.getName() != null
-            && queryHandler.matchesSuffix(question.getName().toString(true))) {
+        
+        // Queries without a question section are malformed — return FORMERR directly
+        // instead of falling through to the forwarding path.
+        if (question == null || question.getName() == null) {
+            metrics.recordFailed();
+            return buildErrorResponse(query, null, Rcode.FORMERR);
+        }
+        
+        if (queryHandler.matchesSuffix(question.getName().toString(true))) {
             // Local queries are timed inside queryHandler.handleQuery() with type/rcode tags
             return queryHandler.handleQuery(query);
         }
         
-        // Forwarding path: timed separately with type/rcode tags
+        // Forwarding path: offloaded to a dedicated worker pool so a slow or down
+        // upstream cannot consume all UDP workers and starve local Nacos lookups.
+        metrics.recordForwarded();
         String type = queryHandler.extractQueryType(query);
         Timer.Sample sample = metrics.startSample();
         
-        NacosDnsForwarder.ForwardResult result = forwarder.forward(query);
+        NacosDnsForwarder.ForwardResult result;
+        try {
+            long forwardTimeoutMs = Math.max(properties.getForwardTimeoutMs(), 100) * 2L + 1000;
+            Future<NacosDnsForwarder.ForwardResult> future =
+                forwardWorkerPool.submit(() -> forwarder.forward(query));
+            result = future.get(forwardTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            LOGGER.warn("Forward worker pool saturated, rejecting query for {}",
+                question.getName());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (TimeoutException e) {
+            LOGGER.warn("Forward query timed out for {}", question.getName());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (ExecutionException e) {
+            LOGGER.error("Forward query failed for {}", question.getName(), e.getCause());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        }
+        
         switch (result.getStatus()) {
             case SUCCESS:
                 Message upstream = result.getResponse();
                 String rcode = Rcode.string(upstream.getHeader().getRcode());
+                metrics.recordSuccess();
                 metrics.stopSample(sample, type, rcode);
                 return upstream;
             case UPSTREAM_FAILURE:
                 // Upstream failed — return SERVFAIL, NOT NXDOMAIN, to avoid
                 // poisoning client negative caches for transient failures.
+                metrics.recordFailed();
                 metrics.stopSample(sample, type, "SERVFAIL");
                 return buildErrorResponse(query, question, Rcode.SERVFAIL);
             case DISABLED:

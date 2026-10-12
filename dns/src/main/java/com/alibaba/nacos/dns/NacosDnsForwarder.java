@@ -69,6 +69,14 @@ public class NacosDnsForwarder {
     }
     
     /**
+     * Returns the parsed and validated upstream server addresses.
+     * Package-private for testing.
+     */
+    List<ServerAddress> getParsedServers() {
+        return servers;
+    }
+    
+    /**
      * Outcome of a forward attempt.
      */
     public enum ForwardStatus {
@@ -201,7 +209,8 @@ public class NacosDnsForwarder {
         if (domain.endsWith(".")) {
             domain = domain.substring(0, domain.length() - 1);
         }
-        return domain.endsWith("." + properties.getDomainSuffix());
+        // DNS names are case-insensitive (RFC 4343); compare lowercased.
+        return domain.toLowerCase().endsWith("." + properties.getDomainSuffix().toLowerCase());
     }
     
     private int perServerTimeoutMs() {
@@ -292,7 +301,7 @@ public class NacosDnsForwarder {
     /**
      * Parsed upstream server address.
      */
-    private record ServerAddress(String host, int port) {
+    record ServerAddress(String host, int port) {
         
         @Override
         public String toString() {

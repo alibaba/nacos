@@ -511,4 +511,20 @@ class NacosDnsQueryHandlerTest {
         
         assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
     }
+    
+    // ---- Case-insensitive suffix matching (RFC 4343) ----
+    
+    @Test
+    void testMatchesSuffixIsCaseInsensitive() {
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(mock(InstanceOperatorClientImpl.class),
+                buildProperties(), buildMetrics());
+        // DNS names are case-insensitive; uppercase suffix must still match locally
+        assertTrue(handler.matchesSuffix("SVC.NACOS"),
+            "uppercase domain should match lowercase suffix");
+        assertTrue(handler.matchesSuffix("svc.Nacos"),
+            "mixed case domain should match");
+        assertFalse(handler.matchesSuffix("svc.notnacos"),
+            "different suffix should not match");
+    }
 }

@@ -248,6 +248,36 @@ class NacosDnsServerTest {
     }
     
     /**
+     * Queries with no question section (qdcount=0) must return FORMERR,
+     * not fall through to the forwarding path.
+     */
+    @Test
+    void testQueryWithoutQuestionReturnsFormerr() throws Exception {
+        mockInstances(1);
+        server.start();
+        int port = getListeningPort();
+        Thread.sleep(200);
+        
+        // Build a message with no question section
+        Message query = new Message();
+        query.getHeader().setOpcode(0);
+        byte[] queryData = query.toWire();
+        
+        DatagramSocket sock = new DatagramSocket();
+        sock.setSoTimeout(3000);
+        sock.send(new java.net.DatagramPacket(queryData, queryData.length,
+            java.net.InetAddress.getByName("127.0.0.1"), port));
+        byte[] buf = new byte[512];
+        java.net.DatagramPacket resp = new java.net.DatagramPacket(buf, buf.length);
+        sock.receive(resp);
+        sock.close();
+        
+        Message response = new Message(java.util.Arrays.copyOf(resp.getData(), resp.getLength()));
+        assertEquals(org.xbill.DNS.Rcode.FORMERR, response.getHeader().getRcode(),
+            "Query without question must return FORMERR");
+    }
+    
+    /**
      * Non-Nacos domains with forwarding disabled must return NXDOMAIN.
      */
     @Test
@@ -325,6 +355,87 @@ class NacosDnsServerTest {
             
             assertEquals(org.xbill.DNS.Rcode.SERVFAIL, response.getHeader().getRcode(),
                 "Upstream failure must return SERVFAIL, not NXDOMAIN");
+        } finally {
+            srv.stop();
+        }
+    }
+    
+    /**
+     * Forwarding success must relay the upstream Message back to the client,
+     * preserving transaction ID and question section.
+     */
+    @Test
+    void testForwardSuccessRelaysUpstreamResponse() throws Exception {
+        NacosDnsProperties props = new NacosDnsProperties();
+        props.setEnabled(true);
+        props.setPort(0);
+        props.setDomainSuffix("nacos");
+        props.setForwardEnabled(true);
+        props.setForwardServers(List.of("127.0.0.1:9999"));
+        
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        
+        // Stub forwarder that returns a crafted NOERROR response with an A record
+        NacosDnsForwarder successForwarder = new NacosDnsForwarder(props, metrics) {
+            
+            @Override
+            public NacosDnsForwarder.ForwardResult forward(Message query) {
+                try {
+                    Message upstream = new Message(query.getHeader().getID());
+                    upstream.getHeader().setFlag(Flags.QR);
+                    Record q = query.getQuestion();
+                    upstream.addRecord(q, Section.QUESTION);
+                    Record answer = new ARecord(q.getName(), DClass.IN, 300,
+                        java.net.InetAddress.getByName("93.184.216.34"));
+                    upstream.addRecord(answer, Section.ANSWER);
+                    return new NacosDnsForwarder.ForwardResult(
+                        NacosDnsForwarder.ForwardStatus.SUCCESS, upstream, "127.0.0.1:9999");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(instanceOperator, props, metrics);
+        NacosDnsServer srv = new NacosDnsServer(props, handler, successForwarder, metrics);
+        try {
+            srv.start();
+            int port = -1;
+            Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
+            f.setAccessible(true);
+            for (int i = 0; i < 100; i++) {
+                DatagramSocket sock = (DatagramSocket) f.get(srv);
+                if (sock != null && sock.getLocalPort() > 0) {
+                    port = sock.getLocalPort();
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(port > 0, "server should be listening");
+            Thread.sleep(200);
+            
+            SimpleResolver resolver = new SimpleResolver("127.0.0.1");
+            resolver.setPort(port);
+            resolver.setTCP(false);
+            resolver.setTimeout(5);
+            
+            Name queryName = Name.fromConstantString("www.example.com.");
+            Record question = Record.newRecord(queryName, Type.A, DClass.IN);
+            Message query = Message.newQuery(question);
+            int queryId = query.getHeader().getID();
+            Message response = resolver.send(query);
+            
+            assertEquals(org.xbill.DNS.Rcode.NOERROR, response.getHeader().getRcode(),
+                "Forwarded success must return NOERROR");
+            assertEquals(queryId, response.getHeader().getID(),
+                "Transaction ID must be preserved");
+            List<Record> answers = response.getSection(Section.ANSWER);
+            assertEquals(1, answers.size(), "Upstream A record must be relayed");
+            assertEquals("93.184.216.34",
+                ((ARecord) answers.get(0)).getAddress().getHostAddress());
+            assertFalse(response.getHeader().getFlag(Flags.RA),
+                "Conditional forwarder must not set RA");
         } finally {
             srv.stop();
         }

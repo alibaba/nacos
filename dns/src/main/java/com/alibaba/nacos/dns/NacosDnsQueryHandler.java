@@ -95,7 +95,8 @@ public class NacosDnsQueryHandler {
         if (domain.endsWith(".")) {
             domain = domain.substring(0, domain.length() - 1);
         }
-        return domain.endsWith("." + properties.getDomainSuffix());
+        // DNS names are case-insensitive (RFC 4343); compare lowercased.
+        return domain.toLowerCase().endsWith("." + properties.getDomainSuffix().toLowerCase());
     }
     
     /**
@@ -368,9 +369,13 @@ public class NacosDnsQueryHandler {
             return null;
         }
         try {
-            // Use getByAddress with parsed bytes to avoid any DNS resolution
+            // Use getByAddress with parsed bytes to avoid any DNS resolution.
+            // Hostname-valued instance IPs are intentionally not resolved: the DNS
+            // server only supports IP-registered instances.
             byte[] addr = parseIpBytes(ip);
             if (addr == null) {
+                LOGGER.warn("Instance IP '{}' is not a valid IPv4/IPv6 address "
+                    + "(hostname registration is not supported); skipping instance", ip);
                 return null;
             }
             return InetAddress.getByAddress(addr);

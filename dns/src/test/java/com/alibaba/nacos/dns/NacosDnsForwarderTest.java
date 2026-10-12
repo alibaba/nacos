@@ -29,6 +29,7 @@ import org.xbill.DNS.Type;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -228,16 +229,21 @@ class NacosDnsForwarderTest {
     void testServerWithCustomPort() {
         NacosDnsProperties props = buildProperties(true, "127.0.0.1:5353");
         NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
-        // Should not throw during construction — port parsing happens at init
-        assertNotNull(forwarder);
+        List<NacosDnsForwarder.ServerAddress> servers = forwarder.getParsedServers();
+        assertEquals(1, servers.size());
+        assertEquals("127.0.0.1", servers.get(0).host());
+        assertEquals(5353, servers.get(0).port());
     }
     
     @Test
     void testInvalidServerEntriesIgnored() {
         NacosDnsProperties props = buildProperties(true, "", "  ", "8.8.8.8");
         NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        List<NacosDnsForwarder.ServerAddress> servers = forwarder.getParsedServers();
         // Blank entries should be skipped, only 8.8.8.8 remains
-        assertNotNull(forwarder);
+        assertEquals(1, servers.size());
+        assertEquals("8.8.8.8", servers.get(0).host());
+        assertEquals(53, servers.get(0).port());
     }
     
     @Test
@@ -246,15 +252,28 @@ class NacosDnsForwarderTest {
         // Must be rejected with a clear message, not silently misparsed.
         NacosDnsProperties props = buildProperties(true, "2001:db8::1");
         NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
-        // The invalid entry is logged and skipped; forwarder still constructs.
-        assertNotNull(forwarder);
+        // The invalid entry is logged and skipped; no servers remain.
+        assertTrue(forwarder.getParsedServers().isEmpty(),
+            "bare IPv6 without brackets must be rejected, not silently accepted");
     }
     
     @Test
     void testIpv6WithBracketsAndPortIsAccepted() {
         NacosDnsProperties props = buildProperties(true, "[2001:db8::1]:5353");
         NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
-        assertNotNull(forwarder);
+        List<NacosDnsForwarder.ServerAddress> servers = forwarder.getParsedServers();
+        assertEquals(1, servers.size());
+        assertEquals("2001:db8::1", servers.get(0).host());
+        assertEquals(5353, servers.get(0).port());
+    }
+    
+    @Test
+    void testDefaultPortWhenNoPortSpecified() {
+        NacosDnsProperties props = buildProperties(true, "8.8.8.8");
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        List<NacosDnsForwarder.ServerAddress> servers = forwarder.getParsedServers();
+        assertEquals(1, servers.size());
+        assertEquals(53, servers.get(0).port(), "default DNS port should be 53");
     }
     
     @Test
