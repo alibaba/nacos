@@ -237,6 +237,10 @@ Rules:
 - independent Console-to-Server calls for an authenticated operator must
   forward every non-blank request identity parameter recorded by the identity
   builder, using the canonical name declared by the selected auth plugin;
+- for a Console operation explicitly marked `ONLY_IDENTITY` that delegates to
+  a Server Admin API, the Console may use the configured server identity for
+  the internal call after the Console has authenticated the operator; this
+  exception must not treat browser-provided fields as server identity;
 - transport-derived fields and auth result metadata in `IdentityContext` must
   not be forwarded;
 - when at least one request identity parameter is forwarded, the call must not

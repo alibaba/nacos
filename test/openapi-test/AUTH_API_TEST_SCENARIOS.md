@@ -61,8 +61,10 @@ coverage calculation.
   `ALLOW_ANONYMOUS` operations. Missing credentials enter the documented public path, while an
   explicitly blank or invalid credential is rejected and never downgraded to anonymous.
 - `IdentityOnlyAuthorizationITCase` directly covers the three Console `ONLY_IDENTITY`
-  operations. Missing, blank, and invalid credentials are rejected; a valid ordinary identity
-  may enter the identity-only business path without an unrelated resource grant.
+  operations in merged and independent Console deployments. Missing, blank, and invalid
+  credentials are rejected; a valid ordinary identity may enter the identity-only business path
+  without an unrelated resource grant, including when the independent Console delegates to the
+  Server through the Maintainer client.
 - `ResourceAuthorizationITCase` covers Config, Naming, and AI namespace/group/name/action
   boundaries, read-versus-write behavior, owner/visibility semantics, adjacent-resource denial,
   and cache-enabled grant/revoke convergence. Its combined Skill boundary method is retained but
