@@ -17,10 +17,10 @@
 package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,7 +103,7 @@ class StsCredentialHolderTest {
     @Test
     void testGetStsCredentialFromStringCache() throws NoSuchFieldException, IllegalAccessException {
         StsCredential stsCredential = buildMockStsCredential();
-        StsConfig.getInstance().setSecurityCredentials(JacksonUtils.toJson(stsCredential));
+        StsConfig.getInstance().setSecurityCredentials(JsonUtils.toJson(stsCredential));
         assertEquals(stsCredential.toString(),
             StsCredentialHolder.getInstance().getStsCredential().toString());
     }
@@ -112,7 +112,7 @@ class StsCredentialHolderTest {
     void testGetStsCredentialFromRequest() throws Exception {
         StsCredential stsCredential = buildMockStsCredential();
         mockResult = new HttpRestResult<String>();
-        mockResult.setData(JacksonUtils.toJson(stsCredential));
+        mockResult.setData(JsonUtils.toJson(stsCredential));
         mockResult.setCode(200);
         when(nacosRestTemplate.get(any(), any(), any(), any())).thenReturn(mockResult);
         assertEquals(stsCredential.toString(),

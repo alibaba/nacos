@@ -27,8 +27,8 @@ import com.alibaba.nacos.api.lock.LockService;
 import com.alibaba.nacos.api.lock.NacosLockFactory;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import org.junit.jupiter.api.AfterEach;
 
 import java.io.InputStream;
@@ -37,6 +37,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -317,9 +318,9 @@ public abstract class JavaSdkBaseITCase {
         connection.setRequestMethod(method);
         connection.setRequestProperty("Authorization", "Bearer " + adminAccessToken());
         try {
-            JsonNode response = readJsonResponse(connection);
+            Map<String, Object> response = readJsonResponse(connection);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
-                    || response.path("code").asInt(-1) != 0) {
+                    || !Integer.valueOf(0).equals(response.get("code"))) {
                 throw new AssertionError("Visibility fixture request failed: HTTP "
                         + connection.getResponseCode() + ", response=" + response);
             }
@@ -345,27 +346,31 @@ public abstract class JavaSdkBaseITCase {
         connection.setDoOutput(true);
         try {
             connection.getOutputStream().write(body);
-            JsonNode response = readJsonResponse(connection);
+            Map<String, Object> response = readJsonResponse(connection);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
-                    || !response.hasNonNull("accessToken")) {
+                    || response.get("accessToken") == null) {
                 throw new AssertionError("Administrator authentication for fixture setup failed: HTTP "
                         + connection.getResponseCode());
             }
-            adminAccessToken = response.get("accessToken").asText();
+            adminAccessToken = String.valueOf(response.get("accessToken"));
             return adminAccessToken;
         } finally {
             connection.disconnect();
         }
     }
 
-    private JsonNode readJsonResponse(HttpURLConnection connection) throws Exception {
+    private Map<String, Object> readJsonResponse(HttpURLConnection connection) throws Exception {
         int responseCode = connection.getResponseCode();
         try (InputStream input = responseCode >= HttpURLConnection.HTTP_BAD_REQUEST
                 ? connection.getErrorStream() : connection.getInputStream()) {
             String response = input == null ? "" : new String(input.readAllBytes(),
                     StandardCharsets.UTF_8);
-            JsonNode result = JacksonUtils.toObj(response);
-            return result == null ? JacksonUtils.toObj("{}") : result;
+            if (response.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            Map<String, Object> result = JsonUtils.toObj(response,
+                    new NacosTypeReference<Map<String, Object>>() { });
+            return result == null ? Collections.emptyMap() : result;
         }
     }
 

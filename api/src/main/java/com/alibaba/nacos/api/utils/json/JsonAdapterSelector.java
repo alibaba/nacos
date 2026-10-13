@@ -189,13 +189,20 @@ final class JsonAdapterSelector {
                 if (!iterator.hasNext()) {
                     break;
                 }
-                result.add(iterator.next());
             } catch (ServiceConfigurationError e) {
                 failures.add(formatProviderFailure(e));
                 break;
             } catch (LinkageError e) {
                 failures.add(formatProviderFailure(e));
                 break;
+            }
+            // Resource enumeration must make progress; an individual failed provider can be skipped.
+            try {
+                result.add(iterator.next());
+            } catch (ServiceConfigurationError e) {
+                failures.add(formatProviderFailure(e));
+            } catch (LinkageError e) {
+                failures.add(formatProviderFailure(e));
             }
         }
         return new LoadedAdapters(result, failures);

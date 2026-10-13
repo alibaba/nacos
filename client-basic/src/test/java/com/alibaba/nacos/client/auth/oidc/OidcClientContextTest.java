@@ -22,6 +22,8 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -246,10 +248,11 @@ class OidcClientContextTest {
         assertFalse(context.discover());
     }
     
-    @Test
-    void testDiscoverNullTokenEndpointReturnsFalse() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"token_endpoint\":null}", "null"})
+    void testDiscoverNullTokenEndpointReturnsFalse(String response) throws Exception {
         startServer("/.well-known/openid-configuration",
-            exchange -> writeJson(exchange, 200, "{\"token_endpoint\":null}"));
+            exchange -> writeJson(exchange, 200, response));
         Properties properties = new Properties();
         properties.setProperty(OidcClientConstants.PROP_ISSUER_URI, baseIssuerUri());
         properties.setProperty(OidcClientConstants.PROP_CLIENT_ID, "my-client");
