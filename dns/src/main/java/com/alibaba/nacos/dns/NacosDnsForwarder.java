@@ -32,7 +32,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.PreDestroy;
 
 /**
  * Forwards DNS queries that don't match the Nacos domain suffix to upstream DNS servers.
@@ -62,23 +67,67 @@ public class NacosDnsForwarder {
     /** Default DNS port. */
     private static final int DEFAULT_DNS_PORT = 53;
     
+    /** Interval between upstream address refreshes. */
+    private static final long REFRESH_INTERVAL_SECONDS = 300;
+    
     private final NacosDnsProperties properties;
     private final NacosDnsMetrics metrics;
-    private final List<ServerAddress> servers;
+    /** Original configured server specs, retained for periodic re-resolution. */
+    private final List<String> originalSpecs;
+    /** Resolved server snapshot, atomically replaced on each refresh. */
+    private final AtomicReference<List<ServerAddress>> servers;
+    private final ScheduledExecutorService refreshExecutor;
     
     public NacosDnsForwarder(NacosDnsProperties properties, NacosDnsMetrics metrics) {
         this.properties = properties;
         this.metrics = metrics;
-        this.servers = parseAndValidateServers(properties.getForwardServers(),
-            Math.max(properties.getForwardTimeoutMs(), MIN_FORWARD_TIMEOUT_MS));
+        this.originalSpecs = properties.getForwardServers() != null
+            ? Collections.unmodifiableList(new ArrayList<>(properties.getForwardServers()))
+            : Collections.emptyList();
+        this.servers = new AtomicReference<>(
+            parseAndValidateServers(originalSpecs, resolveTimeoutMs()));
+        this.refreshExecutor = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r, "nacos-dns-forward-refresh");
+            t.setDaemon(true);
+            return t;
+        });
+        this.refreshExecutor.scheduleWithFixedDelay(
+            this::refreshServers,
+            REFRESH_INTERVAL_SECONDS, REFRESH_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
     
     /**
-     * Returns the parsed and validated upstream server addresses.
+     * Re-resolve all configured upstream hostnames and atomically publish the
+     * updated snapshot. Upstreams that previously failed resolution are retried
+     * on every refresh, so a temporary startup failure does not permanently
+     * exclude an upstream.
+     */
+    private void refreshServers() {
+        try {
+            List<ServerAddress> resolved = parseAndValidateServers(originalSpecs,
+                resolveTimeoutMs());
+            servers.set(resolved);
+            LOGGER.debug("Refreshed upstream DNS server list: {} entries", resolved.size());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh upstream DNS server list: {}", e.toString());
+        }
+    }
+    
+    private int resolveTimeoutMs() {
+        return Math.max(properties.getForwardTimeoutMs(), MIN_FORWARD_TIMEOUT_MS);
+    }
+    
+    @PreDestroy
+    public void close() {
+        refreshExecutor.shutdownNow();
+    }
+    
+    /**
+     * Returns the current resolved upstream server addresses.
      * Package-private for testing.
      */
     List<ServerAddress> getParsedServers() {
-        return servers;
+        return servers.get();
     }
     
     /**
@@ -138,7 +187,7 @@ public class NacosDnsForwarder {
         if (!properties.isForwardEnabled()) {
             return new ForwardResult(ForwardStatus.DISABLED, null, null);
         }
-        if (servers.isEmpty()) {
+        if (servers.get().isEmpty()) {
             return new ForwardResult(ForwardStatus.NO_SERVERS, null, null);
         }
         
@@ -159,7 +208,7 @@ public class NacosDnsForwarder {
         long deadline = System.currentTimeMillis() + totalBudgetMs();
         List<String> failedServers = new ArrayList<>();
         
-        for (ServerAddress addr : servers) {
+        for (ServerAddress addr : servers.get()) {
             long remaining = deadline - System.currentTimeMillis();
             if (remaining <= 0) {
                 LOGGER.warn("Forward time budget exhausted after trying servers: {}",

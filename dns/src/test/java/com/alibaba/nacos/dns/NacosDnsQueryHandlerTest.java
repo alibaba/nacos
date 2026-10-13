@@ -539,12 +539,12 @@ class NacosDnsQueryHandlerTest {
     
     @Test
     void testSrvTargetIpv4AddressQueryReturnsIp() {
-        // A query for 10-0-0-1.nacos must return 10.0.0.1 directly,
+        // A query for _nacos-ip-10-0-0-1.nacos must return 10.0.0.1 directly,
         // so clients resolving SRV targets independently can reach the instance.
         InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
         NacosDnsQueryHandler handler =
             new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
-        Message query = buildQuery("10-0-0-1.nacos.", Type.A, DClass.IN);
+        Message query = buildQuery("_nacos-ip-10-0-0-1.nacos.", Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
         assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
@@ -559,7 +559,7 @@ class NacosDnsQueryHandlerTest {
         InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
         NacosDnsQueryHandler handler =
             new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
-        String target = "2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
+        String target = "_nacos-ip-2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
         Message query = buildQuery(target, Type.AAAA, DClass.IN);
         Message response = handler.handleQuery(query);
         
@@ -571,16 +571,73 @@ class NacosDnsQueryHandlerTest {
     }
     
     @Test
-    void testSrvTargetWrongAddressFamilyReturnsNxdomain() {
-        // A query for an IPv6-encoded target returns NXDOMAIN (no A record for IPv6).
+    void testSrvTargetIpv4WithAaaaQueryReturnsNodata() {
+        // AAAA query for an IPv4 SRV target returns NODATA (NOERROR, empty answer),
+        // not NXDOMAIN. The target is recognized; it simply has no AAAA record.
         InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
         NacosDnsQueryHandler handler =
             new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
-        String target = "2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
+        Message query = buildQuery("_nacos-ip-10-0-0-1.nacos.", Type.AAAA, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Address-family mismatch must return NODATA, not NXDOMAIN");
+        assertTrue(response.getSection(Section.ANSWER).isEmpty(),
+            "NODATA must have empty answer section");
+        assertEquals(1, response.getSection(Section.QUESTION).size(),
+            "Original question must be preserved");
+    }
+    
+    @Test
+    void testSrvTargetIpv6WithAQueryReturnsNodata() {
+        // A query for an IPv6 SRV target returns NODATA (NOERROR, empty answer).
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        String target = "_nacos-ip-2001-0db8-0000-0000-0000-0000-0000-0001.nacos.";
         Message query = buildQuery(target, Type.A, DClass.IN);
         Message response = handler.handleQuery(query);
         
-        assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode());
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Address-family mismatch must return NODATA, not NXDOMAIN");
+        assertTrue(response.getSection(Section.ANSWER).isEmpty());
+    }
+    
+    @Test
+    void testIpShapedServiceNameNotInterceptedAsSrvTarget() {
+        // A service literally named "10-0-0-1" registered at 192.0.2.44 must NOT
+        // be intercepted by the SRV target decoder. The reserved _nacos-ip- prefix
+        // prevents this collision.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        Instance inst = buildInstance("192.0.2.44", true, true);
+        when(op.listInstance(anyString(), anyString(), eq("10-0-0-1"), any(), any(), anyBoolean()))
+            .thenReturn(buildServiceInfo(Arrays.asList(inst)));
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("10-0-0-1.nacos.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode());
+        List<Record> answers = response.getSection(Section.ANSWER);
+        assertEquals(1, answers.size());
+        assertEquals("192.0.2.44", ((ARecord) answers.get(0)).getAddress().getHostAddress(),
+            "IP-shaped service name must resolve to registered address, not encoded IP");
+    }
+    
+    @Test
+    void testBareSuffixQueryReturnsNxdomain() {
+        // Bare suffix queries (nacos. A / AAAA / SRV) must return NXDOMAIN,
+        // not throw an exception or SERVFAIL.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        
+        for (int type : new int[] {Type.A, Type.AAAA, Type.SRV}) {
+            Message query = buildQuery("nacos.", type, DClass.IN);
+            Message response = handler.handleQuery(query);
+            assertEquals(Rcode.NXDOMAIN, response.getHeader().getRcode(),
+                "Bare suffix " + Type.string(type) + " query must return NXDOMAIN");
+        }
     }
     
     @Test

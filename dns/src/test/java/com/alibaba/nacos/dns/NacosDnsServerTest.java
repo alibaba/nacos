@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -551,6 +552,129 @@ class NacosDnsServerTest {
             srv.stop();
             upstreamThread.interrupt();
             upstreamSocket.close();
+        }
+    }
+    
+    @Test
+    void testLocalQueryNotBlockedByPendingForwarding() throws Exception {
+        // When forwarding queries are pending (slow upstream), local Nacos-suffix
+        // queries must still complete promptly on the UDP worker pool. The UDP
+        // worker must not block on forwarder.future.get().
+        NacosDnsProperties props = new NacosDnsProperties();
+        props.setEnabled(true);
+        props.setPort(0);
+        props.setDomainSuffix("nacos");
+        props.setForwardEnabled(true);
+        props.setForwardServers(List.of("127.0.0.1:9999"));
+        props.setForwardTimeoutMs(5000);
+        
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        
+        // Blocking forwarder: holds the forward pool threads until latch released
+        java.util.concurrent.CountDownLatch blockLatch =
+            new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch enteredLatch =
+            new java.util.concurrent.CountDownLatch(4);
+        NacosDnsForwarder blockingForwarder = new NacosDnsForwarder(props, metrics) {
+            
+            @Override
+            public ForwardResult forward(Message query) {
+                enteredLatch.countDown();
+                try {
+                    blockLatch.await(10, java.util.concurrent.TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return new ForwardResult(ForwardStatus.UPSTREAM_FAILURE, null, null);
+            }
+        };
+        
+        Instance inst = new Instance();
+        inst.setIp("10.0.0.99");
+        inst.setPort(8080);
+        inst.setHealthy(true);
+        inst.setEnabled(true);
+        ServiceInfo si = new ServiceInfo();
+        si.setName("localsvc");
+        si.setGroupName("DEFAULT_GROUP");
+        si.setHosts(List.of(inst));
+        when(instanceOperator.listInstance(anyString(), anyString(), eq("localsvc"),
+            any(), any(), anyBoolean())).thenReturn(si);
+        
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(instanceOperator, props, metrics);
+        NacosDnsServer srv = new NacosDnsServer(props, handler, blockingForwarder, metrics);
+        
+        try {
+            srv.start();
+            int port = -1;
+            Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
+            f.setAccessible(true);
+            for (int i = 0; i < 100; i++) {
+                DatagramSocket sock = (DatagramSocket) f.get(srv);
+                if (sock != null && sock.getLocalPort() > 0) {
+                    port = sock.getLocalPort();
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(port > 0, "server should be listening");
+            Thread.sleep(200);
+            final int serverPort = port;
+            
+            // Saturate the forward pool with 4 blocking forwarding queries
+            for (int i = 0; i < 4; i++) {
+                final int idx = i;
+                new Thread(() -> {
+                    try (DatagramSocket sock = new DatagramSocket()) {
+                        sock.setSoTimeout(500);
+                        Name fwdName = Name.fromConstantString("external" + idx + ".com.");
+                        Message fwdQuery = Message.newQuery(
+                            Record.newRecord(fwdName, Type.A, DClass.IN));
+                        byte[] data = fwdQuery.toWire();
+                        DatagramPacket pkt = new DatagramPacket(data, data.length,
+                            InetAddress.getByName("127.0.0.1"), serverPort);
+                        sock.send(pkt);
+                        // Wait for response (will time out since forwarder is blocked)
+                        byte[] buf = new byte[512];
+                        DatagramPacket resp = new DatagramPacket(buf, buf.length);
+                        try {
+                            sock.receive(resp);
+                        } catch (Exception ignored) {
+                            // expected timeout
+                        }
+                    } catch (Exception ignored) {
+                        // ignore
+                    }
+                }, "fwd-client-" + i).start();
+            }
+            // Wait until all 4 forward pool threads are occupied
+            assertTrue(enteredLatch.await(10, java.util.concurrent.TimeUnit.SECONDS),
+                "All 4 forward pool threads should be occupied");
+            
+            // Local query must complete promptly despite forward pool being saturated
+            SimpleResolver localResolver = new SimpleResolver("127.0.0.1");
+            localResolver.setPort(port);
+            localResolver.setTCP(false);
+            localResolver.setTimeout(3);
+            long start = System.currentTimeMillis();
+            Name localName = Name.fromConstantString("localsvc.nacos.");
+            Message localQuery = Message.newQuery(
+                Record.newRecord(localName, Type.A, DClass.IN));
+            Message localResponse = localResolver.send(localQuery);
+            long elapsed = System.currentTimeMillis() - start;
+            
+            assertEquals(org.xbill.DNS.Rcode.NOERROR, localResponse.getHeader().getRcode(),
+                "Local query must succeed while forward pool is saturated");
+            List<Record> answers = localResponse.getSection(Section.ANSWER);
+            assertEquals(1, answers.size());
+            assertEquals("10.0.0.99",
+                ((ARecord) answers.get(0)).getAddress().getHostAddress());
+            assertTrue(elapsed < 3000,
+                "Local query must complete promptly (<3s), took " + elapsed + "ms");
+        } finally {
+            blockLatch.countDown();
+            srv.stop();
         }
     }
 }

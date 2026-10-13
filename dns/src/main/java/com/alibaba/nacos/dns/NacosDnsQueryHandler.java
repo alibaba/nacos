@@ -167,25 +167,27 @@ public class NacosDnsQueryHandler {
             return response;
         }
         
-        // SRV target names (e.g. 10-0-0-1.nacos) encode an IP address. A/AAAA
-        // queries for these names must return the encoded IP directly, so that
-        // clients resolving SRV targets independently (not via Additional section)
-        // can reach the instance.
+        // SRV target names use the reserved "_nacos-ip-" prefix to avoid
+        // collisions with ordinary service names (e.g. a service literally
+        // named "10-0-0-1"). A/AAAA queries for these names return the encoded
+        // IP directly; an address-family mismatch returns NODATA (NOERROR with
+        // empty answer) rather than falling through to service lookup.
         if (type == Type.A || type == Type.AAAA) {
             InetAddress targetAddr = parseSrvTargetAddress(domain);
             if (targetAddr != null) {
+                response.addRecord(question, Section.QUESTION);
                 boolean isIpv4 = targetAddr.getAddress().length == 4;
                 if ((type == Type.A && isIpv4) || (type == Type.AAAA && !isIpv4)) {
-                    response.addRecord(question, Section.QUESTION);
                     Record answer = type == Type.A
                         ? new ARecord(question.getName(), DClass.IN, properties.getTtl(),
                             targetAddr)
                         : new AAAARecord(question.getName(), DClass.IN, properties.getTtl(),
                             targetAddr);
                     response.addRecord(answer, Section.ANSWER);
-                    metrics.recordSuccess();
-                    return response;
                 }
+                // Address-family mismatch: NODATA (NOERROR, empty answer section)
+                metrics.recordSuccess();
+                return response;
             }
         }
         
@@ -293,9 +295,17 @@ public class NacosDnsQueryHandler {
     }
     
     /**
+     * Reserved prefix for generated SRV target hostnames. Using a distinct prefix
+     * prevents collisions between generated targets and ordinary service names
+     * (e.g. a service literally named "10-0-0-1").
+     */
+    private static final String SRV_TARGET_PREFIX = "_nacos-ip-";
+    
+    /**
      * Build a synthetic target hostname for an SRV record from an IP address.
-     * IPv4: 10.0.0.1 -> 10-0-0-1.nacos.
-     * IPv6: uses full expanded form with hyphens, e.g. 2001-0db8-0000-0000-0000-0000-0000-0001.nacos.
+     * IPv4: 10.0.0.1 -> _nacos-ip-10-0-0-1.nacos.
+     * IPv6: uses full expanded form with hyphens,
+     *       e.g. _nacos-ip-2001-0db8-0000-0000-0000-0000-0000-0001.nacos.
      */
     private Name buildSrvTargetName(InetAddress addr) {
         String ipPart;
@@ -313,13 +323,17 @@ public class NacosDnsQueryHandler {
             }
             ipPart = sb.toString();
         }
-        return Name.fromConstantString(ipPart + "." + properties.getDomainSuffix() + ".");
+        return Name.fromConstantString(
+            SRV_TARGET_PREFIX + ipPart + "." + properties.getDomainSuffix() + ".");
     }
     
     /**
      * Parse an IP address from an SRV target name (inverse of buildSrvTargetName).
-     * IPv4: 10-0-0-1.nacos -> 10.0.0.1
-     * IPv6: 2001-0db8-...-0001.nacos -> 2001:0db8:...:0001
+     * Only names with the reserved {@link #SRV_TARGET_PREFIX} are recognized, so
+     * ordinary service names (including IP-shaped names like "10-0-0-1") are not
+     * intercepted.
+     * IPv4: _nacos-ip-10-0-0-1.nacos -> 10.0.0.1
+     * IPv6: _nacos-ip-2001-0db8-...-0001.nacos -> 2001:0db8:...:0001
      *
      * @param domain the queried domain name (may have trailing dot)
      * @return the parsed InetAddress, or null if the domain is not an SRV target
@@ -333,10 +347,18 @@ public class NacosDnsQueryHandler {
             d = d.substring(0, d.length() - 1);
         }
         String suffix = "." + properties.getDomainSuffix();
+        // Bare suffix (domain equals suffix, no service/target part) — not an SRV target
+        if (d.length() <= suffix.length()) {
+            return null;
+        }
         if (!DnsNameUtil.matchesSuffix(d, properties.getDomainSuffix())) {
             return null;
         }
         String ipPart = d.substring(0, d.length() - suffix.length());
+        if (!ipPart.startsWith(SRV_TARGET_PREFIX)) {
+            return null;
+        }
+        ipPart = ipPart.substring(SRV_TARGET_PREFIX.length());
         if (ipPart.isEmpty()) {
             return null;
         }
@@ -395,12 +417,14 @@ public class NacosDnsQueryHandler {
             return null;
         }
         
-        // Strip suffix (length is identical regardless of case)
-        String servicePart = domain.substring(0, domain.length() - suffix.length());
-        if (servicePart.isEmpty()) {
-            // Bare suffix query (e.g. "nacos.") has no service name to resolve
+        // Bare suffix query (domain equals suffix, e.g. "nacos") has no service
+        // name to resolve. Check before substring to avoid StringIndexOutOfBounds.
+        if (domain.length() <= suffix.length()) {
             return null;
         }
+        
+        // Strip suffix (length is identical regardless of case)
+        String servicePart = domain.substring(0, domain.length() - suffix.length());
         
         // Parse service name and group
         String[] parts = servicePart.split("\\.");

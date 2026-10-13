@@ -284,27 +284,47 @@ public class NacosDnsServer {
     
     /**
      * Handle a single UDP DNS query.
+     *
+     * <p>Local Nacos-suffix queries are resolved synchronously on the UDP worker
+     * (fast path). Forwarding queries are submitted to the dedicated forward
+     * worker pool and the UDP worker returns immediately, so a slow or down
+     * upstream cannot occupy UDP workers and starve local Nacos lookups.
      */
     private void handleUdpQuery(byte[] queryData, InetAddress clientAddr, int clientPort) {
         try {
             Message query = new Message(queryData);
-            Message response = resolveQuery(query);
+            Record question = query.getQuestion();
             
-            byte[] responseData = response.toWire();
-            // Truncate if response exceeds standard UDP size to prevent amplification
-            if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
-                response.getHeader().setFlag(Flags.TC);
-                responseData = response.toWire();
-                if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
-                    // Fallback: send only header + question (still valid truncated response)
-                    responseData = buildTruncatedResponse(query,
-                        response.getHeader().getRcode());
-                }
+            // Malformed queries (no question) are handled synchronously — FORMERR
+            if (question == null || question.getName() == null) {
+                metrics.recordQuery();
+                metrics.recordFailed();
+                sendUdpResponse(buildErrorResponse(query, null, Rcode.FORMERR),
+                    query, clientAddr, clientPort);
+                return;
             }
             
-            synchronized (udpSocket) {
-                udpSocket.send(
-                    new DatagramPacket(responseData, responseData.length, clientAddr, clientPort));
+            if (queryHandler.matchesSuffix(question.getName().toString(true))) {
+                // Local fast path: resolve and send on the UDP worker
+                metrics.recordQuery();
+                Message response = queryHandler.handleQuery(query);
+                sendUdpResponse(response, query, clientAddr, clientPort);
+                return;
+            }
+            
+            // Forwarding path: submit to dedicated pool, release UDP worker immediately.
+            // The forward thread performs the upstream lookup and sends the response.
+            metrics.recordQuery();
+            metrics.recordForwarded();
+            try {
+                forwardWorkerPool.submit(
+                    () -> forwardAndSendUdp(query, clientAddr, clientPort));
+            } catch (RejectedExecutionException e) {
+                LOGGER.warn("Forward worker pool saturated, rejecting query for {}",
+                    question.getName());
+                metrics.recordFailed();
+                sendUdpResponse(buildErrorResponse(query, question, Rcode.SERVFAIL),
+                    query, clientAddr, clientPort);
             }
         } catch (Exception e) {
             LOGGER.debug("Error handling UDP DNS query from {}:{}", clientAddr, clientPort, e);
@@ -312,26 +332,96 @@ public class NacosDnsServer {
     }
     
     /**
-     * Resolve a DNS query: handle Nacos-suffix domains locally, forward others if enabled.
+     * Perform forwarding lookup and send the UDP response. Runs on the forward
+     * worker pool, not the UDP worker pool.
      */
-    private Message resolveQuery(Message query) {
+    private void forwardAndSendUdp(Message query, InetAddress clientAddr, int clientPort) {
+        Record question = query.getQuestion();
+        String type = queryHandler.extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
+        Message response;
+        
+        try {
+            // Already running on the forward worker pool — call forwarder directly.
+            // Do NOT submit to forwardWorkerPool here (would deadlock the same pool).
+            // forwarder.forward() enforces its own total time budget (2x per-server timeout).
+            NacosDnsForwarder.ForwardResult result = forwarder.forward(query);
+            
+            switch (result.getStatus()) {
+                case SUCCESS:
+                    Message upstream = result.getResponse();
+                    String rcode = Rcode.string(upstream.getHeader().getRcode());
+                    metrics.recordSuccess();
+                    metrics.stopSample(sample, type, rcode);
+                    response = upstream;
+                    break;
+                case UPSTREAM_FAILURE:
+                    metrics.recordFailed();
+                    metrics.stopSample(sample, type, "SERVFAIL");
+                    response = buildErrorResponse(query, question, Rcode.SERVFAIL);
+                    break;
+                case DISABLED:
+                case NO_SERVERS:
+                case INTERNAL_SUFFIX:
+                default:
+                    metrics.recordFailed();
+                    metrics.stopSample(sample, type, "NXDOMAIN");
+                    response = buildErrorResponse(query, question, Rcode.NXDOMAIN);
+                    break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Forward query failed for {}", question.getName(), e);
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            response = buildErrorResponse(query, question, Rcode.SERVFAIL);
+        }
+        
+        sendUdpResponse(response, query, clientAddr, clientPort);
+    }
+    
+    /**
+     * Serialize, truncate if needed, and send a UDP DNS response.
+     */
+    private void sendUdpResponse(Message response, Message query,
+        InetAddress clientAddr, int clientPort) {
+        try {
+            byte[] responseData = response.toWire();
+            // Truncate if response exceeds standard UDP size to prevent amplification
+            if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
+                response.getHeader().setFlag(Flags.TC);
+                responseData = response.toWire();
+                if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
+                    responseData = buildTruncatedResponse(query,
+                        response.getHeader().getRcode());
+                }
+            }
+            synchronized (udpSocket) {
+                udpSocket.send(
+                    new DatagramPacket(responseData, responseData.length,
+                        clientAddr, clientPort));
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error sending UDP DNS response to {}:{}", clientAddr, clientPort, e);
+        }
+    }
+    
+    /**
+     * Synchronous query resolution for TCP connections. TCP runs on its own
+     * worker pool, so blocking on upstream forwarding is acceptable there.
+     */
+    private Message resolveQuerySync(Message query) {
         metrics.recordQuery();
         Record question = query.getQuestion();
         
-        // Queries without a question section are malformed — return FORMERR directly
-        // instead of falling through to the forwarding path.
         if (question == null || question.getName() == null) {
             metrics.recordFailed();
             return buildErrorResponse(query, null, Rcode.FORMERR);
         }
         
         if (queryHandler.matchesSuffix(question.getName().toString(true))) {
-            // Local queries are timed inside queryHandler.handleQuery() with type/rcode tags
             return queryHandler.handleQuery(query);
         }
         
-        // Forwarding path: offloaded to a dedicated worker pool so a slow or down
-        // upstream cannot consume all UDP workers and starve local Nacos lookups.
         metrics.recordForwarded();
         String type = queryHandler.extractQueryType(query);
         Timer.Sample sample = metrics.startSample();
@@ -373,8 +463,6 @@ public class NacosDnsServer {
                 metrics.stopSample(sample, type, rcode);
                 return upstream;
             case UPSTREAM_FAILURE:
-                // Upstream failed — return SERVFAIL, NOT NXDOMAIN, to avoid
-                // poisoning client negative caches for transient failures.
                 metrics.recordFailed();
                 metrics.stopSample(sample, type, "SERVFAIL");
                 return buildErrorResponse(query, question, Rcode.SERVFAIL);
@@ -382,7 +470,6 @@ public class NacosDnsServer {
             case NO_SERVERS:
             case INTERNAL_SUFFIX:
             default:
-                // Forwarding not configured or not applicable — domain doesn't exist locally
                 metrics.recordFailed();
                 metrics.stopSample(sample, type, "NXDOMAIN");
                 return buildErrorResponse(query, question, Rcode.NXDOMAIN);
@@ -518,7 +605,7 @@ public class NacosDnsServer {
                 }
                 
                 Message query = new Message(queryData);
-                Message response = resolveQuery(query);
+                Message response = resolveQuerySync(query);
                 
                 byte[] responseData = response.toWire();
                 synchronized (out) {

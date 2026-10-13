@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.dns;
 
+import java.util.Locale;
+
 /**
  * DNS name utilities shared between the query handler and forwarder.
  *
@@ -32,8 +34,10 @@ final class DnsNameUtil {
      * Test whether a fully-qualified or relative domain name belongs to the given
      * suffix, using case-insensitive comparison per RFC 4343.
      *
-     * <p>Matches both the bare suffix (e.g. {@code nacos}) and subdomains
-     * (e.g. {@code svc.nacos}). The original domain string is not modified.
+     * <p>Comparison uses {@link Locale#ROOT} to avoid JVM default-locale effects
+     * (e.g. Turkish dotted-I). Matches both the bare suffix (e.g. {@code nacos})
+     * and subdomains (e.g. {@code svc.nacos}). The original domain string is not
+     * modified.
      *
      * @param domain the domain name (may or may not have a trailing dot)
      * @param suffix the configured Nacos DNS suffix (no leading dot, no trailing dot)
@@ -47,8 +51,8 @@ final class DnsNameUtil {
         if (d.endsWith(".")) {
             d = d.substring(0, d.length() - 1);
         }
-        String lowerDomain = d.toLowerCase();
-        String lowerSuffix = suffix.toLowerCase();
+        String lowerDomain = d.toLowerCase(Locale.ROOT);
+        String lowerSuffix = suffix.toLowerCase(Locale.ROOT);
         return lowerDomain.equals(lowerSuffix) || lowerDomain.endsWith("." + lowerSuffix);
     }
 }
