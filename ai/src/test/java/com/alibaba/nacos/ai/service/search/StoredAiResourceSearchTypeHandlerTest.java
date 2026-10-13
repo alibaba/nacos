@@ -19,6 +19,9 @@ package com.alibaba.nacos.ai.service.search;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.service.hub.HubSkillReferenceResolver;
+import com.alibaba.nacos.ai.service.hub.HubSkillSourceReadValidator;
+import com.alibaba.nacos.ai.service.hub.ResolvedHubSkillReference;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -43,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -84,14 +88,23 @@ class StoredAiResourceSearchTypeHandlerTest {
         
         version.setNamespaceId(namespaceId);
         version.setStorage(referenceJson);
+        version.setId(901L);
         
         when(resourceManager.findMeta(namespaceId, internalName, AiResourceConstants.RESOURCE_TYPE_SKILL)).thenReturn(
                 resource);
         
         when(resourceManager.findVersion(namespaceId, internalName, AiResourceConstants.RESOURCE_TYPE_SKILL,
                 "1.0.0")).thenReturn(version);
-        
-        AiResourceIndexProjection projection = handler().project(namespaceId, AiResourceConstants.RESOURCE_TYPE_SKILL,
+        HubSkillReferenceResolver resolver = mock(HubSkillReferenceResolver.class);
+        HubSkillSourceReadValidator validator = mock(HubSkillSourceReadValidator.class);
+        ResolvedHubSkillReference snapshot = mock(ResolvedHubSkillReference.class);
+        when(resolver.resolve(305L)).thenReturn(snapshot);
+        when(snapshot.getInternalName()).thenReturn(internalName);
+        when(snapshot.getSourceVersion()).thenReturn("1.0.0");
+        when(snapshot.getHubVersionId()).thenReturn(901L);
+        StoredAiResourceSearchTypeHandler handler = handler();
+        handler.setHubReadValidation(resolver, validator);
+        AiResourceIndexProjection projection = handler.project(namespaceId, AiResourceConstants.RESOURCE_TYPE_SKILL,
                 internalName, null);
         
         assertEquals(internalName, projection.getDocument().getResourceName());

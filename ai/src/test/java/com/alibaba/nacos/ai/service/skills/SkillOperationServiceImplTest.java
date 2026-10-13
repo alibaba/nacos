@@ -158,6 +158,9 @@ class SkillOperationServiceImplTest {
                 publishPipelineExecutor, manifestService,
                 new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                     pipelineExecutionRepository));
+        skillOperationService.setHubSkillSourceLifecycleRevoker(
+            org.mockito.Mockito
+                .mock(com.alibaba.nacos.ai.service.hub.HubSkillSourceLifecycleRevoker.class));
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString()))
             .thenReturn(Optional.empty());

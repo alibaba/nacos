@@ -85,6 +85,7 @@ export function Sidebar() {
       defaultOpen: true,
       children: [
         { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill', badge: 'new' },
+        { key: 'hubSkillRegistry', label: t('menu.hubSkillRegistry'), path: '/hub/skills' },
         { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement', badge: 'new' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
         { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec', badge: 'Beta' },
@@ -187,6 +188,7 @@ export function Sidebar() {
       agentRegistry: <Bot size={16} />,
       agentSpecRegistry: <Package size={16} />,
       skillRegistry: <Wrench size={16} />,
+      hubSkillRegistry: <Globe size={16} />,
       promptRegistry: <MessageSquare size={16} />,
       userList: <Users size={16} />,
       roleManagement: <Key size={16} />,

@@ -505,6 +505,7 @@ export default function SkillManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('skill.deleteConfirm', { name: deleteTarget })}
+              <span className="mt-2 block text-amber-600">{t('hub.deleteWarning')}</span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

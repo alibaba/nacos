@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { namespaceApi, type Namespace } from '@/api';
+import { HUB_SYSTEM_NAMESPACE } from '@/lib/hub-skill-utils';
 
 export type NamespaceChangeGuard = (namespaceId: string, namespaceShowName: string) => boolean;
 
@@ -28,7 +29,8 @@ export const getDefaultNamespaceFromHash = (hash: string): string => {
     return '';
   }
   const params = new URLSearchParams(queryString);
-  return params.get('namespace') || params.get('namespaceId') || '';
+  const namespace = params.get('namespace') || params.get('namespaceId') || '';
+  return namespace === HUB_SYSTEM_NAMESPACE ? '' : namespace;
 };
 
 export const getNamespaceSearchAfterSwitch = (
@@ -73,6 +75,7 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
 
   // Actions
   setNamespace: (id: string, showName: string) => {
+    if (id === HUB_SYSTEM_NAMESPACE) return;
     set({
       currentNamespace: id,
       namespaceShowName: showName,
@@ -96,10 +99,10 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       // Response interceptor already unwraps response.data (returns HTTP body)
       // Body structure: { code: 0, data: [...namespaces] }
       const body = response as unknown as { code: number; data: Namespace[] };
-      const namespaces = body.data || [];
+      const namespaces = (body.data || []).filter(ns => ns.namespace !== HUB_SYSTEM_NAMESPACE);
       
       // If no current namespace set, use the first one or empty
-      const currentNamespace = get().currentNamespace;
+      const currentNamespace = get().currentNamespace === HUB_SYSTEM_NAMESPACE ? '' : get().currentNamespace;
       if (!currentNamespace && namespaces.length > 0) {
         const defaultNs = namespaces.find(ns => ns.namespace === 'public') || namespaces[0];
         set({
@@ -111,6 +114,8 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       } else {
         set({
           namespaces,
+          currentNamespace,
+          namespaceShowName: currentNamespace ? get().namespaceShowName : '',
           loading: false,
         });
       }

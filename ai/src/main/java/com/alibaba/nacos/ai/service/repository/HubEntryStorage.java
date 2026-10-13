@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResource;
 
+import java.util.List;
+
 /**
  * Hub-only metadata reads and identity-pinned compare-and-set operations.
  *
@@ -31,6 +33,39 @@ public interface HubEntryStorage {
     
     /** Find a Hub entry by immutable database ID, or null if it is not a Hub Skill. */
     AiResource findByEntryId(long hubEntryId);
+    
+    /**
+     * Find the maximum ID belonging to a Hub Skill entry at the start of a scan.
+     * An empty Hub returns 0. This bounds a single directory listing run.
+     *
+     * @return upper bound on Hub entry IDs, or 0 for an empty directory
+     */
+    long maxEntryId();
+    
+    /**
+     * Seek the smallest Hub entry ID strictly greater than {@code afterId} and
+     * not greater than {@code maxId}. Returns null when the scan has finished.
+     *
+     * <p>Using an indexed ID seek prevents offset scans from skipping entries
+     * when earlier rows change or are removed.</p>
+     *
+     * @param afterId exclusive starting ID, nonnegative
+     * @param maxId inclusive upper bound captured at scan start
+     * @return next Hub entry ID, or null
+     */
+    Long nextEntryId(long afterId, long maxId);
+    
+    /**
+     * Read a bounded, ascending range of Hub Skill entries. The caller sets
+     * a numeric ID window (not a row-count limit), so the SQL is portable to
+     * Derby, MySQL, PostgreSQL and Oracle without dialect-specific LIMIT syntax.
+     * The returned rows are not authorization decisions.
+     *
+     * @param fromId inclusive first ID
+     * @param toId inclusive last ID
+     * @return Hub Skill rows sorted by ID ascending
+     */
+    List<AiResource> entriesInIdRange(long fromId, long toId);
     
     /**
      * Persist the complete effective Hub metadata in a single optimistic write.

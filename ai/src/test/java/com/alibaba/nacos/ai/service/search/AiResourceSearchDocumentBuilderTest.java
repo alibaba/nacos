@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -108,15 +109,16 @@ class AiResourceSearchDocumentBuilderTest {
         
         assertEquals("HUB_REFERENCE", metadata.get("entryKind"));
         
-        assertEquals("222", metadata.get("sourceNamespaceId"));
+        assertEquals("HUB", metadata.get("origin"));
+        assertNull(metadata.get("sourceNamespaceId"));
         
-        assertEquals("101", metadata.get("sourceResourceId"));
+        assertNull(metadata.get("sourceResourceId"));
         
-        assertEquals("find-skills", metadata.get("sourceName"));
+        assertNull(metadata.get("sourceName"));
         
-        assertEquals("501", metadata.get("sourceVersionId"));
+        assertNull(metadata.get("sourceVersionId"));
         
-        assertEquals("1.0.0", metadata.get("sourceVersion"));
+        assertNull(metadata.get("sourceVersion"));
     }
     
     @Test

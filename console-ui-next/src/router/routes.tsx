@@ -213,6 +213,14 @@ export const routes: RouteObject[] = [
                 element: lazyPage(() => import('@/pages/skillDetail')),
               },
               {
+                path: 'hub/skills',
+                element: lazyPage(() => import('@/pages/hubSkillManagement')),
+              },
+              {
+                path: 'hub/skills/:hubEntryId',
+                element: lazyPage(() => import('@/pages/hubSkillDetail')),
+              },
+              {
                 path: 'promptManagement',
                 element: lazyPage(() => import('@/pages/promptManagement')),
               },

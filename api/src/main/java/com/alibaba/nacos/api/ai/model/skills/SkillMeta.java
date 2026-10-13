@@ -26,6 +26,17 @@ import java.util.List;
  */
 public class SkillMeta extends SkillSummary {
     
+    /** Sanitized S3 copy/import provenance; never expose raw ext. */
+    private SkillOriginSummary origin;
+    
+    public SkillOriginSummary getOrigin() {
+        return origin;
+    }
+    
+    public void setOrigin(SkillOriginSummary origin) {
+        this.origin = origin;
+    }
+    
     /**
      * All version summaries for this skill.
      */

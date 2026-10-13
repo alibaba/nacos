@@ -1,4 +1,5 @@
 // ===== Skill Types =====
+import type { SkillOriginSummary } from './hub-skill';
 
 export type SkillSearchMode = 'accurate' | 'blur';
 
@@ -55,6 +56,8 @@ export interface SkillDocument {
 
 /** Skill admin detail */
 export interface SkillAdminDetail {
+  /** S3 trace summary (sanitized on the server). */
+  origin?: SkillOriginSummary | null;
   owner: string;
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"

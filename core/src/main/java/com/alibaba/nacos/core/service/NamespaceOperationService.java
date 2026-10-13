@@ -72,6 +72,10 @@ public class NamespaceOperationService {
         namespaceList.add(namespace0);
         
         for (TenantInfo tenantInfo : tenantInfos) {
+            // Defensive filter for legacy/misclassified rows in the ordinary KP.
+            if (AiConstants.Hub.NAMESPACE_ID.equals(tenantInfo.getTenantId())) {
+                continue;
+            }
             Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(),
                 tenantInfo.getTenantName(),
                 tenantInfo.getTenantDesc(), DEFAULT_QUOTA, 0, NamespaceTypeEnum.CUSTOM.getType());
@@ -100,6 +104,12 @@ public class NamespaceOperationService {
      */
     public Namespace getNamespace(String namespaceId, NamespaceTypeEnum type)
         throws NacosException {
+        // Public namespace lookup must never reveal the system Hub as CUSTOM.
+        if (AiConstants.Hub.NAMESPACE_ID.equals(namespaceId)
+            && type != NamespaceTypeEnum.AI_HUB) {
+            throw new NacosApiException(HttpStatus.NOT_FOUND.value(),
+                ErrorCode.NAMESPACE_NOT_EXIST, "Namespace not found");
+        }
         Namespace result;
         if (StringUtils.isBlank(namespaceId)
             || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {

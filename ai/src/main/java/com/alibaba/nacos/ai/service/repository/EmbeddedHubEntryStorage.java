@@ -30,6 +30,8 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /** Hub-only metadata operations routed through embedded consensus-backed database writes. */
 @Service
 @Conditional(value = ConditionOnEmbeddedStorage.class)
@@ -71,6 +73,32 @@ public class EmbeddedHubEntryStorage implements HubEntryStorage {
             + "AND namespace_id=? AND type=? AND c_from=?";
         return databaseOperate.queryOne(sql,
             new Object[] {hubEntryId, AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE},
+            AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
+    }
+    
+    @Override
+    public long maxEntryId() {
+        Long max = databaseOperate.queryOne(
+            "SELECT MAX(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=?",
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE}, Long.class);
+        return max == null ? 0L : max;
+    }
+    
+    @Override
+    public Long nextEntryId(long afterId, long maxId) {
+        return databaseOperate.queryOne(
+            "SELECT MIN(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=? "
+                + "AND id>? AND id<=?",
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, afterId, maxId},
+            Long.class);
+    }
+    
+    @Override
+    public List<AiResource> entriesInIdRange(long fromId, long toId) {
+        String sql = "SELECT " + COLUMNS + " FROM ai_resource WHERE namespace_id=? "
+            + "AND type=? AND c_from=? AND id>=? AND id<=? ORDER BY id ASC";
+        return databaseOperate.queryMany(sql,
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, fromId, toId},
             AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
     

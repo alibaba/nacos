@@ -20,6 +20,14 @@ import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferResult;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillSummary;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillDetail;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillContent;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillDownload;
 import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
@@ -565,7 +573,7 @@ public interface SkillMaintainerService {
      */
     @Since("3.2.0")
     boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException;
-
+    
     /** Share an exact source Skill version in the Hub. */
     @Since("3.3.0")
     default HubShareResult shareHubSkill(HubShareSkillRequest request) throws NacosException {
@@ -595,4 +603,71 @@ public interface SkillMaintainerService {
             "This Maintainer implementation does not support Hub Skill operations");
     }
     
+    /** List actively shared, currently valid Hub Skills (no source namespace parameter). */
+    @Since("3.3.0")
+    default Page<HubSkillSummary> listHubSkills(
+        HubSkillListRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill reads");
+    }
+    
+    /** Get a safely projected pinned Hub Skill detail by immutable Hub Entry ID. */
+    @Since("3.3.0")
+    default HubSkillDetail getHubSkillDetail(Long hubEntryId)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill reads");
+    }
+    
+    /** Get the exact online source version content authorized by the Hub share. */
+    @Since("3.3.0")
+    default HubSkillContent getHubSkillContent(Long hubEntryId)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill reads");
+    }
+    
+    /** Import the active Hub version into an independent target draft. */
+    @Since("3.3.0")
+    default HubSkillTransferResult importHubSkill(HubSkillTransferRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill import");
+    }
+    
+    /** Copy an explicit source version with source READ and target WRITE. */
+    @Since("3.3.0")
+    default HubSkillTransferResult copyHubSkill(HubSkillTransferRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill copy");
+    }
+    
+    /** Source WRITE required; returns null if never shared. */
+    @Since("3.3.0")
+    default HubSkillShareState getHubSkillSourceShare(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub Skill source share lookup is unavailable");
+    }
+    
+    /** Hub governance WRITE required; never use for ordinary users. */
+    @Since("3.3.0")
+    default HubSkillShareState getHubSkillGovernanceState(Long entryId) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub Skill governance lookup is unavailable");
+    }
+    
+    /**
+     * Download the original package authorized by one active Hub share.
+     *
+     * @param hubEntryId immutable Hub Entry ID
+     * @return ZIP transfer including its fixed shared version
+     * @throws NacosException on invalid parameters, denied access or missing content
+     */
+    @Since("3.3.0")
+    default HubSkillDownload getHubSkillDownload(Long hubEntryId) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill downloads");
+    }
 }
