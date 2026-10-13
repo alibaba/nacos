@@ -370,7 +370,8 @@ public class NacosDnsServer {
                     break;
             }
         } catch (Exception e) {
-            LOGGER.error("Forward query failed for {}", question.getName(), e);
+            LOGGER.error("Forward query failed for {}",
+                question != null ? question.getName() : "unknown", e);
             metrics.recordFailed();
             metrics.stopSample(sample, type, "SERVFAIL");
             response = buildErrorResponse(query, question, Rcode.SERVFAIL);
