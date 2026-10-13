@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.client.auth.oidc;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.RandomUtils;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.StringJoiner;
 
 /**
@@ -48,8 +51,6 @@ import java.util.StringJoiner;
 public class OidcTokenHolder {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcTokenHolder.class);
-    
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     private volatile String accessToken;
     
@@ -131,21 +132,26 @@ public class OidcTokenHolder {
      */
     private boolean parseTokenResponse(String responseBody) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            Map<String, Object> root = JsonUtils.toObj(responseBody,
+                new NacosTypeReference<Map<String, Object>>() {
+                });
             
-            JsonNode accessTokenNode = root.get(OidcProtocolConstants.TOKEN_RESPONSE_ACCESS_TOKEN);
-            if (accessTokenNode == null || accessTokenNode.isNull()) {
+            Object accessTokenValue = root == null ? null
+                : root.get(OidcProtocolConstants.TOKEN_RESPONSE_ACCESS_TOKEN);
+            if (accessTokenValue == null) {
                 LOGGER.error("[OIDC-CLIENT] Token response missing 'access_token'");
                 return false;
             }
             
-            JsonNode expiresInNode = root.get(OidcProtocolConstants.TOKEN_RESPONSE_EXPIRES_IN);
+            Object expiresInValue = root.get(OidcProtocolConstants.TOKEN_RESPONSE_EXPIRES_IN);
             long newExpiresIn = 300; // default 5 minutes if not provided
-            if (expiresInNode != null && !expiresInNode.isNull()) {
-                newExpiresIn = expiresInNode.asLong(300);
+            if (expiresInValue instanceof Number) {
+                newExpiresIn = ((Number) expiresInValue).longValue();
+            } else if (expiresInValue != null) {
+                newExpiresIn = NumberUtils.toLong(String.valueOf(expiresInValue), 300);
             }
             
-            this.accessToken = accessTokenNode.asText();
+            this.accessToken = String.valueOf(accessTokenValue);
             this.expiresInSeconds = newExpiresIn;
             this.obtainedAtMs = System.currentTimeMillis();
             
@@ -153,7 +159,7 @@ public class OidcTokenHolder {
                 newExpiresIn);
             return true;
             
-        } catch (IOException e) {
+        } catch (NacosDeserializationException e) {
             LOGGER.error("[OIDC-CLIENT] Failed to parse token response", e);
             return false;
         }

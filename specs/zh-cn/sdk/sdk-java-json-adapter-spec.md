@@ -113,6 +113,18 @@ Adapter availability check 至少必须防御：
 - `LinkageError`；
 - `ServiceConfigurationError`。
 
+两个内置 provider facade 在对应 core/databind 不存在时都必须可以安全加载。
+Jackson 专属类型和 mapper 初始化放入延迟创建的 delegate；缺少依赖或依赖不兼容时，
+`isAvailable()` 返回 `false`。调用方提供 Jackson 3 后可以排除 Jackson 2 core/databind，
+但仍须保留共享的 Jackson annotations。默认传递依赖保持不变。
+
+单个 provider 实例化失败不得阻断后续 provider 的发现，应记录诊断并继续遍历。
+服务资源枚举失败时应带诊断终止发现，避免无法推进的重复重试。显式选中的 adapter
+不可用时仍须报错，不得静默切换到其他 adapter。
+
+客户端鉴权 JSON 解析（默认登录、OIDC discovery/token、RAM STS 凭据）必须使用中立
+JSON 门面。可选鉴权 provider 在没有 Jackson 2 时也必须能够加载，包括未配置该鉴权的场景。
+
 ## 5. 中立类型模型
 
 ### 5.1 泛型类型

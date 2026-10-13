@@ -126,6 +126,23 @@ Adapter availability checks must guard at least:
 - `LinkageError`;
 - `ServiceConfigurationError`.
 
+Both built-in provider facades must remain loadable when their core/databind
+libraries are absent. Jackson-specific types and mapper initialization belong
+in a lazily created delegate; `isAvailable()` returns `false` for an absent or
+incompatible library. Callers may exclude Jackson 2 core/databind when supplying
+Jackson 3, while retaining the shared Jackson annotations. Default transitive
+dependencies remain unchanged.
+
+Failure to instantiate one provider must not prevent discovery of later
+providers. Record that failure and continue. Failure while enumerating service
+resources must terminate discovery with diagnostics rather than retry without
+progress. An explicitly selected unavailable adapter must still fail; it must
+not silently fall back to another adapter.
+
+Client authentication JSON parsing (default login, OIDC discovery/token and
+RAM STS credentials) must use the neutral JSON facade. Optional auth providers
+must load even without Jackson 2, including when they are not configured.
+
 ## 5. Neutral Type Model
 
 ### 5.1 Generic Types

@@ -38,6 +38,28 @@ HTTP API IT CI and should build this module without executing SDK IT cases.
 Destructive restart and cluster cases run through
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md).
 
+## JSON Runtime Dependency Isolation (#15788)
+
+The `jackson3-sdk-test` profile verifies Jackson 2/3 coexistence and explicit
+Jackson 3 selection. It does not prove that Jackson 2 can be removed.
+
+The `jackson3-only-sdk-test` profile, combined with `java-sdk-integration-test`,
+removes Jackson 2 core/databind from the Failsafe JVM, including transitive
+copies from Maintainer SDK dependencies. Shared Jackson annotations remain.
+`JsonAdapterJavaSdkITCase` asserts that the removed classes cannot be loaded,
+checks the selected adapter, generic serialization and controlled malformed
+JSON errors. The same profile reuses all ordinary Config and Naming ITs for
+factory/lifecycle, remote reads/writes, boundary cases and listeners. Run it
+once with `-Dnacos.client.json.adapter=auto` and once with `jackson3`.
+
+`client-basic` also provides `jackson3-only-test` for existing default-login,
+OIDC and RAM STS tests against the same isolated runtime. Their HTTP fixtures
+are local mocks; external OIDC/RAM identity providers are not covered here.
+Other SDK domains and deprecated Jackson-specific `JacksonUtils` APIs are
+outside this profile. The latter still require Jackson 2 by their signatures.
+This is a cross-cutting runtime check, not a new public SDK interface; existing
+interface coverage denominators are unchanged.
+
 ## Agent model consolidation regression
 
 Agent/RAD concrete models now use `model.agent`; client-only requests use
