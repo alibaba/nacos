@@ -176,14 +176,11 @@ public class AiResourceSearchDocumentBuilder {
         HubResourceReference reference) {
         metadata.put("entryKind", reference.getEntryKind());
         metadata.put("hubEntryId", meta.getId() == null ? null : meta.getId().toString());
-        metadata.put("hubResourceName", meta.getName());
-        metadata.put("sourceNamespaceId", reference.getSourceNamespaceId());
-        metadata.put("sourceResourceId", reference.getSourceResourceId().toString());
-        metadata.put("sourceName", reference.getSourceName());
-        metadata.put("sourceVersionId", reference.getSourceVersionId().toString());
-        metadata.put("sourceVersion", reference.getSourceVersion());
+        metadata.put("hubMetaVersion",
+            meta.getMetaVersion() == null ? null : meta.getMetaVersion().toString());
+        metadata.put("origin", "HUB");
     }
-
+    
     private Map<String, Object> extractMetadata(Map<String, Object> ext) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         putIfPresent(metadata, "inputTypes", ext.get("inputTypes"));

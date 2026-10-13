@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.test.maintainer.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillSummary;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferRequest;
+import com.alibaba.nacos.api.model.Page;
+import java.util.UUID;
 import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
@@ -83,4 +88,66 @@ class HubSkillMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         request.setReason("anonymous denial IT");
         assertEquals(403, assertThrows(NacosException.class, () -> anonymous.forceUnshareHubSkill(request)).getErrCode());
     }
+
+    @Test
+    void readContractsPreserveLocalValidationAndRemoteNotFound() {
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.listHubSkills(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillDetail(-1L)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillContent(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillDownload(null)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillDownload(Long.MAX_VALUE)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillDetail(Long.MAX_VALUE)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillContent(Long.MAX_VALUE)).getErrCode());
+    }
+
+    @Test
+    void readTransportRejectsAnonymousIdentity() throws Exception {
+        SkillMaintainerService anonymous = createAiMaintainerService(AuthIdentity.ANONYMOUS).skill();
+        assertEquals(403, assertThrows(NacosException.class,
+            () -> anonymous.listHubSkills(new HubSkillListRequest())).getErrCode());
+        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillDetail(1L)).getErrCode());
+        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillContent(1L)).getErrCode());
+        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillDownload(1L)).getErrCode());
+    }
+
+    @Test
+    void authenticatedDirectoryReadReturnsATypedEmptyPage() throws Exception {
+        HubSkillListRequest request =
+            new HubSkillListRequest();
+        request.setQuery("no-hub-match-" + UUID.randomUUID());
+        Page<HubSkillSummary> page = skill.listHubSkills(request);
+        assertEquals(0, page.getTotalCount());
+        assertEquals(1, page.getPageNumber());
+        assertEquals(0, page.getPageItems().size());
+    }
+
+    @Test
+    void transferValidationAndAnonymousDenialArePreserved() throws Exception {
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.importHubSkill(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.copyHubSkill(null)).getErrCode());
+        HubSkillTransferRequest request =
+            new HubSkillTransferRequest();
+        request.setHubEntryId(Long.MAX_VALUE);
+        request.setTargetNamespaceId("public");
+        request.setTargetName("hub-sdk-transfer-" + UUID.randomUUID());
+        assertEquals(404, assertThrows(NacosException.class, () -> skill.importHubSkill(request)).getErrCode());
+        SkillMaintainerService anonymous = createAiMaintainerService(AuthIdentity.ANONYMOUS).skill();
+        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.importHubSkill(request)).getErrCode());
+    }
+
+    @Test
+    void stateContractsPreserveValidationNotFoundAndAnonymousDenial() throws Exception {
+        assertEquals(400, assertThrows(NacosException.class,
+                () -> skill.getHubSkillSourceShare("", "unused")).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class,
+                () -> skill.getHubSkillGovernanceState(0L)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> skill.getHubSkillGovernanceState(Long.MAX_VALUE)).getErrCode());
+        SkillMaintainerService anonymous = createAiMaintainerService(AuthIdentity.ANONYMOUS).skill();
+        assertEquals(403, assertThrows(NacosException.class,
+                () -> anonymous.getHubSkillSourceShare("public", "unused")).getErrCode());
+        assertEquals(403, assertThrows(NacosException.class,
+                () -> anonymous.getHubSkillGovernanceState(1L)).getErrCode());
+    }
+
 }

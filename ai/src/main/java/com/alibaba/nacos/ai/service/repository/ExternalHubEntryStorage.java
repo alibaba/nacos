@@ -30,6 +30,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /** Exact Hub operations for external SQL databases. */
 @Service
 @Conditional(value = ConditionOnExternalStorage.class)
@@ -80,6 +82,32 @@ public class ExternalHubEntryStorage implements HubEntryStorage {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+    
+    @Override
+    public long maxEntryId() {
+        Long max = jdbcTemplate.queryForObject(
+            "SELECT MAX(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=?",
+            Long.class, AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE);
+        return max == null ? 0L : max;
+    }
+    
+    @Override
+    public Long nextEntryId(long afterId, long maxId) {
+        return jdbcTemplate.queryForObject(
+            "SELECT MIN(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=? "
+                + "AND id>? AND id<=?",
+            Long.class,
+            AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, afterId, maxId);
+    }
+    
+    @Override
+    public List<AiResource> entriesInIdRange(long fromId, long toId) {
+        String sql = "SELECT " + COLUMNS + " FROM ai_resource WHERE namespace_id=? "
+            + "AND type=? AND c_from=? AND id>=? AND id<=? ORDER BY id ASC";
+        return jdbcTemplate.query(sql,
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, fromId, toId},
+            AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
     
     @Override
