@@ -192,6 +192,9 @@ Console 存在三个安全方向：
   已校验 base URL 下的相对地址，非法配置必须按拒绝处理，并且不得跟随重定向；
 - 独立 Console 代表已认证运维人员调用 Server 时，必须使用当前鉴权插件声明的标准名称，透传
   identity builder 记录的全部非空请求身份字段；
+- 对于明确标记为 `ONLY_IDENTITY` 且需要委托 Server Admin API 的 Console 操作，Console
+ 在已完成运维人员身份校验后，可以在内部调用中使用配置的 server identity；该例外不得
+ 将浏览器提供的字段当作 server identity 信任；
 - `IdentityContext` 中的传输层派生字段和鉴权结果元数据不得透传；
 - 至少透传一个请求身份字段时不得同时携带配置的 server identity，使目标 Server 能够认证该
   运维人员并校验其权限；
