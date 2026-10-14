@@ -169,5 +169,15 @@ public class AiConstants {
          * Internal namespace ID for Agentic Resource Hub.
          */
         public static final String NAMESPACE_ID = "__nacos_ai_hub__";
+        
+        /**
+         * Dedicated governance role recognized by the default Nacos RBAC implementation.
+         */
+        public static final String MANAGER_ROLE = "HUB_MANAGER";
+        
+        /**
+         * Specified permission resource for Hub governance operations.
+         */
+        public static final String MANAGE_RESOURCE = "ai-hub/manage";
     }
 }

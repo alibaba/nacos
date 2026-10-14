@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -57,10 +58,10 @@ import java.util.Properties;
 public class HubSkillPermissionGuard {
     
     /**
-     * Canonical RBAC resource for administrator takedowns. Assign WRITE to a Hub governance role (or rely on the
-     * built-in global administrator). It is not a Namespace permission.
+     * Canonical RBAC resource for administrator takedowns. The default HUB_MANAGER role has implicit WRITE; other
+     * roles can receive an explicit grant. It is not a Namespace permission or global administrator grant.
      */
-    public static final String HUB_MANAGE_RESOURCE = "ai-hub/manage";
+    public static final String HUB_MANAGE_RESOURCE = AiConstants.Hub.MANAGE_RESOURCE;
     
     /**
      * Require a readable source Skill for the authenticated caller.
