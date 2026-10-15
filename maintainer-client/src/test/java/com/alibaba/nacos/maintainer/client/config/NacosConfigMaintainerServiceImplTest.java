@@ -704,4 +704,28 @@ class NacosConfigMaintainerServiceImplTest {
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
+    
+    @Test
+    void testPublishOperationMessageForwarding() throws Exception {
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setData(JacksonUtils.toJson(new Result<>(true)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(response);
+        String message = "  release\nreason  ";
+        assertTrue(nacosConfigMaintainerServiceImpl.publishConfig("data", "group", "", "content",
+            "app", "user", "tags", "description", "text", message));
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(captor.capture());
+        assertEquals(message, captor.getValue().getParamValues().get("changeMessage"));
+        assertEquals("description", captor.getValue().getParamValues().get("desc"));
+    }
+    
+    @Test
+    void testPublishOperationMessageRejectsOversizeBeforeHttp() {
+        NacosException error = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("data", "group", "", "content",
+                "app", "user", "tags", "description", "text", new String(new char[513])));
+        assertEquals(NacosException.INVALID_PARAM, error.getErrCode());
+        org.mockito.Mockito.verifyNoInteractions(clientHttpProxy);
+    }
+    
 }

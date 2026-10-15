@@ -31,6 +31,7 @@ export default function NewConfigPage() {
   const [dataId, setDataId] = useState('');
   const [groupName, setGroupName] = useState('DEFAULT_GROUP');
   const [desc, setDesc] = useState('');
+  const [changeMessage, setChangeMessage] = useState('');
   const [appName, setAppName] = useState('');
   const [configTags, setConfigTags] = useState('');
   const [type, setType] = useState<ConfigType>('text');
@@ -71,14 +72,16 @@ export default function NewConfigPage() {
         groupName: groupName.trim(),
         content: content,
         desc: desc.trim(),
+        changeMessage,
         configTags: configTags.trim(),
         type,
         appName: appName.trim(),
         namespaceId: currentNamespace,
       });
+      setChangeMessage('');
       toast.success(t('config.publishSuccess'));
       navigate('/configurationManagement');
-    } catch (error) {
+    } catch {
       toast.error(t('config.publishFailed'));
     } finally {
       setIsSubmitting(false);
@@ -131,6 +134,17 @@ export default function NewConfigPage() {
                 placeholder={t('config.group')}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
+            <Textarea
+              id="changeMessage"
+              value={changeMessage}
+              onChange={(e) => setChangeMessage(e.target.value)}
+              placeholder={t('config.changeMessagePlaceholder')}
+              rows={3}
+            />
           </div>
 
           {/* Description */}

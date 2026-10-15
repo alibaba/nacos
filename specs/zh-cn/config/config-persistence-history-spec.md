@@ -106,3 +106,21 @@ Admin 本地缓存操作可以触发从持久化层到本地缓存的全量 dump
 - [任务执行规范](../design/foundation-task-execution-spec.md)
 - [事件分发与 NotifyCenter 规范](../design/foundation-event-dispatch-spec.md)
 - [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)
+
+### 发布操作说明
+
+正式、CAS、Beta 和 Tag/灰度发布接收可选文本 `changeMessage`，最多 512 个 Unicode
+码点。超长返回参数校验错误；缺省、空串或纯空白表示未填写；非空白文本保留原文和换行。
+说明属于成功的发布操作，不属于配置快照或配置描述，不影响运行时正文、md5、dump 和监听载荷。
+
+历史 `ext_info` JSON 使用 `change_message` 键保存本次说明，并保留原有快照元数据。
+不新增数据库列或 mapper SPI 方法。历史列表、详情及上一版本响应从所选操作行提取可选
+`changeMessage`；旧扩展缺失、JSON 损坏或字段不是文本时返回 null（序列化可省略）。
+更新行仍保存旧正文，说明描述生成该行的更新操作，不得使用下一条历史的说明。
+校验或 CAS 失败不得新增历史；说明随现有发布事务写入，内部跳过历史的操作保持原行为。
+
+回滚通过发布填写新说明，不继承目标历史说明。删除、仅元数据更新、导入、导出和克隆不增加
+说明输入，也不复制旧说明；保留窗口保持不变。控制台提供发布/回滚输入和历史纯文本展示，
+成功后清空输入，失败后保留。Maintainer SDK 增加兼容的正式及 Beta 发布重载，保留旧签名。
+应用 ConfigService API 不变，RPC 可通过 addition parameter 携带 `changeMessage`。
+启用前升级所有服务端和独立控制台节点；旧节点可能忽略参数，不能保证保存说明。

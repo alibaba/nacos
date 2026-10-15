@@ -150,8 +150,10 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp,
                     srcUser, now, "I",
                     Constants.GRAY, grayNameTmp,
-                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp,
-                        srcUser));
+                    ConfigExtInfoUtil.withChangeMessage(
+                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp,
+                            srcUser),
+                        configInfo.getChangeMessage()));
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, grayNameTmp);
             } catch (Exception e) {
@@ -288,10 +290,11 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     oldConfigAllInfo4Gray.getId(),
                     oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
                     grayNameTmp,
-                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(
+                    ConfigExtInfoUtil.withChangeMessage(ConfigExtInfoUtil.getExtInfoFromGrayInfo(
                         oldConfigAllInfo4Gray.getGrayName(),
                         oldConfigAllInfo4Gray.getGrayRule(),
-                        oldConfigAllInfo4Gray.getSrcUser()));
+                        oldConfigAllInfo4Gray.getSrcUser()),
+                        configInfo.getChangeMessage()));
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, grayNameTmp);
             } catch (CannotGetJdbcConnectionException e) {
@@ -353,10 +356,12 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                         oldConfigAllInfo4Gray.getId(),
                         oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
                         grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(
-                            oldConfigAllInfo4Gray.getGrayName(),
-                            oldConfigAllInfo4Gray.getGrayRule(),
-                            oldConfigAllInfo4Gray.getSrcUser()));
+                        ConfigExtInfoUtil.withChangeMessage(
+                            ConfigExtInfoUtil.getExtInfoFromGrayInfo(
+                                oldConfigAllInfo4Gray.getGrayName(),
+                                oldConfigAllInfo4Gray.getGrayRule(),
+                                oldConfigAllInfo4Gray.getSrcUser()),
+                            configInfo.getChangeMessage()));
                     return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                         tenantTmp, grayNameTmp);
                 } else {

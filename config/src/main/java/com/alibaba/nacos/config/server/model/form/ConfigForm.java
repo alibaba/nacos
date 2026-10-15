@@ -62,6 +62,8 @@ public class ConfigForm implements NacosForm, Cloneable {
     
     private int grayPriority;
     
+    private String changeMessage;
+    
     private String desc;
     
     private String use;
@@ -169,6 +171,24 @@ public class ConfigForm implements NacosForm, Cloneable {
         this.configTags = configTags;
     }
     
+    /**
+     * Return the optional message for this publish operation.
+     *
+     * @return change message
+     */
+    public String getChangeMessage() {
+        return changeMessage;
+    }
+    
+    /**
+     * Set the optional message for this publish operation.
+     *
+     * @param changeMessage change message
+     */
+    public void setChangeMessage(String changeMessage) {
+        this.changeMessage = changeMessage;
+    }
+    
     public String getDesc() {
         return desc;
     }
@@ -261,12 +281,31 @@ public class ConfigForm implements NacosForm, Cloneable {
     }
     
     /**
+     * Validate and normalize the optional publish operation message.
+     *
+     * @throws NacosApiException if the message exceeds 512 Unicode code points
+     */
+    public void validateChangeMessage() throws NacosApiException {
+        if (changeMessage != null
+            && changeMessage.codePointCount(0, changeMessage.length()) > 512) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "changeMessage must not exceed 512 Unicode code points");
+        }
+        if (changeMessage != null && changeMessage.codePoints().allMatch(
+            c -> Character.isWhitespace(c) || Character.isSpaceChar(c))) {
+            changeMessage = null;
+        }
+    }
+    
+    /**
      * Validate form parameter and include validate `content` parameters.
      *
      * @throws NacosApiException NacosApiException
      */
     public void validateWithContent() throws NacosApiException {
         validate();
+        validateChangeMessage();
         if (StringUtils.isBlank(content)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                 "Required parameter 'content' type String is not present");

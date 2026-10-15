@@ -313,6 +313,7 @@ const I18N_CONF = {
     articleMeetRequirements: 'configuration items.',
   },
   HistoryRollback: {
+    changeMessage: 'Change message',
     details: 'Details',
     rollback: 'Roll Back',
     pubNoData: 'No results found.',
@@ -336,6 +337,7 @@ const I18N_CONF = {
     gray: 'Gray Version',
   },
   HistoryDetail: {
+    changeMessage: 'Change message',
     historyDetails: 'History Details',
     update: 'Update',
     insert: 'Insert',
@@ -456,6 +458,7 @@ const I18N_CONF = {
     total: 'Total:',
   },
   NewConfig: {
+    changeMessage: 'Change message',
     newListingMain: 'Create Configuration',
     newListing: 'Create Configuration',
     publishFailed: 'Publish failed. Make sure parameters are entered correctly.',
@@ -513,6 +516,7 @@ const I18N_CONF = {
     back: 'Back',
   },
   ConfigEditor: {
+    changeMessage: 'Change message',
     official: 'Official',
     production: 'Production',
     beta: 'BETA',
@@ -648,6 +652,7 @@ const I18N_CONF = {
     namespace: 'Namespace',
   },
   ConfigRollback: {
+    changeMessage: 'Change message',
     rollBack: 'Roll Back',
     determine: 'Are you sure you want to roll back',
     followingConfiguration: 'the following configuration?',
