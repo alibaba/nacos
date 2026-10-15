@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.constant.Constants.Hub;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.context.RequestContextHolder;
@@ -38,6 +40,27 @@ class HubRemoteCallerGuardTest {
     @AfterEach
     void clearContext() {
         RequestContextHolder.removeContext();
+    }
+    
+    @Test
+    void verifiedAnonymousReadsAreForwardedWithoutServerIdentityFallback() {
+        AuthContext ctx = context();
+        IdentityContext identity = new IdentityContext();
+        identity.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
+        ctx.setIdentityContext(identity);
+        ctx.setAuthResult(AuthResult.successResult());
+        assertDoesNotThrow(guard::requireForwardableRead);
+        assertThrows(NacosException.class, guard::requireForwardableUser);
+        RequestResource resource =
+            RequestResource.aiBuilder()
+                .setResource(Hub.ENTRY_RESOURCE).build();
+        assertEquals(0, new ConsoleMaintainerClientAuthPlugin().getLoginIdentityContext(resource)
+            .getAllKey().size());
+        identity.setParameter(Constants.Identity.SERVER_IDENTITY, "true");
+        assertThrows(NacosException.class, guard::requireForwardableRead);
+        identity.setParameter(Constants.Identity.SERVER_IDENTITY, false);
+        ctx.setAuthResult(AuthResult.failureResult(401, "invalid token"));
+        assertThrows(NacosException.class, guard::requireForwardableRead);
     }
     
     @Test

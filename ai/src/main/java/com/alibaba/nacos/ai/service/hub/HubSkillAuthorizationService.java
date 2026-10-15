@@ -80,6 +80,6 @@ public class HubSkillAuthorizationService {
      * @throws NacosException on permission denial
      */
     public void requireForceUnsharePermission() throws NacosException {
-        guard.requireHubManage();
+        guard.requireAdministrator();
     }
 }

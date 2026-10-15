@@ -171,13 +171,8 @@ public class AiConstants {
         public static final String NAMESPACE_ID = "__nacos_ai_hub__";
         
         /**
-         * Dedicated governance role recognized by the default Nacos RBAC implementation.
+         * Console administrator resource used for Hub governance.
          */
-        public static final String MANAGER_ROLE = "HUB_MANAGER";
-        
-        /**
-         * Specified permission resource for Hub governance operations.
-         */
-        public static final String MANAGE_RESOURCE = "ai-hub/manage";
+        public static final String ADMIN_RESOURCE = "console/ai-hub";
     }
 }

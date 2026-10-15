@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.ai.constant.Constants.Hub;
+import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.core.context.addition.AuthContext;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
@@ -57,6 +61,11 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
         if (addRequestIdentities(loginIdentityContext)) {
             return loginIdentityContext;
         }
+        // Preserve a verified anonymous Hub viewer; never substitute server identity.
+        if (resource != null && Hub.ENTRY_RESOURCE.equals(resource.getResource())
+            && isAnonymousHubViewer()) {
+            return loginIdentityContext;
+        }
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
             .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
         if (authConfig != null && authConfig.isSupportServerIdentity()) {
@@ -64,6 +73,18 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
                 authConfig.getServerIdentityValue());
         }
         return loginIdentityContext;
+    }
+    
+    private boolean isAnonymousHubViewer() {
+        AuthContext context =
+            RequestContextHolder.getContext().getAuthContext();
+        IdentityContext identity = context.getIdentityContext();
+        return ApiType.CONSOLE_API.name().equals(context.getApiType())
+            && context.getAuthResult() != null && context.getAuthResult().isSuccess()
+            && identity != null && "anonymous".equals(identity.getParameter(
+                Constants.Identity.IDENTITY_ID))
+            && !Boolean.parseBoolean(String.valueOf(identity.getParameter(
+                Constants.Identity.SERVER_IDENTITY)));
     }
     
     private boolean addRequestIdentities(LoginIdentityContext loginIdentityContext) {

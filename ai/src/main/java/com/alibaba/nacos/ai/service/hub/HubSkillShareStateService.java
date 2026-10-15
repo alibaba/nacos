@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
@@ -61,6 +62,7 @@ public class HubSkillShareStateService {
      */
     public HubSkillShareState bySource(String namespaceId, String sourceName)
         throws NacosException {
+        HubConfig.requireEnabled();
         if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(sourceName)) {
             throw invalid();
         }
@@ -93,9 +95,10 @@ public class HubSkillShareStateService {
         }
     }
     
-    /** Inspect share state with the dedicated Hub governance permission. */
+    /** Inspect share state with existing Console administrator authority. */
     public HubSkillShareState byEntryForAdmin(Long hubEntryId) throws NacosException {
-        permissions.requireHubManage();
+        HubConfig.requireEnabled();
+        permissions.requireAdministrator();
         if (hubEntryId == null || hubEntryId <= 0) {
             throw invalid();
         }
@@ -105,7 +108,7 @@ public class HubSkillShareStateService {
                 throw notFound();
             }
             HubSkillShareState result = view(entry, parseReference(entry));
-            permissions.requireHubManage();
+            permissions.requireAdministrator();
             return result;
         } catch (RuntimeException failure) {
             throw unavailable();

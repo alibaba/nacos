@@ -67,6 +67,26 @@ public class HubRemoteCallerGuard {
         }
     }
     
+    /**
+     * Allow a verified credential-less anonymous viewer only on the Hub read path.
+     *
+     * @throws NacosException if the caller cannot be forwarded safely
+     */
+    public void requireForwardableRead() throws NacosException {
+        AuthContext context = RequestContextHolder.getContext().getAuthContext();
+        IdentityContext identity = context.getIdentityContext();
+        AuthResult<?> result = context.getAuthResult();
+        if (ApiType.CONSOLE_API.name().equals(context.getApiType()) && identity != null
+            && result != null && result.isSuccess()
+            && "anonymous".equals(identity.getParameter(Constants.Identity.IDENTITY_ID))
+            && !Boolean.parseBoolean(
+                String.valueOf(identity.getParameter(Constants.Identity.SERVER_IDENTITY)))
+            && identity.getRequestIdentityNames().isEmpty()) {
+            return;
+        }
+        requireForwardableUser();
+    }
+    
     private NacosApiException denied() {
         return new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
             "Hub remote mutations require an authenticated user and forwardable credentials");

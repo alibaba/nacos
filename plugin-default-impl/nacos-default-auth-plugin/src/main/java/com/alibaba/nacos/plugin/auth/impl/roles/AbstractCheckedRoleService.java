@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
-import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -71,11 +69,8 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
             return false;
         }
         
-        // Dedicated roles have intrinsic permissions; other grants use the existing pattern match.
+        // For other roles, use a pattern match to decide if pass or not.
         for (RoleInfo roleInfo : roleInfoList) {
-            if (isHubManagerPermission(roleInfo, permission)) {
-                return true;
-            }
             List<PermissionInfo> permissionInfoList = getPermissions(roleInfo.getRole());
             if (CollectionUtils.isEmpty(permissionInfoList)) {
                 continue;
@@ -157,15 +152,6 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
             throw new IllegalArgumentException(
                 "role '" + AuthConstants.ANONYMOUS_ROLE + "' is reserved by the system");
         }
-    }
-    
-    // Only this exact resource/action is intrinsic to HUB_MANAGER. No source or Console admin access.
-    private boolean isHubManagerPermission(RoleInfo roleInfo, Permission permission) {
-        Resource resource = permission.getResource();
-        return AiConstants.Hub.MANAGER_ROLE.equals(roleInfo.getRole())
-            && SignType.SPECIFIED.equals(resource.getType())
-            && AiConstants.Hub.MANAGE_RESOURCE.equals(resource.getName())
-            && ActionTypes.WRITE.toString().equals(permission.getAction());
     }
     
     /**

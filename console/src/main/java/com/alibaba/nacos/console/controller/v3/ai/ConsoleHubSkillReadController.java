@@ -48,6 +48,7 @@ import java.nio.charset.StandardCharsets;
 
 import static com.alibaba.nacos.ai.constant.Constants.Hub.ENTRY_RESOURCE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 @NacosApi
 @RestController
@@ -64,7 +65,8 @@ public class ConsoleHubSkillReadController {
     @Since("3.3.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<Page<HubSkillSummary>> list(HubSkillReadListForm form) throws NacosException {
         return Result.success(proxy.list(form.prepareRequest()));
     }
@@ -72,7 +74,8 @@ public class ConsoleHubSkillReadController {
     @Since("3.3.0")
     @GetMapping("/detail")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<HubSkillDetail> detail(HubSkillReadEntryForm form)
         throws NacosException {
         return Result.success(proxy.detail(form.prepareEntryId()));
@@ -81,7 +84,8 @@ public class ConsoleHubSkillReadController {
     @Since("3.3.0")
     @GetMapping("/content")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<HubSkillContent> content(HubSkillReadEntryForm form)
         throws NacosException {
         return Result.success(proxy.content(form.prepareEntryId()));
@@ -97,7 +101,8 @@ public class ConsoleHubSkillReadController {
     @Since("3.3.0")
     @GetMapping("/download")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public ResponseEntity<byte[]> download(HubSkillReadEntryForm form) throws NacosException {
         HubSkillDownload download = proxy.download(form.prepareEntryId());
         String filename = download.getDisplayName() + "-" + download.getSharedVersion() + ".zip";

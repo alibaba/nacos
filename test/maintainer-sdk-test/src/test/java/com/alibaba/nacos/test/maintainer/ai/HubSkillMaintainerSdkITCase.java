@@ -24,7 +24,6 @@ import java.util.UUID;
 import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
-import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.ai.SkillMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -101,13 +101,12 @@ class HubSkillMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     }
 
     @Test
-    void readTransportRejectsAnonymousIdentity() throws Exception {
+    void anonymousReadTransportPreservesTypedPageAndMissingEntry() throws Exception {
         SkillMaintainerService anonymous = createAiMaintainerService(AuthIdentity.ANONYMOUS).skill();
-        assertEquals(403, assertThrows(NacosException.class,
-            () -> anonymous.listHubSkills(new HubSkillListRequest())).getErrCode());
-        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillDetail(1L)).getErrCode());
-        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillContent(1L)).getErrCode());
-        assertEquals(403, assertThrows(NacosException.class, () -> anonymous.getHubSkillDownload(1L)).getErrCode());
+        assertNotNull(anonymous.listHubSkills(new HubSkillListRequest()));
+        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillDetail(Long.MAX_VALUE)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillContent(Long.MAX_VALUE)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillDownload(Long.MAX_VALUE)).getErrCode());
     }
 
     @Test

@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useAuthStore } from '@/stores/auth-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { HubImportDialog } from '@/components/ai/skill/HubImportDialog';
 import { SkillResourcePanel } from '@/pages/skillDetail/SkillResourcePanel';
@@ -24,6 +25,7 @@ export default function HubSkillDetailPage() {
   const navigate = useNavigate();
   const { hubEntryId = '' } = useParams<{ hubEntryId: string }>();
   const { fetchNamespaces } = useNamespaceStore();
+  const { isAuthenticated } = useAuthStore();
   const [detail, setDetail] = useState<HubSkillDetail | null>(null);
   const [content, setContent] = useState<HubSkillContent | null>(null);
   const [adminState, setAdminState] = useState<HubShareState | null>(null);
@@ -70,13 +72,13 @@ export default function HubSkillDetailPage() {
   }, [hubEntryId, refresh]);
 
   useEffect(() => {
-    if (!detail) return;
+    if (!detail || !isAuthenticated) return;
     let cancelled = false;
     hubSkillApi.governanceState(hubEntryId).then(r => {
       if (!cancelled) setAdminState(r.data);
     }).catch(() => { if (!cancelled) setAdminState(null); });
     return () => { cancelled = true; };
-  }, [detail, hubEntryId]);
+  }, [detail, hubEntryId, isAuthenticated]);
 
   const resourceMap = useMemo<Record<string, SkillResource>>(() => Object.fromEntries(
     Object.entries(content?.resource ?? {}).map(([id, value]) => [id, { ...value, metadata: null }]),
@@ -184,7 +186,7 @@ export default function HubSkillDetailPage() {
             {sourcePath && <Button variant="outline" size="sm" onClick={() => navigate(sourcePath)}>
               <ExternalLink className="mr-1 h-4 w-4" />{t('hub.openSourceVersion')}
             </Button>}
-            <Button size="sm" onClick={() => { void fetchNamespaces(); setImportOpen(true); }}>
+            <Button size="sm" onClick={() => { if (!isAuthenticated) { navigate('/login'); return; } void fetchNamespaces(); setImportOpen(true); }}>
               {t('hub.import')}
             </Button>
             {adminState?.active && <Button variant="destructive" size="sm" onClick={() => setTakedownOpen(true)}>

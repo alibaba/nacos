@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.service.repository.HubEntryStorage;
@@ -100,12 +101,25 @@ public class HubSkillDirectoryService {
         HubSkillReadRequestValidator.validate(request);
         // Admission precedes every scan, including an empty or unsupported query.
         permissionGuard.requireHubRead();
+        if (!HubConfig.isEnabled()) {
+            return emptyPage(request);
+        }
         try {
-            return scan(request);
+            Page<HubSkillSummary> result = scan(request);
+            return HubConfig.isEnabled() ? result : emptyPage(request);
         } catch (RuntimeException failure) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                 "Hub Skill directory unavailable");
         }
+    }
+    
+    private Page<HubSkillSummary> emptyPage(HubSkillListRequest request) {
+        Page<HubSkillSummary> result = new Page<>();
+        result.setPageNumber(request.getPageNo());
+        result.setTotalCount(0);
+        result.setPagesAvailable(0);
+        result.setPageItems(Collections.emptyList());
+        return result;
     }
     
     private Page<HubSkillSummary> scan(HubSkillListRequest request) throws NacosException {

@@ -35,7 +35,7 @@ public class HubSkillStateProxy {
         return handler.bySource(namespaceId, name);
     }
     
-    /** Inspect governance state under the dedicated Hub management permission. */
+    /** Inspect governance state under existing Console administrator authority. */
     public HubSkillShareState governanceState(Long id) throws NacosException {
         return handler.governanceState(id);
     }

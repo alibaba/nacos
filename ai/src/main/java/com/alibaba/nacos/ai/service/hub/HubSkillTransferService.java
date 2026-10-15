@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferRequest;
@@ -57,6 +58,7 @@ public class HubSkillTransferService {
     /** Import just the currently shared, immutable Hub version; source READ not required. */
     public HubSkillTransferResult importFromHub(HubSkillTransferRequest request)
         throws NacosException {
+        HubConfig.requireEnabled();
         request = snapshot(request);
         String targetVersion = HubSkillTransferRequestValidator.validate(request, true);
         final String targetNamespaceId = request.getTargetNamespaceId();

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -58,6 +59,7 @@ public class HubSkillReadServiceImpl implements HubSkillReadService {
     
     @Override
     public HubSkillDetail getDetail(Long hubEntryId) throws NacosException {
+        HubConfig.requireEnabled();
         ResolvedHubSkillReference publication = access.resolveReadable(hubEntryId);
         HubEligibleSkillVersion eligible = access.requireReadableVersion(publication);
         AiResource source = eligible.getSourceMeta();
@@ -97,6 +99,7 @@ public class HubSkillReadServiceImpl implements HubSkillReadService {
     
     @Override
     public HubSkillDownload download(Long hubEntryId) throws NacosException {
+        HubConfig.requireEnabled();
         ResolvedHubSkillReference publication = access.resolveReadable(hubEntryId);
         HubSkillDownload result = contentReader.download(publication);
         access.requireStillReadable(publication);
@@ -108,6 +111,7 @@ public class HubSkillReadServiceImpl implements HubSkillReadService {
     
     @Override
     public HubSkillContent getContent(Long hubEntryId) throws NacosException {
+        HubConfig.requireEnabled();
         ResolvedHubSkillReference publication = access.resolveReadable(hubEntryId);
         HubSkillContent result = contentReader.load(publication);
         access.requireStillReadable(publication);

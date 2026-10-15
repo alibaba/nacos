@@ -38,14 +38,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static com.alibaba.nacos.ai.constant.Constants.Hub.ENTRY_RESOURCE;
-import static com.alibaba.nacos.ai.service.hub.HubSkillPermissionGuard.HUB_MANAGE_RESOURCE;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ADMIN_RESOURCE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
 
 /**
  * Hub Skill lifecycle admin APIs.
  *
  * <p>The entry point authenticates the caller. The Hub service authorizes the
- * actual source Skill or the dedicated Hub management resource.</p>
+ * actual source Skill or the existing Console administrator resource.</p>
  *
  * @author nacos
  */
@@ -116,7 +116,7 @@ public class HubSkillAdminController {
     @Since("3.3.0")
     @PostMapping("/force-unshare")
     @Secured(action = ActionTypes.WRITE, signType = SignType.SPECIFIED,
-        resource = HUB_MANAGE_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ADMIN_RESOURCE, apiType = ApiType.ADMIN_API)
     public Result<HubShareResult> forceUnshare(HubForceUnshareForm form) throws NacosException {
         return Result.success(hubSkillService.forceUnshare(form.prepareRequest()));
     }

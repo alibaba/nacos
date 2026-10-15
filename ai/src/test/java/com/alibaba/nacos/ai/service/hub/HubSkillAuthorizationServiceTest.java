@@ -60,7 +60,7 @@ class HubSkillAuthorizationServiceTest {
     @Test
     void administrativeUnshareUsesIndependentGovernancePermission() throws Exception {
         service.requireForceUnsharePermission();
-        verify(guard).requireHubManage();
+        verify(guard).requireAdministrator();
         verifyNoMoreInteractions(guard);
     }
 }

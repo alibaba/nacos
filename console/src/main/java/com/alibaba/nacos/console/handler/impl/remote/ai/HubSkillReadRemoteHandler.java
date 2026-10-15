@@ -47,28 +47,28 @@ public class HubSkillReadRemoteHandler implements HubSkillReadHandler {
     
     @Override
     public Page<HubSkillSummary> list(HubSkillListRequest request) throws NacosException {
-        guard.requireForwardableUser();
+        guard.requireForwardableRead();
         HubSkillReadRequestValidator.validate(request);
         return clientHolder.getAiMaintainerService().skill().listHubSkills(request);
     }
     
     @Override
     public HubSkillDetail detail(Long id) throws NacosException {
-        guard.requireForwardableUser();
+        guard.requireForwardableRead();
         HubSkillReadRequestValidator.validateEntryId(id);
         return clientHolder.getAiMaintainerService().skill().getHubSkillDetail(id);
     }
     
     @Override
     public HubSkillContent content(Long id) throws NacosException {
-        guard.requireForwardableUser();
+        guard.requireForwardableRead();
         HubSkillReadRequestValidator.validateEntryId(id);
         return clientHolder.getAiMaintainerService().skill().getHubSkillContent(id);
     }
     
     @Override
     public HubSkillDownload download(Long hubEntryId) throws NacosException {
-        guard.requireForwardableUser();
+        guard.requireForwardableRead();
         HubSkillReadRequestValidator.validateEntryId(hubEntryId);
         return clientHolder.getAiMaintainerService().skill().getHubSkillDownload(hubEntryId);
     }

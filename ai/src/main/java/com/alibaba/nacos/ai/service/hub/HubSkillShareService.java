@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
@@ -57,7 +58,7 @@ public class HubSkillShareService {
     private final HubShareRepository repository;
     
     public HubSkillShareService(HubSkillEligibilityValidator eligibilityValidator,
-            HubSkillAuthorizationService authorizationService, HubShareRepository repository) {
+        HubSkillAuthorizationService authorizationService, HubShareRepository repository) {
         this.eligibilityValidator = eligibilityValidator;
         this.authorizationService = authorizationService;
         this.repository = repository;
@@ -75,10 +76,12 @@ public class HubSkillShareService {
      * @throws NacosException on invalid source, permission or concurrent conflict
      */
     public HubShareResult shareSkill(HubShareSkillRequest request) throws NacosException {
+        HubConfig.requireEnabled();
         HubSkillRequestValidator.validate(request);
         AiResource initialSource = eligibilityValidator.requireSourceForShare(request);
         authorizationService.requireSharePermission(initialSource);
-        HubEligibleSkillVersion eligible = eligibilityValidator.requireShareableVersion(initialSource,
+        HubEligibleSkillVersion eligible =
+            eligibilityValidator.requireShareableVersion(initialSource,
                 request.getSourceVersion());
         authorizationService.requireSharePermission(eligible.getSourceMeta());
         HubResourceReference reference = eligible.getReference();
@@ -121,12 +124,14 @@ public class HubSkillShareService {
         if (!isActive(published) || !sameEffectiveVersion(published, reference)) {
             throw conflict("Hub Skill share changed during publication");
         }
-        HubShareOutcome outcome = hadPreviousVersion ? HubShareOutcome.REACTIVATED : HubShareOutcome.CREATED;
+        HubShareOutcome outcome =
+            hadPreviousVersion ? HubShareOutcome.REACTIVATED : HubShareOutcome.CREATED;
         return result(published, reference, outcome);
     }
     
-    private HubShareResult alreadyShared(AiResource entry, HubResourceReference requested, AiResource originalSource)
-            throws NacosException {
+    private HubShareResult alreadyShared(AiResource entry, HubResourceReference requested,
+        AiResource originalSource)
+        throws NacosException {
         if (!sameEffectiveVersion(entry, requested)) {
             throw conflict("Skill is already shared at a different version; use adjustShare");
         }
@@ -141,14 +146,19 @@ public class HubSkillShareService {
         return result(confirmed, requested, HubShareOutcome.ALREADY_SHARED);
     }
     
-    private void revalidate(AiResource originalSource, HubResourceReference expected) throws NacosException {
+    private void revalidate(AiResource originalSource, HubResourceReference expected)
+        throws NacosException {
+        HubConfig.requireEnabled();
         HubEligibleSkillVersion latest = revalidateEligibility(originalSource, expected);
         authorizationService.requireSharePermission(latest.getSourceMeta());
     }
     
-    private HubEligibleSkillVersion revalidateEligibility(AiResource originalSource, HubResourceReference expected)
-            throws NacosException {
-        HubEligibleSkillVersion latest = eligibilityValidator.requireShareableVersion(originalSource,
+    private HubEligibleSkillVersion revalidateEligibility(AiResource originalSource,
+        HubResourceReference expected)
+        throws NacosException {
+        HubConfig.requireEnabled();
+        HubEligibleSkillVersion latest =
+            eligibilityValidator.requireShareableVersion(originalSource,
                 expected.getSourceVersion());
         if (!sameReference(latest.getReference(), expected)) {
             throw conflict("Source Skill or version identity changed during sharing");
@@ -156,13 +166,15 @@ public class HubSkillShareService {
         return latest;
     }
     
-    private void rollbackOwnPublication(long id, long ourPublishedVersion, HubResourceReference reference) {
+    private void rollbackOwnPublication(long id, long ourPublishedVersion,
+        HubResourceReference reference) {
         // Do not mask the original source validation failure if repair fails.
         // S2/S4 read-time eligibility checks and reconciliation remain required.
         try {
             AiResource current = repository.findByEntryId(id);
-            if (current != null && isActive(current) && Objects.equals(current.getMetaVersion(), ourPublishedVersion)
-                    && sameEffectiveVersion(current, reference)) {
+            if (current != null && isActive(current)
+                && Objects.equals(current.getMetaVersion(), ourPublishedVersion)
+                && sameEffectiveVersion(current, reference)) {
                 if (!repository.disable(id, ourPublishedVersion)) {
                     LOGGER.warn("Hub share post-publication compensation lost CAS, entryId={}", id);
                 }
@@ -181,8 +193,9 @@ public class HubSkillShareService {
     }
     
     private void requireValidEntry(AiResource entry) throws NacosException {
-        if (entry == null || entry.getId() == null || entry.getId() <= 0 || entry.getMetaVersion() == null
-                || entry.getMetaVersion() <= 0) {
+        if (entry == null || entry.getId() == null || entry.getId() <= 0
+            || entry.getMetaVersion() == null
+            || entry.getMetaVersion() <= 0) {
             throw conflict("Hub Skill entry is missing or has invalid metadata");
         }
     }
@@ -199,19 +212,22 @@ public class HubSkillShareService {
     
     private boolean hasPreviousVersion(AiResource entry) throws NacosException {
         ResourceVersionInfo info = readVersionInfo(entry);
-        return info.getLabels() != null && info.getLabels().get(AiResourceConstants.LABEL_LATEST) != null;
+        return info.getLabels() != null
+            && info.getLabels().get(AiResourceConstants.LABEL_LATEST) != null;
     }
     
-    private boolean sameEffectiveVersion(AiResource entry, HubResourceReference requested) throws NacosException {
+    private boolean sameEffectiveVersion(AiResource entry, HubResourceReference requested)
+        throws NacosException {
         HubResourceReference current = HubResourceReferenceJsonUtil.parse(entry.getExt());
         ResourceVersionInfo info = readVersionInfo(entry);
         return sameReference(current, requested) && info.getLabels() != null && Objects.equals(
-                info.getLabels().get(AiResourceConstants.LABEL_LATEST), requested.getSourceVersion());
+            info.getLabels().get(AiResourceConstants.LABEL_LATEST), requested.getSourceVersion());
     }
     
     private ResourceVersionInfo readVersionInfo(AiResource entry) throws NacosException {
         try {
-            ResourceVersionInfo info = JacksonUtils.toObj(entry.getVersionInfo(), ResourceVersionInfo.class);
+            ResourceVersionInfo info =
+                JacksonUtils.toObj(entry.getVersionInfo(), ResourceVersionInfo.class);
             if (info == null || info.getLabels() == null) {
                 throw conflict("Hub Skill version pointer is missing or corrupt");
             }
@@ -225,13 +241,16 @@ public class HubSkillShareService {
     
     private boolean sameReference(HubResourceReference left, HubResourceReference right) {
         return left != null && right != null && Objects.equals(left.getSourceNamespaceId(),
-                right.getSourceNamespaceId()) && Objects.equals(left.getSourceResourceId(), right.getSourceResourceId())
-                && Objects.equals(left.getSourceName(), right.getSourceName()) && Objects.equals(
-                left.getSourceVersionId(), right.getSourceVersionId()) && Objects.equals(left.getSourceVersion(),
+            right.getSourceNamespaceId())
+            && Objects.equals(left.getSourceResourceId(), right.getSourceResourceId())
+            && Objects.equals(left.getSourceName(), right.getSourceName()) && Objects.equals(
+                left.getSourceVersionId(), right.getSourceVersionId())
+            && Objects.equals(left.getSourceVersion(),
                 right.getSourceVersion());
     }
     
-    private HubShareResult result(AiResource entry, HubResourceReference reference, HubShareOutcome outcome) {
+    private HubShareResult result(AiResource entry, HubResourceReference reference,
+        HubShareOutcome outcome) {
         HubShareResult result = new HubShareResult();
         result.setHubEntryId(entry.getId());
         result.setDisplayName(reference.getSourceName());

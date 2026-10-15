@@ -50,8 +50,8 @@ import java.util.Properties;
 /**
  * Read admission for an explicit, PUBLIC Hub share, separate from source READ.
  *
- * <p>The first version deliberately rejects anonymous users and deployments
- * without enabled authentication/visibility. An authenticated user does NOT
+ * <p>Verified anonymous users may read active PUBLIC Hub shares. Deployments
+ * still require configured authentication/visibility. A Hub viewer does NOT
  * need READ permission on the source Namespace to consume an actively shared,
  * fixed PUBLIC version. S2-3's source and publication checks enforce the scope
  * of that grant. This class alone cannot authorize arbitrary source content.</p>
@@ -64,7 +64,7 @@ import java.util.Properties;
 public class HubSkillReadPermissionGuard {
     
     /**
-     * Require a verified end-user request and a configured visibility SPI.
+     * Require a verified viewer, including anonymous, and a configured visibility SPI.
      *
      * <p>Do not consult the source Namespace READ grant here: that would defeat
      * the dedicated Hub sharing semantics. Callers must also verify the active
@@ -93,7 +93,7 @@ public class HubSkillReadPermissionGuard {
      */
     public boolean canReadSource(AiResource source) throws NacosException {
         Caller caller = requireCaller();
-        if (!isRealSource(source)) {
+        if ("anonymous".equals(caller.principal) || !isRealSource(source)) {
             return false;
         }
         try {
@@ -159,7 +159,8 @@ public class HubSkillReadPermissionGuard {
             }
             Object identityId = identity.getParameter(Constants.Identity.IDENTITY_ID);
             if (!(identityId instanceof String) || StringUtils.isBlank((String) identityId)
-                || "anonymous".equalsIgnoreCase(((String) identityId).trim())) {
+                || ("anonymous".equalsIgnoreCase(((String) identityId).trim())
+                    && !"anonymous".equals(identityId))) {
                 throw denied();
             }
             return new Caller((String) identityId, apiType, identity,

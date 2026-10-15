@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import static com.alibaba.nacos.ai.constant.Constants.Hub.ENTRY_RESOURCE;
-import static com.alibaba.nacos.ai.service.hub.HubSkillPermissionGuard.HUB_MANAGE_RESOURCE;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ADMIN_RESOURCE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
 
 /** Authenticated mutation-state lookup; these are not public directory APIs. */
@@ -63,11 +63,11 @@ public class HubSkillStateAdminController {
         return Result.success(service.bySource(namespaceId, sourceName));
     }
     
-    /** Query governance state with the dedicated Hub management permission. */
+    /** Query governance state with existing Console administrator authority. */
     @Since("3.3.0")
     @GetMapping("/governance-state")
     @Secured(action = ActionTypes.WRITE, signType = SignType.SPECIFIED,
-        resource = HUB_MANAGE_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ADMIN_RESOURCE, apiType = ApiType.ADMIN_API)
     public Result<HubSkillShareState> governanceState(HubSkillReadEntryForm form)
         throws NacosException {
         return Result.success(service.byEntryForAdmin(form.prepareEntryId()));

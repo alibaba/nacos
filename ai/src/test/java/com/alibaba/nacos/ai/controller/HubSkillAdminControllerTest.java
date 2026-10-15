@@ -236,14 +236,14 @@ class HubSkillAdminControllerTest {
         assertEndpoint("share", HubShareSkillForm.class, "ai-hub/entry");
         assertEndpoint("adjust", HubAdjustShareForm.class, "ai-hub/entry");
         assertEndpoint("unshare", HubUnshareForm.class, "ai-hub/entry");
-        assertEndpoint("forceUnshare", HubForceUnshareForm.class, "ai-hub/manage");
+        assertEndpoint("forceUnshare", HubForceUnshareForm.class, "console/ai-hub");
     }
     
     private void assertEndpoint(String name, Class<?> formType, String resource) throws Exception {
         Method method = HubSkillAdminController.class.getDeclaredMethod(name, formType);
         Secured secured = method.getAnnotation(Secured.class);
         assertEquals(ApiType.ADMIN_API, secured.apiType());
-        assertTrue(Arrays.asList(secured.tags())
+        assertEquals(!"console/ai-hub".equals(resource), Arrays.asList(secured.tags())
             .contains(com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY));
         assertEquals(resource, secured.resource());
         assertEquals("3.3.0", method.getAnnotation(Since.class).value());

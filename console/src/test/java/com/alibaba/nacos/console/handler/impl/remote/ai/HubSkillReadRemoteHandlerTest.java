@@ -58,7 +58,7 @@ class HubSkillReadRemoteHandlerTest {
         HubSkillDownload download = new HubSkillDownload();
         when(skill.getHubSkillDownload(91L)).thenReturn(download);
         assertSame(download, handler.download(91L));
-        verify(guard, org.mockito.Mockito.times(4)).requireForwardableUser();
+        verify(guard, org.mockito.Mockito.times(4)).requireForwardableRead();
         verify(skill).listHubSkills(request);
         verify(skill).getHubSkillDetail(91L);
         verify(skill).getHubSkillContent(91L);
@@ -69,7 +69,7 @@ class HubSkillReadRemoteHandlerTest {
         NacosMaintainerClientHolder holder = mock(NacosMaintainerClientHolder.class);
         HubRemoteCallerGuard guard = mock(HubRemoteCallerGuard.class);
         doThrow(new NacosException(NacosException.NO_RIGHT, "not forwardable"))
-            .when(guard).requireForwardableUser();
+            .when(guard).requireForwardableRead();
         HubSkillReadRemoteHandler handler = new HubSkillReadRemoteHandler(holder, guard);
         assertThrows(NacosException.class, () -> handler.detail(91L));
         assertThrows(NacosException.class, () -> handler.download(91L));

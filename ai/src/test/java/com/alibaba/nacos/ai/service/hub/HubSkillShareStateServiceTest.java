@@ -109,7 +109,7 @@ class HubSkillShareStateServiceTest {
     @Test
     void governanceIsAuthorizedBeforeAnyEntryLookup() throws Exception {
         doThrow(new NacosException(NacosException.NO_RIGHT, "denied"))
-            .when(permissions).requireHubManage();
+            .when(permissions).requireAdministrator();
         assertThrows(NacosException.class, () -> service.byEntryForAdmin(901L));
     }
     
@@ -213,7 +213,7 @@ class HubSkillShareStateServiceTest {
         when(sources.findMeta("ns-a", "find-skills", "skill")).thenReturn(source());
         doThrow(new NacosException(403, "denied")).when(permissions)
             .requireSourceWrite(org.mockito.ArgumentMatchers.any(AiResource.class));
-        doThrow(new NacosException(403, "denied")).when(permissions).requireHubManage();
+        doThrow(new NacosException(403, "denied")).when(permissions).requireAdministrator();
         assertThrows(NacosException.class, () -> service.bySource("ns-a", "find-skills"));
         assertThrows(NacosException.class, () -> service.byEntryForAdmin(901L));
         verifyNoInteractions(storage);

@@ -172,9 +172,10 @@ class HubSkillReadPermissionGuardTest {
     }
     
     @Test
-    void anonymousIdentityIsNotGrantedByPublicSource() {
+    void verifiedAnonymousCanReadHubButCannotOpenSource() {
         identity.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
-        assertDenied();
+        assertDoesNotThrow(guard::requireHubRead);
+        assertDoesNotThrow(() -> assertFalse(guard.canReadSource(sourceSkill())));
     }
     
     @Test
@@ -269,8 +270,7 @@ class HubSkillReadPermissionGuardTest {
     @Test
     void sourceLinkNeverAcceptsAnonymousOrServerIdentity() {
         identity.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
-        assertEquals(NacosException.NO_RIGHT, assertThrows(NacosException.class,
-            () -> guard.canReadSource(sourceSkill())).getErrCode());
+        assertDoesNotThrow(() -> assertFalse(guard.canReadSource(sourceSkill())));
         identity.setParameter(Constants.Identity.IDENTITY_ID, "alice");
         identity.setParameter(Constants.Identity.SERVER_IDENTITY, true);
         assertEquals(NacosException.NO_RIGHT, assertThrows(NacosException.class,

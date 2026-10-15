@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -45,7 +46,10 @@ public class CoreStateAdminApiOpenApiITCase extends CoreAdminApiBaseITCase {
         JsonNode state = getJsonOk(ADMIN_CORE_STATE_PATH, Query.newInstance(),
                 AuthIdentity.ANONYMOUS).get("data");
         assertTrue(state.isObject(), state.toString());
-        assertTrue(state.size() > 0, state.toString());
+        assertFalse(state.isEmpty(), state.toString());
+        assertTrue(state.path("ai_hub_enabled").isTextual(), state.toString());
+        assertTrue("true".equals(state.path("ai_hub_enabled").asText())
+                || "false".equals(state.path("ai_hub_enabled").asText()), state.toString());
 
         JsonNode stateWithUnexpectedQuery = getJsonOk(ADMIN_CORE_STATE_PATH,
                 Query.newInstance().addParam("unexpected", "ignored"),
