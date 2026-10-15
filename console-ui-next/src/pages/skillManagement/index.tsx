@@ -34,6 +34,7 @@ import { ImportSkillDialog } from '@/components/ai/skill/ImportSkillDialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useServerStore } from '@/stores/server-store';
 import { skillApi } from '@/api/skill';
 
 export default function SkillManagementPage() {
@@ -42,6 +43,7 @@ export default function SkillManagementPage() {
   const location = useLocation();
   const { currentNamespace } = useNamespaceStore();
   const { globalAdmin, username } = useAuthStore();
+  const hubEnabled = useServerStore((s) => s.hubEnabled);
   const {
     items,
     loading,
@@ -505,7 +507,7 @@ export default function SkillManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('skill.deleteConfirm', { name: deleteTarget })}
-              <span className="mt-2 block text-amber-600">{t('hub.deleteWarning')}</span>
+              {hubEnabled && <span className="mt-2 block text-amber-600">{t('hub.deleteWarning')}</span>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

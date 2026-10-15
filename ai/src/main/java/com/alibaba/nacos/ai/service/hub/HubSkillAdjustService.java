@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
@@ -80,6 +81,7 @@ public class HubSkillAdjustService {
      * @throws NacosException on authorization, qualification or CAS failure
      */
     public HubShareResult adjustShare(HubAdjustShareRequest request) throws NacosException {
+        HubConfig.requireEnabled();
         HubSkillRequestValidator.validate(request);
         long id = request.getHubEntryId();
         long expected = request.getExpectedMetaVersion();
@@ -145,6 +147,7 @@ public class HubSkillAdjustService {
     
     private void revalidate(AiResource source, HubResourceReference expected)
         throws NacosException {
+        HubConfig.requireEnabled();
         HubEligibleSkillVersion fresh = eligibilityValidator.requireShareableVersion(source,
             expected.getSourceVersion());
         requireSameSource(expected, fresh.getReference());

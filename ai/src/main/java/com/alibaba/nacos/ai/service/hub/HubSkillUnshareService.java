@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
@@ -75,6 +76,7 @@ public class HubSkillUnshareService {
      * @throws NacosException if validation, authorization or CAS fails
      */
     public HubShareResult unshareSkill(HubUnshareRequest request) throws NacosException {
+        HubConfig.requireEnabled();
         HubSkillRequestValidator.validate(request);
         long entryId = request.getHubEntryId();
         long expected = request.getExpectedMetaVersion();
@@ -104,6 +106,7 @@ public class HubSkillUnshareService {
      * @throws NacosException if governance permission or CAS fails
      */
     public HubShareResult forceUnshare(HubForceUnshareRequest request) throws NacosException {
+        HubConfig.requireEnabled();
         HubSkillRequestValidator.validate(request);
         // Must be checked before reading the entry: no source WRITE shortcut.
         authorizationService.requireForceUnsharePermission();

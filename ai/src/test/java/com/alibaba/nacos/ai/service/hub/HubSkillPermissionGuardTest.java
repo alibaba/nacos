@@ -207,18 +207,17 @@ class HubSkillPermissionGuardTest {
     }
     
     @Test
-    void forceUnshareUsesSpecificGovernanceRbacPermission() throws Exception {
+    void forceUnshareRequiresExistingConsoleAdministratorAuthority() throws Exception {
         AuthPluginService plugin = mock(AuthPluginService.class);
         when(pluginManager.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.of(plugin));
         when(plugin.validateAuthority(eq(identity), any(Permission.class)))
             .thenReturn(AuthResult.successResult());
         
-        guard.requireHubManage();
+        guard.requireAdministrator();
         
         ArgumentCaptor<Permission> permission = ArgumentCaptor.forClass(Permission.class);
         org.mockito.Mockito.verify(plugin).validateAuthority(eq(identity), permission.capture());
-        assertEquals("ai-hub/manage", HubSkillPermissionGuard.HUB_MANAGE_RESOURCE);
-        assertEquals(HubSkillPermissionGuard.HUB_MANAGE_RESOURCE,
+        assertEquals("console/ai-hub",
             permission.getValue().getResource().getName());
         assertEquals(SignType.SPECIFIED, permission.getValue().getResource().getType());
         assertEquals("w", permission.getValue().getAction());
@@ -231,21 +230,21 @@ class HubSkillPermissionGuardTest {
         when(plugin.validateAuthority(eq(identity), any(Permission.class)))
             .thenReturn(AuthResult.failureResult(403, "no grant"));
         
-        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireHubManage);
+        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireAdministrator);
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
     }
     
     @Test
     void forceUnshareDeniesMissingAuthPlugin() {
         when(pluginManager.findAuthServiceSpiImpl("nacos")).thenReturn(Optional.empty());
-        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireHubManage);
+        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireAdministrator);
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
     }
     
     @Test
     void forceUnshareDeniesDisabledAuthWithoutConsultingAuthPlugin() {
         when(config.isAuthEnabled()).thenReturn(false);
-        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireHubManage);
+        NacosApiException ex = assertThrows(NacosApiException.class, guard::requireAdministrator);
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
         verifyNoInteractions(pluginManager);
     }
@@ -306,7 +305,7 @@ class HubSkillPermissionGuardTest {
     @Test
     void forceUnshareRejectsAnonymousBeforeConsultingPlugin() {
         identity.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
-        assertThrows(NacosApiException.class, guard::requireHubManage);
+        assertThrows(NacosApiException.class, guard::requireAdministrator);
         verifyNoInteractions(pluginManager);
     }
     

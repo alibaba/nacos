@@ -58,12 +58,6 @@ import java.util.Properties;
 public class HubSkillPermissionGuard {
     
     /**
-     * Canonical RBAC resource for administrator takedowns. The default HUB_MANAGER role has implicit WRITE; other
-     * roles can receive an explicit grant. It is not a Namespace permission or global administrator grant.
-     */
-    public static final String HUB_MANAGE_RESOURCE = AiConstants.Hub.MANAGE_RESOURCE;
-    
-    /**
      * Require a readable source Skill for the authenticated caller.
      *
      * @param sourceMeta source Skill metadata from the source namespace
@@ -84,25 +78,26 @@ public class HubSkillPermissionGuard {
     }
     
     /**
-     * Require explicit Hub governance WRITE using the active Nacos auth plugin.
+     * Require existing Console administrator authority through the active auth plugin.
      *
-     * @throws NacosException if the caller is not a Hub manager
+     * @throws NacosException if the caller is not an administrator
      */
-    public void requireHubManage() throws NacosException {
+    public void requireAdministrator() throws NacosException {
         Caller caller = requireAuthenticatedCaller();
         AuthPluginService authPlugin = AuthPluginManager.getInstance()
             .findAuthServiceSpiImpl(caller.authConfig.getNacosAuthSystemType())
             .orElseThrow(() -> accessDenied("Hub management auth plugin is unavailable"));
         Resource resource =
-            new Resource("", "", HUB_MANAGE_RESOURCE, SignType.SPECIFIED, new Properties());
+            new Resource("", "", AiConstants.Hub.ADMIN_RESOURCE, SignType.SPECIFIED,
+                new Properties());
         Permission permission = new Permission(resource, ActionTypes.WRITE.toString());
         try {
             AuthResult<?> result = authPlugin.validateAuthority(caller.identity, permission);
             if (result == null || !result.isSuccess()) {
-                throw accessDenied("No Hub management permission");
+                throw accessDenied("Console administrator permission required");
             }
         } catch (AccessException e) {
-            throw accessDenied("No Hub management permission");
+            throw accessDenied("Console administrator permission required");
         }
     }
     

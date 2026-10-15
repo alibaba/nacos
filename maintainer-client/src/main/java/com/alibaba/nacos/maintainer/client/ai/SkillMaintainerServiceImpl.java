@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
@@ -514,7 +515,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         params.put("hubEntryId", String.valueOf(request.getHubEntryId()));
         params.put("expectedMetaVersion", String.valueOf(request.getExpectedMetaVersion()));
         params.put("reason", request.getReason());
-        return executeHubRequest("/force-unshare", params, "", "ai-hub/manage");
+        return executeHubRequest("/force-unshare", params, "", AiConstants.Hub.ADMIN_RESOURCE);
     }
     
     @Override
@@ -632,7 +633,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         }
         Map<String, String> params = new HashMap<>(1);
         params.put("hubEntryId", String.valueOf(entryId));
-        return executeHubState("/governance-state", params, "", "ai-hub/manage");
+        return executeHubState("/governance-state", params, "", AiConstants.Hub.ADMIN_RESOURCE);
     }
     
     private HubSkillShareState executeHubState(String suffix, Map<String, String> params,

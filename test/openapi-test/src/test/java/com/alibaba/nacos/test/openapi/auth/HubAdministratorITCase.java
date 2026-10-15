@@ -25,40 +25,30 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Verify that an administrator-controlled role binding grants and revokes only Hub governance access.
- */
-public class HubManagerRoleITCase extends AuthITCase {
+/** Verify that Hub governance is reserved for existing global administrators. */
+public class HubAdministratorITCase extends AuthITCase {
 
     private static final String ROLE_PATH = CONTEXT_PATH + "/v3/auth/role";
 
     private static final String HUB_PATH = CONTEXT_PATH + "/v3/admin/ai/hub/skills";
 
     @Test
-    void hubManagerBindingGrantsGovernanceWithoutPermissionRecordAndRevocationDeniesIt() throws Exception {
-        TestIdentity identity = createIdentityWithoutPermission("hub-manager-role");
-        Map<String, String> binding = params("role", AiConstants.Hub.MANAGER_ROLE, "username", identity.username());
+    void explicitAclsCannotReplaceGlobalAdministrator() throws Exception {
+        TestIdentity identity = createIdentityWithoutPermission("hub-admin-boundary");
         String statePath = HUB_PATH + "/governance-state?hubEntryId=" + Long.MAX_VALUE;
         Map<String, String> takedown = params("hubEntryId", Long.toString(Long.MAX_VALUE),
-                "expectedMetaVersion", "1", "reason", "Hub manager role boundary test");
+                "expectedMetaVersion", "1", "reason", "Administrator boundary test");
 
         assertResourceNotFound(get(SERVER_BASE_URL, statePath, adminToken()));
+        assertResourceNotFound(postForm(SERVER_BASE_URL, HUB_PATH + "/force-unshare", adminToken(), takedown));
+        assertDenied(get(SERVER_BASE_URL, statePath, null));
+        assertDenied(get(SERVER_BASE_URL, statePath, identity.token()));
+        for (String resource : new String[] {AiConstants.Hub.ADMIN_RESOURCE, "*"}) {
+            grantPermission(identity, resource, "rw");
+        }
         assertDenied(get(SERVER_BASE_URL, statePath, identity.token()));
         assertDenied(postForm(SERVER_BASE_URL, HUB_PATH + "/force-unshare", identity.token(), takedown));
-        assertDenied(postForm(SERVER_BASE_URL, ROLE_PATH, identity.token(), binding));
-
-        assertSuccess(postForm(SERVER_BASE_URL, ROLE_PATH, adminToken(), binding));
-        addCleanup(() -> deleteForm(SERVER_BASE_URL, ROLE_PATH, adminToken(), binding));
-        // No permission record is added. A missing entry proves permission passed without mutating real Hub data.
-        assertResourceNotFound(awaitAuthorized(() -> get(SERVER_BASE_URL, statePath, identity.token())));
-        assertResourceNotFound(postForm(SERVER_BASE_URL, HUB_PATH + "/force-unshare", identity.token(), takedown));
         assertDenied(get(SERVER_BASE_URL, ROLE_PATH + "/list?pageNo=1&pageSize=20", identity.token()));
-        assertDenied(postForm(SERVER_BASE_URL, ROLE_PATH, identity.token(),
-                params("role", identity.role() + "_other", "username", identity.username())));
-
-        assertSuccess(deleteForm(SERVER_BASE_URL, ROLE_PATH, adminToken(), binding));
-        assertDenied(awaitStatus(() -> get(SERVER_BASE_URL, statePath, identity.token()), 403));
-        assertDenied(postForm(SERVER_BASE_URL, HUB_PATH + "/force-unshare", identity.token(), takedown));
     }
 
     private void assertResourceNotFound(Response response) {

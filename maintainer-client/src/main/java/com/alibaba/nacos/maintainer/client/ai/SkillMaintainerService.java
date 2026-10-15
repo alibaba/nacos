@@ -651,7 +651,7 @@ public interface SkillMaintainerService {
             "Hub Skill source share lookup is unavailable");
     }
     
-    /** Hub governance WRITE required; never use for ordinary users. */
+    /** Console administrator authority required; never use for ordinary users. */
     @Since("3.3.0")
     default HubSkillShareState getHubSkillGovernanceState(Long entryId) throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,

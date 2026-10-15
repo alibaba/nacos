@@ -58,7 +58,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { sidebarCollapsed } = useAppStore();
   const { globalAdmin } = useAuthStore();
-  const { version, startupMode, functionMode, copilotEnabled, aiEnabled } = useServerStore();
+  const { version, startupMode, functionMode, copilotEnabled, aiEnabled, hubEnabled } = useServerStore();
   const { currentNamespace, namespaceShowName } = useNamespaceStore();
   const platformPaths = [
     '/namespace',
@@ -85,7 +85,7 @@ export function Sidebar() {
       defaultOpen: true,
       children: [
         { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill', badge: 'new' },
-        { key: 'hubSkillRegistry', label: t('menu.hubSkillRegistry'), path: '/hub/skills' },
+        ...(hubEnabled ? [{ key: 'hubSkillRegistry', label: t('menu.hubSkillRegistry'), path: '/hub/skills' }] : []),
         { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement', badge: 'new' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
         { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec', badge: 'Beta' },

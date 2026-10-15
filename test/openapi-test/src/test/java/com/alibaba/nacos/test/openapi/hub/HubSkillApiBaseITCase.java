@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Shared deployed-server scenarios for both Hub mutation audiences.
  *
  * <p>Requires enabled Admin/Console auth and the default visibility plugin.
+ * Anonymous read scenarios also require the existing anonymous.ai.enabled setting.
  * Dedicated Hub-role and standalone remote-Console cases require separate
  * deployment fixtures.</p>
  *
@@ -171,10 +172,13 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
-    void allReadEndpointsRejectAnonymousIdentity() throws Exception {
-        for (String suffix : new String[] {"list", "detail", "content", "download"}) {
-            assertError(getRaw(hubPath() + "/" + suffix, Query.newInstance().addParam("hubEntryId", "1"),
-                AuthIdentity.ANONYMOUS), 403, ErrorCode.ACCESS_DENIED, "");
+    void anonymousReadsReachHubValidationWithoutGrantingMutationAccess() throws Exception {
+        // These scenarios require the existing anonymous.ai.enabled switch on the deployed auth plugin.
+        assertEquals(200, getRaw(hubPath() + "/list", Query.newInstance(), AuthIdentity.ANONYMOUS).code());
+        for (String suffix : new String[] {"detail", "content", "download"}) {
+            assertError(getRaw(hubPath() + "/" + suffix,
+                    Query.newInstance().addParam("hubEntryId", String.valueOf(Long.MAX_VALUE)), AuthIdentity.ANONYMOUS),
+                    404, ErrorCode.RESOURCE_NOT_FOUND, "");
         }
     }
 
@@ -216,15 +220,22 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         detail = getJsonOk(hubPath() + "/detail", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
         assertEquals("1.0.0", detail.get("sharedVersion").asText());
         assertEquals(0, detail.get("versionLabels").size());
+        JsonNode anonymousDetail = getJsonOk(hubPath() + "/detail", entry, AuthIdentity.ANONYMOUS).get("data");
+        assertFalse(anonymousDetail.get("sourceReadable").asBoolean());
+        assertFalse(anonymousDetail.has("sourceNamespaceId"));
+        assertEquals("1.0.0", anonymousDetail.get("sharedVersion").asText());
+        JsonNode anonymousContent = getJsonOk(hubPath() + "/content", entry, AuthIdentity.ANONYMOUS).get("data");
+        assertEquals("1.0.0", anonymousContent.get("sharedVersion").asText());
+        assertTrue(anonymousContent.get("skillMd").asText().contains("Pinned original instructions."));
         byte[] archive;
         if (hubPath().contains("/console/")) {
             ByteResponse download = executeRawBytes(new HttpGet(requestUrl(hubPath() + "/download")
-                + "?hubEntryId=" + share.get("hubEntryId").asText()), AuthIdentity.CLIENT_NO_PERMISSION);
+                + "?hubEntryId=" + share.get("hubEntryId").asText()), AuthIdentity.ANONYMOUS);
             assertEquals(200, download.code());
             assertTrue(download.contentType().contains("application/zip"));
             archive = download.body();
         } else {
-            JsonNode download = getJsonOk(hubPath() + "/download", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+            JsonNode download = getJsonOk(hubPath() + "/download", entry, AuthIdentity.ANONYMOUS).get("data");
             assertEquals("1.0.0", download.get("sharedVersion").asText());
             assertFalse(download.has("sourceNamespaceId"));
             archive = Base64.getDecoder().decode(download.get("zipBytes").asText());
@@ -233,6 +244,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         cleanupShare[0] = postFormOk(hubPath() + "/unshare", entryParams(share)).get("data");
         assertError(getRaw(hubPath() + "/download", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
         assertError(getRaw(hubPath() + "/content", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assertError(getRaw(hubPath() + "/content", entry, AuthIdentity.ANONYMOUS), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
         assertEquals(0, getJsonOk(hubPath() + "/list", Query.newInstance().addParam("query", name)).get("data").get("totalCount").asInt());
     }
 

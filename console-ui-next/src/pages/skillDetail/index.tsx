@@ -135,6 +135,7 @@ export default function SkillDetailPage() {
     'public';
   const { globalAdmin, username } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
+  const hubEnabled = useServerStore((s) => s.hubEnabled);
 
   const {
     currentDetail,
@@ -150,6 +151,12 @@ export default function SkillDetailPage() {
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [hubActiveVersion, setHubActiveVersion] = useState<string | null>(null);
   const [hubLifecycleConfirmation, setHubLifecycleConfirmation] = useState<HubLifecycleConfirmation | null>(null);
+  useEffect(() => {
+    if (!hubEnabled) {
+      setHubActiveVersion(null);
+      setHubLifecycleConfirmation(null);
+    }
+  }, [hubEnabled]);
   const selectVersion = useCallback((version: string) => {
     setSelectedVersion(version);
     setSearchParams(prev => {
@@ -393,7 +400,7 @@ export default function SkillDetailPage() {
   // ===== Enable/disable handler =====
 
   const handleToggleEnable = async () => {
-    if (currentDetail?.enable && hubActiveVersion) {
+    if (hubEnabled && currentDetail?.enable && hubActiveVersion) {
       setHubLifecycleConfirmation({ action: 'disable', namespaceId, skillName });
       return;
     }
@@ -419,7 +426,7 @@ export default function SkillDetailPage() {
   };
 
   const handleToggleScope = async () => {
-    if (currentDetail?.scope === 'PUBLIC' && hubActiveVersion) {
+    if (hubEnabled && currentDetail?.scope === 'PUBLIC' && hubActiveVersion) {
       setHubLifecycleConfirmation({ action: 'private', namespaceId, skillName });
       return;
     }
@@ -646,7 +653,7 @@ export default function SkillDetailPage() {
   };
 
   const handleOffline = async (version: string) => {
-    if (revokeWarning(!!hubActiveVersion, version, hubActiveVersion || undefined)) {
+    if (hubEnabled && revokeWarning(!!hubActiveVersion, version, hubActiveVersion || undefined)) {
       setHubLifecycleConfirmation({ action: 'offline', version, namespaceId, skillName });
       return;
     }
@@ -1231,12 +1238,12 @@ export default function SkillDetailPage() {
         <CardContent className="space-y-1 p-4 text-xs text-muted-foreground">
           <p>{t('hub.source')}: {detail.origin.sourceName} @ {detail.origin.sourceVersion}</p>
           <p>{t('hub.importMode')}: {detail.origin.mode === 'HUB_IMPORT' ? t('hub.import') : t('hub.directCopy')}</p>
-          {detail.origin.hubEntryId && validHubId(detail.origin.hubEntryId) && <Button size="sm" variant="outline"
+          {hubEnabled && detail.origin.hubEntryId && validHubId(detail.origin.hubEntryId) && <Button size="sm" variant="outline"
             onClick={() => navigate(hubDetailPath(detail.origin!.hubEntryId!))}>{t('hub.openHubReference')}</Button>}
           <p>{t('hub.independentDraft')}</p>
         </CardContent>
       </Card>}
-      {canWriteResource && <SkillHubShareControls namespaceId={namespaceId} skillName={skillName}
+      {hubEnabled && canWriteResource && <SkillHubShareControls namespaceId={namespaceId} skillName={skillName}
         selectedVersion={selectedVersion} detail={detail} onShareChange={setHubActiveVersion} />}
       {/* ===== Tabs Content ===== */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
@@ -1662,7 +1669,7 @@ export default function SkillDetailPage() {
         onSuccess={loadDetail}
       />
 
-      <Dialog open={!!hubLifecycleConfirmation} onOpenChange={open => {
+      <Dialog open={hubEnabled && !!hubLifecycleConfirmation} onOpenChange={open => {
         if (!open && !hubLifecycleBusy) setHubLifecycleConfirmation(null);
       }}>
         <DialogContent>

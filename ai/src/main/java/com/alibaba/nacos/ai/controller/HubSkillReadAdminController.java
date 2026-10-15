@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static com.alibaba.nacos.ai.constant.Constants.Hub.ENTRY_RESOURCE;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /** Dedicated Hub read Admin APIs; never forwards raw Hub storage. */
 @NacosApi
@@ -58,7 +59,8 @@ public class HubSkillReadAdminController {
     @Since("3.3.0")
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<Page<HubSkillSummary>> list(HubSkillReadListForm form) throws NacosException {
         return Result.success(service.list(form.prepareRequest()));
     }
@@ -66,7 +68,8 @@ public class HubSkillReadAdminController {
     @Since("3.3.0")
     @GetMapping("/detail")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<HubSkillDetail> detail(HubSkillReadEntryForm form)
         throws NacosException {
         return Result.success(service.getDetail(form.prepareEntryId()));
@@ -75,7 +78,8 @@ public class HubSkillReadAdminController {
     @Since("3.3.0")
     @GetMapping("/content")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<HubSkillContent> content(HubSkillReadEntryForm form)
         throws NacosException {
         return Result.success(service.getContent(form.prepareEntryId()));
@@ -91,7 +95,8 @@ public class HubSkillReadAdminController {
     @Since("3.3.0")
     @GetMapping("/download")
     @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
-        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
     public Result<HubSkillDownload> download(HubSkillReadEntryForm form) throws NacosException {
         return Result.success(service.download(form.prepareEntryId()));
     }

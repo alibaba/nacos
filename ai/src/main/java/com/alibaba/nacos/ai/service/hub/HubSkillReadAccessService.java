@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
+import com.alibaba.nacos.ai.config.HubConfig;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -60,6 +61,7 @@ public class HubSkillReadAccessService {
      * @throws NacosException for missing permission or an unavailable share
      */
     public ResolvedHubSkillReference resolveReadable(Long hubEntryId) throws NacosException {
+        HubConfig.requireEnabled();
         permissionGuard.requireHubRead();
         ResolvedHubSkillReference publication = resolver.resolve(hubEntryId);
         sourceValidator.requireLiveSource(publication);
@@ -87,6 +89,7 @@ public class HubSkillReadAccessService {
      */
     public AiResource requireReadableSource(ResolvedHubSkillReference publication)
         throws NacosException {
+        HubConfig.requireEnabled();
         if (publication == null) {
             throw unavailable();
         }
@@ -104,6 +107,7 @@ public class HubSkillReadAccessService {
      * @throws NacosException when permissions, source, or Hub state were revoked
      */
     public void requireStillReadable(ResolvedHubSkillReference publication) throws NacosException {
+        HubConfig.requireEnabled();
         if (publication == null) {
             throw unavailable();
         }
@@ -124,6 +128,7 @@ public class HubSkillReadAccessService {
      */
     public boolean canReadSourceDetail(ResolvedHubSkillReference publication)
         throws NacosException {
+        HubConfig.requireEnabled();
         if (publication == null) {
             throw unavailable();
         }
@@ -144,6 +149,7 @@ public class HubSkillReadAccessService {
      */
     public HubEligibleSkillVersion requireReadableVersion(ResolvedHubSkillReference publication)
         throws NacosException {
+        HubConfig.requireEnabled();
         permissionGuard.requireHubRead();
         HubEligibleSkillVersion source = sourceValidator.requireLiveVersion(publication);
         resolver.requireUnchanged(publication);
