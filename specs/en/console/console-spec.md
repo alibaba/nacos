@@ -183,6 +183,13 @@ Rules:
 - handler implementations must return the same domain meaning across deployment
   modes even if the transport path differs.
 
+Both the default next UI and the legacy UI accept an optional `changeMessage`
+in config create, edit, gray publish, and publish-based rollback workflows. It is independent of configuration description and is
+never copied from the rollback target. Clear the input after success and retain
+it after failure. History list and detail render the message as plain text.
+Merged and independent console handlers must preserve the same semantics defined
+by the [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
+
 ## 7. Independent Console Deployment
 
 In `console` deployment, Console is a management-plane gateway to one or more

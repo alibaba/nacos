@@ -152,6 +152,12 @@ Console Controller
   的领域实现；
 - 即使传输路径不同，handler 实现也必须在不同部署模式下返回相同领域语义。
 
+默认 next UI 和 legacy UI 的配置新建、编辑、灰度发布和通过发布完成的回滚
+接受可选 `changeMessage`。
+它独立于配置描述，回滚时不得从目标历史复制。成功后清空输入，失败时保留输入。
+历史列表和详情以纯文本显示说明。合并部署和独立控制台转发必须遵循相同的
+[Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
+
 ## 7. 独立 Console 部署
 
 在 `console` 部署模式下，Console 是访问一个或多个远端 Nacos Server 节点的管理面网关。

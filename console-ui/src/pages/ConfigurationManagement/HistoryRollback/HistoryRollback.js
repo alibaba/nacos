@@ -463,6 +463,7 @@ class HistoryRollback extends React.Component {
                   return value;
                 }}
               />
+              <Table.Column title={locale.changeMessage} dataIndex="changeMessage" />
               <Table.Column title={locale.operator} dataIndex="srcUser" />
               <Table.Column
                 title={locale.lastUpdateTime}

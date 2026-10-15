@@ -398,6 +398,14 @@ batch delete, are compatibility methods and are pending removal. New maintainer
 contracts should select configs by `namespaceId`, `groupName`, and `dataId`, or
 by explicit lists of that identity tuple.
 
+Formal and Beta publish overloads accept optional `changeMessage`, while the
+existing overloads remain compatible. Validate the 512-code-point limit locally
+before HTTP and report `NacosException.INVALID_PARAM` for oversized input.
+History models expose the selected operation's message; see the
+[Config Persistence And History Spec](../config/config-persistence-history-spec.md).
+The shared HTTP client must preserve UTF-8 JSON response bytes when the server
+omits a charset, including non-ASCII messages in history responses.
+
 ### 7.3 NamingMaintainerService
 
 `NamingMaintainerService` includes:

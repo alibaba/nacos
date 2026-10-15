@@ -85,6 +85,7 @@ public class ConfigOperationService {
         String encryptedDataKey) throws NacosException {
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        configForm.validateChangeMessage();
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -95,6 +96,7 @@ public class ConfigOperationService {
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
             configInfo.setMd5(configRequestInfo.getCasMd5());
         }
+        configInfo.setChangeMessage(configForm.getChangeMessage());
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
         
@@ -192,6 +194,7 @@ public class ConfigOperationService {
         configForm
             .setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
+        configForm.validateChangeMessage();
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -225,6 +228,7 @@ public class ConfigOperationService {
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
             configInfo.setMd5(configRequestInfo.getCasMd5());
         }
+        configInfo.setChangeMessage(configForm.getChangeMessage());
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(configForm.getEncryptedDataKey());
         

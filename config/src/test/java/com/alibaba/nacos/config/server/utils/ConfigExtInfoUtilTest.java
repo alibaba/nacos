@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -185,4 +187,31 @@ class ConfigExtInfoUtilTest {
         assertTrue(result.contains("expr"));
         assertTrue(result.contains("version"));
     }
+    
+    @Test
+    void testChangeMessagePreservesSnapshotMetadata() throws Exception {
+        String message = "  release 🚀\nreason  ";
+        String ext = ConfigExtInfoUtil.withChangeMessage(
+            "{\"c_desc\":\"description\",\"c_schema\":\"schema\",\"gray_name\":\"beta\"}", message);
+        com.fasterxml.jackson.databind.JsonNode node =
+            new com.fasterxml.jackson.databind.ObjectMapper().readTree(ext);
+        assertEquals("description", node.get("c_desc").asText());
+        assertEquals("schema", node.get("c_schema").asText());
+        assertEquals("beta", node.get("gray_name").asText());
+        assertEquals(message, ConfigExtInfoUtil.getChangeMessage(ext));
+        assertEquals("{}", ConfigExtInfoUtil.withChangeMessage("{}", null));
+        assertEquals(message,
+            ConfigExtInfoUtil.getChangeMessage(ConfigExtInfoUtil.withChangeMessage(null, message)));
+        assertThrows(IllegalArgumentException.class,
+            () -> ConfigExtInfoUtil.withChangeMessage("{broken", message));
+    }
+    
+    @Test
+    void testChangeMessageToleratesLegacyExtensions() {
+        for (String ext : new String[] {null, "", "{}", "{broken", "[]", "null",
+            "{\"change_message\":17}"}) {
+            assertNull(ConfigExtInfoUtil.getChangeMessage(ext));
+        }
+    }
+    
 }

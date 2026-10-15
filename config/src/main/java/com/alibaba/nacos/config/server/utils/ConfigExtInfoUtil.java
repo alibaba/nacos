@@ -52,6 +52,50 @@ public class ConfigExtInfoUtil {
         EXTRA_INFO_KEYS_MAPPING.put("schema", "c_schema");
     }
     
+    /**
+     * Attach the current operation message without replacing snapshot metadata.
+     *
+     * @param extInfo snapshot extension JSON
+     * @param changeMessage current operation message
+     * @return extension JSON
+     */
+    public static String withChangeMessage(String extInfo, String changeMessage) {
+        if (changeMessage == null) {
+            return extInfo;
+        }
+        try {
+            JsonNode parsed = StringUtils.isBlank(extInfo) ? OBJECT_MAPPER.createObjectNode()
+                : OBJECT_MAPPER.readTree(extInfo);
+            if (parsed == null || !parsed.isObject()) {
+                throw new IllegalArgumentException("History extension must be a JSON object");
+            }
+            ObjectNode node = (ObjectNode) parsed;
+            node.put("change_message", changeMessage);
+            return OBJECT_MAPPER.writeValueAsString(node);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Unable to serialize publish operation message", ex);
+        }
+    }
+    
+    /**
+     * Read the selected operation's message, tolerating legacy history extensions.
+     *
+     * @param extInfo history extension JSON
+     * @return message, or null for absent or invalid extensions
+     */
+    public static String getChangeMessage(String extInfo) {
+        if (StringUtils.isBlank(extInfo)) {
+            return null;
+        }
+        try {
+            JsonNode node = OBJECT_MAPPER.readTree(extInfo);
+            JsonNode message = node == null ? null : node.get("change_message");
+            return message != null && message.isTextual() ? message.textValue() : null;
+        } catch (JsonProcessingException ex) {
+            return null;
+        }
+    }
+    
     private ConfigExtInfoUtil() {
     }
     

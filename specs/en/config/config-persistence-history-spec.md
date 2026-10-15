@@ -127,3 +127,33 @@ serving state.
 - [Task Execution Spec](../design/foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md)
+
+### Publish operation messages
+
+Formal, CAS, Beta, and tag/gray publishes accept optional `changeMessage` text,
+limited to 512 Unicode code points. Longer input is a parameter-validation error;
+missing, empty, or whitespace-only text means no message. Nonblank text is
+preserved, including whitespace and newlines. The message belongs to the
+successful publish operation, not the configuration snapshot or its description.
+It does not affect runtime content, md5, dump, or listener payloads.
+
+The existing history `ext_info` JSON stores the message under `change_message`,
+alongside the unchanged snapshot metadata. No new database column or mapper SPI
+method is required. History list, detail, and previous responses expose optional
+`changeMessage` from the selected operation row. Missing, malformed, or nontextual
+legacy extension values produce null (which serialization may omit).
+An update row still stores the old content: its message describes the update
+that produced that row, never the next row. Failed validation or CAS produces no
+new history. Message/history writes share the existing publish transaction.
+Existing internal skip-history operations retain that behavior.
+
+Rollback through publish accepts a fresh message and must not inherit the target
+history's message. Delete, metadata-only updates, import, export, and clone do
+not gain a message input or copy prior messages. Retention remains unchanged.
+Console provides optional publish/rollback input and history display as plain
+text, clearing the input after success and retaining it after failure.
+The Maintainer SDK adds compatible overloads for formal and Beta publish; old
+signatures remain valid. The application ConfigService API is unchanged; RPC
+publish may carry `changeMessage` as an addition parameter.
+Upgrade all server and independent-console nodes before using the feature:
+older nodes may ignore the new parameter and cannot guarantee its persistence.

@@ -306,6 +306,7 @@ const I18N_CONF = {
     articleMeetRequirements: '条满足要求的配置。',
   },
   HistoryRollback: {
+    changeMessage: '变更说明',
     details: '详情',
     rollback: '回滚',
     pubNoData: '没有数据',
@@ -329,6 +330,7 @@ const I18N_CONF = {
     gray: '灰度版本',
   },
   HistoryDetail: {
+    changeMessage: '变更说明',
     historyDetails: '历史详情',
     update: '更新',
     insert: '插入',
@@ -447,6 +449,7 @@ const I18N_CONF = {
     total: '总数：',
   },
   NewConfig: {
+    changeMessage: '变更说明',
     newListingMain: '新建配置',
     newListing: '新建配置',
     publishFailed: '发布失败。请检查参数是否正确。',
@@ -504,6 +507,7 @@ const I18N_CONF = {
     back: '返回',
   },
   ConfigEditor: {
+    changeMessage: '变更说明',
     official: '正式',
     production: '正式',
     beta: 'BETA',
@@ -638,6 +642,7 @@ const I18N_CONF = {
     namespace: '命名空间',
   },
   ConfigRollback: {
+    changeMessage: '变更说明',
     rollBack: '回滚配置',
     determine: '确定要',
     followingConfiguration: '以下配置吗？',
