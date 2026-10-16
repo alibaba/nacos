@@ -61,6 +61,8 @@ export default defineConfig(({ command }) => ({
     },
   },
   build: {
+    // Keep the default UI compatible with Chromium 90 deployments (see #15899).
+    target: 'chrome90',
     outDir: 'dist',
     rollupOptions: {
       output: {
