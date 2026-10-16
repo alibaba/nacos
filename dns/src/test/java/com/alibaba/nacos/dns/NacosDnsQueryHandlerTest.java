@@ -604,6 +604,43 @@ class NacosDnsQueryHandlerTest {
     }
     
     @Test
+    void testSrvTargetPrefixCaseInsensitiveIpv4() {
+        // DNS names are case-insensitive: _NACOS-IP-10-0-0-1.NACOS must resolve
+        // the same as _nacos-ip-10-0-0-1.nacos (RFC 4343), without depending on
+        // the JVM default locale.
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        Message query = buildQuery("_NACOS-IP-10-0-0-1.NACOS.", Type.A, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Mixed-case SRV target prefix must be recognized");
+        List<Record> answers = response.getSection(Section.ANSWER);
+        assertEquals(1, answers.size());
+        assertEquals("10.0.0.1", ((ARecord) answers.get(0)).getAddress().getHostAddress());
+        assertEquals(1, response.getSection(Section.QUESTION).size(),
+            "Question must be preserved");
+    }
+    
+    @Test
+    void testSrvTargetPrefixCaseInsensitiveIpv6() {
+        InstanceOperatorClientImpl op = mock(InstanceOperatorClientImpl.class);
+        NacosDnsQueryHandler handler =
+            new NacosDnsQueryHandler(op, buildProperties(), buildMetrics());
+        String target = "_NaCoS-iP-2001-0db8-0000-0000-0000-0000-0000-0001.NaCoS.";
+        Message query = buildQuery(target, Type.AAAA, DClass.IN);
+        Message response = handler.handleQuery(query);
+        
+        assertEquals(Rcode.NOERROR, response.getHeader().getRcode(),
+            "Mixed-case SRV target prefix must be recognized");
+        List<Record> answers = response.getSection(Section.ANSWER);
+        assertEquals(1, answers.size());
+        assertEquals("2001:db8:0:0:0:0:0:1",
+            ((AAAARecord) answers.get(0)).getAddress().getHostAddress());
+    }
+    
+    @Test
     void testIpShapedServiceNameNotInterceptedAsSrvTarget() {
         // A service literally named "10-0-0-1" registered at 192.0.2.44 must NOT
         // be intercepted by the SRV target decoder. The reserved _nacos-ip- prefix

@@ -677,4 +677,77 @@ class NacosDnsServerTest {
             srv.stop();
         }
     }
+    
+    /**
+     * When upstreams are configured but temporarily unresolved (empty resolved
+     * snapshot after a startup or refresh failure), the server must return
+     * SERVFAIL on both UDP and TCP — not NXDOMAIN, which would poison client
+     * negative caches for domains that may well exist.
+     */
+    @Test
+    void testUnresolvedUpstreamsReturnServfailOnUdpAndTcp() throws Exception {
+        NacosDnsProperties props = new NacosDnsProperties();
+        props.setEnabled(true);
+        props.setPort(0);
+        props.setDomainSuffix("nacos");
+        props.setForwardEnabled(true);
+        props.setForwardServers(List.of("8.8.8.8"));
+        props.setForwardTimeoutMs(500);
+        
+        MeterRegistry registry = new SimpleMeterRegistry();
+        NacosDnsMetrics metrics = new NacosDnsMetrics(registry);
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        // Simulate a transient resolution failure: snapshot is empty while
+        // originalSpecs still contains the configured upstream.
+        Field serversField = NacosDnsForwarder.class.getDeclaredField("servers");
+        serversField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.concurrent.atomic.AtomicReference<List<Object>> snapshot =
+            (java.util.concurrent.atomic.AtomicReference<List<Object>>) serversField.get(forwarder);
+        snapshot.set(List.of());
+        
+        NacosDnsQueryHandler handler = new NacosDnsQueryHandler(instanceOperator, props, metrics);
+        NacosDnsServer srv = new NacosDnsServer(props, handler, forwarder, metrics);
+        try {
+            srv.start();
+            int port = -1;
+            Field f = NacosDnsServer.class.getDeclaredField("udpSocket");
+            f.setAccessible(true);
+            for (int i = 0; i < 100; i++) {
+                DatagramSocket sock = (DatagramSocket) f.get(srv);
+                if (sock != null && sock.getLocalPort() > 0) {
+                    port = sock.getLocalPort();
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(port > 0, "server should be listening");
+            Thread.sleep(200);
+            
+            Name queryName = Name.fromConstantString("www.example.com.");
+            Record question = Record.newRecord(queryName, Type.A, DClass.IN);
+            Message query = Message.newQuery(question);
+            
+            // UDP path
+            SimpleResolver udpResolver = new SimpleResolver("127.0.0.1");
+            udpResolver.setPort(port);
+            udpResolver.setTCP(false);
+            udpResolver.setTimeout(5);
+            Message udpResponse = udpResolver.send(query);
+            assertEquals(org.xbill.DNS.Rcode.SERVFAIL, udpResponse.getHeader().getRcode(),
+                "UDP: unresolved upstreams must return SERVFAIL, not NXDOMAIN");
+            
+            // TCP path
+            SimpleResolver tcpResolver = new SimpleResolver("127.0.0.1");
+            tcpResolver.setPort(port);
+            tcpResolver.setTCP(true);
+            tcpResolver.setTimeout(5);
+            Message tcpResponse = tcpResolver.send(query);
+            assertEquals(org.xbill.DNS.Rcode.SERVFAIL, tcpResponse.getHeader().getRcode(),
+                "TCP: unresolved upstreams must return SERVFAIL, not NXDOMAIN");
+        } finally {
+            srv.stop();
+            forwarder.close();
+        }
+    }
 }

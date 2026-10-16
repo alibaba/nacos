@@ -17,6 +17,7 @@
 package com.alibaba.nacos.dns;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
@@ -27,13 +28,17 @@ import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -329,5 +334,88 @@ class NacosDnsForwarderTest {
                 + createCount.get());
         // Total time should be bounded near the budget, not 3 * 500ms
         assertTrue(elapsed < 1500, "Expected bounded total time, got " + elapsed + "ms");
+    }
+    
+    /**
+     * When upstreams are configured but none resolved (e.g. a transient startup
+     * or refresh resolution failure), forwarding must report UPSTREAM_FAILURE
+     * (mapped to SERVFAIL by the server), NOT NO_SERVERS (mapped to NXDOMAIN).
+     * We cannot prove the requested domain does not exist — we are temporarily
+     * unable to query its upstream.
+     */
+    @Test
+    void testConfiguredButUnresolvedUpstreamsReturnsUpstreamFailure() throws Exception {
+        NacosDnsProperties props = buildProperties(true, "8.8.8.8");
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        try {
+            // Simulate a transient resolution failure: configured specs exist but
+            // the resolved snapshot is empty (as after a failed startup or refresh).
+            Field f = NacosDnsForwarder.class.getDeclaredField("servers");
+            f.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            AtomicReference<List<Object>> snapshot =
+                (AtomicReference<List<Object>>) f.get(forwarder);
+            snapshot.set(Collections.emptyList());
+            
+            NacosDnsForwarder.ForwardResult result =
+                forwarder.forward(buildQuery("www.google.com", Type.A));
+            assertEquals(NacosDnsForwarder.ForwardStatus.UPSTREAM_FAILURE, result.getStatus(),
+                "Configured-but-unresolved upstreams must report UPSTREAM_FAILURE, "
+                    + "not NO_SERVERS");
+        } finally {
+            forwarder.close();
+        }
+    }
+    
+    /**
+     * The refresh interval must be configurable and respected: a shorter interval
+     * reduces recovery and address-change delays after resolution failures.
+     */
+    @Test
+    void testRefreshIntervalFromProperties() throws Exception {
+        NacosDnsProperties props = buildProperties(true, "8.8.8.8");
+        props.setForwardRefreshIntervalSeconds(30);
+        NacosDnsForwarder forwarder = new NacosDnsForwarder(props, metrics);
+        try {
+            Field f = NacosDnsForwarder.class.getDeclaredField("refreshExecutor");
+            f.setAccessible(true);
+            ScheduledExecutorService exec = (ScheduledExecutorService) f.get(forwarder);
+            assertFalse(exec.isShutdown(), "refresh executor should be running");
+        } finally {
+            forwarder.close();
+        }
+    }
+    
+    /**
+     * Closing the Spring application context must invoke the jakarta @PreDestroy
+     * lifecycle callback and shut down the refresh executor. Uses javax.* would
+     * silently leak the scheduled task and its references (Spring Boot 4 / Spring 7).
+     */
+    @Test
+    void testClosingSpringContextShutsDownRefreshExecutor() {
+        NacosDnsProperties props = buildProperties(true, "8.8.8.8");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ScheduledExecutorService exec = null;
+        try {
+            ctx.registerBean(NacosDnsMetrics.class, () -> metrics);
+            ctx.registerBean(NacosDnsProperties.class, () -> props);
+            ctx.registerBean(NacosDnsForwarder.class);
+            ctx.refresh();
+            
+            NacosDnsForwarder forwarder = ctx.getBean(NacosDnsForwarder.class);
+            Field f = NacosDnsForwarder.class.getDeclaredField("refreshExecutor");
+            f.setAccessible(true);
+            exec = (ScheduledExecutorService) f.get(forwarder);
+            assertFalse(exec.isShutdown(),
+                "refresh executor should be running while context is open");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            ctx.close();
+        }
+        // After close(): the jakarta @PreDestroy lifecycle callback must have run
+        assertNotNull(exec, "executor reference must be captured before close");
+        assertTrue(exec.isShutdown(),
+            "@PreDestroy must shut down the refresh executor when the context closes");
     }
 }

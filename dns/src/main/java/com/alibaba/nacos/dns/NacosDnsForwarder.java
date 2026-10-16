@@ -37,7 +37,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 
 /**
  * Forwards DNS queries that don't match the Nacos domain suffix to upstream DNS servers.
@@ -67,8 +67,8 @@ public class NacosDnsForwarder {
     /** Default DNS port. */
     private static final int DEFAULT_DNS_PORT = 53;
     
-    /** Interval between upstream address refreshes. */
-    private static final long REFRESH_INTERVAL_SECONDS = 300;
+    /** Minimum upstream address refresh interval in seconds. */
+    private static final long MIN_REFRESH_INTERVAL_SECONDS = 10;
     
     private final NacosDnsProperties properties;
     private final NacosDnsMetrics metrics;
@@ -91,9 +91,11 @@ public class NacosDnsForwarder {
             t.setDaemon(true);
             return t;
         });
+        long refreshInterval = Math.max(properties.getForwardRefreshIntervalSeconds(),
+            MIN_REFRESH_INTERVAL_SECONDS);
         this.refreshExecutor.scheduleWithFixedDelay(
             this::refreshServers,
-            REFRESH_INTERVAL_SECONDS, REFRESH_INTERVAL_SECONDS, TimeUnit.SECONDS);
+            refreshInterval, refreshInterval, TimeUnit.SECONDS);
     }
     
     /**
@@ -187,8 +189,17 @@ public class NacosDnsForwarder {
         if (!properties.isForwardEnabled()) {
             return new ForwardResult(ForwardStatus.DISABLED, null, null);
         }
-        if (servers.get().isEmpty()) {
+        if (originalSpecs.isEmpty()) {
             return new ForwardResult(ForwardStatus.NO_SERVERS, null, null);
+        }
+        if (servers.get().isEmpty()) {
+            // Upstreams are configured but none resolved (e.g. a transient
+            // resolution failure during startup or refresh). Do NOT report
+            // NXDOMAIN here: we cannot prove the requested domain does not
+            // exist — we are temporarily unable to query its upstream.
+            LOGGER.warn("Forwarding enabled but no upstream addresses resolved; "
+                + "reporting SERVFAIL instead of NXDOMAIN");
+            return new ForwardResult(ForwardStatus.UPSTREAM_FAILURE, null, null);
         }
         
         // Defensive: never forward internal suffix domains to upstream

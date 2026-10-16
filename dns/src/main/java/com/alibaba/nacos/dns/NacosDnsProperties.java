@@ -84,6 +84,14 @@ public class NacosDnsProperties {
     private int forwardTimeoutMs = 3000;
     
     /**
+     * Interval in seconds between upstream address re-resolutions.
+     * A shorter interval (e.g. 30-60s) reduces recovery and address-change
+     * delays when the system DNS used to resolve upstream hostnames is
+     * temporarily unavailable or the upstream addresses change.
+     */
+    private int forwardRefreshIntervalSeconds = 300;
+    
+    /**
      * Fail-fast validation when DNS is enabled.
      */
     @PostConstruct
@@ -102,6 +110,11 @@ public class NacosDnsProperties {
         if (ttl < 0) {
             throw new IllegalStateException(
                 "nacos.naming.dns.ttl must not be negative, got: " + ttl);
+        }
+        if (forwardRefreshIntervalSeconds < 10) {
+            throw new IllegalStateException(
+                "nacos.naming.dns.forward-refresh-interval-seconds must be >= 10, got: "
+                    + forwardRefreshIntervalSeconds);
         }
     }
     
@@ -183,5 +196,13 @@ public class NacosDnsProperties {
     
     public void setForwardTimeoutMs(int forwardTimeoutMs) {
         this.forwardTimeoutMs = forwardTimeoutMs;
+    }
+    
+    public int getForwardRefreshIntervalSeconds() {
+        return forwardRefreshIntervalSeconds;
+    }
+    
+    public void setForwardRefreshIntervalSeconds(int forwardRefreshIntervalSeconds) {
+        this.forwardRefreshIntervalSeconds = forwardRefreshIntervalSeconds;
     }
 }

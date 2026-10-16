@@ -195,6 +195,9 @@ public class NacosDnsQueryHandler {
         List<Instance> instances = resolveInstances(domain);
         
         if (instances == null || instances.isEmpty()) {
+            // NXDOMAIN must echo the Question section (RFC 1035 §4.1.2), so
+            // clients and OS stub resolvers can match the response.
+            response.addRecord(question, Section.QUESTION);
             response.getHeader().setRcode(Rcode.NXDOMAIN);
             metrics.recordFailed();
             return response;
@@ -355,7 +358,15 @@ public class NacosDnsQueryHandler {
             return null;
         }
         String ipPart = d.substring(0, d.length() - suffix.length());
-        if (!ipPart.startsWith(SRV_TARGET_PREFIX)) {
+        // Compare the reserved prefix case-insensitively (RFC 4343): DNS names
+        // are case-insensitive, so _NACOS-IP-10-0-0-1.nacos must resolve the
+        // same as _nacos-ip-10-0-0-1.nacos. regionMatches(true, ...) uses
+        // Character-level case folding and is independent of the default
+        // locale. The original case of ordinary service names is preserved —
+        // only the fixed prefix is compared here.
+        if (ipPart.length() <= SRV_TARGET_PREFIX.length()
+            || !ipPart.regionMatches(true, 0, SRV_TARGET_PREFIX, 0,
+                SRV_TARGET_PREFIX.length())) {
             return null;
         }
         ipPart = ipPart.substring(SRV_TARGET_PREFIX.length());
