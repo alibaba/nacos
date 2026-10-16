@@ -169,7 +169,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
-
+    
     /** Required Spring dependency; fail application startup if the safety fence is missing. */
     private HubSkillSourceLifecycleRevoker hubSkillSourceLifecycleRevoker;
     

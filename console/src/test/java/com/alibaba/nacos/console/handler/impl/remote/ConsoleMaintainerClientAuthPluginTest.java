@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.ai.constant.Constants.Hub;
+import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
@@ -175,6 +179,34 @@ class ConsoleMaintainerClientAuthPluginTest {
         assertFalse(serverIdentityContext.getAllKey().contains(ACCESS_TOKEN));
         assertEquals(MOCK_IDENTITY_VALUE,
             serverIdentityContext.getParameter(MOCK_IDENTITY_KEY));
+    }
+    
+    @Test
+    void hubIdentityOnlyReadForwardsCallerInsteadOfServerIdentity() {
+        setRequestIdentity(ACCESS_TOKEN, MOCK_ACCESS_TOKEN);
+        setIdentityOnlyResource();
+        RequestResource request =
+            RequestResource.aiBuilder().setResource(Hub.ENTRY_RESOURCE).build();
+        LoginIdentityContext result = authPlugin.getLoginIdentityContext(request);
+        assertEquals(MOCK_ACCESS_TOKEN, result.getParameter(ACCESS_TOKEN));
+        assertFalse(result.getAllKey().contains(MOCK_IDENTITY_KEY));
+        verifyNoInteractions(mockNacosAuthConfig);
+    }
+    
+    @Test
+    void admittedAnonymousHubReadDoesNotGainServerIdentity() {
+        IdentityContext caller = new IdentityContext();
+        caller.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
+        RequestContextHolder.getContext().getAuthContext().setIdentityContext(caller);
+        RequestContextHolder.getContext().getAuthContext().setApiType(ApiType.CONSOLE_API.name());
+        RequestContextHolder.getContext().getAuthContext()
+            .setAuthResult(AuthResult.successResult());
+        setIdentityOnlyResource();
+        RequestResource request =
+            RequestResource.aiBuilder().setResource(Hub.ENTRY_RESOURCE).build();
+        LoginIdentityContext result = authPlugin.getLoginIdentityContext(request);
+        assertTrue(result.getAllKey().isEmpty());
+        verifyNoInteractions(mockNacosAuthConfig);
     }
     
     private void mockServerIdentity() {

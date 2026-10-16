@@ -87,7 +87,8 @@ class AiResourceSearchApplicationServiceTest {
     
     @BeforeEach
     void setUp() {
-        applicationService = new AiResourceSearchApplicationService(searchService, typeHandlerRegistry);
+        applicationService =
+            new AiResourceSearchApplicationService(searchService, typeHandlerRegistry);
     }
     
     @Test
@@ -126,8 +127,9 @@ class AiResourceSearchApplicationServiceTest {
     void searchShouldListAllRegisteredTypesAndMapCursorPage() throws Exception {
         when(typeHandlerRegistry.resourceTypes()).thenReturn(Arrays.asList("agent", "skill"));
         when(searchService.list(any())).thenReturn(
-                new AiResourceSearchService.Page(Collections.singletonList(result("skill", "research", "1.0.0")),
-                        "next"));
+            new AiResourceSearchService.Page(
+                Collections.singletonList(result("skill", "research", "1.0.0")),
+                "next"));
         AiResourceSearchForm form = genericForm();
         
         AiResourceSearchResponse response = applicationService.search(form);
@@ -141,9 +143,9 @@ class AiResourceSearchApplicationServiceTest {
         assertEquals(10, query.getLimit());
         assertEquals(2, query.getPredicates().size());
         assertPredicate(query.getPredicates().get(0), "tags", PredicateOperator.EXACT_ALL,
-                Arrays.asList("research", "java"));
+            Arrays.asList("research", "java"));
         assertPredicate(query.getPredicates().get(1), "capabilities", PredicateOperator.EXACT_ANY,
-                Collections.singletonList("streaming"));
+            Collections.singletonList("streaming"));
         assertEquals("next", response.getNextCursor());
         AiResourceSearchItem item = response.getItems().get(0);
         assertEquals("public", item.getNamespaceId());
@@ -158,7 +160,8 @@ class AiResourceSearchApplicationServiceTest {
     @Test
     void searchShouldUseRelevanceCoreAndNormalizeRequestedTypes() throws Exception {
         when(typeHandlerRegistry.resourceTypes()).thenReturn(Arrays.asList("agent", "skill"));
-        when(searchService.search(any())).thenReturn(new AiResourceSearchService.Page(Collections.emptyList(), null));
+        when(searchService.search(any()))
+            .thenReturn(new AiResourceSearchService.Page(Collections.emptyList(), null));
         AiResourceSearchForm form = genericForm();
         form.setQuery("research");
         form.setResourceTypes(Arrays.asList("SKILL", "skill"));
@@ -178,18 +181,22 @@ class AiResourceSearchApplicationServiceTest {
         AiResourceSearchForm form = genericForm();
         form.setResourceTypes(Collections.singletonList("unknown"));
         
-        NacosException invalid = assertThrows(NacosException.class, () -> applicationService.search(form));
+        NacosException invalid =
+            assertThrows(NacosException.class, () -> applicationService.search(form));
         assertEquals(NacosException.INVALID_PARAM, invalid.getErrCode());
         
-        AiResourceSearchApplicationService unavailable = new AiResourceSearchApplicationService(null,
+        AiResourceSearchApplicationService unavailable =
+            new AiResourceSearchApplicationService(null,
                 typeHandlerRegistry);
-        NacosException exception = assertThrows(NacosException.class, () -> unavailable.search(genericForm()));
+        NacosException exception =
+            assertThrows(NacosException.class, () -> unavailable.search(genericForm()));
         assertEquals(503, exception.getErrCode());
         
-        AiResourceSearchApplicationService missingRegistry = new AiResourceSearchApplicationService(searchService,
+        AiResourceSearchApplicationService missingRegistry =
+            new AiResourceSearchApplicationService(searchService,
                 null);
         NacosException missingRegistryException = assertThrows(NacosException.class,
-                () -> missingRegistry.search(genericForm()));
+            () -> missingRegistry.search(genericForm()));
         assertEquals(503, missingRegistryException.getErrCode());
     }
     
@@ -198,9 +205,11 @@ class AiResourceSearchApplicationServiceTest {
         when(searchServiceProvider.getIfAvailable()).thenReturn(searchService);
         when(typeHandlerRegistryProvider.getIfAvailable()).thenReturn(typeHandlerRegistry);
         when(typeHandlerRegistry.resourceTypes()).thenReturn(Collections.singletonList("skill"));
-        when(searchService.list(any())).thenReturn(new AiResourceSearchService.Page(Collections.emptyList(), null));
+        when(searchService.list(any()))
+            .thenReturn(new AiResourceSearchService.Page(Collections.emptyList(), null));
         
-        AiResourceSearchApplicationService service = new AiResourceSearchApplicationService(searchServiceProvider,
+        AiResourceSearchApplicationService service =
+            new AiResourceSearchApplicationService(searchServiceProvider,
                 typeHandlerRegistryProvider);
         
         assertTrue(service.search(genericForm()).getItems().isEmpty());
@@ -213,7 +222,8 @@ class AiResourceSearchApplicationServiceTest {
             AiResourceRelevanceFilter relevanceFilter = mock(AiResourceRelevanceFilter.class);
             context.registerBean(AiResourceRelevanceFilter.class, () -> relevanceFilter);
             context.registerBean(AiResourceSearchService.class, () -> searchService);
-            context.registerBean(AiResourceSearchTypeHandlerRegistry.class, () -> typeHandlerRegistry);
+            context.registerBean(AiResourceSearchTypeHandlerRegistry.class,
+                () -> typeHandlerRegistry);
             context.register(AiResourceSearchApplicationService.class);
             
             context.refresh();
@@ -226,8 +236,10 @@ class AiResourceSearchApplicationServiceTest {
     @Test
     void searchAgentSpecsShouldUseLiteralAndTagPredicates() throws Exception {
         when(searchService.numberedList(any())).thenReturn(new NumberedPage(
-                Collections.singletonList(result(Constants.AgentSpecs.RESOURCE_TYPE_AGENTSPEC, "planner", "2.0.0")), 1,
-                2, 3));
+            Collections.singletonList(
+                result(Constants.AgentSpecs.RESOURCE_TYPE_AGENTSPEC, "planner", "2.0.0")),
+            1,
+            2, 3));
         AgentSpecSearchForm form = new AgentSpecSearchForm();
         form.setNamespaceId("public");
         form.setKeyword("plan%_");
@@ -238,24 +250,27 @@ class AiResourceSearchApplicationServiceTest {
         ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
         verify(searchService).numberedList(captor.capture());
         Query query = captor.getValue();
-        assertEquals(Collections.singletonList(Constants.AgentSpecs.RESOURCE_TYPE_AGENTSPEC), query.getResourceTypes());
+        assertEquals(Collections.singletonList(Constants.AgentSpecs.RESOURCE_TYPE_AGENTSPEC),
+            query.getResourceTypes());
         assertEquals(2, query.getPageNumber());
         assertEquals(5, query.getPageSize());
         assertPredicate(query.getPredicates().get(0), "tags", PredicateOperator.EXACT_ALL,
-                Collections.singletonList("workflow"));
-        assertPredicate(query.getPredicates().get(1), "resourceName", PredicateOperator.LITERAL_CONTAINS,
-                Collections.singletonList("plan%_"));
+            Collections.singletonList("workflow"));
+        assertPredicate(query.getPredicates().get(1), "resourceName",
+            PredicateOperator.LITERAL_CONTAINS,
+            Collections.singletonList("plan%_"));
         assertEquals(1, page.getTotalCount());
         assertEquals(3, page.getPagesAvailable());
     }
     
     @Test
     void searchSkillsShouldSelectListOrRelevanceAndMapPage() throws Exception {
-        AiResourceSearchResult source = result(AiResourceConstants.RESOURCE_TYPE_SKILL, "research", "1.0.0");
+        AiResourceSearchResult source =
+            result(AiResourceConstants.RESOURCE_TYPE_SKILL, "research", "1.0.0");
         when(searchService.numberedList(any())).thenReturn(
-                new NumberedPage(Collections.singletonList(source), 1, 1, 1));
+            new NumberedPage(Collections.singletonList(source), 1, 1, 1));
         when(searchService.numberedSearch(any())).thenReturn(
-                new NumberedPage(Collections.singletonList(source), 1, 1, 1));
+            new NumberedPage(Collections.singletonList(source), 1, 1, 1));
         AiResourcePageSearchForm form = pageForm(null);
         
         Page<SkillBasicInfo> listed = applicationService.searchSkills(form, 1, 20);
@@ -272,10 +287,13 @@ class AiResourceSearchApplicationServiceTest {
     @Test
     void searchPromptsShouldMapPromptSummary() throws Exception {
         when(searchService.numberedSearch(any())).thenReturn(new NumberedPage(
-                Collections.singletonList(result(AiResourceConstants.RESOURCE_TYPE_PROMPT, "prompt-key", "3.0.0")), 1,
-                1, 1));
+            Collections.singletonList(
+                result(AiResourceConstants.RESOURCE_TYPE_PROMPT, "prompt-key", "3.0.0")),
+            1,
+            1, 1));
         
-        Page<PromptMetaSummary> page = applicationService.searchPrompts(pageForm("research"), 1, 20);
+        Page<PromptMetaSummary> page =
+            applicationService.searchPrompts(pageForm("research"), 1, 20);
         
         PromptMetaSummary prompt = page.getPageItems().get(0);
         assertEquals("prompt-key", prompt.getPromptKey());
@@ -286,11 +304,13 @@ class AiResourceSearchApplicationServiceTest {
     
     @Test
     void searchMcpShouldApplyTypedFiltersAndMapKnownCapabilities() throws Exception {
-        AiResourceSearchResult source = result(AiResourceConstants.RESOURCE_TYPE_MCP, "mcp-name", "1.0.0");
+        AiResourceSearchResult source =
+            result(AiResourceConstants.RESOURCE_TYPE_MCP, "mcp-name", "1.0.0");
         source.setCapabilities(Arrays.asList("tool", "future-capability"));
-        source.setMetadata(Map.of("mcpServerId", "mcp-id", "protocol", "stdio", "frontProtocol", "http"));
+        source.setMetadata(
+            Map.of("mcpServerId", "mcp-id", "protocol", "stdio", "frontProtocol", "http"));
         when(searchService.numberedSearch(any())).thenReturn(
-                new NumberedPage(Collections.singletonList(source), 1, 1, 1));
+            new NumberedPage(Collections.singletonList(source), 1, 1, 1));
         McpSearchForm form = new McpSearchForm();
         form.setNamespaceId("public");
         form.setQuery("research");
@@ -303,8 +323,9 @@ class AiResourceSearchApplicationServiceTest {
         ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
         verify(searchService).numberedSearch(captor.capture());
         assertEquals(3, captor.getValue().getPredicates().size());
-        assertPredicate(captor.getValue().getPredicates().get(1), "metadata.protocol", PredicateOperator.EXACT_ANY,
-                Collections.singletonList("stdio"));
+        assertPredicate(captor.getValue().getPredicates().get(1), "metadata.protocol",
+            PredicateOperator.EXACT_ANY,
+            Collections.singletonList("stdio"));
         McpServerBasicInfo mcp = page.getPageItems().get(0);
         assertEquals("mcp-id", mcp.getId());
         assertEquals("Research", mcp.getName());
@@ -320,11 +341,12 @@ class AiResourceSearchApplicationServiceTest {
         when(source.getResourceName()).thenReturn("mcp-id");
         when(source.getCapabilities()).thenReturn(null);
         when(searchService.numberedList(any())).thenReturn(
-                new NumberedPage(Collections.singletonList(source), 1, 1, 1));
+            new NumberedPage(Collections.singletonList(source), 1, 1, 1));
         McpSearchForm form = new McpSearchForm();
         form.setNamespaceId("public");
         
-        McpServerBasicInfo mcp = applicationService.searchMcpServers(form, 1, 20).getPageItems().get(0);
+        McpServerBasicInfo mcp =
+            applicationService.searchMcpServers(form, 1, 20).getPageItems().get(0);
         
         assertTrue(mcp.getCapabilities().isEmpty());
     }
@@ -348,7 +370,8 @@ class AiResourceSearchApplicationServiceTest {
         return form;
     }
     
-    private AiResourceSearchResult result(String resourceType, String resourceName, String version) {
+    private AiResourceSearchResult result(String resourceType, String resourceName,
+        String version) {
         AiResourceSearchResult result = new AiResourceSearchResult();
         result.setNamespaceId("public");
         result.setResourceType(resourceType);
@@ -366,7 +389,8 @@ class AiResourceSearchApplicationServiceTest {
         return result;
     }
     
-    private void assertPredicate(Predicate predicate, String field, PredicateOperator operator, List<String> values) {
+    private void assertPredicate(Predicate predicate, String field, PredicateOperator operator,
+        List<String> values) {
         assertEquals(field, predicate.getField());
         assertEquals(operator, predicate.getOperator());
         assertEquals(values, predicate.getValues());
