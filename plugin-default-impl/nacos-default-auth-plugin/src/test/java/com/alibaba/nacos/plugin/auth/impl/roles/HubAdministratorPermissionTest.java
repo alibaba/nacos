@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
