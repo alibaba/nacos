@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
-import { AuthGuard, AdminGuard, GuestGuard, AiGuard, getDefaultRoute } from './guards';
+import { AuthGuard, AdminGuard, GuestGuard, AiGuard, HubGuard, getDefaultRoute } from './guards';
 import { useServerStore } from '@/stores/server-store';
 
 // Loading component
@@ -211,6 +211,19 @@ export const routes: RouteObject[] = [
               {
                 path: 'skill/:name',
                 element: lazyPage(() => import('@/pages/skillDetail')),
+              },
+              {
+                element: <HubGuard />,
+                children: [
+                  {
+                    path: 'hub/skills',
+                    element: lazyPage(() => import('@/pages/hubSkillManagement')),
+                  },
+                  {
+                    path: 'hub/skills/:hubEntryId',
+                    element: lazyPage(() => import('@/pages/hubSkillDetail')),
+                  },
+                ],
               },
               {
                 path: 'promptManagement',

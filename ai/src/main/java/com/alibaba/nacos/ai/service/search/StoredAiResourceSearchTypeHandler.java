@@ -18,11 +18,15 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.service.hub.HubSkillReferenceResolver;
+import com.alibaba.nacos.ai.service.hub.HubSkillSourceReadValidator;
+import com.alibaba.nacos.ai.service.hub.ResolvedHubSkillReference;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -68,6 +72,44 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
             : contentLoader;
     }
     
+    private HubSkillReferenceResolver hubResolver;
+    
+    private HubSkillSourceReadValidator hubSourceValidator;
+    
+    /** Optional only for tests that instantiate this type handler without a Spring context. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setHubReadValidation(HubSkillReferenceResolver resolver,
+        HubSkillSourceReadValidator sourceValidator) {
+        this.hubResolver = resolver;
+        this.hubSourceValidator = sourceValidator;
+    }
+    
+    private boolean validHub(AiResource hub, AiResourceVersion version) throws NacosException {
+        if (hubResolver == null || hubSourceValidator == null || hub == null
+            || hub.getId() == null || version == null) {
+            return false;
+        }
+        try {
+            ResolvedHubSkillReference publication = hubResolver.resolve(hub.getId());
+            hubSourceValidator.requireLiveSourceForIndex(publication);
+            hubResolver.requireUnchanged(publication);
+            return hub.getName().equals(publication.getInternalName())
+                && version.getVersion().equals(publication.getSourceVersion())
+                && version.getId() != null
+                && version.getId().longValue() == publication.getHubVersionId();
+        } catch (NacosException failure) {
+            if (failure.getErrCode() == NacosException.NOT_FOUND) {
+                return false;
+            }
+            throw failure;
+        }
+    }
+    
+    @Override
+    public int projectionVersion() {
+        return 2;
+    }
+    
     @Override
     public Collection<String> resourceTypes() {
         return RESOURCE_TYPES;
@@ -75,7 +117,7 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
     
     @Override
     public AiResourceIndexProjection project(String namespaceId, String resourceType,
-        String resourceName, String version) {
+        String resourceName, String version) throws NacosException {
         if (!RESOURCE_TYPES.contains(resourceType)) {
             return null;
         }
@@ -119,6 +161,29 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
             || !AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(resource.getStatus())) {
             return false;
         }
+        if (HubNamespaceUtils.isHubNamespace(document.getNamespaceId())) {
+            AiResourceVersion version = resourceManager.findVersion(document.getNamespaceId(),
+                document.getResourceName(), document.getResourceType(),
+                document.getResourceVersion());
+            if (!validHub(resource, version)) {
+                return false;
+            }
+            try {
+                ResolvedHubSkillReference publication = hubResolver.resolve(resource.getId());
+                hubSourceValidator.requireLiveSource(publication);
+                hubResolver.requireUnchanged(publication);
+                AiResourceSearchDocument current =
+                    documentBuilder.fromHubResource(resource, version);
+                return java.util.Objects.equals(document.getDisplayName(),
+                    publication.getSourceName())
+                    && java.util.Objects.equals(document.getResourceVersion(),
+                        publication.getSourceVersion())
+                    && java.util.Objects.equals(document.getSourceDigest(),
+                        current.getSourceDigest());
+            } catch (Exception revoked) {
+                return false;
+            }
+        }
         try {
             resourceManager.ensureReadableOrNotFound(resource,
                 document.getResourceType() + " not found: " + document.getResourceName());
@@ -143,7 +208,7 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
     }
     
     private AiResourceIndexProjection projectResource(String namespaceId, String resourceType,
-        AiResource resource, String version) {
+        AiResource resource, String version) throws NacosException {
         if (resource == null) {
             return null;
         }
@@ -164,10 +229,30 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
         if (!isIndexable(resource, resourceVersion)) {
             return null;
         }
+        boolean hubResource =
+                HubNamespaceUtils.isHubNamespace(namespaceId);
+        if (hubResource && !validHub(resource, resourceVersion)) {
+            return null;
+        }
+        
         AiResourceSearchDocument document =
-            documentBuilder.fromAiResource(resource, resourceVersion);
-        List<AiResourceIndexEnhancementContent> contents = loadContents(document, resourceVersion);
-        return projectionBuilder.build(document, contents, sourceChunkType(resourceType));
+                hubResource
+                        ? documentBuilder.fromHubResource(
+                        resource, resourceVersion)
+                        : documentBuilder.fromAiResource(
+                                resource, resourceVersion);
+        
+        List<AiResourceIndexEnhancementContent> contents =
+                hubResource
+                        ? Collections.emptyList()
+                        : loadContents(
+                                document,
+                                resourceVersion);
+        
+        return projectionBuilder.build(
+                document,
+                contents,
+                sourceChunkType(resourceType));
     }
     
     private List<AiResourceIndexEnhancementContent> loadContents(

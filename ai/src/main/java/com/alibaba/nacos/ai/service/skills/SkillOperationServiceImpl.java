@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.hub.HubSkillSourceLifecycleRevoker;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -150,6 +152,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private AiResourceIndexMaintenanceService resourceIndexMaintenanceService =
         AiResourceIndexMaintenanceService.NOOP;
+
+    /** Required Spring dependency; fail application startup if the safety fence is missing. */
+    private HubSkillSourceLifecycleRevoker hubSkillSourceLifecycleRevoker;
+    
+    /**
+     * Inject the required Hub source lifecycle fence.
+     *
+     * @param revoker Hub publication revoker
+     */
+    @Autowired
+    public void setHubSkillSourceLifecycleRevoker(HubSkillSourceLifecycleRevoker revoker) {
+        this.hubSkillSourceLifecycleRevoker = revoker;
+    }
     
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
         AiResourceVersionPersistService aiResourceVersionPersistService,
@@ -181,6 +196,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public String uploadSkillFromZip(SkillUploadRequest request) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         Skill skill = SkillZipParser.parseSkillFromZip(request.getZipBytes(),
             request.getNamespaceId());
         if (skill == null || StringUtils.isBlank(skill.getName())) {
@@ -197,6 +213,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public List<SkillUploadPrecheckResult> precheckUploadSkillFromZip(String namespaceId,
         byte[] zipBytes) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         SkillZipParser.MultiSkillParseResult parseResult =
             SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
         List<SkillUploadPrecheckResult> results = new ArrayList<>(
@@ -314,6 +331,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public BatchUploadResult batchUploadSkillsFromZip(String namespaceId, byte[] zipBytes,
         boolean overwrite)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         SkillZipParser.MultiSkillParseResult parseResult =
             SkillZipParser.parseMultipleSkillsFromZip(zipBytes, namespaceId);
         BatchUploadResult result = new BatchUploadResult();
@@ -435,6 +453,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         bootstrapSkillFromZip(namespaceId, zipBytes, null);
     }
     
@@ -447,6 +466,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes, String from)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Parse ZIP and validate
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
         if (skill == null || StringUtils.isBlank(skill.getName())) {
@@ -949,6 +969,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Find meta and verify read permission
         AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
@@ -990,6 +1011,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setBizTags(meta.getBizTags());
         detail.setFrom(meta.getFrom());
+        detail.setOrigin(SkillOriginSummaryReader.fromExt(meta.getExt()));
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
@@ -1009,6 +1031,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill getSkillVersionDetail(String namespaceId, String skillName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -1034,6 +1057,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill downloadSkillVersion(String namespaceId, String skillName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         Skill skill = getSkillVersionDetail(namespaceId, skillName, version);
         NotifyCenter.publishEvent(
             new SkillDownloadEvent(namespaceId, skillName, RESOURCE_TYPE_SKILL, version));
@@ -1046,27 +1070,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             return;
         }
         VisibilityHelper.checkWritableResource(meta);
-        
-        // Delete in strict reverse order of creation (storage -> version -> meta -> index):
-        // 1) index config first: cut off client discovery immediately
-        manifestService.delete(namespaceId, skillName);
-        
-        // 2) meta, version rows, and storage files
-        resourceManager.deleteResourceWithVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            v -> deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(),
-                v.getStorage()));
-        scheduleSkillIndexMaintenance(namespaceId, skillName);
+        mutateWithHubRevocation(meta, null, true, () -> {
+            // Withdraw client discovery before deleting the resource and its storage.
+            manifestService.delete(namespaceId, skillName);
+            resourceManager.deleteResourceWithVersions(namespaceId, skillName, RESOURCE_TYPE_SKILL,
+                v -> deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(),
+                    v.getStorage()));
+            scheduleSkillIndexMaintenance(namespaceId, skillName);
+        });
     }
     
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         int pageNo,
         int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
     }
     
@@ -1074,6 +1098,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         int pageNo, int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return listSkills(namespaceId, skillName, search, orderBy, null, null, pageNo, pageSize);
     }
     
@@ -1085,6 +1110,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Build name matching condition: exact match or fuzzy match (with wildcards)
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
@@ -1159,6 +1185,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String targetVersion,
         Skill initialContent, String commitMsg)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         
         // ---- Case A: Brand-new skill (meta does not exist) ----
@@ -1247,6 +1274,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateDraft(String namespaceId, Skill draftSkill, String commitMsg)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Validate parameters
         if (draftSkill == null || StringUtils.isBlank(draftSkill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -1300,6 +1328,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_SKILL,
             v -> deleteSkillStorageForVersion(namespaceId, name, v.getVersion(),
                 v.getStorage()));
@@ -1314,6 +1343,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public String submit(String namespaceId, String name, String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Verify meta exists and has write permission
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
@@ -1399,6 +1429,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Update version status to online, clear reviewing pointer in meta
         AiResourceVersion v =
             resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
@@ -1417,6 +1448,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void forcePublish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResourceVersion v =
             resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_SKILL, version, true);
         
@@ -1429,6 +1461,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     @Override
     public void redraft(String namespaceId, String name, String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_SKILL, version);
     }
     
@@ -1438,6 +1471,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         Map<String, String> effectiveLabels =
             resourceManager.validateAndUpdateLabels(namespaceId, name, RESOURCE_TYPE_SKILL, labels);
         
@@ -1455,6 +1489,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateBizTags(String namespaceId, String name, String bizTags)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
         resourceManager.updateBizTagsCas(namespaceId, meta, bizTags);
@@ -1476,54 +1511,51 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public void changeOnlineStatus(String namespaceId, String name, String scope, String version,
         boolean online)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
         
         // Determine operation scope: skill scope (enable/disable entire skill) vs version scope (toggle single version)
         boolean skillScope = SCOPE_SKILL.equalsIgnoreCase(scope) || StringUtils.isBlank(version);
-        if (skillScope) {
-            // Enable/disable entire skill: update meta status
-            resourceManager.metaEnableDisable(namespaceId, meta, online);
+        mutateWithHubRevocation(meta, skillScope ? null : version, !online, () -> {
+            if (skillScope) {
+                // Enable/disable entire skill: update meta status
+                resourceManager.metaEnableDisable(namespaceId, meta, online);
+                if (online) {
+                    refreshSkillIndexManifest(namespaceId, name);
+                    scheduleSkillIndexMaintenance(namespaceId, name);
+                } else {
+                    manifestService.delete(namespaceId, name);
+                    scheduleSkillIndexMaintenance(namespaceId, name);
+                }
+                return;
+            }
+            
+            AiResourceVersion v =
+                resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info, version, online);
+            if (v == null) {
+                return;
+            }
             if (online) {
-                // On re-enable: rebuild index manifest from all online versions in DB
-                refreshSkillIndexManifest(namespaceId, name);
-                scheduleSkillIndexMaintenance(namespaceId, name);
+                List<String> files = parseStorageFiles(v.getStorage());
+                if (files != null && !files.isEmpty()) {
+                    SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+                    manifest.getVersions().put(version, files);
+                    manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
+                    manifestService.write(namespaceId, name, manifest);
+                    scheduleSkillIndexMaintenance(namespaceId, name);
+                }
             } else {
-                // On disable: delete index manifest so clients can no longer discover it
-                manifestService.delete(namespaceId, name);
+                SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+                if (manifest != null && manifest.getVersions() != null) {
+                    manifest.getVersions().remove(version);
+                    manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
+                    manifestService.write(namespaceId, name, manifest);
+                }
                 scheduleSkillIndexMaintenance(namespaceId, name);
             }
-            return;
-        }
-        
-        // Single version toggle: switch version status and sync index manifest
-        AiResourceVersion v =
-            resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info, version, online);
-        if (v == null) {
-            return;
-        }
-        
-        if (online) {
-            // Going online: add this version's file list to manifest
-            List<String> files = parseStorageFiles(v.getStorage());
-            if (files != null && !files.isEmpty()) {
-                SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
-                manifest.getVersions().put(version, files);
-                manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
-                manifestService.write(namespaceId, name, manifest);
-                scheduleSkillIndexMaintenance(namespaceId, name);
-            }
-        } else {
-            // Going offline: remove this version from manifest
-            SkillIndexManifest manifest = manifestService.query(namespaceId, name);
-            if (manifest != null && manifest.getVersions() != null) {
-                manifest.getVersions().remove(version);
-                manifest.setLabels(new LinkedHashMap<>(info.getLabels()));
-                manifestService.write(namespaceId, name, manifest);
-            }
-            scheduleSkillIndexMaintenance(namespaceId, name);
-        }
+        });
     }
     
     /**
@@ -1531,8 +1563,66 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
-        resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
-        scheduleSkillIndexMaintenance(namespaceId, name);
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
+        boolean withdraw = VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope);
+        AiResource source = null;
+        if (withdraw) {
+            source = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
+            // A denied caller must not be able to revoke a share as a side effect.
+            VisibilityHelper.checkWritableResource(source);
+        }
+        mutateWithHubRevocation(source, null, withdraw, () -> {
+            resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope);
+            scheduleSkillIndexMaintenance(namespaceId, name);
+        });
+    }
+    
+    private void mutateWithHubRevocation(AiResource source, String offlineVersion, boolean withdraw,
+        SourceMutation mutation) throws NacosException {
+        if (!withdraw) {
+            mutation.run();
+            return;
+        }
+        HubSkillSourceLifecycleRevoker revoker = hubSkillSourceLifecycleRevoker;
+        if (revoker == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Hub lifecycle revocation unavailable");
+        }
+        revokePublication(revoker, source, offlineVersion);
+        Throwable mutationFailure = null;
+        try {
+            mutation.run();
+        } catch (NacosException | RuntimeException failed) {
+            mutationFailure = failed;
+            throw failed;
+        } finally {
+            // Catch a share racing the first fence, even after a partial source failure.
+            try {
+                revokePublication(revoker, source, offlineVersion);
+            } catch (NacosException | RuntimeException revocationFailure) {
+                if (mutationFailure == null) {
+                    throw revocationFailure;
+                }
+                if (mutationFailure != revocationFailure) {
+                    mutationFailure.addSuppressed(revocationFailure);
+                }
+            }
+        }
+    }
+    
+    private void revokePublication(HubSkillSourceLifecycleRevoker revoker, AiResource source,
+        String offlineVersion) throws NacosException {
+        if (offlineVersion == null) {
+            revoker.revokeSource(source);
+        } else {
+            revoker.revokeVersion(source, offlineVersion);
+        }
+    }
+    
+    @FunctionalInterface
+    private interface SourceMutation {
+        
+        void run() throws NacosException;
     }
     
     private void scheduleSkillIndexMaintenance(String namespaceId, String name) {
@@ -1546,6 +1636,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Verify meta exists and is readable
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta == null) {

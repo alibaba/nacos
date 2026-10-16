@@ -180,7 +180,7 @@ public class NamespaceControllerV3 {
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
         + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
         apiType = ApiType.ADMIN_API)
-    public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
+    public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosApiException {
         return Result.success(namespaceOperationService.removeNamespace(namespaceId));
     }
     

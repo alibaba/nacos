@@ -19,11 +19,14 @@ package com.alibaba.nacos.ai.service.search;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.hub.HubResourceReference;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -59,9 +62,31 @@ public class AiResourceSearchDocumentBuilder {
         };
     
     /**
-     * Build an search document from a skill or prompt meta/version pair.
+     * Build a search document from a normal AI resource.
      */
     public AiResourceSearchDocument fromAiResource(AiResource meta, AiResourceVersion version) {
+        return buildAiResourceDocument(meta, version, meta.getName(), null);
+    }
+
+    /**
+     * Build a search document from a Hub reference resource.
+     *
+     * <p>The persisted resource name remains the Hub internal name, while
+     * displayName is projected from the original source resource name.</p>
+     *
+     * @param meta Hub resource metadata
+     * @param version Hub resource version
+     * @return search document
+     * @throws NacosException if the Hub reference descriptor is invalid
+     */
+    public AiResourceSearchDocument fromHubResource(AiResource meta, AiResourceVersion version)
+        throws NacosException {
+        HubResourceReference reference = HubResourceReferenceJsonUtil.parse(meta.getExt());
+        return buildAiResourceDocument(meta, version, reference.getSourceName(), reference);
+    }
+
+    private AiResourceSearchDocument buildAiResourceDocument(AiResource meta,
+        AiResourceVersion version, String displayName, HubResourceReference hubReference) {
         Map<String, Object> metadata = baseMetadata(meta.getNamespaceId(), meta.getType(),
             meta.getName(), version.getVersion(), AiResourceManager.resolveScope(meta));
         if (RESOURCE_TYPE_SKILL.equals(meta.getType())) {
@@ -69,15 +94,19 @@ public class AiResourceSearchDocumentBuilder {
         }
         Map<String, Object> ext = parseMap(meta.getExt());
         metadata.putAll(extractMetadata(ext));
+        if (hubReference != null) {
+            addHubReferenceMetadata(metadata, meta, hubReference);
+        }
         List<String> tags = parseStringList(meta.getBizTags());
         List<String> capabilities = capabilities(meta.getType(), tags, ext);
         AiResourceSearchDocument entry =
             baseEntry(meta.getNamespaceId(), meta.getType(), meta.getName(),
-                version.getVersion(), meta.getName());
+                version.getVersion(), displayName);
         entry.setDescription(firstNotBlank(version.getDesc(), meta.getDesc()));
         entry.setTags(JacksonUtils.toJson(tags));
         entry.setCapabilities(JacksonUtils.toJson(capabilities));
-        entry.setRepresentativeQueries(JacksonUtils.toJson(representativeQueries(meta, version)));
+        entry.setRepresentativeQueries(
+            JacksonUtils.toJson(representativeQueries(meta, version, displayName)));
         entry.setMetadata(JacksonUtils.toJson(metadata));
         entry.setSourceDigest(sourceDigest(meta, version, metadata));
         entry.setGmtModified(resolveModified(meta.getGmtModified(), version.getGmtModified()));
@@ -143,6 +172,15 @@ public class AiResourceSearchDocumentBuilder {
         return metadata;
     }
     
+    private void addHubReferenceMetadata(Map<String, Object> metadata, AiResource meta,
+        HubResourceReference reference) {
+        metadata.put("entryKind", reference.getEntryKind());
+        metadata.put("hubEntryId", meta.getId() == null ? null : meta.getId().toString());
+        metadata.put("hubMetaVersion",
+            meta.getMetaVersion() == null ? null : meta.getMetaVersion().toString());
+        metadata.put("origin", "HUB");
+    }
+    
     private Map<String, Object> extractMetadata(Map<String, Object> ext) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         putIfPresent(metadata, "inputTypes", ext.get("inputTypes"));
@@ -185,9 +223,10 @@ public class AiResourceSearchDocumentBuilder {
         return dedupe(result);
     }
     
-    private List<String> representativeQueries(AiResource meta, AiResourceVersion version) {
+    private List<String> representativeQueries(AiResource meta, AiResourceVersion version,
+        String displayName) {
         List<String> queries = new ArrayList<>();
-        addIfNotBlank(queries, meta.getName());
+        addIfNotBlank(queries, displayName);
         addIfNotBlank(queries, meta.getDesc());
         addIfNotBlank(queries, version.getDesc());
         return dedupe(queries);

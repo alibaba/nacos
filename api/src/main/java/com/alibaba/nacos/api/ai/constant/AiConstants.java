@@ -162,4 +162,17 @@ public class AiConstants {
         
         public static final String A2A_ENDPOINT_DEFAULT_PROTOCOL = "HTTP";
     }
+    
+    public static class Hub {
+        
+        /**
+         * Internal namespace ID for Agentic Resource Hub.
+         */
+        public static final String NAMESPACE_ID = "__nacos_ai_hub__";
+        
+        /**
+         * Console administrator resource used for Hub governance.
+         */
+        public static final String ADMIN_RESOURCE = "console/ai-hub";
+    }
 }

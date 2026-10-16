@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -49,7 +50,10 @@ public class ServerStateConsoleApiOpenApiITCase extends CoreConsoleApiBaseITCase
         assertEquals(200, stateResponse.code(), stateResponse.body());
         JsonNode state = JacksonUtils.toObj(stateResponse.body());
         assertTrue(state.isObject(), state.toString());
-        assertTrue(state.size() > 0, state.toString());
+        assertFalse(state.isEmpty(), state.toString());
+        assertTrue(state.path("ai_hub_enabled").isTextual(), state.toString());
+        assertTrue("true".equals(state.path("ai_hub_enabled").asText())
+                || "false".equals(state.path("ai_hub_enabled").asText()), state.toString());
 
         JsonNode guide = getJsonOk(CONSOLE_SERVER_PATH + "/guide", Query.newInstance(),
                 AuthIdentity.ANONYMOUS);

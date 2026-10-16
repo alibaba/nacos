@@ -114,6 +114,8 @@ public class Constants {
         
         public static final String AI_SKILL_ADMIN_PATH = "/v3/admin/ai/skills";
         
+        public static final String AI_HUB_SKILL_ADMIN_PATH = "/v3/admin/ai/hub/skills";
+        
         public static final String AI_SKILL_LIST_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/list";
         
         public static final String AI_SKILL_VERSION_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/version";
