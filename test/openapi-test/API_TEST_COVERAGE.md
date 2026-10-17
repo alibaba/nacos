@@ -33,6 +33,11 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+The opt-in embedded Derby cross-distribution upgrade matrix is tracked in
+[`DERBY_UPGRADE_TEST_SCENARIOS.md`](DERBY_UPGRADE_TEST_SCENARIOS.md). It covers
+existing API persistence scenarios without adding HTTP operations or changing
+API-surface totals. Validation evidence is recorded in the scenario document.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI

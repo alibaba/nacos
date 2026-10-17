@@ -103,6 +103,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test-autoconfigure</artifactId>
             <scope>test</scope>
@@ -407,14 +412,14 @@
                                 --initialize-at-run-time=com.alipay.sofa.jraft.entity.LocalFileMetaOutter$LocalFileMeta
                                 --initialize-at-run-time=com.alipay.sofa.jraft.rpc.ProtobufMsgFactory
                                 
-                                --initialize-at-run-time=org.apache.derby.jdbc.AutoloadedDriver
-                                --initialize-at-run-time=org.apache.derby.jdbc.InternalDriver
-                                --initialize-at-run-time=org.apache.derby.jdbc.Driver42
+                                --initialize-at-run-time=org.apache.derby.iapi.jdbc.AutoloadedDriver
+                                --initialize-at-run-time=org.apache.derby.iapi.jdbc.InternalDriver
+                                --initialize-at-run-time=org.apache.derby.iapi.jdbc.Driver42
                                 --initialize-at-run-time=org.apache.derby.jdbc.EmbeddedDriver
-                                --initialize-at-run-time=org.apache.derby.jdbc.ResourceAdapterImpl
+                                --initialize-at-run-time=org.apache.derby.impl.jdbc.ResourceAdapterImpl
                                 --initialize-at-run-time=org.apache.derby.iapi.jdbc.DRDAServerStarter
                                 --initialize-at-run-time=org.apache.derby.iapi.jdbc.JDBCBoot
-                                --initialize-at-run-time=org.apache.derby.iapi.services.SecurityUtil
+                                --initialize-at-run-time=org.apache.derby.iapi.security.SecurityUtil
                                 --initialize-at-run-time=org.apache.derby.iapi.services.monitor.Monitor
                                 --initialize-at-run-time=org.apache.derby.impl.services.monitor.ModuleInstance
                                 --initialize-at-run-time=org.apache.derby.impl.services.monitor.ProtocolKey
