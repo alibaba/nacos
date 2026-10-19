@@ -87,6 +87,34 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
     
+    @Test
+    public void testSearchEnhancementStatusAndCursorBoundary() throws Exception {
+        String emptyNamespace = "jev-empty-" + UUID.randomUUID();
+        Map<String, Object> request = searchRequest("jev capability", null);
+        HttpPost post = new HttpPost(ardUrl(ARD_PATH + "/search",
+            Query.newInstance().addParam("namespaceId", emptyNamespace)));
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        authHeader(identity).getHeader().forEach(post::setHeader);
+        post.setEntity(new StringEntity(JacksonUtils.toJson(request), ContentType.APPLICATION_JSON));
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient client =
+            org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            client.execute(post, response -> {
+                assertEquals(200, response.getCode());
+                assertNotNull(response.getFirstHeader("X-Nacos-ARD-Enhancement"));
+                assertEquals(System.getProperty("nacos.test.ard.relevance.empty-status", "disabled"),
+                    response.getFirstHeader("X-Nacos-ARD-Enhancement").getValue());
+                JsonNode body = JacksonUtils.toObj(org.apache.hc.core5.http.io.entity.EntityUtils.toString(response.getEntity()));
+                assertTrue(body.has("results"));
+                assertFalse(body.has("enhancementStatus"));
+                return null;
+            });
+        }
+        request.put("pageToken", "invalid-enhancement-cursor");
+        HttpPost invalid = new HttpPost(post.getUri());
+        invalid.setEntity(new StringEntity(JacksonUtils.toJson(request), ContentType.APPLICATION_JSON));
+        assertEquals(400, executeRaw(invalid, identity).code());
+    }
+
     @Disabled("DAUTH-F03: private shared-index projection is incomplete with auth enabled; "
             + "see UNEXPECTED_PRODUCT_FINDINGS.md")
     @Test

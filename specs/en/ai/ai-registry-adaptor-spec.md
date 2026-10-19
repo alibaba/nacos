@@ -406,3 +406,10 @@ exclude Runtime state.
 Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors. Do not export runtime, health, or management observation fields.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Optional Search relevance filter
+
+Only ARD Search opts into the shared relevance filter. The response body and original scores
+remain unchanged. `X-Nacos-ARD-Enhancement` reports `disabled`, `applied`, `partial` (oversized
+candidates retained), or `bypassed` (no assessment or whole-request fallback). An empty search
+page may carry a continuation token. See [AI resource search](ai-resource-search-spec.md).

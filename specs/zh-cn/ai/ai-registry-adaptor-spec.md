@@ -324,3 +324,10 @@ identifier、representation-specific URL、offline/digest 失效，以及 Artifa
 Nacos Agent Artifact 随统一定义模型调整声明地址 JSON 结构，并同步 Schema/测试；原生 A2A AgentCard 协议表示保持。实际公开 Agent 的非空 Artifact HTTP 流程、exact version/digest 与 offline 错误必须验证；不得导出 Runtime、健康或管理观测字段。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### 可选的 Search 相关性过滤
+
+只有 ARD Search 请求共享相关性过滤，响应正文及原始 score 保持现有契约。
+`X-Nacos-ARD-Enhancement` 返回 `disabled`、`applied`、`partial`（过长候选保留未评估）
+或 `bypassed`（未评估或整次回退）。空搜索页可以携带续页 token。
+细则见 [AI 资源检索规范](ai-resource-search-spec.md)。
