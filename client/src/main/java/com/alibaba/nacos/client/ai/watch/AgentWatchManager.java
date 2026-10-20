@@ -244,8 +244,22 @@ public class AgentWatchManager implements Closeable {
     }
     
     /**
-     * Enqueue the current snapshot through the existing serialized listener dispatcher.
-     * Used by the legacy Card bridge, whose contract includes an initial callback.
+     * Accept a native subscription and supply its current state through the listener.
+     *
+     * @param reference Agent reference
+     * @param filter optional filter
+     * @param listener listener identity
+     * @throws NacosException when the initial subscription is rejected
+     */
+    public void subscribeAndNotify(AgentReference reference, AgentDiscoveryFilter filter,
+        AbstractNacosAgentDiscoveryListener listener) throws NacosException {
+        subscribe(reference, filter, listener);
+        notifyCurrent(reference, filter, listener);
+    }
+    
+    /**
+     * Initialize a listener only if no state notification has already been registered for it.
+     * Native subscriptions and the legacy Card bridge share this serialized dispatcher.
      */
     void notifyCurrent(AgentReference reference, AgentDiscoveryFilter filter,
         AbstractNacosAgentDiscoveryListener listener) throws NacosException {
@@ -254,12 +268,21 @@ public class AgentWatchManager implements Closeable {
         ListenerNotification notification;
         synchronized (this) {
             WatchIntent intent = intentsByKey.get(key);
-            if (closed || intent == null || intent.current == null
-                || !intent.listeners.containsKey(listener)) {
+            if (closed || intent == null || intent.state == WatchState.ACTIVATING) {
                 return;
             }
-            notification = new ListenerNotification(intent, intent.listeners.get(listener),
-                new NacosAgentDiscoveryEvent(copy(intent.current)), true, ++notificationSequence);
+            ListenerRegistration registration = intent.listeners.get(listener);
+            if (registration == null || registration.notificationRegistered) {
+                return;
+            }
+            NacosAgentDiscoveryEvent current = intent.current == null
+                ? (intent.unavailableNotified ? intent.unavailableState : null)
+                : new NacosAgentDiscoveryEvent(copy(intent.current));
+            if (current == null) {
+                return;
+            }
+            notification = new ListenerNotification(intent, registration, current, true,
+                ++notificationSequence);
         }
         dispatch(notification);
     }
@@ -818,6 +841,7 @@ public class AgentWatchManager implements Closeable {
         NacosException exception, boolean requireActive) {
         List<ListenerNotification> result = new ArrayList<ListenerNotification>();
         NacosAgentDiscoveryEvent event = unavailable(exception);
+        intent.unavailableState = event;
         for (ListenerRegistration listener : intent.listeners.values()) {
             result.add(new ListenerNotification(intent, listener, event, requireActive,
                 ++notificationSequence));
@@ -1101,6 +1125,8 @@ public class AgentWatchManager implements Closeable {
         
         private boolean unavailableNotified;
         
+        private NacosAgentDiscoveryEvent unavailableState;
+        
         private int pendingFailureCount;
         
         private int refreshFailureCount;
@@ -1165,6 +1191,8 @@ public class AgentWatchManager implements Closeable {
         private boolean dispatching;
         
         private long lastDeliveredSequence;
+        
+        private boolean notificationRegistered;
         
         private ListenerRegistration(AbstractNacosAgentDiscoveryListener listener) {
             this.listener = listener;
@@ -1269,6 +1297,7 @@ public class AgentWatchManager implements Closeable {
             this.event = event;
             this.requireActive = requireActive;
             this.sequence = sequence;
+            listener.notificationRegistered = true;
         }
     }
     

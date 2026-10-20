@@ -1090,14 +1090,10 @@ class NacosAiServiceTest {
                 public void onEvent(NacosAgentDiscoveryEvent event) {
                 }
             };
-        AgentDiscoveryResult expected = new AgentDiscoveryResult();
-        when(agentDiscoveryCacheHolder.subscribe(reference, filter, listener))
-            .thenReturn(expected);
-        
-        assertEquals(expected, nacosAiService.agent().subscribeAgent(reference, filter, listener));
+        nacosAiService.agent().subscribeAgent(reference, filter, listener);
         nacosAiService.agent().unsubscribeAgent(reference, filter, listener);
         
-        verify(agentDiscoveryCacheHolder).subscribe(reference, filter, listener);
+        verify(agentDiscoveryCacheHolder).subscribeAndNotify(reference, filter, listener);
         verify(agentDiscoveryCacheHolder).unsubscribe(reference, filter, listener);
     }
     

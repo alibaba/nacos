@@ -177,10 +177,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
                             }
                         }
                     };
-            AgentDiscoveryResult initial = reader.agent().subscribeAgent(reference(name, null), listener);
-            if (initial != null) {
-                snapshotReceived.countDown();
-            }
+            reader.agent().subscribeAgent(reference(name, null), listener);
             addCleanup(() -> reader.agent().unsubscribeAgent(reference(name, null), listener));
             assertTrue(snapshotReceived.await(25, TimeUnit.SECONDS),
                     transport + " initial Watch snapshot");

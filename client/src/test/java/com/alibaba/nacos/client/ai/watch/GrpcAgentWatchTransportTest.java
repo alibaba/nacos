@@ -72,6 +72,20 @@ class GrpcAgentWatchTransportTest {
     }
     
     @Test
+    void initialSubscribeFingerprintMismatchRequestsRefreshWithoutAnotherPush() throws Exception {
+        Connection connection = supportedConnection("connection-a");
+        connect(connection, "connection-a");
+        when(client.subscribeAgentWatch(eq("watch-a"), any(AgentDiscoveryRequest.class),
+            eq("fingerprint-a"))).thenReturn(response("wire-a", "fingerprint-b", true));
+        TestCallback callback = new TestCallback();
+        transport.start(registration("watch-a", "fingerprint-a"), callback);
+        assertTrue(callback.dirtyRecorded);
+        assertEquals("fingerprint-b", callback.observedFingerprint);
+        verify(client).subscribeAgentWatch(eq("watch-a"),
+            any(AgentDiscoveryRequest.class), eq("fingerprint-a"));
+    }
+    
+    @Test
     void negotiatedConnectionSubscribesAndAcceptsDirtyBeforeAck() throws Exception {
         Connection connection = supportedConnection("connection-a");
         connect(connection, "connection-a");

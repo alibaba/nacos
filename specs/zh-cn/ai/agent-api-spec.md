@@ -138,7 +138,7 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | 不含 namespace 字段的 `AgentSearchRequest` | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | 过滤 Discover | `discoverAgent` | `AgentReference`、`AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult`，目标尚不存在时为 `null` |
+| Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | `void`；初始状态和后续变化均由 Listener 回调 |
 | 取消 Watch 订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
 | 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | 注销 | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
@@ -146,9 +146,19 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 `subscribeAgent` 是传输无关的 SDK Watch。所选 Transport 与 Client/Server 都声明 Watch
 能力时，SDK 安装 Server-aware Wire Intent；否则通过有界的本地 Discover 轮询保持兼容。
-首次成功 Discover 结果同步返回；目标不存在时返回 `null` 并保留有界 Pending Intent。
-后续 Watch Hint 或回退轮询执行相同的鉴权 Discover。只有 Canonical Fingerprint 与缓存
-不同的新完整替换结果才投递给 Listener；Wire Hint 不会到达 Listener。`getAll`、
+两个 `subscribeAgent` 重载均返回 `void`。每个新接受的 Listener 通过与后续变化相同的
+串行分发通道获得当前完整状态；目标缺失时交付已有 UNAVAILABLE 状态并保留 Pending Intent。
+新 Listener 加入已有规范化 Watch 也获得当前状态；重复订阅同一 Listener 幂等，不重复初始化。
+首次回调可能在方法返回前或后执行；调用前准备好 Listener 依赖状态，应用仅在回调中更新视图。
+后续 Watch Hint 或回退轮询执行相同的鉴权 Discover；指纹不变不重复通知，Wire Hint 不到达 Listener。
+
+当前状态选择、通知序号分配与登记在 Manager 锁内原子完成，用户代码在锁外执行。已被新通知取代的
+初始化不得再次作为新数据排队；允许 A→B 或只 B，不允许 B→旧初始化 A。真实后续重新变为 A
+仍是新状态。取消／关闭使排队的初始化失效。若 Discover 读到 A、安装 Watch 时已变为 B，复用
+现有 gRPC refreshRequired／observedFingerprint 和 HTTP 首轮 changed ID 触发补查；激活期间
+先记录 dirty，激活后刷新。HTTP/gRPC 路径、报文字段与服务端契约保持不变。
+旧 A2A subscribe 继续返回 Card，复用初始化分发且不双发。回调任务被拒绝后的自动补发尚无保证，
+首次回调也受此限制；该限制与远程恢复独立。`getAll`、
 `selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent Calling 是 SDK 本地
 Helper，不增加远程操作。
 

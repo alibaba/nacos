@@ -239,7 +239,7 @@ The existing disconnected ability-check runtime exception retains its public typ
 | --- | --- | --- |
 | Search | `searchAgents` | Accept `AgentSearchRequest` and return `Page<AgentSummary>`. |
 | Discover | `discoverAgent` overloads | Accept `AgentReference`, with an optional `AgentDiscoveryFilter`, and return one complete `AgentDiscoveryResult`. |
-| Watch | `subscribeAgent` overloads | Accept the same reference, optional Filter, and listener; return the current complete result and later deliver complete replacement results. |
+| Watch | `subscribeAgent` overloads | Accept a reference, optional Filter and listener; return void and deliver initial state and complete replacements through the listener. |
 | Cancel Watch | `unsubscribeAgent` overloads | Remove the Watch identified by the same reference, Filter, and listener identity. |
 | Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationBatch` and retain it as redo intent. |
 | Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `agentName, protocol, List<Endpoint>` owned by this SDK publisher. |
@@ -503,3 +503,10 @@ third-party protocol SDK dependency. Both entrypoints obey the
 including input/output isolation, explicit application invocation and uniform
 IllegalArgumentException failures. No development-draft bytecode compatibility
 fixture is required for the newly introduced AgentService API.
+
+### Native Agent Watch initial delivery
+
+Both Java `subscribeAgent` overloads return `void`; see the initial delivery contract in
+[Agent API](../ai/agent-api-spec.md). The manager reuses one per-Listener dispatcher and
+notification sequence for current state and later updates, including new Listeners on an
+existing Watch. Legacy A2A keeps its return value. Wire contracts remain unchanged.

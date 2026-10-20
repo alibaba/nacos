@@ -814,3 +814,10 @@ nativeDescriptor 仍是解析后的 JSON 值，不是原始字符串。本次保
 定义 endpointSourceOrder 必须恰好包含 DECLARED/RUNTIME 各一次，仅表示推荐顺序。Discover/Watch 未传来源 Filter 时按定义顺序返回两个 Set，保留空 Set；Filter 可以单选任一来源，同时选两种时仍使用定义顺序。显式选择 RUNTIME 且无匹配地址时保留空 Set，不补入 DECLARED。
 
 公开 Endpoint metadata 使用 `__nacos.agent.endpoint.protocolVersion__`（非空可打印 ASCII，最多 64 字符）与 `__nacos.agent.endpoint.tenant__`（最多 256 字符，允许显式空串）支持 A2A 兼容。有效值参与 Runtime source revision 与发现指纹。直接复用历史 Nacos 保留键；Endpoint metadata 仅允许这两个兼容保留键，其他控制键仍禁止写入，非法输入直接拒绝。
+
+## Java SDK 初始化交付
+
+原生 Java subscribeAgent 返回 void，当前状态和后续变化统一通过 Listener 交付，详见
+[Agent API](../ai/agent-api-spec.md)。复用 Subscribe 指纹比较及 HTTP 首轮长轮询比较覆盖
+Discover 到 Watch 的窗口，不改变报文字段或服务端行为。本地通知序号必须防止新状态交付后
+再补发过期初始化结果。

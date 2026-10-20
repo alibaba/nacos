@@ -206,7 +206,7 @@ CLIENT_DISCONNECT、UN_REGISTER 或通用 transport 异常中的 gRPC UNAVAILABL
 | --- | --- | --- |
 | Search | `searchAgents` | 接受 `AgentSearchRequest`，返回 `Page<AgentSummary>`。 |
 | Discover | `discoverAgent` 重载 | 接受 `AgentReference` 和可选 `AgentDiscoveryFilter`，返回一个完整 `AgentDiscoveryResult`。 |
-| Watch | `subscribeAgent` 重载 | 接受相同 Reference、可选 Filter 和 Listener；返回当前完整结果，后续传递完整替换结果。 |
+| Watch | `subscribeAgent` 重载 | 接受 Reference、可选 Filter 和 Listener，返回 void；初始状态和后续完整替换结果统一由 Listener 交付。 |
 | 取消 Watch | `unsubscribeAgent` 重载 | 按相同 Reference、Filter 和 Listener identity 移除 Watch。 |
 | 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationBatch`，并保留为 redo 意图。 |
 | 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `agentName, protocol, List<Endpoint>`。 |
@@ -421,3 +421,9 @@ API 模块在 `com.alibaba.nacos.api.ai.converter` 提供 `AgentConverter<T>` �
 两入口遵循 [Agent API 转换契约](../ai/agent-api-spec.md#公共发现快照转换器)，包含输入输出隔离、
 用户显式调用和统一 IllegalArgumentException。新增 AgentService API 不增加开发稿旧字节码
 兼容 fixture。
+
+### 原生 Agent Watch 初始交付
+
+两个 Java subscribeAgent 重载返回 void；初始交付遵循 [Agent API](../ai/agent-api-spec.md)。
+Manager 对当前状态及后续变化复用同一逐 Listener 分发器和通知序号，加入已有 Watch 的新 Listener
+也获得当前状态。旧 A2A 保留返回值，HTTP/gRPC 报文不变。

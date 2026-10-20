@@ -958,3 +958,11 @@ Registration preserves disabled contributions for management reads. Discovery ex
 Definition endpointSourceOrder MUST contain both DECLARED and RUNTIME exactly once. It is a recommendation, not a source allow-list. Without a source filter, Discover and Watch return both sets in definition order, retaining empty sets. A source filter MAY select one source; selecting both preserves definition order regardless of filter order. An explicitly selected empty RUNTIME set MUST NOT be replaced by DECLARED addresses.
 
 Public Endpoint metadata uses `__nacos.agent.endpoint.protocolVersion__` (nonempty printable ASCII, at most 64 characters) and `__nacos.agent.endpoint.tenant__` (at most 256 characters, including an explicit empty string) for A2A compatibility. Effective values participate in Runtime source revision and discovery fingerprints. These reuse the historical Nacos-owned keys. Only these two reserved keys are accepted in Endpoint metadata; other control keys remain forbidden. Invalid Endpoint input is rejected.
+
+## Java SDK initialization delivery
+
+Native Java `subscribeAgent` returns void and supplies current state and later changes
+through the same Listener, as specified in [Agent API](../ai/agent-api-spec.md).
+The existing Subscribe fingerprint comparison and first HTTP long-poll comparison close
+the Discover-to-Watch window. No wire fields or server behavior change. Local notification
+sequencing must prevent a stale initialization from following a newer delivered state.

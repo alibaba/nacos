@@ -191,11 +191,11 @@ Endpoint, and replacement across an already-online Version.
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Subscribe to an existing target with both Watch abilities | The method returns the current snapshot, installs one connection-scoped gRPC Watch, and refreshes only through Hint followed by Discover. | IT + UT |
-| Subscribe through explicit HTTP or AUTO without negotiated Watch ability | The method returns the same snapshot and installs the intent into one generation-based HTTP Batch Long Poll. | IT + UT |
+| Subscribe to an existing target with both Watch abilities | The void method installs one connection-scoped gRPC Watch; the Listener receives the current snapshot, then changes through Hint followed by Discover. | IT + UT |
+| Subscribe through explicit HTTP or AUTO without negotiated Watch ability | The void method initializes the Listener with the current snapshot and installs the intent into one generation-based HTTP Batch Long Poll. | IT + UT |
 | HTTP Batch Long Poll reaches its timeout without a change | No listener callback is emitted; the same current Watch generation is sent again. | IT + UT |
 | Add or remove one HTTP Watch while an older request is in flight | The client cancels the superseded request, advances generation, sends the complete current list, and ignores a late older response. | IT + UT |
-| Subscribe before the target exists | The method returns `null`, emits at most one typed `UNAVAILABLE` event, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
+| Subscribe before the target exists | The void method initializes each new Listener with typed `UNAVAILABLE`, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
 | Repeated not-found polls | No duplicate `UNAVAILABLE` or empty snapshot is delivered and the subscription remains active. | UT |
 | Poll returns the same Version, digest, and source revisions | No duplicate listener event is delivered. | IT + UT |
 | Resolved Version changes | One complete replacement event is delivered. | IT + UT |
@@ -203,8 +203,8 @@ Endpoint, and replacement across an already-online Version.
 | Any `sourceRevision` changes | One complete replacement event is delivered. | IT + UT |
 | A Runtime binding changes while its Endpoint payload and health stay equal | The v2 Runtime revision changes because discovery-visible binding provenance is part of the snapshot. | UT |
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
-| Same reference/filter and two listener instances | Canonically equivalent intents share one Wire intent while listener identities remain isolated and both receive changes. | IT + UT |
-| Repeat subscribe with the same listener identity | Only one Wire intent and one callback per change are retained. | UT |
+| Same reference/filter and two listener instances | Canonically equivalent intents share one Wire intent; each new Listener receives the current state independently, and both receive changes. | IT + UT |
+| Repeat subscribe with the same listener identity | Only one Wire intent is retained; initialization is not repeated and each change is delivered once. | IT + UT |
 | Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
 | Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
@@ -394,9 +394,10 @@ Disabled UT is recorded separately. See ADAPTATION_VALIDATION.md.
   non-owner, so default PUBLIC visibility cannot mask the identity regression.
 - Retain complete snapshot, duplicate suppression, version/latest evolution, server capacity,
   source preference, partial removal, HTTP batch and cancellation assertions.
-- Native synchronous subscribe returns its initial snapshot; it does not promise an initial
-  SNAPSHOT callback. The scope-invalidation test accepts that return value and still requires
-  a real unavailable event, no stale data and not-found detail after visibility loss.
+- Historical C09 used the native subscribe return value for initialization. P05 supersedes
+  that development signature with void and a required initial Listener callback. The
+  scope-invalidation test now waits for that callback and still requires a real unavailable
+  event, no stale data and not-found detail after visibility loss.
 - The internal A2A adapter is exercised with the real Watch manager in UT. Old public A2A
   methods remain on legacy wire until C10; this stage does not claim public A2A RAD routing.
 - Re-enabled standalone restart and pinned-cluster cases require their directed fixtures.
@@ -450,3 +451,26 @@ legacy A2A facade regression passed 63 executions per JSON adapter (default and 
 including all 9 Converter executions per adapter. Four existing restart/cluster-fixture cases
 per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
 passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.
+
+## Native Watch initial delivery (WATCH02 / P05)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| subscribeAgent overloads | Void signatures, current state on first/new Listener, duplicate idempotence, initial absence, cancellation and legacy A2A return compatibility | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges` passes grpc/http/auto with both JSON adapters. Existing Discovery, legacy A2A, visibility-loss and cross-resource cases now wait for real initial callbacks; all SDK test sources compile. |
+| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains deferred WATCH03. |
+
+P05 precedes the combined P04/P06/P07 Watch phase. Existing terminal-error semantics are
+not claimed to be fixed by initialization delivery; final domain-event/recovery rules are
+validated in that combined phase.
+
+Validation on 2026-10-20: 1,559 AI unit tests passed; one pre-existing disabled MCP
+case was skipped. Default JSON and Jackson 3 each passed 77 SDK executions (60 Discovery,
+6 legacy A2A routing, 1 visibility-loss and 10 cross-resource cases), with zero failures/errors.
+Each adapter conditionally skipped the same four restart/pinned-cluster fixture cases;
+those directed environments were not exercised by this standalone run. All 13 WINIT plan
+groups passed within P05 scope. Pure-UT incremental coverage against `85accf6d7` is
+17/17 lines, 16/16 branches and 95/95 instructions (100% each); this is not whole-repository
+coverage. Spotless, compilation, Checkstyle, SDK packaging and RAT passed.
+
+Separate WATCH02 increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
+effective 2/2 = 100%. External usage documentation remains a separate follow-up.

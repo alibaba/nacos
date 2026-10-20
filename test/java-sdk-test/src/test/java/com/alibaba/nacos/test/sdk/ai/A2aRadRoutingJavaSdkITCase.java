@@ -481,8 +481,8 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
                 }
             }
         };
-        assertNotNull(service.agent().subscribeAgent(reference, listener));
-        assertNotNull(service.agent().subscribeAgent(reference, filter, listener));
+        service.agent().subscribeAgent(reference, listener);
+        service.agent().subscribeAgent(reference, filter, listener);
         service.agent().registerAgentEndpoints(batch);
         // Polling compatibility uses the configured ten-second refresh interval.
         waitUntil("native subscriptions receive runtime updates", 30000L, () -> changes.get() >= 2);

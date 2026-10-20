@@ -191,3 +191,10 @@ Push delivery order 只在某个节点的本地 event 和 task path 内成立。
 
 - push retry、timeout 和 reconnect recovery 观测应遵循
   [可观测钩子规范](../design/foundation-observability-hooks-spec.md)中的共享字段和 label 指引。
+
+## Java SDK 初始化交付
+
+原生 Java subscribeAgent 返回 void，当前状态和后续变化统一通过 Listener 交付，详见
+[Agent API](../ai/agent-api-spec.md)。复用 Subscribe 指纹比较及 HTTP 首轮长轮询比较覆盖
+Discover 到 Watch 的窗口，不改变报文字段或服务端行为。本地通知序号必须防止新状态交付后
+再补发过期初始化结果。

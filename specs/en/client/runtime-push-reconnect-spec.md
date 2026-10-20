@@ -232,3 +232,11 @@ Domain specs must define when a local serving view is visible:
 - Push retry, timeout, and reconnect recovery observations should follow the
   shared field and label guidance in the
   [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
+
+## Java SDK initialization delivery
+
+Native Java `subscribeAgent` returns void and supplies current state and later changes
+through the same Listener, as specified in [Agent API](../ai/agent-api-spec.md).
+The existing Subscribe fingerprint comparison and first HTTP long-poll comparison close
+the Discover-to-Watch window. No wire fields or server behavior change. Local notification
+sequencing must prevent a stale initialization from following a newer delivered state.

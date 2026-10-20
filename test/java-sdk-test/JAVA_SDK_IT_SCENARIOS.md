@@ -440,3 +440,26 @@ legacy A2A facade regression passed 63 executions per JSON adapter (default and 
 including all 9 Converter executions per adapter. Four existing restart/cluster-fixture cases
 per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
 passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.
+
+## Native Watch initial delivery (WATCH02 / P05)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| subscribeAgent overloads | Void signatures, current state on first/new Listener, duplicate idempotence, initial absence, cancellation and legacy A2A return compatibility | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges` passes grpc/http/auto with both JSON adapters. Existing Discovery, legacy A2A, visibility-loss and cross-resource cases now wait for real initial callbacks; all SDK test sources compile. |
+| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains deferred WATCH03. |
+
+P05 precedes the combined P04/P06/P07 Watch phase. Existing terminal-error semantics are
+not claimed to be fixed by initialization delivery; final domain-event/recovery rules are
+validated in that combined phase.
+
+Validation on 2026-10-20: 1,559 AI unit tests passed; one pre-existing disabled MCP
+case was skipped. Default JSON and Jackson 3 each passed 77 SDK executions (60 Discovery,
+6 legacy A2A routing, 1 visibility-loss and 10 cross-resource cases), with zero failures/errors.
+Each adapter conditionally skipped the same four restart/pinned-cluster fixture cases;
+those directed environments were not exercised by this standalone run. All 13 WINIT plan
+groups passed within P05 scope. Pure-UT incremental coverage against `85accf6d7` is
+17/17 lines, 16/16 branches and 95/95 instructions (100% each); this is not whole-repository
+coverage. Spotless, compilation, Checkstyle, SDK packaging and RAT passed.
+
+Separate WATCH02 increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
+effective 2/2 = 100%. External usage documentation remains a separate follow-up.

@@ -86,28 +86,37 @@ public interface AgentDiscoveryService {
     /**
      * Subscribe to one Agent through transport-neutral Watch.
      *
+     * <p>The listener receives the initial complete state and subsequent changes. The first
+     * callback may run before or after this method returns; prepare listener state beforehand.
+     * Repeating the same reference, filter and listener does not repeat initialization.
+     *
      * @param reference Agent reference
      * @param listener discovery listener
-     * @return current snapshot, or {@code null} when the target does not exist yet
      * @throws NacosException when validation or the initial Discover fails
      */
     @Since("3.3.0")
-    default AgentDiscoveryResult subscribeAgent(AgentReference reference,
+    default void subscribeAgent(AgentReference reference,
         AbstractNacosAgentDiscoveryListener listener) throws NacosException {
-        return subscribeAgent(reference, null, listener);
+        subscribeAgent(reference, null, listener);
     }
     
     /**
      * Subscribe to one filtered Agent view through transport-neutral Watch.
      *
+     * <p>A new listener receives the current complete state even when joining an existing
+     * Watch. An initially absent target produces an UNAVAILABLE event and remains pending.
+     * Initial state and changes use the same serialized callback channel; an initialization
+     * superseded by a newer notification is not sent afterwards. Cancellation and shutdown
+     * invalidate queued notifications. Callback executor rejection does not yet guarantee
+     * automatic redelivery, including for the initial notification.
+     *
      * @param reference Agent reference
      * @param filter optional discovery filter
      * @param listener discovery listener
-     * @return current snapshot, or {@code null} when the target does not exist yet
      * @throws NacosException when validation or the initial Discover fails
      */
     @Since("3.3.0")
-    default AgentDiscoveryResult subscribeAgent(AgentReference reference,
+    default void subscribeAgent(AgentReference reference,
         AgentDiscoveryFilter filter, AbstractNacosAgentDiscoveryListener listener)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,

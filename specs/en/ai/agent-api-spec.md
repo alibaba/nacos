@@ -156,7 +156,7 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
+| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | `void`; initial state and later changes arrive through the Listener |
 | Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
 | Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | Deregister | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
@@ -165,11 +165,28 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 `subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
 and both peers advertise Watch, the SDK installs server-aware Wire Intent;
 otherwise it preserves compatibility through bounded local Discover polling.
-The initial successful Discover result is returned synchronously. If the target
-is absent, the call returns `null` and retains a bounded pending intent. A
-later Watch hint or fallback poll invokes the same authorized Discover. The
-Listener receives only a new complete replacement result whose canonical
-fingerprint differs from the cached result; it never receives a Wire hint.
+Both `subscribeAgent` overloads return `void`. Each newly accepted Listener receives
+its current complete state through the same serialized dispatcher as later changes;
+an absent target receives the existing `UNAVAILABLE` state and remains pending.
+Adding a new Listener to an existing canonical Watch also supplies its current state;
+repeating the same Listener is idempotent and does not resend initialization.
+The first callback may run before or after the method returns. Callers prepare all
+Listener state before subscribing and update their view only from callbacks.
+A later Watch hint or fallback poll invokes the same authorized Discover. Unchanged
+fingerprints do not generate another data callback, and Wire hints are never exposed.
+
+State selection, notification sequence assignment and registration happen atomically
+under the manager lock; user code runs outside that lock. Initialization already
+superseded by a new notification must not be re-enqueued as newer data. Delivery may
+be A then B, or only B, but never B then stale initialization A. A real later return to
+A remains a new state. Removal and shutdown invalidate queued initialization.
+If Discover reads A before Watch installation observes B, existing gRPC
+`refreshRequired` / `observedFingerprint` or the initial HTTP changed-ID response
+triggers another Discover; activation records dirty state until refresh can run.
+HTTP/gRPC paths, request/response fields and server contracts remain unchanged.
+The legacy A2A subscribe return value remains, using the same initialization dispatcher
+without duplicate initialization. Rejected callback tasks do not yet have guaranteed
+redelivery; this also applies to initialization and is separate from remote recovery.
 `getAll`, `selectOneHealthy`, protocol choice, priority/weight selection, and
 actual Agent calling are local SDK helpers, not additional remote operations.
 

@@ -125,6 +125,202 @@ class AgentWatchManagerTest {
     }
     
     @Test
+    void nativeInitialStateIsDeliveredOnceToEachNewListenerOutsideManagerLock() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A));
+        AgentReference reference = reference("agent-a");
+        TestListener first = new TestListener(null);
+        TestListener second = new TestListener(null);
+        manager.subscribeAndNotify(reference, null, first);
+        manager.subscribeAndNotify(reference, new AgentDiscoveryFilter(), first);
+        manager.subscribeAndNotify(reference, null, second);
+        assertTrue(first.events.isEmpty());
+        drainCallbacks();
+        assertEquals(1, first.events.size());
+        assertEquals(1, second.events.size());
+        assertEquals("1.0.0", first.events.get(0).getAgentDiscoveryResult().getVersion());
+        assertNotSame(first.events.get(0).getAgentDiscoveryResult(),
+            second.events.get(0).getAgentDiscoveryResult());
+        assertEquals(1, transport.startCount);
+        AtomicReference<Boolean> lockHeld = new AtomicReference<Boolean>();
+        manager.subscribeAndNotify(reference, null, new AbstractNacosAgentDiscoveryListener() {
+            
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                lockHeld.set(Thread.holdsLock(manager));
+            }
+        });
+        drainCallbacks();
+        assertEquals(Boolean.FALSE, lockHeld.get());
+        assertEquals(1, first.events.size());
+    }
+    
+    @Test
+    void newNativeListenerReceivesPendingAbsenceAndThenRecovery() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenThrow(notFound("missing")).thenReturn(result("1.0.0", DIGEST_A));
+        AgentReference reference = reference("agent-a");
+        TestListener first = new TestListener(null);
+        TestListener second = new TestListener(null);
+        manager.subscribeAndNotify(reference, null, first);
+        manager.subscribeAndNotify(reference, null, second);
+        manager.subscribeAndNotify(reference, null, second);
+        drainCallbacks();
+        assertEquals(1, first.events.size());
+        assertEquals(1, second.events.size());
+        assertEvent(second, 0, NacosAgentDiscoveryEventType.UNAVAILABLE, NacosException.NOT_FOUND);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEvent(first, 1, NacosAgentDiscoveryEventType.SNAPSHOT, null);
+        assertEvent(second, 1, NacosAgentDiscoveryEventType.SNAPSHOT, null);
+    }
+    
+    @Test
+    void activationFingerprintMismatchRefreshesWithoutAnotherBusinessChange() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B),
+                result("1.0.0", DIGEST_A));
+        TestListener listener = new TestListener(null);
+        transport.startHook = (registration, callback) -> {
+            manager.notifyCurrent(reference("agent-a"), null, listener);
+            assertTrue(callbacks.isEmpty(), "initialization must wait for activation");
+            assertEquals(AgentDiscoveryCanonicalizer.fingerprint(result("1.0.0", DIGEST_A)),
+                registration.getMaterializedFingerprint());
+            assertTrue(callback.invalidate("new-server-fingerprint", false));
+        };
+        manager.subscribeAndNotify(reference("agent-a"), null, listener);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEquals(2, listener.events.size());
+        assertEquals("1.0.0", listener.events.get(0).getAgentDiscoveryResult().getVersion());
+        assertEquals("2.0.0", listener.events.get(1).getAgentDiscoveryResult().getVersion());
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "changed-again", false);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEquals("1.0.0", listener.events.get(2).getAgentDiscoveryResult().getVersion());
+    }
+    
+    @Test
+    void refreshBeforeInitializationDoesNotSendDuplicateOrStaleInitialState() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        TestListener listener = new TestListener(null);
+        AgentReference reference = reference("agent-a");
+        // Exercise the handoff after subscribe succeeds and before notifyCurrent runs.
+        manager.subscribe(reference, null, listener);
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "newer", false);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        manager.notifyCurrent(reference, null, listener);
+        drainCallbacks();
+        assertEquals(1, listener.events.size());
+        assertEquals("2.0.0", listener.events.get(0).getAgentDiscoveryResult().getVersion());
+    }
+    
+    @Test
+    void nativeInitialAndLaterEventsStaySerializedWithoutBlockingAnotherListener()
+        throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        List<Runnable> slowTasks = new ArrayList<Runnable>();
+        TestListener slow = new TestListener(slowTasks::add);
+        TestListener normal = new TestListener(null);
+        AgentReference reference = reference("agent-a");
+        manager.subscribeAndNotify(reference, null, slow);
+        manager.subscribeAndNotify(reference, null, normal);
+        drainCallbacks();
+        assertEquals(1, slowTasks.size());
+        manager.markDirty(transport.onlyRegistration().getClientWatchId(), "newer", false);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEquals(2, normal.events.size());
+        assertTrue(slow.events.isEmpty());
+        slowTasks.remove(0).run();
+        drainCallbacks();
+        slowTasks.remove(0).run();
+        assertEquals("1.0.0", slow.events.get(0).getAgentDiscoveryResult().getVersion());
+        assertEquals("2.0.0", slow.events.get(1).getAgentDiscoveryResult().getVersion());
+    }
+    
+    @Test
+    void canceledNativeInitializationCannotReachResubscribedListener() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        TestListener listener = new TestListener(null);
+        AgentReference reference = reference("agent-a");
+        manager.subscribeAndNotify(reference, null, listener);
+        manager.unsubscribe(reference, null, listener);
+        manager.subscribeAndNotify(reference, null, listener);
+        drainCallbacks();
+        assertEquals(1, listener.events.size());
+        assertEquals("2.0.0", listener.events.get(0).getAgentDiscoveryResult().getVersion());
+        TestListener closing = new TestListener(null);
+        manager.subscribeAndNotify(reference, null, closing);
+        manager.shutdown();
+        drainCallbacks();
+        assertTrue(closing.events.isEmpty());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {NacosException.NO_RIGHT, NacosException.OVER_THRESHOLD, 50105})
+    void rejectedNativeSubscriptionDoesNotInitializeListener(int errorCode) throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenThrow(new NacosException(errorCode, "rejected"));
+        TestListener listener = new TestListener(null);
+        assertEquals(errorCode, assertThrows(NacosException.class,
+            () -> manager.subscribeAndNotify(reference("agent-a"), null, listener)).getErrCode());
+        assertTrue(callbacks.isEmpty());
+        assertEquals(0, manager.subscriptionCount());
+    }
+    
+    @Test
+    void absenceBeforeInitializationCannotBeFollowedByStaleInitialSnapshot() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("1.0.0", DIGEST_A));
+        TestListener listener = new TestListener(null);
+        AgentReference reference = reference("agent-a");
+        manager.subscribe(reference, null, listener);
+        manager.markUnavailable(transport.onlyRegistration().getClientWatchId(),
+            NacosException.NOT_FOUND, "removed", false);
+        manager.notifyCurrent(reference, null, listener);
+        drainCallbacks();
+        assertEquals(1, listener.events.size());
+        assertEvent(listener, 0, NacosAgentDiscoveryEventType.UNAVAILABLE,
+            NacosException.NOT_FOUND);
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEquals(2, listener.events.size());
+        assertEquals("1.0.0", listener.events.get(1).getAgentDiscoveryResult().getVersion());
+    }
+    
+    @Test
+    void newListenerDoesNotReceiveStaleAbsenceDuringActivationRetry() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenThrow(notFound("missing")).thenReturn(result("1.0.0", DIGEST_A));
+        AgentReference reference = reference("agent-a");
+        TestListener original = new TestListener(null);
+        manager.subscribeAndNotify(reference, null, original);
+        drainCallbacks();
+        transport.startFailure = new NacosException(NacosException.CLIENT_DISCONNECT, "retry");
+        scheduled.remove(0).run();
+        TestListener added = new TestListener(null);
+        manager.subscribeAndNotify(reference, null, added);
+        drainCallbacks();
+        assertTrue(added.events.isEmpty());
+        transport.startFailure = null;
+        scheduled.remove(0).run();
+        drainCallbacks();
+        assertEquals(1, added.events.size());
+        assertEvent(added, 0, NacosAgentDiscoveryEventType.SNAPSHOT, null);
+    }
+    
+    private void drainCallbacks() {
+        while (!callbacks.isEmpty()) {
+            callbacks.remove(0).run();
+        }
+    }
+    
+    @Test
     void metricsTrackActivePendingDirtyRefreshAndCallbackLifecycle() throws Exception {
         double intents = AgentWatchClientMetrics.intentCount();
         double pending = AgentWatchClientMetrics.pendingCount();
