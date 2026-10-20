@@ -261,3 +261,35 @@ negotiation on the optional released-server fixture. Deterministic resolver UTs 
 before selection and after either fixed selection, plus changed evidence on reconnect. The query
 may report SUPPORTED while a business operation returns 50105; no migration admission check is
 bypassed. Directed cutover/rollback execution remains separate from this capability increment.
+
+### Persistent RAD-backed A2A Watch regression evidence
+
+Contract references: [Agent API Java SDK contract](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract)
+and [accepted Watch recovery](../../specs/en/sdk/sdk-java-impl-spec.md#accepted-agent-watch-recovery).
+The Discovery scenario document linked below records validation evidence.
+
+Accepted RAD-backed A2A subscriptions retain their local intent after wire rejection,
+including 50105; the old public Listener still receives complete Cards and suppresses
+empty notifications. Manager/transport/Router/Bridge UT verifies failure retention
+and resumed observation without resubscribe. Native deletion/identical recreation and
+later legacy version delivery pass on gRPC and HTTP with both JSON adapters; all six
+public facade mode/entrypoint combinations also pass. The combined standalone matrix
+passes 83 SDK executions per adapter and includes real server restart with SDK clients
+alive. Three multi-node pinned/rolling cases per adapter are conditionally skipped.
+This phase does not rerun real migration cutover/rollback fixtures; historical migration
+Verified rows above are not new Watch recovery evidence. See [persistent Watch validation](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#persistent-watch-recovery-data-events-and-http-quota-validation) for scope and remaining validation limits.
+These results do not resolve the shared Manager's callback queue growth, rejected
+delivery or throwing-`getExecutor()` limitations described in that section.
+
+### Latest-state Listener delivery regression
+
+RAD-backed A2A uses the same bounded latest-state dispatcher described in the
+[Java SDK spec](../../specs/en/sdk/sdk-java-impl-spec.md#latest-state-agent-listener-delivery).
+It still emits complete Cards and suppresses empty notifications. Intermediate absence
+may coalesce with recreation; this does not introduce a promise to notify every version
+or to notify identical recreation when absence was never delivered to the bridge.
+The final default/Jackson 3 matrix passes 178 executions in total, including all six
+legacy facade/entrypoint combinations per adapter and real standalone restart.
+Manager/bridge UT additionally validates initialization, cancellation, projection dedupe
+and retained delivery. Three multi-node cases per adapter remain conditionally skipped;
+no real migration cutover/rollback fixture is newly claimed.

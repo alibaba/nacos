@@ -257,7 +257,7 @@ RAD 模式的旧 Card 订阅复用原生发现的 Watch manager、transport、�
 
 Agent 或有效 A2A descriptor 暂时不存在时不虚构 Card，保留既有待观察意图。不可用事件清空
 Card 比较状态，不发送旧快照；恢复后的 Card 即使与原值相同也可再次通知。旧 listener 没有
-不可用事件类型；原生鉴权/容量等终止错误仍结束观察，需要显式重新订阅。鉴权失败不触发
+不可用事件类型；后台鉴权/容量等错误保留已接受订阅并内部重试。鉴权失败不触发
 轮询 fallback。绑定缺少 Watch 时复用 RAD Discover 轮询，RAD 模式不回到旧 A2A 轮询。
 
 同一 listener 重复订阅复用 bridge，取消时先移除本地意图再清理 wire；迟到回调不能复活订阅。
@@ -305,3 +305,10 @@ transport。HTTP 明确不支持时返回 unsupported，不静默发送旧 gRPC�
 A2aEndpointUtils 共享逐端点映射。它不改变旧 facade 的 registrationType 覆盖、
 preferredTransport 选择、空 Runtime 描述回退、latestVersion 或 NOT_FOUND 映射，
 不插入原生 Discover／Listener 分发。
+
+### Java SDK Watch 生命周期
+
+Wire 终止（包含迁移拒绝 50105）仅结束远程绑定，不结束已接受的 Java SDK 订阅。
+SDK 保留订阅及确认数据，在正常鉴权和配额下持续重试。只有合法 Discover 确认目标不存在
+产生 SDK UNAVAILABLE，其他错误内部处理。旧 A2A 保留完整 Card 回调与默认推空保护，
+不增加生命周期回调。

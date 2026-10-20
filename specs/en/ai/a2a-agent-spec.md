@@ -342,8 +342,8 @@ only to RAD fields that do not affect the Card do not trigger a legacy callback.
 A missing Agent or missing valid A2A descriptor returns no invented Card and retains the
 existing pending observation. Unavailability clears Card comparison state without sending
 stale content; recovery can notify even when the recovered Card equals the old one. The
-legacy listener has no unavailable-event shape; native terminal authorization/capacity
-errors still end observation and require explicit resubscription. No authentication error
+legacy listener has no unavailable-event shape; background authorization/capacity
+errors retain accepted observation and retry internally. No authentication error
 is converted into polling fallback. Where the selected binding lacks Watch, existing RAD
 Discover polling is used. This never changes to legacy A2A polling in RAD mode.
 
@@ -405,3 +405,11 @@ for legacy preferred fields. It shares per-Endpoint mapping through A2aEndpointU
 with the legacy facade. It does not change the facade's registrationType override,
 preferredTransport selection, empty-Runtime descriptor fallback, latestVersion or
 NOT_FOUND mapping, and it is not inserted into native Discover/Listener dispatch.
+
+### Java SDK Watch lifetime
+
+A wire termination (including migration rejection 50105) ends that remote binding,
+not the accepted Java SDK subscription. The SDK retains intent and confirmed data
+and retries under normal authorization and quota. Only authorized Discover target
+absence produces SDK UNAVAILABLE; other failures stay internal. Legacy A2A retains
+its complete-card callbacks and empty-push protection, without lifecycle callbacks.

@@ -92,7 +92,7 @@ public interface AgentDiscoveryService {
      *
      * @param reference Agent reference
      * @param listener discovery listener
-     * @throws NacosException when validation or the initial Discover fails
+     * @throws NacosException when validation, initial Discover, or synchronous Watch admission fails
      */
     @Since("3.3.0")
     default void subscribeAgent(AgentReference reference,
@@ -105,15 +105,25 @@ public interface AgentDiscoveryService {
      *
      * <p>A new listener receives the current complete state even when joining an existing
      * Watch. An initially absent target produces an UNAVAILABLE event and remains pending.
+     * Accepted subscriptions remain until unsubscribe or service shutdown. Background failures
+     * retry internally without data callbacks. UNAVAILABLE means authorized Discover confirmed
+     * the requested Agent reference does not exist; empty or unhealthy endpoints remain snapshots.
+     * HTTP Watch admission is asynchronous: quota failures retain accepted additions and retry
+     * while observing the acknowledged set. Further growth during known exhaustion is rejected
+     * synchronously. Joining an existing Watch does not count as remote growth.
      * Initial state and changes use the same serialized callback channel; an initialization
      * superseded by a newer notification is not sent afterwards. Cancellation and shutdown
-     * invalidate queued notifications. Callback executor rejection does not yet guarantee
-     * automatic redelivery, including for the initial notification.
+     * invalidate queued notifications. Intermediate snapshots and brief UNAVAILABLE states may
+     * coalesce: each listener eventually receives the latest complete state when execution is
+     * available. Executor rejection and getExecutor failures retain that state for local retry,
+     * including initialization, without another server change. A callback that has already
+     * started and throws is logged but not automatically replayed. Pending delivery memory
+     * does not grow with the number of changes. Bound blocking I/O in your callback with timeouts.
      *
      * @param reference Agent reference
      * @param filter optional discovery filter
      * @param listener discovery listener
-     * @throws NacosException when validation or the initial Discover fails
+     * @throws NacosException when validation, initial Discover, or synchronous Watch admission fails
      */
     @Since("3.3.0")
     default void subscribeAgent(AgentReference reference,

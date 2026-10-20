@@ -62,7 +62,7 @@ transport-neutral.
 | `shouldUseGrpcForAutoWhenInitialConnectionIsAvailable` | AUTO synchronous startup with an available negotiated gRPC connection, followed by Search, gRPC Watch callback, Endpoint Publication, Discover, and Deregister. |
 | `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, HTTP Watch callback, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
 | `shouldBatchHttpWatchesAcrossTimeoutUnsubscribeResubscribeAndShutdown` | Two explicit-HTTP subscriptions share generation-based Batch Long Poll behavior across a silent timeout, independent Agent changes, partial unsubscribe, resubscribe, and shutdown callback suppression. |
-| `shouldRejectOnlyLatestHttpWatchAndRetainExistingBatch` | A server HTTP Watch capacity rejection removes only the latest addition, preserves every previously admitted Watch, accepts a smaller generation, and reuses the released slot. |
+| `shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch` | HTTP growth rejection retains accepted additions, restores the acknowledged batch, rejects further growth synchronously, and resumes pending Watches after an old subscription is canceled. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
 | `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
 | `shouldSurfaceServerWatchCapacityAndReuseSlot` | Workflow-configured authoritative gRPC Watch soft watermark, whole-operation crossing from below, remote over-limit exception mapping, rejected Watch cleanup, and capacity reuse after unsubscribe. |
@@ -215,7 +215,7 @@ Endpoint, and replacement across an already-online Version.
 | gRPC connection is replaced | The old wire key is discarded, current intents are resubscribed on the new connection, and the first required refresh cannot be lost between Subscribe and ACK. | Directed IT + UT |
 | HTTP Watch uses the stable HTTP Client id | The binding remains attributable to one SDK client without renewing Publisher liveness. | IT + UT |
 | HTTP Watch binding is unsupported or persistently unavailable | Existing intents move once to bounded Discover polling; business rejections do not silently fall back. | UT |
-| HTTP Watch capacity rejects a generation after one addition | Only that latest addition receives a terminal `UNAVAILABLE`; the previous accepted batch stays active and a released slot is reusable. | IT + UT |
+| HTTP Watch capacity rejects a generation after one addition | No error data event is delivered; accepted additions wait, the acknowledged batch stays active, further growth is synchronously rejected, and canceling an old Watch restores pending additions. | IT + UT |
 | Shutdown during Watch or polling | Pending long-poll, refresh, retry, and polling tasks are cancelled and no callback is delivered after shutdown. | IT + UT |
 
 ## Complete Endpoint Publication
@@ -394,7 +394,7 @@ Disabled UT is recorded separately. See ADAPTATION_VALIDATION.md.
   non-owner, so default PUBLIC visibility cannot mask the identity regression.
 - Retain complete snapshot, duplicate suppression, version/latest evolution, server capacity,
   source preference, partial removal, HTTP batch and cancellation assertions.
-- Historical C09 used the native subscribe return value for initialization. P05 supersedes
+- Historical C09 used the native subscribe return value for initialization. The void subscription contract supersedes
   that development signature with void and a required initial Listener callback. The
   scope-invalidation test now waits for that callback and still requires a real unavailable
   event, no stale data and not-found detail after visibility loss.
@@ -452,14 +452,15 @@ including all 9 Converter executions per adapter. Four existing restart/cluster-
 per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
 passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.
 
-## Native Watch initial delivery (WATCH02 / P05)
+## Native Watch initial delivery
 
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
 | subscribeAgent overloads | Void signatures, current state on first/new Listener, duplicate idempotence, initial absence, cancellation and legacy A2A return compatibility | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges` passes grpc/http/auto with both JSON adapters. Existing Discovery, legacy A2A, visibility-loss and cross-resource cases now wait for real initial callbacks; all SDK test sources compile. |
-| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains deferred WATCH03. |
+| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains a separate deferred reliability improvement. |
 
-P05 precedes the combined P04/P06/P07 Watch phase. Existing terminal-error semantics are
+Initial-delivery validation preceded persistent Watch recovery and HTTP quota handling.
+At that point terminal-error semantics were
 not claimed to be fixed by initialization delivery; final domain-event/recovery rules are
 validated in that combined phase.
 
@@ -467,10 +468,110 @@ Validation on 2026-10-20: 1,559 AI unit tests passed; one pre-existing disabled 
 case was skipped. Default JSON and Jackson 3 each passed 77 SDK executions (60 Discovery,
 6 legacy A2A routing, 1 visibility-loss and 10 cross-resource cases), with zero failures/errors.
 Each adapter conditionally skipped the same four restart/pinned-cluster fixture cases;
-those directed environments were not exercised by this standalone run. All 13 WINIT plan
-groups passed within P05 scope. Pure-UT incremental coverage against `85accf6d7` is
+those directed environments were not exercised by this standalone run. The initial-state,
+ordering and cancellation scenarios described above passed. Pure-UT incremental coverage
+against `85accf6d7` is
 17/17 lines, 16/16 branches and 95/95 instructions (100% each); this is not whole-repository
 coverage. Spotless, compilation, Checkstyle, SDK packaging and RAT passed.
 
-Separate WATCH02 increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
+Separate initial-delivery increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
 effective 2/2 = 100%. External usage documentation remains a separate follow-up.
+
+### Persistent Watch recovery, data events and HTTP quota validation
+
+Contract references: [Agent API Java SDK contract](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract),
+[current-fact refresh and Listener delivery](../../specs/en/client/runtime-push-reconnect-spec.md#63-current-fact-refresh-and-listener-delivery),
+and [accepted Watch recovery](../../specs/en/sdk/sdk-java-impl-spec.md#accepted-agent-watch-recovery).
+
+Accepted subscriptions persist through background failures; only confirmed authorized
+Discover target absence emits UNAVAILABLE. Permission rejection (403) is an access
+failure, whereas visibility may deliberately make a reference unresolved. HTTP quota
+growth retains pending items and restores the acknowledged set.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent data events | Initial/missing version or label, deletion, identical recreation, empty/unhealthy snapshots, error/data separation | Covered | Both transports exercise unresolved selectors and deletion/recreation through the original Listener; health/filter cases preserve complete snapshots. Legacy A2A suppresses empty Card callbacks and receives a later version. A separate legacy Watch need not notify an identical recreation if it never observed the short absence. |
+| Accepted Watch recovery | Same-instance server restart and permission revoke/restore, retained intent, no access-error data event | Covered | Each JSON adapter executes the real standalone restart with SDK clients alive and isolated read-permission revoke/restore. UT covers 50105, binding/Executor rejection, coalesced in-flight recovery, canceled tasks and old-activation response isolation. Multi-node/real migration fixtures are not included in this increment's execution evidence. |
+| HTTP growth quota | Retain acknowledged and pending sets, reject further growth, cancel old item and recover accepted addition | Covered | `shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch` proves old Watch updates, no quota UNAVAILABLE, synchronous rejection after known exhaustion and recovery on the original pending Listener. Controlled UT covers cooldown, no-success-yet, generation and timer races. |
+
+Separate standalone Watch increment: 3 Covered / 0 Partial / 0 Pending;
+strict 3/3 = 100%, effective 3/3 = 100%. This bounded increment does not upgrade
+the registry's broader Agent/cluster/migration Partial surfaces.
+
+Validation on 2026-10-20: 175 API/client AI UT classes report 1,610 executions:
+1,609 pass, zero failures/errors, one pre-existing disabled MCP cache case.
+Fresh UT-only JaCoCo against `8216f8a0f`, including the new submission helper:
+299/299 changed lines (100%), 164/168 branches (97.62%) and 1,423/1,425 instructions
+(99.86%). Complete changed production files have 95.69% line coverage; the six
+Watch implementation files have 99.43%. These are not whole-repository figures.
+
+Default JSON and Jackson 3 each pass 83 SDK executions: 66 Discovery, 6 legacy
+A2A routing, 1 visibility restore and 10 cross-resource cases; 166 total, zero
+failures/errors. Each adapter conditionally skips the same three multi-node
+pinned/rolling cases. Real standalone restart is executed, not skipped. Real
+migration cutover is not exercised; 50105 recovery is controlled-UT evidence.
+Spotless, compilation, Checkstyle, release packaging and RAT pass. The isolated
+server uses separate ports and is stopped after verification.
+
+The full matrix was rerun after correcting fixture auth-cache readiness and A2A
+projection/intermediate-state assumptions, and after fixing pending-work coalescing
+and stale refresh results across binding reactivation. That historical validation
+did not include callback retry reliability; the latest-state increment below adds it.
+
+The pre-change review identified these callback limits:
+slow listeners retain an unbounded queue of complete snapshots; SDK or listener
+executor rejection can discard a state that an unchanged Discover will not redeliver;
+and a throwing `getExecutor()` can strand later delivery. Two blocked default callback
+workers can also delay healthy listeners while Discover continues updating the cache.
+The background-recovery coverage above does not validate bounded callback memory,
+reliable redelivery or progress of all listeners under blocking user code.
+
+### Latest-state Listener delivery validation
+
+Contract: [latest-state delivery](../../specs/en/sdk/sdk-java-impl-spec.md#latest-state-agent-listener-delivery).
+This increment supersedes the historical callback limitations above.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Latest-state callbacks | Slow callbacks coalesce intermediate snapshots/absence; independent Listener progress; bounded retained state; no I/O thread callbacks | Covered | Public gRPC/HTTP `shouldCoalesceSlowListenerWithoutBlockingWatchObservation`; UT holds a callback across 2,048 changes and verifies only the final state remains, tests the real default pool under saturation, ordering and independent result copies. |
+| Failed delivery recovery | Executor/getExecutor failure recovers without another change; initial state retained; invoked callback exceptions not replayed | Covered | `shouldRecoverListenerSubmissionWithoutAnotherAgentChange` and `shouldObserveLaterChangesAfterListenerThrows` run on gRPC/HTTP. Controlled UT covers SDK pool/check submission rejection, copy failure and late errors from an Executor that has already run/enqueued work. |
+| Cancellation and diagnostics | Cancel/shutdown suppress stale work; task identity; rate-limited actionable failure/recovery/slow logs | Covered | Manager UT covers cancellation during lookup/submission, an already-running check, resubscription and shutdown; transport/helper regressions preserve observation. Real SDK failure/recovery logs retain Watch/Listener context and stack traces. |
+
+Separate Listener delivery increment: 3 Covered / 0 Partial / 0 Pending; strict and
+effective coverage are 3/3 = 100%. Broader cluster/migration rows remain unchanged.
+
+Validation on 2026-10-20: 175 API/client AI UT classes, 1629 passing
+executions, zero failures/errors, one pre-existing disabled MCP test. Fresh UT-only
+JaCoCo for all uncommitted production changes against `8216f8a0f`: lines
+474/474 (100.00%), branches 268/276 (97.10%), instructions
+2470/2470 (100.00%). For this callback/logging change against the saved
+pre-change source: lines 194/194 (100.00%), branches
+105/110 (95.45%), instructions 1138/1138 (100.00%).
+These are scoped incremental figures, not whole-repository coverage.
+
+Default JSON and Jackson 3 each pass 89 SDK executions
+(178 total), including real standalone restart with clients alive. Each adapter
+conditionally skips three multi-node pinned/rolling cases. Migration 50105 remains
+controlled-UT evidence, not a real cutover fixture. Spotless, Checkstyle, RAT,
+compilation and release SDK packaging pass; the isolated server is stopped afterward.
+A saturated shared callback pool can delay other Listeners while retaining bounded
+latest state and continuing Discover. External SDK usage documentation remains a follow-up.
+
+### Watch composition refactor validation
+
+The manager now composes subscription state and Listener delivery while retaining one
+state monitor and the existing public contract. The same SDK scenario matrix was rerun
+against the rebuilt client: 89 passes and three conditional multi-node skips per JSON
+adapter, 178 passes total with no failures/errors. Both adapters execute a real standalone
+restart with the original SDK clients alive. No new public surface or coverage status is
+claimed. Real migration and multi-node execution remain outside this run.
+
+175 API/client AI UT classes report 1,629 passes and one pre-existing disabled MCP case;
+all 95 manager behavior tests pass through the composed implementation. UT-only coverage
+against `8216f8a0f`, including extracted files, is 609/609 changed lines (100%), 278/290
+branches (95.86%) and 2,942/2,952 instructions (99.66%). Refactoring moves existing lines
+into the increment, so these counts are not directly comparable to a behavioral change.
+Spotless, compilation, Checkstyle, release packaging and RAT pass.
+
+See [Agent Watch implementation responsibilities](../../specs/en/sdk/sdk-java-impl-spec.md#agent-watch-implementation-responsibilities)
+for component ownership and the distinction between HTTP long polling and Discover polling.

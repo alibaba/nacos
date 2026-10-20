@@ -27,8 +27,11 @@ import com.alibaba.nacos.client.ai.remote.AgentHttpWatchClient;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import org.slf4j.Logger;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
+import java.util.function.LongSupplier;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,9 +51,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * One request-scoped HTTP batch long-poll coordinator for an Agent SDK namespace.
  *
- * <p>The transport owns only Wire registrations, local generation, and request cancellation.
- * Changed ids are handed to {@link AgentWatchManager} callbacks, which perform authoritative
- * Discover refreshes outside the HTTP request thread.</p>
+ * <p>Each request supplies Watch identifiers, discovery projections, and materialized
+ * fingerprints. The server holds the request until a projection changes or the request
+ * times out. Changed identifiers trigger authoritative Discover through
+ * {@link AgentWatchManager}, outside the HTTP request thread. An unchanged timeout renews
+ * the long poll without requesting complete snapshots for every Watch.</p>
+ *
+ * <p>This transport owns Wire registrations, local generation, quota recovery, and request
+ * cancellation. It uses the HTTP Watch endpoint; {@link PollingAgentWatchTransport} instead
+ * uses a local timer to trigger ordinary Discover. These are separate observation methods,
+ * selected by {@link AgentWatchTransportRouter}, and share the manager's state and Listener
+ * delivery path.</p>
  *
  * @author Nacos
  */
@@ -74,7 +85,27 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     
     private final long retryDelayMillis;
     
-    private final int failuresBeforeFallback;
+    private final AgentWatchTaskScheduler taskScheduler;
+    
+    private final AgentWatchRetryPolicy retryPolicy;
+    
+    private final LongSupplier nanoTime;
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
+    
+    private final Set<String> acknowledged = new HashSet<String>();
+    
+    private boolean quotaLimited;
+    
+    private boolean quotaRetryReady;
+    
+    private int quotaFailures;
+    
+    private long quotaRetryAt;
+    
+    private ScheduledFuture<?> quotaFuture;
+    
+    private long quotaRetryGeneration;
     
     private final Map<String, WireWatch> watches = new LinkedHashMap<String, WireWatch>();
     
@@ -89,6 +120,8 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     private ScheduledFuture<?> retryFuture;
     
     private long generation;
+    
+    private boolean failedGrowth;
     
     private int consecutiveFailures;
     
@@ -112,6 +145,22 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     HttpAgentWatchTransport(AgentHttpWatchClient watchClient, ExecutorService requestExecutor,
         ScheduledExecutorService retryExecutor, long longPollTimeoutMillis,
         long retryDelayMillis, int failuresBeforeFallback) {
+        this(watchClient, requestExecutor, retryExecutor, longPollTimeoutMillis,
+            retryDelayMillis, failuresBeforeFallback, System::nanoTime);
+    }
+    
+    HttpAgentWatchTransport(AgentHttpWatchClient watchClient, ExecutorService requestExecutor,
+        ScheduledExecutorService retryExecutor, long longPollTimeoutMillis,
+        long retryDelayMillis, int failuresBeforeFallback, LongSupplier nanoTime) {
+        this(watchClient, requestExecutor, retryExecutor, longPollTimeoutMillis,
+            retryDelayMillis, failuresBeforeFallback, nanoTime, new AgentWatchTaskScheduler());
+    }
+    
+    HttpAgentWatchTransport(AgentHttpWatchClient watchClient, ExecutorService requestExecutor,
+        ScheduledExecutorService retryExecutor, long longPollTimeoutMillis,
+        long retryDelayMillis, int failuresBeforeFallback, LongSupplier nanoTime,
+        AgentWatchTaskScheduler taskScheduler) {
+        this.taskScheduler = taskScheduler;
         if (longPollTimeoutMillis < 1000L || longPollTimeoutMillis > 60000L) {
             throw new IllegalArgumentException(
                 "longPollTimeoutMillis must be between 1000 and 60000");
@@ -127,7 +176,9 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         this.retryExecutor = retryExecutor;
         this.longPollTimeoutMillis = longPollTimeoutMillis;
         this.retryDelayMillis = retryDelayMillis;
-        this.failuresBeforeFallback = failuresBeforeFallback;
+        this.nanoTime = nanoTime;
+        this.retryPolicy = new AgentWatchRetryPolicy.Jittered(
+            Math.max(1L, retryDelayMillis), Math.max(30000L, retryDelayMillis));
     }
     
     void setLifecycleListener(WireLifecycleListener lifecycleListener) {
@@ -149,6 +200,14 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             }
             WireWatch existing = watches.get(registration.getClientWatchId());
             if (existing == null) {
+                if (quotaLimited) {
+                    if (!pendingAdditions.isEmpty() || nanoTime.getAsLong() - quotaRetryAt < 0L) {
+                        throw new NacosApiException(NacosException.OVER_THRESHOLD,
+                            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT,
+                            "Agent HTTP Watch quota is exhausted; new subscriptions are deferred.");
+                    }
+                    quotaRetryReady = true;
+                }
                 watches.put(registration.getClientWatchId(),
                     new WireWatch(registration, callback));
                 pendingAdditions.add(registration.getClientWatchId());
@@ -181,6 +240,14 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         }
         awaitingRefresh.remove(clientWatchId);
         pendingAdditions.remove(clientWatchId);
+        boolean releasedCapacity = acknowledged.remove(clientWatchId);
+        if (pendingAdditions.isEmpty()) {
+            cancelQuotaRetry();
+            quotaRetryReady = false;
+        } else if (quotaLimited && releasedCapacity) {
+            // Coalesce capacity released by cancellation into one early retry.
+            scheduleQuotaRetry(Math.max(1L, retryDelayMillis));
+        }
         LOGGER.info("[RAD-WATCH] Client HTTP Watch stopped: clientWatchId={}",
             AgentWatchLogUtils.token(clientWatchId));
         advanceGenerationAndDispatch();
@@ -197,11 +264,14 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             watches.clear();
             awaitingRefresh.clear();
             pendingAdditions.clear();
+            acknowledged.clear();
+            cancelQuotaRetry();
             cancelRequest(currentRequest);
             cancel(retryFuture);
             currentRequest = null;
             retryFuture = null;
         }
+        taskScheduler.shutdown();
         requestExecutor.shutdownNow();
         retryExecutor.shutdownNow();
     }
@@ -225,6 +295,10 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         if (request.getWatches().isEmpty()) {
             return;
         }
+        failedGrowth = false;
+        for (AgentWatchBatchItem item : request.getWatches()) {
+            failedGrowth |= pendingAdditions.contains(item.getClientWatchId());
+        }
         try {
             LOGGER.debug("[RAD-WATCH] Client HTTP long poll started: generation={}, "
                 + "watchCount={}, watchIds={}", expectedGeneration,
@@ -244,8 +318,14 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     
     private AgentWatchBatchRequest buildRequest(long expectedGeneration) {
         List<AgentWatchBatchItem> items = new ArrayList<AgentWatchBatchItem>(watches.size());
+        // Do not acknowledge growth against a temporarily reduced old set. The union
+        // must fit when its refreshing members return to the next HTTP request.
+        boolean canGrow = Collections.disjoint(acknowledged, awaitingRefresh);
         for (WireWatch watch : watches.values()) {
-            if (awaitingRefresh.contains(watch.registration.getClientWatchId())) {
+            String id = watch.registration.getClientWatchId();
+            if (awaitingRefresh.contains(id)
+                || (!canGrow && pendingAdditions.contains(id))
+                || (quotaLimited && !quotaRetryReady && !acknowledged.contains(id))) {
                 continue;
             }
             AgentWatchBatchItem item = new AgentWatchBatchItem();
@@ -265,7 +345,7 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         long startedNanos = System.nanoTime();
         try {
             AgentWatchBatchResponse response = watchClient.watchAgents(request);
-            handleResponse(request.getGeneration(), response, elapsedMillis(startedNanos));
+            handleResponse(request, response, elapsedMillis(startedNanos));
         } catch (NacosException e) {
             handleFailure(request.getGeneration(), e);
         } catch (RuntimeException e) {
@@ -274,8 +354,9 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         }
     }
     
-    private void handleResponse(long requestGeneration, AgentWatchBatchResponse response,
+    private void handleResponse(AgentWatchBatchRequest request, AgentWatchBatchResponse response,
         long durationMillis) {
+        long requestGeneration = request.getGeneration();
         List<WireWatch> changed = new ArrayList<WireWatch>();
         NacosException invalidResponse = null;
         synchronized (this) {
@@ -286,18 +367,32 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             if (response == null || response.getGeneration() != requestGeneration) {
                 invalidResponse = new NacosException(NacosException.SERVER_ERROR,
                     "Agent HTTP Watch returned a mismatched generation.");
-            } else if (response.isChanged() && response.getChangedClientWatchIds() != null) {
-                consecutiveFailures = 0;
-                pendingAdditions.clear();
-                for (String clientWatchId : response.getChangedClientWatchIds()) {
-                    WireWatch watch = watches.get(clientWatchId);
-                    if (watch != null && awaitingRefresh.add(clientWatchId)) {
-                        changed.add(watch);
-                    }
-                }
             } else {
                 consecutiveFailures = 0;
-                pendingAdditions.clear();
+                Set<String> sent = new HashSet<String>();
+                boolean confirmedGrowth = false;
+                for (AgentWatchBatchItem item : request.getWatches()) {
+                    String id = item.getClientWatchId();
+                    sent.add(id);
+                    // Current generation and the coordinator lock guarantee these sent
+                    // identities have not been removed or replaced.
+                    acknowledged.add(id);
+                    confirmedGrowth |= pendingAdditions.remove(id);
+                }
+                if (confirmedGrowth && pendingAdditions.isEmpty()) {
+                    quotaLimited = false;
+                    quotaRetryReady = false;
+                    quotaFailures = 0;
+                    cancelQuotaRetry();
+                }
+                if (response.isChanged() && response.getChangedClientWatchIds() != null) {
+                    for (String id : response.getChangedClientWatchIds()) {
+                        WireWatch watch = watches.get(id);
+                        if (sent.contains(id) && awaitingRefresh.add(id)) {
+                            changed.add(watch);
+                        }
+                    }
+                }
             }
         }
         if (invalidResponse != null) {
@@ -313,7 +408,16 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
                 + "result=TIMEOUT, durationMillis={}", requestGeneration, durationMillis);
         }
         for (WireWatch watch : changed) {
-            boolean accepted = watch.callback.invalidate(null, true);
+            boolean accepted = false;
+            try {
+                accepted = watch.callback.invalidate(null, true);
+            } catch (RuntimeException e) {
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("[RAD-WATCH] HTTP invalidation failed: generation={}, "
+                        + "clientWatchId={}", requestGeneration,
+                        AgentWatchLogUtils.token(watch.registration.getClientWatchId()), e);
+                }
+            }
             if (!accepted) {
                 synchronized (this) {
                     awaitingRefresh.remove(watch.registration.getClientWatchId());
@@ -329,46 +433,46 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     
     private void handleFailure(long requestGeneration, NacosException exception) {
         WireLifecycleListener listener = null;
-        WireWatch rejectedAddition = null;
-        List<WireWatch> migrationRejected = new ArrayList<WireWatch>();
         synchronized (this) {
             if (!acceptResponse(requestGeneration)) {
                 return;
             }
             currentRequest = null;
-            if (exception.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
-                migrationRejected.addAll(watches.values());
-                watches.clear();
-                pendingAdditions.clear();
-                awaitingRefresh.clear();
-                cancel(retryFuture);
-                retryFuture = null;
-            } else if (isCapacity(exception) && !pendingAdditions.isEmpty()) {
-                String rejectedId = latestPendingAddition();
-                pendingAdditions.remove(rejectedId);
-                awaitingRefresh.remove(rejectedId);
-                rejectedAddition = watches.remove(rejectedId);
-                advanceGenerationAndDispatch();
-            } else if (requiresFallback(exception)
-                || ++consecutiveFailures >= failuresBeforeFallback) {
+            consecutiveFailures = Math.min(30, consecutiveFailures + 1);
+            if (isCapacity(exception)) {
+                quotaLimited = true;
+                quotaRetryReady = false;
+                quotaFailures = Math.min(30, quotaFailures + 1);
+                long delay = retryPolicy.nextDelayMillis(quotaFailures, "http-quota");
+                quotaRetryAt = nanoTime.getAsLong() + TimeUnit.MILLISECONDS.toNanos(delay);
+                if (!pendingAdditions.isEmpty()) {
+                    scheduleQuotaRetry(delay);
+                    // Only a failed growth attempt rolls back immediately. If even the
+                    // acknowledged set is refused, retry it with backoff instead.
+                    if (failedGrowth) {
+                        advanceGenerationAndDispatch();
+                    } else {
+                        scheduleRetry(requestGeneration, exception);
+                    }
+                } else {
+                    scheduleRetry(requestGeneration, exception);
+                }
+            } else if (requiresFallback(exception) && lifecycleListener != null) {
                 available = false;
                 cancel(retryFuture);
                 retryFuture = null;
+                cancelQuotaRetry();
                 listener = lifecycleListener;
             } else {
                 scheduleRetry(requestGeneration, exception);
             }
-        }
-        LOGGER.warn("[RAD-WATCH] Client HTTP long poll failed: generation={}, errorCode={}, "
-            + "errorType={}, consecutiveFailures={}, fallback={}", requestGeneration,
-            exception.getErrCode(), exception.getClass().getSimpleName(), consecutiveFailures,
-            listener != null);
-        for (WireWatch watch : migrationRejected) {
-            watch.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
-        }
-        if (rejectedAddition != null) {
-            rejectedAddition.callback.unavailable(exception.getErrCode(),
-                exception.getErrMsg(), true);
+            if (WARN_LOG_LIMITER.tryAcquire()) {
+                LOGGER.warn("[RAD-WATCH] Client HTTP poll failed; retaining subscriptions: "
+                    + "generation={}, errorCode={}, failures={}, waitingIds={}, fallback={}",
+                    requestGeneration, exception.getErrCode(),
+                    consecutiveFailures, AgentWatchLogUtils.tokens(pendingAdditions),
+                    listener != null, exception);
+            }
         }
         if (listener != null) {
             listener.onWireUnavailable(exception);
@@ -379,27 +483,39 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         if (closed || !available || generation != requestGeneration || retryFuture != null) {
             return;
         }
-        LOGGER.debug("Agent HTTP Watch generation {} will retry after a transport failure.",
-            requestGeneration, exception);
-        try {
-            retryFuture = retryExecutor.schedule(new Runnable() {
-                
-                @Override
-                public void run() {
-                    synchronized (HttpAgentWatchTransport.this) {
-                        retryFuture = null;
-                    }
-                    dispatch(requestGeneration);
+        long delay = retryPolicy.nextDelayMillis(Math.max(1, consecutiveFailures), "http");
+        retryFuture = taskScheduler.schedule(retryExecutor, () -> {
+            synchronized (HttpAgentWatchTransport.this) {
+                if (!acceptResponse(requestGeneration)) {
+                    return;
                 }
-            }, retryDelayMillis, TimeUnit.MILLISECONDS);
-        } catch (RejectedExecutionException e) {
-            available = false;
-            WireLifecycleListener listener = lifecycleListener;
-            if (listener != null) {
-                listener.onWireUnavailable(new NacosException(NacosException.CLIENT_ERROR,
-                    "Agent HTTP Watch retry executor rejected the generation.", e));
+                retryFuture = null;
+                dispatch(requestGeneration);
             }
-        }
+        }, delay);
+    }
+    
+    private void scheduleQuotaRetry(long delayMillis) {
+        cancelQuotaRetry();
+        long expectedRetryGeneration = quotaRetryGeneration;
+        quotaFuture = taskScheduler.schedule(retryExecutor, () -> {
+            synchronized (HttpAgentWatchTransport.this) {
+                if (quotaRetryGeneration != expectedRetryGeneration) {
+                    return;
+                }
+                quotaFuture = null;
+                // Closing, falling back, clearing quota, or removing the last pending
+                // addition all invalidate the retry generation above.
+                quotaRetryReady = true;
+                advanceGenerationAndDispatch();
+            }
+        }, delayMillis);
+    }
+    
+    private void cancelQuotaRetry() {
+        quotaRetryGeneration++;
+        cancel(quotaFuture);
+        quotaFuture = null;
     }
     
     private boolean acceptResponse(long requestGeneration) {
@@ -409,9 +525,7 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
     private boolean requiresFallback(NacosException exception) {
         int code = exception.getErrCode();
         return code == NacosException.NOT_FOUND || code == NacosException.RESOURCE_NOT_FOUND
-            || code == NacosException.SERVER_NOT_IMPLEMENTED || code == NacosException.NO_HANDLER
-            || code == NacosException.NO_RIGHT || code == NacosException.INVALID_PARAM
-            || code == NacosException.CLIENT_INVALID_PARAM || isCapacity(exception);
+            || code == NacosException.SERVER_NOT_IMPLEMENTED || code == NacosException.NO_HANDLER;
     }
     
     private boolean isCapacity(NacosException exception) {
@@ -425,14 +539,6 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
             throw new NacosException(NacosException.CLIENT_DISCONNECT,
                 "Agent HTTP Watch transport has been shut down.");
         }
-    }
-    
-    private String latestPendingAddition() {
-        String result = null;
-        for (String each : pendingAdditions) {
-            result = each;
-        }
-        return result;
     }
     
     private String watchIds(AgentWatchBatchRequest request) {

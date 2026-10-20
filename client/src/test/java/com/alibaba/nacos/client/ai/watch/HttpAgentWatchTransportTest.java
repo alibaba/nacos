@@ -42,6 +42,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -51,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -70,6 +72,12 @@ class HttpAgentWatchTransportTest {
     
     private HttpAgentWatchTransport transport;
     
+    private final AtomicLong clock = new AtomicLong();
+    
+    private final AtomicReference<Runnable> submissionRetry = new AtomicReference<Runnable>();
+    
+    private AgentWatchTaskScheduler taskScheduler;
+    
     @BeforeEach
     void setUp() {
         requestExecutor = new QueueExecutorService();
@@ -80,9 +88,16 @@ class HttpAgentWatchTransportTest {
                 retryTask.set(invocation.getArgument(0));
                 return mock(ScheduledFuture.class);
             });
+        ScheduledExecutorService driver = mock(ScheduledExecutorService.class);
+        when(driver.scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any()))
+            .thenAnswer(invocation -> {
+                submissionRetry.set(invocation.getArgument(0));
+                return mock(ScheduledFuture.class);
+            });
+        taskScheduler = new AgentWatchTaskScheduler(driver, clock::get, (count, key) -> 1L);
         client = new ScriptedClient();
         transport = new HttpAgentWatchTransport(client, requestExecutor, retryExecutor,
-            1000L, 1L, 3);
+            1000L, 1L, 3, clock::get, taskScheduler);
     }
     
     @AfterEach
@@ -230,112 +245,118 @@ class HttpAgentWatchTransportTest {
     }
     
     @Test
-    void persistentTransientFailureFallsBackAfterBoundedRetries() throws Exception {
+    void persistentFailureRetainsWatchUntilSameTransportRecovers() throws Exception {
+        TestCallback callback = new TestCallback();
         TestLifecycleListener listener = new TestLifecycleListener();
         transport.setLifecycleListener(listener);
         client.failure = new NacosException(NacosException.SERVER_ERROR, "temporary");
-        transport.start(registration("watch-a", "agent-a", "fingerprint-a"),
-            new TestCallback());
-        
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
         requestExecutor.runNext();
+        for (int i = 0; i < 35; i++) {
+            runRetry();
+            requestExecutor.runNext();
+        }
         assertEquals(0, listener.unavailable);
+        assertEquals(0, callback.unavailable);
+        assertTrue(transport.isAvailable());
+        client.failure = null;
+        client.responses.add(changed(1L, "watch-a"));
         runRetry();
         requestExecutor.runNext();
-        assertEquals(0, listener.unavailable);
-        runRetry();
-        requestExecutor.runNext();
-        assertEquals(1, listener.unavailable);
-        assertFalse(transport.isAvailable());
-        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED,
-            assertThrows(NacosException.class,
-                () -> transport.start(
-                    registration("watch-b", "agent-b", "fingerprint-b"),
-                    new TestCallback()))
-                .getErrCode());
+        assertEquals(1, callback.invalidations);
     }
     
     @Test
-    void unsupportedDeniedCapacityAndMismatchedGenerationLeaveNoRetryLoop() throws Exception {
-        assertImmediateFallback(new NacosException(NacosException.NOT_FOUND, "missing"));
-        assertImmediateFallback(new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
-            "unsupported"));
-        assertImmediateFallback(new NacosException(NacosException.NO_RIGHT, "denied"));
-        
+    void onlyUnsupportedBindingFallsBackAndInvalidResponseRetries() throws Exception {
+        assertImmediateFallback(new NacosException(NacosException.NOT_FOUND, "missing binding"));
+        assertImmediateFallback(
+            new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported"));
+        assertImmediateFallback(new NacosException(NacosException.NO_HANDLER, "no handler"));
         transport.shutdown();
         requestExecutor = new QueueExecutorService();
         client = new ScriptedClient();
         retryTask.set(null);
-        TestLifecycleListener mismatch = new TestLifecycleListener();
-        transport = new HttpAgentWatchTransport(client, requestExecutor, retryExecutor,
-            1000L, 1L, 1);
-        transport.setLifecycleListener(mismatch);
-        AgentWatchBatchResponse invalid = timeout(99L);
-        client.responses.add(invalid);
-        transport.start(registration("watch-a", "agent-a", "fingerprint-a"),
-            new TestCallback());
+        transport =
+            new HttpAgentWatchTransport(client, requestExecutor, retryExecutor, 1000L, 1L, 1);
+        TestCallback callback = new TestCallback();
+        client.responses.add(timeout(99L));
+        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
         requestExecutor.runNext();
-        assertEquals(1, mismatch.unavailable);
+        assertTrue(transport.isAvailable());
+        assertNotNull(retryTask.get());
+        runRetry();
+        client.responses.add(changed(1L, "watch-a"));
+        requestExecutor.runNext();
+        assertEquals(1, callback.invalidations);
+        assertEquals(0, callback.unavailable);
     }
     
-    @Test
-    void migrationRejectionTerminatesIntentWithoutRetryOrFallback() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {403, 400, 409, 50105})
+    void backgroundRejectionRetriesWithoutCallbackOrBindingFallback(int code) throws Exception {
         TestCallback callback = new TestCallback();
         TestLifecycleListener lifecycle = new TestLifecycleListener();
         transport.setLifecycleListener(lifecycle);
-        client.failure = new NacosException(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
-            "migration");
+        client.failure = new NacosException(code, "rejected");
         transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
         requestExecutor.runNext();
-        assertTrue(callback.terminal);
+        assertEquals(0, callback.unavailable);
         assertEquals(0, lifecycle.unavailable);
-        assertNull(retryTask.get());
+        assertNotNull(retryTask.get());
+        client.failure = null;
+        client.responses.add(changed(1L, "watch-a"));
+        runRetry();
+        requestExecutor.runNext();
+        assertEquals(1, callback.invalidations);
     }
     
     @Test
-    void capacityRejectionWithoutPendingAdditionFallsBackWithoutDroppingAcknowledgedWatch()
+    void capacityRejectionOfAcknowledgedSetBacksOffWithoutDeletingItems()
         throws Exception {
         TestCallback callback = new TestCallback();
-        TestLifecycleListener lifecycle = new TestLifecycleListener();
-        transport.setLifecycleListener(lifecycle);
         transport.start(registration("watch-a", "agent-a", "fingerprint-a"), callback);
         requestExecutor.runUntilRequests(client, 1, 10);
-        client.failure = new NacosApiException(NacosException.OVER_THRESHOLD,
-            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "capacity changed");
+        client.failure = capacity();
         requestExecutor.runUntilRequests(client, 2, 10);
-        assertEquals(1, lifecycle.unavailable);
         assertEquals(0, callback.unavailable);
-        assertNull(retryTask.get());
-        assertFalse(transport.isAvailable());
+        assertTrue(transport.isAvailable());
+        assertNotNull(retryTask.get());
+        client.failure = null;
+        runRetry();
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("watch-a");
     }
     
     @Test
-    void capacityRejectsOnlyLatestAdditionAndKeepsExistingBatchAvailable() throws Exception {
-        TestCallback first = new TestCallback();
-        TestCallback rejected = new TestCallback();
-        transport.start(registration("watch-a", "agent-a", "fingerprint-a"), first);
+    void quotaRollbackRetainsAllAdditionsAndOnlyGrowthSuccessClearsRestriction() throws Exception {
+        TestCallback a = new TestCallback();
+        TestCallback c = new TestCallback();
+        transport.start(registration("a", "agent-a", "a1"), a);
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
         requestExecutor.runUntilRequests(client, 1, 10);
-        
-        client.failure = new NacosApiException(NacosException.OVER_THRESHOLD,
-            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "full");
-        transport.start(registration("watch-b", "agent-b", "fingerprint-b"), rejected);
+        client.failure = capacity();
+        transport.start(registration("c", "agent-c", "c1"), c);
+        transport.start(registration("d", "agent-d", "d1"), new TestCallback());
         requestExecutor.runUntilRequests(client, 2, 10);
-        assertEquals(1, rejected.unavailable);
-        assertTrue(rejected.terminal);
-        assertEquals(0, first.unavailable);
-        assertTrue(transport.isAvailable());
-        
+        assertIds("a", "b", "c", "d");
+        assertEquals(0, c.unavailable);
+        assertThrows(NacosException.class,
+            () -> transport.start(registration("e", "agent-e", "e1"), new TestCallback()));
         client.failure = null;
         requestExecutor.runUntilRequests(client, 3, 10);
-        AgentWatchBatchRequest retained = client.requests.get(client.requests.size() - 1);
-        assertEquals(1, retained.getWatches().size());
-        assertEquals("watch-a", retained.getWatches().get(0).getClientWatchId());
-        
-        TestCallback replacement = new TestCallback();
-        transport.start(registration("watch-c", "agent-c", "fingerprint-c"), replacement);
+        assertIds("a", "b");
+        transport.start(registration("a", "agent-a", "a2"), a);
         requestExecutor.runUntilRequests(client, 4, 10);
-        AgentWatchBatchRequest reused = client.requests.get(client.requests.size() - 1);
-        assertEquals(2, reused.getWatches().size());
-        assertEquals(0, replacement.unavailable);
+        assertIds("a", "b");
+        assertThrows(NacosException.class,
+            () -> transport.start(registration("e", "agent-e", "e1"), new TestCallback()));
+        runRetry();
+        requestExecutor.runUntilRequests(client, 5, 10);
+        assertIds("a", "b", "c", "d");
+        assertEquals("a2", client.requests.get(4).getWatches().get(0).getMaterializedFingerprint());
+        transport.start(registration("e", "agent-e", "e1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 6, 10);
+        assertIds("a", "b", "c", "d", "e");
     }
     
     @Test
@@ -358,8 +379,8 @@ class HttpAgentWatchTransportTest {
         transport.start(registration("watch-runtime", "agent-runtime", "fingerprint"),
             new TestCallback());
         requestExecutor.runNext();
-        assertEquals(1, runtimeFailure.unavailable);
-        assertEquals(NacosException.SERVER_ERROR, runtimeFailure.exception.getErrCode());
+        assertEquals(0, runtimeFailure.unavailable);
+        assertNotNull(retryTask.get());
         
         transport.shutdown();
         requestExecutor = new QueueExecutorService();
@@ -371,8 +392,8 @@ class HttpAgentWatchTransportTest {
         transport.setLifecycleListener(requestRejected);
         transport.start(registration("watch-request-rejected", "agent-request", "fingerprint"),
             new TestCallback());
-        assertEquals(1, requestRejected.unavailable);
-        assertEquals(NacosException.CLIENT_ERROR, requestRejected.exception.getErrCode());
+        assertEquals(0, requestRejected.unavailable);
+        assertNotNull(retryTask.get());
         
         transport.shutdown();
         requestExecutor = new QueueExecutorService();
@@ -388,8 +409,8 @@ class HttpAgentWatchTransportTest {
         transport.start(registration("watch-retry-rejected", "agent-retry", "fingerprint"),
             new TestCallback());
         requestExecutor.runNext();
-        assertEquals(1, retryRejected.unavailable);
-        assertEquals(NacosException.CLIENT_ERROR, retryRejected.exception.getErrCode());
+        assertEquals(0, retryRejected.unavailable);
+        assertTrue(transport.isAvailable());
     }
     
     @Test
@@ -419,7 +440,243 @@ class HttpAgentWatchTransportTest {
                 .getErrCode());
     }
     
+    @Test
+    void cancelAcknowledgedItemAdvancesPendingGrowthWithoutResubscribe() throws Exception {
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        client.failure = capacity();
+        requestExecutor.runUntilRequests(client, 2, 10);
+        Runnable oldRetry = retryTask.get();
+        transport.stop("a");
+        oldRetry.run();
+        client.failure = null;
+        runRetry();
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("b");
+    }
+    
+    @Test
+    void cancelAllPendingAllowsOnlyOneRealGrowthProbeAfterCooldown() throws Exception {
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        client.failure = capacity();
+        requestExecutor.runUntilRequests(client, 2, 10);
+        transport.stop("b");
+        assertThrows(NacosException.class,
+            () -> transport.start(registration("c", "agent-c", "c1"), new TestCallback()));
+        clock.set(TimeUnit.SECONDS.toNanos(60));
+        transport.start(registration("c", "agent-c", "c1"), new TestCallback());
+        assertThrows(NacosException.class,
+            () -> transport.start(registration("d", "agent-d", "d1"), new TestCallback()));
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("a", "c");
+        client.failure = null;
+        requestExecutor.runUntilRequests(client, 4, 10);
+        assertIds("a");
+        runRetry();
+        requestExecutor.runUntilRequests(client, 5, 10);
+        assertIds("a", "c");
+        transport.start(registration("d", "agent-d", "d1"), new TestCallback());
+    }
+    
+    @Test
+    void neverAcknowledgedQuotaRetriesWholeCurrentSetAndNeverEmptyRequest() throws Exception {
+        client.failure = capacity();
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        assertIds("a", "b");
+        runRetry();
+        requestExecutor.runUntilRequests(client, 2, 10);
+        assertIds("a", "b");
+        transport.stop("a");
+        client.failure = null;
+        runRetry();
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("b");
+        transport.stop("b");
+        while (!requestExecutor.tasks.isEmpty()) {
+            requestExecutor.runNext();
+        }
+        assertEquals(3, client.requests.size());
+    }
+    
+    @Test
+    void rejectedRetryExecutorRetainsTaskUntilItCanSubmitAgain() throws Exception {
+        client.failure = new NacosException(50105, "migration");
+        org.mockito.Mockito.doThrow(new RejectedExecutionException("busy"))
+            .when(retryExecutor).schedule(any(Runnable.class), anyLong(), any());
+        TestCallback callback = new TestCallback();
+        transport.start(registration("a", "agent-a", "a1"), callback);
+        requestExecutor.runNext();
+        assertNotNull(submissionRetry.get());
+        org.mockito.Mockito.doAnswer(invocation -> {
+            retryTask.set(invocation.getArgument(0));
+            return mock(ScheduledFuture.class);
+        }).when(retryExecutor).schedule(any(Runnable.class), anyLong(), any());
+        clock.set(TimeUnit.SECONDS.toNanos(60));
+        submissionRetry.get().run();
+        client.failure = null;
+        client.responses.add(changed(1L, "a"));
+        runRetry();
+        requestExecutor.runNext();
+        assertEquals(1, callback.invalidations);
+        assertEquals(0, callback.unavailable);
+    }
+    
+    @Test
+    void growthWaitsForRefreshingAcknowledgedMembersToRejoinTheBatch() throws Exception {
+        client.responses.add(changed(2L, "a"));
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        transport.start(registration("c", "agent-c", "c1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 2, 10);
+        assertIds("b");
+        transport.update(registration("a", "agent-a", "a2"));
+        client.failure = capacity();
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("a", "b", "c");
+        client.failure = null;
+        requestExecutor.runUntilRequests(client, 4, 10);
+        assertIds("a", "b");
+        transport.stop("b");
+        runRetry();
+        requestExecutor.runUntilRequests(client, 5, 10);
+        assertIds("a", "c");
+    }
+    
+    @Test
+    void lateRunningRetryCannotClearNewGenerationWork() throws Exception {
+        client.failure = new NacosException(500, "temporary");
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        requestExecutor.runNext();
+        Runnable old = retryTask.get();
+        Thread executing;
+        synchronized (transport) {
+            executing = new Thread(old);
+            executing.start();
+            waitUntil(() -> executing.getState() == Thread.State.BLOCKED, 2000L);
+            transport.update(registration("a", "agent-a", "a2"));
+            requestExecutor.runUntilRequests(client, 2, 10);
+        }
+        executing.join(2000L);
+        assertFalse(executing.isAlive());
+        client.failure = null;
+        runRetry();
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertEquals("a2", client.requests.get(2).getWatches().get(0).getMaterializedFingerprint());
+    }
+    
+    @Test
+    void canceledRunningQuotaRetryCannotOverrideReplacementTimer() throws Exception {
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        transport.start(registration("c", "agent-c", "c1"), new TestCallback());
+        client.failure = capacity();
+        requestExecutor.runUntilRequests(client, 2, 10);
+        Runnable old = retryTask.get();
+        Thread executing;
+        synchronized (transport) {
+            executing = new Thread(old);
+            executing.start();
+            waitUntil(() -> executing.getState() == Thread.State.BLOCKED, 2000L);
+            transport.stop("a");
+        }
+        executing.join(2000L);
+        assertFalse(executing.isAlive());
+        client.failure = null;
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("b");
+        runRetry();
+        requestExecutor.runUntilRequests(client, 4, 10);
+        assertIds("b", "c");
+    }
+    
+    @Test
+    void repeatedQuotaFailureOfRollbackSetRetainsPendingGrowthAndBacksOff() throws Exception {
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 1, 10);
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        client.failure = capacity();
+        requestExecutor.runUntilRequests(client, 2, 10);
+        requestExecutor.runUntilRequests(client, 3, 10);
+        assertIds("a");
+        client.failure = null;
+        runRetry();
+        requestExecutor.runUntilRequests(client, 4, 10);
+        assertIds("a");
+        assertTrue(transport.isAvailable());
+    }
+    
+    @Test
+    void invalidationFailureDoesNotStrandRefreshOrOtherItems() throws Exception {
+        resetLogGate();
+        AgentWatchTransportCallback callback = mock(AgentWatchTransportCallback.class);
+        when(callback.invalidate(null, true)).thenThrow(new IllegalStateException("first"),
+            new IllegalStateException("second")).thenReturn(true);
+        transport.start(registration("a", "agent-a", "a1"), callback);
+        for (int i = 1; i <= 3; i++) {
+            AgentWatchBatchResponse response = changed(1L, "a");
+            response.setChangedClientWatchIds(java.util.Arrays.asList("unknown", "a", "a"));
+            client.responses.add(response);
+            requestExecutor.runUntilRequests(client, i, 10);
+        }
+        org.mockito.Mockito.verify(callback, org.mockito.Mockito.times(3)).invalidate(null, true);
+    }
+    
+    @Test
+    void unsupportedBindingWithoutRouterStillRetainsRetryWork() throws Exception {
+        client.failure = new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "unsupported");
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        requestExecutor.runNext();
+        assertNotNull(retryTask.get());
+        assertTrue(transport.isAvailable());
+    }
+    
+    @Test
+    void cancellationBeforeFirstResponseDoesNotAcknowledgeUnsentItems() throws Exception {
+        transport.start(registration("a", "agent-a", "a1"), new TestCallback());
+        transport.start(registration("b", "agent-b", "b1"), new TestCallback());
+        transport.stop("a");
+        AgentWatchBatchResponse noIds = changed(3L, "b");
+        noIds.setChangedClientWatchIds(null);
+        client.responses.add(noIds);
+        requestExecutor.runUntilRequests(client, 1, 10);
+        assertIds("b");
+        transport.start(registration("c", "agent-c", "c1"), new TestCallback());
+        requestExecutor.runUntilRequests(client, 2, 10);
+        assertIds("b", "c");
+    }
+    
+    private NacosException capacity() {
+        return new NacosApiException(NacosException.OVER_THRESHOLD,
+            ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, "full");
+    }
+    
+    private void assertIds(String... ids) {
+        List<String> actual = new ArrayList<String>();
+        for (com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem item : client.requests
+            .get(client.requests.size() - 1).getWatches()) {
+            actual.add(item.getClientWatchId());
+        }
+        assertEquals(java.util.Arrays.asList(ids), actual);
+    }
+    
+    private void resetLogGate() throws Exception {
+        Field field = HttpAgentWatchTransport.class.getDeclaredField("WARN_LOG_LIMITER");
+        field.setAccessible(true);
+        Object limiter = field.get(null);
+        Field next = limiter.getClass().getDeclaredField("nextAllowedNanos");
+        next.setAccessible(true);
+        ((java.util.concurrent.atomic.AtomicLong) next.get(limiter)).set(Long.MIN_VALUE);
+    }
+    
     private void assertImmediateFallback(NacosException failure) throws Exception {
+        resetLogGate();
         transport.shutdown();
         requestExecutor = new QueueExecutorService();
         client = new ScriptedClient();
@@ -438,6 +695,7 @@ class HttpAgentWatchTransportTest {
     }
     
     private void runRetry() {
+        clock.addAndGet(TimeUnit.SECONDS.toNanos(60));
         Runnable task = retryTask.getAndSet(null);
         assertNotNull(task);
         task.run();

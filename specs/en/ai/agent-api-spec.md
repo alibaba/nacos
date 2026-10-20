@@ -112,8 +112,9 @@ retain their normal authentication/ownership checks. SDK partial deregistration 
 remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
 whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
 Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
-50105, and subsequent Discover is also fenced. Callers explicitly invoke or subscribe again after
-cutover.
+50105, and subsequent Discover is also fenced. Initially rejected calls must be retried after
+cutover. Already accepted Java SDK subscriptions retain local state and retry automatically;
+50105 is never a discovery data event.
 
 Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
 Admin/Console, migration, indexing and internal projection retain their existing rules so migration
@@ -185,22 +186,52 @@ If Discover reads A before Watch installation observes B, existing gRPC
 triggers another Discover; activation records dirty state until refresh can run.
 HTTP/gRPC paths, request/response fields and server contracts remain unchanged.
 The legacy A2A subscribe return value remains, using the same initialization dispatcher
-without duplicate initialization. Rejected callback tasks do not yet have guaranteed
-redelivery; this also applies to initialization and is separate from remote recovery.
+without duplicate initialization.
 `getAll`, `selectOneHealthy`, protocol choice, priority/weight selection, and
 actual Agent calling are local SDK helpers, not additional remote operations.
 
 `NacosAgentDiscoveryEvent` has event types `SNAPSHOT` and `UNAVAILABLE`. Its
 existing `NacosAgentDiscoveryEvent(AgentDiscoveryResult)` constructor remains
 the `SNAPSHOT` constructor. A `SNAPSHOT` exposes the complete result and no
-error. `UNAVAILABLE` exposes a Nacos error code and message and no result.
-Initial validation, authorization, and local or server Watch-capacity failures
-are thrown synchronously and the rejected intent is removed from all local
-Watch state. A later terminal authorization or capacity failure emits one
-`UNAVAILABLE` event and removes the intent. A transient transport failure does
-not delete intent; reconnect or fallback re-establishes it. `NOT_FOUND` emits
-at most one unavailable transition for the current absent period, retains a
-bounded pending intent, and emits a new `SNAPSHOT` when the target recovers.
+error. `UNAVAILABLE` means authorized Discover confirmed that the requested
+Agent reference (including version/label) does not resolve. It carries the target
+not-found code/message and no result. Empty endpoints, unhealthy endpoints and
+empty filtered interfaces remain valid snapshots. Raw HTTP 404, Watch rejection,
+authorization, migration and local executor failures are not data events.
+Initial synchronous validation, authorization and capacity rejection throw and
+remove only the rejected new intent. Once accepted, a subscription lasts until
+explicit unsubscribe or service shutdown. All background failures retain intent
+and the last confirmed data, retry with bounded backoff and rate-limited logging,
+and never notify the data listener. One absence state is generated per absent
+period; recovery generates a new snapshot even when it matches the pre-deletion data.
+Rejected background task submissions remain pending for an independent retry
+entry point.
+
+Watch eventually delivers the latest complete state, rather than a log of every
+intermediate event. Each canonical Watch (namespace, reference and filter) retains
+only its latest state and a monotonically increasing local sequence. Each Listener
+tracks its handled sequence and at most one queued or running delivery, without a
+snapshot queue. A task selects current state when it executes and supplies an
+independent result copy to its Listener. Intermediate snapshots and brief UNAVAILABLE
+states may be coalesced; the latest unsuperseded state, including initialization, must
+be delivered when execution becomes available. SDK/user executor rejection and
+getExecutor failures retain the delivery difference for periodic local retry, without
+another Discover or another server change. An onEvent invocation that has already
+started and throws is logged but not automatically replayed. Cancellation and shutdown
+invalidate unexecuted work and release pending state. A saturated bounded callback pool
+may delay other listeners, but user code never runs on query/connection I/O threads and
+retained delivery memory does not grow with the number of changes. Callers bound their
+own permanently blocking I/O with timeouts.
+
+HTTP Watch acceptance is local and asynchronous. Valid responses acknowledge only
+items actually sent in the current generation. If growth exceeds quota, retain
+new items, resume the last acknowledged set and periodically retry the full current
+union with backoff. Reject further growth synchronously while quota is known to
+be exhausted; joining an existing Watch is not growth. Success of the old set alone
+does not clear the restriction. Canceling an acknowledged item can advance a retry.
+After all pending additions are canceled, cooldown permits one real new growth
+probe, without empty/synthetic requests. With no previously acknowledged items,
+retry the whole eligible set. Never discard accepted items to satisfy quota.
 
 One SDK instance keeps at most 300 distinct local Watch records
 by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
@@ -681,14 +712,15 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
 | gRPC reconnect | Redo complete endpoint batches and active Watch intents under the new connection id; perform Discover when the Subscribe response requires refresh |
 | Lost, duplicate, or stale Watch hint | Mark current local intent dirty once and use current-fact Discover plus fingerprint comparison |
-| Terminal Watch authorization or capacity error | Emit one unavailable event, remove local Wire Intent, and do not retry indefinitely |
+| Background Watch rejection or execution failure | Retain accepted intent and confirmed data; retry without an error data event |
 | Transient Watch transport failure | Retain local intent and re-establish it through reconnect, AUTO routing, or polling fallback |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
-Parameter, authorization, and capacity errors do not enter infinite redo.
+Publication parameter, authorization, and capacity errors do not enter infinite redo.
+This publication rule does not terminate an accepted Watch.
 Unsubscribe and shutdown remove Wire Intent before releasing the local slot;
 late notifications are acknowledged as stale and cannot invoke a removed
 listener.

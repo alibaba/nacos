@@ -555,7 +555,9 @@ wire Binding is an invalidation protocol rather than a business-data stream.
   application callback.
 - A terminal server condition or a re-fetch result such as `NOT_FOUND`,
   `PERMISSION_DENIED`, `RESOURCE_EXHAUSTED`, or `CONFLICT` is delivered through
-  the binding's unavailable/terminal path and never as stale business data.
+  the binding's unavailable/terminal path and never as stale business data. This ends
+  the remote binding, not an accepted Java SDK subscription. SDK listeners only receive
+  UNAVAILABLE for confirmed Discover target absence; other failures retry internally.
 - Reconnect re-registers the complete current Watch intent. Lost, duplicated,
   stale, or cross-node notifications are safe because every accepted hint is
   followed by current-fact Discover and fingerprint comparison.
@@ -966,3 +968,11 @@ through the same Listener, as specified in [Agent API](../ai/agent-api-spec.md).
 The existing Subscribe fingerprint comparison and first HTTP long-poll comparison close
 the Discover-to-Watch window. No wire fields or server behavior change. Local notification
 sequencing must prevent a stale initialization from following a newer delivered state.
+
+### Java SDK Watch lifetime
+
+A wire termination (including migration rejection 50105) ends that remote binding,
+not the accepted Java SDK subscription. The SDK retains intent and confirmed data
+and retries under normal authorization and quota. Only authorized Discover target
+absence produces SDK UNAVAILABLE; other failures stay internal. Legacy A2A retains
+its complete-card callbacks and empty-push protection, without lifecycle callbacks.
