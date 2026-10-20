@@ -268,6 +268,11 @@ C09 只准备此组件，C10 一次接通全部旧 facade 方法。
 
 ### Client 实例路由启用
 
+`AiService.getAgentDiscoveryCapability()` 独立查询当前有效 Agent 传输的 RAD 三态证据，
+不触发首次 A2A 选路，也不改变已固定的模式；返回值不是旧 A2A facade 当前模式查询。
+能力缓存刷新、查询失败与迁移门禁均不能隐式切换已选模式。完整契约见
+[Agent API 规范](agent-api-spec.md#21-java-sdk-契约)。
+
 3.3 Java SDK 的所有继承 A2A 重载共享同一 Agent facade，首次可靠选择在 AiService
 生命周期内固定。初始首选 gRPC 协商可确定模式；HTTP-only 初始化不为 A2A 选路启动
 gRPC。未决调用可使用已认证的 HTTP 能力，HTTP 证据缺失时才需要旧 gRPC 协商。

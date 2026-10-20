@@ -145,6 +145,10 @@ public interface AgentDiscoveryService {
     /**
      * Replace this SDK publisher's complete Endpoint Batch for one Agent protocol.
      *
+     * <p>Include every Endpoint to retain for this Agent and protocol. Omitted addresses from
+     * this publisher are removed; other publishers and protocols are unaffected. To replace an
+     * address, register the desired complete Batch without subsequently deregistering the old one.</p>
+     *
      * @param batch complete Endpoint registration batch
      * @throws NacosException when validation or publication fails
      */

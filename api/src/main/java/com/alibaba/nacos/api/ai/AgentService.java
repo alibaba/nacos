@@ -33,9 +33,10 @@ public interface AgentService extends A2aService, AgentDiscoveryService {
      * Publish one exact Agent Version from application code.
      *
      * <p>The AiService namespace is used automatically. A newly created first Version is submitted
-     * automatically; other drafts use
-     * {@link AgentPublishRequest#isAutoSubmit()}. Submission uses the ordinary pipeline and never
-     * force-publishes a Version.</p>
+     * even when {@link AgentPublishRequest#isAutoSubmit()} is false. "First" means the Agent had
+     * no Versions before this creation. Other drafts follow that flag; existing non-drafts remain
+     * unchanged. Submission uses the ordinary pipeline: without a Pipeline it publishes and sets
+     * latest, while a configured Pipeline may delay publication. It never force-publishes.</p>
      *
      * @param request Agent definition publication request
      * @return resulting exact Version detail

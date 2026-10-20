@@ -252,3 +252,12 @@ migration cutover. An additional embedded cutover attempt found node-local Searc
 documents/tasks despite shared Config readiness; it is not counted as passing.
 See [cluster fixture boundaries](../DEFAULT_AUTH_RELIABILITY_IT.md)
 for data evidence, impact, and the separate persistence-consistency work required.
+
+### CAP01 capability evidence and fixed A2A routing
+
+The new public query reports current Agent transport evidence and never selects the A2A facade
+route. `A2aRadRoutingJavaSdkITCase` queries before RAD-backed legacy operations and after legacy
+negotiation on the optional released-server fixture. Deterministic resolver UTs cover queries
+before selection and after either fixed selection, plus changed evidence on reconnect. The query
+may report SUPPORTED while a business operation returns 50105; no migration admission check is
+bypassed. Directed cutover/rollback execution remains separate from this capability increment.

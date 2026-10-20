@@ -179,6 +179,14 @@ a compatibility surface.
 
 ### 5.3 AiService Resource Interfaces
 
+The root interface also provides default `getAgentDiscoveryCapability() throws NacosException`,
+returning the existing `AbilityStatus` and defaulting to `UNKNOWN`. It does not require `agent()`;
+existing third-party implementations and their released bytecode remain compatible. The official
+implementation reuses negotiation and HTTP caching for the effective Agent transport, without
+calling the route-selecting `useRad()`. Three-state results, probe errors, shutdown and target scope
+follow the [Agent API Spec](../ai/agent-api-spec.md#21-java-sdk-contract). Capability evidence does
+not imply business success or migration readiness.
+
 `AiService` exposes namespace-bound `mcp()`, `agent()`, `skill()`, `agentSpec()` and `prompt()`.
 Each accessor reuses a resource service sharing the facade's connections, caches, listeners and
 `shutdown()` lifecycle.
@@ -194,7 +202,7 @@ unsupported, so third-party old implementations can retain their old behavior. T
 implements all accessors. The MCP createDraft default still dispatches false to the old four-argument
 method and rejects unimplemented true requests; the official five-argument override is a pure bridge.
 
-Unreleased 3.3 Agent operations are available only through `agent()`. `AgentService.publishAgent`
+Unreleased 3.3 Agent resource operations are available only through `agent()`. `AgentService.publishAgent`
 returns `AgentVersionDetail` with a compatibility default. The official implementation copies input,
 injects the SDK namespace and creates a draft or performs ordinary submit according to `autoSubmit`,
 without mutating caller state. See the [Agent API Spec](../ai/agent-api-spec.md).

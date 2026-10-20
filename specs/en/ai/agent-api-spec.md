@@ -123,6 +123,27 @@ cannot fence itself. The historical QUIESCING mutation barrier remains unchanged
 
 ### 2.1 Java SDK Contract
 
+`AiService.getAgentDiscoveryCapability()` returns the existing `AbilityStatus` for RAD evidence
+on the effective Agent transport. Its default returns `UNKNOWN` without calling `agent()`,
+preserving compatibility with old third-party implementations. The official implementation:
+
+- Returns `SUPPORTED` for positive evidence, `NOT_SUPPORTED` for reliable negative evidence,
+  and `UNKNOWN` for absent negotiation or declarations. Authentication, connection and probe
+  failures retain their `NacosException`; they are never converted or cached as unsupported.
+- Reads only the current connection for explicit gRPC, returning `UNKNOWN` when disconnected.
+  HTTP reuses bounded capability caching scoped by target URL and identity. AUTO prefers current
+  positive gRPC RAD evidence, otherwise HTTP. The query neither starts another gRPC connection
+  nor probes business APIs such as Discover/publication, nor selects or changes the A2A facade route.
+- Infers unsupported RAD from existing positive legacy gRPC negotiation only when missing HTTP
+  evidence belongs to the sole matching configured target. It never caches this as HTTP false or
+  generalizes one node to the cluster. Reconnect invalidates HTTP evidence.
+- May block on a cold HTTP lookup and try multiple unreachable addresses. Per-connection/read
+  timeouts do not constitute an overall query deadline. After shutdown it throws
+  `CLIENT_DISCONNECT` without probing.
+- Does not promise resource existence/visibility, authorization or migration readiness. A
+  `SUPPORTED` result may coexist with `AGENT_MIGRATION_IN_PROGRESS` on a business operation;
+  callers handle that operation's contract without automatic legacy fallback.
+
 The user-facing interface is named `AgentDiscoveryService`; the RAD acronym is
 not required in application code. During A2A compatibility:
 

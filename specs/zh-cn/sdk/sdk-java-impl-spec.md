@@ -157,6 +157,12 @@ context，而不是修改请求 payload 或让无关 SDK 调用失败。默认 N
 
 ### 5.3 AiService 资源子接口
 
+根接口还提供 default `getAgentDiscoveryCapability() throws NacosException`，返回已有
+`AbilityStatus`，默认 `UNKNOWN`。无需先调用 `agent()`，既有第三方实现及其旧字节码继续
+兼容。官方实现复用 Agent 有效传输的协商和 HTTP 缓存，不通过有选路副作用的 `useRad()`
+查询。三态、探测异常、关闭和目标边界以 [Agent API 规范](../ai/agent-api-spec.md#21-java-sdk-契约)
+为准；该结果不等同于业务成功或迁移就绪。
+
 `AiService` 提供 namespace-bound 的 `mcp()`、`agent()`、`skill()`、`agentSpec()` 和
 `prompt()`。getter 返回复用的子服务，与 facade 共享连接、缓存、监听及 `shutdown()` 生命周期。
 
@@ -170,7 +176,7 @@ AgentService extends A2aService, AgentDiscoveryService
 即可保持原调用；官方实现覆盖所有 getter。MCP createDraft default 保留 false 分派到旧四参
 方法、未实现 true 时受控拒绝的行为；官方五参方法是到 mcp() 的纯桥接。
 
-3.3 尚未发布的新 Agent 操作只通过 `agent()` 使用。`AgentService.publishAgent` 返回
+3.3 尚未发布的新 Agent 资源操作只通过 `agent()` 使用。`AgentService.publishAgent` 返回
 `AgentVersionDetail`，保留兼容 default；官方实现仍复制请求、注入 SDK namespace，并按
 `autoSubmit` 创建 draft 或普通 submit，不修改输入对象。参见 [Agent API 规范](../ai/agent-api-spec.md)。
 旧 A2A 方法始终保留现有 gRPC 路径，不因本次接口拆分切换为 RAD。

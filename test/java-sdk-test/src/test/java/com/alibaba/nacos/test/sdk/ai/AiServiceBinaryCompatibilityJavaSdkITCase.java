@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
@@ -83,6 +84,7 @@ class AiServiceBinaryCompatibilityJavaSdkITCase extends JavaSdkBaseITCase {
                 .getMethod("verifyDefaults", AiService.class).invoke(null, oldImplementation);
             assertThrows(UnsupportedOperationException.class, oldImplementation::mcp);
             assertThrows(UnsupportedOperationException.class, oldImplementation::agent);
+            assertEquals(AbilityStatus.UNKNOWN, oldImplementation.getAgentDiscoveryCapability());
             assertThrows(UnsupportedOperationException.class, oldImplementation::skill);
             assertThrows(UnsupportedOperationException.class, oldImplementation::agentSpec);
             assertThrows(UnsupportedOperationException.class, oldImplementation::prompt);

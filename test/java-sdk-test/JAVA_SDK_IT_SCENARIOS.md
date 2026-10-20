@@ -411,3 +411,13 @@ passing migration coverage. See C11_PROGRESS.md for all 66 report groups and ski
 ### A2A metadata reserved-key regression
 
 A2A conversion and RAD metadata use the same `__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__` keys as legacy Naming Instances. AgentDiscoveryService and A2aRadRouting SDK ITs verify HTTP/gRPC/AUTO Discover/Watch and legacy projection under default/Jackson 3 profiles; migration comparator UTs verify identical old/new meaning and changed tenant/protocol detection. Invalid control metadata remains rejected.
+
+### Agent discovery capability query (CAP01)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| `AiService.getAgentDiscoveryCapability()` | Effective grpc/http/auto and Agent overrides, repeated queries, subsequent Discover/A2A operations, shutdown and released implementation default | Covered | AiServiceJavaSdkITCase, AiServiceBinaryCompatibilityJavaSdkITCase and A2aRadRoutingJavaSdkITCase passed 10 targeted executions per JSON adapter (default and Jackson 3), with default auth enabled on an isolated standalone server. Deterministic UTs cover unknown evidence, probe failures, no route selection, target/identity cache isolation and reconnect. |
+| Query against released old server | Reliable old capability evidence and continued legacy A2A operations | Covered | On 2026-10-20, allSignaturesOnReleasedOldServer passed 6 executions per adapter (default and Jackson 3) on an isolated auth-disabled 3.2.3 container, with 0 failures/errors/skips. grpc/http/auto × facade/resource verifies NOT_SUPPORTED after legacy negotiation, all 18 legacy overloads, controlled rejection of native RAD operations and cleanup. Legacy A2A continues to use gRPC. This result is separate from the released bytecode fixture above. |
+
+Separate CAP01 increment: strict 2/2 = 100%; effective 2/2 = 100%. Historical domain denominators
+and deferred Watch findings are unchanged. No HTTP/gRPC wire contract changes are introduced.

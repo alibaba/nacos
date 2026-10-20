@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.McpService;
@@ -424,6 +425,14 @@ public class NacosAiService implements AiService {
     @Override
     public AgentService agent() {
         return agentService;
+    }
+    
+    @Override
+    public AbilityStatus getAgentDiscoveryCapability() throws NacosException {
+        if (shutdown.get()) {
+            throw new NacosException(NacosException.CLIENT_DISCONNECT, "AI service is closed.");
+        }
+        return agentCapabilityResolver.getDiscoveryCapability();
     }
     
     @Override

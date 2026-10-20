@@ -415,3 +415,19 @@ nativeDescriptor 和 Endpoint sourceRevision 不变。默认与 Jackson 3 adapte
 description/tags，要求固定在节点 A 的 gRPC/HTTP Watch 收到相同完整快照，
 并与 A/B 两节点 Discover 指纹一致；版本与 contentDigest 保持不变。
 该场景在 Derby+Raft 和 MySQL 三节点夹具中分别执行。
+
+## Public Agent discovery capability (CAP01)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| `AiService.getAgentDiscoveryCapability()` | grpc/http/auto and Agent-specific overrides; repeated query; normal Discover and legacy facade use afterwards; shutdown; released third-party default compatibility | Covered | Implemented in `AiServiceJavaSdkITCase#testDiscoveryCapabilityBeforeBusinessCallsAndAfterShutdown`, `AiServiceBinaryCompatibilityJavaSdkITCase#oldImplementationKeepsDefaultDispatchAndOptionalNewAccessors` and `A2aRadRoutingJavaSdkITCase#allSignaturesOnRad`; Default JSON and Jackson 3 each passed 10 targeted executions on an isolated auth-enabled standalone 3.3.0-RC server (0 failures/errors/skips); the released third-party bytecode fixture is included. |
+| Query against a released old server | Reliable old-server capability evidence and continued legacy A2A operations | Covered | On 2026-10-20, `A2aRadRoutingJavaSdkITCase#allSignaturesOnReleasedOldServer` passed 6 executions per adapter (default and Jackson 3) on an isolated auth-disabled 3.2.3 container, with 0 failures/errors/skips. Covers grpc/http/auto configuration and both facade/resource entrypoints: capability is NOT_SUPPORTED after legacy negotiation, all 18 legacy overloads remain usable, native RAD operations reject with SERVER_NOT_IMPLEMENTED, and local cleanup/repeated shutdown work. Legacy A2A still uses gRPC even with HTTP/AUTO configuration. |
+
+Querying has no parameters. Missing evidence, disconnected/current gRPC evidence, independent HTTP
+bindings, target/identity cache isolation, coalesced loads, probe exceptions, reconnect invalidation,
+fixed A2A selection and supported capability with migration admission failure are deterministic
+UT scenarios. These do not imply cross-node guarantees or migration readiness. The new query
+does not change Watch behavior or any HTTP/gRPC request/response contract.
+
+This separate increment has 2 Covered / 0 Partial / 0 Pending: strict 2/2 = 100%, effective 2/2 = 100%.
+Historical SDK domain denominators and deferred Watch findings remain unchanged.

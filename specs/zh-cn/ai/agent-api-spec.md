@@ -110,6 +110,22 @@ HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50
 
 ### 2.1 Java SDK 契约
 
+`AiService.getAgentDiscoveryCapability()` 返回已有 `AbilityStatus`，用于查询当前有效
+Agent 传输的 RAD 能力证据。default 实现返回 `UNKNOWN`，不调用 `agent()`，使第三方
+旧实现继续兼容。官方实现遵循以下规则：
+
+- `SUPPORTED` 表示已有支持证据，`NOT_SUPPORTED` 表示可靠否定证据；缺少协商或声明为
+  `UNKNOWN`。鉴权、连接及探测失败保留 `NacosException`，不转换或缓存为不支持。
+- 显式 gRPC 只读取当前连接能力，未连接为 `UNKNOWN`；HTTP 复用按目标 URL 和身份隔离的
+  有界能力缓存；AUTO 优先使用当前 gRPC 的 RAD 正向证据，否则查询 HTTP。查询不启动额外
+  gRPC 连接，不试调用 Discover、发布等业务接口，也不固定或切换 A2A facade 路由。
+- HTTP 声明缺失时，已有旧 gRPC 正向协商仅在唯一且匹配的配置目标上可推导不支持 RAD；
+  不缓存为 HTTP false，不把单节点结论推广为全群集能力。重连使 HTTP 证据失效。
+- 冷 HTTP 查询可阻塞，并可能依次尝试多个不可达地址；连接和读取超时不是整个查询的总时限。
+  关闭后的官方实例抛 `CLIENT_DISCONNECT`，不启动探测。
+- 能力支持不保证资源存在、可见、鉴权通过或迁移就绪。能力为 `SUPPORTED` 时，业务操作仍可
+  返回 `AGENT_MIGRATION_IN_PROGRESS`；调用方按业务契约处理，不自动回退旧协议。
+
 面向用户的接口命名为 `AgentDiscoveryService`，应用代码不必感知 RAD 缩写。A2A
 兼容期内：
 

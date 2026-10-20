@@ -357,6 +357,12 @@ C09 prepares this component; C10 enables all legacy facade operations together.
 
 ### Client instance routing activation
 
+`AiService.getAgentDiscoveryCapability()` independently queries three-state RAD evidence for the
+current effective Agent transport. It neither makes the initial A2A selection nor changes a fixed
+selection; it does not report the legacy facade's selected mode. Cache refresh, query errors and
+migration admission cannot implicitly switch that mode. See the
+[Agent API Spec](agent-api-spec.md#21-java-sdk-contract) for the full contract.
+
 The 3.3 Java SDK routes every inherited A2A overload through the same Agent facade.
 The first reliable selection is fixed for that AiService lifetime. Initial preferred
 gRPC negotiation can establish this selection; HTTP-only initialization does not start
