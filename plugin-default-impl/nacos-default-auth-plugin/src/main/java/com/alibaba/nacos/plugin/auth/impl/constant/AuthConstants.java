@@ -45,6 +45,14 @@ public class AuthConstants {
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
     
+    /**
+     * Tag for APIs that only require a valid login.
+     * Namespace query is public in 2.x; scanners treat anonymous access as unauthorized disclosure.
+     * Identity is checked by {@code @Secured}, and this tag skips the console-admin permission check
+     * so any logged-in user can still load the namespace list.
+     */
+    public static final String IDENTITY_ONLY_TAG = "nacos.identity.only";
+    
     public static final String NACOS_USER_KEY = "nacosuser";
     
     public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";

@@ -20,6 +20,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
@@ -125,6 +126,15 @@ class NacosRoleServiceImplTest {
         resource.getProperties().put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
         boolean res3 = nacosRoleService.hasPermission(nacosUser, permission2);
         assertTrue(res3);
+        
+        Permission permission3 = new Permission();
+        permission3.setAction("r");
+        Resource identityResource = new Resource("", "", AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces",
+                SignType.CONSOLE, new Properties());
+        permission3.setResource(identityResource);
+        assertFalse(nacosRoleService.hasPermission(nacosUser, permission3));
+        identityResource.getProperties().put(AuthConstants.IDENTITY_ONLY_TAG, AuthConstants.IDENTITY_ONLY_TAG);
+        assertTrue(nacosRoleService.hasPermission(nacosUser, permission3));
     }
     
     @Test

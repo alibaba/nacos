@@ -122,7 +122,7 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
-        if (isUpdatePasswordPermission(permission)) {
+        if (isUpdatePasswordPermission(permission) || isIdentityOnlyPermission(permission)) {
             return true;
         }
         
@@ -168,6 +168,15 @@ public class NacosRoleServiceImpl {
     private boolean isUpdatePasswordPermission(Permission permission) {
         Properties properties = permission.getResource().getProperties();
         return null != properties && properties.contains(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
+    }
+    
+    /**
+     * Logged-in users may call identity-only APIs. Anonymous callers are already rejected
+     * by identity validation before this method runs.
+     */
+    private boolean isIdentityOnlyPermission(Permission permission) {
+        Properties properties = permission.getResource().getProperties();
+        return null != properties && properties.contains(AuthConstants.IDENTITY_ONLY_TAG);
     }
     
     public List<RoleInfo> getRoles(String username) {

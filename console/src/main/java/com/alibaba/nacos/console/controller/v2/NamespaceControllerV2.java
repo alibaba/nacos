@@ -78,6 +78,8 @@ public class NamespaceControllerV2 {
      * @return namespace list
      */
     @GetMapping("/list")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ,
+            signType = SignType.CONSOLE, tags = {AuthConstants.IDENTITY_ONLY_TAG})
     public Result<List<Namespace>> getNamespaceList() {
         return Result.success(namespaceOperationService.getNamespaceList());
     }
