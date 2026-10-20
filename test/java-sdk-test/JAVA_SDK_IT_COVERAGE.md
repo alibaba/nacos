@@ -455,3 +455,8 @@ nativeDescriptor 和 Endpoint sourceRevision 不变。默认与 Jackson 3 adapte
 description/tags，要求固定在节点 A 的 gRPC/HTTP Watch 收到相同完整快照，
 并与 A/B 两节点 Discover 指纹一致；版本与 contentDigest 保持不变。
 该场景在 Derby+Raft 和 MySQL 三节点夹具中分别执行。
+
+
+## Config operation messages (#10978)
+
+The application ConfigService public methods are unchanged. Old application SDK publishes remain valid and produce history without a message. ConfigHistoryBasicInfo adds optional changeMessage for management queries. Maintainer formal/Beta publish overloads carry the optional text; its integration suite covers publish-to-history and controlled oversized-input exceptions. RPC transport accepts the optional addition parameter without changing ConfigService signatures.

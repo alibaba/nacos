@@ -79,6 +79,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('opType', data.opType.trim());
           self.field.setValue('group', data.groupName);
           self.field.setValue('md5', data.md5);
+          self.field.setValue('changeMessage', data.changeMessage || '');
           self.setState({
             currentPublishType: data.publishType,
             ...(data.publishType === 'gray' && {
@@ -166,6 +167,9 @@ class HistoryDetail extends React.Component {
           </Form.Item>
           <Form.Item label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly value={getOpType(init('opType').value, locale)} />
+          </Form.Item>
+          <Form.Item label={locale.changeMessage} {...formItemLayout}>
+            <Input.TextArea rows={3} readOnly {...init('changeMessage')} />
           </Form.Item>
           <Form.Item label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />

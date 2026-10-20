@@ -30,6 +30,9 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.message.BasicClassicHttpResponse;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +44,7 @@ import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 @ExtendWith(MockitoExtension.class)
 class DefaultHttpClientRequestTest {
@@ -142,6 +147,23 @@ class DefaultHttpClientRequestTest {
         Field field = actual.getClass().getDeclaredField("response");
         field.setAccessible(true);
         return (SimpleHttpResponse) field.get(actual);
+    }
+    
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testUnicodeJsonResponseWithoutCharset() throws Exception {
+        String body = "{\"changeMessage\":\"🚀中文\"}";
+        BasicClassicHttpResponse serverResponse = new BasicClassicHttpResponse(200);
+        serverResponse.setEntity(new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8),
+            ContentType.APPLICATION_JSON));
+        doAnswer(invocation -> {
+            HttpClientResponseHandler<SimpleHttpResponse> handler = invocation.getArgument(1);
+            return handler.handleResponse(serverResponse);
+        }).when(client).execute(any(HttpUriRequestBase.class),
+            any(HttpClientResponseHandler.class));
+        HttpClientResponse actual = httpClientRequest.execute(uri, "GET",
+            new RequestHttpEntity(Header.newInstance(), Query.EMPTY, null));
+        assertEquals(body, IoUtils.toString(actual.getBody(), "UTF-8"));
     }
     
     @Test

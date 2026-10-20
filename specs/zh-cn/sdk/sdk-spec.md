@@ -69,6 +69,12 @@ Maintainer SDK 面向管理接入，可以暴露 Client SDK 有意不包含的�
 Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对管理、UI、
 网关或运维工具有意义的能力，应归入 Maintainer SDK，而不是 Client SDK。
 
+配置发布与 Beta 发布的新增重载接受可选 `changeMessage`，最多 512 个 Unicode 码点。
+原有重载保持原有行为。历史模型返回所选操作的说明，遵循
+[Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
+旧的自定义 Maintainer 实现收到非空说明时必须拒绝，不能静默丢弃。
+应用侧 `ConfigService` 接口保持不变。
+
 ## 4. Agent 与 RAD 目标契约
 
 本节定义 Agent 管理和 [Remote Agent Discovery（RAD）](../ai/rad-protocol-spec.md)

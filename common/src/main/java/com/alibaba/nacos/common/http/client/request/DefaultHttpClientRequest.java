@@ -25,13 +25,13 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.HttpEntityWrapper;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         SimpleHttpResponse response = client.execute(request, httpResponse -> {
             SimpleHttpResponse simpleHttpResponse = SimpleHttpResponse.copy(httpResponse);
             ContentType contentType = ContentType.parse(httpResponse.getEntity().getContentType());
-            String body = IoUtils.toString(httpResponse.getEntity().getContent(), null);
+            byte[] body = EntityUtils.toByteArray(httpResponse.getEntity());
             simpleHttpResponse.setBody(body, contentType);
             return simpleHttpResponse;
         });

@@ -642,3 +642,27 @@ Client 发布契约仍为首版普通提交、已有 DRAFT 完整覆盖、非 DR
 contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出展示及管理字段。
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover A/M1,
+B/M2, C/M3 ordering, selected detail/previous operation identity despite old
+snapshot content, omitted messages, a 512-code-point emoji round-trip, and
+513-character rejection with unchanged content and history count.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray CAS history
+being queued before commit with rollback on conflict. Maintainer SDK IT covers
+formal/Beta message-to-history and controlled oversized-input exceptions.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.
+
+`ConfigHistoryAdminApiOpenApiITCase#testGrayPublishOperationMessage` additionally
+checks gray create/update messages, old content, and preserved gray name/rule.
+Both Admin cases also verify successful CAS messages and unchanged history after
+a stale-md5 conflict. The standalone embedded-storage run passed all three HTTP
+cases and both selected Maintainer SDK cases; external databases and independent
+console deployments were not exercised.

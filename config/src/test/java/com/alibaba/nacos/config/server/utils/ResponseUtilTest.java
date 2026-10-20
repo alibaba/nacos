@@ -300,4 +300,21 @@ class ResponseUtilTest {
         assertEquals(configHistoryInfo.getLastModifiedTime().getTime(),
             configHistoryBasicInfo.getModifyTime());
     }
+    
+    @Test
+    void testHistoryMessageBelongsToSelectedOperation() {
+        ConfigHistoryInfo history = mockConfigHistoryInfo();
+        history.setContent("previous content");
+        history.setExtInfo(
+            "{\"change_message\":\"current operation\",\"c_schema\":\"previous schema\"}");
+        assertEquals("current operation",
+            ResponseUtil.transferToConfigHistoryBasicInfo(history).getChangeMessage());
+        ConfigHistoryDetailInfo detail = ResponseUtil.transferToConfigHistoryDetailInfo(history);
+        assertEquals("current operation", detail.getChangeMessage());
+        assertEquals("previous content", detail.getContent());
+        assertEquals("previous schema", detail.getSchema());
+        history.setExtInfo("{broken");
+        assertNull(ResponseUtil.transferToConfigHistoryBasicInfo(history).getChangeMessage());
+    }
+    
 }

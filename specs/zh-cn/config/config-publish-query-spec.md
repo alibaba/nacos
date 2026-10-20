@@ -124,3 +124,10 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 | HTTP Console API | Console 克隆中 `namespaceId` 表示源 namespace，`targetNamespaceId` 表示目标 namespace；缺省 `namespaceId` 时源 namespace 默认等于目标 namespace。 |
 | gRPC API | 查询、兼容发布、兼容删除、监听、模糊订阅和推送消息必须保持同一套 Config 身份和 md5 语义。 |
 | Client SDK | 应用应优先使用运行时查询和监听 API；大范围管理 API 属于 Maintainer SDK。 |
+
+### 发布操作说明
+
+正式、CAS、Beta 和 Tag/灰度发布接收可选文本 `changeMessage`，最多 512 个 Unicode
+码点。缺省、空串和纯空白表示未填写；非空白文本保留原文。说明属于成功的发布操作，
+独立于配置描述和正文。存储、响应、回滚、兼容性及控制台契约见
+[Config 持久化与历史规范](config-persistence-history-spec.md#发布操作说明)。

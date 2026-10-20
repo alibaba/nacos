@@ -139,6 +139,8 @@ public class ResponseUtil {
     
     private static void injectHistoryBasicInfo(ConfigHistoryBasicInfo historyBasicInfo,
         ConfigHistoryInfo historyInfo) {
+        historyBasicInfo
+            .setChangeMessage(ConfigExtInfoUtil.getChangeMessage(historyInfo.getExtInfo()));
         historyBasicInfo.setNamespaceId(historyInfo.getTenant());
         historyBasicInfo.setGroupName(historyInfo.getGroup());
         historyBasicInfo.setCreateTime(historyInfo.getCreatedTime().getTime());

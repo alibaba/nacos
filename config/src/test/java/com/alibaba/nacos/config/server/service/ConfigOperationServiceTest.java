@@ -139,6 +139,7 @@ class ConfigOperationServiceTest {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         String expectedCasMd5 = "test-cas-md5-value";
+        configForm.setChangeMessage("CAS operation");
         configRequestInfo.setBetaIps("test-betaIps");
         configRequestInfo.setCasMd5(expectedCasMd5);
         configForm.setTag("");
@@ -157,6 +158,7 @@ class ConfigOperationServiceTest {
         
         // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
         ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertEquals("CAS operation", capturedConfigInfo.getChangeMessage());
         assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(),
             "ConfigInfo's md5 should be set to casMd5 value");
         assertEquals("test", capturedConfigInfo.getDataId());
@@ -216,6 +218,7 @@ class ConfigOperationServiceTest {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         String expectedCasMd5 = "test-cas-md5-value";
+        configForm.setChangeMessage("CAS operation");
         String tag = "testTag";
         configRequestInfo.setCasMd5(expectedCasMd5);
         configForm.setTag(tag);
@@ -234,6 +237,7 @@ class ConfigOperationServiceTest {
         
         // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
         ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertEquals("CAS operation", capturedConfigInfo.getChangeMessage());
         assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(),
             "ConfigInfo's md5 should be set to casMd5 value");
         assertEquals("test", capturedConfigInfo.getDataId());
@@ -640,4 +644,14 @@ class ConfigOperationServiceTest {
             configForm, configRequestInfo, "");
         assertTrue(result);
     }
+    
+    @Test
+    void testOversizedMessageDoesNotReachPersistence() {
+        ConfigForm form = new ConfigForm();
+        form.setChangeMessage("x".repeat(513));
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(form, new ConfigRequestInfo(), ""));
+        Mockito.verifyNoInteractions(configInfoPersistService, configInfoGrayPersistService);
+    }
+    
 }

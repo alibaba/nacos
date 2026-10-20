@@ -12,6 +12,8 @@ import type { ConfigHistoryDetail, ConfigType } from '@/types/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -34,10 +36,12 @@ export default function ConfigRollbackPage() {
   const { currentHistory, detailLoading, fetchHistoryDetail, clearCurrentHistory } =
     useHistoryStore();
 
+  const [changeMessage, setChangeMessage] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rollbackLoading, setRollbackLoading] = useState(false);
 
   useEffect(() => {
+    setChangeMessage('');
     if (nid && dataId && group) {
       fetchHistoryDetail(nid, dataId, group, namespace);
     }
@@ -107,11 +111,13 @@ export default function ConfigRollbackPage() {
           namespaceId: namespace,
           type,
           appName: currentHistory.appName,
+          changeMessage,
           desc: desc || undefined,
           configTags: configTags || undefined,
         });
       }
 
+      setChangeMessage('');
       toast.success(t('history.rollbackSuccess'));
       navigate('/configurationManagement');
     } catch {
@@ -216,6 +222,19 @@ export default function ConfigRollbackPage() {
           />
         </CardContent>
       </Card>
+
+      {!isInsertRollback && (
+        <div className="space-y-2">
+          <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
+          <Textarea
+            id="changeMessage"
+            value={changeMessage}
+            onChange={(e) => setChangeMessage(e.target.value)}
+            placeholder={t('config.changeMessagePlaceholder')}
+            rows={3}
+          />
+        </div>
+      )}
 
       {/* Action Bar */}
       <div className="flex items-center gap-4">

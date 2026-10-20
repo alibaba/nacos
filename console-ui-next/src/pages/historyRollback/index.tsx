@@ -268,6 +268,7 @@ export default function HistoryRollbackPage() {
                   <TableHead>{t('config.group')}</TableHead>
                   <TableHead>{t('history.publishType')}</TableHead>
                   <TableHead>{t('history.operator')}</TableHead>
+                  <TableHead>{t('config.changeMessage')}</TableHead>
                   <TableHead>{t('config.modifyTime')}</TableHead>
                   <TableHead className="text-right pr-6">{t('common.operation')}</TableHead>
                 </TableRow>
@@ -285,6 +286,9 @@ export default function HistoryRollbackPage() {
                       {getPublishTypeBadge(record)}
                     </TableCell>
                     <TableCell>{record.srcUser || '-'}</TableCell>
+                    <TableCell className="max-w-[240px] truncate" title={record.changeMessage || undefined}>
+                      {record.changeMessage || '-'}
+                    </TableCell>
                     <TableCell>{formatTime(record.modifyTime)}</TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex items-center justify-end gap-2">
