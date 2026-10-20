@@ -572,7 +572,7 @@ candidates are retained unassessed. Permissions and currentness are checked agai
 
 Configuration is read at startup. `nacos.ai.ard.search.enhancement.enabled` defaults to false.
 The prefix `nacos.ai.resource.search.relevance.` defines `provider` (jev), `endpoint`, `api-key`,
-`model`, `threshold` (required when enabled, finite 0..1), `timeout-ms` (3000),
+`model`, `threshold` (defaults to 0.50 when omitted; explicit values must be finite 0..1), `timeout-ms` (3000),
 `max-candidates` (60), `batch-size` (60), `batch-concurrency` (1), and `max-concurrency` (8).
 Enabled configurations must have a known provider and complete credentials; invalid limits fail
 startup. Per-request concurrency cannot exceed the node limit. Settings require restart.

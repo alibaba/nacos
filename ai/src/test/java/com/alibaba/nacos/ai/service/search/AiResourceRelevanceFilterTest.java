@@ -42,7 +42,7 @@ class AiResourceRelevanceFilterTest {
         settings.put("nacos.ai.ard.search.enhancement.enabled", "true");
         for (Map.Entry<String, String> entry : Map
             .of("endpoint", "http://localhost:9000/v1/systemone",
-                "api-key", "test-key", "model", "test-model", "threshold", "0.5")
+                "api-key", "test-key", "model", "test-model")
             .entrySet()) {
             settings.put(AiResourceRelevanceConfiguration.PREFIX + entry.getKey(),
                 entry.getValue());
@@ -83,6 +83,14 @@ class AiResourceRelevanceFilterTest {
         } finally {
             filter.close();
         }
+    }
+    
+    @Test
+    void defaultsThresholdAndHonorsExplicitOverride() {
+        assertEquals(0.5, configuration(Map.of()).threshold);
+        assertEquals(0.1, configuration(Map.of("threshold", "0.1")).threshold);
+        assertEquals(configuration(Map.of("threshold", "0.50")).fingerprint("test-v1"),
+            configuration(Map.of()).fingerprint("test-v1"));
     }
     
     @Test

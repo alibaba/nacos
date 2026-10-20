@@ -425,7 +425,7 @@ Provider 定义批量评分和输入上限，公共服务负责选择 Provider�
 
 配置在启动时读取，修改需重启。`nacos.ai.ard.search.enhancement.enabled` 默认为 false。
 `nacos.ai.resource.search.relevance.` 下包含 `provider`（jev）、`endpoint`、`api-key`、
-`model`、`threshold`（开启时必填，有限数且在 0..1 内）、`timeout-ms`（3000）、
+`model`、`threshold`（未配置时默认 0.50；显式值须为 0..1 内的有限数）、`timeout-ms`（3000）、
 `max-candidates`（60）、`batch-size`（60）、`batch-concurrency`（1）、`max-concurrency`（8）。
 启用时必须配置已知 Provider、完整凭据及合法正数限制；单请求并发不得超过节点并发限制。
 

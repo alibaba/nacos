@@ -59,7 +59,7 @@ public class AiResourceRelevanceConfiguration {
         apiKey = property(properties, "api-key", "");
         model = property(properties, "model", "");
         threshold =
-            enabled ? Double.parseDouble(property(properties, "threshold", "NaN")) : Double.NaN;
+            enabled ? Double.parseDouble(property(properties, "threshold", "0.50")) : Double.NaN;
         timeoutMs = positive(properties, "timeout-ms", 3000);
         maxCandidates = positive(properties, "max-candidates", 60);
         batchSize = positive(properties, "batch-size", 60);
