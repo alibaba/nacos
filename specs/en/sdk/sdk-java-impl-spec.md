@@ -491,3 +491,15 @@ resource management belongs to `AiMaintainerService`.
 - Java Maintainer SDK user docs:
   `src/content/docs/next/zh-cn/manual/admin/maintainer-sdk.md` in the Nacos docs
   project.
+
+## Agent snapshot conversion
+
+The API module provides `AgentConverter<T>` and `AgentConverters.a2a()` in
+`com.alibaba.nacos.api.ai.converter`; AgentService has a default a2aConverter()
+convenience method. The implementation is internal to the API module, uses the
+neutral JSON facade and existing A2A utilities, and adds no client-module or
+third-party protocol SDK dependency. Both entrypoints obey the
+[Agent API converter contract](../ai/agent-api-spec.md#public-discovery-snapshot-converters),
+including input/output isolation, explicit application invocation and uniform
+IllegalArgumentException failures. No development-draft bytecode compatibility
+fixture is required for the newly introduced AgentService API.

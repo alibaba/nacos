@@ -19,6 +19,9 @@ package com.alibaba.nacos.test.sdk.ai;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.converter.AgentConverter;
+import com.alibaba.nacos.api.ai.converter.AgentConverters;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
@@ -27,6 +30,7 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.SecurityScheme;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -190,6 +194,143 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final int DEFAULT_CLIENT_TEST_CAPACITY = 3;
 
     private static final String CONSOLE_AGENT_PATH = "/v3/console/ai/agents";
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldConvertRealDiscoverySnapshotsExplicitly(AgentTransportMode mode) throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        AgentConverter<AgentCard> converter = service.agent().a2aConverter();
+        AgentDiscoveryResult declared = service.agent().discoverAgent(reference);
+        assertEquals("https://example.com:443/" + name + "/a2a", converter.convert(declared).getUrl());
+        Endpoint runtime = endpoint(randomPort(), "/converter", "converter");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION, "1.1");
+        metadata.put(AiConstants.A2a.ENDPOINT_TENANT, "converter-tenant");
+        runtime.setMetadata(metadata);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(runtime)));
+        waitForEndpointCount(service, reference, PROTOCOL_A2A, 1);
+        AgentDiscoveryResult snapshot = service.agent().discoverAgent(reference);
+        String before = JacksonUtils.toJson(snapshot);
+        AgentCard card = converter.convert(snapshot);
+        assertEquals(name, card.getName());
+        assertEquals(VERSION, card.getVersion());
+        assertEquals("X-Agent-Key", card.getSecuritySchemes().get("apiKey").get("name"));
+        assertTrue(card.getSecurityRequirements().get(0).containsKey("apiKey"));
+        assertEquals(runtime.getUri(), card.getUrl());
+        assertEquals("1.1", card.getProtocolVersion());
+        assertEquals("converter-tenant", card.getSupportedInterfaces().get(0).getTenant());
+        assertEquals(JacksonUtils.toJson(card), JacksonUtils.toJson(AgentConverters.a2a().convert(snapshot)));
+        card.getSupportedInterfaces().clear();
+        card.getSecuritySchemes().get("apiKey").put("name", "changed");
+        assertEquals(before, JacksonUtils.toJson(snapshot));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.DECLARED));
+        assertEquals(converter.convert(declared).getUrl(),
+            converter.convert(service.agent().discoverAgent(reference, filter)).getUrl());
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        assertEquals(runtime.getUri(),
+            converter.convert(service.agent().discoverAgent(reference, filter)).getUrl());
+        service.shutdown();
+        assertEquals(runtime.getUri(), converter.convert(snapshot).getUrl());
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldConvertOnlyServerVisibleRuntimeContributions(AgentTransportMode mode)
+        throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        Endpoint endpoint = endpoint(randomPort(), "/enabled-converter", "converter");
+        endpoint.setEnabled(false);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(endpoint)));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        AgentDiscoveryResult disabled = service.agent().discoverAgent(reference, filter);
+        assertTrue(sourceEndpoints(disabled, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> service.agent().a2aConverter().convert(disabled));
+        endpoint.setEnabled(true);
+        endpoint.setHealthy(false);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(endpoint)));
+        waitForEndpointCount(service, reference, PROTOCOL_A2A, 1);
+        AgentDiscoveryResult enabled = service.agent().discoverAgent(reference, filter);
+        Endpoint returned = sourceEndpoints(enabled, PROTOCOL_A2A, EndpointSource.RUNTIME).get(0);
+        assertTrue(returned.getEnabled());
+        assertFalse(returned.getHealthy());
+        assertEquals(endpoint.getUri(), service.agent().a2aConverter().convert(enabled).getUrl());
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldKeepConversionUnderListenerControl(AgentTransportMode mode) throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        AtomicReference<AgentCard> converted = new AtomicReference<>();
+        AtomicReference<AgentDiscoveryResult> raw = new AtomicReference<>();
+        AtomicInteger conversionFailures = new AtomicInteger();
+        AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                AgentDiscoveryResult snapshot = event.getAgentDiscoveryResult();
+                if (snapshot != null) {
+                    raw.set(snapshot);
+                    try {
+                        converted.set(service.agent().a2aConverter().convert(snapshot));
+                    } catch (IllegalArgumentException expectedForEmptyRuntime) {
+                        conversionFailures.incrementAndGet();
+                    }
+                }
+            }
+        };
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, filter, listener));
+        service.agent().subscribeAgent(reference, filter, listener);
+        Endpoint first = endpoint(randomPort(), "/callback-first", "converter");
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(first)));
+        waitUntil("application converts first raw event", POLLING_TIMEOUT_MILLIS,
+            () -> converted.get() != null && first.getUri().equals(converted.get().getUrl()));
+        int failuresBeforeEmpty = conversionFailures.get();
+        service.agent().deregisterAgentEndpoints(name, PROTOCOL_A2A, Collections.singletonList(first));
+        waitUntil("empty raw result reaches listener and conversion fails locally", POLLING_TIMEOUT_MILLIS,
+            () -> conversionFailures.get() > failuresBeforeEmpty);
+        assertTrue(sourceEndpoints(raw.get(), PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        Endpoint second = endpoint(randomPort(), "/callback-second", "converter");
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(second)));
+        waitUntil("local conversion failure must not cancel the subscription", POLLING_TIMEOUT_MILLIS,
+            () -> second.getUri().equals(converted.get().getUrl()));
+        assertEquals(name, raw.get().getAgentName());
+    }
+
+    private String publishConvertibleAgent(AiService service) throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String name = randomServiceName("converter");
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, name));
+        AgentCard card = legacyCompatibleAgentCard(name, VERSION, "converter description");
+        SecurityScheme scheme = new SecurityScheme();
+        scheme.put("type", "apiKey");
+        scheme.put("in", "header");
+        scheme.put("name", "X-Agent-Key");
+        card.setSecuritySchemes(Collections.singletonMap("apiKey", scheme));
+        card.setSecurityRequirements(Collections.singletonList(
+            Collections.singletonMap("apiKey", Collections.emptyList())));
+        AgentCallInterface call = legacyCompatibleCallInterface(card);
+        call.setEndpointSourceOrder(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
+        AgentPublishRequest request = new AgentPublishRequest();
+        request.setAgentName(name);
+        request.setVersion(VERSION);
+        request.setCallInterfaces(Collections.singletonList(call));
+        service.agent().publishAgent(request);
+        return name;
+    }
 
     @ParameterizedTest
     @EnumSource(AgentTransportMode.class)

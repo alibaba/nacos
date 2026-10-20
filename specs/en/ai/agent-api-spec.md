@@ -870,3 +870,38 @@ The shared models and schemas follow the agreed endpoint contract. See the [endp
 ### Agent JSON inclusion contract
 
 The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.5.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.
+
+## Public discovery snapshot converters
+
+`com.alibaba.nacos.api.ai.converter.AgentConverter<T>` is a Java 8 functional
+interface with `T convert(AgentDiscoveryResult source)`. `AgentConverters.a2a()`
+and the default `AgentService.a2aConverter()` return the same stateless conversion
+contract as `AgentConverter<AgentCard>`. They need no client, connection, namespace
+binding or capability negotiation; a retained converter works after client shutdown.
+Conversion is explicitly invoked by the application. Discover and Listener dispatch
+continue to deliver their original snapshots without automatic conversion.
+
+The A2A converter validates the discovery snapshot and selects its A2A interface
+without requiring a protocol filter. Its JSON object nativeDescriptor must decode
+to a valid AgentCard with the same name/version as the snapshot. Descriptor fields
+expressible in AgentCard are retained in a deep isolated output. No external A2A SDK
+dependency is introduced. The converter never mutates input or reuses mutable output.
+
+EndpointSets already reflect RUNTIME/DECLARED priority and filters. Select the first
+nonempty set in returned order; do not merge sets or recover descriptor addresses
+removed by filters. Preserve Endpoint order, including unhealthy addresses; discovery
+validation rejects illegal disabled entries rather than silently filtering them. Map
+all selected Endpoints through A2aEndpointUtils into supportedInterfaces and an
+independent additionalInterfaces list. The first interface supplies url,
+preferredTransport and protocolVersion, regardless of the descriptor's old preference.
+Per-Endpoint protocolVersion metadata overrides the CallInterface fallback only when
+its key is present; tenant is not synthesized. Legacy facade selection and fallback
+remain unchanged and can differ from this explicit conversion.
+
+Invalid input, absent A2A/address, malformed descriptor and identity mismatch throw
+IllegalArgumentException with distinct field/stage diagnostics and Agent identity;
+underlying parsing causes are preserved. Failures never become Watch UNAVAILABLE or
+change subscription state. Diagnostics use the existing safe snapshot renderer: log
+input identity/shape and failure stage/type without dumping descriptors, Endpoint
+metadata or credentials. Diagnostic rendering/logging failures cannot replace the
+conversion exception. This adds no HTTP/gRPC operation or wire contract.

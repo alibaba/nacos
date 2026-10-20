@@ -395,3 +395,13 @@ or reachability: each RAD-backed legacy business operation still checks its conf
 transport. A negative HTTP declaration therefore produces unsupported on HTTP rather
 than silently sending legacy gRPC. Cancellation and full cleanup retain their local
 and existing-owner paths.
+
+## Explicit SDK conversion
+
+The public `AgentConverters.a2a()` / `AgentService.a2aConverter()` operation is
+explicit offline conversion governed by the [Agent API spec](agent-api-spec.md#public-discovery-snapshot-converters).
+It honors filtered EndpointSets and their returned order, taking the first address
+for legacy preferred fields. It shares per-Endpoint mapping through A2aEndpointUtils
+with the legacy facade. It does not change the facade's registrationType override,
+preferredTransport selection, empty-Runtime descriptor fallback, latestVersion or
+NOT_FOUND mapping, and it is not inserted into native Discover/Listener dispatch.

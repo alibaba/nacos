@@ -431,3 +431,22 @@ does not change Watch behavior or any HTTP/gRPC request/response contract.
 
 This separate increment has 2 Covered / 0 Partial / 0 Pending: strict 2/2 = 100%, effective 2/2 = 100%.
 Historical SDK domain denominators and deferred Watch findings remain unchanged.
+
+## Explicit A2A snapshot conversion (CONV01)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| AgentConverters.a2a() / AgentService.a2aConverter() | Real grpc/http/auto snapshots, filtered sources, Endpoint metadata, security fields, input isolation and conversion after shutdown | Covered | AgentDiscoveryServiceJavaSdkITCase#shouldConvertRealDiscoverySnapshotsExplicitly passed in all three modes on 2026-10-20, with default JSON and Jackson 3. Deterministic UT additionally covers malformed inputs, priority, deep independence, concurrent reuse and failure diagnostics. |
+| Discover / explicit Listener conversion | Disabled Runtime contributions excluded by server, enabled/unhealthy replacement visible, callback-controlled conversion and subsequent notifications | Covered | shouldConvertOnlyServerVisibleRuntimeContributions and shouldKeepConversionUnderListenerControl passed in all three modes with both adapters. An empty Runtime snapshot reaches the application listener, conversion fails locally, and subsequent registration still produces a convertible notification through the same subscription. |
+| Legacy A2A facade regression | All overloads plus preferred transport, empty Runtime fallback, NOT_FOUND and latestVersion behavior | Covered | A2aRadConverterTest, A2aRadClientAdapterTest and A2aRadWatchAdapterTest passed; A2aRadRoutingJavaSdkITCase#allSignaturesOnRad passed all 6 mode/entrypoint combinations with both adapters. Facade behavior and native dispatch implementation remain unchanged. |
+
+Separate CONV01 increment: 3 Covered / 0 Partial / 0 Pending; strict 3/3 = 100%, effective 3/3 = 100%.
+Validation (2026-10-20 recheck): 174 API/client AI UT classes reported 1,548 executions:
+1,547 passed, 0 failures/errors, and 1 pre-existing disabled MCP cache case outside CONV01.
+All 18 Converter UT executions passed. Fresh UT coverage of the Converter implementation plus
+AgentService.a2aConverter, both as a complete feature and relative to f7ff685fd, is 61/61 lines,
+18/18 branches and 259/259 instructions (100%). The complete AgentDiscovery SDK IT class plus
+legacy A2A facade regression passed 63 executions per JSON adapter (default and Jackson 3),
+including all 9 Converter executions per adapter. Four existing restart/cluster-fixture cases
+per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
+passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.

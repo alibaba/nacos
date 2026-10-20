@@ -693,3 +693,28 @@ Layout 和替换范围，不改写到新的无 Version Agent Naming Service；�
 ### Agent JSON 输出契约
 
 Agent form/model 的可选 null 输出交由序列化器处理。各 binding 接受共享 Endpoint 默认值；注销仅读取 uri/transport，其他字段不改变删除键。遵循 RAD/管理 Schema 0.5.0 和 [JSON 回归矩阵](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)，覆盖 HTTP、gRPC、两种 SDK JSON adapter、合并与独立 Console。
+
+## 公共发现快照转换器
+
+`com.alibaba.nacos.api.ai.converter.AgentConverter<T>` 是 Java 8 函数式接口，唯一方法为
+`T convert(AgentDiscoveryResult source)`。`AgentConverters.a2a()` 与 default
+`AgentService.a2aConverter()` 均提供 `AgentConverter<AgentCard>`，遵循同一无状态转换契约。
+获取与转换无需客户端、连接、namespace 绑定或能力协商；取得后可在客户端关闭后继续使用。
+调用由应用显式执行，Discover 与 Listener 分发仍交付原始快照，不自动转换。
+
+A2A Converter 校验发现快照，选择其中的 A2A 接口，不要求调用方先按协议过滤。JSON 对象
+nativeDescriptor 必须可解析为合法 AgentCard，且 name/version 与快照一致；保留 AgentCard
+可表达的描述字段，输出与输入深隔离。不引入第三方 A2A SDK 依赖，不修改输入或复用可变输出。
+
+EndpointSet 已体现 RUNTIME／DECLARED 优先级及过滤结果，按返回顺序选择第一组非空地址，
+不合并来源、不恢复 descriptor 中被过滤的地址。保留地址顺序和 unhealthy 地址；发现模型校验
+拒绝非法 disabled 数据，不静默筛选。通过 A2aEndpointUtils 映射选中来源的全部地址，生成
+supportedInterfaces 和独立的 additionalInterfaces 列表；第一项决定 url、preferredTransport、
+protocolVersion，不按 descriptor 旧偏好重选。逐端点协议版本 metadata 的键存在时覆盖
+CallInterface 默认值，tenant 不虚构。旧 facade 的选择和回退保持原状，可与显式转换不同。
+
+非法输入、无 A2A／地址、描述损坏及身份不符统一抛 IllegalArgumentException；message 区分
+字段／阶段并标明 Agent 身份，底层解析 cause 保留。失败不变成 Watch UNAVAILABLE，不改变
+订阅状态。日志复用现有安全快照摘要，记录原始输入身份／结构及失败阶段／异常类型，不输出
+完整 descriptor、Endpoint metadata 或凭据；诊断渲染和日志失败不能覆盖转换异常。
+本能力不新增 HTTP/gRPC 操作或报文契约。

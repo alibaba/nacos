@@ -412,3 +412,12 @@ Draft 创建/更新通过 `createMcpServer(McpServerDraftRequest)` 和
   `src/content/docs/next/zh-cn/manual/user/java-sdk`。
 - Java Maintainer SDK 用户文档：Nacos 文档项目中的
   `src/content/docs/next/zh-cn/manual/admin/maintainer-sdk.md`。
+
+## Agent 快照转换
+
+API 模块在 `com.alibaba.nacos.api.ai.converter` 提供 `AgentConverter<T>` 和
+`AgentConverters.a2a()`，AgentService 的 default a2aConverter() 为便捷入口。
+内部实现使用中立 JSON facade 和既有 A2A 工具，不引入对 client 模块或第三方协议 SDK 的依赖。
+两入口遵循 [Agent API 转换契约](../ai/agent-api-spec.md#公共发现快照转换器)，包含输入输出隔离、
+用户显式调用和统一 IllegalArgumentException。新增 AgentService API 不增加开发稿旧字节码
+兼容 fixture。

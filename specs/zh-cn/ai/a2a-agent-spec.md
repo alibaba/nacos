@@ -296,3 +296,12 @@ API 来源，同一存活 publication 的混用在写前拒绝。Card 查询/事
 缺失或否定。该证据不代表 HTTP 支持或可达；经 RAD 适配的旧业务操作仍校验所配置
 transport。HTTP 明确不支持时返回 unsupported，不静默发送旧 gRPC。取消及完整
 清理仍保留本地状态和既有 owner 的路径。
+
+## SDK 显式转换
+
+公共 `AgentConverters.a2a()`／`AgentService.a2aConverter()` 遵循
+[Agent API 规范](agent-api-spec.md#公共发现快照转换器)，由用户显式离线调用。
+它尊重过滤后的 EndpointSet 及返回顺序，以首个地址填充旧首选字段，与旧 facade 通过
+A2aEndpointUtils 共享逐端点映射。它不改变旧 facade 的 registrationType 覆盖、
+preferredTransport 选择、空 Runtime 描述回退、latestVersion 或 NOT_FOUND 映射，
+不插入原生 Discover／Listener 分发。
