@@ -68,6 +68,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -349,9 +350,9 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         // The HTTP preparation creates this resource as administrator. Grant the ordinary
         // client write visibility before exercising its post-migration publication.
         grantClientReadWriteVisibility(Constants.DEFAULT_NAMESPACE_ID, "agent", CUTOVER_AGENT);
-        assertTrue(containsRuntimeEndpoint(grpcService.agent().subscribeAgent(reference, grpcListener),
+        assertTrue(containsRuntimeEndpoint(subscribeAndAwaitInitial(grpcService, reference, grpcListener),
             uri(replacement)));
-        assertTrue(containsRuntimeEndpoint(httpService.agent().subscribeAgent(reference, httpListener),
+        assertTrue(containsRuntimeEndpoint(subscribeAndAwaitInitial(httpService, reference, httpListener),
             uri(replacement)));
         assertEquals(shadowEnabled, currentLegacyNamingShadow(migrationConfigService));
         AgentEndpoint terminalReplacement = endpoint(VERSION_ONE, randomPort(),
@@ -651,10 +652,10 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         // Config observation can precede each node's migration-mode refresh. The caller
         // explicitly waits for native admission before creating the post-cutover Watches.
         awaitClusterRuntime(readers, agentName, VERSION_ONE, uri(initial));
-        assertTrue(containsRuntimeEndpoint(readerA.agent().subscribeAgent(reference, grpcListener),
+        assertTrue(containsRuntimeEndpoint(subscribeAndAwaitInitial(readerA, reference, grpcListener),
             uri(initial)));
         assertTrue(containsRuntimeEndpoint(
-            loadBalancedReader.agent().subscribeAgent(reference, httpListener), uri(initial)));
+            subscribeAndAwaitInitial(loadBalancedReader, reference, httpListener), uri(initial)));
         AgentEndpoint replacement = endpoint(VERSION_ONE, randomPort(),
             "/cluster-cutover-replacement");
         legacy(readerA).registerAgentEndpoint(agentName, Collections.singletonList(replacement));
@@ -981,6 +982,14 @@ class A2aUpgradeMigrationJavaSdkITCase extends JavaSdkBaseITCase {
         }
         Collections.sort(result);
         return result;
+    }
+
+    private AgentDiscoveryResult subscribeAndAwaitInitial(AiService service,
+        AgentReference reference, RecordingListener listener) throws Exception {
+        service.agent().subscribeAgent(reference, listener);
+        AgentDiscoveryResult initial = listener.events.poll(30L, TimeUnit.SECONDS);
+        assertNotNull(initial, "initial snapshot for " + reference.getAgentName());
+        return initial;
     }
 
     private void assertWatchEndpoint(RecordingListener listener, String endpointUri,

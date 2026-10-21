@@ -179,6 +179,14 @@ a compatibility surface.
 
 ### 5.3 AiService Resource Interfaces
 
+The root interface also provides default `getAgentDiscoveryCapability() throws NacosException`,
+returning the existing `AbilityStatus` and defaulting to `UNKNOWN`. It does not require `agent()`;
+existing third-party implementations and their released bytecode remain compatible. The official
+implementation reuses negotiation and HTTP caching for the effective Agent transport, without
+calling the route-selecting `useRad()`. Three-state results, probe errors, shutdown and target scope
+follow the [Agent API Spec](../ai/agent-api-spec.md#21-java-sdk-contract). Capability evidence does
+not imply business success or migration readiness.
+
 `AiService` exposes namespace-bound `mcp()`, `agent()`, `skill()`, `agentSpec()` and `prompt()`.
 Each accessor reuses a resource service sharing the facade's connections, caches, listeners and
 `shutdown()` lifecycle.
@@ -194,7 +202,7 @@ unsupported, so third-party old implementations can retain their old behavior. T
 implements all accessors. The MCP createDraft default still dispatches false to the old four-argument
 method and rejects unimplemented true requests; the official five-argument override is a pure bridge.
 
-Unreleased 3.3 Agent operations are available only through `agent()`. `AgentService.publishAgent`
+Unreleased 3.3 Agent resource operations are available only through `agent()`. `AgentService.publishAgent`
 returns `AgentVersionDetail` with a compatibility default. The official implementation copies input,
 injects the SDK namespace and creates a draft or performs ordinary submit according to `autoSubmit`,
 without mutating caller state. See the [Agent API Spec](../ai/agent-api-spec.md).
@@ -231,13 +239,13 @@ The existing disconnected ability-check runtime exception retains its public typ
 | --- | --- | --- |
 | Search | `searchAgents` | Accept `AgentSearchRequest` and return `Page<AgentSummary>`. |
 | Discover | `discoverAgent` overloads | Accept `AgentReference`, with an optional `AgentDiscoveryFilter`, and return one complete `AgentDiscoveryResult`. |
-| Watch | `subscribeAgent` overloads | Accept the same reference, optional Filter, and listener; return the current complete result and later deliver complete replacement results. |
+| Watch | `subscribeAgent` overloads | Accept a reference, optional Filter and listener; return void and deliver initial state and complete replacements through the listener. |
 | Cancel Watch | `unsubscribeAgent` overloads | Remove the Watch identified by the same reference, Filter, and listener identity. |
 | Register Endpoint | `registerAgentEndpoints` | Register one `AgentEndpointRegistrationBatch` and retain it as redo intent. |
 | Deregister Endpoint | `deregisterAgentEndpoints` | Deregister one `agentName, protocol, List<Endpoint>` owned by this SDK publisher. |
 
-Watch does not add another public subscribe method. Existing source and binary
-compatibility are preserved. `NacosAgentDiscoveryEvent` adds an event type and
+RAD is new in 3.3.0 and its subscribe methods return void. Existing AiService and
+legacy A2A compatibility remain preserved. `NacosAgentDiscoveryEvent` adds an event type and
 unavailable error accessors while its existing result constructor continues to
 create a `SNAPSHOT`. The official implementation may create `UNAVAILABLE`
 events through a factory or additional constructor without changing listener
@@ -247,12 +255,14 @@ The implementation layers are:
 
 ```text
 AgentDiscoveryService feature facade
-  -> Agent Watch manager (identity, capacity, cache, fingerprint, listener)
-    -> Wire Watch transport (gRPC, HTTP batch long poll, or polling fallback)
-      -> AgentClientProxy Discover for authoritative refresh
+  -> AgentWatchManager (identity, admission, query and recovery orchestration)
+       + AgentWatchSubscription (current state, activation and recovery progress)
+       + AgentWatchListenerDispatcher (Listener delivery and local retry)
+       -> AgentWatchTransport (gRPC hints / HTTP long poll / Discover polling)
+            -> invalidate manager state, then refresh through AgentClientProxy Discover
 ```
 
-Transport code owns only Wire lifecycle and signals; it does not duplicate
+Transport code owns only observation lifecycle and signals; it does not duplicate
 feature cache or listener state. Canonicalization and fingerprinting live in a
 Java 8-compatible shared Agent utility used by both client and server. Listener
 callbacks run outside connection/HTTP I/O, prefer the listener executor when
@@ -483,3 +493,76 @@ resource management belongs to `AiMaintainerService`.
 - Java Maintainer SDK user docs:
   `src/content/docs/next/zh-cn/manual/admin/maintainer-sdk.md` in the Nacos docs
   project.
+
+## Agent snapshot conversion
+
+The API module provides `AgentConverter<T>` and `AgentConverters.a2a()` in
+`com.alibaba.nacos.api.ai.converter`; AgentService has a default a2aConverter()
+convenience method. The implementation is internal to the API module, uses the
+neutral JSON facade and existing A2A utilities, and adds no client-module or
+third-party protocol SDK dependency. Both entrypoints obey the
+[Agent API converter contract](../ai/agent-api-spec.md#public-discovery-snapshot-converters),
+including input/output isolation, explicit application invocation and uniform
+IllegalArgumentException failures. No development-draft bytecode compatibility
+fixture is required for the newly introduced AgentService API.
+
+### Native Agent Watch initial delivery
+
+Both Java `subscribeAgent` overloads return `void`; see the initial delivery contract in
+[Agent API](../ai/agent-api-spec.md). The manager reuses one per-Listener dispatcher and
+notification sequence for current state and later updates, including new Listeners on an
+existing Watch. Legacy A2A keeps its return value. Wire contracts remain unchanged.
+
+### Accepted Agent Watch recovery
+
+Only explicit unsubscribe or service shutdown ends an accepted subscription.
+Authorized Discover target absence produces UNAVAILABLE; empty/unhealthy endpoints
+remain snapshots, while transport/auth/quota/migration failures remain internal.
+A successful Discover can deliver changed data even while rebuilding the remote
+binding fails. Rejected background submissions stay pending for an independent
+submission retry entry point.
+HTTP growth quota recovery follows the acknowledged/pending-set contract in the
+Agent API spec, without changing HTTP/gRPC wire schemas.
+
+Pending Discover work is coalesced while in flight. Active refresh results and errors
+are valid only for the activation under which they started; a late response from a
+replaced binding cannot overwrite recovered data or restart stale recovery work.
+
+### Agent Watch Implementation Responsibilities
+
+`AgentWatchManager` composes subscription state and Listener delivery: the manager owns
+canonical identity, admission, Discover, binding recovery and removal;
+`AgentWatchSubscription` holds current state, activation barriers and recovery progress;
+`AgentWatchListenerDispatcher` owns per-Listener delivery, local retry checking, the bounded
+default callback executor and callback diagnostics. Subscription state and delivery share the
+manager's existing state monitor. Reading current state, advancing delivery progress,
+cancellation and check generations remain atomic under that monitor. User code and remote
+Discover execute outside it. This separation adds no state copies, executors or public APIs.
+
+All three observation strategies share that state and delivery path: gRPC Watch receives
+server hints; HTTP Watch obtains changes through batch long polling; Discover polling
+periodically triggers authoritative queries when no usable Watch binding is available.
+Polling neither invokes HTTP Watch nor chooses HTTP versus gRPC for Discover; query routing
+still follows SDK transport configuration. HTTP long polling and periodic Discover are
+different observation strategies.
+
+### Latest-State Agent Listener Delivery
+
+The manager retains only current state and sequence per canonical Watch, plus a handled
+sequence and one in-flight delivery per Listener. A one-second check on existing background
+execution resources retries local delivery differences; rejected check submissions reuse
+background submission recovery. Checking only compares local state and submits asynchronous
+work: it does not Discover or invoke getExecutor/onEvent. Initial, absent and restored states
+share this path and intermediate states may coalesce. SDK/user executor rejection and
+getExecutor failure release the in-flight flag and retain the difference. An onEvent invocation
+that has started counts as a handled attempt even when it throws, avoiding automatic repeated
+side effects. Task identity isolates late submission failures and cancellation. Queued tasks
+capture no historical snapshots; invocation copies current state. Removal drops Listener
+records, last removal/shutdown stops checking, and stale tasks cannot deliver.
+
+Failure logs use bounded categories for rate limiting and include Watch/Listener identity,
+operation, error code, failure count, retry delay and actionable stack traces. Background
+recovery and callback submission recovery log summaries. Local checking also observes long
+running/queued callbacks without logging full Cards or authentication material. User code
+remains isolated from Discover/connection threads and retained memory is independent of
+the number of changes.

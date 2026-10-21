@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai;
 
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import java.util.List;
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -1088,14 +1090,10 @@ class NacosAiServiceTest {
                 public void onEvent(NacosAgentDiscoveryEvent event) {
                 }
             };
-        AgentDiscoveryResult expected = new AgentDiscoveryResult();
-        when(agentDiscoveryCacheHolder.subscribe(reference, filter, listener))
-            .thenReturn(expected);
-        
-        assertEquals(expected, nacosAiService.agent().subscribeAgent(reference, filter, listener));
+        nacosAiService.agent().subscribeAgent(reference, filter, listener);
         nacosAiService.agent().unsubscribeAgent(reference, filter, listener);
         
-        verify(agentDiscoveryCacheHolder).subscribe(reference, filter, listener);
+        verify(agentDiscoveryCacheHolder).subscribeAndNotify(reference, filter, listener);
         verify(agentDiscoveryCacheHolder).unsubscribe(reference, filter, listener);
     }
     
@@ -1542,6 +1540,47 @@ class NacosAiServiceTest {
             autoBuildHttpPublicationCoordinator.shutdown();
         } catch (NacosException ignored) {
         }
+    }
+    
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(AbilityStatus.class)
+    void discoveryCapabilityDelegatesWithoutSelectingA2a(AbilityStatus status) throws Exception {
+        AgentCapabilityResolver capabilities = capabilityConstruction.constructed().get(0);
+        when(capabilities.getDiscoveryCapability()).thenReturn(status);
+        assertEquals(status, nacosAiService.getAgentDiscoveryCapability());
+        verify(capabilities, never()).useRad();
+    }
+    
+    @Test
+    void supportedCapabilityDoesNotBypassMigrationAdmission() throws Exception {
+        injectMocks();
+        AgentCapabilityResolver capabilities = capabilityConstruction.constructed().get(0);
+        when(capabilities.getDiscoveryCapability()).thenReturn(AbilityStatus.SUPPORTED);
+        NacosException migration = new NacosException(50105, "AGENT_MIGRATION_IN_PROGRESS");
+        when(agentTransportRouter.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenThrow(migration);
+        AgentReference reference = new AgentReference();
+        reference.setAgentName("agent");
+        assertEquals(AbilityStatus.SUPPORTED, nacosAiService.getAgentDiscoveryCapability());
+        assertSame(migration, assertThrows(NacosException.class,
+            () -> nacosAiService.agent().discoverAgent(reference)));
+        assertEquals(AbilityStatus.SUPPORTED, nacosAiService.getAgentDiscoveryCapability());
+        verify(capabilities, never()).useRad();
+        verifyNoInteractions(grpcClient);
+    }
+    
+    @Test
+    void discoveryCapabilityPreservesFailureAndRejectsAfterShutdown() throws Exception {
+        AgentCapabilityResolver capabilities = capabilityConstruction.constructed().get(0);
+        NacosException failure = new NacosException(403, "identity rejected");
+        when(capabilities.getDiscoveryCapability()).thenThrow(failure);
+        assertSame(failure, assertThrows(NacosException.class,
+            nacosAiService::getAgentDiscoveryCapability));
+        nacosAiService.shutdown();
+        Mockito.clearInvocations(capabilities);
+        assertEquals(NacosException.CLIENT_DISCONNECT, assertThrows(NacosException.class,
+            nacosAiService::getAgentDiscoveryCapability).getErrCode());
+        verifyNoInteractions(capabilities);
     }
     
     @Test

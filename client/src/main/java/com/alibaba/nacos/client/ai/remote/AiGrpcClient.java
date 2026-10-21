@@ -372,6 +372,10 @@ public class AiGrpcClient implements AiClientProxy {
         rpcRequest.setDiscoveryRequest(request);
         AgentDiscoveryResponse response =
             requestToServer(rpcRequest, AgentDiscoveryResponse.class);
+        if (response.getDiscoveryResult() == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Invalid Agent Discover response: successful response contains no discoveryResult.");
+        }
         return response.getDiscoveryResult();
     }
     
@@ -1160,6 +1164,11 @@ public class AiGrpcClient implements AiClientProxy {
                     : response.getErrorCode();
                 if (NacosException.NO_RIGHT == errorCode) {
                     securityProxy.reLogin();
+                }
+                if (request instanceof AgentDiscoveryRpcRequest
+                    && response.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND.getCode()) {
+                    throw new NacosApiException(NacosException.NOT_FOUND,
+                        ErrorCode.RESOURCE_NOT_FOUND, response.getMessage());
                 }
                 if (response.getErrorCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT
                     .getCode()) {

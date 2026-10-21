@@ -112,8 +112,9 @@ retain their normal authentication/ownership checks. SDK partial deregistration 
 remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
 whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
 Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
-50105, and subsequent Discover is also fenced. Callers explicitly invoke or subscribe again after
-cutover.
+50105, and subsequent Discover is also fenced. Initially rejected calls must be retried after
+cutover. Already accepted Java SDK subscriptions retain local state and retry automatically;
+50105 is never a discovery data event.
 
 Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
 Admin/Console, migration, indexing and internal projection retain their existing rules so migration
@@ -122,6 +123,27 @@ cannot fence itself. The historical QUIESCING mutation barrier remains unchanged
 ## 2. Client API
 
 ### 2.1 Java SDK Contract
+
+`AiService.getAgentDiscoveryCapability()` returns the existing `AbilityStatus` for RAD evidence
+on the effective Agent transport. Its default returns `UNKNOWN` without calling `agent()`,
+preserving compatibility with old third-party implementations. The official implementation:
+
+- Returns `SUPPORTED` for positive evidence, `NOT_SUPPORTED` for reliable negative evidence,
+  and `UNKNOWN` for absent negotiation or declarations. Authentication, connection and probe
+  failures retain their `NacosException`; they are never converted or cached as unsupported.
+- Reads only the current connection for explicit gRPC, returning `UNKNOWN` when disconnected.
+  HTTP reuses bounded capability caching scoped by target URL and identity. AUTO prefers current
+  positive gRPC RAD evidence, otherwise HTTP. The query neither starts another gRPC connection
+  nor probes business APIs such as Discover/publication, nor selects or changes the A2A facade route.
+- Infers unsupported RAD from existing positive legacy gRPC negotiation only when missing HTTP
+  evidence belongs to the sole matching configured target. It never caches this as HTTP false or
+  generalizes one node to the cluster. Reconnect invalidates HTTP evidence.
+- May block on a cold HTTP lookup and try multiple unreachable addresses. Per-connection/read
+  timeouts do not constitute an overall query deadline. After shutdown it throws
+  `CLIENT_DISCONNECT` without probing.
+- Does not promise resource existence/visibility, authorization or migration readiness. A
+  `SUPPORTED` result may coexist with `AGENT_MIGRATION_IN_PROGRESS` on a business operation;
+  callers handle that operation's contract without automatic legacy fallback.
 
 The user-facing interface is named `AgentDiscoveryService`; the RAD acronym is
 not required in application code. During A2A compatibility:
@@ -135,7 +157,7 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
+| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | `void`; initial state and later changes arrive through the Listener |
 | Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
 | Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | Deregister | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
@@ -144,25 +166,72 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 `subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
 and both peers advertise Watch, the SDK installs server-aware Wire Intent;
 otherwise it preserves compatibility through bounded local Discover polling.
-The initial successful Discover result is returned synchronously. If the target
-is absent, the call returns `null` and retains a bounded pending intent. A
-later Watch hint or fallback poll invokes the same authorized Discover. The
-Listener receives only a new complete replacement result whose canonical
-fingerprint differs from the cached result; it never receives a Wire hint.
+Both `subscribeAgent` overloads return `void`. Each newly accepted Listener receives
+its current complete state through the same serialized dispatcher as later changes;
+an absent target receives the existing `UNAVAILABLE` state and remains pending.
+Adding a new Listener to an existing canonical Watch also supplies its current state;
+repeating the same Listener is idempotent and does not resend initialization.
+The first callback may run before or after the method returns. Callers prepare all
+Listener state before subscribing and update their view only from callbacks.
+A later Watch hint or fallback poll invokes the same authorized Discover. Unchanged
+fingerprints do not generate another data callback, and Wire hints are never exposed.
+
+State selection, notification sequence assignment and registration happen atomically
+under the manager lock; user code runs outside that lock. Initialization already
+superseded by a new notification must not be re-enqueued as newer data. Delivery may
+be A then B, or only B, but never B then stale initialization A. A real later return to
+A remains a new state. Removal and shutdown invalidate queued initialization.
+If Discover reads A before Watch installation observes B, existing gRPC
+`refreshRequired` / `observedFingerprint` or the initial HTTP changed-ID response
+triggers another Discover; activation records dirty state until refresh can run.
+HTTP/gRPC paths, request/response fields and server contracts remain unchanged.
+The legacy A2A subscribe return value remains, using the same initialization dispatcher
+without duplicate initialization.
 `getAll`, `selectOneHealthy`, protocol choice, priority/weight selection, and
 actual Agent calling are local SDK helpers, not additional remote operations.
 
 `NacosAgentDiscoveryEvent` has event types `SNAPSHOT` and `UNAVAILABLE`. Its
 existing `NacosAgentDiscoveryEvent(AgentDiscoveryResult)` constructor remains
 the `SNAPSHOT` constructor. A `SNAPSHOT` exposes the complete result and no
-error. `UNAVAILABLE` exposes a Nacos error code and message and no result.
-Initial validation, authorization, and local or server Watch-capacity failures
-are thrown synchronously and the rejected intent is removed from all local
-Watch state. A later terminal authorization or capacity failure emits one
-`UNAVAILABLE` event and removes the intent. A transient transport failure does
-not delete intent; reconnect or fallback re-establishes it. `NOT_FOUND` emits
-at most one unavailable transition for the current absent period, retains a
-bounded pending intent, and emits a new `SNAPSHOT` when the target recovers.
+error. `UNAVAILABLE` means authorized Discover confirmed that the requested
+Agent reference (including version/label) does not resolve. It carries the target
+not-found code/message and no result. Empty endpoints, unhealthy endpoints and
+empty filtered interfaces remain valid snapshots. Raw HTTP 404, Watch rejection,
+authorization, migration and local executor failures are not data events.
+Initial synchronous validation, authorization and capacity rejection throw and
+remove only the rejected new intent. Once accepted, a subscription lasts until
+explicit unsubscribe or service shutdown. All background failures retain intent
+and the last confirmed data, retry with bounded backoff and rate-limited logging,
+and never notify the data listener. One absence state is generated per absent
+period; recovery generates a new snapshot even when it matches the pre-deletion data.
+Rejected background task submissions remain pending for an independent retry
+entry point.
+
+Watch eventually delivers the latest complete state, rather than a log of every
+intermediate event. Each canonical Watch (namespace, reference and filter) retains
+only its latest state and a monotonically increasing local sequence. Each Listener
+tracks its handled sequence and at most one queued or running delivery, without a
+snapshot queue. A task selects current state when it executes and supplies an
+independent result copy to its Listener. Intermediate snapshots and brief UNAVAILABLE
+states may be coalesced; the latest unsuperseded state, including initialization, must
+be delivered when execution becomes available. SDK/user executor rejection and
+getExecutor failures retain the delivery difference for periodic local retry, without
+another Discover or another server change. An onEvent invocation that has already
+started and throws is logged but not automatically replayed. Cancellation and shutdown
+invalidate unexecuted work and release pending state. A saturated bounded callback pool
+may delay other listeners, but user code never runs on query/connection I/O threads and
+retained delivery memory does not grow with the number of changes. Callers bound their
+own permanently blocking I/O with timeouts.
+
+HTTP Watch acceptance is local and asynchronous. Valid responses acknowledge only
+items actually sent in the current generation. If growth exceeds quota, retain
+new items, resume the last acknowledged set and periodically retry the full current
+union with backoff. Reject further growth synchronously while quota is known to
+be exhausted; joining an existing Watch is not growth. Success of the old set alone
+does not clear the restriction. Canceling an acknowledged item can advance a retry.
+After all pending additions are canceled, cooldown permits one real new growth
+probe, without empty/synthetic requests. With no previously acknowledged items,
+retry the whole eligible set. Never discard accepted items to satisfy quota.
 
 One SDK instance keeps at most 300 distinct local Watch records
 by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
@@ -643,14 +712,15 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
 | gRPC reconnect | Redo complete endpoint batches and active Watch intents under the new connection id; perform Discover when the Subscribe response requires refresh |
 | Lost, duplicate, or stale Watch hint | Mark current local intent dirty once and use current-fact Discover plus fingerprint comparison |
-| Terminal Watch authorization or capacity error | Emit one unavailable event, remove local Wire Intent, and do not retry indefinitely |
+| Background Watch rejection or execution failure | Retain accepted intent and confirmed data; retry without an error data event |
 | Transient Watch transport failure | Retain local intent and re-establish it through reconnect, AUTO routing, or polling fallback |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
-Parameter, authorization, and capacity errors do not enter infinite redo.
+Publication parameter, authorization, and capacity errors do not enter infinite redo.
+This publication rule does not terminate an accepted Watch.
 Unsubscribe and shutdown remove Wire Intent before releasing the local slot;
 late notifications are acknowledged as stale and cannot invoke a removed
 listener.
@@ -849,3 +919,38 @@ The shared models and schemas follow the agreed endpoint contract. See the [endp
 ### Agent JSON inclusion contract
 
 The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.5.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.
+
+## Public discovery snapshot converters
+
+`com.alibaba.nacos.api.ai.converter.AgentConverter<T>` is a Java 8 functional
+interface with `T convert(AgentDiscoveryResult source)`. `AgentConverters.a2a()`
+and the default `AgentService.a2aConverter()` return the same stateless conversion
+contract as `AgentConverter<AgentCard>`. They need no client, connection, namespace
+binding or capability negotiation; a retained converter works after client shutdown.
+Conversion is explicitly invoked by the application. Discover and Listener dispatch
+continue to deliver their original snapshots without automatic conversion.
+
+The A2A converter validates the discovery snapshot and selects its A2A interface
+without requiring a protocol filter. Its JSON object nativeDescriptor must decode
+to a valid AgentCard with the same name/version as the snapshot. Descriptor fields
+expressible in AgentCard are retained in a deep isolated output. No external A2A SDK
+dependency is introduced. The converter never mutates input or reuses mutable output.
+
+EndpointSets already reflect RUNTIME/DECLARED priority and filters. Select the first
+nonempty set in returned order; do not merge sets or recover descriptor addresses
+removed by filters. Preserve Endpoint order, including unhealthy addresses; discovery
+validation rejects illegal disabled entries rather than silently filtering them. Map
+all selected Endpoints through A2aEndpointUtils into supportedInterfaces and an
+independent additionalInterfaces list. The first interface supplies url,
+preferredTransport and protocolVersion, regardless of the descriptor's old preference.
+Per-Endpoint protocolVersion metadata overrides the CallInterface fallback only when
+its key is present; tenant is not synthesized. Legacy facade selection and fallback
+remain unchanged and can differ from this explicit conversion.
+
+Invalid input, absent A2A/address, malformed descriptor and identity mismatch throw
+IllegalArgumentException with distinct field/stage diagnostics and Agent identity;
+underlying parsing causes are preserved. Failures never become Watch UNAVAILABLE or
+change subscription state. Diagnostics use the existing safe snapshot renderer: log
+input identity/shape and failure stage/type without dumping descriptors, Endpoint
+metadata or credentials. Diagnostic rendering/logging failures cannot replace the
+conversion exception. This adds no HTTP/gRPC operation or wire contract.

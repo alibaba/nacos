@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.McpService;
@@ -424,6 +425,14 @@ public class NacosAiService implements AiService {
     @Override
     public AgentService agent() {
         return agentService;
+    }
+    
+    @Override
+    public AbilityStatus getAgentDiscoveryCapability() throws NacosException {
+        if (shutdown.get()) {
+            throw new NacosException(NacosException.CLIENT_DISCONNECT, "AI service is closed.");
+        }
+        return agentCapabilityResolver.getDiscoveryCapability();
     }
     
     @Override
@@ -970,7 +979,7 @@ public class NacosAiService implements AiService {
         }
         
         @Override
-        public AgentDiscoveryResult subscribeAgent(AgentReference reference,
+        public void subscribeAgent(AgentReference reference,
             AgentDiscoveryFilter filter, AbstractNacosAgentDiscoveryListener listener)
             throws NacosException {
             AgentModelUtils.copyDiscoveryRequest(reference, filter, namespaceId);
@@ -979,7 +988,7 @@ public class NacosAiService implements AiService {
                     "Agent discovery listener must not be null.");
             }
             agentCapabilityResolver.requireRad("subscribeAgent");
-            return agentDiscoveryCacheHolder.subscribe(reference, filter, listener);
+            agentDiscoveryCacheHolder.subscribeAndNotify(reference, filter, listener);
         }
         
         @Override

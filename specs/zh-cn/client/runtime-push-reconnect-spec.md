@@ -138,11 +138,19 @@ Dirty 后立即 ACK；ACK 不等待 Discover 或 Listener。Retry 有界且属�
 执行普通鉴权 Discover。Client 对完整结果进行 Canonicalize 并比较 Fingerprint；只有不同
 结果才原子替换 Cache 并投递完整 `SNAPSHOT`，不得合并结果片段。过滤后的空 Shape 是合法
 Snapshot。Listener 工作与 Connection/Long-poll I/O 隔离；慢、抛异常或 Executor Reject
-都不能改变 Hint ACK 状态或阻塞其他 Watch。
+都不能改变 Hint ACK 状态或阻塞后台观察。有限共享回调池饱和时其他 Listener 可以等待。
 
-`NOT_FOUND` 进入有界本地 Pending State，同一缺失周期最多投递一次 `UNAVAILABLE`；恢复
-后投递新 Snapshot。终止性鉴权或容量错误投递一次 Unavailable Event 并删除被拒绝 Intent。
-瞬时传输或 Discover 失败保留 Intent 并有界退避，不得把陈旧数据作为新 Snapshot 投递。
+仅合法 Discover 确认 Agent reference 不存在才进入缺失状态，同一周期生成一次
+`UNAVAILABLE` 状态，恢复后生成快照；Listener 可合并中间状态。鉴权、容量、迁移、绑定和线程池拒绝等全部后台错误
+保留已接受订阅与最后确认数据，有界退避恢复，不作为数据事件。被拒绝的后台任务保留
+待办，由独立入口继续提交。仅取消／关闭结束订阅。
+
+本地 Listener 交付复用 Config 的当前状态／已处理状态对账思路：每 Watch 保存一份最新
+状态和本地序号，每 Listener 最多一个排队或执行任务，执行时读取最新状态并复制结果。
+在途期间合并后续变化，包括短暂缺失，不积压完整快照。拒绝提交或获取 Executor 失败后
+保留差异，以后台本地检查恢复；不额外查询服务端，不在检查线程调用用户代码。
+取消使旧任务失效；业务回调已经执行后抛错不默认重放。具体契约见
+[Agent API](../ai/agent-api-spec.md#21-java-sdk-契约)。
 
 ### 6.4 gRPC 重连
 
@@ -191,3 +199,10 @@ Push delivery order 只在某个节点的本地 event 和 task path 内成立。
 
 - push retry、timeout 和 reconnect recovery 观测应遵循
   [可观测钩子规范](../design/foundation-observability-hooks-spec.md)中的共享字段和 label 指引。
+
+## Java SDK 初始化交付
+
+原生 Java subscribeAgent 返回 void，当前状态和后续变化统一通过 Listener 交付，详见
+[Agent API](../ai/agent-api-spec.md)。复用 Subscribe 指纹比较及 HTTP 首轮长轮询比较覆盖
+Discover 到 Watch 的窗口，不改变报文字段或服务端行为。本地通知序号必须防止新状态交付后
+再补发过期初始化结果。

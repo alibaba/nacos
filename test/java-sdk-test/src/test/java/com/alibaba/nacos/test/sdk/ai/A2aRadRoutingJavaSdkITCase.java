@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.A2aService;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -357,6 +358,10 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, address);
         properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode);
         AiService service = createAiServiceWithoutReadiness(properties);
+        if (rad) {
+            waitUntil("query observes RAD capability before legacy operations",
+                () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        }
         A2aService entry = resource ? service.agent() : service;
         Properties admin = rad ? maintainerProperties() : new Properties();
         admin.setProperty(PropertyKeyConst.SERVER_ADDR, rad
@@ -367,6 +372,8 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
         AgentCard first = card(name, V1);
         // The default false must still publish a newly created first Version.
         entry.releaseAgentCard(first);
+        assertEquals(rad ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED,
+            service.getAgentDiscoveryCapability());
         assertEquals(V1, entry.getAgentCard(name).getVersion());
         assertEquals(V1, entry.getAgentCard(name, V1).getVersion());
         AgentCardDetailInfo exact = entry.getAgentCard(name, V1, "URL");
@@ -474,8 +481,8 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
                 }
             }
         };
-        assertNotNull(service.agent().subscribeAgent(reference, listener));
-        assertNotNull(service.agent().subscribeAgent(reference, filter, listener));
+        service.agent().subscribeAgent(reference, listener);
+        service.agent().subscribeAgent(reference, filter, listener);
         service.agent().registerAgentEndpoints(batch);
         // Polling compatibility uses the configured ten-second refresh interval.
         waitUntil("native subscriptions receive runtime updates", 30000L, () -> changes.get() >= 2);

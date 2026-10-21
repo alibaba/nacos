@@ -481,7 +481,8 @@ Watch 使用与 Discover 相同的公开请求和完整结果，但它的 Wire B
   标记为 Dirty；不改变公开 Projection 的内部变化不应触发应用回调。
 - Server 终止条件或重新查询得到的 `NOT_FOUND`、`PERMISSION_DENIED`、
   `RESOURCE_EXHAUSTED`、`CONFLICT` 等结果通过 Binding 的 Unavailable/Terminal 路径
-  投递，不得作为陈旧业务数据投递。
+  投递，不得作为陈旧业务数据投递。这仅结束远程绑定，不结束已接受 Java SDK 订阅；
+  SDK Listener 仅对合法 Discover 确认目标缺失交付 UNAVAILABLE，其他失败内部重试。
 - 重连时重新注册完整的当前 Watch Intent。丢失、重复、过期或跨节点通知是安全的，
   因为每个被接受的 Hint 后都会执行 Current-fact Discover 和 Fingerprint 比较。
 
@@ -814,3 +815,17 @@ nativeDescriptor 仍是解析后的 JSON 值，不是原始字符串。本次保
 定义 endpointSourceOrder 必须恰好包含 DECLARED/RUNTIME 各一次，仅表示推荐顺序。Discover/Watch 未传来源 Filter 时按定义顺序返回两个 Set，保留空 Set；Filter 可以单选任一来源，同时选两种时仍使用定义顺序。显式选择 RUNTIME 且无匹配地址时保留空 Set，不补入 DECLARED。
 
 公开 Endpoint metadata 使用 `__nacos.agent.endpoint.protocolVersion__`（非空可打印 ASCII，最多 64 字符）与 `__nacos.agent.endpoint.tenant__`（最多 256 字符，允许显式空串）支持 A2A 兼容。有效值参与 Runtime source revision 与发现指纹。直接复用历史 Nacos 保留键；Endpoint metadata 仅允许这两个兼容保留键，其他控制键仍禁止写入，非法输入直接拒绝。
+
+## Java SDK 初始化交付
+
+原生 Java subscribeAgent 返回 void，当前状态和后续变化统一通过 Listener 交付，详见
+[Agent API](../ai/agent-api-spec.md)。复用 Subscribe 指纹比较及 HTTP 首轮长轮询比较覆盖
+Discover 到 Watch 的窗口，不改变报文字段或服务端行为。本地通知序号必须防止新状态交付后
+再补发过期初始化结果。
+
+### Java SDK Watch 生命周期
+
+Wire 终止（包含迁移拒绝 50105）仅结束远程绑定，不结束已接受的 Java SDK 订阅。
+SDK 保留订阅及确认数据，在正常鉴权和配额下持续重试。只有合法 Discover 确认目标不存在
+产生 SDK UNAVAILABLE，其他错误内部处理。旧 A2A 保留完整 Card 回调与默认推空保护，
+不增加生命周期回调。

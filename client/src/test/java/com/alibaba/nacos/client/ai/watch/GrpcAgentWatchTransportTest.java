@@ -30,15 +30,20 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.common.remote.client.Connection;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -69,6 +75,123 @@ class GrpcAgentWatchTransportTest {
         transport = new GrpcAgentWatchTransport(client, executor);
         verify(client).registerConnectionListener(transport);
         verify(client).registerServerRequestHandler(transport);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        transport.shutdown();
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2})
+    void abilityLossIgnoresRegistrationsCanceledDuringFallback(int cancellation) throws Exception {
+        Connection first = supportedConnection("connection-a");
+        connect(first, "connection-a");
+        when(client.subscribeAgentWatch(any(), any(), any()))
+            .thenReturn(response("wire-a", null, false), response("wire-b", null, false));
+        transport.start(registration("watch-a", null), new TestCallback());
+        transport.start(registration("watch-b", null), new TestCallback());
+        java.util.concurrent.atomic.AtomicInteger failures =
+            new java.util.concurrent.atomic.AtomicInteger();
+        transport.setLifecycleListener(new GrpcAgentWatchTransport.WireLifecycleListener() {
+            
+            @Override
+            public void onWireAvailable() {
+            }
+            
+            @Override
+            public void onWireUnavailable(String watchId, NacosException exception) {
+                failures.incrementAndGet();
+                if (cancellation == 0) {
+                    transport.stop("watch-b");
+                } else if (cancellation == 1) {
+                    transport.shutdown();
+                } else {
+                    when(client.getCurrentConnectionId()).thenReturn("connection-c");
+                }
+            }
+        });
+        transport.onDisConnect(first);
+        Connection unsupported = mock(Connection.class);
+        when(unsupported.getConnectionId()).thenReturn("connection-b");
+        when(unsupported.getConnectionAbility(AbilityKey.SERVER_RAD_WATCH_V1))
+            .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        when(client.getCurrentConnectionId()).thenReturn("connection-b");
+        when(client.isAgentWatchAvailable()).thenReturn(false);
+        transport.onConnected(unsupported);
+        assertEquals(1, failures.get());
+    }
+    
+    @Test
+    void reconnectFailureWithoutRouterStillSignalsInternalRecoveryCallback() throws Exception {
+        Connection first = supportedConnection("connection-a");
+        connect(first, "connection-a");
+        when(client.subscribeAgentWatch(any(), any(), any()))
+            .thenReturn(response("wire-a", null, false))
+            .thenThrow(new NacosException(50105, "migration"));
+        TestCallback callback = new TestCallback();
+        transport.start(registration("watch-a", null), callback);
+        transport.onDisConnect(first);
+        when(client.getCurrentConnectionId()).thenReturn("connection-b");
+        transport.onConnected(supportedConnection("connection-b"));
+        assertEquals(1, callback.unavailable);
+    }
+    
+    @Test
+    void reconnectSubmissionRejectionRecoversOnOriginalExecutorWithoutDataSignal()
+        throws Exception {
+        transport.shutdown();
+        ExecutorService recoveringExecutor = mock(ExecutorService.class);
+        ScheduledExecutorService driver = mock(ScheduledExecutorService.class);
+        AtomicLong clock = new AtomicLong();
+        AtomicReference<Runnable> retry = new AtomicReference<Runnable>();
+        when(driver.scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any()))
+            .thenAnswer(invocation -> {
+                retry.set(invocation.getArgument(0));
+                return mock(ScheduledFuture.class);
+            });
+        org.mockito.Mockito.doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(recoveringExecutor).execute(any(Runnable.class));
+        transport = new GrpcAgentWatchTransport(client, recoveringExecutor,
+            new AgentWatchTaskScheduler(driver, clock::get, (count, key) -> 1L));
+        Connection first = supportedConnection("connection-a");
+        connect(first, "connection-a");
+        when(client.subscribeAgentWatch(any(), any(), any()))
+            .thenReturn(response("wire-a", null, false), response("wire-b", null, false));
+        TestCallback callback = new TestCallback();
+        transport.start(registration("watch-a", "fingerprint-a"), callback);
+        transport.onDisConnect(first);
+        org.mockito.Mockito.doThrow(new RejectedExecutionException("busy"))
+            .when(recoveringExecutor).execute(any(Runnable.class));
+        when(client.getCurrentConnectionId()).thenReturn("connection-b");
+        transport.onConnected(supportedConnection("connection-b"));
+        clock.set(TimeUnit.SECONDS.toNanos(1));
+        retry.get().run();
+        assertEquals(0, callback.unavailable);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(recoveringExecutor).execute(any(Runnable.class));
+        clock.set(TimeUnit.SECONDS.toNanos(2));
+        retry.get().run();
+        verify(client, times(2)).subscribeAgentWatch(any(), any(), any());
+        assertEquals(0, callback.unavailable);
+    }
+    
+    @Test
+    void initialSubscribeFingerprintMismatchRequestsRefreshWithoutAnotherPush() throws Exception {
+        Connection connection = supportedConnection("connection-a");
+        connect(connection, "connection-a");
+        when(client.subscribeAgentWatch(eq("watch-a"), any(AgentDiscoveryRequest.class),
+            eq("fingerprint-a"))).thenReturn(response("wire-a", "fingerprint-b", true));
+        TestCallback callback = new TestCallback();
+        transport.start(registration("watch-a", "fingerprint-a"), callback);
+        assertTrue(callback.dirtyRecorded);
+        assertEquals("fingerprint-b", callback.observedFingerprint);
+        verify(client).subscribeAgentWatch(eq("watch-a"),
+            any(AgentDiscoveryRequest.class), eq("fingerprint-a"));
     }
     
     @Test
@@ -320,8 +443,8 @@ class GrpcAgentWatchTransportTest {
         when(client.isAgentWatchAvailable()).thenReturn(true);
         transport.onConnected(supportedConnection("connection-b"));
         
-        assertEquals(1, listener.unavailable);
-        assertEquals(NacosException.CLIENT_ERROR, listener.errorCode);
+        assertEquals(0, listener.unavailable);
+        transport.shutdown();
     }
     
     @Test

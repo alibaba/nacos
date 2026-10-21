@@ -125,6 +125,28 @@ class AiGrpcClientAgentTest {
     }
     
     @Test
+    void discoveryPreservesTargetAbsenceButDoesNotMisclassifyNamespaceOrRaw404() throws Exception {
+        support(AbilityKey.SERVER_RAD_V1);
+        when(rpcClient.request(any(AgentDiscoveryRpcRequest.class)))
+            .thenReturn(
+                ErrorResponse.build(ErrorCode.RESOURCE_NOT_FOUND.getCode(), "target missing"),
+                ErrorResponse.build(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), "namespace missing"),
+                ErrorResponse.build(404, "binding missing"), new AgentDiscoveryResponse());
+        NacosApiException missing = assertThrows(NacosApiException.class,
+            () -> client.discoverAgent(discoveryRequest()));
+        assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(), missing.getDetailErrCode());
+        for (int i = 0; i < 2; i++) {
+            NacosException failure = assertThrows(NacosException.class,
+                () -> client.discoverAgent(discoveryRequest()));
+            assertEquals(NacosException.NOT_FOUND, failure.getErrCode());
+            assertFalse(failure instanceof NacosApiException);
+        }
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
+            () -> client.discoverAgent(discoveryRequest())).getErrCode());
+    }
+    
+    @Test
     void connectionLossBeforeFirstSendStillRetainsCompletePublicationForRedo() throws Exception {
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
         batch.setAgentName("agent-a");

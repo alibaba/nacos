@@ -94,6 +94,23 @@ public final class AgentCapabilityResolver {
     }
     
     /**
+     * Query current native capability without selecting A2A or acquiring another connection.
+     *
+     * @return target-scoped RAD evidence for the configured Agent transport
+     * @throws NacosException when an HTTP capability probe fails
+     */
+    public AbilityStatus getDiscoveryCapability() throws NacosException {
+        if (mode == AgentTransportMode.GRPC) {
+            return grpcCapability();
+        }
+        if (mode == AgentTransportMode.AUTO
+            && ability(AbilityKey.SERVER_RAD_V1) == AbilityStatus.SUPPORTED) {
+            return AbilityStatus.SUPPORTED;
+        }
+        return nativeHttpCapability(http.getCapabilities().get(AiConstants.Capability.RAD_V1));
+    }
+    
+    /**
      * Check fresh evidence for a native operation; cleanup does not call this method.
      * @param operation public operation name for diagnostics
      * @throws NacosException when RAD is unsupported or the selected transport is unavailable
@@ -105,21 +122,9 @@ public final class AgentCapabilityResolver {
                 throw new NacosException(NacosException.CLIENT_DISCONNECT,
                     operation + ": the selected server's gRPC endpoint is unreachable.");
             }
-            status = ability(AbilityKey.SERVER_RAD_V1);
-            if (status == AbilityStatus.UNKNOWN
-                && ability(AbilityKey.SERVER_AGENT_REGISTRY) == AbilityStatus.SUPPORTED) {
-                status = AbilityStatus.NOT_SUPPORTED;
-            }
+            status = grpcCapability();
         } else {
-            status = probe();
-            if (status == AbilityStatus.UNKNOWN
-                && ability(AbilityKey.SERVER_AGENT_REGISTRY) == AbilityStatus.SUPPORTED
-                && ability(AbilityKey.SERVER_RAD_V1) != AbilityStatus.SUPPORTED
-                && http.isOnlyServer(client.getCurrentServerAddress())) {
-                // Only a single matching configured target can use legacy negotiation as
-                // its native-operation guard. Never cache this as HTTP/cluster false.
-                status = AbilityStatus.NOT_SUPPORTED;
-            }
+            status = nativeHttpCapability(probe());
         }
         if (status == AbilityStatus.NOT_SUPPORTED) {
             throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
@@ -144,14 +149,27 @@ public final class AgentCapabilityResolver {
         // A successful old binding can select legacy A2A, but cannot turn a missing HTTP
         // capability into a negative native RAD result for another binding.
         if (mode == AgentTransportMode.GRPC) {
-            AbilityStatus rad = ability(AbilityKey.SERVER_RAD_V1);
-            if (rad == AbilityStatus.UNKNOWN
-                && ability(AbilityKey.SERVER_AGENT_REGISTRY) == AbilityStatus.SUPPORTED) {
-                return AbilityStatus.NOT_SUPPORTED;
-            }
-            return rad;
+            return grpcCapability();
         }
         return httpRad;
+    }
+    
+    private AbilityStatus grpcCapability() {
+        AbilityStatus rad = ability(AbilityKey.SERVER_RAD_V1);
+        return rad == AbilityStatus.UNKNOWN
+            && ability(AbilityKey.SERVER_AGENT_REGISTRY) == AbilityStatus.SUPPORTED
+                ? AbilityStatus.NOT_SUPPORTED : rad;
+    }
+    
+    private AbilityStatus nativeHttpCapability(AbilityStatus status) {
+        if (status == AbilityStatus.UNKNOWN
+            && ability(AbilityKey.SERVER_AGENT_REGISTRY) == AbilityStatus.SUPPORTED
+            && ability(AbilityKey.SERVER_RAD_V1) != AbilityStatus.SUPPORTED
+            && http.isOnlyServer(client.getCurrentServerAddress())) {
+            // A sole matching target can reuse legacy negotiation, never as HTTP/cluster false.
+            return AbilityStatus.NOT_SUPPORTED;
+        }
+        return status;
     }
     
     private AbilityStatus ability(AbilityKey key) {

@@ -166,13 +166,24 @@ Only a different result atomically replaces cache and emits a complete
 `SNAPSHOT`; it never merges result fragments. An empty filtered shape is a
 valid snapshot. Listener work is isolated from connection and long-poll I/O;
 slow, throwing, or rejected listener execution cannot change Hint ACK state or
-block another Watch.
+block background observation. A saturated bounded callback pool may delay other listeners.
 
-`NOT_FOUND` enters a bounded local pending state and emits at most one
-`UNAVAILABLE` transition for the absent period; recovery emits a new snapshot.
-Terminal authorization or capacity errors emit one unavailable event and
-remove the rejected intent. Transient transport or Discover failures retain
-intent and use bounded backoff without exposing stale data as a new snapshot.
+Only authorized Discover confirming an unresolved Agent reference enters absent
+state and generates one `UNAVAILABLE` per absent period; recovery generates a snapshot.
+All background failures retain accepted intent and last confirmed data, including
+authorization, capacity, migration, binding and executor rejection. They retry with
+bounded backoff and never become data events. Rejected background submissions
+remain pending for an independent retry entry point; only unsubscribe or shutdown
+ends the subscription.
+
+Local delivery follows Config's current-state versus handled-state check: one latest
+state and local sequence per Watch, and at most one queued/running task per Listener.
+Execution selects current state and copies its result. Changes, including brief absence,
+coalesce during in-flight delivery instead of accumulating snapshots. Executor lookup
+or submission failures retain the difference for periodic local retry without another
+server query or user code on the checking thread. Cancellation invalidates old tasks;
+an invoked callback that throws is not automatically replayed. See the
+[Agent API contract](../ai/agent-api-spec.md#21-java-sdk-contract).
 
 ### 6.4 gRPC Reconnect
 
@@ -232,3 +243,11 @@ Domain specs must define when a local serving view is visible:
 - Push retry, timeout, and reconnect recovery observations should follow the
   shared field and label guidance in the
   [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
+
+## Java SDK initialization delivery
+
+Native Java `subscribeAgent` returns void and supplies current state and later changes
+through the same Listener, as specified in [Agent API](../ai/agent-api-spec.md).
+The existing Subscribe fingerprint comparison and first HTTP long-poll comparison close
+the Discover-to-Watch window. No wire fields or server behavior change. Local notification
+sequencing must prevent a stale initialization from following a newer delivered state.
