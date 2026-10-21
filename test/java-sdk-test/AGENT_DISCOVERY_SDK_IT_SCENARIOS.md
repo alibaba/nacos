@@ -16,6 +16,12 @@
 
 # AgentDiscoveryService Java SDK Scenario Matrix
 
+For acceptance organized by current A2A compatibility, Discover, Watch failures,
+HTTP quota, Listener delivery and real server upgrade, see the
+[core regression matrix](AGENT_SDK_CORE_REGRESSION_MATRIX.md). It distinguishes
+controlled UT evidence, standalone IT, and directed cluster workflows;
+serializer repetitions do not multiply functional coverage.
+
 This matrix is the test-first contract and execution trace for the first
 `AgentDiscoveryService` implementation. It was fixed before production code and is
 maintained with the resulting tests. Every scenario is assigned to stable standalone

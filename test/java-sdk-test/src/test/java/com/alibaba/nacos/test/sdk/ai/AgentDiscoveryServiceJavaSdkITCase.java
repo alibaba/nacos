@@ -2515,33 +2515,33 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             endpoint(randomPort(), "/cluster-grpc-v2", "cluster-grpc-v2");
         Endpoint httpVersionTwo =
             endpoint(randomPort(), "/cluster-http-v2", "cluster-http-v2");
-        grpcService.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+        registerDuringClusterRestart(grpcService, registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(grpcVersionTwo)));
-        httpService.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+        registerDuringClusterRestart(httpService, registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(httpVersionTwo)));
         Predicate<AgentDiscoveryResult> versionTwoConverged = result ->
             VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri());
         awaitEvent(grpcListener, "gRPC Watch converges while one cluster node is stopped",
-            versionTwoConverged);
+            versionTwoConverged, RECONNECT_TIMEOUT_MILLIS);
         awaitEvent(httpListener, "HTTP Watch converges while one cluster node is stopped",
-            versionTwoConverged);
+            versionTwoConverged, RECONNECT_TIMEOUT_MILLIS);
         writeMarker(stopConverged, agentName);
 
         waitForMarker(nodeRestarted, "external harness restarts the stopped cluster node");
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
         Endpoint httpVersionThree =
             endpoint(randomPort(), "/cluster-http-v3", "cluster-http-v3");
-        httpService.agent().registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
+        registerDuringClusterRestart(httpService, registration(agentName, VERSION_3, PROTOCOL_A2A,
             Collections.singletonList(httpVersionThree)));
         Predicate<AgentDiscoveryResult> versionThreeConverged = result ->
             VERSION_3.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionThree.getUri());
         awaitEvent(grpcListener, "gRPC Watch converges after the cluster node restarts",
-            versionThreeConverged);
+            versionThreeConverged, RECONNECT_TIMEOUT_MILLIS);
         awaitEvent(httpListener, "HTTP Watch converges after the cluster node restarts",
-            versionThreeConverged);
+            versionThreeConverged, RECONNECT_TIMEOUT_MILLIS);
         AgentDiscoveryResult defaultResult = grpcService.agent().discoverAgent(latestReference);
         assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, grpcVersionTwo.getUri()));
         assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, httpVersionThree.getUri()));
@@ -3700,6 +3700,23 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && expectedFingerprint.equals(AgentDiscoveryCanonicalizer.fingerprint(
                     httpReaderA.agent().discoverAgent(reference))));
         return expectedFingerprint;
+    }
+
+    private void registerDuringClusterRestart(AiService service,
+        AgentEndpointRegistrationBatch batch) throws NacosException {
+        try {
+            service.agent().registerAgentEndpoints(batch);
+        } catch (NacosException error) {
+            if (error.getErrCode() != NacosException.SERVER_ERROR
+                && error.getErrCode() != NacosException.CLIENT_DISCONNECT) {
+                throw error;
+            }
+            // Membership/owner convergence can outlast the first request's retries.
+            // Do not register again: the original intent's redo and Watch callbacks
+            // must still converge while the node remains stopped.
+            System.out.println("Cluster restart: awaiting retained publication redo after "
+                + error.getErrCode());
+        }
     }
 
     private String requiredDistinctClusterAddress(String property, String otherAddress) {

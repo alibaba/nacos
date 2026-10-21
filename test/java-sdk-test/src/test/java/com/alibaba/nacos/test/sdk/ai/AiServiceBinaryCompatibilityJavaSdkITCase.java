@@ -157,7 +157,9 @@ class AiServiceBinaryCompatibilityJavaSdkITCase extends JavaSdkBaseITCase {
             String text = new String(Files.readAllBytes(output), StandardCharsets.UTF_8);
             assertEquals(0, process.exitValue(), text);
             assertTrue(text.contains("LEGACY_AI_OK"), text);
-            assertTrue(text.contains(oldSdk ? "nacos-client-3.2.4.jar" : "3.3.0-SNAPSHOT.jar"), text);
+            String expectedSource = oldSdk ? "nacos-client-3.2.4.jar"
+                : "SDK_SOURCE=" + AiService.class.getProtectionDomain().getCodeSource().getLocation();
+            assertTrue(text.contains(expectedSource), text);
         } finally {
             if (process.isAlive()) {
                 process.destroyForcibly();

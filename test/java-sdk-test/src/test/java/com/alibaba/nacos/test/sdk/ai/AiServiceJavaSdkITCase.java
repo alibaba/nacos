@@ -88,7 +88,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     public Java SDK factory, including current-value subscription callbacks, latest-version
  *     lookup, direct/ref MCP endpoint publication and registration, duplicate release behavior,
  *     A2A unsubscribe-stop behavior, single/batch/TLS A2A endpoint registration, and RAD capability
- *     queries followed by Discover across all three effective Agent transport modes.</li>
+ *     queries followed by Discover and explicit A2A conversion across all three effective
+ *     Agent transport modes.</li>
  *     <li>Boundary/validation: missing MCP, A2A, Prompt, Skill, AgentSpec, endpoint, and
  *     listener parameters throw controlled {@link NacosException} values; missing subscribed
  *     resources return nullable SDK shapes where the SDK defines them.</li>
@@ -141,6 +142,10 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentDiscoveryResult discovered = service.agent().discoverAgent(reference);
         assertEquals(name, discovered.getAgentName());
         assertEquals("1.0.0", discovered.getVersion());
+        AgentCard converted = service.agent().a2aConverter().convert(discovered);
+        assertEquals(name, converted.getName());
+        assertEquals("1.0.0", converted.getVersion());
+        assertEquals("https://example.com:443/" + name + "/jsonrpc", converted.getUrl());
         assertEquals(name, service.getAgentCard(name, "1.0.0").getName());
         assertEquals(AbilityStatus.SUPPORTED, service.getAgentDiscoveryCapability());
         service.shutdown();

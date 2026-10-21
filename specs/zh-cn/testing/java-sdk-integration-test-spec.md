@@ -188,7 +188,8 @@ Client 和单机 Server，至少覆盖：
 - Listener 投递完整替换 `SNAPSHOT`、Fingerprint 相同抑制、缺失周期一次 Unavailable
   Transition、恢复 Snapshot、Listener Executor 选择、Slow/Throwing Listener 与隔离；
 - 参数校验、鉴权、冲突、本地/Server 容量、超大 Watch、Discover 瞬时失败、Push/Long-poll
-  Timeout、Executor Reject 和拒绝状态清理，且不无限重试；
+  Timeout、Executor Reject 和同步拒绝的新状态清理；已接受的订阅必须保留状态并限速持续
+  恢复，直到用户取消或关闭；
 - gRPC Disconnect/Reconnect、Server Restart、新 Connection Wire Key、Hint 丢失或重复、
   旧 Key 迟到通知、Subscribe/ACK Failure、Ability 缺失和有界轮询回退；
 - HTTP 完整 List Generation 变化、多 Agent 只使用一个 Long Poll、迟到旧 Generation

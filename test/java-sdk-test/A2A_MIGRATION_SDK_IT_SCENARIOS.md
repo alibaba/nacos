@@ -28,6 +28,19 @@ standalone, U5 cluster-cutover, and U6 frozen-shadow/fault rows are now
 `Verified`; the optional crash-at-each-persistence-boundary hardening remains
 listed separately in the OpenAPI matrix.
 
+## Server-first binary upgrade
+
+The [core regression matrix](AGENT_SDK_CORE_REGRESSION_MATRIX.md) defines
+UPG-01..06: a real 3.2.3 database upgraded to 3.3.0-RC while current SDK clients
+keep their legacy A2A subscriptions, followed by recreated-client RAD-backed A2A
+and native RAD reads, writes and callbacks. `A2aServerUpgradeJavaSdkITCase` and
+`run-a2a-server-upgrade.py` implement the external-process fixture. On 2026-10-21,
+all six acceptance groups passed for grpc/http/auto, with real copied Derby data
+and the original client objects alive. Historical migration-state tests below
+remain separate evidence. Client recreation means AiService shutdown/recreation,
+not a released SDK binary gaining RAD support. Native publications supply a new
+A2A descriptor with a version matching the published Agent version.
+
 ## Standalone Client Responsibilities
 
 The `A2aUpgradeMigrationJavaSdkITCase` uses public `A2aService`,

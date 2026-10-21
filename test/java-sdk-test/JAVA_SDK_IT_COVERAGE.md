@@ -297,6 +297,18 @@ Keep target coverage 0/28 until executed. DAUTH-F05 cannot be hidden by auth-off
 cases; MODEL-D01 remains a separately recorded baseline issue. Source-mixing rejection and
 public metadata precedence now have explicit E25-a/b and E23-a assertions.
 
+### Core Agent SDK acceptance and binary upgrade
+
+The [core regression acceptance matrix](AGENT_SDK_CORE_REGRESSION_MATRIX.md)
+separates existing A2A/old-server behavior, RAD discovery, persistent Watch recovery,
+HTTP quota and bounded latest-state Listener delivery. It maps assertions to
+executable UT/IT evidence, rather than treating JSON repetitions as extra scenarios.
+The real 3.2.3 data upgrade passes all six acceptance groups on 2026-10-21
+for grpc/http/auto. All three directed cluster workflows also pass. The core
+acceptance scope has 48/48 Covered groups, combining real IT and explicitly
+identified controlled UT; this is not 100% coverage of the broader SDK registry.
+No broad registry coverage percentage is upgraded merely by adding tests.
+
 ### C01 migration admission implementation (2026-09-17)
 
 New `AgentMigrationClientOpenApiITCase` uses an external historical-authority server with
