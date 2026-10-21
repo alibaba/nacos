@@ -430,7 +430,6 @@ not local run counts or code-coverage measurements.
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
 | Agent discovery capability | grpc/http/auto selection, repeated query, Discover/conversion/A2A use afterward, shutdown | Covered | `AiServiceJavaSdkITCase#testDiscoveryCapabilityBeforeBusinessCallsAndAfterShutdown`; `A2aRadRoutingJavaSdkITCase#allSignaturesOnRad` checks capability before legacy operations without changing routing. |
-| Existing AiService implementation | New optional capability method returns UNKNOWN without breaking released implementation bytecode | Covered | `AiServiceBinaryCompatibilityJavaSdkITCase#oldImplementationKeepsDefaultDispatchAndOptionalNewAccessors`; the existing compatibility fixture supplies released bytecode. |
 | Explicit A2A converter | Both public getters, full descriptor/security metadata, source selection, input independence, conversion after client shutdown | Covered | `AgentDiscoveryServiceJavaSdkITCase#shouldConvertRealDiscoverySnapshotsExplicitly`, across grpc/http/auto. |
 | Server-visible endpoints | Disabled Runtime contributions stay excluded; enabled/unhealthy contributions remain visible | Covered | `shouldConvertOnlyServerVisibleRuntimeContributions` uses real registration and Discover results. |
 | Application-controlled conversion | Conversion of an empty Runtime snapshot fails locally; later registration is still delivered to the original Listener | Covered | `shouldKeepConversionUnderListenerControl`; no converter is inserted into native discovery/dispatch. |
@@ -445,6 +444,8 @@ not local run counts or code-coverage measurements.
 Method names without a class prefix belong to `AgentDiscoveryServiceJavaSdkITCase`.
 The published contract is defined by the [Agent API spec](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract)
 and [SDK Listener delivery spec](../../specs/en/sdk/sdk-java-impl-spec.md#latest-state-agent-listener-delivery).
+Default-method compatibility is covered by `AiServiceDefaultMethodTest`; optional
+released-bytecode fixtures retain their separate opt-in setup.
 Deterministic unit tests separately cover the discovery/subscription fingerprint
 window, stale initialization ordering, internal executor rejection, `getExecutor()`
 failures, 50105/binding failures and exact HTTP generation races. Those are not

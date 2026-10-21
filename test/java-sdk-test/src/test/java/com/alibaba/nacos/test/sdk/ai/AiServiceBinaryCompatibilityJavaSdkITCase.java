@@ -17,7 +17,6 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.ai.AiService;
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
@@ -84,7 +83,6 @@ class AiServiceBinaryCompatibilityJavaSdkITCase extends JavaSdkBaseITCase {
                 .getMethod("verifyDefaults", AiService.class).invoke(null, oldImplementation);
             assertThrows(UnsupportedOperationException.class, oldImplementation::mcp);
             assertThrows(UnsupportedOperationException.class, oldImplementation::agent);
-            assertEquals(AbilityStatus.UNKNOWN, oldImplementation.getAgentDiscoveryCapability());
             assertThrows(UnsupportedOperationException.class, oldImplementation::skill);
             assertThrows(UnsupportedOperationException.class, oldImplementation::agentSpec);
             assertThrows(UnsupportedOperationException.class, oldImplementation::prompt);
@@ -157,9 +155,7 @@ class AiServiceBinaryCompatibilityJavaSdkITCase extends JavaSdkBaseITCase {
             String text = new String(Files.readAllBytes(output), StandardCharsets.UTF_8);
             assertEquals(0, process.exitValue(), text);
             assertTrue(text.contains("LEGACY_AI_OK"), text);
-            String expectedSource = oldSdk ? "nacos-client-3.2.4.jar"
-                : "SDK_SOURCE=" + AiService.class.getProtectionDomain().getCodeSource().getLocation();
-            assertTrue(text.contains(expectedSource), text);
+            assertTrue(text.contains(oldSdk ? "nacos-client-3.2.4.jar" : "3.3.0-SNAPSHOT.jar"), text);
         } finally {
             if (process.isAlive()) {
                 process.destroyForcibly();

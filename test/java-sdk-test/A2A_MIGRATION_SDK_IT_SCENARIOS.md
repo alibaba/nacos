@@ -263,8 +263,8 @@ rows above describe those reproducible scenarios; local old-to-new server binary
 upgrade experiments do not add coverage claims to this matrix.
 
 The normal [`it-new.yml`](../../.github/workflows/it-new.yml) job covers the public
-capability query before RAD-backed A2A operations, old implementation bytecode,
-full Card callbacks, empty-Card suppression, and later updates after recreation.
+capability query before RAD-backed A2A operations, full Card callbacks,
+empty-Card suppression, and later updates after recreation.
 See the [Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression)
 for the executable methods and the separately selected restart/cluster cases.
 

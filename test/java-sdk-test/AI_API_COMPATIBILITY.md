@@ -24,10 +24,10 @@ silently compile them against the current API.
 
 | Combination | Assertion |
 | --- | --- |
-| Old third-party implementation + old caller bytecode + new API | Inherited overloads still dispatch to old overrides; new optional getters throw the documented `UnsupportedOperationException`; the new default RAD capability query returns `AbilityStatus.UNKNOWN` without requiring `agent()`; MCP `createDraft=false` keeps the old override and `true` retains 501 for unimplemented third-party services. |
+| Old third-party implementation + old caller bytecode + new API | Inherited overloads still dispatch to old overrides; new optional getters throw the documented `UnsupportedOperationException`; MCP `createDraft=false` keeps the old override and `true` retains 501 for unimplemented third-party services. |
 | Old application bytecode + new SDK + current server | MCP release/query/subscription/cancellation and old A2A release/query/Endpoint registration keep their public result shapes. |
 | Released 3.2.4 SDK + current server | The same old MCP/A2A wire operations remain accepted. |
-| New SDK + isolated 3.2.x server (optional) | Old MCP/A2A capabilities remain usable without RAD. Native Agent Discovery is outside this smoke and is not supported by that server. |
+| New SDK + isolated 3.2.4 server (optional) | Old MCP/A2A capabilities remain usable without RAD. Native Agent Discovery is outside this smoke and is not supported by that server. |
 
 MCP IDs and A2A's registered Endpoint URL are asserted against actual server
 results. The application runs in a separate JVM with a bounded timeout, and
@@ -66,34 +66,10 @@ For Jackson 3 add
 `-Pjava-sdk-integration-test,ai-api-compatibility,jackson3-sdk-test`. The new SDK
 child receives the selected adapter property; the released SDK retains its own
 dependencies and adapter. To include the old-server row, start a **disposable,
-auth-disabled, isolated 3.2.x server** externally and add
-`-Dnacos.ai.compatibility.old-server-address=127.0.0.1:8858`. Keep its data directory
-isolated from existing instances and discard it when the fixture is no longer needed. This row skips
+auth-disabled, isolated 3.2.4 server** externally and add
+`-Dnacos.ai.compatibility.old-server-address=127.0.0.1:8858`. Its data directory
+belongs to the harness and must be discarded after the run. This row skips
 when the address is omitted; it must not be described as a pass then.
-
-The separate CAP01 old-server scenario was executed on 2026-10-20 against the
-local `nacos-registry.cn-hangzhou.cr.aliyuncs.com/nacos/nacos-server:v3.2.3` image.
-`A2aRadRoutingJavaSdkITCase#allSignaturesOnReleasedOldServer` passed all 6
-grpc/http/auto × facade/resource combinations with both default JSON and Jackson 3
-(12 executions, 0 failures/errors/skips). It checks `NOT_SUPPORTED` after legacy
-negotiation, continued legacy A2A operations, controlled rejection of native RAD
-operations, and local cleanup. This is independent of the released 3.2.4 SDK/API
-bytecode fixtures and does not claim a rerun of the MCP smoke above. Legacy A2A
-uses gRPC even when the configured native Agent mode is HTTP or AUTO.
-
-With the isolated old server mapped to main port 18848, gRPC port 19848 and
-console port 18080, reproduce the CAP01 scenario using:
-
-```bash
-mvn -B -pl test/java-sdk-test -Pjava-sdk-integration-test \
-  -DskipTests=false \
-  '-Dit.test=A2aRadRoutingJavaSdkITCase#allSignaturesOnReleasedOldServer' \
-  -Dnacos.port=18848 -Dnacos.console.port=18080 \
-  -Dnacos.test.auth.enabled=false \
-  -Dnacos.ai.compatibility.old-server-address=127.0.0.1:18848 verify
-```
-
-Repeat with `-Pjava-sdk-integration-test,jackson3-sdk-test` for Jackson 3.
 
 The wrapper resolves historical dependencies into repository-level `target`
 before invoking the IT lifecycle. A module `clean` does not remove that classpath;

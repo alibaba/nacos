@@ -423,7 +423,7 @@ directed restart/cluster cases use the existing
 
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| Agent discovery capability | Selected transport, query before/after business use, shutdown, existing implementation default and bytecode compatibility | Covered | `AiServiceJavaSdkITCase`, `AiServiceBinaryCompatibilityJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
+| Agent discovery capability | Selected transport, query before/after business use, shutdown and unchanged A2A routing | Covered | `AiServiceJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; default-method compatibility, unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
 | Explicit A2A snapshot conversion | Descriptor preservation, visible endpoint sources, disabled filtering, input isolation, application-owned conversion failures and subsequent updates | Covered | Three Converter workflows in `AgentDiscoveryServiceJavaSdkITCase`; malformed input and identity mismatch additionally have deterministic UT coverage. |
 | Native initial and changed state | Void subscription, initial state, duplicate/new Listener behavior, missing selectors, deletion/recreation and old A2A empty-Card suppression | Covered | Named initial/missing/deletion methods in the Agent matrix; exact initialization races remain UT assertions. |
 | Accepted Watch recovery | Permission revoke/restore, HTTP quota growth rollback and retained additions, cancellation freeing a slot | Covered | Auth/capacity fixtures in `it-new.yml`; internal binding failures and 50105 recovery are UT evidence, not real migration fault injection. |
