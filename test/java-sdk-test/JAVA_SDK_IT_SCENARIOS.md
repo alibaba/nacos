@@ -412,54 +412,24 @@ passing migration coverage. See C11_PROGRESS.md for all 66 report groups and ski
 
 A2A conversion and RAD metadata use the same `__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__` keys as legacy Naming Instances. AgentDiscoveryService and A2aRadRouting SDK ITs verify HTTP/gRPC/AUTO Discover/Watch and legacy projection under default/Jackson 3 profiles; migration comparator UTs verify identical old/new meaning and changed tenant/protocol detection. Invalid control metadata remains rejected.
 
-### Agent discovery capability query (CAP01)
+
+## Agent SDK functional regressions
+
+Execution ownership and method-level assertions are maintained in the
+[Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression).
+The ordinary functional job is [`it-new.yml`](../../.github/workflows/it-new.yml);
+directed restart/cluster cases use the existing
+[reliability workflow](../../.github/workflows/default-auth-reliability-it.yml).
 
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| `AiService.getAgentDiscoveryCapability()` | Effective grpc/http/auto and Agent overrides, repeated queries, subsequent Discover/A2A operations, shutdown and released implementation default | Covered | AiServiceJavaSdkITCase, AiServiceBinaryCompatibilityJavaSdkITCase and A2aRadRoutingJavaSdkITCase passed 10 targeted executions per JSON adapter (default and Jackson 3), with default auth enabled on an isolated standalone server. Deterministic UTs cover unknown evidence, probe failures, no route selection, target/identity cache isolation and reconnect. |
-| Query against released old server | Reliable old capability evidence and continued legacy A2A operations | Covered | On 2026-10-20, allSignaturesOnReleasedOldServer passed 6 executions per adapter (default and Jackson 3) on an isolated auth-disabled 3.2.3 container, with 0 failures/errors/skips. grpc/http/auto × facade/resource verifies NOT_SUPPORTED after legacy negotiation, all 18 legacy overloads, controlled rejection of native RAD operations and cleanup. Legacy A2A continues to use gRPC. This result is separate from the released bytecode fixture above. |
+| Agent discovery capability | Selected transport, query before/after business use, shutdown, existing implementation default and bytecode compatibility | Covered | `AiServiceJavaSdkITCase`, `AiServiceBinaryCompatibilityJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
+| Explicit A2A snapshot conversion | Descriptor preservation, visible endpoint sources, disabled filtering, input isolation, application-owned conversion failures and subsequent updates | Covered | Three Converter workflows in `AgentDiscoveryServiceJavaSdkITCase`; malformed input and identity mismatch additionally have deterministic UT coverage. |
+| Native initial and changed state | Void subscription, initial state, duplicate/new Listener behavior, missing selectors, deletion/recreation and old A2A empty-Card suppression | Covered | Named initial/missing/deletion methods in the Agent matrix; exact initialization races remain UT assertions. |
+| Accepted Watch recovery | Permission revoke/restore, HTTP quota growth rollback and retained additions, cancellation freeing a slot | Covered | Auth/capacity fixtures in `it-new.yml`; internal binding failures and 50105 recovery are UT evidence, not real migration fault injection. |
+| Latest-state Listener delivery | Slow Listener coalescing, rejected Executor recovery without a new change, later notification after callback throws | Covered | Public gRPC/HTTP functional cases use application Executor hooks; bounded internal memory and getExecutor failure races are additionally tested in UT. |
+| Restart and multi-node lifecycle | Original subscriptions and endpoint redo recover across restart, pinned-node changes and rolling peer restart | Covered | Four methods selected by the fixed reliability workflow; its environment is separate from the normal functional job. |
 
-Separate CAP01 increment: strict 2/2 = 100%; effective 2/2 = 100%. Historical domain denominators
-and deferred Watch findings are unchanged. No HTTP/gRPC wire contract changes are introduced.
-
-## Explicit A2A snapshot conversion (CONV01)
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| AgentConverters.a2a() / AgentService.a2aConverter() | Real grpc/http/auto snapshots, filtered sources, Endpoint metadata, security fields, input isolation and conversion after shutdown | Covered | AgentDiscoveryServiceJavaSdkITCase#shouldConvertRealDiscoverySnapshotsExplicitly passed in all three modes on 2026-10-20, with default JSON and Jackson 3. Deterministic UT additionally covers malformed inputs, priority, deep independence, concurrent reuse and failure diagnostics. |
-| Discover / explicit Listener conversion | Disabled Runtime contributions excluded by server, enabled/unhealthy replacement visible, callback-controlled conversion and subsequent notifications | Covered | shouldConvertOnlyServerVisibleRuntimeContributions and shouldKeepConversionUnderListenerControl passed in all three modes with both adapters. An empty Runtime snapshot reaches the application listener, conversion fails locally, and subsequent registration still produces a convertible notification through the same subscription. |
-| Legacy A2A facade regression | All overloads plus preferred transport, empty Runtime fallback, NOT_FOUND and latestVersion behavior | Covered | A2aRadConverterTest, A2aRadClientAdapterTest and A2aRadWatchAdapterTest passed; A2aRadRoutingJavaSdkITCase#allSignaturesOnRad passed all 6 mode/entrypoint combinations with both adapters. Facade behavior and native dispatch implementation remain unchanged. |
-
-Separate CONV01 increment: 3 Covered / 0 Partial / 0 Pending; strict 3/3 = 100%, effective 3/3 = 100%.
-Validation (2026-10-20 recheck): 174 API/client AI UT classes reported 1,548 executions:
-1,547 passed, 0 failures/errors, and 1 pre-existing disabled MCP cache case outside CONV01.
-All 18 Converter UT executions passed. Fresh UT coverage of the Converter implementation plus
-AgentService.a2aConverter, both as a complete feature and relative to f7ff685fd, is 61/61 lines,
-18/18 branches and 259/259 instructions (100%). The complete AgentDiscovery SDK IT class plus
-legacy A2A facade regression passed 63 executions per JSON adapter (default and Jackson 3),
-including all 9 Converter executions per adapter. Four existing restart/cluster-fixture cases
-per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
-passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.
-
-## Native Watch initial delivery (WATCH02 / P05)
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| subscribeAgent overloads | Void signatures, current state on first/new Listener, duplicate idempotence, initial absence, cancellation and legacy A2A return compatibility | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges` passes grpc/http/auto with both JSON adapters. Existing Discovery, legacy A2A, visibility-loss and cross-resource cases now wait for real initial callbacks; all SDK test sources compile. |
-| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains deferred WATCH03. |
-
-P05 precedes the combined P04/P06/P07 Watch phase. Existing terminal-error semantics are
-not claimed to be fixed by initialization delivery; final domain-event/recovery rules are
-validated in that combined phase.
-
-Validation on 2026-10-20: 1,559 AI unit tests passed; one pre-existing disabled MCP
-case was skipped. Default JSON and Jackson 3 each passed 77 SDK executions (60 Discovery,
-6 legacy A2A routing, 1 visibility-loss and 10 cross-resource cases), with zero failures/errors.
-Each adapter conditionally skipped the same four restart/pinned-cluster fixture cases;
-those directed environments were not exercised by this standalone run. All 13 WINIT plan
-groups passed within P05 scope. Pure-UT incremental coverage against `85accf6d7` is
-17/17 lines, 16/16 branches and 95/95 instructions (100% each); this is not whole-repository
-coverage. Spotless, compilation, Checkstyle, SDK packaging and RAT passed.
-
-Separate WATCH02 increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
-effective 2/2 = 100%. External usage documentation remains a separate follow-up.
+Coverage is scoped to these behavior groups and does not promote unrelated SDK
+registry rows. Local upgrade experiments and one-off coverage/run summaries are
+kept outside the committed scenario matrix.

@@ -297,18 +297,6 @@ Keep target coverage 0/28 until executed. DAUTH-F05 cannot be hidden by auth-off
 cases; MODEL-D01 remains a separately recorded baseline issue. Source-mixing rejection and
 public metadata precedence now have explicit E25-a/b and E23-a assertions.
 
-### Core Agent SDK acceptance and binary upgrade
-
-The [core regression acceptance matrix](AGENT_SDK_CORE_REGRESSION_MATRIX.md)
-separates existing A2A/old-server behavior, RAD discovery, persistent Watch recovery,
-HTTP quota and bounded latest-state Listener delivery. It maps assertions to
-executable UT/IT evidence, rather than treating JSON repetitions as extra scenarios.
-The real 3.2.3 data upgrade passes all six acceptance groups on 2026-10-21
-for grpc/http/auto. All three directed cluster workflows also pass. The core
-acceptance scope has 48/48 Covered groups, combining real IT and explicitly
-identified controlled UT; this is not 100% coverage of the broader SDK registry.
-No broad registry coverage percentage is upgraded merely by adding tests.
-
 ### C01 migration admission implementation (2026-09-17)
 
 New `AgentMigrationClientOpenApiITCase` uses an external historical-authority server with
@@ -469,151 +457,24 @@ description/tags，要求固定在节点 A 的 gRPC/HTTP Watch 收到相同完�
 并与 A/B 两节点 Discover 指纹一致；版本与 contentDigest 保持不变。
 该场景在 Derby+Raft 和 MySQL 三节点夹具中分别执行。
 
-## Public Agent discovery capability (CAP01)
+
+## Agent SDK functional regressions
+
+Execution ownership and method-level assertions are maintained in the
+[Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression).
+The ordinary functional job is [`it-new.yml`](../../.github/workflows/it-new.yml);
+directed restart/cluster cases use the existing
+[reliability workflow](../../.github/workflows/default-auth-reliability-it.yml).
 
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| `AiService.getAgentDiscoveryCapability()` | grpc/http/auto and Agent-specific overrides; repeated query; normal Discover and legacy facade use afterwards; shutdown; released third-party default compatibility | Covered | Implemented in `AiServiceJavaSdkITCase#testDiscoveryCapabilityBeforeBusinessCallsAndAfterShutdown`, `AiServiceBinaryCompatibilityJavaSdkITCase#oldImplementationKeepsDefaultDispatchAndOptionalNewAccessors` and `A2aRadRoutingJavaSdkITCase#allSignaturesOnRad`; Default JSON and Jackson 3 each passed 10 targeted executions on an isolated auth-enabled standalone 3.3.0-RC server (0 failures/errors/skips); the released third-party bytecode fixture is included. |
-| Query against a released old server | Reliable old-server capability evidence and continued legacy A2A operations | Covered | On 2026-10-20, `A2aRadRoutingJavaSdkITCase#allSignaturesOnReleasedOldServer` passed 6 executions per adapter (default and Jackson 3) on an isolated auth-disabled 3.2.3 container, with 0 failures/errors/skips. Covers grpc/http/auto configuration and both facade/resource entrypoints: capability is NOT_SUPPORTED after legacy negotiation, all 18 legacy overloads remain usable, native RAD operations reject with SERVER_NOT_IMPLEMENTED, and local cleanup/repeated shutdown work. Legacy A2A still uses gRPC even with HTTP/AUTO configuration. |
+| Agent discovery capability | Selected transport, query before/after business use, shutdown, existing implementation default and bytecode compatibility | Covered | `AiServiceJavaSdkITCase`, `AiServiceBinaryCompatibilityJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
+| Explicit A2A snapshot conversion | Descriptor preservation, visible endpoint sources, disabled filtering, input isolation, application-owned conversion failures and subsequent updates | Covered | Three Converter workflows in `AgentDiscoveryServiceJavaSdkITCase`; malformed input and identity mismatch additionally have deterministic UT coverage. |
+| Native initial and changed state | Void subscription, initial state, duplicate/new Listener behavior, missing selectors, deletion/recreation and old A2A empty-Card suppression | Covered | Named initial/missing/deletion methods in the Agent matrix; exact initialization races remain UT assertions. |
+| Accepted Watch recovery | Permission revoke/restore, HTTP quota growth rollback and retained additions, cancellation freeing a slot | Covered | Auth/capacity fixtures in `it-new.yml`; internal binding failures and 50105 recovery are UT evidence, not real migration fault injection. |
+| Latest-state Listener delivery | Slow Listener coalescing, rejected Executor recovery without a new change, later notification after callback throws | Covered | Public gRPC/HTTP functional cases use application Executor hooks; bounded internal memory and getExecutor failure races are additionally tested in UT. |
+| Restart and multi-node lifecycle | Original subscriptions and endpoint redo recover across restart, pinned-node changes and rolling peer restart | Covered | Four methods selected by the fixed reliability workflow; its environment is separate from the normal functional job. |
 
-Querying has no parameters. Missing evidence, disconnected/current gRPC evidence, independent HTTP
-bindings, target/identity cache isolation, coalesced loads, probe exceptions, reconnect invalidation,
-fixed A2A selection and supported capability with migration admission failure are deterministic
-UT scenarios. These do not imply cross-node guarantees or migration readiness. The new query
-does not change Watch behavior or any HTTP/gRPC request/response contract.
-
-This separate increment has 2 Covered / 0 Partial / 0 Pending: strict 2/2 = 100%, effective 2/2 = 100%.
-Historical SDK domain denominators and deferred Watch findings remain unchanged.
-
-## Explicit A2A snapshot conversion (CONV01)
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| AgentConverters.a2a() / AgentService.a2aConverter() | Real grpc/http/auto snapshots, filtered sources, Endpoint metadata, security fields, input isolation and conversion after shutdown | Covered | AgentDiscoveryServiceJavaSdkITCase#shouldConvertRealDiscoverySnapshotsExplicitly passed in all three modes on 2026-10-20, with default JSON and Jackson 3. Deterministic UT additionally covers malformed inputs, priority, deep independence, concurrent reuse and failure diagnostics. |
-| Discover / explicit Listener conversion | Disabled Runtime contributions excluded by server, enabled/unhealthy replacement visible, callback-controlled conversion and subsequent notifications | Covered | shouldConvertOnlyServerVisibleRuntimeContributions and shouldKeepConversionUnderListenerControl passed in all three modes with both adapters. An empty Runtime snapshot reaches the application listener, conversion fails locally, and subsequent registration still produces a convertible notification through the same subscription. |
-| Legacy A2A facade regression | All overloads plus preferred transport, empty Runtime fallback, NOT_FOUND and latestVersion behavior | Covered | A2aRadConverterTest, A2aRadClientAdapterTest and A2aRadWatchAdapterTest passed; A2aRadRoutingJavaSdkITCase#allSignaturesOnRad passed all 6 mode/entrypoint combinations with both adapters. Facade behavior and native dispatch implementation remain unchanged. |
-
-Separate CONV01 increment: 3 Covered / 0 Partial / 0 Pending; strict 3/3 = 100%, effective 3/3 = 100%.
-Validation (2026-10-20 recheck): 174 API/client AI UT classes reported 1,548 executions:
-1,547 passed, 0 failures/errors, and 1 pre-existing disabled MCP cache case outside CONV01.
-All 18 Converter UT executions passed. Fresh UT coverage of the Converter implementation plus
-AgentService.a2aConverter, both as a complete feature and relative to f7ff685fd, is 61/61 lines,
-18/18 branches and 259/259 instructions (100%). The complete AgentDiscovery SDK IT class plus
-legacy A2A facade regression passed 63 executions per JSON adapter (default and Jackson 3),
-including all 9 Converter executions per adapter. Four existing restart/cluster-fixture cases
-per adapter were conditionally skipped, outside the CONV01 matrix. All 16 CONV01 plan groups
-passed; Spotless, Checkstyle, RAT and API SpotBugs passed. Existing deferred Watch gaps remain.
-
-## Native Watch initial delivery
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| subscribeAgent overloads | Void signatures, current state on first/new Listener, duplicate idempotence, initial absence, cancellation and legacy A2A return compatibility | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges` passes grpc/http/auto with both JSON adapters. Existing Discovery, legacy A2A, visibility-loss and cross-resource cases now wait for real initial callbacks; all SDK test sources compile. |
-| Initial and later Listener ordering | A-to-B subscription window, no B-to-stale-A delivery, independent serialized callbacks and cancellation generations | Covered | Manager/transport UT deterministically exercise activation-time fingerprint mismatch, late old notifications, absence/recovery, duplicate and canceled initialization. Real SDK IT verifies initialization and subsequent changes; precise race injection is UT-only. Callback rejection redelivery remains a separate deferred reliability improvement. |
-
-Initial-delivery validation preceded persistent Watch recovery and HTTP quota handling.
-At that point terminal-error semantics were
-not claimed to be fixed by initialization delivery; final domain-event/recovery rules are
-validated in that combined phase.
-
-Validation on 2026-10-20: 1,559 AI unit tests passed; one pre-existing disabled MCP
-case was skipped. Default JSON and Jackson 3 each passed 77 SDK executions (60 Discovery,
-6 legacy A2A routing, 1 visibility-loss and 10 cross-resource cases), with zero failures/errors.
-Each adapter conditionally skipped the same four restart/pinned-cluster fixture cases;
-those directed environments were not exercised by this standalone run. The initial-state,
-ordering and cancellation scenarios described above passed. Pure-UT incremental coverage
-against `85accf6d7` is
-17/17 lines, 16/16 branches and 95/95 instructions (100% each); this is not whole-repository
-coverage. Spotless, compilation, Checkstyle, SDK packaging and RAT passed.
-
-Separate initial-delivery increment: 2 Covered / 0 Partial / 0 Pending; strict 2/2 = 100%,
-effective 2/2 = 100%. External usage documentation remains a separate follow-up.
-
-### Persistent Watch recovery, data events and HTTP quota validation
-
-Contract references: [Agent API Java SDK contract](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract),
-[current-fact refresh and Listener delivery](../../specs/en/client/runtime-push-reconnect-spec.md#63-current-fact-refresh-and-listener-delivery),
-and [accepted Watch recovery](../../specs/en/sdk/sdk-java-impl-spec.md#accepted-agent-watch-recovery).
-
-Accepted subscriptions persist through background failures; only confirmed authorized
-Discover target absence emits UNAVAILABLE. Permission rejection (403) is an access
-failure, whereas visibility may deliberately make a reference unresolved. HTTP quota
-growth retains pending items and restores the acknowledged set.
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| Agent data events | Initial/missing version or label, deletion, identical recreation, empty/unhealthy snapshots, error/data separation | Covered | Both transports exercise unresolved selectors and deletion/recreation through the original Listener; health/filter cases preserve complete snapshots. Legacy A2A suppresses empty Card callbacks and receives a later version. A separate legacy Watch need not notify an identical recreation if it never observed the short absence. |
-| Accepted Watch recovery | Same-instance server restart and permission revoke/restore, retained intent, no access-error data event | Covered | Each JSON adapter executes the real standalone restart with SDK clients alive and isolated read-permission revoke/restore. UT covers 50105, binding/Executor rejection, coalesced in-flight recovery, canceled tasks and old-activation response isolation. Multi-node/real migration fixtures are not included in this increment's execution evidence. |
-| HTTP growth quota | Retain acknowledged and pending sets, reject further growth, cancel old item and recover accepted addition | Covered | `shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch` proves old Watch updates, no quota UNAVAILABLE, synchronous rejection after known exhaustion and recovery on the original pending Listener. Controlled UT covers cooldown, no-success-yet, generation and timer races. |
-
-Separate standalone Watch increment: 3 Covered / 0 Partial / 0 Pending;
-strict 3/3 = 100%, effective 3/3 = 100%. This bounded increment does not upgrade
-the registry's broader Agent/cluster/migration Partial surfaces.
-
-Validation on 2026-10-20: 175 API/client AI UT classes report 1,610 executions:
-1,609 pass, zero failures/errors, one pre-existing disabled MCP cache case.
-Fresh UT-only JaCoCo against `8216f8a0f`, including the new submission helper:
-299/299 changed lines (100%), 164/168 branches (97.62%) and 1,423/1,425 instructions
-(99.86%). Complete changed production files have 95.69% line coverage; the six
-Watch implementation files have 99.43%. These are not whole-repository figures.
-
-Default JSON and Jackson 3 each pass 83 SDK executions: 66 Discovery, 6 legacy
-A2A routing, 1 visibility restore and 10 cross-resource cases; 166 total, zero
-failures/errors. Each adapter conditionally skips the same three multi-node
-pinned/rolling cases. Real standalone restart is executed, not skipped. Real
-migration cutover is not exercised; 50105 recovery is controlled-UT evidence.
-Spotless, compilation, Checkstyle, release packaging and RAT pass. The isolated
-server uses separate ports and is stopped after verification.
-
-The full matrix was rerun after correcting fixture auth-cache readiness and A2A
-projection/intermediate-state assumptions, and after fixing pending-work coalescing
-and stale refresh results across binding reactivation. That historical validation
-did not include callback retry reliability; the latest-state increment below adds it.
-
-The pre-change review identified these callback limits:
-slow listeners retain an unbounded queue of complete snapshots; SDK or listener
-executor rejection can discard a state that an unchanged Discover will not redeliver;
-and a throwing `getExecutor()` can strand later delivery. Two blocked default callback
-workers can also delay healthy listeners while Discover continues updating the cache.
-The background-recovery coverage above does not validate bounded callback memory,
-reliable redelivery or progress of all listeners under blocking user code.
-
-### Latest-state Listener delivery validation
-
-Contract: [latest-state delivery](../../specs/en/sdk/sdk-java-impl-spec.md#latest-state-agent-listener-delivery).
-This increment supersedes the historical callback limitations above.
-
-| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
-| --- | --- | --- | --- |
-| Latest-state callbacks | Slow callbacks coalesce intermediate snapshots/absence; independent Listener progress; bounded retained state; no I/O thread callbacks | Covered | Public gRPC/HTTP `shouldCoalesceSlowListenerWithoutBlockingWatchObservation`; UT holds a callback across 2,048 changes and verifies only the final state remains, tests the real default pool under saturation, ordering and independent result copies. |
-| Failed delivery recovery | Executor/getExecutor failure recovers without another change; initial state retained; invoked callback exceptions not replayed | Covered | `shouldRecoverListenerSubmissionWithoutAnotherAgentChange` and `shouldObserveLaterChangesAfterListenerThrows` run on gRPC/HTTP. Controlled UT covers SDK pool/check submission rejection, copy failure and late errors from an Executor that has already run/enqueued work. |
-| Cancellation and diagnostics | Cancel/shutdown suppress stale work; task identity; rate-limited actionable failure/recovery/slow logs | Covered | Manager UT covers cancellation during lookup/submission, an already-running check, resubscription and shutdown; transport/helper regressions preserve observation. Real SDK failure/recovery logs retain Watch/Listener context and stack traces. |
-
-Separate Listener delivery increment: 3 Covered / 0 Partial / 0 Pending; strict and
-effective coverage are 3/3 = 100%. Broader cluster/migration rows remain unchanged.
-
-Validation on 2026-10-20: 175 API/client AI UT classes, 1629 passing
-executions, zero failures/errors, one pre-existing disabled MCP test. Fresh UT-only
-JaCoCo for all uncommitted production changes against `8216f8a0f`: lines
-474/474 (100.00%), branches 268/276 (97.10%), instructions
-2470/2470 (100.00%). For this callback/logging change against the saved
-pre-change source: lines 194/194 (100.00%), branches
-105/110 (95.45%), instructions 1138/1138 (100.00%).
-These are scoped incremental figures, not whole-repository coverage.
-
-Default JSON and Jackson 3 each pass 89 SDK executions
-(178 total), including real standalone restart with clients alive. Each adapter
-conditionally skips three multi-node pinned/rolling cases. Migration 50105 remains
-controlled-UT evidence, not a real cutover fixture. Spotless, Checkstyle, RAT,
-compilation and release SDK packaging pass; the isolated server is stopped afterward.
-A saturated shared callback pool can delay other Listeners while retaining bounded
-latest state and continuing Discover. External SDK usage documentation remains a follow-up.
-
-### Watch composition regression
-
-Internal Watch ownership was split into manager, subscription state and Listener dispatcher
-without changing the public SDK matrix. Revalidation passes 178 SDK executions across the
-default/Jackson 3 adapters with two real standalone restarts; six conditional multi-node
-executions remain skipped. Existing surface statuses are unchanged. Details are in
-[Watch composition refactor validation](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#watch-composition-refactor-validation)
-and the [SDK implementation spec](../../specs/en/sdk/sdk-java-impl-spec.md#agent-watch-implementation-responsibilities).
+Coverage is scoped to these behavior groups and does not promote unrelated SDK
+registry rows. Local upgrade experiments and one-off coverage/run summaries are
+kept outside the committed scenario matrix.
