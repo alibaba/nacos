@@ -175,6 +175,12 @@ Health、readiness、metrics 和 diagnostics 的可观测形态由
 
 ## 10. 实验性多 Context AOT
 
+Maven `native` 是显式启用的 Bootstrap 构建 profile：独立构建 JVM 准备所有选定 Context，
+编译生成的 Java，并纳入直接生成的字节码与资源。构建工具和测试依赖不得进入应用运行时。
+`release-native` 需要同时启用 `native`，打包适用于构建平台的 Bootstrap 可执行程序；普通
+构建和 JVM 启动脚本保持不变。插件实现、驱动及其 Native 元数据必须进入构建 classpath。
+内嵌 Derby 必须显式选择实验性运行时类加载，不能在默认构建中静默开启。
+
 AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须保持原有启动、条件 Bean、
 数据源插件和扩展协议装载行为，不得依赖 AOT 产物或执行其一致性校验。
 
