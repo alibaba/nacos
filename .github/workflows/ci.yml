@@ -83,6 +83,17 @@ jobs:
         run: mvnd -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build and Test with Maven Daemon"
         run: mvnd -B '-Prelease-nacos,!dev' clean install -Drat.skip=true -Dspotbugs.skip=true -DtrimStackTrace=false -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Verify Native Build Integration on JDK"
+        run: python3 test/scripts/native-build-it.py --maven mvnd --work-dir "$RUNNER_TEMP/nacos-native-build-it"
+      - name: "Upload Native Build Integration Diagnostics"
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-build-it-diagnostics
+          path: |
+            ${{ runner.temp }}/nacos-native-build-it/*.log
+            ${{ runner.temp }}/nacos-native-build-it/results.json
+          if-no-files-found: ignore
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v5
         with:

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 <assembly>
-    <id>server-${project.version}</id>
+    <id>server-${project.version}-native-${nacos.native.classifier}</id>
     <includeBaseDirectory>true</includeBaseDirectory>
     <formats>
         <format>dir</format>
@@ -24,11 +24,6 @@
     </formats>
     <fileSets>
 
-        <fileSet>
-            <includes>
-                <include>plugins/**</include>
-            </includes>
-        </fileSet>
 
         <fileSet>
             <includes>
@@ -42,6 +37,26 @@
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>../bootstrap/target/native</directory>
+            <outputDirectory>target/</outputDirectory>
+            <includes>
+                <include>nacos-server</include>
+                <include>nacos-server.exe</include>
+                <include>*.so</include>
+                <include>*.dylib</include>
+                <include>*.dll</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../bootstrap/target/native</directory>
+            <outputDirectory>target/</outputDirectory>
+            <includes>
+                <include>aot-manifest.properties</include>
+                <include>build.properties</include>
+            </includes>
+        </fileSet>
     </fileSets>
     <files>
         <file>
@@ -52,30 +67,6 @@
             <source>NOTICE-BIN</source>
             <destName>NOTICE</destName>
         </file>
-        <file>
-            <source>../console/target/nacos-server</source>
-            <outputDirectory>target/</outputDirectory>
-        </file>
-        <file>
-            <source>../console/target/nacos-server.exe</source>
-            <outputDirectory>target/</outputDirectory>
-        </file>
-        <file>
-            <source>../console/target/*.so</source>
-            <outputDirectory>target/</outputDirectory>
-        </file>
-        <file>
-            <source>../console/target/*.dll</source>
-            <outputDirectory>target/</outputDirectory>
-        </file>
     </files>
 
-    <moduleSets>
-        <moduleSet>
-            <useAllReactorProjects>true</useAllReactorProjects>
-            <includes>
-                <include>com.alibaba.nacos:nacos-console</include>
-            </includes>
-        </moduleSet>
-    </moduleSets>
 </assembly>
