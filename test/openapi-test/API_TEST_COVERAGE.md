@@ -642,3 +642,13 @@ Client 发布契约仍为首版普通提交、已有 DRAFT 完整覆盖、非 DR
 contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出展示及管理字段。
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+## Native binding and serialization regression
+
+The existing Config Admin and Console CRUD rows also verify non-empty inherited `srcUser` and
+`appName` parameters and persisted `createUser` / `appName` detail fields. This catches missing
+Native form-binding metadata without changing the API contract. Native and JVM execution are
+separate validation targets; these additional scenarios do not change surface-row coverage totals.
+
+Existing Service Admin and Console IT cases are also reused to check persisted service metadata
+and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.
