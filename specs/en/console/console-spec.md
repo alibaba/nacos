@@ -301,6 +301,27 @@ contract:
 - Console metrics and logs must not include secrets, tokens, full credentials,
   or large user payloads.
 
+### 10.1 Experimental AOT / Native Verification
+
+Console follows the multi-context AOT contract in the
+[Server Lifecycle Spec](../design/foundation-server-lifecycle-env-spec.md).
+This contract does not certify every database, plugin, or business path for Native execution.
+
+- In `merged`, the console context retains its core parent. In `console`, only the independent
+  console context is generated and started; Native adaptation must not start local domain services
+  or storage.
+- Generated artifacts must match deployment type, function mode, and plugins. Structural changes
+  require regeneration. Remote Server addresses, ports, and runtime credentials must not be embedded
+  in generated initialization code.
+- Ordinary JVM execution without AOT must not require generated artifacts, perform their consistency
+  checks, or change existing handler selection.
+- Native verification must exercise UI entry points and referenced JS/CSS, login, anonymous rejection,
+  and real Console business reads and writes. Liveness or empty lists cannot replace functional
+  success. Independent deployments must also exercise remote handler response models and operations.
+- Record JVM / Native Console and Server interoperability separately; merged deployment results do
+  not certify independent deployment. Verify AI features and registry protocols when enabled, and
+  explicitly identify untested databases, clusters, and business paths.
+
 ## 11. Pending Issues
 
 - Clarify and document which v3 Console health, server state, announcement, and

@@ -166,6 +166,8 @@ Runtime metadata follows the lifecycle of the runtime publisher. Operational
 metadata follows the metadata persistence path and may overlay runtime metadata
 after recovery.
 
+For the experimental AOT/Native build, service metadata operations must retain their serialization fields and object allocation metadata even when Console is absent from the image. Admin and remote Console operations must preserve the same metadata values as ordinary JVM execution; tracing instance registration alone is not sufficient evidence. Actual list DTOs behind polymorphic return types must retain serialization metadata; a successful response missing service names, groups or metadata does not satisfy compatibility.
+
 ## 6. Pending Removal
 
 - API-defined service selector fields and request parameters are legacy
