@@ -96,6 +96,10 @@
             <artifactId>derby</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
@@ -269,7 +273,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-default-ai-vector-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-default-ai-vector-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,derbyshared,derbytools,postgresql</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

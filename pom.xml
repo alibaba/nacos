@@ -138,7 +138,7 @@
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.12</postgresql.version>
-        <derby.version>10.14.2.0</derby.version>
+        <derby.version>10.16.1.1</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.81.0</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
@@ -984,6 +984,17 @@
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
+                <version>${derby.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derbyshared</artifactId>
+                <version>${derby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derbytools</artifactId>
                 <version>${derby.version}</version>
             </dependency>
 

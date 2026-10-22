@@ -88,6 +88,32 @@ Nacos 支持两类存储模式：
 生成主键和函数行为，但不得改变逻辑数据含义、schema 归属、鉴权或资源身份。参见
 [数据源方言插件规范](../plugin/datasource-dialect-plugin-spec.md)。
 
+### 3.1 嵌入式 Derby 运行时契约
+
+嵌入式存储运行时在服务端 Java 17 基线上使用 Derby 10.16.1.1。拆分后的制品职责如下：
+
+| 制品 | 在 Nacos 中的职责 |
+| --- | --- |
+| `org.apache.derby:derby` | 嵌入式数据库引擎，包含 `org.apache.derby.iapi.jdbc.AutoloadedDriver`。 |
+| `org.apache.derby:derbyshared` | 共享运行时类，包含 `org.apache.derby.shared.common.stream.InfoStreams`。 |
+| `org.apache.derby:derbytools` | 提供 Nacos 显式加载的 `org.apache.derby.jdbc.EmbeddedDriver`。 |
+
+运行时装配规则：
+
+- 三个制品必须统一使用根 POM 的 `derby.version`，运行时不得混用 Derby 版本；
+- 服务端发行包必须在 `plugins/` 下包含三个制品，仅打包引擎 JAR 不足以运行 Nacos 嵌入式存储；
+- 直接引用 `EmbeddedDriver` 的模块必须在对应编译或测试 scope 中提供 `derbytools`；使用
+  `provided` scope 仍要求发行包在运行时提供该依赖；
+- GraalVM runtime hints、反射元数据和运行时初始化配置必须使用所选 Derby 版本中的类位置。
+  native-image 集成使用的 Derby 内部类名属于实现细节，不是 Nacos 公共 API。
+
+嵌入式存储选择、数据库目录和逻辑 schema 遵循数据源与领域契约。正常启动使用
+`jdbc:derby:...;create=true` URL，不携带 `upgrade=true`。数据库 schema 迁移由对应领域规范定义。
+
+上游运行要求和制品职责参见
+[Derby 10.16.1.1 发布说明](https://db.apache.org/derby/releases/release-10_16_1_1.cgi)和
+[Derby 模块概览](https://db.apache.org/derby/docs/10.16/publishedapi/)。
+
 ## 4. Repository 契约
 
 Repository service 在 datasource 细节之上定义领域存储语义。它是领域语义与持久化层抽象相遇的边界。
