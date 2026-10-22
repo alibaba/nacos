@@ -18,6 +18,24 @@ import { describe, expect, it } from 'vitest';
 import viteConfig from '../../vite.config';
 
 describe('browser compatibility target', () => {
+  it('keeps a multi-browser build target so Safari CSS prefixes survive', () => {
+    const config = viteConfig({ command: 'build', mode: 'production' });
+    expect(config.build?.target).toEqual([
+      'chrome90',
+      'edge111',
+      'firefox114',
+      'safari16.4',
+      'ios16.4',
+    ]);
+    expect(config.build?.cssTarget).toEqual([
+      'chrome90',
+      'edge111',
+      'firefox114',
+      'safari16.4',
+      'ios16.4',
+    ]);
+  });
+
   it('transforms syntax unsupported by Chromium 90', async () => {
     const config = viteConfig({ command: 'build', mode: 'production' });
     const fixture = 'class BrowserCompatFixture { static { this.value = 1; } }';
@@ -25,15 +43,17 @@ describe('browser compatibility target', () => {
     const result = await build({
       configFile: false,
       logLevel: 'silent',
-      plugins: [{
-        name: 'browser-compat-fixture',
-        resolveId(id) {
-          return id === 'browser-compat-fixture' ? '\0browser-compat-fixture' : null;
+      plugins: [
+        {
+          name: 'browser-compat-fixture',
+          resolveId(id) {
+            return id === 'browser-compat-fixture' ? '\0browser-compat-fixture' : null;
+          },
+          load(id) {
+            return id === '\0browser-compat-fixture' ? fixture : null;
+          },
         },
-        load(id) {
-          return id === '\0browser-compat-fixture' ? fixture : null;
-        },
-      }],
+      ],
       build: {
         write: false,
         minify: false,
@@ -50,5 +70,21 @@ describe('browser compatibility target', () => {
       .join('\n');
 
     expect(code).not.toMatch(/\bstatic\s*\{/);
+  });
+
+  it('emits an Object.hasOwn polyfill banner for Chromium 90 runtimes', () => {
+    const config = viteConfig({ command: 'build', mode: 'production' });
+    const banner = config.build?.rollupOptions?.output;
+    const output = Array.isArray(banner) ? banner[0] : banner;
+    expect(String(output?.banner ?? '')).toMatch(/Object\.hasOwn/);
+    expect(String(output?.banner ?? '')).toMatch(/hasOwnProperty/);
+  });
+
+  it('lists Safari in cssTarget so prefix emission is not chrome-only', () => {
+    const config = viteConfig({ command: 'build', mode: 'production' });
+    const cssTarget = config.build?.cssTarget;
+    expect(Array.isArray(cssTarget) ? cssTarget : [cssTarget]).toEqual(
+      expect.arrayContaining(['safari16.4', 'ios16.4']),
+    );
   });
 });

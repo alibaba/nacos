@@ -61,11 +61,16 @@ export default defineConfig(({ command }) => ({
     },
   },
   build: {
-    // Keep the default UI compatible with Chromium 90 deployments (see #15899).
-    target: 'chrome90',
+    // Lower Chrome to 90 for #15899, but keep Vite's other browser targets so
+    // CSS still emits Safari -webkit-* prefixes (cssTarget inherits build.target).
+    target: ['chrome90', 'edge111', 'firefox114', 'safari16.4', 'ios16.4'],
+    cssTarget: ['chrome90', 'edge111', 'firefox114', 'safari16.4', 'ios16.4'],
     outDir: 'dist',
     rollupOptions: {
       output: {
+        // Cover main chunks and Monaco workers that may call Object.hasOwn.
+        banner:
+          "if(typeof Object.hasOwn!=='function'){Object.defineProperty(Object,'hasOwn',{configurable:true,writable:true,value:function(o,p){return Object.prototype.hasOwnProperty.call(Object(o),p);}});}",
         entryFileNames: 'js/main.js',
         chunkFileNames: 'js/[name].js',
         assetFileNames: (info) => {

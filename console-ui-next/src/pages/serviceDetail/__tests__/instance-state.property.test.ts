@@ -80,7 +80,9 @@ describe('patchInstance properties', () => {
         fc.integer({ min: 1, max: 65535 }),
         patchArb,
         (state, clusterName, ip, port, patch) => {
-          const cluster = Object.hasOwn(state, clusterName) ? state[clusterName] : undefined;
+          const cluster = Object.prototype.hasOwnProperty.call(state, clusterName)
+            ? state[clusterName]
+            : undefined;
           const miss =
             !cluster || !cluster.list.some((inst) => inst.ip === ip && inst.port === port);
           fc.pre(miss);
@@ -141,7 +143,9 @@ describe('removeInstance properties', () => {
         ipArb,
         fc.integer({ min: 1, max: 65535 }),
         (state, clusterName, ip, port) => {
-          const cluster = Object.hasOwn(state, clusterName) ? state[clusterName] : undefined;
+          const cluster = Object.prototype.hasOwnProperty.call(state, clusterName)
+            ? state[clusterName]
+            : undefined;
           const miss =
             !cluster || !cluster.list.some((inst) => inst.ip === ip && inst.port === port);
           fc.pre(miss);
