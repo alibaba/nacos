@@ -257,7 +257,7 @@ RAD 模式的旧 Card 订阅复用原生发现的 Watch manager、transport、�
 
 Agent 或有效 A2A descriptor 暂时不存在时不虚构 Card，保留既有待观察意图。不可用事件清空
 Card 比较状态，不发送旧快照；恢复后的 Card 即使与原值相同也可再次通知。旧 listener 没有
-不可用事件类型；原生鉴权/容量等终止错误仍结束观察，需要显式重新订阅。鉴权失败不触发
+不可用事件类型；后台鉴权/容量等错误保留已接受订阅并内部重试。鉴权失败不触发
 轮询 fallback。绑定缺少 Watch 时复用 RAD Discover 轮询，RAD 模式不回到旧 A2A 轮询。
 
 同一 listener 重复订阅复用 bridge，取消时先移除本地意图再清理 wire；迟到回调不能复活订阅。
@@ -267,6 +267,11 @@ Card 比较状态，不发送旧快照；恢复后的 Card 即使与原值相同
 C09 只准备此组件，C10 一次接通全部旧 facade 方法。
 
 ### Client 实例路由启用
+
+`AiService.getAgentDiscoveryCapability()` 独立查询当前有效 Agent 传输的 RAD 三态证据，
+不触发首次 A2A 选路，也不改变已固定的模式；返回值不是旧 A2A facade 当前模式查询。
+能力缓存刷新、查询失败与迁移门禁均不能隐式切换已选模式。完整契约见
+[Agent API 规范](agent-api-spec.md#21-java-sdk-契约)。
 
 3.3 Java SDK 的所有继承 A2A 重载共享同一 Agent facade，首次可靠选择在 AiService
 生命周期内固定。初始首选 gRPC 协商可确定模式；HTTP-only 初始化不为 A2A 选路启动
@@ -291,3 +296,19 @@ API 来源，同一存活 publication 的混用在写前拒绝。Card 查询/事
 缺失或否定。该证据不代表 HTTP 支持或可达；经 RAD 适配的旧业务操作仍校验所配置
 transport。HTTP 明确不支持时返回 unsupported，不静默发送旧 gRPC。取消及完整
 清理仍保留本地状态和既有 owner 的路径。
+
+## SDK 显式转换
+
+公共 `AgentConverters.a2a()`／`AgentService.a2aConverter()` 遵循
+[Agent API 规范](agent-api-spec.md#公共发现快照转换器)，由用户显式离线调用。
+它尊重过滤后的 EndpointSet 及返回顺序，以首个地址填充旧首选字段，与旧 facade 通过
+A2aEndpointUtils 共享逐端点映射。它不改变旧 facade 的 registrationType 覆盖、
+preferredTransport 选择、空 Runtime 描述回退、latestVersion 或 NOT_FOUND 映射，
+不插入原生 Discover／Listener 分发。
+
+### Java SDK Watch 生命周期
+
+Wire 终止（包含迁移拒绝 50105）仅结束远程绑定，不结束已接受的 Java SDK 订阅。
+SDK 保留订阅及确认数据，在正常鉴权和配额下持续重试。只有合法 Discover 确认目标不存在
+产生 SDK UNAVAILABLE，其他错误内部处理。旧 A2A 保留完整 Card 回调与默认推空保护，
+不增加生命周期回调。

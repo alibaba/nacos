@@ -312,7 +312,12 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         Result<AgentDiscoveryResult> result = JsonUtils.toObj(response,
             new NacosTypeReference<Result<AgentDiscoveryResult>>() {
             });
-        return requireSuccess(result);
+        AgentDiscoveryResult discovery = requireSuccess(result);
+        if (discovery == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Invalid Agent Discover response: successful response contains no discoveryResult.");
+        }
+        return discovery;
     }
     
     @Override
@@ -684,6 +689,9 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
             }
             index = (index + 1) % servers.size();
         }
+        if (exception instanceof NacosApiException) {
+            throw exception;
+        }
         throw new NacosException(exception.getErrCode(),
             "Failed to request API: " + api + " after all servers(" + servers + ") tried: "
                 + exception.getMessage());
@@ -799,6 +807,10 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
                     throw new NacosApiException(NacosException.OVER_THRESHOLD,
                         ErrorCode.AGENT_DISCOVERY_SUBSCRIPTION_OVER_LIMIT, errorMessage);
                 }
+                if (ErrorCode.RESOURCE_NOT_FOUND.getCode().equals(result.getCode())) {
+                    throw new NacosApiException(NacosException.NOT_FOUND,
+                        ErrorCode.RESOURCE_NOT_FOUND, errorMessage);
+                }
                 int errorCode = (ErrorCode.HTTP_CLIENT_NOT_FOUND.getCode().equals(result.getCode())
                     || ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode().equals(result.getCode()))
                         ? result.getCode() : restResult.getCode();
@@ -831,6 +843,10 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
                 "AI API returned an invalid response.");
         }
         if (!ErrorCode.SUCCESS.getCode().equals(result.getCode())) {
+            if (ErrorCode.RESOURCE_NOT_FOUND.getCode().equals(result.getCode())) {
+                throw new NacosApiException(NacosException.NOT_FOUND,
+                    ErrorCode.RESOURCE_NOT_FOUND, result.getMessage());
+            }
             throw new NacosException(result.getCode(), result.getMessage());
         }
         return result.getData();

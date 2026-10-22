@@ -342,8 +342,8 @@ only to RAD fields that do not affect the Card do not trigger a legacy callback.
 A missing Agent or missing valid A2A descriptor returns no invented Card and retains the
 existing pending observation. Unavailability clears Card comparison state without sending
 stale content; recovery can notify even when the recovered Card equals the old one. The
-legacy listener has no unavailable-event shape; native terminal authorization/capacity
-errors still end observation and require explicit resubscription. No authentication error
+legacy listener has no unavailable-event shape; background authorization/capacity
+errors retain accepted observation and retry internally. No authentication error
 is converted into polling fallback. Where the selected binding lacks Watch, existing RAD
 Discover polling is used. This never changes to legacy A2A polling in RAD mode.
 
@@ -356,6 +356,12 @@ ordering, so a late-enqueued older event cannot overwrite a newer delivered stat
 C09 prepares this component; C10 enables all legacy facade operations together.
 
 ### Client instance routing activation
+
+`AiService.getAgentDiscoveryCapability()` independently queries three-state RAD evidence for the
+current effective Agent transport. It neither makes the initial A2A selection nor changes a fixed
+selection; it does not report the legacy facade's selected mode. Cache refresh, query errors and
+migration admission cannot implicitly switch that mode. See the
+[Agent API Spec](agent-api-spec.md#21-java-sdk-contract) for the full contract.
 
 The 3.3 Java SDK routes every inherited A2A overload through the same Agent facade.
 The first reliable selection is fixed for that AiService lifetime. Initial preferred
@@ -389,3 +395,21 @@ or reachability: each RAD-backed legacy business operation still checks its conf
 transport. A negative HTTP declaration therefore produces unsupported on HTTP rather
 than silently sending legacy gRPC. Cancellation and full cleanup retain their local
 and existing-owner paths.
+
+## Explicit SDK conversion
+
+The public `AgentConverters.a2a()` / `AgentService.a2aConverter()` operation is
+explicit offline conversion governed by the [Agent API spec](agent-api-spec.md#public-discovery-snapshot-converters).
+It honors filtered EndpointSets and their returned order, taking the first address
+for legacy preferred fields. It shares per-Endpoint mapping through A2aEndpointUtils
+with the legacy facade. It does not change the facade's registrationType override,
+preferredTransport selection, empty-Runtime descriptor fallback, latestVersion or
+NOT_FOUND mapping, and it is not inserted into native Discover/Listener dispatch.
+
+### Java SDK Watch lifetime
+
+A wire termination (including migration rejection 50105) ends that remote binding,
+not the accepted Java SDK subscription. The SDK retains intent and confirmed data
+and retries under normal authorization and quota. Only authorized Discover target
+absence produces SDK UNAVAILABLE; other failures stay internal. Legacy A2A retains
+its complete-card callbacks and empty-push protection, without lifecycle callbacks.

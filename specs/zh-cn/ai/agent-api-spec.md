@@ -101,7 +101,8 @@ HTTP 状态与 `Result.code` 使用通用 v3 异常映射；gRPC Response 暴露
 心跳保留既有身份和归属检查。需要 Register 提交剩余列表的 SDK 局部注销仍返回 50105，
 不改变已确认缓存，也不能扩大为整份删除。拒绝的 Register/Watch 不创建 owner 或补注册。
 HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50105 的 TERMINATED，
-后续 Discover 也受门禁。迁移完成后由调用者显式重新发起业务/订阅。
+后续 Discover 也受门禁。初次被拒绝的调用需在迁移完成后重新发起；已接受的 Java SDK
+订阅保留本地状态并持续重试，50105 不进入数据 Listener。
 
 门禁仅用于外部 RAD binding，不加入共享领域服务。旧 A2A wire、Admin/Console、内部迁移、
 索引和投影继续沿用已有规则，避免阻断迁移自身。旧 API 的 QUIESCING 写屏障保持不变。
@@ -109,6 +110,22 @@ HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50
 ## 2. Client API
 
 ### 2.1 Java SDK 契约
+
+`AiService.getAgentDiscoveryCapability()` 返回已有 `AbilityStatus`，用于查询当前有效
+Agent 传输的 RAD 能力证据。default 实现返回 `UNKNOWN`，不调用 `agent()`，使第三方
+旧实现继续兼容。官方实现遵循以下规则：
+
+- `SUPPORTED` 表示已有支持证据，`NOT_SUPPORTED` 表示可靠否定证据；缺少协商或声明为
+  `UNKNOWN`。鉴权、连接及探测失败保留 `NacosException`，不转换或缓存为不支持。
+- 显式 gRPC 只读取当前连接能力，未连接为 `UNKNOWN`；HTTP 复用按目标 URL 和身份隔离的
+  有界能力缓存；AUTO 优先使用当前 gRPC 的 RAD 正向证据，否则查询 HTTP。查询不启动额外
+  gRPC 连接，不试调用 Discover、发布等业务接口，也不固定或切换 A2A facade 路由。
+- HTTP 声明缺失时，已有旧 gRPC 正向协商仅在唯一且匹配的配置目标上可推导不支持 RAD；
+  不缓存为 HTTP false，不把单节点结论推广为全群集能力。重连使 HTTP 证据失效。
+- 冷 HTTP 查询可阻塞，并可能依次尝试多个不可达地址；连接和读取超时不是整个查询的总时限。
+  关闭后的官方实例抛 `CLIENT_DISCONNECT`，不启动探测。
+- 能力支持不保证资源存在、可见、鉴权通过或迁移就绪。能力为 `SUPPORTED` 时，业务操作仍可
+  返回 `AGENT_MIGRATION_IN_PROGRESS`；调用方按业务契约处理，不自动回退旧协议。
 
 面向用户的接口命名为 `AgentDiscoveryService`，应用代码不必感知 RAD 缩写。A2A
 兼容期内：
@@ -122,7 +139,7 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 | Search | `searchAgents` | 不含 namespace 字段的 `AgentSearchRequest` | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | 过滤 Discover | `discoverAgent` | `AgentReference`、`AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | 当前 `AgentDiscoveryResult`，目标尚不存在时为 `null` |
+| Watch 订阅 | `subscribeAgent` | Reference、可选 Filter、Listener | `void`；初始状态和后续变化均由 Listener 回调 |
 | 取消 Watch 订阅 | `unsubscribeAgent` | 相同 Reference、Filter 和 Listener identity | `void` |
 | 注册 | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
 | 注销 | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
@@ -130,19 +147,48 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 `subscribeAgent` 是传输无关的 SDK Watch。所选 Transport 与 Client/Server 都声明 Watch
 能力时，SDK 安装 Server-aware Wire Intent；否则通过有界的本地 Discover 轮询保持兼容。
-首次成功 Discover 结果同步返回；目标不存在时返回 `null` 并保留有界 Pending Intent。
-后续 Watch Hint 或回退轮询执行相同的鉴权 Discover。只有 Canonical Fingerprint 与缓存
-不同的新完整替换结果才投递给 Listener；Wire Hint 不会到达 Listener。`getAll`、
+两个 `subscribeAgent` 重载均返回 `void`。每个新接受的 Listener 通过与后续变化相同的
+串行分发通道获得当前完整状态；目标缺失时交付已有 UNAVAILABLE 状态并保留 Pending Intent。
+新 Listener 加入已有规范化 Watch 也获得当前状态；重复订阅同一 Listener 幂等，不重复初始化。
+首次回调可能在方法返回前或后执行；调用前准备好 Listener 依赖状态，应用仅在回调中更新视图。
+后续 Watch Hint 或回退轮询执行相同的鉴权 Discover；指纹不变不重复通知，Wire Hint 不到达 Listener。
+
+当前状态选择、通知序号分配与登记在 Manager 锁内原子完成，用户代码在锁外执行。已被新通知取代的
+初始化不得再次作为新数据排队；允许 A→B 或只 B，不允许 B→旧初始化 A。真实后续重新变为 A
+仍是新状态。取消／关闭使排队的初始化失效。若 Discover 读到 A、安装 Watch 时已变为 B，复用
+现有 gRPC refreshRequired／observedFingerprint 和 HTTP 首轮 changed ID 触发补查；激活期间
+先记录 dirty，激活后刷新。HTTP/gRPC 路径、报文字段与服务端契约保持不变。
+旧 A2A subscribe 继续返回 Card，复用初始化分发且不双发。`getAll`、
 `selectOneHealthy`、协议选择、priority/weight 选址和实际 Agent Calling 是 SDK 本地
 Helper，不增加远程操作。
 
 `NacosAgentDiscoveryEvent` 的事件类型为 `SNAPSHOT` 和 `UNAVAILABLE`。现有
 `NacosAgentDiscoveryEvent(AgentDiscoveryResult)` 构造器继续表示 `SNAPSHOT`。
-`SNAPSHOT` 包含完整结果且不含错误；`UNAVAILABLE` 包含 Nacos 错误码和消息且不含结果。
-首次参数校验、鉴权以及本地或服务端 Watch 容量失败同步抛出，并从全部本地 Watch State
-移除被拒绝 Intent。后续终止性的鉴权或容量失败投递一次 `UNAVAILABLE` 并移除 Intent；
-瞬时传输失败不删除 Intent，由重连或回退重建。`NOT_FOUND` 在同一缺失周期最多投递一次
-Unavailable Transition，保留有界 Pending Intent，并在目标恢复时投递新 `SNAPSHOT`。
+`SNAPSHOT` 包含完整结果且不含错误；`UNAVAILABLE` 仅表示合法鉴权后的 Discover 确认
+订阅 Agent reference（含版本／标签）不存在，携带目标缺失错误码和消息且不含结果。
+空端点、全不健康端点及过滤后空接口仍是合法快照。原始 HTTP 404、Watch 拒绝、鉴权、
+迁移门禁和本地任务执行失败不属于数据事件。
+首次同步参数、鉴权及容量拒绝抛出异常，只清理被拒绝的新增项。一旦接受，只有显式取消
+或关闭服务才能结束订阅。全部后台失败保留订阅及最后确认数据，通过有界退避和限频日志
+持续恢复，不通知数据 Listener。同一缺失周期只生成一次 UNAVAILABLE 状态；恢复后即使内容
+与删除前相同也生成新的 SNAPSHOT。后台任务提交被拒绝时保留待办，由独立入口重新提交。
+
+Watch 是最新完整状态的最终一致性交付，不是所有中间事件的日志。每个规范化 Watch
+（namespace、reference、filter）仅保存最新状态与本地递增序号；每个 Listener 保存已处理
+序号和单次在途标记，不维护快照队列。排队任务执行时才读取最新状态，向不同 Listener
+提供独立结果副本。慢回调期间的新状态覆盖旧状态，允许合并中间 SNAPSHOT 和短暂
+UNAVAILABLE；未被更新取代的最新状态必须在执行能力恢复后交付，包括初始状态。
+SDK／用户 Executor 拒绝及 getExecutor 抛错均保留交付差异，后台周期检查本地状态重试，
+不额外 Discover，也不等待新的服务端变化。业务 onEvent 已开始执行后抛错记日志，
+不默认重放该次回调。取消／关闭失效化未执行任务并释放待交付状态。
+有限共享回调池饱和时允许其他 Listener 等待，但查询与连接 I/O 不执行用户代码，
+待交付内存不随变化次数增长；永久阻塞的业务 I/O 由调用方设置超时。
+
+HTTP Watch 采用本地异步接受，只有有效响应中当前 generation 实际发送的项才确认成功。
+新增导致限额时保留新增项，优先恢复上次成功集合，退避后重试当前完整并集。已知限额时
+进一步增长同步拒绝；复用已有 Watch 不算增长。旧集合单独成功不能解限。取消成功集合
+中的项可提前重试；等待项全部取消后，冷却结束允许一次真实新增长试探，不发送空或虚假
+请求。从未确认成功时始终重试当前全部可发送项，不通过删除已接受项来满足配额。
 
 一个 SDK 实例默认最多保存 300 个不同的本地 Watch 记录，Client 配置键
 `nacosAiAgentDiscoveryMaxSubscriptions` 可修改该上限。重复相同的规范化 Reference、
@@ -510,13 +556,13 @@ Ability 和一个独立 SDK Push Ability。只有两者都协商成功时才选�
 | 本地或服务端 Publication 容量拒绝 | 抛出容量异常，并从 Publication、Heartbeat 和 Reconnect Redo Cache 中移除该身份 |
 | gRPC reconnect | 使用新 connection id redo 完整 Endpoint Batch 和 Active Watch Intent；Subscribe Response 要求刷新时执行 Discover |
 | Watch Hint 丢失、重复或过期 | 只把当前本地 Intent 标记一次 Dirty，并通过 Current-fact Discover 与 Fingerprint 比较处理 |
-| Watch 终止性鉴权或容量错误 | 投递一次 Unavailable Event，删除本地 Wire Intent，不得无限重试 |
+| Watch 后台拒绝或任务执行失败 | 保留已接受的订阅和确认数据，持续重试，不投递错误数据事件 |
 | Watch 瞬时传输失败 | 保留本地 Intent，通过重连、AUTO 路由或轮询回退重建 |
 | 跨传输注销 | 禁止；一个 Publisher identity 不能删除另一传输的 Contribution |
 
 SDK 在第一次写入前记录期望状态，并按 Agent 和 Protocol 串行修改期望 Batch。
 Shutdown 执行 best-effort 整份 Publication 注销，expire 作为清理兜底。参数和鉴权
-错误和容量拒绝不进入无限 redo。Unsubscribe 和 Shutdown 在释放本地槽位前删除 Wire
+错误和容量拒绝不进入无限 Publication redo，该规则不终止已接受 Watch。Unsubscribe 和 Shutdown 在释放本地槽位前删除 Wire
 Intent；迟到通知作为 Stale 被 ACK，不能调用已删除 Listener。
 
 ## 3. Admin API 与 Maintainer SDK
@@ -677,3 +723,28 @@ Layout 和替换范围，不改写到新的无 Version Agent Naming Service；�
 ### Agent JSON 输出契约
 
 Agent form/model 的可选 null 输出交由序列化器处理。各 binding 接受共享 Endpoint 默认值；注销仅读取 uri/transport，其他字段不改变删除键。遵循 RAD/管理 Schema 0.5.0 和 [JSON 回归矩阵](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)，覆盖 HTTP、gRPC、两种 SDK JSON adapter、合并与独立 Console。
+
+## 公共发现快照转换器
+
+`com.alibaba.nacos.api.ai.converter.AgentConverter<T>` 是 Java 8 函数式接口，唯一方法为
+`T convert(AgentDiscoveryResult source)`。`AgentConverters.a2a()` 与 default
+`AgentService.a2aConverter()` 均提供 `AgentConverter<AgentCard>`，遵循同一无状态转换契约。
+获取与转换无需客户端、连接、namespace 绑定或能力协商；取得后可在客户端关闭后继续使用。
+调用由应用显式执行，Discover 与 Listener 分发仍交付原始快照，不自动转换。
+
+A2A Converter 校验发现快照，选择其中的 A2A 接口，不要求调用方先按协议过滤。JSON 对象
+nativeDescriptor 必须可解析为合法 AgentCard，且 name/version 与快照一致；保留 AgentCard
+可表达的描述字段，输出与输入深隔离。不引入第三方 A2A SDK 依赖，不修改输入或复用可变输出。
+
+EndpointSet 已体现 RUNTIME／DECLARED 优先级及过滤结果，按返回顺序选择第一组非空地址，
+不合并来源、不恢复 descriptor 中被过滤的地址。保留地址顺序和 unhealthy 地址；发现模型校验
+拒绝非法 disabled 数据，不静默筛选。通过 A2aEndpointUtils 映射选中来源的全部地址，生成
+supportedInterfaces 和独立的 additionalInterfaces 列表；第一项决定 url、preferredTransport、
+protocolVersion，不按 descriptor 旧偏好重选。逐端点协议版本 metadata 的键存在时覆盖
+CallInterface 默认值，tenant 不虚构。旧 facade 的选择和回退保持原状，可与显式转换不同。
+
+非法输入、无 A2A／地址、描述损坏及身份不符统一抛 IllegalArgumentException；message 区分
+字段／阶段并标明 Agent 身份，底层解析 cause 保留。失败不变成 Watch UNAVAILABLE，不改变
+订阅状态。日志复用现有安全快照摘要，记录原始输入身份／结构及失败阶段／异常类型，不输出
+完整 descriptor、Endpoint metadata 或凭据；诊断渲染和日志失败不能覆盖转换异常。
+本能力不新增 HTTP/gRPC 操作或报文契约。

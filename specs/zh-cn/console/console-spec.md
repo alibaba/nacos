@@ -239,6 +239,21 @@ Console 应让 UI 用户能读懂错误，同时保持共享 API 契约：
   auth 状态；
 - Console 指标和日志不得包含密钥、token、完整凭据或大体积用户载荷。
 
+### 10.1 实验性 AOT / Native 验收
+
+Console 遵循[服务端生命周期规范](../design/foundation-server-lifecycle-env-spec.md)中的
+多 Context AOT 契约。该契约不表示所有数据库、插件和业务路径已完成 Native 验证。
+
+- `merged` 的 console context 保留 core parent；`console` 只生成并启动独立 console context，
+  不能为了适配 Native 而启动本地域服务或存储。
+- 构建产物必须匹配部署类型、function mode 和插件集合；这些结构性选择改变时重新生成。
+  远端 Server 地址、端口和运行期凭据不得固化在生成的初始化代码中。
+- 普通 JVM 未开启 AOT 时，不得要求生成产物、运行其一致性检查或改变原有 handler 选择。
+- Native 验收必须包含 UI 入口及其 JS/CSS 资源、登录、匿名拒绝和真实 Console 业务读写，
+  不能以 liveness 或空列表代替功能成功。独立部署还应验证远端 handler 的返回模型和实际操作。
+- 普通 JVM 与 Native 的 Console / Server 互通结果应分别记录；合并部署通过不能代替独立部署。
+  AI 功能和扩展协议启用时应单独验证，未执行的数据库、集群和业务路径须明确列出。
+
 ## 11. 待处理问题
 
 - 明确并文档化哪些 v3 Console health、server state、announcement 和 guide 端点是有意公开的。

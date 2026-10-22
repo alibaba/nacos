@@ -329,6 +329,45 @@ public abstract class JavaSdkBaseITCase {
         }
     }
 
+    /**
+     * Configure an isolated authentication fixture on the external standalone server.
+     *
+     * @param method HTTP method
+     * @param resource auth resource name, such as user, role, or permission
+     * @param parameters fixture form fields
+     * @throws Exception when fixture mutation fails
+     */
+    protected void requestAuthFixture(String method, String resource,
+            Map<String, String> parameters) throws Exception {
+        String form = encodeForm(parameters);
+        URL url = new URL(SERVER_HTTP_BASE_URL + "/v3/auth/" + resource
+                + ("POST".equals(method) ? "" : "?" + form));
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setRequestMethod(method);
+        authorizeAdmin(connection);
+        if ("POST".equals(method)) {
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        }
+        try {
+            if ("POST".equals(method)) {
+                try (java.io.OutputStream output = connection.getOutputStream()) {
+                    output.write(form.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+            Map<String, Object> response = readJsonResponse(connection);
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
+                    || !Integer.valueOf(0).equals(response.get("code"))) {
+                throw new AssertionError("Auth fixture " + resource + " failed: HTTP "
+                        + connection.getResponseCode());
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
     private String adminAccessToken() throws Exception {
         if (adminAccessToken != null) {
             return adminAccessToken;

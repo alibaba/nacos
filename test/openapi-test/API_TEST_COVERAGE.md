@@ -658,3 +658,13 @@ The paid-provider success path is not a prerequisite for standalone IT. Determin
 and Search Core tests exercise nonempty success and failure paths without external credentials.
 Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
 nonempty Jev filtering coverage. No public Java SDK contract changes.
+
+## Native binding and serialization regression
+
+The existing Config Admin and Console CRUD rows also verify non-empty inherited `srcUser` and
+`appName` parameters and persisted `createUser` / `appName` detail fields. This catches missing
+Native form-binding metadata without changing the API contract. Native and JVM execution are
+separate validation targets; these additional scenarios do not change surface-row coverage totals.
+
+Existing Service Admin and Console IT cases are also reused to check persisted service metadata
+and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.

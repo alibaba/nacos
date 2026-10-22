@@ -72,6 +72,23 @@ class AgentWatchTransportRouterTest {
         pollingExecutor = mock(ScheduledExecutorService.class);
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(
+        ints = {50105, NacosException.NO_RIGHT, NacosException.INVALID_PARAM,
+            NacosException.CLIENT_INVALID_PARAM, NacosException.OVER_THRESHOLD,
+            NacosException.CLIENT_OVER_THRESHOLD, NacosException.CONFLICT})
+    void rejectedGrpcBindingNeverBypassesAdmissionThroughFallback(int code) throws Exception {
+        connectSupported();
+        AgentWatchTransportRouter router = router(AgentTransportMode.GRPC);
+        when(client.subscribeAgentWatch(any(), any(), any())).thenReturn(response("wire-a"));
+        TestCallback callback = new TestCallback();
+        router.start(registration("watch-a"), callback);
+        router.onWireUnavailable("watch-a", new NacosException(code, "rejected"));
+        assertEquals(1, callback.unavailable);
+        assertEquals(0, polling.startCount);
+        router.shutdown();
+    }
+    
     @Test
     void constructorsBuildDefaultPollingAndShutdownCleanly() {
         AgentWatchTransportRouter publicRouter =
@@ -518,10 +535,8 @@ class AgentWatchTransportRouterTest {
         
         grpc.onConnected(connection("connection-a", AbilityStatus.SUPPORTED));
         
-        assertEquals(1, missing.unavailable);
-        assertFalse(missing.terminal);
-        assertEquals(1, denied.unavailable);
-        assertTrue(denied.terminal);
+        assertEquals(0, missing.unavailable);
+        assertEquals(0, denied.unavailable);
         assertEquals(0, temporary.unavailable);
         assertEquals(0, runtime.unavailable);
         assertEquals(4, polling.registrations.size());

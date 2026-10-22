@@ -360,13 +360,18 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference reference = reference(agentName);
         AgentDiscoveryResult discovered = service.agent().discoverAgent(reference);
         assertEquals(VERSION, discovered.getVersion(), discovered.toString());
+        java.util.concurrent.atomic.AtomicReference<AgentDiscoveryResult> initial =
+            new java.util.concurrent.atomic.AtomicReference<>();
         AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
             @Override
             public void onEvent(NacosAgentDiscoveryEvent event) {
+                initial.set(event.getAgentDiscoveryResult());
             }
         };
         addCleanup(() -> service.agent().unsubscribeAgent(reference, listener));
-        assertEquals(VERSION, service.agent().subscribeAgent(reference, listener).getVersion());
+        service.agent().subscribeAgent(reference, listener);
+        waitUntil(mode + " Agent initial callback", () -> initial.get() != null);
+        assertEquals(VERSION, initial.get().getVersion());
 
         Endpoint endpoint = endpoint(mode);
         AgentEndpointRegistrationBatch registration = new AgentEndpointRegistrationBatch();

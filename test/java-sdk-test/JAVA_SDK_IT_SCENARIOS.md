@@ -411,3 +411,25 @@ passing migration coverage. See C11_PROGRESS.md for all 66 report groups and ski
 ### A2A metadata reserved-key regression
 
 A2A conversion and RAD metadata use the same `__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__` keys as legacy Naming Instances. AgentDiscoveryService and A2aRadRouting SDK ITs verify HTTP/gRPC/AUTO Discover/Watch and legacy projection under default/Jackson 3 profiles; migration comparator UTs verify identical old/new meaning and changed tenant/protocol detection. Invalid control metadata remains rejected.
+
+
+## Agent SDK functional regressions
+
+Execution ownership and method-level assertions are maintained in the
+[Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression).
+The ordinary functional job is [`it-new.yml`](../../.github/workflows/it-new.yml);
+directed restart/cluster cases use the existing
+[reliability workflow](../../.github/workflows/default-auth-reliability-it.yml).
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent discovery capability | Selected transport, query before/after business use, shutdown and unchanged A2A routing | Covered | `AiServiceJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; default-method compatibility, unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
+| Explicit A2A snapshot conversion | Descriptor preservation, visible endpoint sources, disabled filtering, input isolation, application-owned conversion failures and subsequent updates | Covered | Three Converter workflows in `AgentDiscoveryServiceJavaSdkITCase`; malformed input and identity mismatch additionally have deterministic UT coverage. |
+| Native initial and changed state | Void subscription, initial state, duplicate/new Listener behavior, missing selectors, deletion/recreation and old A2A empty-Card suppression | Covered | Named initial/missing/deletion methods in the Agent matrix; exact initialization races remain UT assertions. |
+| Accepted Watch recovery | Permission revoke/restore, HTTP quota growth rollback and retained additions, cancellation freeing a slot | Covered | Auth/capacity fixtures in `it-new.yml`; internal binding failures and 50105 recovery are UT evidence, not real migration fault injection. |
+| Latest-state Listener delivery | Slow Listener coalescing, rejected Executor recovery without a new change, later notification after callback throws | Covered | Public gRPC/HTTP functional cases use application Executor hooks; bounded internal memory and getExecutor failure races are additionally tested in UT. |
+| Restart and multi-node lifecycle | Original subscriptions and endpoint redo recover across restart, pinned-node changes and rolling peer restart | Covered | Four methods selected by the fixed reliability workflow; its environment is separate from the normal functional job. |
+
+Coverage is scoped to these behavior groups and does not promote unrelated SDK
+registry rows. Local upgrade experiments and one-off coverage/run summaries are
+kept outside the committed scenario matrix.

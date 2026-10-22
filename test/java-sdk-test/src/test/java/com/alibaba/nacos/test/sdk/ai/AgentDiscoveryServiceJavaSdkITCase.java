@@ -19,6 +19,9 @@ package com.alibaba.nacos.test.sdk.ai;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.converter.AgentConverter;
+import com.alibaba.nacos.api.ai.converter.AgentConverters;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
@@ -27,6 +30,7 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.SecurityScheme;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -93,6 +97,10 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -190,6 +198,319 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final int DEFAULT_CLIENT_TEST_CAPACITY = 3;
 
     private static final String CONSOLE_AGENT_PATH = "/v3/console/ai/agents";
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldInitializeEachListenerOnceBeforeSubsequentChanges(AgentTransportMode mode)
+        throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        RecordingAgentListener first = new RecordingAgentListener();
+        RecordingAgentListener second = new RecordingAgentListener();
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, first));
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, second));
+        AgentDiscoveryResult initial = subscribeAndAwaitInitial(service, reference, first);
+        assertEquals(name, initial.getAgentName());
+        assertEquals(VERSION, initial.getVersion());
+        service.agent().subscribeAgent(reference, new AgentDiscoveryFilter(), first);
+        AgentDiscoveryResult joined = subscribeAndAwaitInitial(service, reference, second);
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(initial),
+            AgentDiscoveryCanonicalizer.fingerprint(joined));
+        Endpoint changed = endpoint(randomPort(), "/initial-then-change", "initial");
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(changed)));
+        awaitEvent(first, mode + " first listener must receive the next snapshot",
+            result -> containsEndpoint(result, PROTOCOL_A2A, changed.getUri()));
+        awaitEvent(second, mode + " joined listener must receive the next snapshot",
+            result -> containsEndpoint(result, PROTOCOL_A2A, changed.getUri()));
+        // The changed callback is a per-listener ordering barrier for earlier initialization.
+        assertEquals(2, first.eventCount.get(), mode + " duplicate must not reinitialize");
+        assertEquals(2, second.eventCount.get(), mode + " joining must initialize only once");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldCoalesceSlowListenerWithoutBlockingWatchObservation(AgentTransportMode mode)
+        throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        RecordingAgentListener healthy = new RecordingAgentListener();
+        subscribeAndAwaitInitial(service, reference, healthy);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        BlockingQueue<NacosAgentDiscoveryEvent> received = new LinkedBlockingQueue<>();
+        AtomicInteger calls = new AtomicInteger();
+        ExecutorService executor =
+            Executors.newSingleThreadExecutor();
+        AbstractNacosAgentDiscoveryListener slow = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public Executor getExecutor() {
+                return executor;
+            }
+
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                int call = calls.incrementAndGet();
+                received.add(event);
+                if (call == 1) {
+                    entered.countDown();
+                    try {
+                        release.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        };
+        try {
+            service.agent().subscribeAgent(reference, slow);
+            assertTrue(entered.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+            assertNotNull(received.poll());
+            Endpoint latest = null;
+            for (int i = 0; i < 8; i++) {
+                latest = endpoint(randomPort(), "/slow-listener-" + i, "slow");
+                String uri = latest.getUri();
+                service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+                    Collections.singletonList(latest)));
+                awaitEvent(healthy, mode + " must continue observation while callback blocks",
+                    result -> containsEndpoint(result, PROTOCOL_A2A, uri));
+            }
+            assertEquals(1, calls.get());
+            release.countDown();
+            NacosAgentDiscoveryEvent converged =
+                received.poll(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            assertNotNull(converged, "latest state must arrive without another server change");
+            assertTrue(containsEndpoint(converged.getAgentDiscoveryResult(),
+                PROTOCOL_A2A, latest.getUri()));
+            assertEquals(2, calls.get(), "intermediate snapshots must not queue behind I/O");
+        } finally {
+            release.countDown();
+            service.agent().unsubscribeAgent(reference, slow);
+            service.agent().unsubscribeAgent(reference, healthy);
+            executor.shutdownNow();
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldRecoverListenerSubmissionWithoutAnotherAgentChange(AgentTransportMode mode)
+        throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        for (boolean failLookup : new boolean[] {false, true}) {
+            AtomicReference<Boolean> rejecting = new AtomicReference<>(true);
+            CountDownLatch rejected = new CountDownLatch(1);
+            BlockingQueue<NacosAgentDiscoveryEvent> received = new LinkedBlockingQueue<>();
+            AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
+                @Override
+                public Executor getExecutor() {
+                    if (failLookup && rejecting.get()) {
+                        rejected.countDown();
+                        throw new IllegalStateException("controlled executor lookup failure");
+                    }
+                    return command -> {
+                        if (rejecting.get()) {
+                            rejected.countDown();
+                            throw new RejectedExecutionException("controlled busy executor");
+                        }
+                        command.run();
+                    };
+                }
+
+                @Override
+                public void onEvent(NacosAgentDiscoveryEvent event) {
+                    received.add(event);
+                }
+            };
+            try {
+                service.agent().subscribeAgent(reference, listener);
+                assertTrue(rejected.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+                assertTrue(received.isEmpty(), "executor failure is not an Agent data event");
+                rejecting.set(false);
+                NacosAgentDiscoveryEvent event =
+                    received.poll(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+                assertNotNull(event, "accepted Listener must recover without resubscribe or mutation");
+                assertEquals(NacosAgentDiscoveryEventType.SNAPSHOT, event.getType());
+                assertEquals(name, event.getAgentDiscoveryResult().getAgentName());
+            } finally {
+                service.agent().unsubscribeAgent(reference, listener);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldObserveLaterChangesAfterListenerThrows(AgentTransportMode mode) throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        CountDownLatch invoked = new CountDownLatch(1);
+        BlockingQueue<NacosAgentDiscoveryEvent> received = new LinkedBlockingQueue<>();
+        AtomicInteger calls = new AtomicInteger();
+        AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                if (calls.incrementAndGet() == 1) {
+                    invoked.countDown();
+                    throw new IllegalStateException("controlled application callback failure");
+                }
+                received.add(event);
+            }
+        };
+        try {
+            service.agent().subscribeAgent(reference, listener);
+            assertTrue(invoked.await(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+            Endpoint changed = endpoint(randomPort(), "/after-listener-error", "callback");
+            service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+                Collections.singletonList(changed)));
+            NacosAgentDiscoveryEvent event = received.poll(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            assertNotNull(event);
+            assertTrue(containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A, changed.getUri()));
+            assertEquals(2, calls.get());
+        } finally {
+            service.agent().unsubscribeAgent(reference, listener);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldConvertRealDiscoverySnapshotsExplicitly(AgentTransportMode mode) throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        AgentConverter<AgentCard> converter = service.agent().a2aConverter();
+        AgentDiscoveryResult declared = service.agent().discoverAgent(reference);
+        assertEquals("https://example.com:443/" + name + "/a2a", converter.convert(declared).getUrl());
+        Endpoint runtime = endpoint(randomPort(), "/converter", "converter");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION, "1.1");
+        metadata.put(AiConstants.A2a.ENDPOINT_TENANT, "converter-tenant");
+        runtime.setMetadata(metadata);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(runtime)));
+        waitForEndpointCount(service, reference, PROTOCOL_A2A, 1);
+        AgentDiscoveryResult snapshot = service.agent().discoverAgent(reference);
+        String before = JacksonUtils.toJson(snapshot);
+        AgentCard card = converter.convert(snapshot);
+        assertEquals(name, card.getName());
+        assertEquals(VERSION, card.getVersion());
+        assertEquals("X-Agent-Key", card.getSecuritySchemes().get("apiKey").get("name"));
+        assertTrue(card.getSecurityRequirements().get(0).containsKey("apiKey"));
+        assertEquals(runtime.getUri(), card.getUrl());
+        assertEquals("1.1", card.getProtocolVersion());
+        assertEquals("converter-tenant", card.getSupportedInterfaces().get(0).getTenant());
+        assertEquals(JacksonUtils.toJson(card), JacksonUtils.toJson(AgentConverters.a2a().convert(snapshot)));
+        card.getSupportedInterfaces().clear();
+        card.getSecuritySchemes().get("apiKey").put("name", "changed");
+        assertEquals(before, JacksonUtils.toJson(snapshot));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.DECLARED));
+        assertEquals(converter.convert(declared).getUrl(),
+            converter.convert(service.agent().discoverAgent(reference, filter)).getUrl());
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        assertEquals(runtime.getUri(),
+            converter.convert(service.agent().discoverAgent(reference, filter)).getUrl());
+        service.shutdown();
+        assertEquals(runtime.getUri(), converter.convert(snapshot).getUrl());
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldConvertOnlyServerVisibleRuntimeContributions(AgentTransportMode mode)
+        throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        Endpoint endpoint = endpoint(randomPort(), "/enabled-converter", "converter");
+        endpoint.setEnabled(false);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(endpoint)));
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        AgentDiscoveryResult disabled = service.agent().discoverAgent(reference, filter);
+        assertTrue(sourceEndpoints(disabled, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> service.agent().a2aConverter().convert(disabled));
+        endpoint.setEnabled(true);
+        endpoint.setHealthy(false);
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(endpoint)));
+        waitForEndpointCount(service, reference, PROTOCOL_A2A, 1);
+        AgentDiscoveryResult enabled = service.agent().discoverAgent(reference, filter);
+        Endpoint returned = sourceEndpoints(enabled, PROTOCOL_A2A, EndpointSource.RUNTIME).get(0);
+        assertTrue(returned.getEnabled());
+        assertFalse(returned.getHealthy());
+        assertEquals(endpoint.getUri(), service.agent().a2aConverter().convert(enabled).getUrl());
+    }
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void shouldKeepConversionUnderListenerControl(AgentTransportMode mode) throws Exception {
+        AiService service = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = publishConvertibleAgent(service);
+        AgentReference reference = reference(name, VERSION, null);
+        AgentDiscoveryFilter filter = new AgentDiscoveryFilter();
+        filter.setEndpointSources(Collections.singletonList(EndpointSource.RUNTIME));
+        AtomicReference<AgentCard> converted = new AtomicReference<>();
+        AtomicReference<AgentDiscoveryResult> raw = new AtomicReference<>();
+        AtomicInteger conversionFailures = new AtomicInteger();
+        AbstractNacosAgentDiscoveryListener listener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                AgentDiscoveryResult snapshot = event.getAgentDiscoveryResult();
+                if (snapshot != null) {
+                    raw.set(snapshot);
+                    try {
+                        converted.set(service.agent().a2aConverter().convert(snapshot));
+                    } catch (IllegalArgumentException expectedForEmptyRuntime) {
+                        conversionFailures.incrementAndGet();
+                    }
+                }
+            }
+        };
+        addCleanup(() -> service.agent().unsubscribeAgent(reference, filter, listener));
+        service.agent().subscribeAgent(reference, filter, listener);
+        Endpoint first = endpoint(randomPort(), "/callback-first", "converter");
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(first)));
+        waitUntil("application converts first raw event", POLLING_TIMEOUT_MILLIS,
+            () -> converted.get() != null && first.getUri().equals(converted.get().getUrl()));
+        int failuresBeforeEmpty = conversionFailures.get();
+        service.agent().deregisterAgentEndpoints(name, PROTOCOL_A2A, Collections.singletonList(first));
+        waitUntil("empty raw result reaches listener and conversion fails locally", POLLING_TIMEOUT_MILLIS,
+            () -> conversionFailures.get() > failuresBeforeEmpty);
+        assertTrue(sourceEndpoints(raw.get(), PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
+        Endpoint second = endpoint(randomPort(), "/callback-second", "converter");
+        service.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+            Collections.singletonList(second)));
+        waitUntil("local conversion failure must not cancel the subscription", POLLING_TIMEOUT_MILLIS,
+            () -> second.getUri().equals(converted.get().getUrl()));
+        assertEquals(name, raw.get().getAgentName());
+    }
+
+    private String publishConvertibleAgent(AiService service) throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String name = randomServiceName("converter");
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, name));
+        AgentCard card = legacyCompatibleAgentCard(name, VERSION, "converter description");
+        SecurityScheme scheme = new SecurityScheme();
+        scheme.put("type", "apiKey");
+        scheme.put("in", "header");
+        scheme.put("name", "X-Agent-Key");
+        card.setSecuritySchemes(Collections.singletonMap("apiKey", scheme));
+        card.setSecurityRequirements(Collections.singletonList(
+            Collections.singletonMap("apiKey", Collections.emptyList())));
+        AgentCallInterface call = legacyCompatibleCallInterface(card);
+        call.setEndpointSourceOrder(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
+        AgentPublishRequest request = new AgentPublishRequest();
+        request.setAgentName(name);
+        request.setVersion(VERSION);
+        request.setCallInterfaces(Collections.singletonList(call));
+        service.agent().publishAgent(request);
+        return name;
+    }
 
     @ParameterizedTest
     @EnumSource(AgentTransportMode.class)
@@ -882,8 +1203,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             declared.setEndpointSources(Collections.singletonList(EndpointSource.DECLARED));
             RecordingAgentListener runtimeListener = new RecordingAgentListener();
             RecordingAgentListener declaredListener = new RecordingAgentListener();
-            AgentDiscoveryResult runtimeInitial = service.agent().subscribeAgent(reference, runtime, runtimeListener);
-            AgentDiscoveryResult declaredInitial = service.agent().subscribeAgent(reference, declared, declaredListener);
+            AgentDiscoveryResult runtimeInitial = subscribeAndAwaitInitial(service, reference, runtime, runtimeListener);
+            AgentDiscoveryResult declaredInitial = subscribeAndAwaitInitial(service, reference, declared, declaredListener);
             assertEquals(1, runtimeInitial.getCallInterfaces().get(0).getEndpointSets().size());
             assertTrue(sourceEndpoints(runtimeInitial, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
             assertEquals(1, sourceEndpoints(declaredInitial, PROTOCOL_A2A, EndpointSource.DECLARED).size());
@@ -924,10 +1245,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 null, null));
         }
         for (int i = 0; i < subscriptionCapacity; i++) {
-            assertNull(service.agent().subscribeAgent(references.get(i), listener));
+            service.agent().subscribeAgent(references.get(i), listener);
         }
-        assertNull(service.agent().subscribeAgent(references.get(0), listener),
-            "an idempotent repeat must not consume another slot");
+        service.agent().subscribeAgent(references.get(0), listener);
         NacosApiException rejected = assertThrows(NacosApiException.class,
             () -> service.agent().subscribeAgent(references.get(subscriptionCapacity), listener));
         assertEquals(NacosException.CLIENT_OVER_THRESHOLD, rejected.getErrCode());
@@ -935,9 +1255,94 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             rejected.getDetailErrCode());
 
         service.agent().unsubscribeAgent(references.get(0), listener);
-        assertNull(service.agent().subscribeAgent(references.get(subscriptionCapacity), listener));
+        service.agent().subscribeAgent(references.get(subscriptionCapacity), listener);
         for (int i = 1; i <= subscriptionCapacity; i++) {
             service.agent().unsubscribeAgent(references.get(i), listener);
+        }
+    }
+
+    @Test
+    void shouldRecoverSameGrpcAndHttpWatchesAfterPermissionIsRestored() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED);
+        String username = randomServiceName("watch-reader");
+        String password = java.util.UUID.randomUUID().toString() + "-A1!";
+        String role = randomServiceName("watch-role");
+        Map<String, String> user = new java.util.LinkedHashMap<>();
+        user.put("username", username);
+        user.put("password", password);
+        requestAuthFixture("POST", "user", user);
+        addCleanup(() -> requestAuthFixture("DELETE", "user",
+            Collections.singletonMap("username", username)));
+        Map<String, String> membership = new java.util.LinkedHashMap<>();
+        membership.put("username", username);
+        membership.put("role", role);
+        requestAuthFixture("POST", "role", membership);
+        addCleanup(() -> requestAuthFixture("DELETE", "role", membership));
+        Map<String, String> permission = new java.util.LinkedHashMap<>();
+        permission.put("role", role);
+        permission.put("resource", "*:*:ai/*");
+        permission.put("action", "r");
+        requestAuthFixture("POST", "permission", permission);
+        addCleanup(() -> requestAuthFixture("DELETE", "permission", permission));
+
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String name = randomServiceName("watch-auth-recovery");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, name,
+            Collections.singletonList("watch-auth"), Collections.singletonList(PROTOCOL_A2A), false);
+        maintainer.updateScope(name, "PUBLIC");
+        AiService publisher = createAiService();
+        List<AiService> readers = new ArrayList<>();
+        List<RecordingAgentEventListener> listeners = new ArrayList<>();
+        AgentReference target = reference(name, null, null);
+        for (String mode : new String[] {"GRPC", "HTTP"}) {
+            Properties properties = sdkProperties();
+            properties.setProperty(com.alibaba.nacos.api.PropertyKeyConst.USERNAME, username);
+            properties.setProperty(com.alibaba.nacos.api.PropertyKeyConst.PASSWORD, password);
+            properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, mode);
+            // Newly created identities become visible through the server's auth-cache refresh.
+            AiService reader = createAiServiceWithoutReadiness(properties);
+            waitUntil(mode + " isolated reader permission is visible", POLLING_TIMEOUT_MILLIS, () ->
+                reader.agent().discoverAgent(target) != null);
+            RecordingAgentEventListener listener = new RecordingAgentEventListener();
+            subscribeAndAwaitInitial(reader, target, listener);
+            readers.add(reader);
+            listeners.add(listener);
+        }
+        requestAuthFixture("DELETE", "permission", permission);
+        boolean restored = false;
+        try {
+            for (AiService reader : readers) {
+                waitUntil("revoked permission is enforced by Discover", POLLING_TIMEOUT_MILLIS, () -> {
+                    try {
+                        reader.agent().discoverAgent(target);
+                        return false;
+                    } catch (NacosException e) {
+                        assertEquals(NacosException.NO_RIGHT, e.getErrCode());
+                        return true;
+                    }
+                });
+            }
+            Endpoint changed = endpoint(randomPort(), "/auth-recovered", "auth-recovered");
+            publisher.agent().registerAgentEndpoints(registration(name, PROTOCOL_A2A,
+                Collections.singletonList(changed)));
+            for (RecordingAgentEventListener listener : listeners) {
+                assertNull(listener.events.poll(2, TimeUnit.SECONDS),
+                    "permission failure must not become a discovery data event");
+            }
+            requestAuthFixture("POST", "permission", permission);
+            restored = true;
+            for (RecordingAgentEventListener listener : listeners) {
+                awaitDiscoveryEvent(listener, "same Watch recovers without resubscribe or another change",
+                    event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
+                        && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A, changed.getUri()), RECONNECT_TIMEOUT_MILLIS);
+            }
+        } finally {
+            if (!restored) {
+                requestAuthFixture("POST", "permission", permission);
+            }
+            for (int i = 0; i < readers.size(); i++) {
+                readers.get(i).agent().unsubscribeAgent(target, listeners.get(i));
+            }
         }
     }
 
@@ -964,7 +1369,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         }
         for (int i = 0; i < watchCapacity; i++) {
             assertEquals(VERSION,
-                service.agent().subscribeAgent(references.get(i), listeners.get(i)).getVersion());
+                subscribeAndAwaitInitial(service, references.get(i), listeners.get(i)).getVersion());
         }
 
         NacosApiException rejected = assertThrows(NacosApiException.class,
@@ -976,7 +1381,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
 
         service.agent().unsubscribeAgent(references.get(0), listeners.get(0));
         assertEquals(VERSION,
-            service.agent().subscribeAgent(references.get(watchCapacity),
+            subscribeAndAwaitInitial(service, references.get(watchCapacity),
                 listeners.get(watchCapacity)).getVersion());
         for (int i = 1; i <= watchCapacity; i++) {
             service.agent().unsubscribeAgent(references.get(i), listeners.get(i));
@@ -986,19 +1391,19 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
     @Test
     @EnabledIfSystemProperty(named = SERVER_WATCH_CAPACITY_PROPERTY,
         matches = "[2-9]|[1-9][0-9]+")
-    void shouldRejectOnlyLatestHttpWatchAndRetainExistingBatch() throws Exception {
+    void shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch() throws Exception {
         int watchCapacity = Integer.getInteger(SERVER_WATCH_CAPACITY_PROPERTY);
         AgentMaintainerService maintainer = createAgentMaintainerService();
         Properties properties = sdkProperties();
         properties.setProperty(AiConstants.AI_TRANSPORT_MODE,
             AgentTransportMode.HTTP.getValue());
         properties.setProperty(AiConstants.AI_AGENT_DISCOVERY_MAX_SUBSCRIPTIONS,
-            String.valueOf(watchCapacity + 1));
+            String.valueOf(watchCapacity + 3));
         AiService reader = createAiService(properties);
         AiService publisher = createAiService();
         List<AgentReference> references = new ArrayList<>();
         List<RecordingAgentEventListener> listeners = new ArrayList<>();
-        for (int i = 0; i <= watchCapacity; i++) {
+        for (int i = 0; i <= watchCapacity + 1; i++) {
             String agentName = randomServiceName("http-watch-capacity-" + i);
             createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName,
                 Collections.singletonList("java-sdk-it"),
@@ -1007,7 +1412,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             listeners.add(new RecordingAgentEventListener());
         }
         for (int i = 0; i < watchCapacity; i++) {
-            assertEquals(VERSION, reader.agent().subscribeAgent(references.get(i),
+            assertEquals(VERSION, subscribeAndAwaitInitial(reader, references.get(i),
                 listeners.get(i)).getVersion());
         }
 
@@ -1021,13 +1426,22 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
                     admissionProbe.getUri()));
 
-        assertEquals(VERSION, reader.agent().subscribeAgent(references.get(watchCapacity),
+        assertEquals(VERSION, subscribeAndAwaitInitial(reader, references.get(watchCapacity),
             listeners.get(watchCapacity)).getVersion());
-        NacosAgentDiscoveryEvent rejected = awaitDiscoveryEvent(listeners.get(watchCapacity),
-            "the HTTP batch must surface one terminal server-capacity event",
-            event -> event.getType() == NacosAgentDiscoveryEventType.UNAVAILABLE);
-        assertEquals(NacosException.OVER_THRESHOLD, rejected.getErrorCode());
-        assertNull(rejected.getAgentDiscoveryResult());
+        AgentReference probe = references.get(watchCapacity + 1);
+        RecordingAgentEventListener probeListener = listeners.get(watchCapacity + 1);
+        waitUntil("known remote quota must synchronously reject further growth", () -> {
+            try {
+                reader.agent().subscribeAgent(probe, probeListener);
+                reader.agent().unsubscribeAgent(probe, probeListener);
+                return false;
+            } catch (NacosException e) {
+                assertEquals(NacosException.OVER_THRESHOLD, e.getErrCode());
+                return true;
+            }
+        });
+        assertNull(listeners.get(watchCapacity).events.poll(1, TimeUnit.SECONDS),
+            "quota rejection must not produce an UNAVAILABLE data event");
 
         Endpoint retained = endpoint(randomPort(), "/http-capacity-retained", "retained");
         publisher.agent().registerAgentEndpoints(registration(
@@ -1050,14 +1464,12 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
                     reduced.getUri()));
 
-        RecordingAgentEventListener reused = new RecordingAgentEventListener();
-        assertEquals(VERSION,
-            reader.agent().subscribeAgent(references.get(watchCapacity), reused).getVersion());
         Endpoint reusedEndpoint = endpoint(randomPort(), "/http-capacity-reused", "reused");
         publisher.agent().registerAgentEndpoints(registration(
             references.get(watchCapacity).getAgentName(), PROTOCOL_A2A,
             Collections.singletonList(reusedEndpoint)));
-        awaitDiscoveryEvent(reused, "the released HTTP Watch slot must be reusable",
+        awaitDiscoveryEvent(listeners.get(watchCapacity),
+            "the accepted pending Watch must recover without another subscribe",
             event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT
                 && containsEndpoint(event.getAgentDiscoveryResult(), PROTOCOL_A2A,
                     reusedEndpoint.getUri()));
@@ -1065,7 +1477,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         for (int i = 1; i < watchCapacity; i++) {
             reader.agent().unsubscribeAgent(references.get(i), listeners.get(i));
         }
-        reader.agent().unsubscribeAgent(references.get(watchCapacity), reused);
+        reader.agent().unsubscribeAgent(references.get(watchCapacity), listeners.get(watchCapacity));
     }
 
     @Test
@@ -1201,6 +1613,92 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForEndpointCount(reader, agentName, PROTOCOL_A2A, 0);
     }
     
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldKeepMissingVersionAndLabelSubscriptionsUntilTargetsResolve(AgentTransportMode mode)
+        throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService reader = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = randomServiceName("watch-missing-selector");
+        createPublishedAgent(maintainer, Constants.DEFAULT_NAMESPACE_ID, name,
+            Collections.singletonList("missing-selector"), Collections.singletonList(PROTOCOL_A2A), false);
+        AgentReference exact = reference(name, VERSION_2, null);
+        AgentReference label = reference(name, null, "future");
+        RecordingAgentEventListener exactListener = new RecordingAgentEventListener();
+        RecordingAgentEventListener labelListener = new RecordingAgentEventListener();
+        reader.agent().subscribeAgent(exact, exactListener);
+        reader.agent().subscribeAgent(label, labelListener);
+        for (RecordingAgentEventListener listener : new RecordingAgentEventListener[] {exactListener, labelListener}) {
+            NacosAgentDiscoveryEvent absent = awaitDiscoveryEvent(listener, "unresolved reference",
+                event -> event.getType() == NacosAgentDiscoveryEventType.UNAVAILABLE);
+            assertEquals(NacosException.NOT_FOUND, absent.getErrorCode());
+            assertNull(absent.getAgentDiscoveryResult());
+        }
+        createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, name, VERSION_2);
+        updateLabel(maintainer, Constants.DEFAULT_NAMESPACE_ID, name, "future", VERSION_2);
+        for (RecordingAgentEventListener listener : new RecordingAgentEventListener[] {exactListener, labelListener}) {
+            NacosAgentDiscoveryEvent resolved = awaitDiscoveryEvent(listener, "same reference resolves after publication",
+                event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT);
+            assertEquals(VERSION_2, resolved.getAgentDiscoveryResult().getVersion());
+        }
+        reader.agent().unsubscribeAgent(exact, exactListener);
+        reader.agent().unsubscribeAgent(label, labelListener);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"GRPC", "HTTP"})
+    void shouldNotifyDeletionAndIdenticalRecreationWithoutPushingEmptyLegacyCard(AgentTransportMode mode)
+        throws Exception {
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        AiService publisher = createAiService();
+        AiService reader = createAiService(Constants.DEFAULT_NAMESPACE_ID, mode.getValue());
+        String name = randomServiceName("watch-recreation");
+        AgentCard card = legacyCompatibleAgentCard(name, VERSION, "unchanged definition");
+        publisher.releaseAgentCard(card, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        addCleanup(() -> maintainer.deleteAgent(name));
+        RecordingAgentEventListener nativeListener = new RecordingAgentEventListener();
+        AgentReference target = reference(name, null, null);
+        AgentDiscoveryResult initial = subscribeAndAwaitInitial(reader, target, nativeListener);
+        BlockingQueue<AgentCardDetailInfo> cards = new LinkedBlockingQueue<>();
+        AbstractNacosAgentCardListener legacyListener = new AbstractNacosAgentCardListener() {
+            @Override
+            public void onEvent(NacosAgentCardEvent event) {
+                cards.add(event.getAgentCard());
+            }
+        };
+        reader.subscribeAgentCard(name, legacyListener);
+        assertNotNull(cards.poll(POLLING_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+        maintainer.deleteAgent(name);
+        NacosAgentDiscoveryEvent absent = awaitDiscoveryEvent(nativeListener, "deleted target",
+            event -> event.getType() == NacosAgentDiscoveryEventType.UNAVAILABLE);
+        assertEquals(NacosException.NOT_FOUND, absent.getErrorCode());
+        assertNull(absent.getAgentDiscoveryResult());
+        assertNull(cards.poll(1, TimeUnit.SECONDS), "legacy listener retains empty-push protection");
+        publisher.releaseAgentCard(card, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        NacosAgentDiscoveryEvent restored = awaitDiscoveryEvent(nativeListener, "identical recreation",
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT);
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(initial),
+            AgentDiscoveryCanonicalizer.fingerprint(restored.getAgentDiscoveryResult()));
+        AgentCardDetailInfo restoredCard = reader.getAgentCard(name);
+        assertEquals(card.getSupportedInterfaces().get(0).getUrl(), restoredCard.getUrl());
+        assertEquals(card.getName(), restoredCard.getName());
+        assertEquals(card.getVersion(), restoredCard.getVersion());
+        // Legacy empty-push protection may coalesce an identical recreation if its own
+        // Watch did not observe the short absence. A later real change must still arrive.
+        publisher.releaseAgentCard(legacyCompatibleAgentCard(name, VERSION_2, "after recreation"),
+            AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        waitUntil("original legacy listener receives the later version", POLLING_TIMEOUT_MILLIS, () -> {
+            AgentCardDetailInfo changed = cards.poll();
+            if (changed == null) {
+                return false;
+            }
+            assertNotNull(changed.getUrl());
+            return VERSION_2.equals(changed.getVersion());
+        });
+        reader.agent().unsubscribeAgent(target, nativeListener);
+        reader.unsubscribeAgentCard(name, legacyListener);
+    }
+
     @Test
     void shouldDiscoverPreRegistrationAndPollUntilAgentAppears() throws Exception {
         AgentMaintainerService maintainer = createAgentMaintainerService();
@@ -1216,7 +1714,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         
         RecordingAgentEventListener listener = new RecordingAgentEventListener();
         AgentReference reference = reference(agentName, null, null);
-        assertNull(service.agent().subscribeAgent(reference, listener));
+        service.agent().subscribeAgent(reference, listener);
 
         NacosAgentDiscoveryEvent unavailable = awaitDiscoveryEvent(listener,
             "a missing target must emit one unavailable transition",
@@ -1280,8 +1778,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                     throw new IllegalStateException("intentional listener failure");
                 }
             };
-        AgentDiscoveryResult firstCurrent = reader.agent().subscribeAgent(reference, first);
-        AgentDiscoveryResult secondCurrent = reader.agent().subscribeAgent(reference, emptyFilter, second);
+        AgentDiscoveryResult firstCurrent = subscribeAndAwaitInitial(reader, reference, first);
+        AgentDiscoveryResult secondCurrent = subscribeAndAwaitInitial(reader, reference, emptyFilter, second);
         reader.agent().subscribeAgent(reference, throwing);
         assertEquals(AgentDiscoveryCanonicalizer.fingerprint(firstCurrent),
             AgentDiscoveryCanonicalizer.fingerprint(secondCurrent));
@@ -1334,7 +1832,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference reference = reference(agentName, VERSION, null);
         RecordingAgentListener listener = new RecordingAgentListener();
         addCleanup(() -> service.agent().unsubscribeAgent(reference, listener));
-        AgentDiscoveryResult initial = service.agent().subscribeAgent(reference, listener);
+        AgentDiscoveryResult initial = subscribeAndAwaitInitial(service, reference, listener);
         assertEquals(VERSION, initial.getVersion());
         assertEquals("Java SDK Agent discovery integration test", initial.getDescription());
         assertEquals(new HashSet<>(Arrays.asList("chat", "research")),
@@ -1408,37 +1906,24 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(initial)));
         waitForEndpointCount(service, agentName, PROTOCOL_A2A, 1);
         
-        AtomicInteger callbackCount = new AtomicInteger();
-        AtomicReference<AgentDiscoveryResult> callbackResult = new AtomicReference<>();
-        CountDownLatch replacementCallback = new CountDownLatch(1);
-        AbstractNacosAgentDiscoveryListener listener =
-            new AbstractNacosAgentDiscoveryListener() {
-                
-                @Override
-                public void onEvent(NacosAgentDiscoveryEvent event) {
-                    callbackResult.set(event.getAgentDiscoveryResult());
-                    callbackCount.incrementAndGet();
-                    replacementCallback.countDown();
-                }
-            };
+        RecordingAgentListener listener = new RecordingAgentListener();
         AgentReference reference = reference(agentName, null, null);
-        AgentDiscoveryResult current = service.agent().subscribeAgent(reference, listener);
+        AgentDiscoveryResult current = subscribeAndAwaitInitial(service, reference, listener);
         assertNotNull(current);
-        assertEquals(0, callbackCount.get());
+        assertEquals(1, listener.eventCount.get());
         
         Endpoint replacement = endpoint(randomPort(), "/replacement", "replacement");
         AgentEndpointRegistrationBatch replacementBatch =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement));
         service.agent().registerAgentEndpoints(replacementBatch);
-        assertTrue(replacementCallback.await(WATCH_HINT_TIMEOUT_MILLIS,
-            TimeUnit.MILLISECONDS),
-            "gRPC Watch Hint must trigger Discover and a complete replacement snapshot");
-        assertTrue(containsEndpoint(callbackResult.get(), PROTOCOL_A2A, replacement.getUri()));
+        awaitEvent(listener, "Watch Hint must trigger Discover and a complete replacement snapshot",
+            result -> containsEndpoint(result, PROTOCOL_A2A, replacement.getUri()),
+            WATCH_HINT_TIMEOUT_MILLIS);
         
-        int countAfterReplacement = callbackCount.get();
+        int countAfterReplacement = listener.eventCount.get();
         service.agent().registerAgentEndpoints(replacementBatch);
         Thread.sleep(AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL + 1500L);
-        assertEquals(countAfterReplacement, callbackCount.get(),
+        assertEquals(countAfterReplacement, listener.eventCount.get(),
             "an unchanged complete fingerprint must not deliver a duplicate callback");
         
         service.agent().unsubscribeAgent(reference, listener);
@@ -1460,7 +1945,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference reference = reference(agentName, VERSION, null);
         RecordingAgentListener listener = new RecordingAgentListener();
         addCleanup(() -> service.agent().unsubscribeAgent(reference, listener));
-        AgentDiscoveryResult initial = service.agent().subscribeAgent(reference, listener);
+        AgentDiscoveryResult initial = subscribeAndAwaitInitial(service, reference, listener);
         assertTrue(sourceEndpoints(initial, PROTOCOL_A2A, EndpointSource.RUNTIME).isEmpty());
         Endpoint first = endpoint(randomPort(), "/first", "first");
         Endpoint second = endpoint(randomPort(), "/second", "second");
@@ -1530,8 +2015,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference secondReference = reference(secondAgent, null, null);
         RecordingAgentListener first = new RecordingAgentListener();
         RecordingAgentListener second = new RecordingAgentListener();
-        assertEquals(VERSION, reader.agent().subscribeAgent(firstReference, first).getVersion());
-        assertEquals(VERSION, reader.agent().subscribeAgent(secondReference, second).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(reader, firstReference, first).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(reader, secondReference, second).getVersion());
 
         assertNull(first.events.poll(32000L, TimeUnit.MILLISECONDS),
             "an HTTP long-poll timeout must not create a Listener callback");
@@ -1567,7 +2052,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             "the removed HTTP Listener must remain silent");
 
         RecordingAgentListener resubscribed = new RecordingAgentListener();
-        assertTrue(containsEndpoint(reader.agent().subscribeAgent(firstReference, resubscribed),
+        assertTrue(containsEndpoint(subscribeAndAwaitInitial(reader, firstReference, resubscribed),
             PROTOCOL_A2A, ignored.getUri()));
         Endpoint afterResubscribe =
             endpoint(randomPort(), "/http-watch-resubscribed", "resubscribed");
@@ -1606,11 +2091,11 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentReference stableReference = reference(agentName, null, LABEL_STABLE);
         AgentReference exactVersionOneReference = reference(agentName, VERSION, null);
         assertEquals(VERSION,
-            service.agent().subscribeAgent(latestReference, latestListener).getVersion());
+            subscribeAndAwaitInitial(service, latestReference, latestListener).getVersion());
         assertEquals(VERSION,
-            service.agent().subscribeAgent(stableReference, stableListener).getVersion());
+            subscribeAndAwaitInitial(service, stableReference, stableListener).getVersion());
         assertEquals(VERSION,
-            service.agent().subscribeAgent(exactVersionOneReference, exactVersionOneListener).getVersion());
+            subscribeAndAwaitInitial(service, exactVersionOneReference, exactVersionOneListener).getVersion());
         
         Endpoint versionTwoEndpoint = endpoint(randomPort(), "/v2", "version-two");
         service.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
@@ -1711,9 +2196,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         RecordingAgentListener defaultListener = new RecordingAgentListener();
         RecordingAgentListener latestListener = new RecordingAgentListener();
         AgentDiscoveryResult initialDefault =
-            reader.agent().subscribeAgent(defaultReference, defaultListener);
+            subscribeAndAwaitInitial(reader, defaultReference, defaultListener);
         AgentDiscoveryResult initialLatest =
-            reader.agent().subscribeAgent(latestReference, latestListener);
+            subscribeAndAwaitInitial(reader, latestReference, latestListener);
         addCleanup(() -> reader.agent().unsubscribeAgent(defaultReference, defaultListener));
         addCleanup(() -> reader.agent().unsubscribeAgent(latestReference, latestListener));
         assertEquals(VERSION, initialDefault.getVersion());
@@ -1878,9 +2363,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         RecordingAgentListener httpLatestListener = new RecordingAgentListener();
         AgentReference latestReference = reference(agentName, null, null);
         assertEquals(VERSION,
-            grpcService.agent().subscribeAgent(latestReference, grpcLatestListener).getVersion());
+            subscribeAndAwaitInitial(grpcService, latestReference, grpcLatestListener).getVersion());
         assertEquals(VERSION,
-            httpService.agent().subscribeAgent(latestReference, httpLatestListener).getVersion());
+            subscribeAndAwaitInitial(httpService, latestReference, httpLatestListener).getVersion());
         writeMarker(ready, agentName);
         
         waitForMarker(serverStopped, "external harness stops the standalone server");
@@ -2019,9 +2504,9 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         RecordingAgentListener grpcListener = new RecordingAgentListener();
         RecordingAgentListener httpListener = new RecordingAgentListener();
         assertEquals(VERSION,
-            grpcService.agent().subscribeAgent(latestReference, grpcListener).getVersion());
+            subscribeAndAwaitInitial(grpcService, latestReference, grpcListener).getVersion());
         assertEquals(VERSION,
-            httpService.agent().subscribeAgent(latestReference, httpListener).getVersion());
+            subscribeAndAwaitInitial(httpService, latestReference, httpListener).getVersion());
         writeMarker(ready, agentName);
 
         waitForMarker(nodeStopped, "external harness stops one cluster node");
@@ -2030,33 +2515,33 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
             endpoint(randomPort(), "/cluster-grpc-v2", "cluster-grpc-v2");
         Endpoint httpVersionTwo =
             endpoint(randomPort(), "/cluster-http-v2", "cluster-http-v2");
-        grpcService.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+        registerDuringClusterRestart(grpcService, registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(grpcVersionTwo)));
-        httpService.agent().registerAgentEndpoints(registration(agentName, VERSION_2, PROTOCOL_A2A,
+        registerDuringClusterRestart(httpService, registration(agentName, VERSION_2, PROTOCOL_A2A,
             Collections.singletonList(httpVersionTwo)));
         Predicate<AgentDiscoveryResult> versionTwoConverged = result ->
             VERSION_2.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, grpcVersionTwo.getUri())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionTwo.getUri());
         awaitEvent(grpcListener, "gRPC Watch converges while one cluster node is stopped",
-            versionTwoConverged);
+            versionTwoConverged, RECONNECT_TIMEOUT_MILLIS);
         awaitEvent(httpListener, "HTTP Watch converges while one cluster node is stopped",
-            versionTwoConverged);
+            versionTwoConverged, RECONNECT_TIMEOUT_MILLIS);
         writeMarker(stopConverged, agentName);
 
         waitForMarker(nodeRestarted, "external harness restarts the stopped cluster node");
         createPublishedVersion(maintainer, Constants.DEFAULT_NAMESPACE_ID, agentName, VERSION_3);
         Endpoint httpVersionThree =
             endpoint(randomPort(), "/cluster-http-v3", "cluster-http-v3");
-        httpService.agent().registerAgentEndpoints(registration(agentName, VERSION_3, PROTOCOL_A2A,
+        registerDuringClusterRestart(httpService, registration(agentName, VERSION_3, PROTOCOL_A2A,
             Collections.singletonList(httpVersionThree)));
         Predicate<AgentDiscoveryResult> versionThreeConverged = result ->
             VERSION_3.equals(result.getVersion())
                 && containsEndpoint(result, PROTOCOL_A2A, httpVersionThree.getUri());
         awaitEvent(grpcListener, "gRPC Watch converges after the cluster node restarts",
-            versionThreeConverged);
+            versionThreeConverged, RECONNECT_TIMEOUT_MILLIS);
         awaitEvent(httpListener, "HTTP Watch converges after the cluster node restarts",
-            versionThreeConverged);
+            versionThreeConverged, RECONNECT_TIMEOUT_MILLIS);
         AgentDiscoveryResult defaultResult = grpcService.agent().discoverAgent(latestReference);
         assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, grpcVersionTwo.getUri()));
         assertTrue(containsEndpoint(defaultResult, PROTOCOL_A2A, httpVersionThree.getUri()));
@@ -2106,8 +2591,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && VERSION.equals(httpReaderB.agent().discoverAgent(reference).getVersion()));
         RecordingAgentListener grpcListener = new RecordingAgentListener();
         RecordingAgentListener httpListener = new RecordingAgentListener();
-        assertEquals(VERSION, grpcReaderA.agent().subscribeAgent(reference, grpcListener).getVersion());
-        assertEquals(VERSION, httpReaderA.agent().subscribeAgent(reference, httpListener).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(grpcReaderA, reference, grpcListener).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(httpReaderA, reference, httpListener).getVersion());
         addCleanup(() -> grpcReaderA.agent().unsubscribeAgent(reference, grpcListener));
         addCleanup(() -> httpReaderA.agent().unsubscribeAgent(reference, httpListener));
 
@@ -2228,8 +2713,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 && VERSION.equals(httpReaderB.agent().discoverAgent(reference).getVersion()));
         RecordingAgentListener grpcListener = new RecordingAgentListener();
         RecordingAgentListener httpListener = new RecordingAgentListener();
-        assertEquals(VERSION, grpcReaderA.agent().subscribeAgent(reference, grpcListener).getVersion());
-        assertEquals(VERSION, httpReaderA.agent().subscribeAgent(reference, httpListener).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(grpcReaderA, reference, grpcListener).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(httpReaderA, reference, httpListener).getVersion());
         addCleanup(() -> grpcReaderA.agent().unsubscribeAgent(reference, grpcListener));
         addCleanup(() -> httpReaderA.agent().unsubscribeAgent(reference, httpListener));
 
@@ -2388,7 +2873,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForSearchTotal(service, agentName, 1);
         AgentReference reference = reference(agentName, null, null);
         RecordingAgentListener listener = new RecordingAgentListener();
-        assertEquals(VERSION, service.agent().subscribeAgent(reference, listener).getVersion());
+        assertEquals(VERSION, subscribeAndAwaitInitial(service, reference, listener).getVersion());
         Endpoint endpoint = endpoint(randomPort(), "/auto-grpc", "auto-grpc");
         service.agent().registerAgentEndpoints(
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(endpoint)));
@@ -2418,7 +2903,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitForSearchTotal(autoService, agentName, 1);
         RecordingAgentListener listener = new RecordingAgentListener();
         AgentReference reference = reference(agentName, null, null);
-        AgentDiscoveryResult initial = autoService.agent().subscribeAgent(reference, listener);
+        AgentDiscoveryResult initial = subscribeAndAwaitInitial(autoService, reference, listener);
         assertEquals(VERSION, initial.getVersion());
         Endpoint endpoint = endpoint(randomPort(), "/auto-http", "auto-http");
         autoService.agent().registerAgentEndpoints(
@@ -3217,6 +3702,23 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return expectedFingerprint;
     }
 
+    private void registerDuringClusterRestart(AiService service,
+        AgentEndpointRegistrationBatch batch) throws NacosException {
+        try {
+            service.agent().registerAgentEndpoints(batch);
+        } catch (NacosException error) {
+            if (error.getErrCode() != NacosException.SERVER_ERROR
+                && error.getErrCode() != NacosException.CLIENT_DISCONNECT) {
+                throw error;
+            }
+            // Membership/owner convergence can outlast the first request's retries.
+            // Do not register again: the original intent's redo and Watch callbacks
+            // must still converge while the node remains stopped.
+            System.out.println("Cluster restart: awaiting retained publication redo after "
+                + error.getErrCode());
+        }
+    }
+
     private String requiredDistinctClusterAddress(String property, String otherAddress) {
         String value = System.getProperty(property);
         if (value == null || value.trim().isEmpty()) {
@@ -3229,9 +3731,37 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         return value;
     }
 
+    private AgentDiscoveryResult subscribeAndAwaitInitial(AiService service,
+        AgentReference reference, RecordingAgentListener listener) throws Exception {
+        return subscribeAndAwaitInitial(service, reference, null, listener);
+    }
+
+    private AgentDiscoveryResult subscribeAndAwaitInitial(AiService service,
+        AgentReference reference, AgentDiscoveryFilter filter, RecordingAgentListener listener) throws Exception {
+        service.agent().subscribeAgent(reference, filter, listener);
+        return awaitEvent(listener, "initial snapshot for " + reference.getAgentName(), result -> true);
+    }
+
+    private AgentDiscoveryResult subscribeAndAwaitInitial(AiService service,
+        AgentReference reference, RecordingAgentEventListener listener) throws Exception {
+        return subscribeAndAwaitInitial(service, reference, null, listener);
+    }
+
+    private AgentDiscoveryResult subscribeAndAwaitInitial(AiService service,
+        AgentReference reference, AgentDiscoveryFilter filter, RecordingAgentEventListener listener) throws Exception {
+        service.agent().subscribeAgent(reference, filter, listener);
+        return awaitDiscoveryEvent(listener, "initial snapshot for " + reference.getAgentName(),
+            event -> event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT).getAgentDiscoveryResult();
+    }
+
     private NacosAgentDiscoveryEvent awaitDiscoveryEvent(RecordingAgentEventListener listener,
         String reason, Predicate<NacosAgentDiscoveryEvent> predicate) throws Exception {
-        long deadline = System.currentTimeMillis() + POLLING_TIMEOUT_MILLIS;
+        return awaitDiscoveryEvent(listener, reason, predicate, POLLING_TIMEOUT_MILLIS);
+    }
+
+    private NacosAgentDiscoveryEvent awaitDiscoveryEvent(RecordingAgentEventListener listener,
+        String reason, Predicate<NacosAgentDiscoveryEvent> predicate, long timeoutMillis) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
         while (System.currentTimeMillis() < deadline) {
             long remaining = deadline - System.currentTimeMillis();
             NacosAgentDiscoveryEvent event =

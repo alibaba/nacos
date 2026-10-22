@@ -119,6 +119,34 @@ class AiHttpClientProxyAgentTest {
     }
     
     @Test
+    void discoveryDistinguishesConfirmedAbsenceFromRawHttp404AndEmptySuccess() throws Exception {
+        doReturn(
+            error(404, Result.failure(ErrorCode.RESOURCE_NOT_FOUND.getCode(), "missing", null)))
+            .when(restTemplate)
+            .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
+        NacosApiException missing = assertThrows(NacosApiException.class,
+            () -> proxy.discoverAgent(discoveryRequest()));
+        assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(), missing.getDetailErrCode());
+        doReturn(error(404, "binding not found")).when(restTemplate)
+            .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
+        NacosException transportFailure = assertThrows(NacosException.class,
+            () -> proxy.discoverAgent(discoveryRequest()));
+        assertFalse(transportFailure instanceof NacosApiException);
+        assertEquals(NacosException.NOT_FOUND, transportFailure.getErrCode());
+        doReturn(success(null)).when(restTemplate)
+            .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
+        assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
+            () -> proxy.discoverAgent(discoveryRequest())).getErrCode());
+        doReturn(ok(JacksonUtils.toJson(Result.failure(ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+            "missing", null)))).when(restTemplate)
+            .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
+        assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode().intValue(),
+            assertThrows(NacosApiException.class, () -> proxy.discoverAgent(discoveryRequest()))
+                .getDetailErrCode());
+    }
+    
+    @Test
     void searchPreservesRepeatedParametersAndClientIdentity() throws Exception {
         AgentSummary entry = new AgentSummary();
         entry.setAgentName("agent-a");

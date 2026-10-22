@@ -41,15 +41,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Connection-scoped gRPC binding for Agent Watch hints.
  *
- * <p>This transport owns only Wire Watch keys and reconnect resubscription. Canonical intent,
- * complete discovery snapshots, fingerprints, and user listeners remain in
- * {@link AgentWatchManager}.</p>
+ * <p>Subscribe installs a server-side Watch on the shared AI gRPC connection. Server pushes
+ * carry change hints; {@link AgentWatchManager} performs authoritative Discover when a
+ * refresh is needed. Receiving a hint followed by Discover is the normal push path, not
+ * periodic polling. An established gRPC owner does not also run a periodic Discover timer.</p>
+ *
+ * <p>This transport owns Wire Watch keys and reconnect resubscription. Canonical intent,
+ * complete discovery snapshots, fingerprints, and user listeners remain in the manager.
+ * When {@link AgentWatchTransportRouter} upgrades a polling owner to gRPC, the old timer
+ * stops only after this binding starts successfully; a refresh already triggered by that
+ * timer may still finish.</p>
  *
  * @author Nacos
  */
@@ -63,6 +71,8 @@ final class GrpcAgentWatchTransport
     private final AiGrpcClient client;
     
     private final ExecutorService reconnectExecutor;
+    
+    private final AgentWatchTaskScheduler taskScheduler;
     
     private final Map<String, WireWatch> watchesByClientId =
         new LinkedHashMap<String, WireWatch>();
@@ -78,12 +88,20 @@ final class GrpcAgentWatchTransport
     
     private boolean closed;
     
+    private Future<?> pendingReconnect;
+    
     GrpcAgentWatchTransport(AiGrpcClient client) {
         this(client, new ScheduledThreadPoolExecutor(1,
             new NameThreadFactory("com.alibaba.nacos.client.ai.agent.watch.grpc")));
     }
     
     GrpcAgentWatchTransport(AiGrpcClient client, ExecutorService reconnectExecutor) {
+        this(client, reconnectExecutor, new AgentWatchTaskScheduler());
+    }
+    
+    GrpcAgentWatchTransport(AiGrpcClient client, ExecutorService reconnectExecutor,
+        AgentWatchTaskScheduler taskScheduler) {
+        this.taskScheduler = taskScheduler;
         this.client = client;
         this.reconnectExecutor = reconnectExecutor;
         client.registerConnectionListener(this);
@@ -258,6 +276,9 @@ final class GrpcAgentWatchTransport
                 return;
             }
             closed = true;
+            if (pendingReconnect != null) {
+                pendingReconnect.cancel(false);
+            }
             available = false;
             connectionId = null;
             for (WireWatch watch : watchesByClientId.values()) {
@@ -271,6 +292,7 @@ final class GrpcAgentWatchTransport
         for (String watchKey : watchKeys) {
             executeBestEffortUnsubscribe(watchKey);
         }
+        taskScheduler.shutdown();
         reconnectExecutor.shutdown();
     }
     
@@ -311,26 +333,14 @@ final class GrpcAgentWatchTransport
             AgentWatchLogUtils.describeRequest(registration.getDiscoveryRequest()));
     }
     
-    private void executeReconnect(final String connectedId, final List<WireWatch> watches,
+    private synchronized void executeReconnect(final String connectedId,
+        final List<WireWatch> watches,
         final boolean watchAvailable) {
-        try {
-            reconnectExecutor.execute(new Runnable() {
-                
-                @Override
-                public void run() {
-                    reconnect(connectedId, watches, watchAvailable);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            if (WARN_LOG_LIMITER.tryAcquire()) {
-                LOGGER.warn("Agent Watch reconnect scheduling was rejected: {}",
-                    e.getClass().getSimpleName());
-            }
-            for (WireWatch watch : watches) {
-                notifyWireUnavailable(watch, new NacosException(NacosException.CLIENT_ERROR,
-                    "Agent Watch reconnect scheduling was rejected.", e));
-            }
+        if (pendingReconnect != null) {
+            pendingReconnect.cancel(false);
         }
+        pendingReconnect = taskScheduler.execute(reconnectExecutor,
+            () -> reconnect(connectedId, watches, watchAvailable));
     }
     
     private void reconnect(String connectedId, List<WireWatch> watches,
@@ -338,8 +348,14 @@ final class GrpcAgentWatchTransport
         LOGGER.info("[RAD-WATCH] Client gRPC Watch reconnect started: connectionId={}, "
             + "watchAvailable={}, watchCount={}", connectedId, watchAvailable,
             watches.size());
+        if (!isSameConnection(connectedId)) {
+            return;
+        }
         if (!watchAvailable) {
             for (WireWatch watch : watches) {
+                if (!isSameRegistration(watch, connectedId)) {
+                    continue;
+                }
                 removeWatch(watch);
                 notifyWireUnavailable(watch,
                     new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
@@ -383,12 +399,22 @@ final class GrpcAgentWatchTransport
     }
     
     private void notifyWireUnavailable(WireWatch watch, NacosException exception) {
+        if (WARN_LOG_LIMITER.tryAcquire()) {
+            LOGGER.warn("[RAD-WATCH] gRPC binding failed; delegating recovery: clientWatchId={}, "
+                + "errorCode={}, {}",
+                AgentWatchLogUtils.token(watch.registration.getClientWatchId()),
+                exception.getErrCode(),
+                AgentWatchLogUtils.describeRequest(watch.registration.getDiscoveryRequest()),
+                exception);
+        }
         WireLifecycleListener listener;
         synchronized (this) {
             listener = lifecycleListener;
         }
         if (listener != null) {
             listener.onWireUnavailable(watch.registration.getClientWatchId(), exception);
+        } else {
+            watch.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
         }
     }
     
@@ -436,6 +462,16 @@ final class GrpcAgentWatchTransport
         }
         watch.watchKey = null;
         watch.connectionId = null;
+    }
+    
+    private synchronized boolean isSameConnection(String expectedConnectionId) {
+        return !closed && expectedConnectionId.equals(connectionId)
+            && expectedConnectionId.equals(client.getCurrentConnectionId());
+    }
+    
+    private synchronized boolean isSameRegistration(WireWatch watch, String expectedConnectionId) {
+        return isSameConnection(expectedConnectionId)
+            && watchesByClientId.get(watch.registration.getClientWatchId()) == watch;
     }
     
     private synchronized boolean isCurrentRegistration(WireWatch watch,

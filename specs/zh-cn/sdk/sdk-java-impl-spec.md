@@ -157,6 +157,12 @@ context，而不是修改请求 payload 或让无关 SDK 调用失败。默认 N
 
 ### 5.3 AiService 资源子接口
 
+根接口还提供 default `getAgentDiscoveryCapability() throws NacosException`，返回已有
+`AbilityStatus`，默认 `UNKNOWN`。无需先调用 `agent()`，既有第三方实现及其旧字节码继续
+兼容。官方实现复用 Agent 有效传输的协商和 HTTP 缓存，不通过有选路副作用的 `useRad()`
+查询。三态、探测异常、关闭和目标边界以 [Agent API 规范](../ai/agent-api-spec.md#21-java-sdk-契约)
+为准；该结果不等同于业务成功或迁移就绪。
+
 `AiService` 提供 namespace-bound 的 `mcp()`、`agent()`、`skill()`、`agentSpec()` 和
 `prompt()`。getter 返回复用的子服务，与 facade 共享连接、缓存、监听及 `shutdown()` 生命周期。
 
@@ -170,7 +176,7 @@ AgentService extends A2aService, AgentDiscoveryService
 即可保持原调用；官方实现覆盖所有 getter。MCP createDraft default 保留 false 分派到旧四参
 方法、未实现 true 时受控拒绝的行为；官方五参方法是到 mcp() 的纯桥接。
 
-3.3 尚未发布的新 Agent 操作只通过 `agent()` 使用。`AgentService.publishAgent` 返回
+3.3 尚未发布的新 Agent 资源操作只通过 `agent()` 使用。`AgentService.publishAgent` 返回
 `AgentVersionDetail`，保留兼容 default；官方实现仍复制请求、注入 SDK namespace，并按
 `autoSubmit` 创建 draft 或普通 submit，不修改输入对象。参见 [Agent API 规范](../ai/agent-api-spec.md)。
 旧 A2A 方法始终保留现有 gRPC 路径，不因本次接口拆分切换为 RAD。
@@ -200,12 +206,12 @@ CLIENT_DISCONNECT、UN_REGISTER 或通用 transport 异常中的 gRPC UNAVAILABL
 | --- | --- | --- |
 | Search | `searchAgents` | 接受 `AgentSearchRequest`，返回 `Page<AgentSummary>`。 |
 | Discover | `discoverAgent` 重载 | 接受 `AgentReference` 和可选 `AgentDiscoveryFilter`，返回一个完整 `AgentDiscoveryResult`。 |
-| Watch | `subscribeAgent` 重载 | 接受相同 Reference、可选 Filter 和 Listener；返回当前完整结果，后续传递完整替换结果。 |
+| Watch | `subscribeAgent` 重载 | 接受 Reference、可选 Filter 和 Listener，返回 void；初始状态和后续完整替换结果统一由 Listener 交付。 |
 | 取消 Watch | `unsubscribeAgent` 重载 | 按相同 Reference、Filter 和 Listener identity 移除 Watch。 |
 | 注册 Endpoint | `registerAgentEndpoints` | 注册一个 `AgentEndpointRegistrationBatch`，并保留为 redo 意图。 |
 | 注销 Endpoint | `deregisterAgentEndpoints` | 注销该 SDK Publisher 拥有的一个 `agentName, protocol, List<Endpoint>`。 |
 
-Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进制兼容。
+RAD 是 3.3.0 新增接口，其 Subscribe 方法返回 void；既有 AiService 与旧 A2A 兼容性继续保留。
 `NacosAgentDiscoveryEvent` 增加 Event Type 与 Unavailable Error Getter，现有 Result
 构造器继续创建 `SNAPSHOT`。官方实现可以通过 Factory 或附加构造器创建 `UNAVAILABLE`，
 但不能改变 Listener 方法签名。
@@ -214,12 +220,14 @@ Watch 不增加另一组公开 Subscribe 方法，并保持现有源码和二进
 
 ```text
 AgentDiscoveryService Feature Facade
-  -> Agent Watch Manager（Identity、Capacity、Cache、Fingerprint、Listener）
-    -> Wire Watch Transport（gRPC、HTTP Batch Long Poll 或轮询回退）
-      -> AgentClientProxy Discover 执行权威刷新
+  -> AgentWatchManager（身份、准入、查询与恢复编排）
+       + AgentWatchSubscription（最新状态、激活与恢复进度）
+       + AgentWatchListenerDispatcher（Listener 交付与补发）
+       -> AgentWatchTransport（gRPC Hint / HTTP Long Poll / Discover Polling）
+            -> 变化信号回到 Manager，触发 AgentClientProxy Discover
 ```
 
-Transport Code 只拥有 Wire Lifecycle 和 Signal，不复制 Feature Cache 或 Listener State。
+Transport Code 只拥有观察生命周期和变化信号，不复制 Feature Cache 或 Listener State。
 Canonicalization 与 Fingerprinting 位于 Client/Server 共用的 Java 8 兼容 Agent Utility。
 Listener Callback 在 Connection/HTTP I/O 外执行；有 Listener Executor 时优先使用，否则
 使用有界共享 Executor，并隔离异常。该 Agent-only 分层不改变 Prompt、Skill、MCP、
@@ -406,3 +414,58 @@ Draft 创建/更新通过 `createMcpServer(McpServerDraftRequest)` 和
   `src/content/docs/next/zh-cn/manual/user/java-sdk`。
 - Java Maintainer SDK 用户文档：Nacos 文档项目中的
   `src/content/docs/next/zh-cn/manual/admin/maintainer-sdk.md`。
+
+## Agent 快照转换
+
+API 模块在 `com.alibaba.nacos.api.ai.converter` 提供 `AgentConverter<T>` 和
+`AgentConverters.a2a()`，AgentService 的 default a2aConverter() 为便捷入口。
+内部实现使用中立 JSON facade 和既有 A2A 工具，不引入对 client 模块或第三方协议 SDK 的依赖。
+两入口遵循 [Agent API 转换契约](../ai/agent-api-spec.md#公共发现快照转换器)，包含输入输出隔离、
+用户显式调用和统一 IllegalArgumentException。新增 AgentService API 不增加开发稿旧字节码
+兼容 fixture。
+
+### 原生 Agent Watch 初始交付
+
+两个 Java subscribeAgent 重载返回 void；初始交付遵循 [Agent API](../ai/agent-api-spec.md)。
+Manager 对当前状态及后续变化复用同一逐 Listener 分发器和通知序号，加入已有 Watch 的新 Listener
+也获得当前状态。旧 A2A 保留返回值，HTTP/gRPC 报文不变。
+
+### 已接受 Agent Watch 的恢复
+
+已接受订阅仅由显式取消或服务关闭结束。合法 Discover 确认目标缺失才产生 UNAVAILABLE；
+空／不健康端点仍是快照，传输、鉴权、容量、迁移错误只内部处理。远程绑定重建失败时，
+成功 Discover 得到的新数据仍可以交付。后台任务提交被拒绝时保留待办，由独立入口继续
+提交。HTTP 增长限额恢复遵循 Agent API spec 的成功／等待
+集合规则，不修改 HTTP/gRPC Wire Schema。
+
+等待订阅的 Discover 执行期间合并重复恢复请求。Active 刷新的结果及异常只对发起时的
+激活身份有效；旧绑定下的迟到查询不能覆盖重建后的数据，也不能重新引入旧恢复任务。
+
+### Agent Watch 实现职责
+
+`AgentWatchManager` 组合订阅状态与 Listener 交付组件：Manager 负责规范化身份、准入、
+Discover、绑定恢复和取消；`AgentWatchSubscription` 保存一个 Watch 的最新状态、
+激活屏障和恢复进度；`AgentWatchListenerDispatcher` 负责逐 Listener 交付、补发检查、
+有界默认回调池和回调诊断。状态对象与交付组件共享 Manager 的同一把状态锁；
+读取最新状态、更新交付序号、取消和检查任务代次仍在该锁下完成。用户代码及远端
+Discover 不在该锁内执行。拆分不新增状态副本、线程池或公共接口。
+
+三种观察方式共享这一状态与交付路径：gRPC Watch 接收服务端 Hint；HTTP Watch
+以批量长轮询获取变化；Discover Polling 在缺少可用 Watch 通道时定时触发权威查询。
+Polling 不调用 HTTP Watch，也不决定 Discover 使用 HTTP 还是 gRPC；查询路由仍遵循
+SDK Transport 配置。HTTP 长轮询与定时 Discover 不是同一种协议绑定。
+
+### Agent Listener 最新状态交付
+
+Manager 仅保存每个规范化 Watch 的最新状态与序号，逐 Listener 记录已处理序号和单次
+在途状态。使用已有后台定时资源，每秒检查一次已注册 Listener 的交付差异；检查任务提交
+被拒绝时复用后台任务提交恢复机制。检查只做本地对账与异步提交，不发起 Discover，
+不执行 getExecutor 或 onEvent。首次状态、缺失与恢复都走相同路径；中间状态允许合并。
+SDK／用户 Executor 拒绝和 getExecutor 异常释放在途标记并保留差异；已开始的 onEvent
+即使抛错也记为一次已处理尝试，避免自动重复副作用。任务身份隔离迟到的提交失败和取消。
+排队 Runnable 不捕获历史快照；真正调用时才复制最新结果。取消立即移除 Listener 记录，
+最后取消／关闭停止本地检查，旧任务不能再交付。
+
+异常日志按有限类别限频，包含 Watch／Listener 标识、操作阶段、错误码、失败次数、
+重试间隔与可定位堆栈；后台恢复和回调提交恢复记录摘要。检查同时观察慢回调／排队时长，
+不打印完整 Card 或鉴权数据。用户回调与 Discover／连接线程隔离，内存不随变化次数增长。
