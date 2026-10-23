@@ -23,6 +23,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AppNameUtilsTest {
@@ -54,21 +56,21 @@ class AppNameUtilsTest {
     
     @Test
     void testGetAppNameByServerTypeForJboss() {
-        System.setProperty("jboss.server.home.dir", "/home/admin/testAppName/");
+        System.setProperty("jboss.server.home.dir", "/home/admin/testAppName" + File.separator);
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
     
     @Test
     void testGetAppNameByServerTypeForJetty() {
-        System.setProperty("jetty.home", "/home/admin/testAppName/");
+        System.setProperty("jetty.home", "/home/admin/testAppName" + File.separator);
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
     
     @Test
     void testGetAppNameByServerTypeForTomcat() {
-        System.setProperty("catalina.base", "/home/admin/testAppName/");
+        System.setProperty("catalina.base", "/home/admin/testAppName" + File.separator);
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
