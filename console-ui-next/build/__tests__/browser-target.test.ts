@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 import { build } from 'vite';
+import path from 'node:path';
+import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import viteConfig from '../../vite.config';
 
@@ -78,6 +80,37 @@ describe('browser compatibility target', () => {
     const output = Array.isArray(banner) ? banner[0] : banner;
     expect(String(output?.banner ?? '')).toMatch(/Object\.hasOwn/);
     expect(String(output?.banner ?? '')).toMatch(/hasOwnProperty/);
+  });
+
+  it('runs a built worker when Object.hasOwn is unavailable', async () => {
+    const config = viteConfig({ command: 'build', mode: 'production' });
+    const result = await build({
+      configFile: false,
+      logLevel: 'silent',
+      worker: config.worker,
+      build: {
+        write: false,
+        minify: false,
+        target: config.build?.target,
+        rolldownOptions: {
+          input: path.resolve(__dirname, 'fixtures/worker-host.ts'),
+        },
+      },
+    });
+
+    const bundles = Array.isArray(result) ? result : [result];
+    const worker = bundles
+      .flatMap((bundle) => bundle.output)
+      .find((output) => output.type === 'asset' && output.fileName.includes('worker-runtime'));
+    expect(worker?.type).toBe('asset');
+    if (worker?.type !== 'asset') return;
+
+    const messages: unknown[] = [];
+    const context = { self: { postMessage: (message: unknown) => messages.push(message) } };
+    vm.runInNewContext(`Object.hasOwn = undefined;\n${String(worker.source)}`, context, {
+      timeout: 1000,
+    });
+    expect(messages).toEqual([true]);
   });
 
   it('lists Safari in cssTarget so prefix emission is not chrome-only', () => {

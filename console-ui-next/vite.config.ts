@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 const isTest = !!process.env.VITEST;
+const objectHasOwnPolyfillBanner =
+  "if(typeof Object.hasOwn!=='function'){Object.defineProperty(Object,'hasOwn',{configurable:true,writable:true,value:function(o,p){return Object.prototype.hasOwnProperty.call(Object(o),p);}});}";
 
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? './' : '/',
@@ -60,6 +62,13 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
+  worker: {
+    rolldownOptions: {
+      output: {
+        banner: objectHasOwnPolyfillBanner,
+      },
+    },
+  },
   build: {
     // Lower Chrome to 90 for #15899, but keep Vite's other browser targets so
     // CSS still emits Safari -webkit-* prefixes (cssTarget inherits build.target).
@@ -68,9 +77,8 @@ export default defineConfig(({ command }) => ({
     outDir: 'dist',
     rollupOptions: {
       output: {
-        // Cover main chunks and Monaco workers that may call Object.hasOwn.
-        banner:
-          "if(typeof Object.hasOwn!=='function'){Object.defineProperty(Object,'hasOwn',{configurable:true,writable:true,value:function(o,p){return Object.prototype.hasOwnProperty.call(Object(o),p);}});}",
+        // Workers use their own build options and receive the same banner above.
+        banner: objectHasOwnPolyfillBanner,
         entryFileNames: 'js/main.js',
         chunkFileNames: 'js/[name].js',
         assetFileNames: (info) => {
