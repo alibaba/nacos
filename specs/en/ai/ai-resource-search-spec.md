@@ -554,3 +554,44 @@ cross-results.
 The unified models preserve index semantics. Verify AgentSearchIndexProjector protocol/capability/catalog projection, definition lifecycle scheduling, atomic replacement, rebuild, and currency. Runtime endpoint, healthy, and revision changes must not schedule directory indexing or enter its documents. Require a real nonempty INDEX query, not SCAN or empty results as a substitute.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+## Optional online relevance filtering
+
+ARD Search may opt into a protocol-neutral relevance filter after recall, ranking, visibility
+and current-version validation and before cursor pagination. It is disabled by default; other
+search, list, explore, aggregate and numbered-page operations keep their existing behavior.
+The first provider is Jev. Providers implement a batch score contract with explicit input limits;
+selection and batch scheduling are shared, while provider request/response formats stay in the
+adapter. Offline index enrichment retains its independent lifecycle and concurrency.
+
+Filtering preserves original rank, integer score and relative order. A score greater than or
+equal to the configured threshold passes. Only declared names, types, descriptions and
+capabilities of eligible resources may be sent. Internal candidate IDs bind each score to a
+single resource version; metadata, credentials and full artifacts are excluded. Oversized
+candidates are retained unassessed. Permissions and currentness are checked again after the call.
+
+Configuration is read at startup. `nacos.ai.ard.search.enhancement.enabled` defaults to false.
+The prefix `nacos.ai.resource.search.relevance.` defines `provider` (jev), `endpoint`, `api-key`,
+`model`, `threshold` (defaults to 0.50 when omitted; explicit values must be finite 0..1), `timeout-ms` (3000),
+`max-candidates` (60), `batch-size` (60), `batch-concurrency` (1), and `max-concurrency` (8).
+Enabled configurations must have a known provider and complete credentials; invalid limits fail
+startup. Per-request concurrency cannot exceed the node limit. Settings require restart.
+
+A request scans one bounded candidate window. Batches may run concurrently in a shared bounded
+executor; there is no unbounded queue or automatic retry. One deadline covers preparation,
+submission, HTTP and result validation. No capacity, HTTP failure, invalid scores or timeout in
+any batch cancels remaining work and discards every score, returning a basic page. Running
+requests occupy capacity until they actually terminate. No partial batch success is applied.
+
+Enhanced cursors bind a stable document anchor, query and configuration fingerprint. They
+cannot be mixed with basic cursors. Changed query/configuration or a missing anchor is invalid.
+If a window produces fewer than the page limit, the cursor advances to the last scanned item;
+an empty page may have a continuation. If the page fills early, the cursor uses the last returned
+item, so remaining candidates can be assessed on the next request. Fallback consumes only the
+basic page. There is no cross-page score snapshot or enhanced total count.
+
+Tests must cover disabled behavior, threshold boundaries, invalid provider output, batching,
+node limits, cancellation, deadline and fallback, stable ordering, empty-page continuation,
+configuration-bound cursors and permission/current-version changes during external calls.
+Diagnostics contain provider, namespace, request/batch identity, counts, status and elapsed time;
+never log raw queries, resource descriptions, credentials or provider response bodies.

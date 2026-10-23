@@ -643,6 +643,22 @@ contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出�
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
+## ARD online relevance filtering
+
+| Scenario | Coverage |
+| --- | --- |
+| Default-off Search header, unchanged JSON, invalid cursor | `ArdAdaptorOpenApiITCase.testSearchEnhancementStatusAndCursorBoundary` against standalone ARD |
+| Enabled empty result bypass | Same IT with server enhancement enabled and `-Dnacos.test.ard.relevance.empty-status=bypassed` |
+| Jev protocol, invalid scores/IDs, 429, no retry | `JevRelevanceProviderTest`, deterministic local HTTP stub |
+| Concurrent batches, timeout/cancel, node saturation, all-or-nothing fallback | `AiResourceRelevanceFilterTest` |
+| Threshold, stable order/score, empty continuation, fallback boundary, currentness, cursor binding | `AiResourceSearchRelevanceTest` |
+| Header propagation and no JSON field leakage | `ArdSearchControllerTest` |
+
+The paid-provider success path is not a prerequisite for standalone IT. Deterministic provider
+and Search Core tests exercise nonempty success and failure paths without external credentials.
+Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
+nonempty Jev filtering coverage. No public Java SDK contract changes.
+
 ## Native binding and serialization regression
 
 The existing Config Admin and Console CRUD rows also verify non-empty inherited `srcUser` and

@@ -107,6 +107,13 @@ public class AiResourceSearchService {
     
     private final AiResourceSearchReadinessObserver readinessObserver;
     
+    private AiResourceRelevanceFilter relevanceFilter;
+    
+    @Autowired
+    public void setRelevanceFilter(AiResourceRelevanceFilter relevanceFilter) {
+        this.relevanceFilter = relevanceFilter;
+    }
+    
     @Autowired
     public AiResourceSearchService(AiResourceSearchTypeHandlerRegistry typeHandlerRegistry,
         AiResourceSearchRepository repository,
@@ -146,7 +153,15 @@ public class AiResourceSearchService {
      */
     public Page search(Query query) throws NacosException {
         observeReadiness(query);
-        return page(searchCandidates(query), query);
+        List<RankedEntry> candidates = searchCandidates(query);
+        if (query.isRelevanceRequested() && relevanceFilter != null && relevanceFilter.enabled()) {
+            return relevancePage(candidates, query);
+        }
+        return page(candidates, query);
+    }
+    
+    public boolean isRelevanceFilteringEnabled() {
+        return relevanceFilter != null && relevanceFilter.enabled();
     }
     
     private List<RankedEntry> searchCandidates(Query query) throws NacosException {
@@ -744,6 +759,100 @@ public class AiResourceSearchService {
         return (int) Math.min(100L, Math.round(score * 100D / maxScore));
     }
     
+    private Page relevancePage(List<RankedEntry> candidates, Query query) throws NacosException {
+        final long started = System.nanoTime();
+        // Serialize a copy of query identity, excluding the mutable cursor.
+        Map<String, Object> identity = new LinkedHashMap<>();
+        identity.put("namespace", query.getNamespaceId());
+        identity.put("text", query.getText());
+        identity.put("types", query.getResourceTypes());
+        identity.put("filters", new java.util.TreeMap<>(query.getFilters()));
+        identity.put("predicates", query.getPredicates());
+        identity.put("sort", query.getSort());
+        identity.put("descending", query.isDescending());
+        identity.put("createdAfter", String.valueOf(query.getCreatedAfter()));
+        identity.put("updatedAfter", String.valueOf(query.getUpdatedAfter()));
+        identity.put("ranking", enhancedRankingEnabled());
+        identity.put("configuration", relevanceFilter.fingerprint());
+        String fingerprint = AiResourceRelevanceConfiguration.digest(JacksonUtils.toJson(identity));
+        int from = 0;
+        if (StringUtils.isNotBlank(query.getCursor())) {
+            Map<String, Object> cursor = cursorValues(query.getCursor());
+            if (!fingerprint.equals(cursor.get("relevanceV1"))) {
+                throw invalidCursor();
+            }
+            from = cursorIndex(candidates, encodeCursor(cursorDocumentId(cursor)));
+        }
+        int end = from + Math.min(relevanceFilter.maxCandidates(), candidates.size() - from);
+        List<Map<String, String>> payloads = new ArrayList<>();
+        for (int i = from; i < end; i++) {
+            AiResourceSearchDocument document = candidates.get(i).getDocument();
+            Map<String, String> payload = new LinkedHashMap<>();
+            payload.put("id", "candidate_" + i);
+            payload.put("name", document.getResourceName());
+            payload.put("type", document.getResourceType());
+            payload.put("description", StringUtils.defaultIfBlank(document.getDescription(), ""));
+            payload.put("capabilities", StringUtils.defaultIfBlank(document.getCapabilities(), ""));
+            payloads.add(payload);
+        }
+        AiResourceRelevanceFilter.Evaluation evaluation =
+            StringUtils.isBlank(query.getText()) || payloads.isEmpty()
+                ? new AiResourceRelevanceFilter.Evaluation(Collections.emptyMap(), "bypassed")
+                : relevanceFilter.evaluate(query.getNamespaceId(), query.getText(), payloads,
+                    started);
+        boolean bypassed = "bypassed".equals(evaluation.getStatus());
+        // Fallback only consumes the base page, not the entire assessment window.
+        if (bypassed) {
+            end = from + Math.min(query.getLimit(), candidates.size() - from);
+        }
+        List<AiResourceSearchResult> items = new ArrayList<>();
+        int consumed = from;
+        for (int i = from; i < end; i++) {
+            RankedEntry candidate = candidates.get(i);
+            consumed = i + 1;
+            if ((bypassed || relevanceFilter.keep(evaluation.getScores().get("candidate_" + i)))
+                && matches(query, candidate.getDocument())
+                && validateCurrentResource(candidate.getDocument())) {
+                items.add(toResult(candidate));
+                if (items.size() == query.getLimit()) {
+                    break;
+                }
+            }
+        }
+        String next = null;
+        if (consumed > from && consumed < candidates.size()) {
+            Map<String, Object> cursor = new LinkedHashMap<>();
+            cursor.put(CURSOR_DOCUMENT_ID, candidates.get(consumed - 1).getDocument().getId());
+            cursor.put("relevanceV1", fingerprint);
+            next = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                JacksonUtils.toJson(cursor).getBytes(StandardCharsets.UTF_8));
+        }
+        return new Page(items, next, evaluation.getStatus());
+    }
+    
+    private Map<String, Object> cursorValues(String cursor) throws NacosException {
+        try {
+            Map<String, Object> values = JacksonUtils.toObj(
+                new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8),
+                MAP_TYPE);
+            if (values != null) {
+                return values;
+            }
+        } catch (Exception ignored) {
+            throw invalidCursor();
+        }
+        throw invalidCursor();
+    }
+    
+    private Long cursorDocumentId(Map<String, Object> values) throws NacosException {
+        Object id = values.get(CURSOR_DOCUMENT_ID);
+        try {
+            return Long.valueOf(String.valueOf(id));
+        } catch (NumberFormatException ignored) {
+            throw invalidCursor();
+        }
+    }
+    
     private Page page(List<RankedEntry> candidates, Query query) throws NacosException {
         int fromIndex = cursorIndex(candidates, query.getCursor());
         int toIndex = Math.min(fromIndex + query.getLimit(), candidates.size());
@@ -854,21 +963,11 @@ public class AiResourceSearchService {
     }
     
     private Long decodeCursor(String cursor) throws NacosException {
-        try {
-            byte[] decoded = Base64.getUrlDecoder().decode(cursor);
-            Map<String, Object> values = JacksonUtils.toObj(
-                new String(decoded, StandardCharsets.UTF_8), MAP_TYPE);
-            Object documentId = values == null ? null : values.get(CURSOR_DOCUMENT_ID);
-            if (documentId instanceof Number) {
-                return ((Number) documentId).longValue();
-            }
-            if (documentId instanceof String && StringUtils.isNotBlank((String) documentId)) {
-                return Long.parseLong((String) documentId);
-            }
-        } catch (Exception ignored) {
+        Map<String, Object> values = cursorValues(cursor);
+        if (values.containsKey("relevanceV1")) {
             throw invalidCursor();
         }
-        throw invalidCursor();
+        return cursorDocumentId(values);
     }
     
     private NacosException invalidCursor() {
@@ -1029,6 +1128,16 @@ public class AiResourceSearchService {
      * Canonical resource discovery query.
      */
     public static class Query {
+        
+        private boolean relevanceRequested;
+        
+        public boolean isRelevanceRequested() {
+            return relevanceRequested;
+        }
+        
+        public void setRelevanceRequested(boolean relevanceRequested) {
+            this.relevanceRequested = relevanceRequested;
+        }
         
         private String namespaceId;
         
@@ -1264,11 +1373,23 @@ public class AiResourceSearchService {
      */
     public static class Page {
         
+        private final String enhancementStatus;
+        
+        public String getEnhancementStatus() {
+            return enhancementStatus;
+        }
+        
         private final List<AiResourceSearchResult> items;
         
         private final String nextCursor;
         
         public Page(List<AiResourceSearchResult> items, String nextCursor) {
+            this(items, nextCursor, "disabled");
+        }
+        
+        public Page(List<AiResourceSearchResult> items, String nextCursor,
+            String enhancementStatus) {
+            this.enhancementStatus = enhancementStatus;
             this.items = items;
             this.nextCursor = nextCursor;
         }
