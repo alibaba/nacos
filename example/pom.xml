@@ -46,6 +46,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp</artifactId>
+        </dependency>
         <!-- log -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
