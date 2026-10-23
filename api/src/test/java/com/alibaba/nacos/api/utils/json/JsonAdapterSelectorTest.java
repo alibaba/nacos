@@ -19,6 +19,9 @@ package com.alibaba.nacos.api.utils.json;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,19 +31,26 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.ServiceConfigurationError;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonAdapterSelectorTest {
     
     private static final String SERVICE_RESOURCE_NAME =
         "META-INF/services/" + NacosJsonAdapter.class.getName();
+    
+    @TempDir
+    Path serviceRoot;
     
     @AfterEach
     void tearDown() {
@@ -197,7 +207,9 @@ class JsonAdapterSelectorTest {
             .setContextClassLoader(new ServiceResourceLinkageErrorClassLoader(originalClassLoader));
         try {
             NacosLoadException exception =
-                assertThrows(NacosLoadException.class, () -> new JsonAdapterSelector().select());
+                assertTimeoutPreemptively(Duration.ofSeconds(2),
+                    () -> assertThrows(NacosLoadException.class,
+                        () -> new JsonAdapterSelector().select()));
             
             assertTrue(exception.getMessage().contains("Adapter diagnostics"));
             assertTrue(exception.getMessage().contains("provider:"));
@@ -215,6 +227,43 @@ class JsonAdapterSelectorTest {
             () -> new JsonAdapterSelector(Collections.<NacosJsonAdapter>emptyList()).select());
         
         assertTrue(exception.getMessage().contains("Unsupported JSON adapter"));
+    }
+    
+    @ParameterizedTest
+    @CsvSource({"missing,auto", "missing,jackson3", "constructor,auto", "constructor,jackson3"})
+    void testContinuesAfterFailedProvider(String failure, String configuredAdapter)
+        throws Exception {
+        String brokenProvider = "missing".equals(failure)
+            ? "com.alibaba.nacos.api.utils.json.MissingJsonAdapter"
+            : FailingServiceProvider.class.getName();
+        Path serviceFile = serviceRoot.resolve(SERVICE_RESOURCE_NAME);
+        Files.createDirectories(serviceFile.getParent());
+        Files.write(serviceFile, (brokenProvider + System.lineSeparator()
+            + Jackson3ServiceProvider.class.getName()).getBytes(StandardCharsets.UTF_8));
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader loader =
+            new URLClassLoader(new URL[] {serviceRoot.toUri().toURL()}, original)) {
+            Thread.currentThread().setContextClassLoader(loader);
+            System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, configuredAdapter);
+            assertEquals(NacosJsonAdapterNames.JACKSON3, new JsonAdapterSelector().select().name());
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+    
+    public static class FailingServiceProvider extends ServiceLoadedAdapter {
+        
+        public FailingServiceProvider() {
+            throw new NoClassDefFoundError("missing-provider-dependency");
+        }
+    }
+    
+    public static class Jackson3ServiceProvider extends ServiceLoadedAdapter {
+        
+        @Override
+        public String name() {
+            return NacosJsonAdapterNames.JACKSON3;
+        }
     }
     
     private static class FakeAdapter implements NacosJsonAdapter {

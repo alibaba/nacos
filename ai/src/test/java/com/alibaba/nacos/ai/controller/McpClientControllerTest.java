@@ -23,7 +23,7 @@ import com.alibaba.nacos.ai.form.mcp.client.McpSearchForm;
 import com.alibaba.nacos.ai.service.mcp.McpClientApplicationService;
 import com.alibaba.nacos.ai.service.runtime.AiHttpClientLifecycleService;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;

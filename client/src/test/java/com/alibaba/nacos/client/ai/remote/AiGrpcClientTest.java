@@ -17,6 +17,10 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.client.ai.remote.redo.AgentEndpointPublicationRedoData;
+import java.util.function.Consumer;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
@@ -80,6 +84,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -829,6 +834,61 @@ class AiGrpcClientTest {
     }
     
     @Test
+    void currentMainAddressRequiresRunningNegotiatedConnection() throws Exception {
+        injectMock();
+        assertNull(aiGrpcClient.getCurrentServerAddress());
+        when(rpcClient.isRunning()).thenReturn(true);
+        assertNull(aiGrpcClient.getCurrentServerAddress());
+        when(rpcClient.getCurrentServer()).thenReturn(
+            new com.alibaba.nacos.common.remote.client.RpcClient.ServerInfo("127.0.0.1", 8848));
+        assertEquals("127.0.0.1:8848", aiGrpcClient.getCurrentServerAddress());
+        when(rpcClient.isRunning()).thenReturn(false);
+        assertNull(aiGrpcClient.getCurrentServerAddress());
+    }
+    
+    @Test
+    void unknownRadNegotiationIsNotAClaimOfOldServer() throws Exception {
+        injectMock();
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
+            .thenReturn(null, AbilityStatus.UNKNOWN, AbilityStatus.NOT_SUPPORTED);
+        for (int i = 0; i < 2; i++) {
+            assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosException.class,
+                () -> aiGrpcClient.searchAgents("public", new AgentSearchRequest())).getErrCode());
+        }
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, assertThrows(NacosException.class,
+            () -> aiGrpcClient.searchAgents("public", new AgentSearchRequest())).getErrCode());
+    }
+    
+    @Test
+    void oldGrpcNegotiationStopsNativeRequestsAndRedoAsUnsupported() throws Exception {
+        injectMock();
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
+            .thenReturn(AbilityStatus.UNKNOWN);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_REGISTRY))
+            .thenReturn(AbilityStatus.SUPPORTED);
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, assertThrows(NacosException.class,
+            () -> aiGrpcClient.searchAgents("public", new AgentSearchRequest())).getErrCode());
+    }
+    
+    @Test
+    void shouldPreserveAllNegotiationStates() throws Exception {
+        injectMock();
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_RAD_V1))
+            .thenReturn(null, AbilityStatus.UNKNOWN, AbilityStatus.NOT_SUPPORTED,
+                AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.UNKNOWN,
+            aiGrpcClient.getServerAbility(AbilityKey.SERVER_RAD_V1));
+        assertEquals(AbilityStatus.UNKNOWN,
+            aiGrpcClient.getServerAbility(AbilityKey.SERVER_RAD_V1));
+        assertEquals(AbilityStatus.NOT_SUPPORTED,
+            aiGrpcClient.getServerAbility(AbilityKey.SERVER_RAD_V1));
+        assertEquals(AbilityStatus.SUPPORTED,
+            aiGrpcClient.getServerAbility(AbilityKey.SERVER_RAD_V1));
+    }
+    
+    @Test
     void initialConnectionProbeDelegatesToRpcClient() throws Exception {
         injectMock();
         InitialConnectionFailureListener listener =
@@ -895,6 +955,61 @@ class AiGrpcClientTest {
         // Should not throw and should return a resource even with null name
         Object resource = m.invoke(aiGrpcClient, "ns", null);
         assertTrue(resource != null);
+    }
+    
+    @Test
+    void managerOwnsReplayAndDisconnectedClientDoesNotDispatch() throws Exception {
+        injectMock();
+        AgentEndpointPublicationRedoData data =
+            new AgentEndpointPublicationRedoData("public", publicationBatch());
+        assertFalse(aiGrpcClient.dispatchAgentEndpointPublicationRedo(data));
+        Consumer<AgentEndpointPublicationRedoData> handler =
+            org.mockito.Mockito.mock(Consumer.class);
+        aiGrpcClient.setAgentEndpointPublicationRedoHandler(handler);
+        assertTrue(aiGrpcClient.dispatchAgentEndpointPublicationRedo(data));
+        verify(handler, never()).accept(any());
+        when(rpcClient.isRunning()).thenReturn(true);
+        assertTrue(aiGrpcClient.dispatchAgentEndpointPublicationRedo(data));
+        verify(handler).accept(data);
+    }
+    
+    @Test
+    void replayReconciliationRestoresExpectedSnapshotAndNeverReplacesNewerWrite() throws Exception {
+        injectMock();
+        AgentEndpointRegistrationBatch expectedBatch = publicationBatch();
+        AgentEndpointPublicationRedoData expected =
+            new AgentEndpointPublicationRedoData("public", expectedBatch);
+        AgentEndpointPublicationRedoData restored =
+            new AgentEndpointPublicationRedoData("public", publicationBatch());
+        when(redoService.getAgentEndpointPublication(expected.getKey())).thenReturn(expectedBatch);
+        aiGrpcClient.reconcileAgentEndpointPublicationRedo(expected, restored);
+        verify(redoService).discardAgentEndpointPublication(expected.getKey());
+        verify(redoService).cachedRedoData(restored.getKey(), restored,
+            AgentEndpointRegistrationBatch.class);
+        when(redoService.getAgentEndpointPublication(expected.getKey()))
+            .thenReturn(publicationBatch());
+        aiGrpcClient.reconcileAgentEndpointPublicationRedo(expected, null);
+        verify(redoService, org.mockito.Mockito.times(1))
+            .discardAgentEndpointPublication(expected.getKey());
+    }
+    
+    @Test
+    void completedReplayCanRemoveOnlyItsOwnCurrentRecord() throws Exception {
+        injectMock();
+        AgentEndpointRegistrationBatch batch = publicationBatch();
+        AgentEndpointPublicationRedoData expected =
+            new AgentEndpointPublicationRedoData("public", batch);
+        when(redoService.getAgentEndpointPublication(expected.getKey())).thenReturn(batch);
+        aiGrpcClient.reconcileAgentEndpointPublicationRedo(expected, null);
+        verify(redoService).discardAgentEndpointPublication(expected.getKey());
+        verify(redoService, never()).cachedRedoData(any(), any(), any());
+    }
+    
+    private AgentEndpointRegistrationBatch publicationBatch() {
+        AgentEndpointRegistrationBatch result = new AgentEndpointRegistrationBatch();
+        result.setAgentName("agent-a");
+        result.setProtocol("a2a");
+        return result;
     }
     
     private void injectMockWithAgentCardCache()

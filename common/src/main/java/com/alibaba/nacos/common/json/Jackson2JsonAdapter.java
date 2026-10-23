@@ -16,35 +16,44 @@
 
 package com.alibaba.nacos.common.json;
 
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapter;
 import com.alibaba.nacos.api.utils.json.NacosJsonAdapterNames;
 import com.alibaba.nacos.api.utils.json.NacosJsonSubtype;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ServiceConfigurationError;
 
 /**
- * Jackson 2 implementation of {@link NacosJsonAdapter}.
+ * Dependency-safe Jackson 2 provider facade.
  *
  * @author nacos
  */
 public class Jackson2JsonAdapter implements NacosJsonAdapter {
     
-    private final ObjectMapper mapper = createObjectMapper();
+    private static final String JACKSON2_OBJECT_MAPPER_CLASS =
+        "com.fasterxml.jackson.databind.ObjectMapper";
     
-    private final ObjectMapper canonicalMapper = createCanonicalObjectMapper();
+    private static final String JACKSON2_EXCEPTION_CLASS =
+        "com.fasterxml.jackson.core.JsonProcessingException";
+    
+    private final ClassLoader classLoader;
+    
+    private final List<NacosJsonSubtype> subtypes = new ArrayList<NacosJsonSubtype>();
+    
+    private volatile NacosJsonAdapter delegate;
+    
+    public Jackson2JsonAdapter() {
+        this(Jackson2JsonAdapter.class.getClassLoader());
+    }
+    
+    Jackson2JsonAdapter(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
     
     @Override
     public String name() {
@@ -53,121 +62,113 @@ public class Jackson2JsonAdapter implements NacosJsonAdapter {
     
     @Override
     public boolean isAvailable() {
-        return true;
+        try {
+            Class.forName(JACKSON2_OBJECT_MAPPER_CLASS, false, classLoader);
+            Class.forName(JACKSON2_EXCEPTION_CLASS, false, classLoader);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (ServiceConfigurationError e) {
+            return false;
+        } catch (LinkageError e) {
+            return false;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
     
     @Override
     public String toJson(Object obj) {
-        return write(obj, () -> mapper.writeValueAsString(obj));
+        return delegate().toJson(obj);
     }
     
     @Override
     public byte[] toJsonBytes(Object obj) {
-        return write(obj, () -> mapper.writeValueAsBytes(obj));
+        return delegate().toJsonBytes(obj);
     }
     
     @Override
     public String toCanonicalJson(Object obj) {
-        return write(obj, () -> canonicalMapper.writeValueAsString(obj));
+        return delegate().toCanonicalJson(obj);
     }
     
     @Override
     public <T> T toObj(byte[] json, Class<T> cls) {
-        return read(() -> mapper.readValue(json, cls), cls);
+        return delegate().toObj(json, cls);
     }
     
     @Override
     public <T> T toObj(byte[] json, Type type) {
-        return read(() -> mapper.readValue(json, constructJavaType(type)), type);
+        return delegate().toObj(json, type);
     }
     
     @Override
     public <T> T toObj(byte[] json, NacosTypeReference<T> typeReference) {
-        return toObj(json, typeReference.getType());
+        return delegate().toObj(json, typeReference);
     }
     
     @Override
     public <T> T toObj(String json, Class<T> cls) {
-        return read(() -> mapper.readValue(json, cls), cls);
+        return delegate().toObj(json, cls);
     }
     
     @Override
     public <T> T toObj(String json, Type type) {
-        return read(() -> mapper.readValue(json, constructJavaType(type)), type);
+        return delegate().toObj(json, type);
     }
     
     @Override
     public <T> T toObj(String json, NacosTypeReference<T> typeReference) {
-        return toObj(json, typeReference.getType());
+        return delegate().toObj(json, typeReference);
     }
     
     @Override
     public <T> T toObj(InputStream inputStream, Class<T> cls) {
-        return read(() -> mapper.readValue(inputStream, cls), cls);
+        return delegate().toObj(inputStream, cls);
     }
     
     @Override
     public <T> T toObj(InputStream inputStream, Type type) {
-        return read(() -> mapper.readValue(inputStream, constructJavaType(type)), type);
+        return delegate().toObj(inputStream, type);
     }
     
     @Override
     public void registerSubtype(NacosJsonSubtype subtype) {
-        NamedType namedType = new NamedType(subtype.getSubtype(), subtype.getTypeName());
-        mapper.registerSubtypes(namedType);
-        canonicalMapper.registerSubtypes(namedType);
-    }
-    
-    private JavaType constructJavaType(Type type) {
-        return mapper.constructType(type);
-    }
-    
-    private <T> T write(Object obj, JsonWriter<T> writer) {
-        try {
-            return writer.write();
-        } catch (JsonProcessingException e) {
-            Class<?> serializedClass = obj == null ? Object.class : obj.getClass();
-            throw new NacosSerializationException(serializedClass, e);
+        synchronized (subtypes) {
+            if (!subtypes.contains(subtype)) {
+                subtypes.add(subtype);
+            }
+            NacosJsonAdapter currentDelegate = delegate;
+            if (currentDelegate != null) {
+                currentDelegate.registerSubtype(subtype);
+            }
         }
     }
     
-    private <T> T read(JsonReader<T> reader, Class<?> cls) {
-        try {
-            return reader.read();
-        } catch (Exception e) {
-            throw new NacosDeserializationException(cls, e);
+    private NacosJsonAdapter delegate() {
+        NacosJsonAdapter currentDelegate = delegate;
+        if (currentDelegate != null) {
+            return currentDelegate;
+        }
+        synchronized (this) {
+            if (delegate == null) {
+                if (!isAvailable()) {
+                    throw new NacosLoadException(
+                        "Jackson 2 is not available on the runtime classpath.");
+                }
+                delegate = createDelegate();
+            }
+            return delegate;
         }
     }
     
-    private <T> T read(JsonReader<T> reader, Type type) {
-        try {
-            return reader.read();
-        } catch (Exception e) {
-            throw new NacosDeserializationException(type, e);
+    private NacosJsonAdapter createDelegate() {
+        NacosJsonAdapter createdDelegate = new Jackson2JsonAdapterDelegate();
+        synchronized (subtypes) {
+            for (NacosJsonSubtype subtype : subtypes) {
+                createdDelegate.registerSubtype(subtype);
+            }
         }
-    }
-    
-    private static ObjectMapper createObjectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
-        return objectMapper;
-    }
-    
-    private static ObjectMapper createCanonicalObjectMapper() {
-        ObjectMapper objectMapper = createObjectMapper();
-        objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-        objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-        return objectMapper;
-    }
-    
-    private interface JsonWriter<T> {
-        
-        T write() throws JsonProcessingException;
-    }
-    
-    private interface JsonReader<T> {
-        
-        T read() throws IOException;
+        return createdDelegate;
     }
 }

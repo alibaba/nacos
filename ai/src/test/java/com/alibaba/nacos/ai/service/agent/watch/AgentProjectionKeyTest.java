@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent.watch;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

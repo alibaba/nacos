@@ -95,6 +95,17 @@ class NacosApiExceptionHandlerTest {
     }
     
     @Test
+    void testRemoteApiErrorPreservesStatusAndBody() throws Exception {
+        mockControllerThrowException(
+            new NacosApiException(409, 98765, "remote conflict", "remote detail"));
+        mockMvc.perform(post("/v3/admin/core/namespace"))
+            .andExpect(MockMvcResultMatchers.status().isConflict())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(98765))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("remote conflict"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data").value("remote detail"));
+    }
+    
+    @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置NamespaceControllerV3的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
         mockControllerThrowException(new NacosRuntimeException(NacosException.INVALID_PARAM));

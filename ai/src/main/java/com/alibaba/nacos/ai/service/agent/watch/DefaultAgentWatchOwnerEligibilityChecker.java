@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.agent.watch;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import org.springframework.stereotype.Component;
@@ -44,7 +44,8 @@ public class DefaultAgentWatchOwnerEligibilityChecker
     public AgentWatchOwnerEligibility evaluate(AgentWatchOwnerContext owner,
         AgentProjectionKey key) {
         try {
-            Agent agent = persistenceService.getAgent(key.getNamespaceId(), key.getAgentName());
+            AgentSummary agent =
+                persistenceService.getAgent(key.getNamespaceId(), key.getAgentName());
             AgentVisibilityResource resource = new AgentVisibilityResource(agent);
             return VisibilityHelper.canReadResource(owner.getIdentity(), owner.getApiType(),
                 resource) ? AgentWatchOwnerEligibility.ALLOWED
@@ -66,7 +67,7 @@ public class DefaultAgentWatchOwnerEligibilityChecker
         
         private final String agentName;
         
-        AgentVisibilityResource(Agent agent) {
+        AgentVisibilityResource(AgentSummary agent) {
             namespaceId = agent.getNamespaceId();
             agentName = agent.getAgentName();
             setOwner(agent.getOwner());

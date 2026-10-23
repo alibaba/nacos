@@ -210,6 +210,19 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
     }
     
     @Override
+    public int updateContent(String namespaceId, String name, String type, String version,
+        String storage, String desc, String author) {
+        AiResourceVersionMapper mapper =
+            mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql =
+            mapper.update(Arrays.asList("storage", "c_desc", "author", "gmt_modified@NOW()"),
+                Arrays.asList("namespace_id", "name", "type", "version"));
+        return jt.update(sql, storage, desc, author, normalizeNamespaceId(namespaceId), name,
+            type, version);
+    }
+    
+    @Override
     public int updateStorageMd5(String namespaceId, String name, String type, String version,
         String contentMd5) {
         AiResourceVersion existed = find(namespaceId, name, type, version);

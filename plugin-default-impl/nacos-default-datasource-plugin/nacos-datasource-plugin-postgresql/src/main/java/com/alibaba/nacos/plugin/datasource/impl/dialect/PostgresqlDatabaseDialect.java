@@ -35,9 +35,16 @@ public class PostgresqlDatabaseDialect extends AbstractDatabaseDialect {
      */
     private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
     
+    private static final String DEFAULT_DRIVER_CLASS_NAME = "org.postgresql.Driver";
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.POSTGRESQL;
+    }
+    
+    @Override
+    public String getDefaultDriverClassName() {
+        return DEFAULT_DRIVER_CLASS_NAME;
     }
     
     @Override

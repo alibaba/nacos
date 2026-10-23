@@ -78,4 +78,28 @@ class DataSourcePoolPropertiesTest {
         assertEquals(20000L, actual.getConnectionTimeout());
         assertEquals(MAX_POOL_SIZE.intValue(), actual.getMaximumPoolSize());
     }
+    
+    @Test
+    void testBuildWithExternalDefault() {
+        DataSourcePoolProperties poolProperties =
+            DataSourcePoolProperties.build(new MockEnvironment());
+        assertEquals(DataSourcePoolProperties.DEFAULT_CONNECTION_TIMEOUT,
+            poolProperties.getDataSource().getConnectionTimeout());
+    }
+    
+    @Test
+    void testBuildWithEmbeddedDefault() {
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(
+            new MockEnvironment(), DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT);
+        assertEquals(DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT,
+            poolProperties.getDataSource().getConnectionTimeout());
+    }
+    
+    @Test
+    void testBuildWithEmbeddedDefaultAndConfigOverride() {
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment,
+            DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT);
+        assertEquals(CONNECTION_TIMEOUT.longValue(),
+            poolProperties.getDataSource().getConnectionTimeout());
+    }
 }

@@ -129,6 +129,9 @@ Naming 领域数据那样受[持久化与 Dump 规范](../design/foundation-pers
 服务端是否支持 `SERVER_DISTRIBUTED_LOCK` ability，并遵循
 [客户端能力协商规范](../client/client-ability-negotiation-spec.md)。
 
+锁客户端使用 `module=lock` 标签标识连接。服务端仅在带有该标签的连接断开时触发锁清理。
+其他模块的连接或缺少模块标签的连接断开时，不得向 CP 协议提交锁清理操作。
+
 公开 SDK 边界为：
 
 - 创建 `LockService`；

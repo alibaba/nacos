@@ -51,4 +51,15 @@ class NacosApiExceptionTest {
         assertEquals("test", exception.getErrMsg());
         assertEquals(ErrorCode.SERVER_ERROR.getMsg(), exception.getErrAbstract());
     }
+    
+    @Test
+    void testRemoteErrorConstructorPreservesUnknownCode() {
+        NacosApiException exception =
+            new NacosApiException(409, 98765, "remote conflict", "remote detail");
+        assertEquals(409, exception.getErrCode());
+        assertEquals(98765, exception.getDetailErrCode());
+        assertEquals("remote conflict", exception.getErrAbstract());
+        assertEquals("remote detail", exception.getErrMsg());
+    }
+    
 }

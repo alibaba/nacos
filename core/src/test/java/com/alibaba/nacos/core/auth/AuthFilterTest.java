@@ -342,7 +342,8 @@ class AuthFilterTest {
     }
     
     @Test
-    @Secured(tags = Constants.Tag.ONLY_IDENTITY)
+    @Secured(signType = com.alibaba.nacos.plugin.auth.constant.SignType.AI,
+        tags = Constants.Tag.ONLY_IDENTITY)
     void testDoFilterWithNeedAuthSecuredOnlyIdentity()
         throws NoSuchMethodException, ServletException, IOException, AccessException {
         when(authConfig.isAuthEnabled()).thenReturn(true);
@@ -359,6 +360,10 @@ class AuthFilterTest {
             .thenReturn(
                 AuthResult.successResult());
         authFilter.doFilter(request, response, filterChain);
+        verify(protocolAuthService).validateIdentity(any(IdentityContext.class),
+            any(Resource.class));
+        verify(protocolAuthService, never()).validateAuthority(any(IdentityContext.class),
+            any(Permission.class));
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
     }

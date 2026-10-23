@@ -17,6 +17,9 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -26,6 +29,24 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgentValidationUtilsTest {
+    
+    @ParameterizedTest
+    @CsvSource({"1.0.0,1.0.0,0", "2.0.0,10.0.0,-1", "1.0.0,1.0.0-rc,1",
+        "1.0.0-alpha.2,1.0.0-alpha.10,-1", "1.0.0-Alpha,1.0.0-alpha,-1",
+        "999999999999999999999.0.0,1000000000000000000000.0.0,-1"})
+    void testSharedExactVersionComparison(String left, String right, int comparison) {
+        assertEquals(comparison, Integer.signum(AgentValidationUtils.compareVersions(left, right)));
+        assertEquals(-comparison,
+            Integer.signum(AgentValidationUtils.compareVersions(right, left)));
+    }
+    
+    @Test
+    void testComparisonRejectsInvalidVersionsOnEitherSide() {
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentValidationUtils.compareVersions(null, "1.0.0"));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentValidationUtils.compareVersions("1.0.0", "1"));
+    }
     
     @Test
     void testValidateNamespaceId() {

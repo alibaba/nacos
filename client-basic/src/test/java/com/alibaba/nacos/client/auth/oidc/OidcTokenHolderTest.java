@@ -22,6 +22,8 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -231,10 +233,11 @@ class OidcTokenHolderTest {
         assertFalse(tokenHolder.fetchToken(context));
     }
     
-    @Test
-    void testFetchTokenAccessTokenIsNullReturnsFalse() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"access_token\":null,\"expires_in\":300}", "null"})
+    void testFetchTokenAccessTokenIsNullReturnsFalse(String response) throws Exception {
         startServer(exchange -> writeResponse(exchange, 200,
-            "{\"access_token\":null,\"expires_in\":300}"));
+            response));
         OidcClientContext context = newContextWithEndpoint(tokenEndpointUrl());
         assertFalse(tokenHolder.fetchToken(context));
     }

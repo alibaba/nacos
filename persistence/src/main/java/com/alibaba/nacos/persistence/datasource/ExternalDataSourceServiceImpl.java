@@ -143,7 +143,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
             
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
-                .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                .build(EnvUtil.getEnvironment(), dataSourceType, (dataSource) -> {
                     //check datasource connection
                     ConnectionCheckUtil.checkDataSourceConnection(dataSource);
                     

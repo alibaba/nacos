@@ -328,9 +328,19 @@
           }
         },
         {
-          "not": {
-            "pattern": "^__nacos\\.agent\\.endpoint\\."
-          }
+          "anyOf": [
+            {
+              "enum": [
+                "__nacos.agent.endpoint.protocolVersion__",
+                "__nacos.agent.endpoint.tenant__"
+              ]
+            },
+            {
+              "not": {
+                "pattern": "^__nacos\\.agent\\.endpoint\\."
+              }
+            }
+          ]
         }
       ]
     },
@@ -344,6 +354,18 @@
       "additionalProperties": {
         "type": "string",
         "maxLength": 256
+      },
+      "properties": {
+        "__nacos.agent.endpoint.protocolVersion__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[!-~]+$"
+        },
+        "__nacos.agent.endpoint.tenant__": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "DeclaredEndpoint": {
@@ -408,20 +430,21 @@
         },
         "endpointSourceOrder": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 2,
           "maxItems": 2,
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/EndpointSource"
-          }
+          },
+          "description": "Contains both DECLARED and RUNTIME exactly once; ordering is a default preference, not an availability restriction."
         },
-        "declaredEndpoints": {
+        "endpointSets": {
           "type": "array",
-          "minItems": 1,
-          "maxItems": 64,
           "items": {
-            "$ref": "#/$defs/DeclaredEndpoint"
-          }
+            "$ref": "#/$defs/DeclaredEndpointSet"
+          },
+          "minItems": 1,
+          "maxItems": 1
         }
       }
     },
@@ -449,7 +472,7 @@
           }
         }
       },
-      "description": "Storage projection serialized once with the common Nacos JSON serializer as UTF-8. The exact emitted bytes are persisted and used for size and SHA-256 contentDigest; no semantic JSON canonicalization is defined. Reject unknown schema properties on the envelope, CallInterface, and Endpoint objects; nativeDescriptor members and metadata map entries remain open within their value constraints. Before serialization, canonicalize declared Endpoint URI, validate and preserve transport, materialize priority and weight, and omit empty metadata and declaredEndpoints. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. Protocol uniqueness, URI canonicalization, and descriptor-to-endpoint consistency require domain validation."
+      "description": "Storage projection serialized once with the common Nacos JSON serializer as UTF-8. The exact emitted bytes are persisted and used for size and SHA-256 contentDigest; no semantic JSON canonicalization is defined. Reject unknown schema properties on the envelope, CallInterface, and Endpoint objects; nativeDescriptor members and metadata map entries remain open within their value constraints. Before serialization, canonicalize declared Endpoint URI, validate and preserve transport, materialize priority and weight, and omit empty metadata and absent/empty endpointSets; preserve an explicitly supplied empty DECLARED Set. Array order preserves CallInterface, endpoint-source, and declared Endpoint business order. Protocol uniqueness, URI canonicalization, and descriptor-to-endpoint consistency require domain validation."
     },
     "AgentVersionStorageDescriptor": {
       "type": "object",
@@ -663,10 +686,6 @@
           "maxLength": 32,
           "pattern": "^[A-Za-z][A-Za-z0-9+.-]*$"
         },
-        "__nacos.agent.endpoint.protocolVersion__": {
-          "$ref": "#/$defs/ProtocolVersion",
-          "description": "Optional compatibility fact reserved for a future A2A migration adapter that writes the new RAD layout. The current version-specific legacy A2A publication is outside this definition. Public RAD projection and Runtime revision exclude this value."
-        },
         "__nacos.agent.endpoint.supportTls__": {
           "type": "string",
           "enum": [
@@ -677,11 +696,6 @@
         "__nacos.agent.endpoint.query__": {
           "type": "string",
           "maxLength": 2048
-        },
-        "__nacos.agent.endpoint.tenant__": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 256
         },
         "__nacos.agent.endpoint.version__": {
           "$ref": "#/$defs/AgentVersion",
@@ -695,6 +709,16 @@
           "type": "string",
           "pattern": "^(0|[1-9][0-9]*)$",
           "description": "Canonical decimal representation of an integer in 0..2147483647; the upper bound requires numeric domain validation."
+        },
+        "__nacos.agent.endpoint.protocolVersion__": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[!-~]+$"
+        },
+        "__nacos.agent.endpoint.tenant__": {
+          "type": "string",
+          "maxLength": 256
         }
       },
       "propertyNames": {
@@ -797,7 +821,7 @@
           "$ref": "#/$defs/NamingRuntimeMetadata"
         }
       },
-      "$comment": "This definition covers only the new Version-neutral RAD Naming layout. Current legacy A2A services named <legacyEncodedAgentName>::<exactVersion> and their Instance metadata are outside its scope. clusterName must equal RadAsciiAgentIdCodec.encode() applied to the reserved raw transport metadata. Each Naming Runtime publication carries exactly one runtime Version and canonical Version range pair in metadata, and the range must contain the runtime Version. A publisher submits the complete Instance batch for one Agent protocol service; a new batch replaces that publisher's previous batch. If the client's desired batch becomes empty, it invokes whole-publication deregistration instead of submitting an empty batch. The server adapter maps the submitted batch without reading and merging old publisher state. Query projections construct one RuntimeVersionBinding per Instance, apply range matching, and aggregate bindings by natural Endpoint key. IP, port, path, query, scheme, and TLS metadata must reconstruct the canonical Endpoint. The optional reserved protocolVersion is excluded from public RAD Endpoint metadata and Runtime revision."
+      "$comment": "This definition covers only the new Version-neutral RAD Naming layout. Current legacy A2A services named <legacyEncodedAgentName>::<exactVersion> and their Instance metadata are outside its scope. clusterName must equal RadAsciiAgentIdCodec.encode() applied to the reserved raw transport metadata. Each Naming Instance carries its Endpoint's one resolved runtime Version and canonical Version range pair in metadata, and the range must contain the runtime Version. A publisher submits the complete Instance batch for one Agent protocol service; a new batch replaces that publisher's previous batch. If the client's desired batch becomes empty, it invokes whole-publication deregistration instead of submitting an empty batch. The server adapter maps the submitted batch without reading and merging old publisher state. Query projections construct one RuntimeVersionBinding per Instance, apply range matching, and aggregate bindings by natural Endpoint key. IP, port, path, query, scheme, and TLS metadata must reconstruct the canonical Endpoint. The historical Nacos reserved protocolVersion and tenant keys are reused as Endpoint compatibility metadata and included in Runtime revision. Other reserved keys remain internal."
     },
     "RuntimeRevisionContract": {
       "type": "object",
@@ -1006,7 +1030,27 @@
           "const": "murmur3-x64-128-v1:"
         }
       },
-      "$comment": "For one Runtime discovery projection, construct a RuntimeVersionBinding from each Naming Instance's singular runtime Version and Version range metadata, retain contributions whose range matches at least one compatibility target Version, aggregate publishers and query-time bindings by natural Endpoint key, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal and bindings by runtime Version then canonical range. The legacy-only reserved protocolVersion metadata is not public metadata and is excluded from the revision. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, healthy as one byte 0 or 1, and bindings as uint32be count followed by runtimeVersion/versionRange string pairs. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Endpoint membership, health, and returned binding provenance are revision-visible."
+      "$comment": "For one Runtime discovery projection, construct a RuntimeVersionBinding from each Naming Instance's singular runtime Version and Version range metadata, retain contributions whose range matches at least one compatibility target Version, aggregate publishers and query-time bindings by natural Endpoint key, remove enabled=false, retain both healthy values, canonicalize URI, validate and preserve transport, materialize default priority=0 and weight=1.0, and require healthy. Sort Endpoints by normalizedHost UTF-16 ordinal, effectivePort numeric, then transport UTF-16 ordinal; sort public metadata keys by UTF-16 ordinal and bindings by runtime Version then canonical range. The shared Nacos reserved protocolVersion and tenant metadata are included in the revision without alias conversion. Revision bytes start with a four-byte unsigned big-endian Endpoint count. For every Endpoint, encode URI and transport as uint32be length-prefixed UTF-8, priority as int32be, weight as big-endian IEEE-754 binary64 with negative zero normalized to positive zero, metadata as uint32be entry count followed by ordered length-prefixed key/value strings, healthy as one byte 0 or 1, and bindings as uint32be count followed by runtimeVersion/versionRange string pairs. The empty projection is exactly uint32be(0). Hash the bytes with Apache Commons Codec MurmurHash3.hash128x64(byte[], 0, length, 0). Emit h1 followed by h2, each as eight unsigned big-endian bytes, then encode the 16 bytes as 32 lowercase hexadecimal characters. Endpoint membership, health, and returned binding provenance are revision-visible."
+    },
+    "DeclaredEndpointSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "endpoints"
+      ],
+      "properties": {
+        "source": {
+          "const": "DECLARED"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeclaredEndpoint"
+          },
+          "maxItems": 64
+        }
+      }
     }
   }
 }

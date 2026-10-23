@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

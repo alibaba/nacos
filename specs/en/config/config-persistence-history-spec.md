@@ -85,6 +85,14 @@ dump, task, and event boundaries are defined by the
 
 ## 5. History
 
+V3 Admin and Console history detail and previous-version responses expose
+`schema` from `c_schema` in the selected history record's `extInfo`, while
+preserving `extInfo` unchanged. They must not use the current Config's schema.
+If the extension is absent, invalid JSON, or has no textual `c_schema`, the
+model value is null and the response may omit `schema` under the default
+serialization rules; the history query still succeeds. Schema text is returned
+as stored in that history record.
+
 History records must preserve enough information to inspect and recover config
 changes:
 

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.metadata;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 
@@ -86,12 +86,12 @@ public final class AgentVersionCatalogBuilder {
             }
         }
         
-        AgentVersionCatalog catalog = new AgentVersionCatalog();
-        catalog.setLatestVersion(normalizedLabels.get("latest"));
-        List<AgentVersionCatalogEntry> entries =
-            new ArrayList<AgentVersionCatalogEntry>(versions.size());
+        AgentVersionInfo catalog = new AgentVersionInfo();
+        catalog.setLabels(new LinkedHashMap<String, String>(normalizedLabels));
+        List<AgentVersionSummary> entries =
+            new ArrayList<AgentVersionSummary>(versions.size());
         for (String version : versions) {
-            AgentVersionCatalogEntry entry = new AgentVersionCatalogEntry();
+            AgentVersionSummary entry = new AgentVersionSummary();
             entry.setVersion(version);
             entry.setLabels(labelsForVersion(normalizedLabels, version));
             List<String> versionProtocols = protocolsByVersion.get(version);
@@ -158,17 +158,17 @@ public final class AgentVersionCatalogBuilder {
      */
     public static final class Result {
         
-        private final AgentVersionCatalog versionCatalog;
+        private final AgentVersionInfo versionCatalog;
         
         private final Map<String, String> labels;
         
-        private Result(AgentVersionCatalog versionCatalog, Map<String, String> labels) {
+        private Result(AgentVersionInfo versionCatalog, Map<String, String> labels) {
             this.versionCatalog = versionCatalog;
             this.labels = Collections.unmodifiableMap(
                 new LinkedHashMap<String, String>(labels));
         }
         
-        public AgentVersionCatalog getVersionCatalog() {
+        public AgentVersionInfo getVersionCatalog() {
             return versionCatalog;
         }
         

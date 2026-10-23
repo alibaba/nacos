@@ -17,6 +17,7 @@
 package com.alibaba.nacos.maintainer.client.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
@@ -139,7 +140,7 @@ public class ClientHttpProxy implements Closeable {
                 if (result.ok()) {
                     return result;
                 }
-                throw new NacosException(result.getCode(), resolveErrorMessage(result));
+                throw resolveRequestException(result);
             } catch (NacosException nacosException) {
                 requestException = nacosException;
                 resultCode = nacosException.getErrCode();
@@ -161,6 +162,9 @@ public class ClientHttpProxy implements Closeable {
             }
         }
         
+        if (requestException instanceof NacosApiException) {
+            throw requestException;
+        }
         if (null != requestException) {
             throw new NacosException(requestException.getErrCode(),
                 "No available server after " + maxRetry + " retries, last tried server: "
@@ -172,8 +176,9 @@ public class ClientHttpProxy implements Closeable {
                 + currentServerAddr);
     }
     
-    private String resolveErrorMessage(HttpRestResult<String> result) {
-        String responseBody = result.getData();
+    private NacosException resolveRequestException(HttpRestResult<String> result) {
+        String responseBody = StringUtils.isNotBlank(result.getData())
+            ? result.getData() : result.getMessage();
         if (StringUtils.isNotBlank(responseBody)) {
             try {
                 Result<Object> response =
@@ -182,22 +187,27 @@ public class ClientHttpProxy implements Closeable {
                 if (response != null) {
                     String message = response.getMessage();
                     Object data = response.getData();
+                    if (response.getCode() != null && response.getCode() != 0
+                        && (data == null || data instanceof String)) {
+                        return new NacosApiException(result.getCode(), response.getCode(), message,
+                            data == null ? message : (String) data);
+                    }
                     if (data instanceof String && StringUtils.isNotBlank((String) data)) {
                         if (StringUtils.isNotBlank(message) && !data.equals(message)) {
-                            return message + ": " + data;
+                            return new NacosException(result.getCode(), message + ": " + data);
                         }
-                        return (String) data;
+                        return new NacosException(result.getCode(), (String) data);
                     }
                     if (StringUtils.isNotBlank(message)) {
-                        return message;
+                        return new NacosException(result.getCode(), message);
                     }
                 }
             } catch (Exception ignored) {
                 // Fall back to the raw response body for non-Result payloads.
             }
-            return responseBody;
+            return new NacosException(result.getCode(), responseBody);
         }
-        return result.getMessage();
+        return new NacosException(result.getCode(), result.getMessage());
     }
     
     private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr)

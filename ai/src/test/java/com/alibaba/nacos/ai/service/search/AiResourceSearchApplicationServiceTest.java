@@ -178,6 +178,8 @@ class AiResourceSearchApplicationServiceTest {
     void springContextShouldSelectProviderConstructor() {
         try (AnnotationConfigApplicationContext context =
             new AnnotationConfigApplicationContext()) {
+            AiResourceRelevanceFilter relevanceFilter = mock(AiResourceRelevanceFilter.class);
+            context.registerBean(AiResourceRelevanceFilter.class, () -> relevanceFilter);
             context.registerBean(AiResourceSearchService.class, () -> searchService);
             context.registerBean(AiResourceSearchTypeHandlerRegistry.class,
                 () -> typeHandlerRegistry);
@@ -186,6 +188,7 @@ class AiResourceSearchApplicationServiceTest {
             context.refresh();
             
             assertNotNull(context.getBean(AiResourceSearchApplicationService.class));
+            verify(searchService).setRelevanceFilter(relevanceFilter);
         }
     }
     

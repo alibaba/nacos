@@ -1,0 +1,660 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.dns;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+import org.xbill.DNS.Flags;
+import org.xbill.DNS.Message;
+import org.xbill.DNS.Rcode;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Section;
+
+import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PreDestroy;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Nacos DNS Server that serves DNS queries using Nacos naming service as backend.
+ *
+ * <p>Supports:
+ * <ul>
+ *   <li>Standard A record query</li>
+ *   <li>UDP and TCP transport</li>
+ *   <li>Healthy instance filtering</li>
+ * </ul>
+ *
+ * <p>Hardened for production:
+ * <ul>
+ *   <li>UDP response is capped at 512 bytes (truncation bit set when overflow)</li>
+ *   <li>Per-packet buffer copies to avoid receive-buffer race</li>
+ *   <li>TCP read timeout and connection limit to prevent resource exhaustion</li>
+ *   <li>Listener threads separated from worker pool</li>
+ * </ul>
+ *
+ * @author Nacos
+ */
+@Component
+public class NacosDnsServer {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosDnsServer.class);
+    
+    /** Standard DNS UDP payload limit without EDNS. */
+    private static final int UDP_MAX_RESPONSE_SIZE = 512;
+    
+    /** Receive buffer large enough for EDNS-sized UDP queries. */
+    private static final int UDP_RECEIVE_BUFFER_SIZE = 4096;
+    
+    /** TCP read timeout in milliseconds. */
+    private static final int TCP_SOCKET_TIMEOUT_MS = 5000;
+    
+    /** Maximum DNS message size over TCP (RFC 1035: 16-bit length prefix). */
+    private static final int TCP_MAX_MESSAGE_SIZE = 65535;
+    
+    /** Maximum concurrent TCP connections. */
+    private static final int MAX_TCP_CONNECTIONS = 64;
+    
+    /** UDP worker thread pool size for quick query processing. */
+    private static final int UDP_WORKER_THREADS = 16;
+    
+    /** TCP worker thread pool size (separate to prevent slow TCP from blocking UDP). */
+    private static final int TCP_WORKER_THREADS = 8;
+    
+    /** Forward worker thread pool size (separate to prevent slow upstreams from blocking local queries). */
+    private static final int FORWARD_WORKER_THREADS = 4;
+    
+    private final NacosDnsProperties properties;
+    private final NacosDnsQueryHandler queryHandler;
+    private final NacosDnsForwarder forwarder;
+    private final NacosDnsMetrics metrics;
+    
+    /** Dedicated listener threads (non-daemon, short-lived). */
+    private Thread udpListenerThread;
+    private Thread tcpListenerThread;
+    
+    /** Separate worker pools: UDP queries and TCP connections don't starve each other. */
+    private ExecutorService udpWorkerPool;
+    private ExecutorService tcpWorkerPool;
+    private ExecutorService forwardWorkerPool;
+    
+    private DatagramSocket udpSocket;
+    private ServerSocket tcpSocket;
+    private volatile boolean running = false;
+    
+    /** Track active TCP connections to enforce limit. */
+    private final AtomicInteger activeTcpConnections = new AtomicInteger(0);
+    
+    public NacosDnsServer(NacosDnsProperties properties,
+        NacosDnsQueryHandler queryHandler, NacosDnsForwarder forwarder,
+        NacosDnsMetrics metrics) {
+        this.properties = properties;
+        this.queryHandler = queryHandler;
+        this.forwarder = forwarder;
+        this.metrics = metrics;
+    }
+    
+    /**
+     * Start DNS server when application is ready.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void start() {
+        if (!properties.isEnabled()) {
+            LOGGER.info("Nacos DNS server is disabled.");
+            return;
+        }
+        
+        // Bind sockets first: if binding fails, no thread pools have been created yet,
+        // so no cleanup is needed. UDP is bound first to resolve the actual port
+        // (supports port=0 for ephemeral), then TCP uses the same port.
+        try {
+            udpSocket = new DatagramSocket(
+                new InetSocketAddress(properties.getBindAddress(), properties.getPort()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind UDP socket on {}:{}", properties.getBindAddress(),
+                properties.getPort(), e);
+            return;
+        }
+        int actualPort = udpSocket.getLocalPort();
+        
+        try {
+            tcpSocket = new ServerSocket(actualPort, 50,
+                InetAddress.getByName(properties.getBindAddress()));
+        } catch (IOException e) {
+            LOGGER.error("Failed to bind TCP socket on {}:{}", properties.getBindAddress(),
+                actualPort, e);
+            udpSocket.close();
+            return;
+        }
+        
+        // Both sockets bound successfully — now create worker pools and start listeners.
+        udpWorkerPool = new ThreadPoolExecutor(
+            UDP_WORKER_THREADS, UDP_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(1024),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-udp-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
+        tcpWorkerPool = new ThreadPoolExecutor(
+            TCP_WORKER_THREADS, TCP_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(256),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-tcp-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
+        // Separate pool for upstream forwarding: a slow or down upstream cannot
+        // consume all UDP workers and starve local Nacos service lookups.
+        forwardWorkerPool = new ThreadPoolExecutor(
+            FORWARD_WORKER_THREADS, FORWARD_WORKER_THREADS,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(64),
+            r -> {
+                Thread t = new Thread(r, "nacos-dns-forward-worker");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
+        
+        running = true;
+        
+        udpListenerThread = new Thread(this::startUdpListenerLoop, "nacos-dns-udp-listener");
+        udpListenerThread.setDaemon(true);
+        udpListenerThread.start();
+        
+        tcpListenerThread = new Thread(this::startTcpListenerLoop, "nacos-dns-tcp-listener");
+        tcpListenerThread.setDaemon(true);
+        tcpListenerThread.start();
+        
+        LOGGER.info("Nacos DNS server started on port {}, domain suffix: {}",
+            actualPort, properties.getDomainSuffix());
+    }
+    
+    /**
+     * Stop DNS server.
+     */
+    @PreDestroy
+    public void stop() {
+        running = false;
+        if (udpSocket != null) {
+            udpSocket.close();
+        }
+        if (tcpSocket != null) {
+            try {
+                tcpSocket.close();
+            } catch (IOException e) {
+                LOGGER.warn("Error closing TCP socket", e);
+            }
+        }
+        if (udpWorkerPool != null) {
+            udpWorkerPool.shutdown();
+            try {
+                udpWorkerPool.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (tcpWorkerPool != null) {
+            tcpWorkerPool.shutdown();
+            try {
+                tcpWorkerPool.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (forwardWorkerPool != null) {
+            forwardWorkerPool.shutdownNow();
+        }
+        LOGGER.info("Nacos DNS server stopped.");
+    }
+    
+    /**
+     * Start UDP listener loop (socket already bound in start()).
+     */
+    private void startUdpListenerLoop() {
+        try {
+            LOGGER.info("DNS UDP server listening on port {}", udpSocket.getLocalPort());
+            
+            while (running) {
+                byte[] recvBuf = new byte[UDP_RECEIVE_BUFFER_SIZE];
+                DatagramPacket packet = new DatagramPacket(recvBuf, recvBuf.length);
+                udpSocket.receive(packet);
+                
+                // Defensive copy: extract only received bytes to avoid buffer race
+                InetAddress clientAddr = packet.getAddress();
+                int clientPort = packet.getPort();
+                int dataLen = packet.getLength();
+                byte[] queryData = new byte[dataLen];
+                System.arraycopy(packet.getData(), packet.getOffset(), queryData, 0, dataLen);
+                
+                try {
+                    udpWorkerPool.submit(() -> handleUdpQuery(queryData, clientAddr, clientPort));
+                } catch (Exception e) {
+                    LOGGER.warn("Dropping UDP query, worker queue full", e);
+                }
+            }
+        } catch (IOException e) {
+            if (running) {
+                LOGGER.error("UDP DNS listener error", e);
+            }
+        }
+    }
+    
+    /**
+     * Handle a single UDP DNS query.
+     *
+     * <p>Local Nacos-suffix queries are resolved synchronously on the UDP worker
+     * (fast path). Forwarding queries are submitted to the dedicated forward
+     * worker pool and the UDP worker returns immediately, so a slow or down
+     * upstream cannot occupy UDP workers and starve local Nacos lookups.
+     */
+    private void handleUdpQuery(byte[] queryData, InetAddress clientAddr, int clientPort) {
+        try {
+            Message query = new Message(queryData);
+            Record question = query.getQuestion();
+            
+            // Malformed queries (no question) are handled synchronously — FORMERR
+            if (question == null || question.getName() == null) {
+                metrics.recordQuery();
+                metrics.recordFailed();
+                sendUdpResponse(buildErrorResponse(query, null, Rcode.FORMERR),
+                    query, clientAddr, clientPort);
+                return;
+            }
+            
+            if (queryHandler.matchesSuffix(question.getName().toString(true))) {
+                // Local fast path: resolve and send on the UDP worker
+                metrics.recordQuery();
+                Message response = queryHandler.handleQuery(query);
+                sendUdpResponse(response, query, clientAddr, clientPort);
+                return;
+            }
+            
+            // Forwarding path: submit to dedicated pool, release UDP worker immediately.
+            // The forward thread performs the upstream lookup and sends the response.
+            metrics.recordQuery();
+            metrics.recordForwarded();
+            try {
+                forwardWorkerPool.submit(
+                    () -> forwardAndSendUdp(query, clientAddr, clientPort));
+            } catch (RejectedExecutionException e) {
+                LOGGER.warn("Forward worker pool saturated, rejecting query for {}",
+                    question.getName());
+                metrics.recordFailed();
+                sendUdpResponse(buildErrorResponse(query, question, Rcode.SERVFAIL),
+                    query, clientAddr, clientPort);
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error handling UDP DNS query from {}:{}", clientAddr, clientPort, e);
+        }
+    }
+    
+    /**
+     * Perform forwarding lookup and send the UDP response. Runs on the forward
+     * worker pool, not the UDP worker pool.
+     */
+    private void forwardAndSendUdp(Message query, InetAddress clientAddr, int clientPort) {
+        Record question = query.getQuestion();
+        String type = queryHandler.extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
+        Message response;
+        
+        try {
+            // Already running on the forward worker pool — call forwarder directly.
+            // Do NOT submit to forwardWorkerPool here (would deadlock the same pool).
+            // forwarder.forward() enforces its own total time budget (2x per-server timeout).
+            NacosDnsForwarder.ForwardResult result = forwarder.forward(query);
+            
+            switch (result.getStatus()) {
+                case SUCCESS:
+                    Message upstream = result.getResponse();
+                    String rcode = Rcode.string(upstream.getHeader().getRcode());
+                    metrics.recordSuccess();
+                    metrics.stopSample(sample, type, rcode);
+                    response = upstream;
+                    break;
+                case UPSTREAM_FAILURE:
+                    metrics.recordFailed();
+                    metrics.stopSample(sample, type, "SERVFAIL");
+                    response = buildErrorResponse(query, question, Rcode.SERVFAIL);
+                    break;
+                case DISABLED:
+                case NO_SERVERS:
+                case INTERNAL_SUFFIX:
+                default:
+                    metrics.recordFailed();
+                    metrics.stopSample(sample, type, "NXDOMAIN");
+                    response = buildErrorResponse(query, question, Rcode.NXDOMAIN);
+                    break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Forward query failed for {}",
+                question != null ? question.getName() : "unknown", e);
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            response = buildErrorResponse(query, question, Rcode.SERVFAIL);
+        }
+        
+        sendUdpResponse(response, query, clientAddr, clientPort);
+    }
+    
+    /**
+     * Serialize, truncate if needed, and send a UDP DNS response.
+     */
+    private void sendUdpResponse(Message response, Message query,
+        InetAddress clientAddr, int clientPort) {
+        try {
+            byte[] responseData = response.toWire();
+            // Truncate if response exceeds standard UDP size to prevent amplification
+            if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
+                response.getHeader().setFlag(Flags.TC);
+                responseData = response.toWire();
+                if (responseData.length > UDP_MAX_RESPONSE_SIZE) {
+                    responseData = buildTruncatedResponse(query,
+                        response.getHeader().getRcode());
+                }
+            }
+            synchronized (udpSocket) {
+                udpSocket.send(
+                    new DatagramPacket(responseData, responseData.length,
+                        clientAddr, clientPort));
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error sending UDP DNS response to {}:{}", clientAddr, clientPort, e);
+        }
+    }
+    
+    /**
+     * Synchronous query resolution for TCP connections. TCP runs on its own
+     * worker pool, so blocking on upstream forwarding is acceptable there.
+     */
+    private Message resolveQuerySync(Message query) {
+        metrics.recordQuery();
+        Record question = query.getQuestion();
+        
+        if (question == null || question.getName() == null) {
+            metrics.recordFailed();
+            return buildErrorResponse(query, null, Rcode.FORMERR);
+        }
+        
+        if (queryHandler.matchesSuffix(question.getName().toString(true))) {
+            return queryHandler.handleQuery(query);
+        }
+        
+        metrics.recordForwarded();
+        String type = queryHandler.extractQueryType(query);
+        Timer.Sample sample = metrics.startSample();
+        
+        NacosDnsForwarder.ForwardResult result;
+        try {
+            long forwardTimeoutMs = Math.max(properties.getForwardTimeoutMs(), 100) * 2L + 1000;
+            Future<NacosDnsForwarder.ForwardResult> future =
+                forwardWorkerPool.submit(() -> forwarder.forward(query));
+            result = future.get(forwardTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            LOGGER.warn("Forward worker pool saturated, rejecting query for {}",
+                question.getName());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (TimeoutException e) {
+            LOGGER.warn("Forward query timed out for {}", question.getName());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        } catch (ExecutionException e) {
+            LOGGER.error("Forward query failed for {}", question.getName(), e.getCause());
+            metrics.recordFailed();
+            metrics.stopSample(sample, type, "SERVFAIL");
+            return buildErrorResponse(query, question, Rcode.SERVFAIL);
+        }
+        
+        switch (result.getStatus()) {
+            case SUCCESS:
+                Message upstream = result.getResponse();
+                String rcode = Rcode.string(upstream.getHeader().getRcode());
+                metrics.recordSuccess();
+                metrics.stopSample(sample, type, rcode);
+                return upstream;
+            case UPSTREAM_FAILURE:
+                metrics.recordFailed();
+                metrics.stopSample(sample, type, "SERVFAIL");
+                return buildErrorResponse(query, question, Rcode.SERVFAIL);
+            case DISABLED:
+            case NO_SERVERS:
+            case INTERNAL_SUFFIX:
+            default:
+                metrics.recordFailed();
+                metrics.stopSample(sample, type, "NXDOMAIN");
+                return buildErrorResponse(query, question, Rcode.NXDOMAIN);
+        }
+    }
+    
+    /**
+     * Build a minimal error response with the given rcode.
+     */
+    private Message buildErrorResponse(Message query, Record question, int rcode) {
+        Message response = new Message(query.getHeader().getID());
+        response.getHeader().setFlag(Flags.QR);
+        // Do NOT set RA (Recursion Available): this is a conditional forwarder,
+        // not an open recursive resolver.
+        response.getHeader().setRcode(rcode);
+        if (question != null) {
+            response.addRecord(question, Section.QUESTION);
+        }
+        return response;
+    }
+    
+    /**
+     * Build a minimal truncated response (header + question only), preserving the
+     * original rcode so NXDOMAIN/SERVFAIL is not silently rewritten to NOERROR.
+     */
+    private byte[] buildTruncatedResponse(Message query, int rcode) throws IOException {
+        Message truncated = new Message(query.getHeader().getID());
+        truncated.getHeader().setFlag(Flags.QR);
+        truncated.getHeader().setFlag(Flags.TC);
+        // Do NOT set RA: this is a conditional forwarder, not an open recursive resolver.
+        truncated.getHeader().setRcode(rcode);
+        truncated.addRecord(query.getQuestion(), Section.QUESTION);
+        return truncated.toWire();
+    }
+    
+    /**
+     * Start TCP listener loop (socket already bound in start()).
+     */
+    private void startTcpListenerLoop() {
+        try {
+            LOGGER.info("DNS TCP server listening on port {}", tcpSocket.getLocalPort());
+            
+            while (running) {
+                Socket clientSocket = tcpSocket.accept();
+                
+                // Atomically enforce connection limit
+                int current = activeTcpConnections.incrementAndGet();
+                if (current > MAX_TCP_CONNECTIONS) {
+                    activeTcpConnections.decrementAndGet();
+                    LOGGER.warn("Too many TCP connections ({}), rejecting {}",
+                        current - 1, clientSocket.getRemoteSocketAddress());
+                    clientSocket.close();
+                    continue;
+                }
+                
+                try {
+                    tcpWorkerPool.submit(() -> {
+                        try {
+                            handleTcpConnection(clientSocket);
+                        } catch (Exception e) {
+                            LOGGER.debug("Error handling TCP DNS query from {}",
+                                clientSocket.getRemoteSocketAddress(), e);
+                        } finally {
+                            activeTcpConnections.decrementAndGet();
+                            try {
+                                clientSocket.close();
+                            } catch (IOException e) {
+                                // ignore
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    activeTcpConnections.decrementAndGet();
+                    clientSocket.close();
+                    LOGGER.warn("Dropping TCP connection, worker queue full", e);
+                }
+            }
+        } catch (IOException e) {
+            if (running) {
+                LOGGER.error("Failed to start TCP DNS server on port {}", tcpSocket.getLocalPort(),
+                    e);
+            }
+        }
+    }
+    
+    /**
+     * Handle a TCP DNS connection.
+     *
+     * <p>Enforces an absolute receive deadline covering both the 2-byte length
+     * prefix and the complete message body, per RFC 7766 §6.2.3. The idle
+     * deadline is reset only after a complete DNS message has been received.
+     */
+    private void handleTcpConnection(Socket clientSocket) throws IOException {
+        clientSocket.setTcpNoDelay(true);
+        
+        DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+        
+        long deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
+        
+        while (running) {
+            try {
+                // Read 2-byte length prefix
+                int b0 = readByteWithDeadline(in, clientSocket, deadline);
+                if (b0 < 0) {
+                    break;
+                }
+                int b1 = readByteWithDeadline(in, clientSocket, deadline);
+                if (b1 < 0) {
+                    break;
+                }
+                
+                int length = (b0 << 8) | b1;
+                if (length <= 0 || length > TCP_MAX_MESSAGE_SIZE) {
+                    break;
+                }
+                
+                // Read message body within remaining deadline
+                byte[] queryData = new byte[length];
+                int totalRead = 0;
+                while (totalRead < length) {
+                    if (checkDeadline(clientSocket, deadline) < 0) {
+                        break;
+                    }
+                    int n = in.read(queryData, totalRead, length - totalRead);
+                    if (n < 0) {
+                        break;
+                    }
+                    totalRead += n;
+                }
+                if (totalRead < length) {
+                    break;
+                }
+                
+                Message query = new Message(queryData);
+                Message response = resolveQuerySync(query);
+                
+                byte[] responseData = response.toWire();
+                synchronized (out) {
+                    out.writeShort(responseData.length);
+                    out.write(responseData);
+                    out.flush();
+                }
+                
+                // Reset idle deadline only after a complete message (RFC 7766)
+                deadline = System.currentTimeMillis() + TCP_SOCKET_TIMEOUT_MS;
+            } catch (java.net.SocketTimeoutException e) {
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Check remaining time until deadline and configure socket timeout.
+     *
+     * @return remaining milliseconds (>0), or -1 if deadline expired
+     */
+    private long checkDeadline(Socket socket, long deadline) throws SocketException {
+        long remaining = deadline - System.currentTimeMillis();
+        if (remaining <= 0) {
+            return -1;
+        }
+        socket.setSoTimeout((int) Math.min(remaining, Integer.MAX_VALUE));
+        return remaining;
+    }
+    
+    /**
+     * Read one byte, respecting the absolute deadline.
+     *
+     * @return the byte read (0-255), or -1 on EOF/deadline expiry
+     */
+    private int readByteWithDeadline(DataInputStream in, Socket socket, long deadline)
+        throws IOException {
+        if (checkDeadline(socket, deadline) < 0) {
+            return -1;
+        }
+        int b = in.read();
+        if (b < 0) {
+            return -1;
+        }
+        return b;
+    }
+    
+    public boolean isRunning() {
+        return running;
+    }
+}

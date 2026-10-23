@@ -195,7 +195,12 @@ source, metadata, masking, and update semantics.
 
 If the selected plugin is disabled or unavailable, the current AI domain skips
 visibility filtering and single-resource visibility validation; creation falls
-back to `PRIVATE` scope. This preserves the historical disabled behavior and
+back to `PRIVATE` for every resource type. The same fallback applies when a
+plugin returns a blank default. Type-specific defaults belong to
+`VisibilityService.resolveDefaultScopeForCreate`; the domain helper must not
+duplicate them. A nonblank plugin default, including `PRIVATE`, takes precedence.
+Existing stored scopes are never rewritten by default resolution. The skipped
+visibility checks preserve the historical disabled behavior and
 must not be confused with auth being enabled or disabled. The built-in plugin
 also treats disabled auth as allowing visibility.
 
@@ -230,6 +235,19 @@ DELETE /v3/auth/visibility
 These endpoints are plugin-owned auth APIs and must use `ApiType.ADMIN_API`.
 The default implementation does not expose a management-side grant-list
 endpoint.
+
+### Explicit Identity During Asynchronous Checks
+
+The `identity` supplied to `validateVisibility` is the server-authenticated caller captured
+at the authorized entry point, not an identity accepted directly from an arbitrary request
+parameter. Asynchronous checks must use that identity rather than a thread-local request.
+The default implementation selects auth by the supplied API scope. For the built-in Nacos
+and derived auth implementations, it creates a credential-free user identity and evaluates
+current roles and permissions; it does not copy another request's user or cached admin flag.
+Existing role-cache and token revocation guarantees remain unchanged.
+For an unrelated auth implementation whose identity cannot be reconstructed, delegation
+requires its matching authenticated request context; absence or mismatch fails closed.
+This rule does not add authentication bypasses or persist credentials in Watch state.
 
 ## API Requirements
 

@@ -19,8 +19,8 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.remote.response.AgentSubscribeRpcResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -70,6 +70,23 @@ class AgentWatchTransportRouterTest {
         when(http.isAvailable()).thenReturn(true);
         polling = new FakeTransport();
         pollingExecutor = mock(ScheduledExecutorService.class);
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(
+        ints = {50105, NacosException.NO_RIGHT, NacosException.INVALID_PARAM,
+            NacosException.CLIENT_INVALID_PARAM, NacosException.OVER_THRESHOLD,
+            NacosException.CLIENT_OVER_THRESHOLD, NacosException.CONFLICT})
+    void rejectedGrpcBindingNeverBypassesAdmissionThroughFallback(int code) throws Exception {
+        connectSupported();
+        AgentWatchTransportRouter router = router(AgentTransportMode.GRPC);
+        when(client.subscribeAgentWatch(any(), any(), any())).thenReturn(response("wire-a"));
+        TestCallback callback = new TestCallback();
+        router.start(registration("watch-a"), callback);
+        router.onWireUnavailable("watch-a", new NacosException(code, "rejected"));
+        assertEquals(1, callback.unavailable);
+        assertEquals(0, polling.startCount);
+        router.shutdown();
     }
     
     @Test
@@ -518,10 +535,8 @@ class AgentWatchTransportRouterTest {
         
         grpc.onConnected(connection("connection-a", AbilityStatus.SUPPORTED));
         
-        assertEquals(1, missing.unavailable);
-        assertFalse(missing.terminal);
-        assertEquals(1, denied.unavailable);
-        assertTrue(denied.terminal);
+        assertEquals(0, missing.unavailable);
+        assertEquals(0, denied.unavailable);
         assertEquals(0, temporary.unavailable);
         assertEquals(0, runtime.unavailable);
         assertEquals(4, polling.registrations.size());

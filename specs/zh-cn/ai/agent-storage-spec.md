@@ -123,7 +123,7 @@ AgentVersionContent
     protocol / protocolVersion
     descriptorMediaType / nativeDescriptor
     endpointSourceOrder[]
-    declaredEndpoints[]
+    endpointSets[] { source = DECLARED, endpoints[] }
 ```
 
 服务端校验对象并构造下述存储投影，然后使用 Nacos 公共 JSON serializer 一次序列化为
@@ -133,12 +133,12 @@ UTF-8。同一份输出 bytes 传递给 AI Storage，并用于计算 `size` 和
 
 序列化前，服务端先构造 storage projection：
 
-1. 拒绝 envelope、CallInterface 和 Endpoint object 上的未知 schema property，再仅投影
-   schema version 1 定义的字段；
+1. 写入只投影 schema version 1 的定义字段，忽略只读字段；读取拒绝 envelope、CallInterface、
+   EndpointSet 和 Endpoint 上的未知 property；
 2. 使用公共 Endpoint canonicalizer 规范每个 declared Endpoint 的 URI，并校验且保持其
    transport 原值；
 3. 显式写入 Endpoint 的有效默认值 `priority=0` 和 `weight=1`；
-4. 省略缺失或为空的 Endpoint `metadata` 和 `declaredEndpoints`；
+4. 省略缺失或为空的 Endpoint `metadata` 和 endpointSets；显式提交的空 DECLARED Set 保留；
 5. 除上述规范化外，保持所有数组顺序和 descriptor JSON value 不变。
 
 `nativeDescriptor` 的 JSON member 和 Endpoint `metadata` map entry 仍是开放内容，但必须
@@ -263,8 +263,9 @@ namespaceId / agentName / runtimeVersion / versionRange? / protocol
 endpoints[1..1000]
 ```
 
-批次中全部 Endpoint 共享一组 `runtimeVersion`/`versionRange` 和 protocol。单元素数组就是通用
-单 Endpoint 形式。命令本身不持久化。该批次是当前 publisher 对组合后 Naming Service 的完整期望状态。服务端校验
+批次中全部 Endpoint 共享 protocol；批次级 `runtimeVersion`/`versionRange` 是输入默认值，
+每个 Endpoint 可通过单条 binding 分别覆盖。逐字段继承并补齐精确范围后，服务端校验每个
+有效绑定，完整规则见 RAD 注册规范。单元素数组就是通用单 Endpoint 形式。命令本身不持久化。该批次是当前 publisher 对组合后 Naming Service 的完整期望状态。服务端校验
 完整批次后委托 Naming `batchRegisterInstance`；Naming 原子替换同一 Client 和 Service 的旧批次，
 未列出的 Endpoint 会被删除。批次包含重复自然键时整体拒绝；重复提交相同内容具有幂等性。
 
@@ -282,11 +283,10 @@ publisherIdentity
 + namespaceId + agentName + protocol
 ```
 
-Naming 为该 Client 和 Service 只保存一份 `BatchInstancePublishInfo`。其中 Instance 共享一组
-`runtimeVersion` 和 canonical `versionRange`。后续注册完整替换该记录及这两个共享字段。
-因此首版同一 publisher、Agent 和 protocol 只能保存一组 singular
-`runtimeVersion`/`versionRange`。如果未来需要同时保存多组，应由客户端提供完整快照 wire model，
-而不是由服务端执行 read-merge-write。
+Naming 为该 Client 和 Service 只保存一份 `BatchInstancePublishInfo`。每个 Instance 保存其
+Endpoint 展开后的 runtimeVersion 和 canonical versionRange，Batch 字段只是输入默认值。
+所有 Endpoint 展开并校验通过后才执行完整替换；同一 Batch 的不同 Endpoint 可以有不同版本对。
+仍然不引入服务端 read-merge-write。
 
 Agent 层不会读取旧 publisher 记录，不直接依赖 `ClientServiceIndexesManager`，不增加 Service 锁，
 也不在写入前扫描其他 publisher。Naming 负责完整替换、连接清理、索引、事件和 Distro AP 收敛；
@@ -306,8 +306,8 @@ __nacos.agent.endpoint.version__       = runtimeVersion
 __nacos.agent.endpoint.versionRange__  = canonicalVersionRange
 ```
 
-Naming metadata 中没有序列化的 `bindings` 值。只有读取 Naming Service 投影时才创建
-`RuntimeVersionBinding` 对象和公开 `bindings[]`。Binding 去重后先按 `runtimeVersion` 的
+Naming metadata 中没有序列化的 `bindings` 值。`RuntimeVersionBinding` 也用于每 Endpoint 一条的注册输入；
+查询时公开 `bindings[]` 聚合不同 Publisher 的 Naming Service 投影。Binding 去重后先按 `runtimeVersion` 的
 Agent SemVer 升序排序，再按 `versionRange` 的大小写敏感字符串升序排序。
 
 `RuntimeEndpointSnapshot` 从 `ServiceStorage` 读取完整的 Naming 内部 Service 投影，再聚合其中的
@@ -340,7 +340,7 @@ Publisher identity 是内部状态：
 至少一个匹配的活跃 contribution 健康，聚合 `healthy` 就为 true；只有全部不健康时才为 false。
 仅 heartbeat 或 publisher 数量变化不会改变公开投影。
 
-`enabled` 是独立的 Naming 运维状态，不被 heartbeat 覆盖。Agent Endpoint metadata 不得设置
+`enabled` 是可注册的 Publisher 属性，Naming 运维覆盖优先，heartbeat 不覆盖它。Agent Endpoint metadata 不得设置
 Naming heartbeat interval、heartbeat timeout 或 instance-delete timeout key。显式注销、
 publisher 丢失或 Naming cleanup 会结束运行时状态。Agent disable、Version offline 或定义删除
 只会把它从适用的发现投影中移除。
@@ -401,7 +401,7 @@ metadata transport 并与 clusterName 交叉校验，不能从 clusterName 反�
 | URI path | `__nacos.agent.endpoint.path__`。 |
 | normalized transport | `__nacos.agent.endpoint.transport__`。 |
 | URI scheme | `__nacos.agent.endpoint.protocol__`。 |
-| 旧 A2A protocol version | 可选 `__nacos.agent.endpoint.protocolVersion__`。 |
+| 旧 A2A protocol version | `__nacos.agent.endpoint.protocolVersion__`。 |
 | HTTPS 状态 | `__nacos.agent.endpoint.supportTls__`。 |
 | 原始 URI query | `__nacos.agent.endpoint.query__`。 |
 | native tenant，非空时 | `__nacos.agent.endpoint.tenant__`。 |
@@ -412,12 +412,16 @@ metadata transport 并与 clusterName 交叉校验，不能从 clusterName 反�
 | 公开 Endpoint metadata | 其余 `Instance.metadata`。 |
 | 运行状态 | `Instance.enabled`、`Instance.healthy`、`ephemeral=true`。 |
 
-用户 metadata 不得覆盖任何 `__nacos.agent.endpoint.*__` key。服务端在接受 publication 前
+用户 metadata 只允许填写 protocolVersion 与 tenant 两个 A2A 兼容保留键，
+不得覆盖其他 `__nacos.agent.endpoint.*__` 控制键。服务端在接受 publication 前
 构造并校验完整 Naming metadata。缺失的 range 输入在写 `versionRange` 前完成 canonicalize。
 
-`__nacos.agent.endpoint.protocolVersion__` 仅用于旧 A2A 兼容。只有 A2A 兼容 Adapter 可以写入；
-它不属于公开 RAD Endpoint metadata，也不进入 Runtime revision。反向投影旧 A2A 响应时，
-兼容 Adapter 优先使用该值；缺失时回退到目标 CallInterface 的 `protocolVersion`。
+canonical A2A publication 直接复用历史 Nacos 保留键
+`__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__`，
+不再增加别名或优先级规则。这两个键和值原样进入 Endpoint metadata 与 Runtime revision，
+其他保留键仅用于内部映射。缺协议版本时回退目标 CallInterface，tenant 不伪造。
+读取历史空协议版本时视为缺失；新 Endpoint 请求显式填写 protocolVersion 时必须非空。
+tenant 空串是有效值并保留。
 
 公开自然键映射为 Service、Cluster、IP 和 port。Path 和 query 仍然是 payload metadata。
 ServiceName 和 clusterName 都不包含 Version，因此 Service 数量不会随兼容 Agent Version 增长。
@@ -534,7 +538,7 @@ Endpoint set 及其 revision，不维护第二份投影缓存。
 | 变化 | 写入目标 | 一致性规则 |
 | --- | --- | --- |
 | Agent 目录、治理、extensions | `ai_resource`。 | `metaVersion` CAS。 |
-| 创建或更新 draft | AI Storage 固定 key 和 Version row。 | Pointer、bytes、size 和 digest 一致。 |
+| 创建或更新 draft | AI Storage 固定 key 与 Version row。 | Pointer、bytes、size 和 digest 一致。 |
 | Publish、online、offline、delete、label/latest | Version row 和 Resource 摘要。 | 重建派生目录。 |
 | Runtime register、Publisher heartbeat、deregister | Naming Client 运行时状态。 | 不写 AI Resource 或 Storage。 |
 | Agent 目录或 Version 生命周期提交 | `ai_resource_task` 中合并的 `search_index` revision。 | 异步重读事实并重建派生索引。 |
@@ -552,8 +556,7 @@ Naming `ServiceStorage` 负责完整的 per-Service 投影缓存。Agent 层不�
 `sourceRevision`。
 
 AI Storage provider 保证单个 StorageKey 的原子 bytes 和它声明的读取一致性。Agent Registry
-负责跨 Resource、Version、Storage pointer、digest 和派生目录的编排，并执行校验、幂等重试
-和失败补偿。Publish 前必须重新读取内容并校验 digest。
+负责跨 Resource、Version、Storage pointer、digest 和派生目录的编排，并执行校验与跨存储失败处理。Publish 前必须重新读取内容并校验 digest。
 
 Draft 更新先校验目标 Version 等于 Resource 当前 `editingVersion` 且仍为 draft，再覆盖该
 Version 已有的固定 StorageKey，最后复用 AI Resource 现有的 `updateStorageAndDesc` 更新
@@ -561,7 +564,8 @@ Storage pointer 与说明。Agent 层不增加资源专用的 compare-and-set �
 `ai_resource_version` 和 AI Storage 的条件更新属于通用 AI Resource 能力，后续必须由
 Agent、Prompt、Skill 和 AgentSpec 统一采用。
 
-Storage 写入成功但元数据写入失败时，形成可观测的不完整操作，并通过重试或孤儿内容清理处理。
+Storage 写入成功但元数据写入失败时，形成可观测的不完整操作。Client 发布直接报错，
+不自动重试；未引用内容可能需要后续清理。结果不确定时不得删除可能仍被引用的对象。
 Digest 不一致时不得返回未校验内容。`versionCatalog` 和 Resource Version 摘要是可重建
 派生数据；其一致性不得下放给 Storage provider。
 
@@ -624,3 +628,24 @@ Runtime 等价、重试、Connection 清理、切流、回滚和延期旧 Servic
 
 可选 Shadow 只表达历史精确 Version A2A Publication 请求，不是第二个 RAD 事实源，也不支持
 通用 RAD Version Range。这套临时双物化实现计划在 Nacos 4.0 删除，且不改变标准 Runtime Layout。
+
+## 地址模型统一的验收
+
+AgentVersionContent 容器可复用统一 CallInterface/EndpointSet/Endpoint，存储只保存完整定义、声明地址及来源配置；不考虑 BETA 旧格式兼容。注册 healthy 映射为当前 Naming contribution health，后续活性处理保持；Runtime/健康/观测/revision 不进入版本内容。验证新格式读回、实际 bytes 的 digest、迁移读回及运行变化不影响定义。
+
+统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### 去注解后的公开 Endpoint 与存储投影
+
+公开 Endpoint 默认值及可选引用的 null 输出不扩大 AgentVersionContent。声明地址仅存储 uri、transport、生效 priority/weight 与 metadata；读回补出 healthy/enabled=true，这些字段不落库，提交的状态/健康变化不影响版本 bytes 和 contentDigest。内部 storage schema v1 不变。Artifact 公开序列化遵循更新后的 Schema，contentDigest 仍标识存储定义的 bytes。
+
+定义存储要求来源顺序恰好包含两种来源，保留推荐顺序；写前和读回校验均拒绝单来源定义，不增加 BETA 存储升级兼容。
+
+### Client 发布范围（C05）
+
+Client 发布复用原有固定 key 内容存储和草稿流程，仅增加首版普通 submit、当前可编辑草稿完整覆盖、
+非草稿 no-op 的业务编排。不引入独立写入 key、对象回收、Agent 专用多行 CAS 事务或存储可见性等待。
+首版判定读取包含所有状态的持久化版本集合，不新增并发创建的原子判定保证。
+跨存储写入一致性、并发草稿更新等既有边界留待统一 AI Resource 存储机制设计处理。
+
+历史空 protocolVersion 按缺省处理；空 tenant 保留。

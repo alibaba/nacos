@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.junit.jupiter.api.Test;

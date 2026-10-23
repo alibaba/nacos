@@ -18,16 +18,17 @@ package com.alibaba.nacos.client.auth.impl.process;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,7 +38,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -65,6 +68,17 @@ class HttpLoginProcessorTest {
     }
     
     @Test
+    @EnabledIfSystemProperty(named = "nacos.test.json.jackson3-only", matches = "true")
+    void testJackson3OnlyRuntime() {
+        ClassLoader loader = getClass().getClassLoader();
+        assertThrows(ClassNotFoundException.class,
+            () -> loader.loadClass("com.fasterxml.jackson.core.JsonProcessingException"));
+        assertThrows(ClassNotFoundException.class,
+            () -> loader.loadClass("com.fasterxml.jackson.databind.ObjectMapper"));
+        assertEquals("jackson3", JsonUtils.selectedAdapterName());
+    }
+    
+    @Test
     void testGetResponseSuccess() throws Exception {
         properties.setProperty(NacosAuthLoginConstant.SERVER, "http://localhost:8848");
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v3/auth/user/login"),
@@ -74,10 +88,23 @@ class HttpLoginProcessorTest {
         Map<String, String> mockMap = new HashMap<>();
         mockMap.put(Constants.ACCESS_TOKEN, "mock_access_token");
         mockMap.put(Constants.TOKEN_TTL, "100L");
-        when(result.getData()).thenReturn(JacksonUtils.toJson(mockMap));
+        when(result.getData()).thenReturn(JsonUtils.toJson(mockMap));
         LoginIdentityContext actual = loginProcessor.getResponse(properties);
         assertEquals("mock_access_token", actual.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
         assertEquals("100L", actual.getParameter(NacosAuthLoginConstant.TOKENTTL));
+    }
+    
+    @Test
+    void testNullJsonResponseHasNoToken() throws Exception {
+        properties.setProperty(NacosAuthLoginConstant.SERVER, "localhost");
+        when(restTemplate.postForm(anyString(), eq(Header.EMPTY), any(Query.class), anyMap(),
+            eq(String.class)))
+            .thenReturn(result);
+        when(result.ok()).thenReturn(true);
+        when(result.getData()).thenReturn("null");
+        LoginIdentityContext context = loginProcessor.getResponse(properties);
+        assertNotNull(context);
+        assertNull(context.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
     @Test
@@ -132,7 +159,7 @@ class HttpLoginProcessorTest {
         Map<String, String> mockMap = new HashMap<>();
         mockMap.put(Constants.ACCESS_TOKEN, "mock_access_token");
         mockMap.put(Constants.TOKEN_TTL, "100L");
-        when(result.getData()).thenReturn(JacksonUtils.toJson(mockMap));
+        when(result.getData()).thenReturn(JsonUtils.toJson(mockMap));
         when(restTemplate.postForm(eq("http://localhost:8848/nacos/v1/auth/users/login"),
             eq(Header.EMPTY),
             any(Query.class), anyMap(), eq(String.class))).thenReturn(result);

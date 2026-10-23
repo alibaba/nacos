@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -35,13 +36,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
@@ -121,10 +127,36 @@ class DefaultHttpClientRequestTest {
         assertEquals(response, getActualResponse(actual));
     }
     
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testNonRepeatableMarkerDoesNotCreateABodyForEmptyGet() throws Exception {
+        HttpUriRequestBase request = DefaultHttpClientRequest.build(uri, "GET",
+            new RequestHttpEntity(null, Header.newInstance(), Query.EMPTY, null, false),
+            defaultConfig);
+        org.junit.jupiter.api.Assertions.assertNull(request.getEntity());
+        assertEquals("GET", request.getMethod());
+    }
+    
     private SimpleHttpResponse getActualResponse(HttpClientResponse actual)
         throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("response");
         field.setAccessible(true);
         return (SimpleHttpResponse) field.get(actual);
     }
+    
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testNonRepeatableFormPreservesContentAndDefaultPolicy() throws Exception {
+        Header header = Header.newInstance().setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        Map<String, String> body = Collections.singletonMap("name", "agent");
+        HttpUriRequestBase once = DefaultHttpClientRequest.build(uri, "POST",
+            new RequestHttpEntity(null, header, null, body, false), defaultConfig);
+        assertFalse(once.getEntity().isRepeatable());
+        assertEquals("name=agent", IoUtils.toString(
+            once.getEntity().getContent(), "UTF-8"));
+        HttpUriRequestBase ordinary = DefaultHttpClientRequest.build(uri, "POST",
+            new RequestHttpEntity(header, body), defaultConfig);
+        assertTrue(ordinary.getEntity().isRepeatable());
+    }
+    
 }

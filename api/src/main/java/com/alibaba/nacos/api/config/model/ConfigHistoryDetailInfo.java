@@ -33,6 +33,19 @@ public class ConfigHistoryDetailInfo extends ConfigHistoryBasicInfo {
     
     private String extInfo;
     
+    /**
+     * Schema text from this history record; null when absent.
+     */
+    private String schema;
+    
+    public String getSchema() {
+        return schema;
+    }
+    
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+    
     public String getContent() {
         return content;
     }

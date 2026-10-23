@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 
 /**
  * JSON field parser shared by Agent Admin forms.
@@ -40,19 +40,19 @@ final class AgentAdminFormJsonParser {
             return null;
         }
         try {
-            return JacksonUtils.toObj(value, targetType);
+            return JsonUtils.toObj(value, targetType);
         } catch (NacosDeserializationException e) {
             throw invalidJson(fieldName);
         }
     }
     
     static <T> T parseOptional(String fieldName, String value,
-        TypeReference<T> targetType) throws NacosApiException {
+        NacosTypeReference<T> targetType) throws NacosApiException {
         if (StringUtils.isBlank(value)) {
             return null;
         }
         try {
-            return JacksonUtils.toObj(value, targetType);
+            return JsonUtils.toObj(value, targetType);
         } catch (NacosDeserializationException e) {
             throw invalidJson(fieldName);
         }

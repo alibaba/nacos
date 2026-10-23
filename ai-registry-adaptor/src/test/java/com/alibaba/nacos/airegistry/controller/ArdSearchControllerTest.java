@@ -68,6 +68,22 @@ class ArdSearchControllerTest {
     private ArdArtifactService ardArtifactService;
     
     @Test
+    void searchShouldExposeEnhancementHeaderWithoutChangingBody() throws Exception {
+        ArdSearchRequest request = new ArdSearchRequest();
+        ArdSearchResponse response = new ArdSearchResponse();
+        response.setEnhancementStatus("applied");
+        when(ardSearchService.search(request)).thenReturn(response);
+        org.springframework.mock.web.MockHttpServletResponse http =
+            new org.springframework.mock.web.MockHttpServletResponse();
+        assertSame(response, controller().search("tenant-a", request, http));
+        assertEquals("applied", http.getHeader("X-Nacos-ARD-Enhancement"));
+        org.junit.jupiter.api.Assertions.assertFalse(
+            com.alibaba.nacos.common.utils.JacksonUtils.toObj(
+                com.alibaba.nacos.common.utils.JacksonUtils.toJson(response))
+                .has("enhancementStatus"));
+    }
+    
+    @Test
     void searchShouldReturnRawArdResponse() throws NacosException {
         ArdSearchController controller = controller();
         ArdSearchRequest request = new ArdSearchRequest();

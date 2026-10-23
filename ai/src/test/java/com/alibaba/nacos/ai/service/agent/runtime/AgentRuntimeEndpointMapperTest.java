@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.ai.service.agent.runtime;
 
+import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +46,55 @@ class AgentRuntimeEndpointMapperTest {
         com.alibaba.nacos.naming.constants.Constants.PUBLISH_INSTANCE_WEIGHT;
     
     @Test
+    void publicTenantUsesTheSharedMetadataCodePointLimit() {
+        Endpoint endpoint = endpoint("https://example.com/agent", "HTTP+JSON");
+        String tenant = "🚀".repeat(256);
+        endpoint.setMetadata(Collections.singletonMap("__nacos.agent.endpoint.tenant__", tenant));
+        Instance instance = AgentRuntimeEndpointMapper.toInstance(endpoint, "1.0.0", null);
+        assertEquals(tenant, AgentRuntimeEndpointMapper.fromInstance(instance)
+            .getMetadata().get("__nacos.agent.endpoint.tenant__"));
+    }
+    
+    @Test
+    void reservedCompatibilityValuesRoundTripAndInvalidValuesAreRejected() {
+        Instance instance = validInstance();
+        instance.getMetadata().put("__nacos.agent.endpoint.protocolVersion__", "1.0");
+        instance.getMetadata().put("__nacos.agent.endpoint.tenant__", "");
+        Endpoint endpoint = AgentRuntimeEndpointMapper.fromInstance(instance);
+        assertEquals("1.0", endpoint.getMetadata().get("__nacos.agent.endpoint.protocolVersion__"));
+        assertEquals("", endpoint.getMetadata().get("__nacos.agent.endpoint.tenant__"));
+        instance.getMetadata().put("__nacos.agent.endpoint.protocolVersion__", "bad version");
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentRuntimeEndpointMapper.fromInstance(instance));
+        instance.getMetadata().put("__nacos.agent.endpoint.protocolVersion__", "1.0");
+        instance.getMetadata().put("__nacos.agent.endpoint.tenant__", repeat('x', 257));
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentRuntimeEndpointMapper.fromInstance(instance));
+    }
+    
+    @Test
+    void shouldAcceptHealthAndEnabledWithResolvedVersionBinding() {
+        Endpoint source = endpoint("https://example.com/agent", "HTTP");
+        RuntimeVersionBinding forged = new RuntimeVersionBinding();
+        forged.setRuntimeVersion("9.0.0");
+        forged.setVersionRange("invalid-but-ignored");
+        source.setBindings(Collections.singletonList(forged));
+        source.setEnabled(false);
+        source.setHealthy(false);
+        Instance instance = AgentRuntimeEndpointMapper.toInstance(source, "1.0.0", "[1.0.0,2.0.0)");
+        Endpoint restored = AgentRuntimeEndpointMapper.fromInstance(instance);
+        assertFalse(restored.getHealthy());
+        assertFalse(restored.getEnabled());
+        assertEquals("1.0.0", restored.getBindings().get(0).getRuntimeVersion());
+        assertEquals("[1.0.0,2.0.0)", restored.getBindings().get(0).getVersionRange());
+        assertEquals("9.0.0", source.getBindings().get(0).getRuntimeVersion());
+        source.setHealthy(true);
+        assertTrue(AgentRuntimeEndpointMapper.toInstance(source, "1.0.0", null).isHealthy());
+        source = endpoint("https://example.com/agent", "HTTP");
+        assertTrue(AgentRuntimeEndpointMapper.toInstance(source, "1.0.0", null).isHealthy());
+    }
+    
+    @Test
     void testMapEndpointToNamingAndBack() {
         Endpoint endpoint = endpoint("HTTPS://EXAMPLE.COM/a2a?tenant=nacos", "HTTP+JSON");
         endpoint.setPriority(3);
@@ -63,7 +111,7 @@ class AgentRuntimeEndpointMapperTest {
         assertEquals("enc-HTTP-043JSON", instance.getClusterName());
         assertEquals(2.5D, instance.getWeight());
         assertTrue(instance.isEnabled());
-        assertTrue(instance.isHealthy());
+        assertFalse(instance.isHealthy());
         assertTrue(instance.isEphemeral());
         Map<String, String> metadata = instance.getMetadata();
         assertEquals("/a2a", metadata.get(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
@@ -81,18 +129,17 @@ class AgentRuntimeEndpointMapperTest {
         
         instance.setEnabled(false);
         instance.setHealthy(false);
-        RuntimeEndpointSnapshotItem result =
-            AgentRuntimeEndpointMapper.fromInstance(instance, 1234L);
+        Endpoint result =
+            AgentRuntimeEndpointMapper.fromInstance(instance);
         
-        assertEndpoint(result.getEndpoint(), "https://example.com:443/a2a?tenant=nacos",
+        assertEndpoint(result, "https://example.com:443/a2a?tenant=nacos",
             "HTTP+JSON", 3, 2.5D);
-        assertEquals("cn-hangzhou", result.getEndpoint().getMetadata().get("region"));
+        assertEquals("cn-hangzhou", result.getMetadata().get("region"));
         assertEquals("1.0.0", result.getBindings().get(0).getRuntimeVersion());
         assertEquals("[1.0.0]", result.getBindings().get(0).getVersionRange());
         assertFalse(result.getEnabled());
         assertFalse(result.getHealthy());
-        assertEquals(RuntimeEndpointState.DISABLED, result.getState());
-        assertEquals(1234L, result.getLastUpdatedTime());
+        
     }
     
     @Test
@@ -115,30 +162,32 @@ class AgentRuntimeEndpointMapperTest {
         Instance ipv6Instance = AgentRuntimeEndpointMapper.toInstance(
             endpoint("wss://[2001:0DB8:0:0:0:0:0:1]/rpc", "websocket"),
             "1.0.0", "[1.0.0]");
-        RuntimeEndpointSnapshotItem result =
-            AgentRuntimeEndpointMapper.fromInstance(ipv6Instance, 1L);
+        Endpoint result =
+            AgentRuntimeEndpointMapper.fromInstance(ipv6Instance);
         
         assertEquals("2001:db8::1", ipv6Instance.getIp());
         assertEquals(443, ipv6Instance.getPort());
-        assertEquals("wss://[2001:db8::1]:443/rpc", result.getEndpoint().getUri());
+        assertEquals("wss://[2001:db8::1]:443/rpc", result.getUri());
     }
     
     @Test
-    void testAcceptLegacyMetadataWithoutExposingIt() {
+    void testExposeLegacyMetadataThroughTheSameReservedKeys() {
         Instance instance = validInstance();
         instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "1.0");
         instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, "public");
         
-        RuntimeEndpointSnapshotItem result =
-            AgentRuntimeEndpointMapper.fromInstance(instance, 1L);
+        Endpoint result =
+            AgentRuntimeEndpointMapper.fromInstance(instance);
         
-        assertNull(result.getEndpoint().getMetadata());
-        assertEquals("https://example.com:443/agent", result.getEndpoint().getUri());
+        assertEquals("1.0", result.getMetadata().get("__nacos.agent.endpoint.protocolVersion__"));
+        assertEquals("public", result.getMetadata().get("__nacos.agent.endpoint.tenant__"));
+        assertFalse(result.getMetadata().containsKey(Constants.Agent.AGENT_ENDPOINT_PATH_KEY));
+        assertEquals("https://example.com:443/agent", result.getUri());
         
         instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "");
         instance.getMetadata().put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, "");
         assertEquals("https://example.com:443/agent",
-            AgentRuntimeEndpointMapper.fromInstance(instance, 1L).getEndpoint().getUri());
+            AgentRuntimeEndpointMapper.fromInstance(instance).getUri());
     }
     
     @Test
@@ -148,18 +197,18 @@ class AgentRuntimeEndpointMapperTest {
             "0.3", "tenant-a");
         
         assertEquals("0.3", instance.getMetadata().get(
-            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+            "__nacos.agent.endpoint.protocolVersion__"));
         assertEquals("tenant-a", instance.getMetadata().get(
-            Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
+            "__nacos.agent.endpoint.tenant__"));
         assertTrue(AgentRuntimeEndpointMapper.supportsVersion(instance, "1.0.0"));
         assertFalse(AgentRuntimeEndpointMapper.supportsVersion(instance, "2.0.0"));
         
         Instance withoutOptionalMetadata = AgentRuntimeEndpointMapper.toLegacyA2aInstance(
             endpoint, "1.0.0", "", null);
         assertFalse(withoutOptionalMetadata.getMetadata().containsKey(
-            Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+            "__nacos.agent.endpoint.protocolVersion__"));
         assertFalse(withoutOptionalMetadata.getMetadata().containsKey(
-            Constants.Agent.AGENT_ENDPOINT_TENANT_KEY));
+            "__nacos.agent.endpoint.tenant__"));
     }
     
     @Test
@@ -178,13 +227,13 @@ class AgentRuntimeEndpointMapperTest {
         Instance instance = validInstance();
         instance.getMetadata().put("region", "cn-hangzhou");
         
-        RuntimeEndpointSnapshotItem result =
-            AgentRuntimeEndpointMapper.fromInstance(instance, 1234L);
-        result.getEndpoint().getMetadata().put("region", "outside");
+        Endpoint result =
+            AgentRuntimeEndpointMapper.fromInstance(instance);
+        result.getMetadata().put("region", "outside");
         
         assertEquals("cn-hangzhou", instance.getMetadata().get("region"));
-        assertEquals(RuntimeEndpointState.AVAILABLE, result.getState());
-        assertEquals(1234L, result.getLastUpdatedTime());
+        assertEquals(Boolean.TRUE, result.getHealthy());
+        
     }
     
     @Test
@@ -192,10 +241,10 @@ class AgentRuntimeEndpointMapperTest {
         Instance instance = validInstance();
         instance.setHealthy(false);
         
-        RuntimeEndpointSnapshotItem result =
-            AgentRuntimeEndpointMapper.fromInstance(instance, 1L);
+        Endpoint result =
+            AgentRuntimeEndpointMapper.fromInstance(instance);
         
-        assertEquals(RuntimeEndpointState.UNHEALTHY, result.getState());
+        assertEquals(Boolean.FALSE, result.getHealthy());
     }
     
     @Test
@@ -246,7 +295,7 @@ class AgentRuntimeEndpointMapperTest {
     @Test
     void testRejectInvalidNamingIdentityAndMetadataShape() {
         assertThrows(IllegalArgumentException.class,
-            () -> AgentRuntimeEndpointMapper.fromInstance(null, 1L));
+            () -> AgentRuntimeEndpointMapper.fromInstance(null));
         assertInvalidInstance(value -> value.setMetadata(null));
         assertInvalidInstance(value -> value.setIp(null));
         assertInvalidInstance(value -> value.setIp(repeat('a', 254)));
@@ -272,7 +321,7 @@ class AgentRuntimeEndpointMapperTest {
             Instance instance = validInstance();
             instance.getMetadata().remove(key);
             assertThrows(IllegalArgumentException.class,
-                () -> AgentRuntimeEndpointMapper.fromInstance(instance, 1L), key);
+                () -> AgentRuntimeEndpointMapper.fromInstance(instance), key);
         }
     }
     
@@ -321,7 +370,7 @@ class AgentRuntimeEndpointMapperTest {
         Instance instance = validInstance();
         mutation.accept(instance);
         assertThrows(IllegalArgumentException.class,
-            () -> AgentRuntimeEndpointMapper.fromInstance(instance, 1L));
+            () -> AgentRuntimeEndpointMapper.fromInstance(instance));
     }
     
     private Instance validInstance() {
@@ -342,7 +391,6 @@ class AgentRuntimeEndpointMapperTest {
         assertEquals(transport, endpoint.getTransport());
         assertEquals(priority, endpoint.getPriority());
         assertEquals(weight, endpoint.getWeight());
-        assertNull(endpoint.getHealthy());
     }
     
     private String repeat(char value, int count) {

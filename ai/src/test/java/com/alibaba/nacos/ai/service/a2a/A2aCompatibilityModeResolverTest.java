@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationState;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationStateService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -31,6 +34,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class A2aCompatibilityModeResolverTest {
+    
+    @Test
+    void shouldFenceRadUntilCanonicalAuthorityIsObserved() throws Exception {
+        A2aMigrationStateService stateService = mock(A2aMigrationStateService.class);
+        for (String configured : new String[] {"LEGACY", "AUTO"}) {
+            A2aCompatibilityMode mode = A2aCompatibilityMode.valueOf(configured);
+            AgentClientMigrationGuard guard = new AgentClientMigrationGuard(
+                new A2aCompatibilityModeResolver(stateService, () -> configured));
+            for (A2aMigrationState state : new A2aMigrationState[] {
+                null, A2aMigrationState.SYNCING, A2aMigrationState.QUIESCING}) {
+                when(stateService.resolve(mode)).thenReturn(state);
+                assertEquals(ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode(),
+                    assertThrows(NacosApiException.class, guard::checkReady).getDetailErrCode());
+            }
+            when(stateService.resolve(mode)).thenReturn(A2aMigrationState.CANONICAL);
+            guard.checkReady();
+        }
+        new AgentClientMigrationGuard(new A2aCompatibilityModeResolver(stateService,
+            () -> "CANONICAL")).checkReady();
+    }
     
     @Test
     void shouldDefaultToCanonical() {

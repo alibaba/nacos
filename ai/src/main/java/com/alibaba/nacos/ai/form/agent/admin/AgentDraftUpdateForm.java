@@ -17,9 +17,9 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 
 import java.io.Serial;
 import java.util.List;
@@ -59,7 +59,7 @@ public class AgentDraftUpdateForm extends AgentVersionForm {
         result.setAgentName(getAgentName());
         result.setVersion(getVersion());
         result.setCallInterfaces(AgentAdminFormJsonParser.parseOptional("callInterfaces",
-            callInterfaces, new TypeReference<List<AgentCallInterface>>() {
+            callInterfaces, new NacosTypeReference<List<AgentCallInterface>>() {
             }));
         result.setChangeDescription(changeDescription);
         result.validate();

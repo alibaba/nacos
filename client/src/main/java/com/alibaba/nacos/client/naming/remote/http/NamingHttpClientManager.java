@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.remote.RequestIdHttpClientRequestInterceptor;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -81,6 +82,13 @@ public class NamingHttpClientManager implements Closeable {
     }
     
     private static class NamingHttpClientFactory extends AbstractHttpClientFactory {
+        
+        @Override
+        public NacosRestTemplate createNacosRestTemplate() {
+            NacosRestTemplate template = super.createNacosRestTemplate();
+            template.getInterceptors().add(new RequestIdHttpClientRequestInterceptor());
+            return template;
+        }
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {

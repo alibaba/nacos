@@ -48,6 +48,21 @@ public interface AiResourceVersionPersistService {
         String storage, String desc);
     
     /**
+     * Replace the mutable content fields of a Version using the ordinary update path.
+     *
+     * @param namespaceId namespace
+     * @param name resource name
+     * @param type resource type
+     * @param version exact version
+     * @param storage serialized content descriptor
+     * @param desc change description
+     * @param author replacement author
+     * @return affected row count
+     */
+    int updateContent(String namespaceId, String name, String type, String version,
+        String storage, String desc, String author);
+    
+    /**
      * Update only the {@code contentMd5} entry inside the {@code storage} JSON column. The provider,
      * scope and files entries are preserved by performing a read-merge-write on the existing row.
      *

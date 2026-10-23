@@ -26,9 +26,16 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.oracle.TrustedOracleFuncti
  */
 public class OracleDatabaseDialect extends AbstractDatabaseDialect {
     
+    private static final String DEFAULT_DRIVER_CLASS_NAME = "oracle.jdbc.OracleDriver";
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.ORACLE;
+    }
+    
+    @Override
+    public String getDefaultDriverClassName() {
+        return DEFAULT_DRIVER_CLASS_NAME;
     }
     
     @Override

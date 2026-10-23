@@ -18,8 +18,8 @@ package com.alibaba.nacos.ai.service.a2a.migration;
 
 import com.alibaba.nacos.ai.service.a2a.A2aCanonicalDefinitionConverter;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -116,7 +116,7 @@ public class A2aHistoricalDefinitionReconciler {
         if (latestRequest == null) {
             throw new IllegalStateException("Historical A2A latest Version content is missing");
         }
-        Agent agent = new Agent();
+        AgentSummary agent = new AgentSummary();
         agent.setNamespaceId(namespaceId);
         agent.setAgentName(agentName);
         agent.setDescription(latestRequest.getDescription());

@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentAdminForm;
+import com.alibaba.nacos.ai.form.agent.admin.AgentScopeForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentDraftCreateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentDraftUpdateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentLabelsUpdateForm;
@@ -26,9 +27,8 @@ import com.alibaba.nacos.ai.form.agent.admin.AgentRuntimeEndpointForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentVersionForm;
 import com.alibaba.nacos.ai.form.agent.admin.AgentVersionListForm;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -43,6 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,9 +76,18 @@ class ConsoleAgentControllerTest {
     }
     
     @Test
+    void testScopeDelegatesValidatedForm() throws Exception {
+        AgentScopeForm form = new AgentScopeForm();
+        form.setAgentName(AGENT_NAME);
+        form.setScope("PRIVATE");
+        assertEquals("ok", controller.updateScope(form).getData());
+        verify(agentProxy).updateScope("public", AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryConsoleOperation() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent agent = new Agent();
+        AgentSummary agent = new AgentSummary();
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();

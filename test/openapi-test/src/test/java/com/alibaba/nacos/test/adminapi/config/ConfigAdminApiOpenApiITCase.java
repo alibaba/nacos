@@ -22,12 +22,17 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Integration tests for config admin OpenAPI {@code /nacos/v3/admin/cs/config}.
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: publish creates a config, republish updates its content, query returns the admin detail
+ *     <li>Expected capability: inherited optional source user and app name bind and persist; publish creates a config, republish updates its content, query returns the admin detail
  *     model, metadata update changes description and config tags, and delete removes the config.</li>
  *     <li>Boundary/validation: omitted namespaceId is stored as public, invalid config type is normalized to text,
  *     {@code dataId}, {@code groupName}, and {@code content} are required, embedded dots remain valid in Config names,
@@ -40,6 +45,29 @@ import org.junit.jupiter.api.Test;
  * @author xiweng.yy
  */
 public class ConfigAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
+
+    @Test
+    public void testPublishConfigWithInheritedOptionalFields() throws Exception {
+        String dataId = randomDataId("binding");
+        String groupName = randomGroupName("binding");
+        String content = "binding=optional-fields";
+        Map<String, String> form = Map.of("dataId", dataId, "groupName", groupName,
+                "namespaceId", DEFAULT_NAMESPACE, "content", content,
+                "type", ConfigType.PROPERTIES.getType(), "desc", "binding description",
+                "configTags", "binding-tag", "srcUser", "form-source-user",
+                "appName", "form-binding-app");
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, DEFAULT_NAMESPACE));
+        JsonNode result = postFormOk(ADMIN_CONFIG_PATH, form);
+        assertTrue(result.get("data").asBoolean(), result.toString());
+
+        JsonNode detail = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertConfigDetail(detail, dataId, groupName, DEFAULT_NAMESPACE, content,
+                ConfigType.PROPERTIES.getType());
+        assertEquals("form-source-user", detail.get("createUser").asText(), detail.toString());
+        assertEquals("form-binding-app", detail.get("appName").asText(), detail.toString());
+        assertConfigMetadata(detail, "binding description", "binding-tag");
+    }
+
     
     @Test
     public void testPublishQueryUpdateMetadataAndDeleteConfig() throws Exception {

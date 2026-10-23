@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.runtime;
 
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.api.ai.model.agent.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;

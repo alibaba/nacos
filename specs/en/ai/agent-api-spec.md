@@ -52,7 +52,7 @@ HTTP APIs follow the Nacos v3 conventions:
 
 The six RAD root messages are reused without creating another domain model.
 Java may represent `AgentCatalogPage` as an equivalent
-`Page<AgentCatalogEntry>`. `Result<T>`, gRPC wrappers,
+`Page<AgentSummary>`. `Result<T>`, gRPC wrappers,
 `ClientLivenessInfo`, and Console-only views are binding objects and are not
 part of the RAD Schema.
 
@@ -88,16 +88,62 @@ current `editingVersion` and remains in `draft` status. Lists are paged; a
 | HTTP registration cannot establish or retain its Client, or heartbeat cannot find the Client/publication | HTTP 404 and the distinct `HTTP_CLIENT_NOT_FOUND (50404)` application code |
 | Unsupported negotiated transport capability | Local `FEATURE_NOT_SUPPORTED`; no remote request |
 | Deregistration of a missing contribution | Success without change |
-| Valid runtime query with no instances | Success with `items=[]` |
+| Valid runtime query with no instances | Success with `callInterface.endpointSets[0].endpoints=[]` |
 | Discover filter matches no value | A typed empty result as defined by RAD, not `NOT_FOUND` |
 
 HTTP status and `Result.code` use the common v3 exception mapping. gRPC
 responses expose equivalent error categories. `HTTP_CLIENT_NOT_FOUND` is fixed
 at `50404`; it must not alias ordinary `RESOURCE_NOT_FOUND`.
 
+### External RAD migration admission
+
+While the node's effective A2A authority is historical, native RAD Client Search, Discover,
+Publish, complete Endpoint Register, and Watch admission/subsequent business reads MUST reject
+with HTTP 409 / `AGENT_MIGRATION_IN_PROGRESS (50105)`. gRPC preserves the same detail code.
+The binding checks admission after authentication and necessary input checks, before business
+mutation or owner creation. Unprojected names and unrelated standard Agents are also fenced.
+This is neither unsupported RAD nor a reason to fall back to the legacy protocol.
+
+Reuse A2A effective-mode resolution: LEGACY, AUTO without a plan, AUTO/SYNCING and AUTO/QUIESCING
+reject; fresh CANONICAL and an observed permanent CANONICAL marker allow access. A missing
+marker alone does not prove readiness. Capability queries still advertise implementation support.
+Whole-publication Deregister, local cancellation/shutdown, and existing legitimate owner heartbeats
+retain their normal authentication/ownership checks. SDK partial deregistration that Registers a
+remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
+whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
+Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
+50105, and subsequent Discover is also fenced. Initially rejected calls must be retried after
+cutover. Already accepted Java SDK subscriptions retain local state and retry automatically;
+50105 is never a discovery data event.
+
+Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
+Admin/Console, migration, indexing and internal projection retain their existing rules so migration
+cannot fence itself. The historical QUIESCING mutation barrier remains unchanged.
+
 ## 2. Client API
 
 ### 2.1 Java SDK Contract
+
+`AiService.getAgentDiscoveryCapability()` returns the existing `AbilityStatus` for RAD evidence
+on the effective Agent transport. Its default returns `UNKNOWN` without calling `agent()`,
+preserving compatibility with old third-party implementations. The official implementation:
+
+- Returns `SUPPORTED` for positive evidence, `NOT_SUPPORTED` for reliable negative evidence,
+  and `UNKNOWN` for absent negotiation or declarations. Authentication, connection and probe
+  failures retain their `NacosException`; they are never converted or cached as unsupported.
+- Reads only the current connection for explicit gRPC, returning `UNKNOWN` when disconnected.
+  HTTP reuses bounded capability caching scoped by target URL and identity. AUTO prefers current
+  positive gRPC RAD evidence, otherwise HTTP. The query neither starts another gRPC connection
+  nor probes business APIs such as Discover/publication, nor selects or changes the A2A facade route.
+- Infers unsupported RAD from existing positive legacy gRPC negotiation only when missing HTTP
+  evidence belongs to the sole matching configured target. It never caches this as HTTP false or
+  generalizes one node to the cluster. Reconnect invalidates HTTP evidence.
+- May block on a cold HTTP lookup and try multiple unreachable addresses. Per-connection/read
+  timeouts do not constitute an overall query deadline. After shutdown it throws
+  `CLIENT_DISCONNECT` without probing.
+- Does not promise resource existence/visibility, authorization or migration readiness. A
+  `SUPPORTED` result may coexist with `AGENT_MIGRATION_IN_PROGRESS` on a business operation;
+  callers handle that operation's contract without automatic legacy fallback.
 
 The user-facing interface is named `AgentDiscoveryService`; the RAD acronym is
 not required in application code. During A2A compatibility:
@@ -108,37 +154,84 @@ AiService.agent() -> AgentService extends AgentDiscoveryService, A2aService
 
 | Capability | Method | Input | Result |
 |---|---|---|---|
-| Search | `searchAgents` | `AgentSearchQuery` without a caller-controlled namespace | `Page<AgentCatalogEntry>` |
+| Search | `searchAgents` | `AgentSearchRequest` without a caller-controlled namespace | `Page<AgentSummary>` |
 | Discover | `discoverAgent` | `AgentReference` | `AgentDiscoveryResult` |
 | Filtered Discover | `discoverAgent` | `AgentReference`, `AgentDiscoveryFilter` | `AgentDiscoveryResult` |
-| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | Current `AgentDiscoveryResult`, or `null` while the target is absent |
+| Watch subscription | `subscribeAgent` | Reference, optional Filter, Listener | `void`; initial state and later changes arrive through the Listener |
 | Cancel Watch subscription | `unsubscribeAgent` | Same Reference, Filter, and Listener identity | `void` |
-| Register | `registerAgentEndpoints` | `AgentEndpointRegistration` | `void` |
-| Deregister | `deregisterAgentEndpoints` | `AgentEndpointDeregistration` | `void` |
+| Register | `registerAgentEndpoints` | `AgentEndpointRegistrationBatch` | `void` |
+| Deregister | `deregisterAgentEndpoints` | `agentName, protocol, List<Endpoint>` | `void` |
 | Code-first publish | `publishAgent` | `AgentPublishRequest` | `AgentVersionDetail` |
 
 `subscribeAgent` is a transport-neutral SDK Watch. When the selected transport
 and both peers advertise Watch, the SDK installs server-aware Wire Intent;
 otherwise it preserves compatibility through bounded local Discover polling.
-The initial successful Discover result is returned synchronously. If the target
-is absent, the call returns `null` and retains a bounded pending intent. A
-later Watch hint or fallback poll invokes the same authorized Discover. The
-Listener receives only a new complete replacement result whose canonical
-fingerprint differs from the cached result; it never receives a Wire hint.
+Both `subscribeAgent` overloads return `void`. Each newly accepted Listener receives
+its current complete state through the same serialized dispatcher as later changes;
+an absent target receives the existing `UNAVAILABLE` state and remains pending.
+Adding a new Listener to an existing canonical Watch also supplies its current state;
+repeating the same Listener is idempotent and does not resend initialization.
+The first callback may run before or after the method returns. Callers prepare all
+Listener state before subscribing and update their view only from callbacks.
+A later Watch hint or fallback poll invokes the same authorized Discover. Unchanged
+fingerprints do not generate another data callback, and Wire hints are never exposed.
+
+State selection, notification sequence assignment and registration happen atomically
+under the manager lock; user code runs outside that lock. Initialization already
+superseded by a new notification must not be re-enqueued as newer data. Delivery may
+be A then B, or only B, but never B then stale initialization A. A real later return to
+A remains a new state. Removal and shutdown invalidate queued initialization.
+If Discover reads A before Watch installation observes B, existing gRPC
+`refreshRequired` / `observedFingerprint` or the initial HTTP changed-ID response
+triggers another Discover; activation records dirty state until refresh can run.
+HTTP/gRPC paths, request/response fields and server contracts remain unchanged.
+The legacy A2A subscribe return value remains, using the same initialization dispatcher
+without duplicate initialization.
 `getAll`, `selectOneHealthy`, protocol choice, priority/weight selection, and
 actual Agent calling are local SDK helpers, not additional remote operations.
 
 `NacosAgentDiscoveryEvent` has event types `SNAPSHOT` and `UNAVAILABLE`. Its
 existing `NacosAgentDiscoveryEvent(AgentDiscoveryResult)` constructor remains
 the `SNAPSHOT` constructor. A `SNAPSHOT` exposes the complete result and no
-error. `UNAVAILABLE` exposes a Nacos error code and message and no result.
-Initial validation, authorization, and local or server Watch-capacity failures
-are thrown synchronously and the rejected intent is removed from all local
-Watch state. A later terminal authorization or capacity failure emits one
-`UNAVAILABLE` event and removes the intent. A transient transport failure does
-not delete intent; reconnect or fallback re-establishes it. `NOT_FOUND` emits
-at most one unavailable transition for the current absent period, retains a
-bounded pending intent, and emits a new `SNAPSHOT` when the target recovers.
+error. `UNAVAILABLE` means authorized Discover confirmed that the requested
+Agent reference (including version/label) does not resolve. It carries the target
+not-found code/message and no result. Empty endpoints, unhealthy endpoints and
+empty filtered interfaces remain valid snapshots. Raw HTTP 404, Watch rejection,
+authorization, migration and local executor failures are not data events.
+Initial synchronous validation, authorization and capacity rejection throw and
+remove only the rejected new intent. Once accepted, a subscription lasts until
+explicit unsubscribe or service shutdown. All background failures retain intent
+and the last confirmed data, retry with bounded backoff and rate-limited logging,
+and never notify the data listener. One absence state is generated per absent
+period; recovery generates a new snapshot even when it matches the pre-deletion data.
+Rejected background task submissions remain pending for an independent retry
+entry point.
+
+Watch eventually delivers the latest complete state, rather than a log of every
+intermediate event. Each canonical Watch (namespace, reference and filter) retains
+only its latest state and a monotonically increasing local sequence. Each Listener
+tracks its handled sequence and at most one queued or running delivery, without a
+snapshot queue. A task selects current state when it executes and supplies an
+independent result copy to its Listener. Intermediate snapshots and brief UNAVAILABLE
+states may be coalesced; the latest unsuperseded state, including initialization, must
+be delivered when execution becomes available. SDK/user executor rejection and
+getExecutor failures retain the delivery difference for periodic local retry, without
+another Discover or another server change. An onEvent invocation that has already
+started and throws is logged but not automatically replayed. Cancellation and shutdown
+invalidate unexecuted work and release pending state. A saturated bounded callback pool
+may delay other listeners, but user code never runs on query/connection I/O threads and
+retained delivery memory does not grow with the number of changes. Callers bound their
+own permanently blocking I/O with timeouts.
+
+HTTP Watch acceptance is local and asynchronous. Valid responses acknowledge only
+items actually sent in the current generation. If growth exceeds quota, retain
+new items, resume the last acknowledged set and periodically retry the full current
+union with backoff. Reject further growth synchronously while quota is known to
+be exhausted; joining an existing Watch is not growth. Success of the old set alone
+does not clear the restriction. Canceling an acknowledged item can advance a retry.
+After all pending additions are canceled, cooldown permits one real new growth
+probe, without empty/synthetic requests. With no previously acknowledged items,
+retry the whole eligible set. Never discard accepted items to satisfy quota.
 
 One SDK instance keeps at most 300 distinct local Watch records
 by default. `nacosAiAgentDiscoveryMaxSubscriptions` configures that Client
@@ -171,8 +264,9 @@ because they repeat the unchanged Discover request.
 
 One registration batch is the complete desired state for the SDK publisher and
 `(namespaceId, agentName, protocol)`. Register replaces the previous batch,
-including its single `runtimeVersion` and `versionRange`; omitted Endpoints are
-removed. The SDK stores that complete batch as redo intent.
+including each Endpoint's resolved `runtimeVersion` and `versionRange`; omitted Endpoints
+are removed. Batch fields are optional per-field defaults, resolved before exact-range fallback
+and validation. The SDK stores a deep copy of the complete normalized batch as redo intent.
 
 One SDK instance has a soft watermark of 100 Endpoint publication entries
 across all retained complete intents by default;
@@ -194,32 +288,84 @@ deregistration. Existing `A2aService.releaseAgentCard` remains functional
 through the compatibility adapter.
 
 `publishAgent` is an optional, namespace-bound definition-publication step.
-`AgentPublishRequest` reuses the Version content, `basedOnVersion`, author,
-change description, and initial Agent metadata fields from
-`AgentDraftCreateRequest`, and adds `autoSubmit`, whose default is `false`.
-The caller does not supply a namespace. The proxy copies the request, uses the
-SDK namespace, and never mutates the caller's object. `autoSubmit=false` only
-creates or returns an equivalent draft. `autoSubmit=true` runs the ordinary
-submit Pipeline after draft creation and returns the final observable
-`reviewing`, `reviewed`, or `online` Version. It is not force-publish and
-endpoint registration never creates a definition implicitly.
+`AgentPublishRequest` and `AgentDraftCreateRequest` are sibling subclasses of
+`model.agent.base.AbstractAgentDraftRequest`, which holds Version content,
+`basedOnVersion`, author, change description, and initial Agent metadata fields.
+Only the Client request adds `autoSubmit`, whose default is `false`.
+The caller does not supply a namespace. The proxy defensively copies the request.
+The Client publication service uses the following rules:
 
-Equivalent retries for the same namespace, Agent, and exact Version converge.
-A draft retry is idempotent. When an earlier `autoSubmit=true` request already
-advanced equivalent content to `reviewing`, `reviewed`, or `online`, the retry
-returns the existing Version. The same request may resume an existing draft by
-changing only `autoSubmit` to `true`. Different content, author, change
-description, or explicitly supplied initial metadata is a conflict.
-`autoSubmit=false` against an advanced Version, and either mode against an
-`offline` Version, returns illegal state or conflict. A submit failure does not
-compensate by deleting the created draft.
+- Creating a Version when the Agent currently has no Versions forces ordinary submit,
+  even with autoSubmit=false. Creating an Admin/Console draft does not force submit.
+- A current editable DRAFT is completely replaced, including protocols, author and change
+  description. Its existence never counts as a new first Version; only this call's autoSubmit
+  controls submit. Existing Agent presentation, owner and scope remain unchanged.
+- Any existing REVIEWING, REVIEWED, ONLINE or OFFLINE Version is a no-op after request
+  validation, identity/WRITE/visibility checks and the migration gate. Different valid content
+  does not overwrite that Version or change latest; no-op does not load basedOnVersion content.
+- Later missing Versions use autoSubmit normally. Direct content and basedOnVersion remain
+  mutually exclusive; copied content replaces the entire definition.
+- Creation, replacement and submit are single attempts. A failure is returned directly,
+  including an uncertain write outcome; there is no equivalent-content recovery, publication
+  redo, cross-server HTTP retry or cross-transport replay. This includes transparent retries
+  inside the HTTP implementation: the Agent publication body is non-repeatable. A later explicit
+  caller invocation uses then-current state. Failure never compensates by deleting a saved draft.
 
-Client Search, registration and deregistration accept `model.agent.AgentSearchQuery`,
-`AgentEndpointRegistration` and `AgentEndpointDeregistration`. None exposes a namespace field
-or accessor. The SDK copies the inputs and injects its instance namespace into the existing
-transport DTOs, leaving caller collections/Endpoints unchanged. These unreleased 3.3 methods
-do not retain public overloads accepting namespace-bearing wire DTOs. Server HTTP/gRPC DTOs,
-authorization, query and registration semantics are unchanged.
+Only the ordinary Pipeline runs; automatic submit is not force-publish. It can result in
+reviewing/reviewed/online. Endpoint registration never implicitly creates a definition.
+Publication reuses the existing draft storage and state checks. It does not introduce a new
+cross-store transaction or concurrent-draft CAS guarantee; those shared storage concerns
+are outside this compatibility change. See Agent Storage for the existing failure boundaries.
+
+Search and complete registration use root-package `AgentSearchRequest` and
+`AgentEndpointRegistrationBatch`, containing business fields without namespace accessors.
+Partial deregistration uses
+`deregisterAgentEndpoints(String agentName, String protocol, List<Endpoint> endpoints)`;
+there is no deregistration Java Request/Batch. The SDK defensively copies caller content
+and supplies its instance namespace through HTTP parameters or the RPC envelope to query
+and registration services. Publication keys and redo data retain namespace separately.
+Partial deregistration registers the complete nonempty remainder or deregisters the whole
+publication when empty, without mutating caller objects or collections. HTTP fields,
+authorization, replacement and error semantics remain unchanged. Search/Register RPC
+namespace is on the envelope rather than nested in the business request.
+No 3.3 BETA Java compatibility wrappers are retained; historical A2A contracts are unchanged.
+
+
+### Java model binding
+
+Agent management and RAD concrete Java models share `com.alibaba.nacos.api.ai.model.agent`.
+The former `model.rad` package is removed; legacy `model.a2a` remains unchanged.
+Shared field-only classes live in `model.agent.base` as public abstract classes with protected
+constructors. Public SDK parameters, return values, DTO members and collection elements use
+concrete types. No polymorphic discriminator or additional JSON nesting is introduced.
+
+Java models use `com.alibaba.nacos.api.ai.model.agent` as the root. Shared RAD models,
+Search and RegistrationBatch stay in that package. `agent.admin` contains
+`AgentDraftCreateRequest`, `AgentDraftUpdateRequest`, `AgentUpdateRequest`,
+`AgentLabelsUpdateRequest` and `AgentVersionRequest`; `agent.client` contains `AgentPublishRequest`.
+`agent.base` contains only `AbstractAgentMetadata` and `AbstractAgentDraftRequest`, both
+abstract with protected constructors. Metadata shares metadata fields and extensions;
+Draft shares version-definition fields and draft validation. Client publication and Admin
+draft creation are sibling concrete subclasses; public APIs use concrete types.
+Shared validation lives in `com.alibaba.nacos.api.ai.utils.AgentValidationUtils`, outside model.
+Forms perform HTTP string parsing. Admin models remain shared by the Maintainer SDK,
+Console and server; namespace comes from the Form or an explicit method argument.
+JSON conversion uses `JsonUtils`/`NacosTypeReference`.
+
+Management and discovery bind to the same concrete AgentCallInterface, EndpointSet and Endpoint.
+Definition, raw runtime and discovery remain explicit projections with context-specific field constraints;
+no additional CallInterface base or Endpoint subclass is exposed.
+AgentSummary is the unified resource type; detail projections may include extensions and lists
+omit them. AgentVersionDetail still extends AgentVersionSummary and Version lists do not load
+protocol content. Management and Search use versionInfo.labels/onlineVersions with
+AgentVersionSummary entries. Search omits management fields and non-online label targets;
+management entries keep explicit empty labels arrays while Search permits omission.
+This step changes Search/Admin/Console version-metadata JSON, preserving discovery results,
+RPC envelope types, endpoints, version-storage bytes and canonical fingerprints.
+Agent/MCP shared `ClientLivenessInfo` lives in `api.ai.model`.
+
+See [the model consolidation contract](./client-ai-api-evolution-spec.md#6-agent--rad-java-model-consolidation-proposal)
+for the complete abstract-base and concrete-request inventory.
 
 ### 2.2 Transport Matrix
 
@@ -300,11 +446,11 @@ Discover routing rules.
 
 | Method | Path | Input | Result |
 |---|---|---|---|
-| GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentCatalogEntry>>` |
+| GET | `/v3/client/ai/agents/search` | RAD search query | `Result<Page<AgentSummary>>` |
 | GET | `/v3/client/ai/agents` | RAD reference and optional filter query | `Result<AgentDiscoveryResult>` |
 | POST | `/v3/client/ai/agents/watch` | Form: `generation + timeoutMillis + watches`, where `watches` is a JSON array string | `Result<AgentWatchBatchResponse>` |
 | POST | `/v3/client/ai/agents` | Form: `AgentPublishRequest`; complex fields are JSON strings | `Result<AgentVersionDetail>` |
-| POST | `/v3/client/ai/agents/endpoints` | Form: complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
+| POST | `/v3/client/ai/agents/endpoints` | Form: `namespaceId` plus complete `AgentEndpointRegistrationBatch`, with `endpoints` as a JSON string | `Result<ClientLivenessInfo>` |
 | DELETE | `/v3/client/ai/agents/endpoints` | Form: `namespaceId + agentName + protocol` publication identity | `Result<Void>` |
 | PUT | `/v3/client/ai/agents/endpoints/heartbeat` | No body | `Result<ClientLivenessInfo>` |
 
@@ -383,7 +529,7 @@ implements partial deregistration by updating its local expected batch and
 POSTing the complete remainder; it uses DELETE only when that remainder is
 empty. A direct HTTP caller likewise owns its complete desired batch. The
 three-field DELETE Form is a binding object, not a replacement for the
-application-facing `AgentEndpointDeregistrationBatch` RAD model.
+logical `AgentEndpointDeregistrationBatch` RAD command; the Java SDK exposes its three business parameters directly.
 
 Definition publication uses a dedicated Form rather than a JSON body.
 `provider`, `tags`, `extensions`, and `callInterfaces` are JSON strings; the
@@ -486,8 +632,8 @@ Disconnect removes that connection's contributions. Reconnect obtains a new
 connection id and redoes endpoints and the complete current Watch intent.
 
 The `RpcRequest` suffix distinguishes Nacos Payload wrappers from the
-transport-neutral RAD root messages. Search and Discover wrappers carry their
-corresponding RAD request. Register carries one
+transport-neutral RAD root messages. Search carries namespace on the envelope and a namespace-free business request.
+Discover continues carrying its complete RAD request. Register carries namespace on the envelope and one
 `AgentEndpointRegistrationBatch`. Deregister directly carries
 `namespaceId + agentName + protocol`; it does not introduce a separate
 identity object or accept partial Endpoint keys.
@@ -566,14 +712,15 @@ does not authorize sending a RAD payload through a legacy fallback.
 | Local or server publication capacity rejection | Throw the capacity exception and remove that identity from publication, heartbeat, and reconnect redo caches |
 | gRPC reconnect | Redo complete endpoint batches and active Watch intents under the new connection id; perform Discover when the Subscribe response requires refresh |
 | Lost, duplicate, or stale Watch hint | Mark current local intent dirty once and use current-fact Discover plus fingerprint comparison |
-| Terminal Watch authorization or capacity error | Emit one unavailable event, remove local Wire Intent, and do not retry indefinitely |
+| Background Watch rejection or execution failure | Retain accepted intent and confirmed data; retry without an error data event |
 | Transient Watch transport failure | Retain local intent and re-establish it through reconnect, AUTO routing, or polling fallback |
 | Cross-transport deregistration | Forbidden; one publisher identity cannot remove another transport's contribution |
 
 The SDK records expected state before the first write and serializes desired
 batch changes per Agent and protocol. Shutdown performs a best-effort
 whole-publication deregistration; expiry remains the cleanup fallback.
-Parameter, authorization, and capacity errors do not enter infinite redo.
+Publication parameter, authorization, and capacity errors do not enter infinite redo.
+This publication rule does not terminate an accepted Watch.
 Unsubscribe and shutdown remove Wire Intent before releasing the local slot;
 late notifications are acknowledged as stale and cannot invoke a removed
 listener.
@@ -588,7 +735,7 @@ runtime endpoints into a Version descriptor.
 | Method | Path | Action | Result |
 |---|---|---|---|
 | GET | `/v3/admin/ai/agents` | Read Agent and first bounded Version-summary page | `Result<AgentOverview>` |
-| PUT | `/v3/admin/ai/agents` | Update writable Agent fields through the shared AI Resource update flow | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents` | Update writable Agent fields through the shared AI Resource update flow | `Result<AgentSummary>` |
 | DELETE | `/v3/admin/ai/agents` | Delete Agent definition and Version content | `Result<Void>` |
 | GET | `/v3/admin/ai/agents/list` | Filter and page Agent summaries | `Result<Page<AgentSummary>>` |
 | GET | `/v3/admin/ai/agents/versions` | Page Version summaries | `Result<Page<AgentVersionSummary>>` |
@@ -612,6 +759,11 @@ Forms do not. The following complex fields are JSON strings:
 - draft update: `callInterfaces`; and
 - label update: `labels`.
 
+The five typed requests in `model.agent.admin` are shared by the Maintainer SDK, Console
+and server. HTTP Forms parse strings and bind namespace separately; they do not replace
+SDK inputs. Complex values use `JsonUtils`/`NacosTypeReference`, while namespace comes
+from the Form or explicit SDK argument.
+
 Form size uses the shared Nacos HTTP form-size policy. The serialized
 AgentVersion content is still independently limited by the Agent Management
 contract.
@@ -621,7 +773,7 @@ Runtime query input is `namespaceId + agentName + protocol + version?`.
 Endpoint key for the protocol with all bindings; supplying it retains only
 matching bindings. The query does
 not apply `endpointSourceOrder`, does not require a definition to exist, and
-returns an empty item array when no instance exists.
+returns `callInterface.endpointSets[0].endpoints=[]` with a retained RUNTIME Set when no instance exists.
 
 There is no separate `createAgent` operation. `POST /draft` is the single
 creation entry:
@@ -643,7 +795,22 @@ tags, extensions, and enabled state, but not identity, owner, scope, Version
 content, labels, or the derived catalog. The server initializes owner on first
 creation and the initial release exposes no owner-transfer operation. Scope
 changes are a dedicated public/private visibility operation, are not part of
-the shared metadata CAS, and are not exposed by the initial Agent API binding.
+the shared metadata CAS, and use `PUT /agents/scope`. This Form operation accepts
+`namespaceId` (omitted or empty means `public`), required `agentName`, and required
+`scope` (`PUBLIC` or `PRIVATE`, case-insensitive). It returns `Result<String>` with
+`data="ok"`, requires Agent WRITE and resource write visibility, and retains the
+A2A migration mutation guard. It changes only scope and its update timestamp,
+audits the change, and schedules existing search and Watch invalidation. It does
+not change owner, content, Version states, labels, or Runtime Endpoints. Repeating
+the same scope succeeds. Invalid input, missing resources, and denied writes keep
+the existing 400, 404, and 403 error contracts.
+
+The built-in initial Agent scope is `PUBLIC`. Creation and publication requests
+do not accept scope; publication, new Versions, equivalent retries, and Runtime
+registration preserve the stored value. `AgentMaintainerService.updateScope`
+exposes explicit-namespace and default-namespace overloads and returns `boolean`.
+Console forwards the same relative `/scope` operation and uses the existing detail
+page scope control; creation forms do not gain a visibility selector.
 Definition deletion immediately prevents ordinary discovery; it does not
 delete independently owned runtime publications.
 
@@ -660,7 +827,7 @@ delete independently owned runtime publications.
 | POST | `/v3/admin/ai/agents/redraft` | `reviewed -> draft` | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/online` | `offline -> online` | `Result<AgentVersionSummary>` |
 | POST | `/v3/admin/ai/agents/offline` | `online -> offline` | `Result<AgentVersionSummary>` |
-| PUT | `/v3/admin/ai/agents/labels` | Update custom labels; `latest` stays server-managed | `Result<Agent>` |
+| PUT | `/v3/admin/ai/agents/labels` | Update custom labels; `latest` stays server-managed | `Result<AgentSummary>` |
 
 Every action identifies `namespaceId + agentName + exact version`; an omitted
 version never means latest for a write. `force-publish` uses ordinary Agent
@@ -742,3 +909,48 @@ onto the new version-neutral Agent Naming service, because an old client cannot
 construct the complete cross-Version publisher batch required by that service.
 Historical data migration and mixed-version rolling-upgrade behavior are a
 separate specification and must not be inferred from this API-only contract.
+
+## Endpoint Consolidation Acceptance
+
+Consolidation affects Client registration/publication, Admin/Maintainer, Console, and internal legacy A2A conversion. Runtime registration/complete replacement accept healthy and enabled, both defaulting to true and rejecting explicit null; resolve one input binding per Endpoint using Batch defaults. EndpointSet revisions and observations remain server-maintained. HTTP, gRPC, and both SDK JSON adapters must agree while preserving namespace, authorization, error, query, and subscription behavior.
+
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Agent JSON inclusion contract
+
+The Agent forms/models delegate optional null inclusion to the serializer. Bindings must accept shared Endpoint defaults and deregister using uri/transport only; other fields do not change the removal key. See RAD/management Schema 0.5.0 and the [JSON regression matrix](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md). HTTP, gRPC, both SDK JSON adapters and merged/independent Console are regression targets.
+
+## Public discovery snapshot converters
+
+`com.alibaba.nacos.api.ai.converter.AgentConverter<T>` is a Java 8 functional
+interface with `T convert(AgentDiscoveryResult source)`. `AgentConverters.a2a()`
+and the default `AgentService.a2aConverter()` return the same stateless conversion
+contract as `AgentConverter<AgentCard>`. They need no client, connection, namespace
+binding or capability negotiation; a retained converter works after client shutdown.
+Conversion is explicitly invoked by the application. Discover and Listener dispatch
+continue to deliver their original snapshots without automatic conversion.
+
+The A2A converter validates the discovery snapshot and selects its A2A interface
+without requiring a protocol filter. Its JSON object nativeDescriptor must decode
+to a valid AgentCard with the same name/version as the snapshot. Descriptor fields
+expressible in AgentCard are retained in a deep isolated output. No external A2A SDK
+dependency is introduced. The converter never mutates input or reuses mutable output.
+
+EndpointSets already reflect RUNTIME/DECLARED priority and filters. Select the first
+nonempty set in returned order; do not merge sets or recover descriptor addresses
+removed by filters. Preserve Endpoint order, including unhealthy addresses; discovery
+validation rejects illegal disabled entries rather than silently filtering them. Map
+all selected Endpoints through A2aEndpointUtils into supportedInterfaces and an
+independent additionalInterfaces list. The first interface supplies url,
+preferredTransport and protocolVersion, regardless of the descriptor's old preference.
+Per-Endpoint protocolVersion metadata overrides the CallInterface fallback only when
+its key is present; tenant is not synthesized. Legacy facade selection and fallback
+remain unchanged and can differ from this explicit conversion.
+
+Invalid input, absent A2A/address, malformed descriptor and identity mismatch throw
+IllegalArgumentException with distinct field/stage diagnostics and Agent identity;
+underlying parsing causes are preserved. Failures never become Watch UNAVAILABLE or
+change subscription state. Diagnostics use the existing safe snapshot renderer: log
+input identity/shape and failure stage/type without dumping descriptors, Endpoint
+metadata or credentials. Diagnostic rendering/logging failures cannot replace the
+conversion exception. This adds no HTTP/gRPC operation or wire contract.

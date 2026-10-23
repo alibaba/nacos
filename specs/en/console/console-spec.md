@@ -125,6 +125,10 @@ Rules:
 The current v3 Console API surface is described by the
 [V3 API Surface](../http-api/v3-api-surface.md).
 
+Remote Admin business errors must follow the [Response And Error Spec](../http-api/response-error-spec.md):
+independent Console preserves upstream HTTP status, business code, summary, and
+string detail rather than converting every typed failure to `SERVER_ERROR`.
+
 ## 5. UI Entry And Static Assets
 
 Console owns the browser entry and static asset serving behavior:
@@ -233,6 +237,10 @@ Rules:
 - independent Console-to-Server calls for an authenticated operator must
   forward every non-blank request identity parameter recorded by the identity
   builder, using the canonical name declared by the selected auth plugin;
+- for a Console operation explicitly marked `ONLY_IDENTITY` that delegates to
+  a Server Admin API, the Console may use the configured server identity for
+  the internal call after the Console has authenticated the operator; this
+  exception must not treat browser-provided fields as server identity;
 - transport-derived fields and auth result metadata in `IdentityContext` must
   not be forwarded;
 - when at least one request identity parameter is forwarded, the call must not
@@ -292,6 +300,27 @@ contract:
   UI enabled/default version and console auth status;
 - Console metrics and logs must not include secrets, tokens, full credentials,
   or large user payloads.
+
+### 10.1 Experimental AOT / Native Verification
+
+Console follows the multi-context AOT contract in the
+[Server Lifecycle Spec](../design/foundation-server-lifecycle-env-spec.md).
+This contract does not certify every database, plugin, or business path for Native execution.
+
+- In `merged`, the console context retains its core parent. In `console`, only the independent
+  console context is generated and started; Native adaptation must not start local domain services
+  or storage.
+- Generated artifacts must match deployment type, function mode, and plugins. Structural changes
+  require regeneration. Remote Server addresses, ports, and runtime credentials must not be embedded
+  in generated initialization code.
+- Ordinary JVM execution without AOT must not require generated artifacts, perform their consistency
+  checks, or change existing handler selection.
+- Native verification must exercise UI entry points and referenced JS/CSS, login, anonymous rejection,
+  and real Console business reads and writes. Liveness or empty lists cannot replace functional
+  success. Independent deployments must also exercise remote handler response models and operations.
+- Record JVM / Native Console and Server interoperability separately; merged deployment results do
+  not certify independent deployment. Verify AI features and registry protocols when enabled, and
+  explicitly identify untested databases, clusters, and business paths.
 
 ## 11. Pending Issues
 

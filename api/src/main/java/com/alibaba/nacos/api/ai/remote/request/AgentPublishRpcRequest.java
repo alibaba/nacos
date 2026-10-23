@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 
 /**
  * gRPC binding for code-first Agent definition publication.

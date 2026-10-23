@@ -138,6 +138,76 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
     }
     
     @Test
+    public void testPublicAgentIndexTracksUnifiedVersionCatalog() throws Exception {
+        String agentName = randomAiName("search-public-model");
+        publishPublicAgent(agentName, "1.0.0");
+        putFormOk(ADMIN_AGENT_PATH, agentForm(agentUpdateRequest(null, agentName, agentName)));
+        Query query = genericQuery(agentName).addParam("resourceTypes", "agent")
+                .addParam("tagsAll", agentName);
+        JsonNode generic = awaitGenericSearch(query, Set.of("agent:" + agentName));
+        assertEquals(Set.of("agent:" + agentName), genericKeys(generic), generic.toString());
+        JsonNode initial = awaitAgentCatalog(agentName, "1.0.0", 1);
+        assertFalse(initial.hasNonNull("namespaceId"), initial.toString());
+        assertEquals(DEFAULT_NAMESPACE, generic.get("data").get("items").get(0)
+                .get("namespaceId").asText(), generic.toString());
+        assertTrue(initial.get("versionInfo").get("onlineVersions").get(0)
+                .get("protocols").toString().contains("a2a"), initial.toString());
+
+        postFormOk(ADMIN_AGENT_PATH + "/draft", agentForm(
+                agentDraftCreateRequest(null, agentName, "2.0.0", null)));
+        postFormOk(ADMIN_AGENT_PATH + "/force-publish",
+                agentForm(agentVersionCommand(null, agentName, "2.0.0")));
+        awaitAgentCatalog(agentName, "2.0.0", 2);
+        putFormOk(ADMIN_AGENT_PATH + "/labels", agentForm(agentLabelsUpdateRequest(
+                null, agentName, Map.of("stable", "1.0.0"))));
+        JsonNode relabeled = awaitAgentCatalog(agentName, "2.0.0", 2, "1.0.0");
+        assertEquals("1.0.0", relabeled.get("versionInfo").get("labels").get("stable").asText());
+        postFormOk(ADMIN_AGENT_PATH + "/offline",
+                agentForm(agentVersionCommand(null, agentName, "2.0.0")));
+        awaitAgentCatalog(agentName, "1.0.0", 1);
+        deleteJsonOk(ADMIN_AGENT_PATH, agentIdentityQuery(DEFAULT_NAMESPACE, agentName));
+        JsonNode last = null;
+        for (int retry = 0; retry <= SEARCH_MAX_RETRIES; retry++) {
+            last = getJsonOk(GENERIC_SEARCH_PATH, query);
+            if (genericKeys(last).isEmpty()) {
+                return;
+            }
+            Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+        }
+        fail("Deleted Agent remained indexed: " + last);
+    }
+
+    private JsonNode awaitAgentCatalog(String agentName, String latest, int onlineCount)
+            throws Exception {
+        return awaitAgentCatalog(agentName, latest, onlineCount, null);
+    }
+
+    private JsonNode awaitAgentCatalog(String agentName, String latest, int onlineCount,
+            String stable) throws Exception {
+        JsonNode last = null;
+        for (int retry = 0; retry <= SEARCH_MAX_RETRIES; retry++) {
+            last = getJsonOk(AGENT_SEARCH_PATH, Query.newInstance()
+                    .addParam("agentNameContains", agentName).addParam("pageNo", "1")
+                    .addParam("pageSize", "10"));
+            JsonNode items = last.get("data").get("pageItems");
+            if (items.size() == 1) {
+                JsonNode agent = items.get(0);
+                JsonNode info = agent.path("versionInfo");
+                if (latest.equals(info.path("labels").path("latest").asText())
+                        && onlineCount == info.path("onlineVersions").size()
+                        && (stable == null || stable.equals(info.path("labels").path("stable").asText()))) {
+                    assertEquals(agentName, agent.get("agentName").asText(), agent.toString());
+                    assertFalse(agent.has("versionCatalog"), agent.toString());
+                    return agent;
+                }
+            }
+            Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+        }
+        fail("Agent version catalog did not converge: " + last);
+        return null;
+    }
+
+    @Test
     public void testSearchEmptyAndValidationContracts() throws Exception {
         JsonNode empty = getJsonOk(GENERIC_SEARCH_PATH, Query.newInstance()
                 .addParam("query", "absent-" + UUID.randomUUID()).addParam("limit", "10"));

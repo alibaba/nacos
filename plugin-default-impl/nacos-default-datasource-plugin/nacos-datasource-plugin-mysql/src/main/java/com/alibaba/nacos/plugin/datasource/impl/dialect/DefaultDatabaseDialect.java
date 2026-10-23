@@ -31,6 +31,11 @@ public class DefaultDatabaseDialect extends AbstractDatabaseDialect {
     }
     
     @Override
+    public String getDefaultDriverClassName() {
+        return MysqlDatabaseDialect.DEFAULT_DRIVER_CLASS_NAME;
+    }
+    
+    @Override
     public String getFunction(String functionName) {
         return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
     }

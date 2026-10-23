@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -34,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -65,18 +69,27 @@ class AgentProxyTest {
     }
     
     @Test
+    void testScopeForwarding() throws Exception {
+        agentProxy.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+        verify(agentHandler).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryOperationAndBuildRuntimeView() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent agent = new Agent();
+        AgentSummary agent = new AgentSummary();
         AgentUpdateRequest updateRequest = new AgentUpdateRequest();
         AgentDraftCreateRequest createRequest = new AgentDraftCreateRequest();
         AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
-        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();
-        AgentVersionSummary versionSummary = new AgentVersionSummary();
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
         when(agentHandler.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(overview);
         when(agentHandler.updateAgent(NAMESPACE_ID, updateRequest)).thenReturn(agent);
         when(agentHandler.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE", "owner",
@@ -89,6 +102,7 @@ class AgentProxyTest {
             .thenReturn(snapshot);
         when(agentHandler.createDraft(NAMESPACE_ID, createRequest)).thenReturn(versionDetail);
         when(agentHandler.updateDraft(NAMESPACE_ID, draftUpdateRequest)).thenReturn(versionDetail);
+        AgentVersionSummary versionSummary = new AgentVersionSummary();
         when(agentHandler.submit(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(versionSummary);
         when(agentHandler.publish(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(versionSummary);
         when(agentHandler.forcePublish(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -96,6 +110,7 @@ class AgentProxyTest {
         when(agentHandler.redraft(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(versionSummary);
         when(agentHandler.online(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(versionSummary);
         when(agentHandler.offline(NAMESPACE_ID, AGENT_NAME, VERSION)).thenReturn(versionSummary);
+        AgentLabelsUpdateRequest labelsRequest = new AgentLabelsUpdateRequest();
         when(agentHandler.updateLabels(NAMESPACE_ID, labelsRequest)).thenReturn(agent);
         
         assertSame(overview, agentProxy.getAgent(NAMESPACE_ID, AGENT_NAME));

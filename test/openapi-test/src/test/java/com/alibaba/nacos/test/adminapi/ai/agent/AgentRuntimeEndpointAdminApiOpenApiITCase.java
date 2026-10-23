@@ -101,14 +101,14 @@ public class AgentRuntimeEndpointAdminApiOpenApiITCase extends AiAdminApiBaseITC
             String protocol, String version) {
         assertEquals(namespaceId, snapshot.get("namespaceId").asText(), snapshot.toString());
         assertEquals(agentName, snapshot.get("agentName").asText(), snapshot.toString());
-        assertEquals(protocol, snapshot.get("protocol").asText(), snapshot.toString());
+        assertEquals(protocol, snapshot.get("callInterface").get("protocol").asText(), snapshot.toString());
         if (null == version) {
             assertTrue(snapshot.get("version") == null || snapshot.get("version").isNull(),
                     snapshot.toString());
         } else {
             assertEquals(version, snapshot.get("version").asText(), snapshot.toString());
         }
-        assertTrue(snapshot.get("items").isArray(), snapshot.toString());
-        assertFalse(snapshot.get("items").elements().hasNext(), snapshot.toString());
+        assertTrue(snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").isArray(), snapshot.toString());
+        assertFalse(snapshot.get("callInterface").get("endpointSets").get(0).get("endpoints").elements().hasNext(), snapshot.toString());
     }
 }

@@ -156,6 +156,37 @@
             </dependencies>
         </profile>
         <profile>
+            <id>jackson3-only-sdk-test</id>
+            <dependencies>
+                <dependency>
+                    <groupId>tools.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <includes>
+                                <include>**/JsonAdapterJavaSdkITCase.java</include>
+                                <include>**/ConfigServiceJavaSdkITCase.java</include>
+                                <include>**/NamingServiceJavaSdkITCase.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <nacos.test.json.jackson3-only>true</nacos.test.json.jackson3-only>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>ai-api-compatibility</id>
             <build>
                 <plugins>

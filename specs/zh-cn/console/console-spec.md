@@ -105,6 +105,9 @@ Admin API 或 Maintainer SDK，除非某能力被明确设计为仅控制台可�
 
 当前 v3 Console API 范围由 [V3 API 范围](../http-api/v3-api-surface.md)描述。
 
+远程 Admin 业务错误遵循[响应与错误规范](../http-api/response-error-spec.md)：独立 Console
+保留上游 HTTP 状态、业务码、摘要和字符串详情，不应将类型化业务失败统一转换为 `SERVER_ERROR`。
+
 ## 5. UI 入口与静态资源
 
 Console 负责浏览器入口和静态资源服务行为：
@@ -189,6 +192,9 @@ Console 存在三个安全方向：
   已校验 base URL 下的相对地址，非法配置必须按拒绝处理，并且不得跟随重定向；
 - 独立 Console 代表已认证运维人员调用 Server 时，必须使用当前鉴权插件声明的标准名称，透传
   identity builder 记录的全部非空请求身份字段；
+- 对于明确标记为 `ONLY_IDENTITY` 且需要委托 Server Admin API 的 Console 操作，Console
+ 在已完成运维人员身份校验后，可以在内部调用中使用配置的 server identity；该例外不得
+ 将浏览器提供的字段当作 server identity 信任；
 - `IdentityContext` 中的传输层派生字段和鉴权结果元数据不得透传；
 - 至少透传一个请求身份字段时不得同时携带配置的 server identity，使目标 Server 能够认证该
   运维人员并校验其权限；
@@ -232,6 +238,21 @@ Console 应让 UI 用户能读懂错误，同时保持共享 API 契约：
 - Console module state 应暴露低基数运维状态，例如 UI 是否开启、默认 UI 版本和 Console
   auth 状态；
 - Console 指标和日志不得包含密钥、token、完整凭据或大体积用户载荷。
+
+### 10.1 实验性 AOT / Native 验收
+
+Console 遵循[服务端生命周期规范](../design/foundation-server-lifecycle-env-spec.md)中的
+多 Context AOT 契约。该契约不表示所有数据库、插件和业务路径已完成 Native 验证。
+
+- `merged` 的 console context 保留 core parent；`console` 只生成并启动独立 console context，
+  不能为了适配 Native 而启动本地域服务或存储。
+- 构建产物必须匹配部署类型、function mode 和插件集合；这些结构性选择改变时重新生成。
+  远端 Server 地址、端口和运行期凭据不得固化在生成的初始化代码中。
+- 普通 JVM 未开启 AOT 时，不得要求生成产物、运行其一致性检查或改变原有 handler 选择。
+- Native 验收必须包含 UI 入口及其 JS/CSS 资源、登录、匿名拒绝和真实 Console 业务读写，
+  不能以 liveness 或空列表代替功能成功。独立部署还应验证远端 handler 的返回模型和实际操作。
+- 普通 JVM 与 Native 的 Console / Server 互通结果应分别记录；合并部署通过不能代替独立部署。
+  AI 功能和扩展协议启用时应单独验证，未执行的数据库、集群和业务路径须明确列出。
 
 ## 11. 待处理问题
 

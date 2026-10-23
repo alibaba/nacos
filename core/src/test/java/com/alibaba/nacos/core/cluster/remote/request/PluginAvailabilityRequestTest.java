@@ -16,10 +16,15 @@
 
 package com.alibaba.nacos.core.cluster.remote.request;
 
+import com.alibaba.nacos.common.remote.PayloadRegistry;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link PluginAvailabilityRequest} unit test.
@@ -27,6 +32,37 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @author WangzJi
  */
 class PluginAvailabilityRequestTest {
+    
+    @BeforeAll
+    static void initPayloadRegistry() {
+        PayloadRegistry.init();
+    }
+    
+    @Test
+    void testSinglePluginPayloadRoundTrip() {
+        PluginAvailabilityRequest request = new PluginAvailabilityRequest();
+        request.setPluginId("auth:nacos");
+        request.putHeader("test-server-identity", "test-value");
+        
+        PluginAvailabilityRequest parsed =
+            (PluginAvailabilityRequest) GrpcUtils.parse(GrpcUtils.convert(request));
+        
+        assertEquals("auth:nacos", parsed.getPluginId());
+        assertFalse(parsed.isQueryAll());
+        assertEquals("test-value", parsed.getHeader("test-server-identity"));
+    }
+    
+    @Test
+    void testQueryAllPayloadRoundTrip() {
+        PluginAvailabilityRequest request = new PluginAvailabilityRequest();
+        request.setQueryAll(true);
+        
+        PluginAvailabilityRequest parsed =
+            (PluginAvailabilityRequest) GrpcUtils.parse(GrpcUtils.convert(request));
+        
+        assertTrue(parsed.isQueryAll());
+        assertNull(parsed.getPluginId());
+    }
     
     @Test
     void defaultConstructorTest() {

@@ -50,6 +50,12 @@ snapshot 在服务端查询成功后写入，并在服务端确认 Config item �
 snapshot 与 content snapshot 分开存储。Config filter，包括 encryption filter，会在选定本地或
 远端 content 后执行。
 
+snapshot 的使用由客户端 `configSnapshotEnabled` 属性控制，默认值为 `true`。客户端在 snapshot
+switch 类初始化时每个 JVM 只读取一次该属性，因此之后在同一 JVM 内修改不会生效。当 snapshot
+被禁用时，客户端会在同一次初始化中尝试执行现有本地配置 best-effort 清理。可恢复的清理
+失败（例如 runtime 或 linkage error）只记录日志并保持 snapshot 禁用，
+不会导致 switch 初始化失败；fatal VM error 不会被掩盖。
+
 Config listener 发送 listener check 前必须检查本地 failover 文件。当 failover 文件出现、变化
 或消失时，必须更新 listener state，并可按 `CacheData` MD5 规则触发 listener callback。
 
@@ -260,3 +266,11 @@ Agent Shutdown 还要取消 HTTP Batch Long Poll、Best-effort Unsubscribe 当�
 - Config listener recovery、Naming redo、AI redo 和
   [运行时推送与重连规范](runtime-push-reconnect-spec.md)定义的 runtime push recovery 应共享可观测字段。
 - 多语言 SDK 应说明自己支持哪些本地缓存和 redo 行为，以及哪些行为有意与 Java 不同。
+
+### 8.5 A2A 适配后的 Runtime 意图
+
+A2A 使用 RAD 时，publication 状态同时保留各精确版本的引用快照及各 Endpoint 的连续范围。
+这些状态与既有完整 Batch、固定 transport owner 一起提交、回滚、重放和清理，不建立第二套
+redo 缓存。原生 RAD/A2A 写入来源互斥遵循 [A2A Agent 规范](../ai/a2a-agent-spec.md)。
+gRPC 定时任务将受管理 publication 交给同一个串行 owner；核对快照身份以阻止旧工作覆盖
+新写入，完成或拒绝的重放只协调自身仍为当前记录的 redo 状态。

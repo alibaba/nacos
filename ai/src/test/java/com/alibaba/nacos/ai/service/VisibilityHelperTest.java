@@ -46,6 +46,9 @@ class VisibilityHelperTest {
     
     private static final ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
     
+    private static final String[] RESOURCE_TYPES =
+        {"agent", "mcp", "skill", "prompt", "agentspec", "unknown"};
+    
     private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
     
     private VisibilityPluginManager visibilityPluginManager;
@@ -73,30 +76,40 @@ class VisibilityHelperTest {
     void resolveDefaultScopeForCreateShouldFallbackToPrivateWhenPluginAbsent() {
         when(visibilityPluginManager.findVisibilityService(anyString()))
             .thenReturn(Optional.empty());
-        String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
-        assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
+        for (String resourceType : RESOURCE_TYPES) {
+            assertEquals(VisibilityConstants.SCOPE_PRIVATE,
+                VisibilityHelper.resolveDefaultScopeForCreate(resourceType));
+        }
     }
     
     @Test
     void resolveDefaultScopeForCreateShouldUsePluginScopeAndNormalizeUppercase() {
         VisibilityService visibilityService = mock(VisibilityService.class);
-        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
-            .thenReturn("public");
         when(visibilityPluginManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(visibilityService));
-        String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
-        assertEquals(VisibilityConstants.SCOPE_PUBLIC, actual);
+        for (String scope : new String[] {"public", "private"}) {
+            when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(),
+                anyString())).thenReturn(scope);
+            for (String resourceType : RESOURCE_TYPES) {
+                assertEquals(scope.toUpperCase(java.util.Locale.ROOT),
+                    VisibilityHelper.resolveDefaultScopeForCreate(resourceType));
+            }
+        }
     }
     
     @Test
     void resolveDefaultScopeForCreateShouldFallbackToPrivateWhenPluginReturnsBlank() {
         VisibilityService visibilityService = mock(VisibilityService.class);
-        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
-            .thenReturn("  ");
         when(visibilityPluginManager.findVisibilityService(anyString()))
             .thenReturn(Optional.of(visibilityService));
-        String actual = VisibilityHelper.resolveDefaultScopeForCreate("skill");
-        assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
+        for (String scope : new String[] {null, "", "  "}) {
+            when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(),
+                anyString())).thenReturn(scope);
+            for (String resourceType : RESOURCE_TYPES) {
+                assertEquals(VisibilityConstants.SCOPE_PRIVATE,
+                    VisibilityHelper.resolveDefaultScopeForCreate(resourceType));
+            }
+        }
     }
     
     @Test

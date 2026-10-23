@@ -25,6 +25,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opentest4j.AssertionFailedError;
@@ -40,8 +43,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,6 +70,7 @@ class HttpRequestContextFilterTest {
     void setUp() {
         filter = new HttpRequestContextFilter();
         RequestContextHolder.getContext();
+        when(servletRequest.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID)).thenReturn(null);
         when(servletRequest.getHeader(HttpHeaders.HOST)).thenReturn("localhost");
         when(servletRequest.getHeader(HttpHeaders.USER_AGENT))
             .thenReturn("Nacos-Java-Client:v1.4.7");
@@ -106,6 +115,73 @@ class HttpRequestContextFilterTest {
         if (null != nextFilter.error) {
             throw nextFilter.error;
         }
+    }
+    
+    @Test
+    void testDoFilterUsesClientRequestId() throws Exception {
+        String requestId = UUID.randomUUID().toString();
+        when(servletRequest.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID)).thenReturn(requestId);
+        RequestContext context = RequestContextHolder.getContext();
+        
+        filter.doFilter(servletRequest, servletResponse, (request, response) -> {
+            assertSame(context, RequestContextHolder.getContext());
+            assertEquals(requestId, RequestContextHolder.getContext().getRequestId());
+            assertEquals(BasicContext.HTTP_PROTOCOL,
+                context.getBasicContext().getRequestProtocol());
+        });
+        
+        assertNotSame(context, RequestContextHolder.getContext());
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "\t"})
+    void testDoFilterKeepsGeneratedIdWithoutClientRequestId(String requestId) throws Exception {
+        when(servletRequest.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID)).thenReturn(requestId);
+        RequestContext context = RequestContextHolder.getContext();
+        String generatedId = context.getRequestId();
+        
+        filter.doFilter(servletRequest, servletResponse, (request, response) -> {
+            assertEquals(generatedId, RequestContextHolder.getContext().getRequestId());
+            assertEquals(4, UUID.fromString(generatedId).version());
+        });
+        
+        assertNotSame(context, RequestContextHolder.getContext());
+    }
+    
+    @Test
+    void testDoFilterDoesNotLeakClientRequestIdToNextRequest() throws Exception {
+        String requestId = UUID.randomUUID().toString();
+        when(servletRequest.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID))
+            .thenReturn(requestId, null);
+        RequestContext firstContext = RequestContextHolder.getContext();
+        filter.doFilter(servletRequest, servletResponse, (request,
+            response) -> assertEquals(requestId, RequestContextHolder.getContext().getRequestId()));
+        
+        filter.doFilter(servletRequest, servletResponse, (request, response) -> {
+            RequestContext nextContext = RequestContextHolder.getContext();
+            assertNotSame(firstContext, nextContext);
+            assertNotEquals(requestId, nextContext.getRequestId());
+            assertEquals(4, UUID.fromString(nextContext.getRequestId()).version());
+        });
+    }
+    
+    @Test
+    void testDoFilterClearsContextAfterException() {
+        String requestId = UUID.randomUUID().toString();
+        when(servletRequest.getHeader(HttpHeaderConsts.NACOS_REQUEST_ID)).thenReturn(requestId);
+        RequestContext context = RequestContextHolder.getContext();
+        ServletException failure = new ServletException("downstream failure");
+        
+        ServletException actual = assertThrows(ServletException.class,
+            () -> filter.doFilter(servletRequest, servletResponse, (request, response) -> {
+                assertEquals(requestId, RequestContextHolder.getContext().getRequestId());
+                throw failure;
+            }));
+        
+        assertSame(failure, actual);
+        assertNotSame(context, RequestContextHolder.getContext());
+        assertNotEquals(requestId, RequestContextHolder.getContext().getRequestId());
     }
     
     private static class MockNextFilter implements Filter {

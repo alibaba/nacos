@@ -201,6 +201,60 @@ repeated `tagsAll`, `pageNo`, and `pageSize`, and returns the existing
 Storage extension rules are defined by the
 [AI Storage Plugin Spec](../plugin/ai-storage-plugin-spec.md).
 
+### 4.1 Management list frontmatter
+
+Admin and Console Skill lists and metadata detail responses expose nullable
+`frontMatter: Map<String, String>` and `frontMatterTruncated: Boolean` fields
+(null may be omitted by the response serializer). Values use the existing Skill
+frontmatter parser's string representation, including flattened `metadata.*`
+keys. This change does not add frontmatter search or alter the package parser.
+
+The display version is the server-managed `latest`, falling back to
+`editingVersion`, then `reviewingVersion`. An editing draft must not replace an
+online version's frontmatter. No display version means `frontMatter = null`.
+
+New or updated content stores the complete parsed `frontMatter` alongside the
+version's storage descriptor. Upload, upload overwrite, draft
+creation/update/fork and new bootstrap imports populate it from the SKILL.md
+bytes being saved. This version-level value is not truncated.
+
+`ai_resource.ext` holds a bounded display snapshot as `frontMatter`,
+`frontMatterVersion`, and `frontMatterTruncated`; unrelated extension keys must
+be preserved. The snapshot contains custom fields only. `name`, `description`,
+and `version` are reserved and excluded from it. When the marker matches the
+resolved display version, responses generate those fields from
+`SkillSummary.name`, `SkillSummary.description`, and the resolved version, then
+merge cached custom fields. Cached data cannot override the generated values.
+
+The custom-field snapshot has at most 64 entries, 128 UTF-8 bytes per key,
+1,024 characters per value, and 16 KiB of serialized map data. Longer values
+retain the first 1,021 characters and append `...`; oversized keys are omitted.
+`alias`, `license`, `compatibility`, `allowed-tools`, and flattened `metadata.*`
+fields are selected before other custom fields. Remaining lower-priority fields
+may be omitted when an entry or byte limit is reached. `frontMatterTruncated`
+is true when any custom key or value is omitted or shortened, false for a
+complete projection, and null or omitted when frontmatter is unavailable.
+
+Publish, force-publish, redraft, draft deletion and version online/offline
+operations refresh the snapshot from version metadata, without reading package
+files. Unchanged display snapshots are reused during edits of another version.
+The existing list `pageSize` behavior is unchanged.
+
+Snapshot writes use metadata CAS. Conflicts must restart version selection and
+metadata loading from the current resource row. Snapshot refresh is best-effort:
+retry exhaustion or refresh failure is logged and must not fail an already
+completed lifecycle operation. Lists and metadata detail queries compare
+`frontMatterVersion` with the display version from the same row and return null
+on a mismatch, without querying version rows or storage for frontmatter.
+
+Historical versions without this metadata remain readable and may return null.
+There is no migration, bootstrap repair or list-time backfill. Newly updating
+historical content populates metadata for the updated version only; merely
+publishing or toggling an untouched historical version does not parse its files.
+Malformed historical `ai_resource.ext` values are treated as unavailable
+metadata: list and metadata detail requests remain successful and return null
+frontmatter rather than propagating JSON deserialization failures.
+
 ## 5. Lifecycle
 
 Skill follows the shared [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md):

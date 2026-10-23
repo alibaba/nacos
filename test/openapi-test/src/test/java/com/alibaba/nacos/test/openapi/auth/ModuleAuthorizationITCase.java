@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ModuleAuthorizationITCase extends AuthITCase {
 
-    private static final int EXPECTED_SECURED_OPERATION_COUNT = 390;
+    private static final int EXPECTED_SECURED_OPERATION_COUNT = 393;
 
     private static final String OPERATION_COVERAGE_MANIFEST =
             "test/openapi-test/AUTHORIZATION_OPERATION_COVERAGE.md";
@@ -63,8 +63,9 @@ public class ModuleAuthorizationITCase extends AuthITCase {
 
     private static final Map<String, Integer> EXPECTED_SECURED_OPERATIONS = Map.ofEntries(
             Map.entry("A2aAdminController", 6),
-            Map.entry("AgentAdminController", 17),
+            Map.entry("AgentAdminController", 18),
             Map.entry("AgentClientController", 7),
+            Map.entry("AiCapabilityClientController", 1),
             Map.entry("AgentSpecAdminController", 18),
             Map.entry("AgentSpecClientController", 2),
             Map.entry("AiResourceImportAdminController", 4),
@@ -78,7 +79,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("ConfigOpenApiController", 1),
             Map.entry("ConfigOpsControllerV3", 4),
             Map.entry("ConsoleA2aController", 6),
-            Map.entry("ConsoleAgentController", 17),
+            Map.entry("ConsoleAgentController", 18),
             Map.entry("ConsoleAgentSpecController", 17),
             Map.entry("ConsoleAiResourceImportController", 4),
             Map.entry("ConsoleClusterController", 1),
@@ -147,6 +148,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
         controllerScenarios().map(ControllerScenario::controller).forEach(expected::add);
         expected.addAll(AUTH_PLUGIN_CONTROLLERS);
         expected.addAll(ANONYMOUS_ONLY_CONTROLLERS);
+        expected.add("AiCapabilityClientController");
 
         Path repositoryRoot = findRepositoryRoot();
         Map<String, Integer> actual = new TreeMap<>();
@@ -219,7 +221,8 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             if (tuple.contains("ONLY_IDENTITY")) {
                 assertTrue(coverage.contains("IdentityOnlyAuthorizationITCase")
                                 || coverage.contains("DefaultAuthApiITCase")
-                                || coverage.contains("ResourceAuthorizationITCase"),
+                                || coverage.contains("ResourceAuthorizationITCase")
+                                || coverage.contains("AiCapabilitiesClientOpenApiITCase"),
                         "Identity-only operation needs direct coverage: " + operation);
             }
             assertNull(result.put(operation, tuple),

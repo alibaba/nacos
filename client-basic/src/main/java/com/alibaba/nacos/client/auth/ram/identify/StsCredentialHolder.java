@@ -18,12 +18,11 @@ package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.remote.HttpClientManager;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +63,7 @@ public class StsCredentialHolder {
             }
         }
         String stsResponse = getStsResponse();
-        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
-        });
+        stsCredential = JsonUtils.toObj(stsResponse, StsCredential.class);
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
             stsCredential.getCode(), stsCredential.getAccessKeyId(),
             stsCredential.getLastUpdated(),

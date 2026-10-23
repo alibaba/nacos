@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.ai.param;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.AgentSearchRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentWatchBatchItem;
-import com.alibaba.nacos.api.ai.model.agent.AgentPublishRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem;
+import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointDeregisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
@@ -100,7 +100,7 @@ class AgentClientParamExtractorTest {
         assertEmpty(extract(request));
         
         AgentSearchRequest search = new AgentSearchRequest();
-        search.setNamespaceId("search-ns");
+        request.setNamespaceId("search-ns");
         request.setSearchRequest(search);
         ParamInfo actual = extract(request);
         assertEquals("search-ns", actual.getNamespaceId());
@@ -131,7 +131,7 @@ class AgentClientParamExtractorTest {
         assertEmpty(extract(request));
         
         AgentEndpointRegistrationBatch batch = new AgentEndpointRegistrationBatch();
-        batch.setNamespaceId("register-ns");
+        request.setNamespaceId("register-ns");
         batch.setAgentName("demo");
         request.setRegistrationBatch(batch);
         ParamInfo actual = extract(request);

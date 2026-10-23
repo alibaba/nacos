@@ -105,7 +105,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             conn.setRequestMethod(httpMethod);
             if (body != null && !"".equals(body)) {
                 if (body instanceof File) {
-                    handleFileUpload(conn, (File) body);
+                    handleFileUpload(conn, (File) body, requestHttpEntity.isBodyRepeatable());
                 } else {
                     String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
                     String bodyStr =
@@ -118,6 +118,10 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                         conn.setDoOutput(true);
                         byte[] b = bodyStr.getBytes(StandardCharsets.UTF_8);
                         conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
+                        if (!requestHttpEntity.isBodyRepeatable()) {
+                            // Buffered HttpURLConnection POSTs can be retried after response loss.
+                            conn.setFixedLengthStreamingMode(b.length);
+                        }
                         OutputStream outputStream = conn.getOutputStream();
                         outputStream.write(b, 0, b.length);
                         outputStream.flush();
@@ -133,7 +137,8 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         }
     }
     
-    private void handleFileUpload(HttpURLConnection conn, File file) throws IOException {
+    private void handleFileUpload(HttpURLConnection conn, File file, boolean bodyRepeatable)
+        throws IOException {
         String boundary = BOUNDARY_PREFIX + System.currentTimeMillis();
         conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         
@@ -149,9 +154,14 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         byte[] boundaryBytes =
             (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
         
+        byte[] prefix = sb.toString().getBytes(StandardCharsets.UTF_8);
         conn.setDoOutput(true);
+        if (!bodyRepeatable) {
+            conn.setFixedLengthStreamingMode((long) prefix.length + fileBytes.length
+                + boundaryBytes.length);
+        }
         try (OutputStream outputStream = conn.getOutputStream()) {
-            outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            outputStream.write(prefix);
             outputStream.write(fileBytes);
             outputStream.write(boundaryBytes);
             outputStream.flush();

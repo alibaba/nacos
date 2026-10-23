@@ -205,7 +205,7 @@ must be treated as an inactive or incomplete gRPC contract.
 | Server remote context | `ServerReloadRequest`, `ServerReloadResponse`, `ServerLoaderInfoRequest`, `ServerLoaderInfoResponse` | Core remote | Reload remote protocol context or query connection and load metrics from another node. |
 | Config change sync | `ConfigChangeClusterSyncRequest`, `ConfigChangeClusterSyncResponse` | Config | Notify peers of a Config change so they can refresh dump and listener-visible state. Config Notify semantics are defined by the [AP Consistency Spec](foundation-ap-consistency-spec.md), while Config resource semantics remain defined by Config specs. |
 | Naming Distro transport | `DistroDataRequest`, `DistroDataResponse` | Naming and Distro | Carry Distro verify, snapshot, sync, delete, and query operations between nodes. Distro ownership and convergence rules are defined by the [AP Consistency Spec](foundation-ap-consistency-spec.md) and Naming specs. |
-| Plugin availability | `PluginAvailabilityRequest`, `PluginAvailabilityResponse` | Core plugin | Query plugin availability on a node. Current code has a handler, but a payload that is not registered must not be treated as an active gRPC contract. |
+| Plugin availability | `PluginAvailabilityRequest`, `PluginAvailabilityResponse` | Core plugin | Query one plugin's registration on a node, or return the enabled-state map for all plugins when `queryAll=true`. Both request and response are registered in the core payload SPI for cross-node queries. |
 
 Domain specs may add more categories, but they must preserve the caller,
 handler, auth, source, and payload rules in this document.

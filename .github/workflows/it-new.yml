@@ -232,6 +232,19 @@ jobs:
             -Dnacos.agent.it.client.publication.capacity="$RAD_CLIENT_PUBLICATION_CAPACITY" \
             -Dnacos.agent.it.client.subscription.capacity="$RAD_CLIENT_SUBSCRIPTION_CAPACITY"
 
+      - name: Run Jackson 3-only Client Tests
+        run: |
+          mvn -B -pl client-basic test -Pjackson3-only-test \
+            -Dnacos.client.json.adapter=jackson3
+          for adapter in auto jackson3; do
+            echo "Running Jackson 3-only SDK IT with adapter=$adapter"
+            mvn -B -pl test/java-sdk-test failsafe:integration-test failsafe:verify \
+              -Pjava-sdk-integration-test,jackson3-only-sdk-test \
+              -DskipTests=false -Dnacos.client.json.adapter="$adapter" \
+              -Dnacos.test.auth.enabled=true \
+              -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME"
+          done
+
       - name: Guard Auth Scopes After Java SDK Tests
         run: |
           mvn -B -pl test/openapi-test verify -Pintegration-test \

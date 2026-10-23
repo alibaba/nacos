@@ -323,6 +323,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).shutdown();
         verify(serverListManager, times(1)).shutdown();
+        verify(securityProxy, times(1)).shutdown();
         verify(executorService, times(1)).shutdown();
     }
 }

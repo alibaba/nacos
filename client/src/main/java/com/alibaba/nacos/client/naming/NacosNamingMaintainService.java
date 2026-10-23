@@ -207,6 +207,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         serverListManager.shutdown();
         serverProxy.shutdown();
+        securityProxy.shutdown();
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }

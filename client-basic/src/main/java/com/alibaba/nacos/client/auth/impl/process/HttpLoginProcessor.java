@@ -19,6 +19,8 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
@@ -28,10 +30,8 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,18 +97,23 @@ public class HttpLoginProcessor implements LoginProcessor {
                     bodyMap, String.class);
             }
             if (!restResult.ok()) {
-                SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
+                SECURITY_LOGGER.error("login failed: {}", JsonUtils.toJson(restResult));
                 return null;
             }
-            JsonNode obj = JacksonUtils.toObj(restResult.getData());
+            Map<String, Object> obj = JsonUtils.toObj(restResult.getData(),
+                new NacosTypeReference<Map<String, Object>>() {
+                });
             
             LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
             
-            if (obj.has(Constants.ACCESS_TOKEN)) {
+            if (obj != null && obj.containsKey(Constants.ACCESS_TOKEN)) {
+                if (!obj.containsKey(Constants.TOKEN_TTL)) {
+                    throw new IllegalArgumentException("Login response is missing tokenTtl");
+                }
                 loginIdentityContext.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
-                    obj.get(Constants.ACCESS_TOKEN).asText());
+                    String.valueOf(obj.get(Constants.ACCESS_TOKEN)));
                 loginIdentityContext.setParameter(NacosAuthLoginConstant.TOKENTTL,
-                    obj.get(Constants.TOKEN_TTL).asText());
+                    String.valueOf(obj.get(Constants.TOKEN_TTL)));
             } else {
                 SECURITY_LOGGER
                     .info("[NacosClientAuthServiceImpl] ACCESS_TOKEN is empty from response");

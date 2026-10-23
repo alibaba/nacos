@@ -18,13 +18,12 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -61,9 +60,15 @@ public class AgentInnerHandler implements AgentHandler {
     }
     
     @Override
-    public Agent updateAgent(String namespaceId, AgentUpdateRequest request)
+    public AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
         throws NacosException {
         return agentOperationService.updateAgent(toAgent(namespaceId, request));
+    }
+    
+    @Override
+    public void updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        agentOperationService.updateScope(namespaceId, agentName, scope);
     }
     
     @Override
@@ -155,14 +160,14 @@ public class AgentInnerHandler implements AgentHandler {
     }
     
     @Override
-    public Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException {
         return agentOperationService.updateLabels(namespaceId, request.getAgentName(),
             request.getLabels());
     }
     
-    private Agent toAgent(String namespaceId, AgentUpdateRequest request) {
-        Agent result = new Agent();
+    private AgentSummary toAgent(String namespaceId, AgentUpdateRequest request) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(namespaceId);
         result.setAgentName(request.getAgentName());
         result.setDisplayName(request.getDisplayName());

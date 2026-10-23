@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.client.auth.oidc;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -43,8 +45,6 @@ import java.util.Properties;
 public class OidcClientContext {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcClientContext.class);
-    
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     private String issuerUri;
     
@@ -136,21 +136,24 @@ public class OidcClientContext {
                 responseBody = readInputStreamAsString(responseStream);
             }
             
-            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
-            JsonNode tokenEndpointNode = root.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT);
+            Map<String, Object> root = JsonUtils.toObj(responseBody,
+                new NacosTypeReference<Map<String, Object>>() {
+                });
+            Object tokenEndpointValue = root == null ? null
+                : root.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT);
             
-            if (tokenEndpointNode == null || tokenEndpointNode.isNull()) {
+            if (tokenEndpointValue == null) {
                 LOGGER.error("[OIDC-CLIENT] OIDC Discovery response missing 'token_endpoint'");
                 return false;
             }
             
-            this.tokenEndpoint = tokenEndpointNode.asText();
+            this.tokenEndpoint = String.valueOf(tokenEndpointValue);
             this.discovered = true;
             LOGGER.info("[OIDC-CLIENT] OIDC Discovery success, token_endpoint: {}",
                 this.tokenEndpoint);
             return true;
             
-        } catch (IOException e) {
+        } catch (IOException | NacosDeserializationException e) {
             LOGGER.error("[OIDC-CLIENT] OIDC Discovery failed", e);
             return false;
         } finally {

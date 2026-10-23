@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.migration;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 
 import java.util.ArrayList;
@@ -32,13 +32,13 @@ import java.util.List;
  */
 public final class A2aMigrationDefinition {
     
-    private final Agent agent;
+    private final AgentSummary agent;
     
     private final List<AgentVersionDetail> versions;
     
     private final String latestVersion;
     
-    A2aMigrationDefinition(Agent agent, List<AgentVersionDetail> versions,
+    A2aMigrationDefinition(AgentSummary agent, List<AgentVersionDetail> versions,
         String latestVersion) {
         this.agent = agent;
         this.versions = Collections.unmodifiableList(
@@ -46,7 +46,7 @@ public final class A2aMigrationDefinition {
         this.latestVersion = latestVersion;
     }
     
-    public Agent getAgent() {
+    public AgentSummary getAgent() {
         return agent;
     }
     

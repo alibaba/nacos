@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.model.agent;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +45,7 @@ class AgentResourceExtTest {
         provider.setUrl("https://nacos.io");
         Map<String, Object> extensions = new LinkedHashMap<String, Object>();
         extensions.put("example.com/enabled", true);
-        AgentVersionCatalog catalog = new AgentVersionCatalog();
+        AgentVersionInfo catalog = new AgentVersionInfo();
         catalog.setOnlineVersions(Collections.emptyList());
         
         resourceExt.setSchemaVersion(AgentResourceExt.SCHEMA_VERSION);

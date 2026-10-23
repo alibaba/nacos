@@ -36,6 +36,10 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-dns</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-config</artifactId>
         </dependency>
         <dependency>

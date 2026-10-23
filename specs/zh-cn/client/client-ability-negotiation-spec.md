@@ -149,3 +149,28 @@ Legacy fallback 必须由领域规范说明。Fallback 的移除应遵循
 ## 7. 待处理问题
 
 - 公开 ability key 列表应由源码生成，避免文档漂移。
+
+## AI Client HTTP 能力查询
+
+`GET /v3/client/ai/capabilities` 返回标准 `Result`，其中
+`data.schemaVersion=1`，`data.capabilities` 含 Boolean 键 `radV1`、`mcp`、
+`skill`、`prompt`、`agentSpec`。只声明响应节点 Client HTTP binding 的实现能力，
+不代表 gRPC 可达、全群集能力、资源权限或迁移就绪。RAD 已包含 HTTP Watch，
+不另设公开 Watch/A2A 兼容位，已有 gRPC 能力键保持原义。
+
+接口采用标准 Client 鉴权流程，元组为 `OPEN_API + AI + READ + ONLY_IDENTITY`，
+使用显式无资源 parser。有效零资源权限身份可以查询；需要 Client 鉴权时，无效或
+缺少身份仍拒绝，即使启用 AI 匿名访问。Client auth-off、插件及内部身份的标准
+跳过分支保持；Admin/Console 开关独立。额外资源参数及 Client-id 忽略，不读取资源，
+不创建或续租 Client/Publisher。
+
+SDK 对每个能力保留支持、不支持、未知三态；只有合法 schemaVersion=1 响应中的
+Boolean 才是确定证据。缺失/错误类型键为未知，忽略扩展键；未知版本、空/错误内容、
+能力路径 404/405 均不能证明没有 RAD。鉴权与连接异常保留分类。缓存有界、短 TTL、
+合并同目标并发请求，按目标 URL（含 context path/HTTP scheme）和身份摘要隔离，
+不以明文凭据作为缓存键。
+
+能力证据与实例 A2A 模式独立。可靠选择旧模式后，刷新及重连均保留到实例关闭；
+RAD 未知但旧 A2A binding 可靠可用时，可以选择旧链路，而不声称原生 RAD 不支持。
+只有未知证据不能固定旧模式。原生 RAD 使用真实业务目标证据，正常成功请求可提供
+支持证据，不能额外发探测写。C06 准备组件，旧 facade 待所有适配路径齐备后统一接通。

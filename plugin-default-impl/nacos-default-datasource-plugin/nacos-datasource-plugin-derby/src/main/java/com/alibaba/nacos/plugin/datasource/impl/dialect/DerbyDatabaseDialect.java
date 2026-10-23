@@ -26,9 +26,16 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.derby.TrustedDerbyFunction
  */
 public class DerbyDatabaseDialect extends AbstractDatabaseDialect {
     
+    private static final String DEFAULT_DRIVER_CLASS_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.DERBY;
+    }
+    
+    @Override
+    public String getDefaultDriverClassName() {
+        return DEFAULT_DRIVER_CLASS_NAME;
     }
     
     @Override

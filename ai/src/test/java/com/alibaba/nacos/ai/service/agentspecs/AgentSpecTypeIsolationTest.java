@@ -451,6 +451,12 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
+        public int updateContent(String namespaceId, String name, String type, String version,
+            String storage, String desc, String author) {
+            throw new UnsupportedOperationException("Client publication is outside this fixture");
+        }
+        
+        @Override
         public int updateStorageAndDesc(String namespaceId, String name, String type,
             String version, String storage,
             String desc) {

@@ -52,6 +52,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
     @Test
+    public void testScopePreservesDraftRetryAndLifecycleState() throws Exception {
+        String name = randomAiName("agent-scope");
+        Map<String, String> draftRequest = agentForm(agentInitialDraftRequest(null, name, "1.0.0"));
+        JsonNode draft = postFormOk(ADMIN_AGENT_PATH + "/draft", draftRequest).get("data");
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, name));
+        JsonNode before = getJsonOk(ADMIN_AGENT_PATH, agentIdentityQuery(null, name))
+                .get("data").get("agent");
+        assertEquals("PUBLIC", before.get("scope").asText());
+        Query scope = Query.newInstance().addParam("agentName", name).addParam("scope", "private");
+        assertEquals("ok", putFormOk(ADMIN_AGENT_PATH + "/scope", scope).get("data").asText());
+        putFormOk(ADMIN_AGENT_PATH + "/scope", scope);
+        JsonNode retried = postFormOk(ADMIN_AGENT_PATH + "/draft", draftRequest).get("data");
+        assertEquals(draft.get("contentDigest"), retried.get("contentDigest"));
+        Query version = agentVersionIdentityQuery(null, name, "1.0.0");
+        postFormOk(ADMIN_AGENT_PATH + "/force-publish", version);
+        postFormOk(ADMIN_AGENT_PATH + "/offline", version);
+        postFormOk(ADMIN_AGENT_PATH + "/online", version);
+        JsonNode after = getJsonOk(ADMIN_AGENT_PATH, agentIdentityQuery(null, name))
+                .get("data").get("agent");
+        assertEquals("PRIVATE", after.get("scope").asText());
+        assertEquals(before.get("owner"), after.get("owner"));
+        assertEquals("1.0.0", after.get("versionInfo").get("labels").get("latest").asText());
+        assertEquals(draft.get("contentDigest"),
+                getJsonOk(ADMIN_AGENT_VERSION_PATH, version).get("data").get("contentDigest"));
+        assertError(putRaw(ADMIN_AGENT_PATH + "/scope",
+                Query.newInstance().addParam("agentName", name)),
+                400, ErrorCode.PARAMETER_MISSING, "scope");
+        assertError(putRaw(ADMIN_AGENT_PATH + "/scope",
+                Query.newInstance().addParam("agentName", name).addParam("scope", "SHARED")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "scope");
+        assertError(putRaw(ADMIN_AGENT_PATH + "/scope",
+                Query.newInstance().addParam("agentName", name + "-absent")
+                        .addParam("scope", "PUBLIC")),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "not found");
+    }
+
+    @Test
     public void testDefaultNamespaceCrudOverviewListAndVersionReads() throws Exception {
         String agentName = randomAiName("agent-admin");
         String version = "1.0.0";
@@ -93,6 +130,11 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals("OpenAPI Agent updated", summary.get("displayName").asText(),
                 summary.toString());
         assertEquals("updated", summary.get("tags").get(1).asText(), summary.toString());
+        assertEquals(updated.get("provider"), summary.get("provider"), summary.toString());
+        assertEquals(updated.get("iconUrl"), summary.get("iconUrl"), summary.toString());
+        assertFalse(summary.hasNonNull("extensions"), summary.toString());
+        assertFalse(summary.has("callInterfaces"), summary.toString());
+        assertTrue(updated.hasNonNull("extensions"), updated.toString());
 
         JsonNode versions = getJsonOk(ADMIN_AGENT_VERSIONS_PATH,
                 Query.newInstance().addParam("agentName", agentName)
@@ -101,6 +143,12 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertEmptyPageShape(versions);
         assertEquals(1, versions.get("totalCount").asInt(), versions.toString());
         assertVersionSummary(versions.get("pageItems").get(0), version, "draft");
+        JsonNode versionSummary = versions.get("pageItems").get(0);
+        assertFalse(versionSummary.has("namespaceId"), versionSummary.toString());
+        assertFalse(versionSummary.has("agentName"), versionSummary.toString());
+        assertFalse(versionSummary.has("callInterfaces"), versionSummary.toString());
+        assertEquals(createdDraft.get("contentDigest"), versionSummary.get("contentDigest"));
+        assertEquals(createdDraft.get("author"), versionSummary.get("author"));
 
         JsonNode versionDetail = getJsonOk(ADMIN_AGENT_VERSION_PATH,
                 agentVersionIdentityQuery(null, agentName, version)).get("data");
@@ -124,7 +172,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
         JsonNode page = getJsonOk(ADMIN_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", targetName)
-                        .addParam("bizTag", "create").addParam("scope", "PRIVATE")
+                        .addParam("bizTag", "create").addParam("scope", "PUBLIC")
                         .addParam("owner", "nacos").addParam("orderBy", "download_count")
                         .addParam("pageNo", "1").addParam("pageSize", "1")).get("data");
 
@@ -136,7 +184,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
         JsonNode wrongScope = getJsonOk(ADMIN_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", targetName)
-                        .addParam("scope", "PUBLIC").addParam("pageNo", "1")
+                        .addParam("scope", "PRIVATE").addParam("pageNo", "1")
                         .addParam("pageSize", "1")).get("data");
         assertEquals(0, wrongScope.get("totalCount").asInt(), wrongScope.toString());
         JsonNode wrongOwner = getJsonOk(ADMIN_AGENT_LIST_PATH,
@@ -211,16 +259,20 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
             String version, String marker) {
         assertNotNull(overview, "overview");
         JsonNode agent = overview.get("agent");
+        assertFalse(agent.has("versionCatalog"), agent.toString());
+        assertFalse(agent.get("versionInfo").has("onlineCnt"), agent.toString());
+        assertFalse(agent.get("versionInfo").has("latestVersion"), agent.toString());
+        assertTrue(agent.get("versionInfo").has("labels"), agent.toString());
         assertEquals(namespaceId, agent.get("namespaceId").asText(), overview.toString());
         assertEquals(agentName, agent.get("agentName").asText(), overview.toString());
         assertEquals("OpenAPI Agent " + marker, agent.get("displayName").asText(),
                 overview.toString());
         assertEquals("enable", agent.get("status").asText(), overview.toString());
         assertTrue(agent.has("owner"), overview.toString());
-        assertEquals("PRIVATE", agent.get("scope").asText(), overview.toString());
+        assertEquals("PUBLIC", agent.get("scope").asText(), overview.toString());
         assertEquals(version, agent.get("versionInfo").get("editingVersion").asText(),
                 overview.toString());
-        assertEquals(0, agent.get("versionInfo").get("onlineCnt").asInt(), overview.toString());
+        assertEquals(0, agent.get("versionInfo").get("onlineVersions").size(), overview.toString());
         assertTrue(agent.get("metaVersion").asLong() >= 1L, overview.toString());
 
         JsonNode versionPage = overview.get("versionPage");
@@ -251,7 +303,7 @@ public class AgentAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     private JsonNode getAgentList(String nameContains) throws Exception {
         return getJsonOk(ADMIN_AGENT_LIST_PATH,
                 Query.newInstance().addParam("agentName", nameContains)
-                        .addParam("bizTag", "updated").addParam("scope", "PRIVATE")
+                        .addParam("bizTag", "updated").addParam("scope", "PUBLIC")
                         .addParam("owner", "nacos").addParam("orderBy", "download_count")
                         .addParam("pageNo", "1").addParam("pageSize", "10"));
     }

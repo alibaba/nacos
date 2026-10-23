@@ -47,7 +47,7 @@ transport-neutral.
 | IT method | Scenario groups |
 | --- | --- |
 | `shouldInteroperateWithLegacyA2aSdk` | Legacy A2A SDK definition release, canonical Console and RAD reads, duplicate no-overwrite, legacy exact-Version Endpoint registration into the canonical Runtime Registry without Beta dual-write to the historical Naming service, Console Runtime Snapshot and legacy SERVICE query agreement, Version 2 pre-registration, omitted-selector multi-Version aggregation versus explicit-latest isolation, canonical Version publication, and legacy latest-subscription convergence. |
-| `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; namespace-free Search/Endpoint inputs bound by each Client; namespace-isolated publication/deregistration under grpc/http/auto. |
+| `shouldSearchDiscoverAndIsolateNamespaces` | Default and custom namespaces; default, individual, combined, empty, and paged Search; latest/exact/label Discover; combined filters; caller immutability; namespace-free Search/Endpoint inputs bound by each Client; namespace-isolated publication/deregistration under grpc/http/auto; inherited catalog metadata and the shared AgentVersionSummary preserve complete labels/protocols while excluding management-only fields. |
 | `shouldReplaceAndPartiallyDeregisterCompletePublications` | Complete register, identical idempotence, replacement convergence, canonical single-key and multi-key partial deregistration, retained Endpoint fields and Version bindings, mixed unknown keys, immutable inputs, final and multi-key whole deregistration, repeated no-op, and protocol isolation under grpc/http/auto. |
 | `shouldAggregateIndependentSdkPublishers` | Two SDK identities contributing the same natural key and last-contributor removal. |
 | `shouldDiscoverPreRegistrationAndPollUntilAgentAppears` | Pre-registration, missing Discover, subscribe-before-create, one typed `UNAVAILABLE` event, recovery with a complete `SNAPSHOT`, unsubscribe, and post-unsubscribe suppression. |
@@ -62,7 +62,7 @@ transport-neutral.
 | `shouldUseGrpcForAutoWhenInitialConnectionIsAvailable` | AUTO synchronous startup with an available negotiated gRPC connection, followed by Search, gRPC Watch callback, Endpoint Publication, Discover, and Deregister. |
 | `shouldFallbackAutoToHttpWhenGrpcNeverLeavesStarting` | A deliberately unreachable gRPC port keeps the connection in STARTING while AUTO immediately completes Search, HTTP Watch callback, Publication, and Deregister through HTTP; explicit HTTP remains independent of gRPC and explicit GRPC fails without fallback. |
 | `shouldBatchHttpWatchesAcrossTimeoutUnsubscribeResubscribeAndShutdown` | Two explicit-HTTP subscriptions share generation-based Batch Long Poll behavior across a silent timeout, independent Agent changes, partial unsubscribe, resubscribe, and shutdown callback suppression. |
-| `shouldRejectOnlyLatestHttpWatchAndRetainExistingBatch` | A server HTTP Watch capacity rejection removes only the latest addition, preserves every previously admitted Watch, accepts a smaller generation, and reuses the released slot. |
+| `shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch` | HTTP growth rejection retains accepted additions, restores the acknowledged batch, rejects further growth synchronously, and resumes pending Watches after an old subscription is canceled. |
 | `shouldKeepSearchProjectionLifecyclePaginationAndTransportParity` | gRPC/HTTP Search parity over combined typed filters, case-sensitive names, stable first/middle/last/out-of-range numbered pages, Runtime Endpoint non-indexing, two-Version latest/catalog convergence, one-Version offline convergence, and exclusion after every Version is offline. The same eventual assertions are reusable for `AUTO`, `INDEX`, and `SCAN` server runs. |
 | `shouldEnforceConfiguredLocalSubscriptionCapacityAndReuseSlot` | Workflow-configured polling-subscription capacity, idempotent duplicate admission, synchronous over-limit rejection before caching, and slot reuse after unsubscribe. |
 | `shouldSurfaceServerWatchCapacityAndReuseSlot` | Workflow-configured authoritative gRPC Watch soft watermark, whole-operation crossing from below, remote over-limit exception mapping, rejected Watch cleanup, and capacity reuse after unsubscribe. |
@@ -71,7 +71,7 @@ transport-neutral.
 | `shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart` | Opt-in three-node rolling-cluster workflow: independent gRPC and HTTP subscriptions observe a Version published through another node while one node is stopped, retain omitted-selector rollout-safe Endpoint aggregation and exact-selector isolation, then converge again after the stopped node restarts and a later Version is published. |
 | `shouldConvergePinnedNodeDefinitionAndRuntimeChanges` | Opt-in two-node workflow with gRPC and HTTP subscribers pinned to node A. It publishes definition and Runtime changes first through A (A-A) and then through B (A-B), covers storage-changing Version publication and metadata-only online/offline transitions, and cross-checks every callback fingerprint against authoritative Discover on both nodes. |
 | `shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart` | Opt-in two-node peer-restart workflow. It establishes gRPC and HTTP subscriptions on node A, mutates through node B, stops and restarts B, then verifies that the existing A-side Watches receive later definition and Runtime changes without resubscription. The test treats the expected loss of CP quorum while one of two nodes is down as topology unavailability rather than a Watch failure. |
-| `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, server-owned health, invalid deregistration payload, unknown local no-op, and not-found mapping. |
+| `shouldRejectInvalidBoundariesBeforeRemoteMutation` | Nulls, page boundaries, duplicate filters/natural keys, reference ambiguity, invalid protocol/URI/transport/version/range, empty publication, forbidden health in deregistration, invalid deregistration payload, unknown local no-op, and not-found mapping. |
 
 The same twenty-three stable workflows pass with both the default JSON adapter and
 `jackson3`. Existing `AiServiceJavaSdkITCase` runs with them as a compatibility
@@ -112,9 +112,9 @@ expected count.
 | --- | --- | --- |
 | Create `AiService` through `AiFactory` with no namespace | Agent operations bind to `public`. | IT |
 | Create services bound to `public` and a custom namespace | Search, Discover, subscriptions, and publications remain namespace-isolated. | IT + UT |
-| Request or Batch omits namespace | The SDK copies the value and injects its bound namespace without mutating caller input. | IT + UT |
-| Request or Batch carries the same namespace | The request succeeds and caller input remains unchanged. | UT |
-| Request or Batch carries another non-empty namespace | The SDK rejects it locally before transport invocation. | IT + UT |
+| Search/Registration business model has no namespace field or accessor | The SDK copies business values and passes its instance namespace in HTTP parameters/RPC envelopes; caller input remains unchanged. | IT + UT |
+| Reuse one Search/Registration object across two namespace-bound SDK instances with the same Agent/protocol | Search returns each namespace's tags; partial deregistration and whole removal affect only the selected instance's namespace. | IT + UT |
+| Registration redo and capacity rejection cleanup | Namespace stays in publication/redo keys after being removed from business models; discarding one namespace leaves the other intact. | UT |
 | Reuse caller lists, maps, references, filters, and endpoints after a call | SDK state and wire payload remain isolated from later caller mutations. | UT |
 | Shutdown with no subscription or publication | Polling, heartbeat, HTTP resources, and gRPC resources stop cleanly. | IT + UT |
 | Shutdown with active subscriptions and publications | The SDK cancels polling and heartbeat and best-effort deregisters every complete publication. | IT + UT |
@@ -191,11 +191,11 @@ Endpoint, and replacement across an already-online Version.
 
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
-| Subscribe to an existing target with both Watch abilities | The method returns the current snapshot, installs one connection-scoped gRPC Watch, and refreshes only through Hint followed by Discover. | IT + UT |
-| Subscribe through explicit HTTP or AUTO without negotiated Watch ability | The method returns the same snapshot and installs the intent into one generation-based HTTP Batch Long Poll. | IT + UT |
+| Subscribe to an existing target with both Watch abilities | The void method installs one connection-scoped gRPC Watch; the Listener receives the current snapshot, then changes through Hint followed by Discover. | IT + UT |
+| Subscribe through explicit HTTP or AUTO without negotiated Watch ability | The void method initializes the Listener with the current snapshot and installs the intent into one generation-based HTTP Batch Long Poll. | IT + UT |
 | HTTP Batch Long Poll reaches its timeout without a change | No listener callback is emitted; the same current Watch generation is sent again. | IT + UT |
 | Add or remove one HTTP Watch while an older request is in flight | The client cancels the superseded request, advances generation, sends the complete current list, and ignores a late older response. | IT + UT |
-| Subscribe before the target exists | The method returns `null`, emits at most one typed `UNAVAILABLE` event, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
+| Subscribe before the target exists | The void method initializes each new Listener with typed `UNAVAILABLE`, retains a bounded local-pending intent, and delivers a complete `SNAPSHOT` after the target appears. | IT + UT |
 | Repeated not-found polls | No duplicate `UNAVAILABLE` or empty snapshot is delivered and the subscription remains active. | UT |
 | Poll returns the same Version, digest, and source revisions | No duplicate listener event is delivered. | IT + UT |
 | Resolved Version changes | One complete replacement event is delivered. | IT + UT |
@@ -203,8 +203,8 @@ Endpoint, and replacement across an already-online Version.
 | Any `sourceRevision` changes | One complete replacement event is delivered. | IT + UT |
 | A Runtime binding changes while its Endpoint payload and health stay equal | The v2 Runtime revision changes because discovery-visible binding provenance is part of the snapshot. | UT |
 | A Filter produces a typed empty result | That result is cached and can replace an earlier non-empty snapshot. | UT |
-| Same reference/filter and two listener instances | Canonically equivalent intents share one Wire intent while listener identities remain isolated and both receive changes. | IT + UT |
-| Repeat subscribe with the same listener identity | Only one Wire intent and one callback per change are retained. | UT |
+| Same reference/filter and two listener instances | Canonically equivalent intents share one Wire intent; each new Listener receives the current state independently, and both receive changes. | IT + UT |
+| Repeat subscribe with the same listener identity | Only one Wire intent is retained; initialization is not repeated and each change is delivered once. | IT + UT |
 | Reach the configured local subscription limit | The last admitted subscription remains active; because the current API installs one subscription per call, the next distinct key throws `CLIENT_OVER_THRESHOLD` before Discover, cache insertion, or scheduling. A future batched Wire Watch operation must admit or reject the whole batch from the pre-operation watermark without partial caching. | IT + UT |
 | Unsubscribe at the configured limit, then subscribe another key | The released slot is immediately reusable and the new subscription is scheduled normally. | IT + UT |
 | Unsubscribe with the same reference/filter/listener | Only that listener stops; other listeners continue. | IT + UT |
@@ -215,7 +215,7 @@ Endpoint, and replacement across an already-online Version.
 | gRPC connection is replaced | The old wire key is discarded, current intents are resubscribed on the new connection, and the first required refresh cannot be lost between Subscribe and ACK. | Directed IT + UT |
 | HTTP Watch uses the stable HTTP Client id | The binding remains attributable to one SDK client without renewing Publisher liveness. | IT + UT |
 | HTTP Watch binding is unsupported or persistently unavailable | Existing intents move once to bounded Discover polling; business rejections do not silently fall back. | UT |
-| HTTP Watch capacity rejects a generation after one addition | Only that latest addition receives a terminal `UNAVAILABLE`; the previous accepted batch stays active and a released slot is reusable. | IT + UT |
+| HTTP Watch capacity rejects a generation after one addition | No error data event is delivered; accepted additions wait, the acknowledged batch stays active, further growth is synchronously rejected, and canceling an old Watch restores pending additions. | IT + UT |
 | Shutdown during Watch or polling | Pending long-poll, refresh, retry, and polling tasks are cancelled and no callback is delivered after shutdown. | IT + UT |
 
 ## Complete Endpoint Publication
@@ -319,3 +319,154 @@ failed targeted run rather than a sleeping normal CI test.
 | Public `getAll` / `selectOneHealthy` helper API shape | The design states local selection semantics but does not yet specify a stable Java type and method signature. It does not block Search, Discover, polling, or publication and is recorded rather than invented in this phase. |
 | Agent management-metadata change notification | `AgentDiscoveryResult` intentionally excludes display name, description, tags, provider, and other management metadata. Its polling fingerprint contains only resolved Version, Version `contentDigest`, and Endpoint `sourceRevision` values. A future requirement to subscribe to forced updates of published Agent metadata needs a Search/catalog subscription or an explicit RAD contract extension; it is not inferred by the current Discover subscription. |
 | Packet loss at individual frames and unknown gRPC write-result ambiguity | Covered with deterministic unit fault injection; a real single-node process restart is covered separately, while frame-level fault injection is not stable standalone IT. |
+
+### Agent 元数据模型合并（2026-09-14）
+
+Search 返回 Page<AgentSummary>，目录通过 versionInfo.onlineVersions 的 AgentVersionSummary 读取；latest 来自 versionInfo.labels。验证 grpc/http/auto 的字段一致、过滤与分页不变、Search 不泄漏 namespace/管理状态/非在线标签。CallInterface、Endpoint 和默认发现算法未纳入本轮。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### EP-03/06/07/15 加固（2026-09-15）
+
+`shouldReplaceAndPartiallyDeregisterCompletePublications` 在 GRPC、HTTP、AUTO 参数下保留三项中第三项的 weight/metadata/绑定及显式 `healthy=false`；注销前两项后，通过 Discover 和 Maintainer `getRuntimeEndpoints` 交叉读取剩余地址。Maintainer 返回非空统一三层模型及 `UNHEALTHY`/enabled/Set 观察时间，Discover 不泄漏管理状态。伪造 bindings/enabled/state 不覆盖批次及 Naming 状态；双 JSON adapter 验证同一 typed 结果。
+
+### EP-09 PUBLIC Agent Watch 回归（2026-09-15）
+
+`shouldWatchPublicAgentHealthAndPartialDeregistrationWithUnifiedModels` 通过历史 A2A 公开写入口准备 PUBLIC Agent，保持默认鉴权，分别在 GRPC/HTTP 和默认/Jackson 3 下订阅新 Agent 结果。注册三项后注销两项，核对剩余 healthy=false、绑定和同步 Discover fingerprint；仅将 healthy 改为 true 也须触发新完整结果；移除最后一项、取消订阅后不再回调。四种组合均通过。原有私有授权异步 Watch DAUTH-F05 Disabled 继续保留。
+
+
+## Request consolidation (2026-09-15)
+
+`searchAgents(AgentSearchRequest)` and `registerAgentEndpoints(AgentEndpointRegistrationBatch)`
+use shared concrete, namespace-free models. `deregisterAgentEndpoints(agentName, protocol,
+List<Endpoint>)` takes natural keys directly; nonempty remainder uses full registration,
+empty remainder uses whole-publication deregistration. The existing replacement, rollback,
+health, ownership, multi-publisher and transport cases now exercise these signatures.
+
+`shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespace` runs in GRPC/HTTP/AUTO:
+two namespaces contain the same Agent/protocol, share caller-owned input objects, then
+remove two of three endpoints and finally all endpoints in one namespace while asserting
+the other retains all three. Default/Jackson 3 runs use the same case. These are scenario
+contracts; fresh execution status is recorded in the design validation ledger.
+
+## Agent JSON 注解移除（2026-09-16）
+
+JSON-01/03：shouldIsolateSameAgentSearchAndPartialDeregistrationByClientNamespace 在 GRPC/HTTP/AUTO 和两种 JSON adapter 下断言 0/1/true/true 默认值，并直接使用 discover 返回的两个完整 Endpoint（含 bindings）执行 3 删 2、重复删除及 namespace 隔离；输入不被修改。INDEX/SCAN 均复验。
+
+[本轮测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_JSON_TEST_MATRIX.md)区分待执行项与实际结果。
+
+共享监听器用例 `shouldShareCanonicalPollingIntentAndIsolateListeners` 使用 PUBLIC Agent，继续验证空 Filter/无 Filter 的同一意图、完整快照一致、抛异常监听器隔离和部分取消订阅。原私有 fixture 在本轮复现服务端异步 `TERMINATED/-404`（DAUTH-F05），因此该项通过不代表私有授权 Watch 已修复；原始失败日志保留在本轮验证记录中。
+
+### C07 A2A/RAD metadata interoperation
+
+`AgentDiscoveryServiceJavaSdkITCase.shouldInteroperateA2aMetadataWithRadAndChangeRevision`
+uses two public SDK instances. Legacy Card publication and Endpoint registration are
+observed with native RAD discovery in HTTP/GRPC/AUTO modes. Tenant-only and protocol-version-only
+changes must alter Runtime revision; tenant also changes the complete discovery fingerprint.
+After legacy cleanup, native RAD metadata is projected back into a complete old Card, including
+an unhealthy endpoint, stored URL preference and both complete interface arrays.
+Run with default and Jackson 3 SDK adapters. This proves current public interoperation,
+not the C10 A2A-to-RAD facade routing, which remains pending.
+
+C07 execution: 74 external cases passed (11 SDK cases per JSON adapter, 34 HTTP cases,
+18 independent-Console cases), with authentication enabled and no skips. See
+ADAPTATION_VALIDATION.md for artifact hashes and component-test evidence. The legacy
+SDK facade still uses the old wire; public A2A-to-RAD routing is validated in C10.
+
+### C08 staged Endpoint-intent coverage
+
+The A2A-to-RAD merger is an internal component until C10. C08 UTs cover per-Version
+replacement, continuous retained ranges, conflicts, source ownership, rollback,
+unknown writes, serialized reconnect replay and shutdown. Native public SDK IT
+regression covers bindings, multi-item removal, namespace/publisher isolation,
+capacity and HTTP cleanup on HTTP/gRPC/AUTO and both JSON adapters. These runs
+do not claim public legacy-to-RAD routing coverage before C10. Final execution:
+15 SDK cases per JSON adapter and 7 HTTP cases passed with real identities,
+no skips; 716 default-adapter UTs and 81 Jackson 3 UTs passed. One existing MCP
+Disabled UT is recorded separately. See ADAPTATION_VALIDATION.md.
+
+### A2A/RAD C09: Watch adapter and explicit identity
+
+- Restore all seven DAUTH-F05 Agent discovery methods. The existing-target fingerprint
+  case now explicitly changes the Agent to PRIVATE and runs HTTP and GRPC as a granted
+  non-owner, so default PUBLIC visibility cannot mask the identity regression.
+- Retain complete snapshot, duplicate suppression, version/latest evolution, server capacity,
+  source preference, partial removal, HTTP batch and cancellation assertions.
+- Historical C09 used the native subscribe return value for initialization. The void subscription contract supersedes
+  that development signature with void and a required initial Listener callback. The
+  scope-invalidation test now waits for that callback and still requires a real unavailable
+  event, no stale data and not-found detail after visibility loss.
+- The internal A2A adapter is exercised with the real Watch manager in UT. Old public A2A
+  methods remain on legacy wire until C10; this stage does not claim public A2A RAD routing.
+- Re-enabled standalone restart and pinned-cluster cases require their directed fixtures.
+  Their execution status is recorded separately from ordinary Watch IT in the C11 matrix.
+
+### Discover 公共描述与标签（本轮范围）
+
+仅扩展已有 Discover/Watch 响应，不增加 API surface，覆盖率分母不变。
+`AgentDiscoveryServiceJavaSdkITCase#shouldWatchCurrentMetadataForAnExactOldVersion`
+覆盖 HTTP/gRPC/auto：旧版本订阅首次返回当前 description/tags、分别修改描述与标签的回调、
+标签换序不通知、空过滤仍返回元数据、清空字段及取消订阅；同时断言 contentDigest、
+nativeDescriptor 和 Endpoint sourceRevision 不变。默认与 Jackson 3 adapter 均执行。
+公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+集群专项复用 `shouldConvergePinnedNodeDefinitionAndRuntimeChanges`：从节点 B 更新
+description/tags，要求固定在节点 A 的 gRPC/HTTP Watch 收到相同完整快照，
+并与 A/B 两节点 Discover 指纹一致；版本与 contentDigest 保持不变。
+该场景在 Derby+Raft 和 MySQL 三节点夹具中分别执行。
+
+
+## Agent SDK functional regression
+
+The normal functional cases below run in
+[`it-new.yml`](../../.github/workflows/it-new.yml) with default authentication,
+configured publication/Watch capacities, and the default/Jackson 3 SDK profiles.
+`Covered` identifies implemented and verified assertions; it does not claim a
+particular GitHub Actions run passed. This matrix records reproducible behavior,
+not local run counts or code-coverage measurements.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent discovery capability | grpc/http/auto selection, repeated query, Discover/conversion/A2A use afterward, shutdown | Covered | `AiServiceJavaSdkITCase#testDiscoveryCapabilityBeforeBusinessCallsAndAfterShutdown`; `A2aRadRoutingJavaSdkITCase#allSignaturesOnRad` checks capability before legacy operations without changing routing. |
+| Explicit A2A converter | Both public getters, full descriptor/security metadata, source selection, input independence, conversion after client shutdown | Covered | `AgentDiscoveryServiceJavaSdkITCase#shouldConvertRealDiscoverySnapshotsExplicitly`, across grpc/http/auto. |
+| Server-visible endpoints | Disabled Runtime contributions stay excluded; enabled/unhealthy contributions remain visible | Covered | `shouldConvertOnlyServerVisibleRuntimeContributions` uses real registration and Discover results. |
+| Application-controlled conversion | Conversion of an empty Runtime snapshot fails locally; later registration is still delivered to the original Listener | Covered | `shouldKeepConversionUnderListenerControl`; no converter is inserted into native discovery/dispatch. |
+| Native subscription initialization | Initial state arrives through Listener, each new Listener initializes once, duplicate registration is idempotent, later state changes arrive | Covered | `shouldInitializeEachListenerOnceBeforeSubsequentChanges`; native methods return void, while legacy A2A keeps its return contract. |
+| Missing/deleted Agent data | Missing version/label remains subscribed; deletion and identical recreation; old A2A suppresses empty Cards and receives later changes | Covered | `shouldKeepMissingVersionAndLabelSubscriptionsUntilTargetsResolve`, `shouldNotifyDeletionAndIdenticalRecreationWithoutPushingEmptyLegacyCard`. |
+| Authorization recovery | Accepted gRPC/HTTP subscriptions survive permission removal/restoration without an access-error UNAVAILABLE or resubscribe | Covered | `shouldRecoverSameGrpcAndHttpWatchesAfterPermissionIsRestored`; uses isolated identities and the normal auth-enabled fixture. |
+| HTTP quota growth | Keep acknowledged Watch updates, retain accepted additions, reject further growth while limited, recover an addition after canceling an old Watch | Covered | `shouldRetainHttpQuotaAdditionsAndRecoverAfterCancelingOldWatch`; the workflow supplies the server Watch capacity. |
+| Slow callbacks | Observation progresses while a Listener is blocked; intermediate states may coalesce and the latest state is delivered | Covered | `shouldCoalesceSlowListenerWithoutBlockingWatchObservation`, for gRPC and HTTP. |
+| Rejected callback submission | Retain the latest state and deliver it when the application Executor accepts work again, without another Agent change | Covered | `shouldRecoverListenerSubmissionWithoutAnotherAgentChange`, using only the public Listener Executor hook. |
+| Throwing callback | An invoked callback exception does not prevent later state delivery | Covered | `shouldObserveLaterChangesAfterListenerThrows`; callback invocation is not automatically replayed. |
+
+Method names without a class prefix belong to `AgentDiscoveryServiceJavaSdkITCase`.
+The published contract is defined by the [Agent API spec](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract)
+and [SDK Listener delivery spec](../../specs/en/sdk/sdk-java-impl-spec.md#latest-state-agent-listener-delivery).
+Default-method compatibility is covered by `AiServiceDefaultMethodTest`; optional
+released-bytecode fixtures retain their separate opt-in setup.
+Deterministic unit tests separately cover the discovery/subscription fingerprint
+window, stale initialization ordering, internal executor rejection, `getExecutor()`
+failures, 50105/binding failures and exact HTTP generation races. Those are not
+reported as real-server fault injection in this IT matrix.
+
+### Fixed reliability workflow
+
+The scheduled/manual
+[`default-auth-reliability-it.yml`](../../.github/workflows/default-auth-reliability-it.yml)
+invokes [`default-auth-reliability-it.sh`](../scripts/default-auth-reliability-it.sh)
+for the existing directed cases below. These are separate from the ordinary
+single-server functional job and require their explicit fixture properties.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Original publications and Watches after restart | Keep SDK instances alive, restart the server, observe redo and later updates without resubscribe | Covered | `shouldRestoreGrpcAndHttpPublicationsAndWatchesAfterRealServerRestart` in the standalone reliability suite. |
+| Cross-node discovery and Watch | Pinned readers observe definition and Runtime changes made on another member | Covered | `shouldConvergePinnedNodeDefinitionAndRuntimeChanges` in the cluster suite. |
+| Rolling restart | Original gRPC/HTTP Watches converge while one member stops and after it returns; retained publication redo tolerates the initial connection/server failure | Covered | `shouldConvergeGrpcAndHttpWatchesAcrossRollingClusterRestart`; no manual registration retry masks redo. |
+| Pinned-reader peer restart | Existing Watches stay readable and receive later writes after the peer returns | Covered | `shouldKeepPinnedWatchesReadableAndRecoverAfterPeerRestart`. |
+
+Migration-specific fixtures belong to
+[`migration-it.yml`](../../.github/workflows/migration-it.yml) and the
+[A2A migration matrix](A2A_MIGRATION_SDK_IT_SCENARIOS.md). Local binary/data upgrade
+experiments and their execution reports are not part of this functional matrix.
