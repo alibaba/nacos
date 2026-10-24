@@ -67,7 +67,8 @@ class ConsoleAuthPluginLifecycleContextTest {
     
     @Test
     void initializeBuiltInAuthPluginInConsoleOnlyContext() throws Exception {
-        Files.createDirectories(tempDir.resolve("logs"));
+        Path logsDir = Files.createDirectories(Path.of("target", "test-logs",
+            "console-auth-plugin-lifecycle")).toAbsolutePath();
         Files.createDirectories(tempDir.resolve("conf"));
         Files.createFile(tempDir.resolve("conf/application.properties"));
         EnvUtil.setNacosHomePath(tempDir.toString());
@@ -84,7 +85,7 @@ class ConsoleAuthPluginLifecycleContextTest {
                 "nacos.core.auth.server.identity.value=test-value",
                 "nacos.plugin.auth.type=nacos",
                 "nacos.plugin.auth.nacos.token.secret.key=" + TOKEN_SECRET,
-                "nacos.logs.path=" + tempDir.resolve("logs"),
+                "nacos.logs.path=" + logsDir,
                 "spring.config.additional-location=file:" + tempDir.resolve("conf") + '/',
                 "spring.main.lazy-initialization=false")
             .run();
