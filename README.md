@@ -34,6 +34,9 @@ Nacos provides four major functions.
 * **Service and MetaData Management**
 	
     Nacos provides an easy-to-use service dashboard to help you manage your services metadata, configuration, kubernetes DNS, service health and metrics statistics.
+
+
+The web console is available in the following languages: `中文`, `English`, `Русский`(only new UI)
  
 
 ## Quick Start
