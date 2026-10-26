@@ -40,6 +40,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AgentCardUtilTest {
     
     @Test
+    void legacyProjectionPreservesHistoricalEmptyStrings() {
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "");
+        metadata.put(Constants.Agent.AGENT_ENDPOINT_TENANT_KEY, "");
+        instance.setMetadata(metadata);
+        AgentInterface projected = AgentCardUtil.buildAgentInterface(instance);
+        assertEquals("", projected.getProtocolVersion());
+        assertEquals("", projected.getTenant());
+    }
+    
+    @Test
     void testBuildAgentCardDetailInfo() {
         // Given
         AgentCard agentCard = createTestAgentCard();

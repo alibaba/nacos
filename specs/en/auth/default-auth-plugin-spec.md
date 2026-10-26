@@ -220,6 +220,12 @@ operational errors and must not be converted into credential failures.
 
 ## RBAC Storage Model
 
+External user, role, and permission persistence beans must initialize their datasource before
+first use, on both ordinary JVM and AOT paths. AOT bean definitions must expose lifecycle
+callbacks declared on the implementation; interface factory return types must not hide
+`@PostConstruct`. This does not change ordinary JVM bean names, implementation selection,
+initialization order, or authentication API contracts.
+
 The default plugin stores:
 
 | Object | Meaning |
@@ -310,7 +316,8 @@ used by AI resources.
 
 Default behavior:
 
-- New resources default to `PRIVATE` unless the domain supplies another scope.
+- New `agent` and `mcp` resources default to `PUBLIC`; other resource types retain
+  the `PRIVATE` default. This is a creation default, never a publish-time scope reset.
 - Global administrators can read and write all visibility-aware resources.
 - A resource owner can read and write the resource.
 - `PUBLIC` resources can be read by non-owners.

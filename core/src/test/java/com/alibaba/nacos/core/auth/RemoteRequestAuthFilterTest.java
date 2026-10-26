@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -79,10 +80,16 @@ class RemoteRequestAuthFilterTest {
     
     MockEnvironment environment;
     
+    private ConfigurableEnvironment originalEnvironment;
+    
     @BeforeEach
     void setUp() {
+        originalEnvironment = EnvUtil.getEnvironment();
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "test-key");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "test-value");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
         authFilter = new RemoteRequestAuthFilter(innerApiAuthEnabled);
         GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
@@ -94,7 +101,7 @@ class RemoteRequestAuthFilterTest {
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
-        EnvUtil.setEnvironment(null);
+        EnvUtil.setEnvironment(originalEnvironment);
     }
     
     @Test

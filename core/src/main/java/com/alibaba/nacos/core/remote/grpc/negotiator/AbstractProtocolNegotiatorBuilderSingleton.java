@@ -72,7 +72,8 @@ public abstract class AbstractProtocolNegotiatorBuilderSingleton
      */
     public AbstractProtocolNegotiatorBuilderSingleton(String typePropertyKey) {
         this.typePropertyKey = typePropertyKey;
-        this.actualType = EnvUtil.getProperty(typePropertyKey, defaultBuilderPair().getFirst());
+        this.actualType =
+            EnvUtil.getProperty(typePropertyKey, defaultBuilderPair().getSecond().type());
     }
     
     /**
@@ -87,7 +88,7 @@ public abstract class AbstractProtocolNegotiatorBuilderSingleton
             Loggers.REMOTE.warn(
                 "Not found ProtocolNegotiatorBuilder for type {}, will use default type {}",
                 actualType,
-                defaultBuilderPair().getFirst());
+                defaultBuilderPair().getSecond().type());
             return defaultBuilderPair().getSecond().build();
         }
         return actualBuilder.build();

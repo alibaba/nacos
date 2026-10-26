@@ -56,13 +56,13 @@ Set `NACOS_RELIABILITY_DISTRIBUTION` to test a specific `.tar.gz` or `.zip`,
 | Standalone | Config restart | Two original `ConfigService` instances reconnect; the original listener receives post-restart state and both clients can query/publish with normal credentials. |
 | Standalone | Naming restart | Original publisher/subscriber instances reconnect; ephemeral registration Redo and subscription callbacks recover; a later instance update is visible. |
 | Standalone | Lock restart | A lease longer than the restart window proves process replacement clears the connection-scoped lock; both original clients reconnect and mutex compete/release/reacquire behavior remains correct. |
-| Standalone | Agent and MCP restart | Retained as an exact directed scenario, but currently disabled as `DAUTH-F05` because the authorized gRPC Watch cannot resume after process replacement. |
+| Standalone | Agent and MCP restart | Original Agent/MCP publishers and authorized gRPC/HTTP listeners recover after real process replacement; restored with the C09 explicit-identity fix. |
 | Standalone | Maintainer restart | The original Maintainer client recovers, persistent namespace state remains readable, a new namespace is created exactly once, and a duplicate write remains rejected. |
 | Standalone | Jackson 3 restart | The Config restart contract is repeated with the Jackson 3 adapter. |
 | Cluster security | Default and scope checks | All three nodes start auth-on; an intentional mixed Client-auth state is detected; uniform explicit false affects only Client APIs and leaves Admin/Console protected; the runner restores all nodes to true. |
 | Cluster security | Token expiry | A token issued with a 5-second TTL expires on every node; a newly issued token is accepted by every node; the normal TTL is restored. |
 | Cluster security | Permission cache | Naming permission revoke and regrant converge on every node within a bounded window while the default cache remains enabled. |
-| Cluster client | Pinned-node changes | Retained as an exact directed scenario, but currently disabled as `DAUTH-F05` because an authorized pinned client cannot read the initial Agent definition. |
+| Cluster client | Pinned-node changes | Authorized pinned clients read and track definition/runtime changes across nodes; restored with the C09 explicit-identity fix. |
 | Cluster client | Rolling node restart | With node B stopped, existing gRPC/HTTP Watches converge to Version 2; after B rejoins they converge to Version 3 without rebuilding SDK instances. |
 | Cluster client | Peer restart | Watches pinned to node A remain active while a node-B client observes failure; after B restarts, later definition and Runtime changes converge without resubscription. |
 
@@ -114,3 +114,8 @@ Distributed Lock is experimental and has no complete `SignType.LOCK`
 authorization guard, so this suite verifies authenticated functionality and
 reconnect behavior but does not claim an authorization-denial contract that
 the server does not implement.
+
+C09 restores the previously disabled Agent restart and pinned-node runner entries. Their
+fixture execution must be checked in the final A2A/RAD matrix; restoring a Java method or shell
+entry alone is not a passing reliability result. Historical DAUTH-F05 reports remain evidence
+of the original failure, not exclusions from the current required suite.

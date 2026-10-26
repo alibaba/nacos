@@ -62,4 +62,44 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>jackson3-only-test</id>
+            <properties>
+                <nacos.client.json.adapter>auto</nacos.client.json.adapter>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>tools.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <includes>
+                                <include>**/HttpLoginProcessorTest.java</include>
+                                <include>**/OidcClientContextTest.java</include>
+                                <include>**/OidcTokenHolderTest.java</include>
+                                <include>**/OidcClientAuthServiceImplTest.java</include>
+                                <include>**/StsCredentialHolderTest.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <nacos.client.json.adapter>${nacos.client.json.adapter}</nacos.client.json.adapter>
+                                <nacos.test.json.jackson3-only>true</nacos.test.json.jackson3-only>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

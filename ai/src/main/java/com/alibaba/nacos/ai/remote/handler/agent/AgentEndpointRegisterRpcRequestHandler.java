@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.ai.remote.handler.agent;
 
+import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointOperationResponse;
 import com.alibaba.nacos.api.annotation.Since;
@@ -43,10 +44,14 @@ import org.springframework.stereotype.Component;
 public class AgentEndpointRegisterRpcRequestHandler
     extends RequestHandler<AgentEndpointRegisterRpcRequest, AgentEndpointOperationResponse> {
     
+    private final AgentClientMigrationGuard migrationGuard;
+    
     private final AgentRuntimeRegistryService runtimeRegistryService;
     
     public AgentEndpointRegisterRpcRequestHandler(
-        AgentRuntimeRegistryService runtimeRegistryService) {
+        AgentRuntimeRegistryService runtimeRegistryService,
+        AgentClientMigrationGuard migrationGuard) {
+        this.migrationGuard = migrationGuard;
         this.runtimeRegistryService = runtimeRegistryService;
     }
     
@@ -60,9 +65,11 @@ public class AgentEndpointRegisterRpcRequestHandler
         try {
             AgentEndpointRegistrationBatch batch =
                 requireRequest(request.getRegistrationBatch(), "registrationBatch");
-            batch.setNamespaceId(NamespaceUtil.processNamespaceParameter(
-                batch.getNamespaceId()));
-            runtimeRegistryService.register(meta.getConnectionId(), batch);
+            request.setNamespaceId(NamespaceUtil.processNamespaceParameter(
+                request.getNamespaceId()));
+            migrationGuard.checkReady();
+            runtimeRegistryService.register(meta.getConnectionId(), request.getNamespaceId(),
+                batch);
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);
         }

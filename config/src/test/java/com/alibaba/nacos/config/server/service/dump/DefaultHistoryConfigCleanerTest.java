@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -34,8 +35,6 @@ import java.lang.reflect.Method;
 import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 
 @ExtendWith(SpringExtension.class)
 public class DefaultHistoryConfigCleanerTest {
@@ -85,9 +84,19 @@ public class DefaultHistoryConfigCleanerTest {
     
     @Test
     public void testCleanHistoryConfig() throws Exception {
-        defaultHistoryConfigCleaner.cleanHistoryConfig();
-        Mockito.verify(historyConfigInfoPersistService, Mockito.times(1))
-            .removeConfigHistory(any(Timestamp.class), anyInt());
+        Timestamp currentTime = Timestamp.valueOf("2026-01-02 03:04:05.678");
+        try (MockedStatic<PropertyUtil> propertyUtilMockedStatic =
+            Mockito.mockStatic(PropertyUtil.class);
+            MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class)) {
+            propertyUtilMockedStatic.when(PropertyUtil::getConfigRententionDays)
+                .thenReturn(2);
+            timeUtilsMockedStatic.when(TimeUtils::getCurrentTime).thenReturn(currentTime);
+            
+            defaultHistoryConfigCleaner.cleanHistoryConfig();
+            
+            Mockito.verify(historyConfigInfoPersistService, Mockito.times(1))
+                .removeConfigHistory(Timestamp.valueOf("2025-12-31 03:04:05"), 1000);
+        }
     }
     
     @Test

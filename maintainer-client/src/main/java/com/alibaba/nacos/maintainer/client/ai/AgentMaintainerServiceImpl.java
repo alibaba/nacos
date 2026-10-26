@@ -16,19 +16,19 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCommand;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentVersionRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.utils.json.NacosTypeReference;
@@ -62,7 +62,7 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public Agent updateAgent(String namespaceId, AgentUpdateRequest request)
+    public AgentSummary updateAgent(String namespaceId, AgentUpdateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -71,10 +71,24 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
             request.getProvider(), request.getTags(), request.getExtensions(), request.getStatus());
         HttpRestResult<String> restResult = executeFormRequest(HttpMethod.PUT, ROOT_PATH,
             namespaceId, request.getAgentName(), params);
-        Result<Agent> result =
-            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Agent>>() {
+        Result<AgentSummary> result =
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<AgentSummary>>() {
             });
         return result.getData();
+    }
+    
+    @Override
+    public boolean updateScope(String namespaceId, String agentName, String scope)
+        throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = identityParams(namespaceId, agentName);
+        params.put("scope", scope);
+        HttpRestResult<String> restResult = executeFormRequest(HttpMethod.PUT, ROOT_PATH + "/scope",
+            namespaceId, agentName, params);
+        Result<String> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<String>>() {
+            });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     @Override
@@ -205,43 +219,43 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
     }
     
     @Override
-    public AgentVersionSummary submit(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary submit(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/submit");
     }
     
     @Override
-    public AgentVersionSummary publish(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary publish(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/publish");
     }
     
     @Override
-    public AgentVersionSummary forcePublish(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary forcePublish(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/force-publish");
     }
     
     @Override
-    public AgentVersionSummary redraft(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary redraft(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/redraft");
     }
     
     @Override
-    public AgentVersionSummary online(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary online(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/online");
     }
     
     @Override
-    public AgentVersionSummary offline(String namespaceId, AgentVersionCommand command)
+    public AgentVersionSummary offline(String namespaceId, AgentVersionRequest command)
         throws NacosException {
         return executeVersionCommand(namespaceId, command, "/offline");
     }
     
     @Override
-    public Agent updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
+    public AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException {
         request = requireRequest(request);
         namespaceId = resolveNamespace(namespaceId);
@@ -249,14 +263,14 @@ final class AgentMaintainerServiceImpl extends AbstractAiDelegateMaintainerServi
         putJsonIfNotNull(params, "labels", request.getLabels());
         HttpRestResult<String> restResult = executeFormRequest(HttpMethod.PUT,
             ROOT_PATH + "/labels", namespaceId, request.getAgentName(), params);
-        Result<Agent> result =
-            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Agent>>() {
+        Result<AgentSummary> result =
+            JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<AgentSummary>>() {
             });
         return result.getData();
     }
     
     private AgentVersionSummary executeVersionCommand(String namespaceId,
-        AgentVersionCommand command, String path) throws NacosException {
+        AgentVersionRequest command, String path) throws NacosException {
         command = requireRequest(command);
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params =

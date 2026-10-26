@@ -16,3 +16,5 @@
 
 com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest
 com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse
+com.alibaba.nacos.core.cluster.remote.request.PluginAvailabilityRequest
+com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse

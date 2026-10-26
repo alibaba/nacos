@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.ai.service.search;
 
+import java.util.LinkedHashMap;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -96,7 +97,7 @@ class AgentAiResourceSearchTypeHandlerTest {
     @Test
     void shouldProjectOnlyEnabledCommonLatestOnlineVersion() throws Exception {
         AiResource meta = meta("enable", AGENT_NAME);
-        Agent agent = agent(VERSION);
+        AgentSummary agent = agent(VERSION);
         AgentVersionDetail latest = version("online");
         AiResourceIndexProjection expected = projection("digest");
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -124,17 +125,17 @@ class AgentAiResourceSearchTypeHandlerTest {
             AGENT_NAME, null));
         
         AiResource enabled = meta("enable", AGENT_NAME);
-        Agent noCatalog = agent(null);
+        AgentSummary noCatalog = agent(null);
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(enabled);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(noCatalog);
         assertNull(handler.project(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT,
             AGENT_NAME, null));
-        noCatalog.setVersionCatalog(null);
+        noCatalog.setVersionInfo(null);
         assertNull(handler.project(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT,
             AGENT_NAME, null));
         
-        Agent agent = agent(VERSION);
+        AgentSummary agent = agent(VERSION);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
         when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(version("offline"));
@@ -150,7 +151,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         page.setPageItems(Arrays.asList(null, good, failed));
         when(resourceManager.listMetaByType(NAMESPACE_ID,
             Constants.Agent.RESOURCE_TYPE_AGENT, null, null, 1, 3)).thenReturn(page);
-        Agent goodAgent = agent(VERSION);
+        AgentSummary goodAgent = agent(VERSION);
         AgentVersionDetail goodVersion = version("online");
         when(persistenceService.getAgent(NAMESPACE_ID, "good")).thenReturn(goodAgent);
         when(persistenceService.getAgentVersion(NAMESPACE_ID, "good", VERSION))
@@ -184,7 +185,7 @@ class AgentAiResourceSearchTypeHandlerTest {
     @Test
     void shouldValidateCurrentReadableDigest() throws Exception {
         AiResource meta = meta("enable", AGENT_NAME);
-        Agent agent = agent(VERSION);
+        AgentSummary agent = agent(VERSION);
         AgentVersionDetail latest = version("online");
         AiResourceSearchDocument document = projection("digest").getDocument();
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
@@ -244,16 +245,17 @@ class AgentAiResourceSearchTypeHandlerTest {
         return result;
     }
     
-    private Agent agent(String latestVersion) {
-        Agent result = new Agent();
+    private AgentSummary agent(String latestVersion) {
+        AgentSummary result = new AgentSummary();
         result.setNamespaceId(NAMESPACE_ID);
         result.setAgentName(AGENT_NAME);
         if (latestVersion != null) {
-            AgentVersionCatalog catalog = new AgentVersionCatalog();
-            catalog.setLatestVersion(latestVersion);
-            result.setVersionCatalog(catalog);
+            AgentVersionInfo catalog = new AgentVersionInfo();
+            catalog.setLabels(new LinkedHashMap<String, String>(
+                Collections.singletonMap("latest", latestVersion)));
+            result.setVersionInfo(catalog);
         } else {
-            result.setVersionCatalog(new AgentVersionCatalog());
+            result.setVersionInfo(new AgentVersionInfo());
         }
         return result;
     }

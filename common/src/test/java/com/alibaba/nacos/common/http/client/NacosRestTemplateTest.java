@@ -24,10 +24,12 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -44,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -388,4 +392,23 @@ class NacosRestTemplateTest {
         restTemplate.setInterceptors(Collections.singletonList(interceptor));
         assertEquals(1, restTemplate.getInterceptors().size());
     }
+    
+    @Test
+    void testPostFormReplayPolicyIsRequestScoped() throws Exception {
+        when(requestClient.execute(any(), eq("POST"), any())).thenReturn(mockResponse);
+        when(mockResponse.getStatusCode()).thenReturn(200);
+        when(mockResponse.getBody())
+            .thenAnswer(ignored -> new ByteArrayInputStream("ok".getBytes()));
+        restTemplate.postForm("http://127.0.0.1:8848/publish", Header.newInstance(),
+            Collections.singletonMap("name", "agent"), String.class, false);
+        restTemplate.postForm("http://127.0.0.1:8848/ordinary", Header.newInstance(),
+            Collections.singletonMap("name", "agent"), String.class);
+        ArgumentCaptor<RequestHttpEntity> entities =
+            ArgumentCaptor.forClass(RequestHttpEntity.class);
+        verify(requestClient, times(2))
+            .execute(any(), eq("POST"), entities.capture());
+        assertFalse(entities.getAllValues().get(0).isBodyRepeatable());
+        assertTrue(entities.getAllValues().get(1).isBodyRepeatable());
+    }
+    
 }

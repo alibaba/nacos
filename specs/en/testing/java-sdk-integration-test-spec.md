@@ -228,7 +228,8 @@ uses real external clients and a standalone server to cover at least:
   listener executor selection, slow/throwing listeners, and callback isolation;
 - validation, authorization, conflict, local/server capacity, oversized Watch,
   Discover transient failure, push/long-poll timeout, executor rejection, and
-  rejected-state cleanup without infinite retry;
+  cleanup of synchronously rejected new intents; already accepted intents must
+  retain state and retry at a bounded rate until unsubscribe or shutdown;
 - gRPC disconnect/reconnect, server restart, new connection wire keys, lost or
   duplicate Hint tolerance, late old-key notification, Subscribe/ACK failure,
   ability absence, and bounded polling fallback;

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,6 +89,13 @@ class DatabaseDialectManagerTest {
             () -> DatabaseDialectManager.getInstance().getDialect("unknown"));
         
         assertTrue(exception.getMessage().contains("unknown"));
+    }
+    
+    @Test
+    void testDefaultDriverClassNameIsNullWhenDialectDoesNotProvideOne() {
+        // The SPI default keeps third-party dialects compiled against older versions working and
+        // lets the datasource module fall back to its compatibility default driver.
+        assertNull(new TestDatabaseDialect("test").getDefaultDriverClassName());
     }
     
     @Test

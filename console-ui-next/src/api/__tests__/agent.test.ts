@@ -47,6 +47,13 @@ describe('Agent Console API', () => {
     vi.clearAllMocks();
   });
 
+  it('updates scope through an independent form operation', async () => {
+    await agentApi.updateScope({ agentName: 'demo', scope: 'PRIVATE' });
+    expectForm('put', '/scope', { agentName: 'demo', scope: 'PRIVATE' });
+    await agentApi.updateScope({ namespaceId: 'tenant', agentName: 'demo', scope: 'PUBLIC' });
+    expectForm('put', '/scope', { namespaceId: 'tenant', agentName: 'demo', scope: 'PUBLIC' });
+  });
+
   it('encodes only present form fields while preserving empty, zero and false values', () => {
     expect(Object.fromEntries(toFormParams({
       omitted: undefined,

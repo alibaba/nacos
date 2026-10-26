@@ -505,12 +505,13 @@ class AgentVersionStorageServiceTest {
         callInterface.setProtocol("a2a");
         callInterface.setDescriptorMediaType("application/json");
         callInterface.setNativeDescriptor("descriptor");
-        callInterface.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
+        callInterface.setEndpointSourceOrder(
+            java.util.Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         return new AgentVersionContent(Collections.singletonList(callInterface));
     }
     
     private byte[] reorderedContentBytes() {
-        return ("{\"callInterfaces\":[{\"endpointSourceOrder\":[\"RUNTIME\"],"
+        return ("{\"callInterfaces\":[{\"endpointSourceOrder\":[\"RUNTIME\",\"DECLARED\"],"
             + "\"nativeDescriptor\":\"descriptor\",\"descriptorMediaType\":"
             + "\"application/json\",\"protocol\":\"a2a\"}],\"schemaVersion\":1,"
             + "\"kind\":\"AgentVersionContent\"}").getBytes(StandardCharsets.UTF_8);

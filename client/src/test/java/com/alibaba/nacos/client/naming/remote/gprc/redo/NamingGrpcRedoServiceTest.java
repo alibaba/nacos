@@ -129,7 +129,7 @@ class NamingGrpcRedoServiceTest {
     void testOnDisConnect() {
         redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
-        redoService.instanceRegistered(SERVICE, GROUP);
+        redoService.instanceRegistered(SERVICE, GROUP, redoService.getCurrentConnectionEpoch());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
         assertTrue(redoService.isConnected());
@@ -180,9 +180,25 @@ class NamingGrpcRedoServiceTest {
     void testInstanceRegistered() {
         ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
-        redoService.instanceRegistered(SERVICE, GROUP);
+        redoService.instanceRegistered(SERVICE, GROUP, redoService.getCurrentConnectionEpoch());
         InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
         assertTrue(actual.isRegistered());
+    }
+    
+    @Test
+    void testInstanceRegisteredIgnoreStaleConnectionEpoch() {
+        redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
+        long epochWhenRequestSent = redoService.getCurrentConnectionEpoch();
+        // connection breaks, then a late register response from the dead connection arrives
+        redoService.onDisConnect(new TestConnection(new RpcClient.ServerInfo()));
+        redoService.instanceRegistered(SERVICE, GROUP, epochWhenRequestSent);
+        // stale response is discarded, the instance still needs redo (see issue #15876)
+        assertFalse(redoService.findInstanceRedoData().isEmpty());
+        // a fresh register on the live connection is accepted again
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
+        redoService.instanceRegistered(SERVICE, GROUP, redoService.getCurrentConnectionEpoch());
+        assertTrue(redoService.findInstanceRedoData().isEmpty());
     }
     
     @Test
@@ -220,7 +236,7 @@ class NamingGrpcRedoServiceTest {
     void testFindInstanceRedoData() {
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         assertFalse(redoService.findInstanceRedoData().isEmpty());
-        redoService.instanceRegistered(SERVICE, GROUP);
+        redoService.instanceRegistered(SERVICE, GROUP, redoService.getCurrentConnectionEpoch());
         assertTrue(redoService.findInstanceRedoData().isEmpty());
         redoService.instanceDeregister(SERVICE, GROUP);
         assertFalse(redoService.findInstanceRedoData().isEmpty());

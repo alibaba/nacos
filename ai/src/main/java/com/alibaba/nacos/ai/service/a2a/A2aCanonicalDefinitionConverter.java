@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
@@ -30,7 +31,7 @@ import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -78,7 +79,11 @@ public class A2aCanonicalDefinitionConverter {
         callInterface.setDescriptorMediaType(JSON_MEDIA_TYPE);
         callInterface.setNativeDescriptor(toNativeDescriptor(card));
         callInterface.setEndpointSourceOrder(sourceOrder(normalizedType));
-        callInterface.setDeclaredEndpoints(declaredEndpoints(namespaceId, card));
+        
+        EndpointSet declaredSet1 = new EndpointSet();
+        declaredSet1.setSource(EndpointSource.DECLARED);
+        declaredSet1.setEndpoints(declaredEndpoints(namespaceId, card));
+        callInterface.setEndpointSets(Collections.singletonList(declaredSet1));
         AgentDraftCreateRequest result = new AgentDraftCreateRequest();
         result.setAgentName(card.getName());
         result.setVersion(card.getVersion());
@@ -118,11 +123,11 @@ public class A2aCanonicalDefinitionConverter {
         if (source == null) {
             throw new IllegalArgumentException("AgentCard must not be null");
         }
-        return JacksonUtils.toObj(JacksonUtils.toJson(source), AgentCard.class);
+        return JsonUtils.toObj(JsonUtils.toJson(source), AgentCard.class);
     }
     
     private Object toNativeDescriptor(AgentCard card) {
-        return JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class);
+        return JsonUtils.toObj(JsonUtils.toJson(card), Map.class);
     }
     
     private AgentProvider toAgentProvider(AgentCard card) {

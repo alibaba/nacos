@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -76,6 +78,8 @@ class ClusterRpcClientProxyTest {
     
     private Member member;
     
+    private ConfigurableEnvironment originalEnvironment;
+    
     @AfterAll
     static void tearDown() throws NacosException {
         Map<String, RpcClient> clientMap = (Map<String, RpcClient>) ReflectionTestUtils
@@ -85,8 +89,11 @@ class ClusterRpcClientProxyTest {
     
     @BeforeEach
     void setUp() throws NacosException {
+        originalEnvironment = EnvUtil.getEnvironment();
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "test-key");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "test-value");
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
         EnvUtil.setEnvironment(environment);
         member = new Member();
@@ -104,6 +111,11 @@ class ClusterRpcClientProxyTest {
         clientMap.remove("Cluster-" + member.getAddress()).shutdown();
         clientMap.put("Cluster-" + member.getAddress(), client);
         when(client.getConnectionType()).thenReturn(ConnectionType.GRPC);
+    }
+    
+    @AfterEach
+    void restoreEnvironment() {
+        EnvUtil.setEnvironment(originalEnvironment);
     }
     
     @Test

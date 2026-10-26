@@ -17,9 +17,9 @@
 package com.alibaba.nacos.ai.form.agent.admin;
 
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 
 import java.io.Serial;
 import java.util.List;
@@ -74,10 +74,10 @@ public class AgentUpdateForm extends AgentAdminForm {
         result.setProvider(AgentAdminFormJsonParser.parseOptional("provider", provider,
             AgentProvider.class));
         result.setTags(AgentAdminFormJsonParser.parseOptional("tags", tags,
-            new TypeReference<List<String>>() {
+            new NacosTypeReference<List<String>>() {
             }));
         result.setExtensions(AgentAdminFormJsonParser.parseOptional("extensions", extensions,
-            new TypeReference<Map<String, Object>>() {
+            new NacosTypeReference<Map<String, Object>>() {
             }));
         result.setStatus(status);
         result.validate();

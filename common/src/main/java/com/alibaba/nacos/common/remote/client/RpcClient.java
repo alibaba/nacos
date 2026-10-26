@@ -748,11 +748,16 @@ public abstract class RpcClient implements Closeable {
      * @return response from server.
      */
     public Response request(Request request, long timeoutMills) throws NacosException {
+        return request(request, timeoutMills, rpcClientConfig.retryTimes());
+    }
+    
+    private Response request(Request request, long timeoutMills, int maxRetries)
+        throws NacosException {
         int retryTimes = 0;
         Response response;
         Throwable exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes <= rpcClientConfig.retryTimes() && (timeoutMills <= 0
+        while (retryTimes <= maxRetries && (timeoutMills <= 0
             || System.currentTimeMillis() < timeoutMills + start)) {
             boolean waitReconnect = false;
             try {
@@ -818,6 +823,19 @@ public abstract class RpcClient implements Closeable {
         } else {
             throw new NacosException(SERVER_ERROR, "Request fail, unknown Error");
         }
+    }
+    
+    /**
+     * Send a non-replayable request once, preserving ordinary connection error handling.
+     *
+     * @param request request
+     * @param timeoutMills timeout; a negative value uses the configured default
+     * @return response
+     * @throws NacosException when the single attempt fails
+     */
+    public Response requestOnce(Request request, long timeoutMills) throws NacosException {
+        return request(request, timeoutMills < 0 ? rpcClientConfig.timeOutMills() : timeoutMills,
+            0);
     }
     
     /**

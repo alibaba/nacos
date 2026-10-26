@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.remote.RequestIdHttpClientRequestInterceptor;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.HttpClientRequestInterceptor;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -69,6 +70,9 @@ class ConfigHttpClientManagerTest {
         // second call should not add a duplicate
         NacosRestTemplate t2 = instance.getNacosRestTemplate();
         assertEquals(afterFirst, t2.getInterceptors().size());
+        assertEquals(1, t2.getInterceptors().stream()
+            .filter(RequestIdHttpClientRequestInterceptor.class::isInstance).count());
+        assertEquals(2, t2.getInterceptors().size());
     }
     
     @Test

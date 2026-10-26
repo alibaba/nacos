@@ -110,7 +110,8 @@ class PreparedAgentVersionWriteTest {
         callInterface.setProtocol("a2a");
         callInterface.setDescriptorMediaType("application/json");
         callInterface.setNativeDescriptor("descriptor");
-        callInterface.setEndpointSourceOrder(Collections.singletonList(EndpointSource.RUNTIME));
+        callInterface.setEndpointSourceOrder(
+            java.util.Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         AgentVersionContent content =
             new AgentVersionContent(Collections.singletonList(callInterface));
         return AgentVersionContentSerializer.serialize(content);

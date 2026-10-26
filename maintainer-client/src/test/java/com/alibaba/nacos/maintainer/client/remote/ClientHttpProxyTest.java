@@ -17,6 +17,10 @@
 package com.alibaba.nacos.maintainer.client.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -27,12 +31,20 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +52,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,6 +128,8 @@ public class ClientHttpProxyTest {
         
         HttpRestResult<Object> mockFailureResult = new HttpRestResult<>();
         mockFailureResult.setCode(500);
+        mockFailureResult
+            .setMessage("{\"code\":30000,\"message\":\"server error\",\"data\":\"retry\"}");
         HttpRestResult<Object> mockSuccessResult = new HttpRestResult<>();
         mockSuccessResult.setCode(200);
         mockSuccessResult.setData("Success");
@@ -134,6 +150,7 @@ public class ClientHttpProxyTest {
         
         verify(mockNacosRestTemplate, times(2)).get(anyString(), any(), any(), any(),
             eq(String.class));
+        verify(mockServerListManager).genNextServer();
     }
     
     @Test
@@ -231,40 +248,91 @@ public class ClientHttpProxyTest {
             eq(String.class));
     }
     
-    @Test
-    void testExecuteSyncHttpRequestShouldKeepBusinessErrorMessage() throws Exception {
-        when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
-        
-        HttpRestResult<Object> conflictResult = new HttpRestResult<>();
-        conflictResult.setCode(409);
-        conflictResult.setData(
-            "{\"code\":20005,\"message\":\"resource conflict\",\"data\":"
-                + "\"There is already a working version (editing/reviewing), cannot upload\"}");
+    @ParameterizedTest
+    @CsvSource({"400,23000,false", "404,20004,false", "404,50100,false", "409,98765,false",
+        "400,23000,true", "404,20004,true", "404,50100,true", "409,98765,true"})
+    void testPreserveRemoteBusinessError(int status, int code, boolean uploadBody)
+        throws Exception {
+        String body = "{\"code\":" + code + ",\"message\":\"remote summary\","
+            + "\"data\":\"Required parameter agentCard.protocolVersion not present\"}";
+        HttpRestResult<Object> failure;
+        if (uploadBody) {
+            failure = new HttpRestResult<>(Header.newInstance(), status, body, "HTTP error");
+        } else {
+            HttpClientResponse response = mock(HttpClientResponse.class);
+            when(response.getStatusCode()).thenReturn(status);
+            when(response.getHeaders()).thenReturn(Header.newInstance());
+            when(response.getBody())
+                .thenReturn(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+            HttpRestResult<String> handled = new StringResponseHandler().handle(response);
+            assertNull(handled.getData());
+            failure =
+                new HttpRestResult<>(handled.getHeader(), handled.getCode(), handled.getData(),
+                    handled.getMessage());
+        }
+        when(mockServerListManager.getCurrentServer()).thenReturn("localhost:8848");
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class)))
-            .thenReturn(conflictResult);
-        
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(),
-            null, REQUEST_RESOURCE);
-        
+            .thenReturn(failure);
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> clientHttpProxy.executeSyncHttpRequest(errorRequest()));
+        assertEquals(status, exception.getErrCode());
+        assertEquals(code, exception.getDetailErrCode());
+        assertEquals("remote summary", exception.getErrAbstract());
+        assertEquals("Required parameter agentCard.protocolVersion not present",
+            exception.getErrMsg());
+        verify(mockNacosRestTemplate, times(4)).get(anyString(), any(), any(), any(),
+            eq(String.class));
+        verify(mockServerListManager, never()).genNextServer();
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"plain error", "{broken", "null", "[]", "{}",
+        "{\"message\":\"legacy detail\"}", "{\"code\":null,\"message\":\"legacy detail\"}",
+        "{\"code\":0,\"message\":\"success\"}",
+        "{\"code\":20004,\"message\":\"object error\",\"data\":{\"reason\":\"missing\"}}"})
+    void testNonstandardErrorFallback(String body) throws Exception {
+        when(mockServerListManager.getCurrentServer()).thenReturn("localhost:8848");
+        when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class)))
+            .thenReturn(new HttpRestResult<>(Header.newInstance(), 400, null, body));
         NacosException exception = assertThrows(NacosException.class,
-            () -> clientHttpProxy.executeSyncHttpRequest(request));
-        
-        assertEquals(409, exception.getErrCode());
-        assertTrue(exception.getErrMsg().contains("resource conflict"));
-        assertTrue(exception.getErrMsg()
-            .contains("There is already a working version (editing/reviewing), cannot upload"));
-        
+            () -> clientHttpProxy.executeSyncHttpRequest(errorRequest()));
+        assertFalse(exception instanceof NacosApiException);
+        assertEquals(400, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("No available server after"));
         verify(mockNacosRestTemplate, times(4)).get(anyString(), any(), any(), any(),
             eq(String.class));
     }
     
     @Test
+    void testBusinessErrorWithoutDetailUsesSummary() throws Exception {
+        when(mockServerListManager.getCurrentServer()).thenReturn("localhost:8848");
+        when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class)))
+            .thenReturn(new HttpRestResult<>(Header.newInstance(), 404, null,
+                "{\"code\":20004,\"message\":\"resource missing\",\"data\":null}"));
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> clientHttpProxy.executeSyncHttpRequest(errorRequest()));
+        assertEquals(404, exception.getErrCode());
+        assertEquals(20004, exception.getDetailErrCode());
+        assertEquals("resource missing", exception.getErrAbstract());
+        assertEquals("resource missing", exception.getErrMsg());
+    }
+    
+    private HttpRequest errorRequest() {
+        return new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null,
+            REQUEST_RESOURCE);
+    }
+    
+    @Test
     void testExecuteSyncHttpRequestRetryOnNoRight() throws Exception {
+        clientHttpProxy = spy(clientHttpProxy);
         when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
         when(mockServerListManager.genNextServer()).thenReturn("localhost:8848");
         
         HttpRestResult<Object> mockFailureResult = new HttpRestResult<>();
         mockFailureResult.setCode(403);
+        mockFailureResult.setMessage(
+            "{\"code\":10002,\"message\":\"access denied\",\"data\":\"expired token\"}");
         HttpRestResult<Object> mockSuccessResult = new HttpRestResult<>();
         mockSuccessResult.setCode(200);
         mockSuccessResult.setData("Success");
@@ -282,6 +350,8 @@ public class ClientHttpProxyTest {
         assertNotNull(result);
         assertEquals(200, result.getCode());
         assertEquals("Success", result.getData());
+        verify(clientHttpProxy).reLogin();
+        verify(mockServerListManager, never()).genNextServer();
         
         verify(mockNacosRestTemplate, times(2)).get(anyString(), any(), any(), any(),
             eq(String.class));

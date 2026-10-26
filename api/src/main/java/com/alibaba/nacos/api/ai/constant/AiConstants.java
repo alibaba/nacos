@@ -25,6 +25,26 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.McpServerStatusEnum;
  */
 public class AiConstants {
     
+    /**
+     * Capabilities of the responding Client HTTP binding.
+     */
+    public static class Capability {
+        
+        public static final String CLIENT_PATH = "/v3/client/ai/capabilities";
+        
+        public static final int SCHEMA_VERSION = 1;
+        
+        public static final String RAD_V1 = "radV1";
+        
+        public static final String MCP = "mcp";
+        
+        public static final String SKILL = "skill";
+        
+        public static final String PROMPT = "prompt";
+        
+        public static final String AGENT_SPEC = "agentSpec";
+    }
+    
     public static class Mcp {
         
         public static final String MCP_DEFAULT_NAMESPACE = "public";
@@ -143,6 +163,11 @@ public class AiConstants {
     public static final long DEFAULT_AI_CACHE_UPDATE_INTERVAL = 10000L;
     
     public static class A2a {
+        
+        public static final String ENDPOINT_PROTOCOL_VERSION =
+            "__nacos.agent.endpoint.protocolVersion__";
+        
+        public static final String ENDPOINT_TENANT = "__nacos.agent.endpoint.tenant__";
         
         public static final String A2A_DEFAULT_NAMESPACE = "public";
         

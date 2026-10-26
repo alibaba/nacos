@@ -65,7 +65,20 @@ dialect 和另一个数据库的 mapper 是无效行为。
 | `getPageLastNum(page, pageSize)` | 返回第二个分页参数。 |
 | `getReturnPrimaryKeys()` | 返回生成主键列。 |
 | `getFunction(functionName)` | 将逻辑函数名映射到方言 SQL 函数。 |
+| `getDefaultDriverClassName()` | 返回该方言默认的 JDBC 驱动类名；方言不提供时返回 `null`。默认实现返回 `null`。 |
 | `isDuplicateKeyException(throwable)` | 判定数据源抛出的异常是否为唯一键重复冲突。默认识别异常因果链中的 Spring `DuplicateKeyException`，方言可重写以实现驱动级别的判定。 |
+
+`getDefaultDriverClassName()` 让方言插件自己携带所属数据库的驱动知识，用户只需通过
+`nacos.plugin.datasource-dialect.type` 选择方言，外部数据源即可选出匹配的驱动。
+datasource 模块仅在完成历史和标准连接池配置绑定后，驱动类仍为空时才会读取该值。
+通过标准 key 或历史 alias 显式配置驱动时，必须完全跳过默认驱动 getter，
+即使该 getter 会抛出异常也不影响显式驱动配置；标准 key 仍优先于历史 alias。
+当所选方言无法解析、已被禁用或返回 `null`/空白时，datasource 模块保持 MySQL 驱动兼容默认值。
+内置的 `mysql`、`postgresql`、
+`oracle`、`derby` 方言分别提供 `com.mysql.cj.jdbc.Driver`、`org.postgresql.Driver`、
+`oracle.jdbc.OracleDriver` 和 `org.apache.derby.jdbc.EmbeddedDriver`。提供默认驱动类名
+并不意味着打包驱动 jar，部署时仍需将驱动放入 classpath 或 `${nacos.home}/plugins`。
+驱动类的兼容回退不会替换所选方言，也不会放宽该方言的启动校验。
 
 `isDuplicateKeyException(throwable)` 是 config 仓储判断插入失败是否为唯一键重复冲突的
 统一入口。默认实现会遍历异常因果链，当发现 Spring 的 `DuplicateKeyException` 时返回
@@ -120,6 +133,9 @@ default 中硬编码，因为各数据库能接受的转义字符字面量写法
 方言 selector 只提供启动选择并需要重启生效。该互斥类型的持久化状态不能替代静态选择，
 运行时 status API 必须拒绝选择变更。
 
+外部数据源查询默认驱动时，必须复用服务初始化时已按标准 key 和历史 alias 优先级解析的
+数据源类型。连接池 reload 继续使用该类型，不得重新从环境中读取 selector。
+
 标准选择 key 与历史 alias 均未配置时，选择结果沿用服务端存储默认值：单机模式以及
 配置了 `-DembeddedStorage=true` 的集群模式选择 `derby`，普通集群模式选择 `mysql`。
 这一隐式选择同样在启动时形成快照。
@@ -165,12 +181,12 @@ datasource 配置 owner，不能把同一份凭据复制到所有方言。
 | `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | 从 `0` 到 `num - 1` 每个 index 的 JDBC URL。 |
 | `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | 共享或按 index 配置的用户名；缺少某个 index 时回退共享值或 index `0`。 |
 | `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | 共享或按 index 配置的密码，回退规则与 `user` 相同；该值属于敏感信息。 |
-| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒，默认 `3000`。 |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒；外部数据源默认 `3000`，嵌入式 Derby 默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` 或对应 kebab-case | Hikari 校验超时，单位毫秒，默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
 | `nacos.plugin.datasource.db.pool.config.minimum-idle` | `db.pool.config.minimumIdle` 或对应 kebab-case | Hikari 最小空闲连接数，默认 `2`。 |
-| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用 MySQL 驱动兼容默认值。 |
+| `nacos.plugin.datasource.db.pool.config.driver-class-name` | `db.pool.config.driverClassName` 或对应 kebab-case | JDBC 驱动类；为空时使用所选方言插件通过 `getDefaultDriverClassName()` 提供的默认值，方言未提供时回落到 MySQL 驱动兼容默认值。需要覆盖方言默认值，或所用方言插件不提供默认值时，显式配置该项。 |
 | `nacos.plugin.datasource.db.pool.config.connection-test-query` | `db.pool.config.connectionTestQuery` 或对应 kebab-case | 连接测试 SQL；为空时使用 `SELECT 1`。 |
 | `nacos.plugin.datasource.db.query-timeout` | JVM 参数 `QUERYTIMEOUT` | JDBC 查询超时，单位秒，默认 `3`。 |
 
@@ -183,6 +199,9 @@ source。索引项按 index 独立解析，因此迁移期间可以同时使用�
 Hikari datasource，从而保留已有 Hikari 属性透传能力，并让标准值覆盖同名旧值。当前实现可
 接受随附 Hikari 版本提供的 JavaBean 配置面，但只有上表明确列出的稳定子集属于 Nacos 长期
 配置契约。
+
+未配置连接超时时，嵌入式 Derby 使用更长的默认值，以容忍数据库创建期间的本地文件系统延迟。
+显式配置的标准 key 或历史 alias 会覆盖所选存储模式的默认值。
 
 `nacos.plugin.datasource.log.enabled` 仍是独立的数据源日志开关。embedded/external
 persistence 模式同样不属于方言私有配置。负责转换加密数据源凭据的 custom environment

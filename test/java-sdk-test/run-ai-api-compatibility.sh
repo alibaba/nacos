@@ -18,11 +18,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-mkdir -p "${SCRIPT_DIR}/target/compatibility-libs"
+mkdir -p "${PROJECT_ROOT}/target/ai-compatibility"
 mvn -B -f "${SCRIPT_DIR}/src/test/compatibility/pom.xml" \
     org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
     org.apache.maven.plugins:maven-dependency-plugin:3.8.1:tree \
-    -Dmdep.outputFile="${SCRIPT_DIR}/target/compatibility-libs/legacy-classpath.txt" \
-    -DoutputFile="${SCRIPT_DIR}/target/compatibility-libs/legacy-dependency-tree.txt"
+    -Dmdep.outputFile="${PROJECT_ROOT}/target/ai-compatibility/legacy-classpath.txt" \
+    -DoutputFile="${PROJECT_ROOT}/target/ai-compatibility/legacy-dependency-tree.txt"
 mvn -B -f "${PROJECT_ROOT}/pom.xml" -pl test/java-sdk-test \
     -Pjava-sdk-integration-test,ai-api-compatibility -DskipTests=false "$@" verify

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator;
 
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsProtocolNegotiatorBuilder;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,7 +70,7 @@ class SdkProtocolNegotiatorBuilderSingletonTest {
     void testType() {
         String type = SdkProtocolNegotiatorBuilderSingleton.getSingleton().type();
         assertNotNull(type);
-        assertEquals(SdkProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, type);
+        assertEquals(SdkDefaultTlsProtocolNegotiatorBuilder.TYPE_DEFAULT_TLS, type);
     }
     
     @Test

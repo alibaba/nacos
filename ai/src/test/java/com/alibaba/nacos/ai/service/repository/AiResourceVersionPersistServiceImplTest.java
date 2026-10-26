@@ -163,6 +163,17 @@ class AiResourceVersionPersistServiceImplTest {
             "md5"));
     }
     
+    @Test
+    void updateContentShouldWriteOnlyVersionFieldsWithMapperSql() {
+        String sql = "UPDATE ai_resource_version";
+        when(jdbcTemplate.update(sql, "{}", "desc", "writer", "public", "agent", "agent", "1.0.0"))
+            .thenReturn(1);
+        assertEquals(1,
+            service.updateContent("public", "agent", "agent", "1.0.0", "{}", "desc", "writer"));
+        Mockito.verify(jdbcTemplate).update(sql, "{}", "desc", "writer", "public", "agent", "agent",
+            "1.0.0");
+    }
+    
     private void stubGeneratedKey(long id) throws Exception {
         doAnswer(invocation -> {
             PreparedStatementCreator creator = invocation.getArgument(0);

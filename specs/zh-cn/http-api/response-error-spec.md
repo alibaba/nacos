@@ -65,6 +65,12 @@ v3 错误：
 接入共享兼容门禁的废弃 v3 API 在 `nacos.core.api.compatibility.enabled=false` 时返回
 HTTP `410 Gone` 和 `API_DEPRECATED`。
 
+远程 Admin API 的非成功 HTTP 响应以标准 `Result<String>` 返回错误时，Maintainer SDK 必须分别保留
+HTTP 状态、业务 `code`、摘要 `message` 和详情 `data`，包括 SDK 本地枚举尚未识别的
+业务码。独立 Console 通过 `NacosApiExceptionHandler` 透传该类型化异常，使错误契约
+与合并部署一致。纯文本、空响应和非标准错误响应继续使用普通 `NacosException`
+回退。本要求不改变重试、重新登录或节点切换策略。
+
 ## 4. ExceptionHandler 收敛
 
 Nacos 自有的 v3 HTTP API 应收敛到 `@NacosApi` 和

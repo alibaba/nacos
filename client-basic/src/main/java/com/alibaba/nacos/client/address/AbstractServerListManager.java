@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,11 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     @Override
     public List<String> getServerList() {
-        return serverListProvider.getServerList();
+        ServerListProvider provider = serverListProvider;
+        if (null == provider) {
+            return Collections.emptyList();
+        }
+        return provider.getServerList();
     }
     
     @Override

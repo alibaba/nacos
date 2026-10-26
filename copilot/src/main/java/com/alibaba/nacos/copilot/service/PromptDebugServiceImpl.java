@@ -23,8 +23,7 @@ import com.alibaba.nacos.copilot.config.CopilotAgentManager;
 import com.alibaba.nacos.copilot.model.PromptDebugRequest;
 import com.alibaba.nacos.copilot.model.PromptDebugResponse;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.agent.EventType;
-import io.agentscope.core.agent.StreamOptions;
+import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.message.Msg;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -81,20 +80,14 @@ public class PromptDebugServiceImpl implements PromptDebugService {
             return;
         }
         
-        // 5. Configure streaming options
-        StreamOptions streamOptions = StreamOptions.builder()
-            .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
-            .incremental(true)
-            .build();
-        
-        // 6. Create user message
+        // 5. Create user message
         Msg userMsg = Msg.builder()
             .textContent(request.getUserInput())
             .build();
         
-        // 7. Call agent with stream response
+        // 6. Call agent with stream response
         // Unlike optimization, we include THINKING in debug response
-        Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
+        Flux<AgentEvent> eventFlux = agent.streamEvents(userMsg)
             .subscribeOn(Schedulers.boundedElastic());
         
         eventFlux.subscribe(StreamEventProcessor.createSubscriber(

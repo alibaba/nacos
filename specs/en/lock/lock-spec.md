@@ -154,6 +154,11 @@ administrative API. The Java client uses the gRPC request path described by the
 following the
 [Client Ability Negotiation Spec](../client/client-ability-negotiation-spec.md).
 
+Lock clients identify their connections with the `module=lock` label. The server
+must only trigger lock cleanup on disconnect for connections with this label.
+Disconnecting another module's connection, or a connection without a module
+label, must not submit a lock cleanup operation to the CP protocol.
+
 The public SDK boundary is:
 
 - create a `LockService`;

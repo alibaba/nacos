@@ -34,7 +34,7 @@ public class RequestContext {
     /**
      * Optional, the request id.
      * <ul>
-     *     <li>For HTTP request, the id not usage, will generate automatically.</li>
+     *     <li>For HTTP, use Nacos-Request-Id when non-blank, otherwise generate automatically.</li>
      *     <li>For GRPC, the id is same with real request id.</li>
      * </ul>
      */

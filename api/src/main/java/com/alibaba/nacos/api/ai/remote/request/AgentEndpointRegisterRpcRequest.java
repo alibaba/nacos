@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 
 /**
  * gRPC binding for a complete RAD Agent Endpoint registration batch.
@@ -25,11 +25,13 @@ import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
  */
 public class AgentEndpointRegisterRpcRequest extends AbstractAgentClientRpcRequest {
     
+    private String namespaceId;
+    
     private AgentEndpointRegistrationBatch registrationBatch;
     
     @Override
     public String extractNamespaceId() {
-        return registrationBatch == null ? null : registrationBatch.getNamespaceId();
+        return namespaceId;
     }
     
     @Override
@@ -43,5 +45,13 @@ public class AgentEndpointRegisterRpcRequest extends AbstractAgentClientRpcReque
     
     public void setRegistrationBatch(AgentEndpointRegistrationBatch registrationBatch) {
         this.registrationBatch = registrationBatch;
+    }
+    
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

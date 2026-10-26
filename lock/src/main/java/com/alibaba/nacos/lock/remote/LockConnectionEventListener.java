@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.lock.remote;
 
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.lock.service.LockOperationService;
@@ -26,7 +27,7 @@ import org.springframework.stereotype.Component;
 /**
  * Listens for client connection events to clean up lock state on disconnect.
  *
- * <p>When a client disconnects, any locks held by that connection are force-released
+ * <p>When a lock client disconnects, any locks held by that connection are force-released
  * and waiting entries from that connection are removed from wait queues.
  *
  * @author DHX
@@ -50,6 +51,10 @@ public class LockConnectionEventListener extends ClientConnectionEventListener {
     
     @Override
     public void clientDisConnected(Connection connect) {
+        if (!RemoteConstants.LABEL_MODULE_LOCK
+            .equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+            return;
+        }
         String connectionId = connect.getMetaInfo().getConnectionId();
         LOGGER.info("Lock: client disconnected, connectionId={}, cleaning up locks", connectionId);
         try {

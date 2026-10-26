@@ -16,13 +16,22 @@
 
 package com.alibaba.nacos.core.distributed.raft.grpc;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alipay.sofa.jraft.rpc.RaftRpcFactory;
 import com.alipay.sofa.jraft.rpc.RpcClient;
+import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
+import com.alipay.sofa.jraft.rpc.impl.GrpcServer;
+import com.alipay.sofa.jraft.util.Endpoint;
 import com.alipay.sofa.jraft.util.SPI;
+import com.alipay.sofa.jraft.util.SystemPropertyUtil;
 import com.google.protobuf.Message;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import io.grpc.util.MutableHandlerRegistry;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,6 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @SPI(priority = 100)
 public class NacosGrpcRaftRpcFactory extends GrpcRaftRpcFactory {
+    
+    private static final int MAX_INBOUND_MESSAGE_SIZE = SystemPropertyUtil.getInt(
+        "jraft.grpc.max_inbound_message_size.bytes", 4 * 1024 * 1024);
     
     private final Map<String, Message> parserClasses = new ConcurrentHashMap<>();
     
@@ -48,5 +60,36 @@ public class NacosGrpcRaftRpcFactory extends GrpcRaftRpcFactory {
             helper.config(rpcClient);
         }
         return rpcClient;
+    }
+    
+    /**
+     * Creates a gRPC server without the optional Bolt transport dependency.
+     *
+     * <p>JRaft 1.4.1's factory references Bolt's StringUtils when choosing the
+     * listen address. Nacos excludes Bolt, so construct the server here while
+     * preserving the endpoint binding, message limit and configuration helper.
+     *
+     * @param endpoint the server listen endpoint
+     * @param helper optional server configuration applied before startup
+     * @return the configured JRaft gRPC server
+     */
+    @Override
+    public RpcServer createRpcServer(Endpoint endpoint, ConfigHelper<RpcServer> helper) {
+        int port = Objects.requireNonNull(endpoint, "endpoint").getPort();
+        if (port <= 0 || port >= 0xFFFF) {
+            throw new IllegalArgumentException("port out of range:" + port);
+        }
+        InetSocketAddress listenAddress = StringUtils.isBlank(endpoint.getIp())
+            ? new InetSocketAddress(port) : new InetSocketAddress(endpoint.getIp(), port);
+        MutableHandlerRegistry registry = new MutableHandlerRegistry();
+        NettyServerBuilder builder = NettyServerBuilder.forAddress(listenAddress)
+            .directExecutor().fallbackHandlerRegistry(registry)
+            .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE);
+        RpcServer server =
+            new GrpcServer(builder.build(), registry, parserClasses, getMarshallerRegistry());
+        if (helper != null) {
+            helper.config(server);
+        }
+        return server;
     }
 }

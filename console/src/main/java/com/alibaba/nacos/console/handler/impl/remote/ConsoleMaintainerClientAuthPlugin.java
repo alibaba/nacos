@@ -26,6 +26,8 @@ import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
 
 import java.util.List;
@@ -54,16 +56,31 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
         LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
+        if (isIdentityOnlyRequest() && addServerIdentity(loginIdentityContext)) {
+            return loginIdentityContext;
+        }
         if (addRequestIdentities(loginIdentityContext)) {
             return loginIdentityContext;
         }
+        addServerIdentity(loginIdentityContext);
+        return loginIdentityContext;
+    }
+    
+    private boolean addServerIdentity(LoginIdentityContext loginIdentityContext) {
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
             .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
         if (authConfig != null && authConfig.isSupportServerIdentity()) {
             loginIdentityContext.setParameter(authConfig.getServerIdentityKey(),
                 authConfig.getServerIdentityValue());
+            return true;
         }
-        return loginIdentityContext;
+        return false;
+    }
+    
+    private boolean isIdentityOnlyRequest() {
+        Resource resource = RequestContextHolder.getContext().getAuthContext().getResource();
+        return resource != null && resource.getProperties() != null
+            && resource.getProperties().containsKey(Constants.Tag.ONLY_IDENTITY);
     }
     
     private boolean addRequestIdentities(LoginIdentityContext loginIdentityContext) {

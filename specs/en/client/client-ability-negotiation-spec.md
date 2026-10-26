@@ -179,3 +179,38 @@ removed only according to the
 
 - The public list of ability keys should be generated from source to avoid
   documentation drift.
+
+## AI Client HTTP capabilities
+
+`GET /v3/client/ai/capabilities` returns `Result` with
+`data.schemaVersion=1` and Boolean `data.capabilities` keys `radV1`, `mcp`,
+`skill`, `prompt`, and `agentSpec`. These describe the responding Client HTTP
+binding only, not gRPC reachability, cluster-wide support, resource permission,
+or migration readiness. RAD includes HTTP Watch; no separate public Watch or
+A2A compatibility flag is added. Existing gRPC ability keys keep their meaning.
+
+The standard Client auth flow uses `OPEN_API + AI + READ + ONLY_IDENTITY` and
+an explicit resource-less parser. A valid identity with no resource grants may
+query it; missing/invalid credentials are rejected when Client auth applies,
+even when AI anonymous access is enabled. Client auth-off and normal plugin or
+internal-identity bypasses retain existing behavior. Admin/Console auth toggles
+are independent. Extra resource parameters and Client-id headers are ignored;
+this read neither accesses resources nor creates or renews a Client/Publisher.
+
+The SDK preserves per-feature `SUPPORTED`, `NOT_SUPPORTED`, and `UNKNOWN`.
+Only a Boolean in a valid schema-version-1 response provides evidence. Missing
+or wrongly typed keys remain unknown; unknown keys are ignored. Unknown schema,
+empty/malformed responses and capability-route 404/405 do not prove RAD absent.
+Authentication and connectivity failures retain their error classification.
+Cache entries are bounded, short-lived, coalesce concurrent requests, and are
+isolated by target URL (including context path/HTTP scheme) and a digest of the
+identity context; credentials are not retained as plaintext cache keys.
+
+Capability evidence is separate from the SDK instance's A2A routing choice.
+A reliably selected legacy mode remains legacy through reconnect and refresh,
+until shutdown/reinstantiation. Unknown RAD plus a reliable legacy A2A binding
+can choose that binding without claiming native RAD is unsupported. Unknown
+alone never fixes legacy mode. Native RAD still uses actual target evidence;
+an ordinary successful RAD call can provide positive evidence without an
+additional probe write. C06 prepares these components; the legacy facade is
+connected to them only when all adaptation paths are enabled together.

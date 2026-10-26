@@ -293,8 +293,14 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         
         SkillMeta skillMeta = maintainerService.skill().getSkillMeta(NAMESPACE_ID, skillName);
         assertEquals(skillName, skillMeta.getName());
+        assertNotNull(skillMeta.getFrontMatter());
+        assertEquals(skillName, skillMeta.getFrontMatter().get("name"));
+        assertEquals(Boolean.FALSE, skillMeta.getFrontMatterTruncated());
         assertContainsPageItem(maintainerService.skill().listSkills(NAMESPACE_ID, skillName,
-                "accurate", 1, 10), each -> skillName.equals(each.getName()));
+                "accurate", 1, 10), each -> skillName.equals(each.getName())
+                        && each.getFrontMatter() != null
+                        && Boolean.FALSE.equals(each.getFrontMatterTruncated())
+                        && "Maintainer SDK IT skill updated".equals(each.getFrontMatter().get("description")));
         
         String agentSpecName = randomMaintainerName("agentspec");
         String agentSpecVersion = maintainerService.agentSpec()

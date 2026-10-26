@@ -36,10 +36,10 @@ export function AgentCard({
   const { t } = useTranslation();
   const [iconError, setIconError] = useState(false);
   const title = agent.displayName || agent.agentName;
-  const latestVersion = agent.versionCatalog?.latestVersion;
+  const latestVersion = agent.versionInfo?.labels?.latest;
   const editingVersion = agent.versionInfo?.editingVersion;
   const reviewingVersion = agent.versionInfo?.reviewingVersion;
-  const onlineCount = agent.versionInfo?.onlineCnt || 0;
+  const onlineCount = agent.versionInfo?.onlineVersions?.length || 0;
 
   return (
     <Card

@@ -94,6 +94,16 @@ class AbstractServerListManagerTest {
     }
     
     @Test
+    void testGetServerListAfterShutdown() throws NacosException {
+        properties.setProperty("MockTest", "true");
+        serverListManager = new MockServerListManager(properties);
+        serverListManager.start();
+        assertEquals(1, serverListManager.getServerList().size());
+        serverListManager.shutdown();
+        assertTrue(serverListManager.getServerList().isEmpty());
+    }
+    
+    @Test
     void testGetServerNameDefault() throws NacosException {
         properties.setProperty("MockTest", "true");
         serverListManager = new MockServerListManager(properties);

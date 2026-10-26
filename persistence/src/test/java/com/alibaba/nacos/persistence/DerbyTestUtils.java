@@ -54,7 +54,6 @@ public final class DerbyTestUtils {
     public static MockEnvironment createDerbyTestEnvironment() {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty("nacos.persistence.sql.derby.limit.enabled", "false");
-        environment.setProperty("db.pool.config.connection-timeout", "30000");
         environment.setProperty("db.pool.config.minimum-idle", "0");
         environment.setProperty("db.pool.config.maximum-pool-size", "1");
         return environment;

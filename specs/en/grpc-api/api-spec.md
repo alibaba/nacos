@@ -187,7 +187,7 @@ inner server-to-server rules are defined by the
 | `ServerReloadRequest` | `ServerReloadResponse` | unary | inner, cluster source | Reload server remote context on a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
 | `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner, cluster source | Query server loader metrics from a peer. See the [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md). |
 | `MemberReportRequest` | `MemberReportResponse` | unary | inner, cluster source | Report member metadata and update server member state according to the [Cluster Membership Spec](../design/foundation-cluster-membership-spec.md). |
-| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | handler exists | Query plugin availability on a node. Current code has a handler, but the payload is not listed in the core payload SPI file, so it must be registered before becoming an active gRPC contract. |
+| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | inner, cluster source | Query one plugin's registration or, with `queryAll=true`, all plugins' enabled states on a node. Both payload types are registered in the core payload SPI. |
 
 ### 7.2 Config
 
@@ -277,7 +277,7 @@ registrations, and negotiated abilities are present in the runtime.
 
 | Target request type | Target response type | Direction | Contract |
 | --- | --- | --- | --- |
-| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentCatalogEntry` values. |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | Search the Agent catalog and return one page of `AgentSummary` values. |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | Discover one Agent and return one complete `AgentDiscoveryResult`. |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | Create an Agent draft in code and optionally run ordinary submit according to `autoSubmit`. |
 | `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | Install one authorized connection-owned Watch and return an opaque `watchKey`, observed fingerprint, and refresh decision; never return a discovery snapshot. |
@@ -328,3 +328,13 @@ experimental and may change with that domain.
 9. For server-to-server payloads, also update the
    [Internal RPC And Cluster Request Spec](../design/foundation-internal-rpc-spec.md)
    or the domain spec that owns the cluster request semantics.
+
+
+### Agent Search/Register Namespace Binding
+
+`AgentSearchRpcRequest` and `AgentEndpointRegisterRpcRequest` carry `namespaceId` at the
+envelope top level; `searchRequest`/`registrationBatch` contain no namespace. Parameter
+extraction, namespace validation, authorization and services use that same envelope value,
+normalizing omission to public under existing rules. RPC type names remain unchanged.
+This pre-3.3 layout change requires matching Client and Server updates. Discover, Watch,
+Publish and historical A2A envelope layouts remain unchanged.

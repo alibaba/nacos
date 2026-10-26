@@ -62,6 +62,21 @@ public class NacosApiException extends NacosException {
         this.errAbstract = errorCode.getMsg();
     }
     
+    /**
+     * Preserve a remote API error, including business codes unknown to this SDK.
+     *
+     * @param statusCode HTTP status code
+     * @param detailErrCode remote business error code
+     * @param errAbstract remote error summary
+     * @param message remote error detail
+     */
+    public NacosApiException(int statusCode, int detailErrCode, String errAbstract,
+        String message) {
+        super(statusCode, message);
+        this.detailErrCode = detailErrCode;
+        this.errAbstract = errAbstract;
+    }
+    
     public int getDetailErrCode() {
         return detailErrCode;
     }

@@ -23,6 +23,7 @@ import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -140,6 +141,19 @@ class ConsoleMaintainerClientAuthPluginTest {
     }
     
     @Test
+    void testGetIdentityContextUsesServerIdentityForIdentityOnlyRequest() {
+        mockServerIdentity();
+        setRequestIdentity(ACCESS_TOKEN, MOCK_ACCESS_TOKEN);
+        setIdentityOnlyResource();
+        
+        LoginIdentityContext identityContext = authPlugin.getLoginIdentityContext(null);
+        
+        assertEquals(1, identityContext.getAllKey().size());
+        assertEquals(MOCK_IDENTITY_VALUE, identityContext.getParameter(MOCK_IDENTITY_KEY));
+        assertFalse(identityContext.getAllKey().contains(ACCESS_TOKEN));
+    }
+    
+    @Test
     void testGetIdentityContextFallsBackForBlankAccessToken() {
         mockServerIdentity();
         setRequestIdentity(ACCESS_TOKEN, " ");
@@ -174,5 +188,12 @@ class ConsoleMaintainerClientAuthPluginTest {
         identityContext.setRequestIdentityParameter(identityName, identityValue);
         RequestContextHolder.getContext().getAuthContext().setIdentityContext(identityContext);
         return identityContext;
+    }
+    
+    private void setIdentityOnlyResource() {
+        Properties properties = new Properties();
+        properties.put(Constants.Tag.ONLY_IDENTITY, Constants.Tag.ONLY_IDENTITY);
+        Resource resource = new Resource(null, null, "console/namespaces", "specified", properties);
+        RequestContextHolder.getContext().getAuthContext().setResource(resource);
     }
 }

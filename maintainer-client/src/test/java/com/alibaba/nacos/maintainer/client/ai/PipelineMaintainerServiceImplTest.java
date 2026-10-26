@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecution;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -31,6 +32,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -154,11 +157,13 @@ class PipelineMaintainerServiceImplTest {
         assertEquals("exec-1", result.getData().getPageItems().get(0).getExecutionId());
     }
     
-    @Test
-    void getPipelineDetailFallsBackOn404() throws NacosException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void getPipelineDetailFallsBackOn404(boolean typedError) throws NacosException {
         PipelineExecution payload = newPipelineExecution("legacy");
         HttpRestResult<String> ok = newRestResult(Result.success(payload));
-        doThrow(new NacosException(NacosException.NOT_FOUND, "not found"))
+        doThrow(typedError ? new NacosApiException(404, 20004, "resource missing", "not found")
+            : new NacosException(NacosException.NOT_FOUND, "not found"))
             .doAnswer(invocation -> ok).when(clientHttpProxy)
             .executeSyncHttpRequest(any(HttpRequest.class));
         
@@ -183,12 +188,14 @@ class PipelineMaintainerServiceImplTest {
     
     // ========== Additional Tests for Coverage ==========
     
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     @DisplayName("listPipelineExecutions falls back on 404")
-    void listPipelineExecutionsFallsBackOn404() throws NacosException {
+    void listPipelineExecutionsFallsBackOn404(boolean typedError) throws NacosException {
         Page<PipelineExecution> page = newPipelinePage(newPipelineExecution("legacy"), 1);
         HttpRestResult<String> ok = newRestResult(Result.success(page));
-        doThrow(new NacosException(NacosException.NOT_FOUND, "not found"))
+        doThrow(typedError ? new NacosApiException(404, 20004, "resource missing", "not found")
+            : new NacosException(NacosException.NOT_FOUND, "not found"))
             .doAnswer(invocation -> ok).when(clientHttpProxy)
             .executeSyncHttpRequest(any(HttpRequest.class));
         

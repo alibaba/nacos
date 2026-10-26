@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,22 @@ class AgentAdminControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(
-            new AgentAdminController(operationService, runtimeRegistryService)).build();
+            new AgentAdminController(operationService, runtimeRegistryService))
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+    }
+    
+    @Test
+    void testScopeRouteAndValidation() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put(PATH + "/scope")
+            .param("agentName", "Demo Agent").param("scope", "private"))
+            .andExpect(status().isOk());
+        verify(operationService).updateScope("public", "Demo Agent", "private");
+        mockMvc.perform(MockMvcRequestBuilders.put(PATH + "/scope")
+            .param("agentName", "Demo Agent").param("scope", "SHARED"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(MockMvcRequestBuilders.put(PATH + "/scope")
+            .param("agentName", "Demo Agent"))
+            .andExpect(status().isBadRequest());
     }
     
     @Test

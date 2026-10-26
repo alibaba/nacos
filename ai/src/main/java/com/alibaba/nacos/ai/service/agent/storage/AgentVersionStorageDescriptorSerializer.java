@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.agent.storage;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -84,7 +84,7 @@ public final class AgentVersionStorageDescriptorSerializer {
     public static String serialize(AgentVersionStorageDescriptor descriptor) {
         validate(descriptor);
         try {
-            return JacksonUtils.toJson(descriptor);
+            return JsonUtils.toJson(descriptor);
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException(
                 "Unable to serialize Agent Version storage descriptor",
@@ -103,7 +103,7 @@ public final class AgentVersionStorageDescriptorSerializer {
         validateJsonShape(json);
         final AgentVersionStorageDescriptor descriptor;
         try {
-            descriptor = JacksonUtils.toObj(json, AgentVersionStorageDescriptor.class);
+            descriptor = JsonUtils.toObj(json, AgentVersionStorageDescriptor.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid Agent Version storage descriptor", e);
         }
@@ -119,7 +119,7 @@ public final class AgentVersionStorageDescriptorSerializer {
         validateSingleJsonValue(json);
         final Map<?, ?> root;
         try {
-            root = JacksonUtils.toObj(json, Map.class);
+            root = JsonUtils.toObj(json, Map.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid Agent Version storage descriptor", e);
         }

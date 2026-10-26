@@ -314,3 +314,10 @@ The source code of OpenMessaging can be found at https://github.com/openmessagin
  See the License for the specific language governing permissions and
  limitations under the License.
 
+
+
+ConcurrentLinkedHashMap and support classes incorporated from SOFA Hessian 3.3.6
+Source: https://github.com/sofastack/sofa-hessian/tree/8eb8411c113aaaba7a95fb188d646951374a6482/src/main/java/com/alipay/hessian/clhm
+Copyright 2010 Benjamin Manes; Copyright 2011 Benjamin Manes (LinkedDeque).
+These incorporated files are licensed under the Apache License, Version 2.0,
+whose full text appears above. See NOTICE for provenance and local changes.

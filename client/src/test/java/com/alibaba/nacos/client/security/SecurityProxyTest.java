@@ -24,6 +24,9 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.notify.DefaultSharePublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
@@ -202,5 +205,18 @@ class SecurityProxyTest {
         when(clientAuthPluginManager.getAuthServiceSpiImplSet())
             .thenReturn(Collections.singleton(mockClientAuthService));
         assertDoesNotThrow(() -> securityProxy.reLogin());
+    }
+    
+    @Test
+    void testShutdownDeregisterSubscriber() throws Exception {
+        Field subscriberField =
+            SecurityProxy.class.getDeclaredField("serverListChangeSubscriber");
+        subscriberField.setAccessible(true);
+        Subscriber<?> subscriber = (Subscriber<?>) subscriberField.get(securityProxy);
+        DefaultSharePublisher sharePublisher =
+            (DefaultSharePublisher) NotifyCenter.getSharePublisher();
+        assertTrue(sharePublisher.getSubscribers().contains(subscriber));
+        securityProxy.shutdown();
+        assertFalse(sharePublisher.getSubscribers().contains(subscriber));
     }
 }

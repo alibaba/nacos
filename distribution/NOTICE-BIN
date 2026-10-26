@@ -34,3 +34,20 @@ components that this product depends on.
 ------
 This product has a bundle commons-lang, which includes software from the Spring Framework,
 under the Apache License 2.0 (see: StringUtils.containsWhitespace())
+------
+This product includes the ConcurrentLinkedHashMap implementation and its
+EvictionListener, LinkedDeque, Weigher, and Weighers support classes, copied
+from SOFA Hessian 3.3.6 (com.alipay.hessian.clhm) and maintained by Nacos under
+com.alibaba.nacos.core.remote.thirdparty.clhm to avoid depending on the entire
+Hessian jar for this utility.
+
+Source: https://github.com/sofastack/sofa-hessian/tree/8eb8411c113aaaba7a95fb188d646951374a6482/src/main/java/com/alipay/hessian/clhm
+Original project: https://github.com/ben-manes/concurrentlinkedhashmap
+
+Copyright 2010 Benjamin Manes
+Copyright 2011 Benjamin Manes (LinkedDeque)
+
+Licensed under the Apache License, Version 2.0.
+Local changes: package relocation, provenance documentation, and replacement
+of optional JCIP annotations with comments. The separately licensed JCIP
+annotation source files are not included.

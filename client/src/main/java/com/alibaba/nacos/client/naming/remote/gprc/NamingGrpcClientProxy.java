@@ -263,8 +263,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         throws NacosException {
         BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
             NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
+        long connectionEpoch = redoService.getCurrentConnectionEpoch();
         requestToServer(request, BatchInstanceResponse.class);
-        redoService.instanceRegistered(serviceName, groupName);
+        redoService.instanceRegistered(serviceName, groupName, connectionEpoch);
     }
     
     /**
@@ -279,8 +280,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
             NamingRemoteConstants.REGISTER_INSTANCE, instance);
+        long connectionEpoch = redoService.getCurrentConnectionEpoch();
         requestToServer(request, Response.class);
-        redoService.instanceRegistered(serviceName, groupName);
+        redoService.instanceRegistered(serviceName, groupName, connectionEpoch);
     }
     
     /**

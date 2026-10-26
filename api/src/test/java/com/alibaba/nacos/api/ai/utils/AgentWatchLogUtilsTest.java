@@ -17,13 +17,13 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryCallInterface;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryFilter;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.rad.AgentReference;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
+import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -93,7 +93,7 @@ class AgentWatchLogUtilsTest {
     
     @Test
     void resultSummaryContainsOnlyPublicShape() {
-        AgentDiscoveryEndpoint endpoint = new AgentDiscoveryEndpoint();
+        Endpoint endpoint = new Endpoint();
         endpoint.setUri("https://agent.example.com/private-path");
         endpoint.setTransport("http");
         EndpointSet endpointSet = new EndpointSet();
@@ -101,7 +101,7 @@ class AgentWatchLogUtilsTest {
         endpointSet.setSourceRevision(
             "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         endpointSet.setEndpoints(Collections.singletonList(endpoint));
-        AgentDiscoveryCallInterface callInterface = new AgentDiscoveryCallInterface();
+        AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");
         callInterface.setProtocolVersion("1.0");
         callInterface.setDescriptorMediaType("application/json");
@@ -125,7 +125,7 @@ class AgentWatchLogUtilsTest {
         assertFalse(summary.contains("descriptor"));
         assertEquals("invalidResult=IllegalArgumentException",
             AgentWatchLogUtils.describeResult(null));
-        result.setCallInterfaces(Collections.<AgentDiscoveryCallInterface>emptyList());
+        result.setCallInterfaces(Collections.<AgentCallInterface>emptyList());
         assertTrue(AgentWatchLogUtils.describeResult(result).contains("protocols=[]"));
     }
     

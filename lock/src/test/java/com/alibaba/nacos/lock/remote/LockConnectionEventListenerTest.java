@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.lock.remote;
 
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -45,7 +49,7 @@ class LockConnectionEventListenerTest {
         LockOperationService lockOperationService = mock(LockOperationService.class);
         LockConnectionEventListener listener =
             new LockConnectionEventListener(lockOperationService);
-        Connection connection = mockConnection("connection-1");
+        Connection connection = mockConnection("connection-1", RemoteConstants.LABEL_MODULE_LOCK);
         
         listener.clientDisConnected(connection);
         
@@ -60,14 +64,30 @@ class LockConnectionEventListenerTest {
         LockConnectionEventListener listener =
             new LockConnectionEventListener(lockOperationService);
         
-        listener.clientDisConnected(mockConnection("connection-1"));
+        listener
+            .clientDisConnected(mockConnection("connection-1", RemoteConstants.LABEL_MODULE_LOCK));
         
         verify(lockOperationService).releaseLocksByConnection("connection-1");
     }
     
-    private Connection mockConnection(String connectionId) {
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(
+        strings = {RemoteConstants.LABEL_MODULE_NAMING, RemoteConstants.LABEL_MODULE_CONFIG})
+    void testClientDisconnectedIgnoresNonLockConnections(String module) {
+        LockOperationService lockOperationService = mock(LockOperationService.class);
+        LockConnectionEventListener listener =
+            new LockConnectionEventListener(lockOperationService);
+        
+        listener.clientDisConnected(mockConnection("connection-1", module));
+        
+        verifyNoInteractions(lockOperationService);
+    }
+    
+    private Connection mockConnection(String connectionId, String module) {
         ConnectionMeta meta = mock(ConnectionMeta.class);
         when(meta.getConnectionId()).thenReturn(connectionId);
+        when(meta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(module);
         Connection connection = mock(Connection.class);
         when(connection.getMetaInfo()).thenReturn(meta);
         return connection;

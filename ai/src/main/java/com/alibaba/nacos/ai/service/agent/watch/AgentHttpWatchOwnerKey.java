@@ -41,6 +41,10 @@ final class AgentHttpWatchOwnerKey {
         return clientId;
     }
     
+    String getIdentity() {
+        return identity;
+    }
+    
     String getNamespaceId() {
         return namespaceId;
     }

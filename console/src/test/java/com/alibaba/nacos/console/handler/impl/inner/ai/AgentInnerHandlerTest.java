@@ -16,17 +16,18 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.ai.service.agent.AgentOperationService;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftCreateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentDraftUpdateRequest;
-import com.alibaba.nacos.api.ai.model.agent.AgentLabelsUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentLabelsUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentOverview;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
-import com.alibaba.nacos.api.ai.model.agent.AgentUpdateRequest;
+import com.alibaba.nacos.api.ai.model.agent.admin.AgentUpdateRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
@@ -75,9 +76,15 @@ class AgentInnerHandlerTest {
     }
     
     @Test
+    void testScopeForwarding() throws Exception {
+        handler.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+        verify(agentOperationService).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
+    }
+    
+    @Test
     void shouldDelegateEveryOperationToLocalServices() throws Exception {
         AgentOverview overview = new AgentOverview();
-        Agent persistedAgent = new Agent();
+        AgentSummary persistedAgent = new AgentSummary();
         AgentDraftUpdateRequest draftUpdateRequest = new AgentDraftUpdateRequest();
         List<AgentCallInterface> callInterfaces =
             Collections.singletonList(new AgentCallInterface());
@@ -91,10 +98,15 @@ class AgentInnerHandlerTest {
         Page<AgentSummary> agentPage = new Page<>();
         Page<AgentVersionSummary> versionPage = new Page<>();
         AgentVersionDetail versionDetail = new AgentVersionDetail();
-        AgentVersionSummary versionSummary = new AgentVersionSummary();
         RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setCallInterface(new AgentCallInterface());
+        EndpointSet runtimeSet = new EndpointSet();
+        runtimeSet.setSource(EndpointSource.RUNTIME);
+        runtimeSet.setLastUpdatedTime(2L);
+        snapshot.getCallInterface().setEndpointSets(Collections.singletonList(runtimeSet));
         when(agentOperationService.getOverview(NAMESPACE_ID, AGENT_NAME)).thenReturn(overview);
-        when(agentOperationService.updateAgent(org.mockito.ArgumentMatchers.any(Agent.class)))
+        when(
+            agentOperationService.updateAgent(org.mockito.ArgumentMatchers.any(AgentSummary.class)))
             .thenReturn(persistedAgent);
         when(agentOperationService.listAgents(NAMESPACE_ID, AGENT_NAME, "tag", "PRIVATE", "owner",
             "download_count", 1, 10)).thenReturn(agentPage);
@@ -109,6 +121,7 @@ class AgentInnerHandlerTest {
             .thenReturn(versionDetail);
         when(agentOperationService.updateDraft(NAMESPACE_ID, AGENT_NAME, VERSION, callInterfaces,
             "change")).thenReturn(versionDetail);
+        AgentVersionSummary versionSummary = new AgentVersionSummary();
         when(agentOperationService.submit(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(versionSummary);
         when(agentOperationService.publish(NAMESPACE_ID, AGENT_NAME, VERSION))
@@ -146,7 +159,7 @@ class AgentInnerHandlerTest {
         assertSame(versionSummary, handler.offline(NAMESPACE_ID, AGENT_NAME, VERSION));
         assertSame(persistedAgent, handler.updateLabels(NAMESPACE_ID, labelsRequest));
         
-        ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
+        ArgumentCaptor<AgentSummary> agentCaptor = ArgumentCaptor.forClass(AgentSummary.class);
         verify(agentOperationService).updateAgent(agentCaptor.capture());
         assertMappedAgent(agentCaptor.getValue(), updateRequest);
         verify(agentOperationService).deleteAgent(NAMESPACE_ID, AGENT_NAME);
@@ -168,7 +181,7 @@ class AgentInnerHandlerTest {
         return result;
     }
     
-    private void assertMappedAgent(Agent actual, AgentUpdateRequest expected) {
+    private void assertMappedAgent(AgentSummary actual, AgentUpdateRequest expected) {
         assertEquals(NAMESPACE_ID, actual.getNamespaceId());
         assertEquals(expected.getAgentName(), actual.getAgentName());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());

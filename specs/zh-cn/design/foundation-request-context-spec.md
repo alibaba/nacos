@@ -53,6 +53,12 @@ HTTP 请求由 `HttpRequestContextFilter` 初始化，它以最早的 servlet fi
 将协议设置为 HTTP，用 HTTP method 和 URI 作为请求目标，记录编码和客户端 header，并在 `finally`
 中清理上下文。
 
+HTTP filter 在进入下游 filter 或 controller 前，将非空白的 `Nacos-Request-Id` header
+写入 `RequestContext.requestId`。header 缺失或为空白时，保留上下文初始化时生成的 UUID，
+因此旧客户端和直接 HTTP 调用仍然有服务端请求 ID。HTTP header 名按大小写不敏感方式读取；
+旧 `RequestId` header 不改变此规则。该 ID 仅用于请求关联，不参与鉴权或幂等判断，也不要求
+服务端将它回显到响应。正常返回和异常退出都必须清理上下文，避免后续请求继承前一个请求的 ID。
+
 gRPC unary 请求由 `GrpcRequestAcceptor` 在连接校验和 payload 解析之后初始化。它使用 `Request`
 中的 request id，将协议设置为 gRPC，以请求类名作为请求目标，把客户端版本记录为 user agent，
 解析 app 元数据，并从已注册连接中记录远端/source 地址。
@@ -95,6 +101,12 @@ HTTP Controller 方法解析规则：
   解析器。旧解析器从 3.3.0 起废弃，计划在 3.4.0 移除，且可能与 Spring MVC 路径匹配结果
   不一致，因此默认必须关闭。启用旧解析器时，必须在移除 context path 前使用一致的方式解析
   request URI 和 context path，包括任一值包含百分号编码字符的情况。
+- 旧注解缓存必须将 `HEAD` 请求解析到对应的 `GET` 映射，保留该映射的参数条件，
+  且不得修改 Servlet request 中的原始请求方法。
+
+方法解析遇到 HTTP method 不匹配时没有业务 handler，应交由 Spring MVC 返回 405，
+不能将正常的方法拒绝包装为 500；其他未预期的解析失败仍保持报错。HEAD 解析为 GET
+的同一个 handler，沿用其身份校验；框架生成的 OPTIONS 仅暴露允许的方法。
 
 ## 4. gRPC 请求过滤模型
 

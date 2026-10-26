@@ -18,12 +18,12 @@ package com.alibaba.nacos.ai.service.agent.metadata;
 
 import com.alibaba.nacos.ai.model.agent.AgentResourceExt;
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -84,7 +84,7 @@ public final class AgentResourceExtSerializer {
     public static String serialize(AgentResourceExt resourceExt) {
         validate(resourceExt);
         try {
-            return JacksonUtils.toJson(toStorageProjection(resourceExt));
+            return JsonUtils.toJson(toStorageProjection(resourceExt));
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize AgentResourceExt", e);
         }
@@ -100,7 +100,24 @@ public final class AgentResourceExtSerializer {
         validateJsonShape(json);
         final AgentResourceExt result;
         try {
-            result = JacksonUtils.toObj(json, AgentResourceExt.class);
+            result = JsonUtils.toObj(json, AgentResourceExt.class);
+            Map<?, ?> root = JsonUtils.toObj(json, Map.class);
+            Map<?, ?> storedCatalog = (Map<?, ?>) root.get("versionCatalog");
+            Map<String, String> labels = new LinkedHashMap<String, String>();
+            if (storedCatalog.get("latestVersion") != null) {
+                labels.put("latest", (String) storedCatalog.get("latestVersion"));
+            }
+            if (result.getVersionCatalog() != null
+                && result.getVersionCatalog().getOnlineVersions() != null) {
+                for (AgentVersionSummary version : result.getVersionCatalog().getOnlineVersions()) {
+                    if (version.getLabels() != null) {
+                        for (String label : version.getLabels()) {
+                            labels.put(label, version.getVersion());
+                        }
+                    }
+                }
+                result.getVersionCatalog().setLabels(labels);
+            }
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid AgentResourceExt", e);
         }
@@ -158,7 +175,7 @@ public final class AgentResourceExtSerializer {
         }
         final byte[] bytes;
         try {
-            bytes = JacksonUtils.toJsonBytes(extensions);
+            bytes = JsonUtils.toJsonBytes(extensions);
         } catch (NacosSerializationException e) {
             throw new IllegalArgumentException("Unable to serialize Agent extensions", e);
         }
@@ -208,9 +225,9 @@ public final class AgentResourceExtSerializer {
         throw new IllegalArgumentException(fieldName + " is not a JSON value");
     }
     
-    private static void validateCatalog(AgentVersionCatalog catalog) {
+    private static void validateCatalog(AgentVersionInfo catalog) {
         AgentModelValidator.validateVersionCatalog(catalog);
-        List<AgentVersionCatalogEntry> versions = catalog.getOnlineVersions();
+        List<AgentVersionSummary> versions = catalog.getOnlineVersions();
         for (int i = 1; i < versions.size(); i++) {
             String previous = versions.get(i - 1).getVersion();
             String current = versions.get(i).getVersion();
@@ -270,11 +287,11 @@ public final class AgentResourceExtSerializer {
         return result;
     }
     
-    private static Map<String, Object> toStorageProjection(AgentVersionCatalog catalog) {
+    private static Map<String, Object> toStorageProjection(AgentVersionInfo catalog) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        putIfPresent(result, "latestVersion", catalog.getLatestVersion());
+        putIfPresent(result, "latestVersion", catalog.latestVersion());
         List<Map<String, Object>> versions = new ArrayList<Map<String, Object>>();
-        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+        for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             Map<String, Object> version = new LinkedHashMap<String, Object>();
             version.put("version", entry.getVersion());
             version.put("labels", entry.getLabels());
@@ -298,7 +315,7 @@ public final class AgentResourceExtSerializer {
         validateSingleJsonValue(json);
         final Map<?, ?> root;
         try {
-            root = JacksonUtils.toObj(json, Map.class);
+            root = JsonUtils.toObj(json, Map.class);
         } catch (NacosDeserializationException e) {
             throw new IllegalArgumentException("Invalid AgentResourceExt", e);
         }

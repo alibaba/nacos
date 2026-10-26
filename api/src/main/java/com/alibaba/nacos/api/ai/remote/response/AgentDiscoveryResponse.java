@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.remote.response;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**

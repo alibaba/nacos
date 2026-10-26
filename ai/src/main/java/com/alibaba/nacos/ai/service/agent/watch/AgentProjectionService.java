@@ -119,7 +119,7 @@ public class AgentProjectionService {
      * @return canonical shared key
      */
     public AgentProjectionKey retain(
-        com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryRequest request) {
+        com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest request) {
         ensureOpen();
         AgentProjectionKey key = AgentProjectionKey.of(request);
         if (registry.retain(key)) {

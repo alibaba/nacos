@@ -171,7 +171,7 @@ inner 请求的详细规则由
 | `ServerReloadRequest` | `ServerReloadResponse` | unary | inner，cluster 来源 | 在对端重新加载远程上下文。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
 | `ServerLoaderInfoRequest` | `ServerLoaderInfoResponse` | unary | inner，cluster 来源 | 查询对端 server loader 指标。参见[内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)。 |
 | `MemberReportRequest` | `MemberReportResponse` | unary | inner，cluster 来源 | 按[集群成员规范](../design/foundation-cluster-membership-spec.md)上报成员信息并更新成员状态。 |
-| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | 已有 handler | 查询节点上的插件可用性。当前代码已有 handler，但 payload 未列入 core payload SPI 文件；注册前不应视为已生效的 gRPC 契约。 |
+| `PluginAvailabilityRequest` | `PluginAvailabilityResponse` | unary | inner、cluster source | 查询节点上单个插件是否已注册，或在 `queryAll=true` 时查询全部插件的启用状态。两种 payload 均已注册到 core payload SPI。 |
 
 ### 7.2 Config
 
@@ -249,7 +249,7 @@ Payload 清单。
 
 | 目标 Request type | 目标 Response type | 方向 | 契约 |
 | --- | --- | --- | --- |
-| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentCatalogEntry`。 |
+| `AgentSearchRpcRequest` | `AgentSearchResponse` | read | 搜索 Agent 目录并返回一页 `AgentSummary`。 |
 | `AgentDiscoveryRpcRequest` | `AgentDiscoveryResponse` | read | 发现一个 Agent 并返回完整的 `AgentDiscoveryResult`。 |
 | `AgentPublishRpcRequest` | `AgentPublishRpcResponse` | write | 代码式创建 Agent draft，并按 `autoSubmit` 可选执行普通 submit。 |
 | `AgentSubscribeRpcRequest` | `AgentSubscribeRpcResponse` | read | 安装一个已鉴权且归属当前 Connection 的 Watch，返回不透明 `watchKey`、已观测 fingerprint 和刷新决策，绝不返回 Discover Snapshot。 |
@@ -293,3 +293,11 @@ Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gR
 9. 对于服务端间 payload，还应同步更新
    [内部 RPC 与集群请求规范](../design/foundation-internal-rpc-spec.md)，或拥有该集群请求语义的
    领域规范。
+
+
+### Agent Search/Register namespace 绑定
+
+`AgentSearchRpcRequest` 和 `AgentEndpointRegisterRpcRequest` 的 `namespaceId` 位于信封顶层；
+`searchRequest`/`registrationBatch` 不含 namespace。参数提取、namespace 校验、鉴权和业务服务
+使用同一信封值，缺省值按现有规则归一到 public。RPC 类型名不变；这是 3.3 发布前的布局调整，
+Client 与 Server 必须同步更新。Discover/Watch/Publish 及历史 A2A 信封结构保持不变。

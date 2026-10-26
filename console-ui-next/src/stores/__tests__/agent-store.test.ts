@@ -52,8 +52,7 @@ const runtime: ConsoleRuntimeEndpointView = {
     namespaceId: 'public',
     agentName: 'demo',
     version: '1.0.0',
-    protocol: 'A2A',
-    items: [],
+    callInterface: { protocol: 'A2A', endpointSets: [{ source: 'RUNTIME', endpoints: [], lastUpdatedTime: 1 }] },
   },
   namingServiceRef: {
     namespaceId: 'public',

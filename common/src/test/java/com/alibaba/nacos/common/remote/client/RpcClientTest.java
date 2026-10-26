@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -411,6 +412,39 @@ class RpcClientTest {
         Response response = rpcClient.request(new HealthCheckRequest());
         assertTrue(response instanceof HealthCheckResponse);
         assertTrue(lastActiveTimeStamp <= (long) lastActiveTimeStampField.get(rpcClient));
+    }
+    
+    @Test
+    void testNonReplayableRequestUsesOneAttemptAndDefaultTimeout() throws Exception {
+        rpcClient.currentConnection = connection;
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        NacosException failure = new NacosException(500, "response lost");
+        when(connection.request(any(), anyLong())).thenThrow(failure);
+        org.junit.jupiter.api.Assertions.assertSame(failure, assertThrows(NacosException.class,
+            () -> rpcClient.requestOnce(new HealthCheckRequest(), -1L)));
+        verify(connection, times(1)).request(any(), eq(3000L));
+    }
+    
+    @Test
+    void testNonReplayableRequestReturnsSuccessfulResponse() throws Exception {
+        rpcClient.currentConnection = connection;
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        HealthCheckResponse expected = new HealthCheckResponse();
+        when(connection.request(any(), anyLong())).thenReturn(expected);
+        org.junit.jupiter.api.Assertions.assertSame(expected,
+            rpcClient.requestOnce(new HealthCheckRequest(), 1234L));
+        verify(connection).request(any(), eq(1234L));
+    }
+    
+    @Test
+    void testOrdinaryRequestWithZeroTimeoutStillMakesAnAttempt() throws Exception {
+        rpcClient.currentConnection = connection;
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        HealthCheckResponse expected = new HealthCheckResponse();
+        when(connection.request(any(), eq(0L))).thenReturn(expected);
+        org.junit.jupiter.api.Assertions.assertSame(expected,
+            rpcClient.request(new HealthCheckRequest(), 0L));
+        verify(connection).request(any(), eq(0L));
     }
     
     @Test

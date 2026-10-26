@@ -21,6 +21,8 @@ import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RouteTable;
@@ -36,6 +38,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -78,8 +82,16 @@ class JRaftUtilsTest {
     private MockedStatic<ApplicationUtils> applicationUtilsMock;
     private MockedStatic<RouteTable> routeTableMock;
     
+    private ConfigurableEnvironment originalEnvironment;
+    
     @BeforeEach
     void setUp() {
+        originalEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_PLUGIN_AUTH_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "test-key");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "test-value");
+        EnvUtil.setEnvironment(environment);
         RaftConfig config = new RaftConfig();
         config.setVal(RaftSysConstants.RAFT_CORE_THREAD_NUM, "2");
         config.setVal(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "1");
@@ -88,6 +100,7 @@ class JRaftUtilsTest {
     
     @AfterEach
     void tearDown() {
+        EnvUtil.setEnvironment(originalEnvironment);
         if (applicationUtilsMock != null) {
             try {
                 applicationUtilsMock.close();

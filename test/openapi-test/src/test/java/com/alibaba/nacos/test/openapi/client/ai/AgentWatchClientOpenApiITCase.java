@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.test.openapi.client.ai;
 
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryResult;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -85,6 +85,34 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
             AgentDiscoveryCanonicalizer.ALGORITHM_ID + ":" + "0".repeat(64);
 
     @Test
+    public void testVisibilityLossInvalidatesOnlyOpaqueIdWithoutChangingSharedFingerprint()
+            throws Exception {
+        Assumptions.assumeTrue(AUTH_ENABLED);
+        String first = randomAiName("watch-private");
+        String second = randomAiName("watch-public");
+        publishAgent(first, VERSION);
+        publishAgent(second, VERSION);
+        String firstFingerprint = fingerprint(discover(null, first));
+        String secondFingerprint = fingerprint(discover(null, second));
+        putFormOk(ADMIN_AGENT_PATH + "/scope", Query.newInstance()
+                .addParam("agentName", first).addParam("scope", "PRIVATE"));
+        List<Map<String, Object>> items = java.util.Arrays.asList(
+                watchItem("first", null, first, firstFingerprint),
+                watchItem("second", null, second, secondFingerprint));
+        HttpPost request = watchRequest(requestUrl(AGENT_WATCH_PATH), randomHttpClientId(),
+                REQUEST_MODULE, watchForm(1L, 5000L, items));
+        JsonNode changed = assertWatchResponse(executeRaw(request, AuthIdentity.CLIENT_READ_ONLY),
+                1L, true, Collections.singletonList("first"));
+        assertOpaqueInvalidation(changed);
+        assertEquals(404, getRaw(AGENT_CLIENT_PATH,
+                Query.newInstance().addParam("agentName", first), AuthIdentity.CLIENT_READ_ONLY).code());
+        assertEquals(firstFingerprint, fingerprint(discover(null, first)),
+                "visibility must not contaminate the shared projection fingerprint");
+        assertWatchResponse(postWatchForm(randomHttpClientId(), REQUEST_MODULE,
+                watchForm(1L, 1000L, items)), 1L, false, Collections.emptyList());
+    }
+
+    @Test
     public void testTimeoutAndMultiIntentChangedResponsesAreOpaque() throws Exception {
         String firstAgent = randomAiName("agent-watch-first");
         String secondAgent = randomAiName("agent-watch-second");
@@ -104,7 +132,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
                 1L, false, Collections.emptyList());
         long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
         assertTrue(elapsedMillis >= 700L, "unchanged Watch returned too early: " + elapsedMillis);
-        assertFalse(timedOut.has("changedClientWatchIds"), timedOut.toString());
+        assertFalse(timedOut.hasNonNull("changedClientWatchIds"), timedOut.toString());
 
         List<Map<String, Object>> batch = new ArrayList<>();
         batch.add(watchItem("first", null, firstAgent, firstFingerprint));
@@ -416,7 +444,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
                     REQUEST_MODULE, watchForm(12L, 1000L, Collections.singletonList(
                             watchItem("cross-node", null, agentName, afterFingerprint)))),
                     12L, false, Collections.emptyList());
-            assertFalse(generationTwelve.has("changedClientWatchIds"),
+            assertFalse(generationTwelve.hasNonNull("changedClientWatchIds"),
                     generationTwelve.toString());
         } finally {
             generationTen.cancel(true);
@@ -505,7 +533,7 @@ public class AgentWatchClientOpenApiITCase extends AgentClientOpenApiBaseITCase 
 
     private List<String> changedIds(JsonNode data) {
         List<String> result = new ArrayList<>();
-        if (data.has("changedClientWatchIds")) {
+        if (data.hasNonNull("changedClientWatchIds")) {
             data.get("changedClientWatchIds").forEach(each -> result.add(each.asText()));
         }
         return result;

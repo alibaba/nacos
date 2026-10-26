@@ -49,7 +49,7 @@ The destructive restart case is orchestrated by
 | `NamingMaintainerService` and sub-services | Service/instance/cluster/client/health/ops admin workflows, defaulting, validation, idempotency, and cleanup. | Covered | Covers persistent service create/get/update/list/detail-list/remove lifecycle, missing service controlled exception, invalid service parameter validation, persistent instance register/list/detail/update/partial-update/batch-metadata-update/batch-metadata-delete/deregister lifecycle, invalid instance parameter validation, selector type and health-checker queries, cluster health-checker metadata update, manual persistent instance health status update, naming client list/detail/publisher/subscriber diagnostics, subscriber diagnostics, naming metrics/log operations, full auth-on execution, focused read-write/read-only/no-permission boundaries, denied-write side effects, and cleanup. |
 | `AiMaintainerService` and existing delegate services | MCP compatibility API, A2A, Prompt, Skill, AgentSpec, Pipeline, and Agent delegate exposure; existing AI admin workflows, version behavior, validation, upload boundaries, controlled pipeline query failures, and cleanup. | Covered | Covers AI maintainer factory delegate creation, including both the new `agent()` delegate and retained `a2a()` compatibility delegate; empty-result list queries; Pipeline Result-wrapper list query and missing-detail controlled 404 when the deprecated fallback API is gone; MCP compatibility create/get/list/search/update/delete behavior and invalid local/remote spec validation; A2A agent register/get/list/search/new-version update/delete lifecycle plus immutable same-Version conflict; Prompt draft/update/force-publish/label/description/biz-tag/online-status/list/delete lifecycle; Skill draft/update/force-publish/label/biz-tag/scope/online-status/list/delete lifecycle; authenticated Skill ZIP upload with target version and commit message; authenticated Skill batch ZIP upload; authenticated AgentSpec ZIP upload and version-meta query; AgentSpec lifecycle; Skill/AgentSpec submit direct-publish behavior when no review Pipeline plugin is enabled; invalid-credential fail-closed behavior on anonymous-enabled Skill list; null factory property validation; full auth-on execution with both adapters; and cleanup of business resources. MCP detail and direct-online create/update are deprecated since 3.3.0 for removal in 4.0.0, but remain intentionally exercised during the compatibility window. MCP list/search/delete remain non-deprecated until equivalent typed lifecycle replacements exist. Real review-Pipeline plugin approval is intentionally excluded from standalone maintainer SDK IT, Skill/AgentSpec/Prompt download endpoints plus AI import/adaptor paths are not currently exposed by the Maintainer SDK, and the AI facade has no public shutdown method. |
 | `McpMaintainerService` typed lifecycle API | Name-only draft and Version management in default and explicit namespaces; bounded reads; lifecycle actions; Resource enablement and scope; labels; optional content and endpoint compatibility; validation/error mapping; deprecation boundary; and cleanup. | Covered | Covers default-public and explicit-namespace draft creation, exact and status-filtered bounded Version reads, complete draft replacement, no-Pipeline submit, force-publish, offline/online, Resource enable/disable and public/private scope, custom labels while preserving `latest`, draft deletion, full cleanup, controlled not-found and invalid publish-state errors, STDIO Tools/Resources, and a Direct Streamable endpoint projected through the deprecated compatibility detail API after lifecycle publication. Typed lifecycle detail is asserted writable and not to expose internal `mcpId`; unit tests enforce that only legacy methods with semantics-equivalent lifecycle migration paths carry `@Deprecated`. Successful reviewed-state `publish` and `redraft` require an MCP review Pipeline plugin and remain intentionally excluded; REF endpoint semantics remain covered by component and compatibility tests because this surface adds transport rather than a new endpoint model. |
-| `AgentMaintainerService` | Unified first/subsequent draft creation, default-public and explicit-namespace Agent management, bounded overview/list/version reads, writable metadata replacement, draft update/delete, lifecycle actions, labels, Runtime Endpoint snapshot, validation, error mapping, compatibility delegate retention, and cleanup. | Partial | Covers first-draft creation of missing Agent metadata and its server-derived enable/owner/default-scope values; Request/Command models without namespace; convenience overloads fixed to `public`; explicit method namespace as the sole custom-namespace source; get/update/delete with update preserving owner/scope; fuzzy name, one business-tag, scope, and owner list filters; Version list/detail; direct and copied later drafts; draft replacement/deletion; force-publish; no-Pipeline submit; offline/online; custom labels while preserving server-managed `latest`; empty Runtime Endpoint snapshots; not-found, invalid identity/protocol, and invalid publish/redraft state mapping; and continued availability of the legacy `a2a()` delegate. Successful reviewed-state `publish` and `redraft` remain intentionally excluded because standalone Maintainer SDK IT does not enable an Agent review Pipeline plugin; a populated Runtime Endpoint snapshot awaits the Client/RAD publication binding. |
+| `AgentMaintainerService` | Unified first/subsequent draft creation, default-public and explicit-namespace Agent management, bounded overview/list/version reads, writable metadata replacement, draft update/delete, lifecycle actions, labels, Runtime Endpoint snapshot, validation, error mapping, compatibility delegate retention, and cleanup. | Partial | Covers first-draft creation of missing Agent metadata and its server-derived enable/owner/default-scope values; Request/Command models without namespace; convenience overloads fixed to `public`; explicit method namespace as the sole custom-namespace source; get/update/delete with update preserving owner/scope; fuzzy name, one business-tag, scope, and owner list filters; Version list/detail; direct and copied later drafts; draft replacement/deletion; force-publish; no-Pipeline submit; offline/online; custom labels while preserving server-managed `latest`; empty Runtime Endpoint snapshots; not-found, invalid identity/protocol, and invalid publish/redraft state mapping; and continued availability of the legacy `a2a()` delegate. Successful reviewed-state `publish` and `redraft` remain intentionally excluded because standalone Maintainer SDK IT does not enable an Agent review Pipeline plugin; a populated Runtime Endpoint snapshot awaits the Client/RAD publication binding. Scope coverage includes PUBLIC creation, both updateScope overloads, lowercase input, private first-draft retry, and invalid-scope exception mapping. |
 
 ## Coverage Summary
 
@@ -63,3 +63,60 @@ Current in-scope maintained surfaces: 11.
 
 - Strict coverage: 9 / 11 = 81.8%
 - Effective coverage: (9 + 2 * 0.5) / 11 = 90.9%
+
+## Config detail schema (#15853)
+
+`ConfigMaintainerServiceMaintainerSdkITCase.shouldQueryConfigHistory` verifies
+that current, historical, and previous-version detail models expose null schema
+when publishing through the Maintainer SDK, whose publish interface has no
+schema parameter. Non-null response deserialization is covered for all three
+SDK query methods by `NacosConfigMaintainerServiceImplTest`; HTTP IT covers
+publishing non-null schema and preserving historical values. No new SDK publish
+interface is introduced.
+
+## Agent model consolidation
+
+Agent Admin requests now carry the AdminRequest suffix. The default-namespace lifecycle verifies inherited metadata and version-summary fields, using concrete summary instances without namespace, agentName or callInterfaces. Existing custom-namespace, copied-draft, update and lifecycle/error coverage is retained.
+
+### Agent 元数据模型合并（2026-09-14）
+
+AgentSummary 合并详情/列表类型；验证详情保留 extensions、列表省略 extensions；versionInfo 保存完整标签及 onlineVersions，单版本条目复用 AgentVersionSummary，metadata/lifecycle 行为保持。
+
+### Agent 地址模型统一：实施与验收（2026-09-15）
+
+CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+
+### 2026-09-15 JSON 门面替换 review
+
+Admin Form 转类型化 Request 改用 JsonUtils/NacosTypeReference；HTTP Form 字段、namespace 传递、公开 SDK Request 和响应结构均未变化。沿用原场景矩阵：非空嵌套定义、空/非法 JSON、默认 namespace、发布后读回及受控错误。执行状态见模型统一验证记录 §7，不能以替换前的 IT 结果替代新实现的验证。
+
+
+### 2026-09-15 请求整合回归
+
+Agent 五个管理请求改用 model.agent.admin 下的 AgentDraftCreateRequest、AgentDraftUpdateRequest、AgentUpdateRequest、AgentLabelsUpdateRequest、AgentVersionRequest。既有生命周期、namespace、嵌套定义/运行地址和错误映射场景保持，默认/Jackson 3 均需重跑。
+
+本轮实际执行状态见 [请求整合验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_REQUEST_VALIDATION.md)。
+既有 Covered/Partial/Pending 表示场景覆盖归属，不表示本轮已重新执行；不能引用前轮结果代替本轮验收。
+
+## Remote API errors（2026-09-16）
+
+AgentMaintainerServiceMaintainerSdkITCase strengthens existing missing-resource, invalid-publish,
+invalid-redraft, and deleted-version scenarios: NacosApiException retains HTTP status separately
+from the exact business code and summary. The complete Maintainer SDK suite is exercised with
+both default and Jackson 3 adapters because ClientHttpProxy is shared by all domains, including
+multipart uploads, authentication refresh, and legacy fallback. Existing scenario row counts
+and known exclusions remain unchanged. Nonstandard remote responses keep the generic exception
+fallback and are covered by proxy unit tests.
+
+See [validation evidence](../../Codex/design/nacos-3.3-client-ai-api/CONSOLE_ERROR_VALIDATION.md).
+
+Verified on 2026-09-16: both adapters discovered 46 cases, with 44 passed, zero failures/errors,
+and two existing skips each (DAUTH-F04 and the opt-in real restart scenario). No recovery test was
+performed. This validates the strengthened business-error assertions without upgrading unrelated coverage gaps.
+
+Skill frontmatter (#15345): `AiMaintainerServiceMaintainerSdkITCase` verifies
+that metadata detail and list deserialization retain parsed frontmatter after
+content update, publication and version offline/online, including the generated
+description and `frontMatterTruncated=false` for a complete projection. Historical
+responses may omit frontmatter and the truncation flag or return null; API model
+round-trip unit tests cover that boundary.

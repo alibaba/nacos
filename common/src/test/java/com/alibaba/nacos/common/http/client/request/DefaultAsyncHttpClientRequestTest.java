@@ -35,12 +35,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -155,4 +158,14 @@ class DefaultAsyncHttpClientRequestTest {
             assertEquals(exception, e);
         }
     }
+    
+    @Test
+    void testRejectNonRepeatableBodyBeforeAsyncSubmission() {
+        RequestHttpEntity entity = new RequestHttpEntity(null, Header.newInstance(), null,
+            Collections.singletonMap("name", "agent"), false);
+        assertThrows(IllegalArgumentException.class,
+            () -> httpClientRequest.execute(uri, "POST", entity, responseHandler, callback));
+        verify(client, never()).execute(any(), any());
+    }
+    
 }

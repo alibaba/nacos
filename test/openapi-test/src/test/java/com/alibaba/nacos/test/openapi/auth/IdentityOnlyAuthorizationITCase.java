@@ -27,7 +27,8 @@ import java.util.stream.Stream;
  * <p>These operations require a valid identity but intentionally skip resource authority
  * evaluation. The matrix therefore proves both sides of that contract: absent, invalid, and
  * blank credentials fail, while an authenticated user with no role permission reaches the
- * business operation.</p>
+ * business operation. The same scenarios are used with merged and independent Console
+ * deployments so remote identity-only delegation is covered as well.</p>
  *
  * @author Nacos
  */

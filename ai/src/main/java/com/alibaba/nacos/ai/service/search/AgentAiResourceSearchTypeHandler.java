@@ -24,8 +24,8 @@ import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.agent.AgentPersistenceService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.agent.Agent;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
+import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -146,9 +146,9 @@ public class AgentAiResourceSearchTypeHandler implements AiResourceSearchTypeHan
         if (!isEnabled(meta) || StringUtils.isBlank(resourceName)) {
             return null;
         }
-        Agent agent = persistenceService.getAgent(namespaceId, resourceName);
-        AgentVersionCatalog catalog = agent.getVersionCatalog();
-        String latestVersion = catalog == null ? null : catalog.getLatestVersion();
+        AgentSummary agent = persistenceService.getAgent(namespaceId, resourceName);
+        AgentVersionInfo catalog = agent.getVersionInfo();
+        String latestVersion = catalog == null ? null : catalog.latestVersion();
         if (StringUtils.isBlank(latestVersion)
             || StringUtils.isNotBlank(requestedVersion)
                 && !latestVersion.equals(requestedVersion)) {

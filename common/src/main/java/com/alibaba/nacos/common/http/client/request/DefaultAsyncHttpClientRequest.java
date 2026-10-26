@@ -61,6 +61,10 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     @Override
     public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
         final ResponseHandler<T> responseHandler, final Callback<T> callback) throws Exception {
+        if (!requestHttpEntity.isBodyRepeatable()) {
+            throw new IllegalArgumentException(
+                "Non-repeatable request bodies require synchronous execution");
+        }
         HttpUriRequestBase httpRequestBase =
             DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity, defaultConfig);
         // IllegalStateException has been removed from ver.5.0, should catch it in DefaultConnectingIOReactor callback

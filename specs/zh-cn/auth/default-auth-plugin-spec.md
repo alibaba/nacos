@@ -171,6 +171,11 @@ Java Client SDK 扩展在 [Java SDK 实现规范](../sdk/sdk-java-impl-spec.md)�
 
 ## RBAC 存储模型
 
+外部存储的用户、角色、权限持久化 Bean 必须在第一次访问前完成数据源初始化；
+普通 JVM 与 AOT 运行均须遵守此要求。用于 AOT 的 Bean 定义必须暴露实现类型上的生命周期
+回调，不得仅因工厂方法声明接口类型而丢失 `@PostConstruct`。此要求不改变普通 JVM
+的 Bean 名称、实现选择、初始化顺序或鉴权 API 契约。
+
 默认插件存储：
 
 | 对象 | 含义 |
@@ -250,7 +255,8 @@ LIKE 的默认转义字符，因此嵌入式存储显式声明 `ESCAPE '\'`。�
 
 默认行为：
 
-- 除非领域提供其他 scope，新资源默认 `PRIVATE`。
+- 新建 `agent`、`mcp` 资源默认 `PUBLIC`；其他类型保持默认 `PRIVATE`。这仅是首建默认值，
+  发布时不得重置已有 scope。
 - 全局管理员可以读写所有具备可见性语义的资源。
 - 资源 owner 可以读写该资源。
 - `PUBLIC` 资源可以被非 owner 读取。

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.metadata;
 
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalog;
-import com.alibaba.nacos.api.ai.model.agent.AgentVersionCatalogEntry;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
+import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ class AgentVersionCatalogBuilderTest {
         AgentVersionCatalogBuilder.Result result = AgentVersionCatalogBuilder.build(
             Collections.<String, List<String>>emptyMap(), labels);
         
-        assertNull(result.getVersionCatalog().getLatestVersion());
+        assertNull(result.getVersionCatalog().latestVersion());
         assertEquals(Collections.emptyList(),
             result.getVersionCatalog().getOnlineVersions());
         assertEquals(Collections.singletonMap("archived", "0.9.0"), result.getLabels());
@@ -64,9 +64,9 @@ class AgentVersionCatalogBuilderTest {
         
         AgentVersionCatalogBuilder.Result result =
             AgentVersionCatalogBuilder.build(versions, labels);
-        AgentVersionCatalog catalog = result.getVersionCatalog();
+        AgentVersionInfo catalog = result.getVersionCatalog();
         
-        assertEquals("1.0.0", catalog.getLatestVersion());
+        assertEquals("1.0.0", catalog.latestVersion());
         assertEquals(Arrays.asList("2.0.0", "2.0.0-RC1", "1.0.0"),
             catalogVersions(catalog));
         assertEquals(Arrays.asList("beta", "canary"),
@@ -89,12 +89,12 @@ class AgentVersionCatalogBuilderTest {
         
         AgentVersionCatalogBuilder.Result missingLatest = AgentVersionCatalogBuilder.build(
             versions, Collections.<String, String>emptyMap());
-        assertEquals("1.0.0", missingLatest.getVersionCatalog().getLatestVersion());
+        assertEquals("1.0.0", missingLatest.getVersionCatalog().latestVersion());
         assertEquals("1.0.0", missingLatest.getLabels().get("latest"));
         
         AgentVersionCatalogBuilder.Result staleLatest = AgentVersionCatalogBuilder.build(
             versions, Collections.singletonMap("latest", "2.0.0"));
-        assertEquals("1.0.0", staleLatest.getVersionCatalog().getLatestVersion());
+        assertEquals("1.0.0", staleLatest.getVersionCatalog().latestVersion());
         assertEquals("1.0.0", staleLatest.getLabels().get("latest"));
     }
     
@@ -123,7 +123,7 @@ class AgentVersionCatalogBuilderTest {
             () -> result.getLabels().put("stable", "1.0.0"));
         assertThrows(UnsupportedOperationException.class,
             () -> result.getVersionCatalog().getOnlineVersions().add(
-                new AgentVersionCatalogEntry()));
+                new AgentVersionSummary()));
         assertThrows(UnsupportedOperationException.class,
             () -> result.getVersionCatalog().getOnlineVersions().get(0)
                 .getProtocols().add("grpc"));
@@ -159,9 +159,9 @@ class AgentVersionCatalogBuilderTest {
                 Collections.singletonMap(version, protocols), Collections.emptyMap()));
     }
     
-    private List<String> catalogVersions(AgentVersionCatalog catalog) {
+    private List<String> catalogVersions(AgentVersionInfo catalog) {
         List<String> result = new ArrayList<String>();
-        for (AgentVersionCatalogEntry entry : catalog.getOnlineVersions()) {
+        for (AgentVersionSummary entry : catalog.getOnlineVersions()) {
             result.add(entry.getVersion());
         }
         return result;

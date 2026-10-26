@@ -21,14 +21,12 @@ import com.alibaba.nacos.ai.service.agent.fingerprint.RuntimeEndpointRevision;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionComparator;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
+import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshotItem;
-import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointState;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
-import com.alibaba.nacos.api.ai.model.rad.AgentDiscoveryEndpoint;
-import com.alibaba.nacos.api.ai.model.rad.AgentEndpointRegistrationBatch;
-import com.alibaba.nacos.api.ai.model.rad.EndpointSet;
+import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
@@ -103,19 +101,22 @@ public class AgentRuntimeRegistryService {
      * Replace one publisher's complete Runtime Endpoint batch.
      *
      * @param publisherId Naming client identity
-     * @param batch complete batch for one Agent, protocol, and shared Version values
+     * @param batch complete batch for one Agent and protocol, with per-Endpoint Version bindings
      * @throws NacosException when Naming rejects the batch
      */
-    public void register(String publisherId, AgentEndpointRegistrationBatch batch)
+    public void register(String publisherId, String namespaceId,
+        AgentEndpointRegistrationBatch batch)
         throws NacosException {
-        RadModelValidator.validate(batch);
+        RadModelValidator.validate(namespaceId, batch);
         List<Instance> instances = new ArrayList<Instance>(batch.getEndpoints().size());
         for (Endpoint endpoint : batch.getEndpoints()) {
+            RuntimeVersionBinding binding = EndpointCanonicalizer.canonicalizeRuntimeBinding(
+                endpoint, batch.getRuntimeVersion(), batch.getVersionRange());
             instances.add(AgentRuntimeEndpointMapper.toInstance(endpoint,
-                batch.getRuntimeVersion(), batch.getVersionRange()));
+                binding.getRuntimeVersion(), binding.getVersionRange()));
         }
         NamingUtils.batchCheckInstanceIsLegal(instances);
-        Service service = composeService(batch.getNamespaceId(), batch.getAgentName(),
+        Service service = composeService(namespaceId, batch.getAgentName(),
             batch.getProtocol());
         publicationCapacityGate.register(publisherId, service, instances.size(),
             () -> clientOperationService.batchRegisterInstance(service, instances, publisherId));
@@ -157,9 +158,17 @@ public class AgentRuntimeRegistryService {
         RuntimeEndpointSnapshot result = new RuntimeEndpointSnapshot();
         result.setNamespaceId(namespaceId);
         result.setAgentName(agentName);
-        result.setProtocol(protocol);
         result.setVersion(version);
-        result.setItems(loadSnapshotItems(namespaceId, agentName, protocol, version));
+        ServiceInfo serviceInfo = getServiceInfo(namespaceId, agentName, protocol);
+        EndpointSet endpointSet = new EndpointSet();
+        endpointSet.setSource(EndpointSource.RUNTIME);
+        endpointSet.setLastUpdatedTime(serviceInfo.getLastRefTime());
+        endpointSet.setEndpoints(
+            loadSnapshotItems(namespaceId, agentName, protocol, version, serviceInfo));
+        AgentCallInterface callInterface = new AgentCallInterface();
+        callInterface.setProtocol(protocol);
+        callInterface.setEndpointSets(Collections.singletonList(endpointSet));
+        result.setCallInterface(callInterface);
         AgentModelValidator.validateRuntimeEndpointSnapshot(result);
         return result;
     }
@@ -221,7 +230,7 @@ public class AgentRuntimeRegistryService {
     private EndpointSet buildRuntimeEndpointSet(String namespaceId, String agentName,
         String protocol, List<String> versions, boolean currentFacts) throws NacosException {
         validateDiscoveryVersions(namespaceId, agentName, protocol, versions);
-        List<AgentDiscoveryEndpoint> endpoints =
+        List<Endpoint> endpoints =
             loadRuntimeEndpoints(namespaceId, agentName, protocol, versions, currentFacts);
         sortRuntimeEndpoints(namespaceId, agentName, protocol, endpoints);
         EndpointSet result = new EndpointSet();
@@ -233,55 +242,54 @@ public class AgentRuntimeRegistryService {
         return result;
     }
     
-    private List<RuntimeEndpointSnapshotItem> loadSnapshotItems(String namespaceId,
+    private List<Endpoint> loadSnapshotItems(String namespaceId,
         String agentName, String protocol,
-        String version) throws NacosException {
-        ServiceInfo serviceInfo = getServiceInfo(namespaceId, agentName, protocol);
-        Map<EndpointNaturalKey, RuntimeEndpointSnapshotItem> result =
-            new TreeMap<EndpointNaturalKey, RuntimeEndpointSnapshotItem>();
+        String version, ServiceInfo serviceInfo) throws NacosException {
+        Map<EndpointNaturalKey, Endpoint> result =
+            new TreeMap<EndpointNaturalKey, Endpoint>();
         for (Instance instance : serviceInfo.getHosts()) {
-            RuntimeEndpointSnapshotItem contribution =
-                mapInstance(instance, serviceInfo.getLastRefTime());
+            Endpoint contribution =
+                mapInstance(instance);
             List<RuntimeVersionBinding> matchingBindings =
                 matchingBindings(contribution.getBindings(), version);
             if (matchingBindings.isEmpty()) {
                 continue;
             }
             contribution.setBindings(matchingBindings);
-            Endpoint endpoint = contribution.getEndpoint();
+            Endpoint endpoint = contribution;
             EndpointNaturalKey key =
                 EndpointNaturalKey.of(namespaceId, agentName, protocol, endpoint);
-            RuntimeEndpointSnapshotItem current = result.get(key);
+            Endpoint current = result.get(key);
             if (current == null) {
                 result.put(key, contribution);
             } else {
-                if (!samePayload(current.getEndpoint(), endpoint)) {
+                if (!samePayload(current, endpoint)) {
                     throw conflict(key);
                 }
                 mergeSnapshotItem(current, contribution);
             }
         }
         validateCapacity(result.size());
-        return new ArrayList<RuntimeEndpointSnapshotItem>(result.values());
+        return new ArrayList<Endpoint>(result.values());
     }
     
-    private List<AgentDiscoveryEndpoint> loadRuntimeEndpoints(String namespaceId,
+    private List<Endpoint> loadRuntimeEndpoints(String namespaceId,
         String agentName, String protocol, List<String> versions, boolean currentFacts)
         throws NacosException {
         ServiceInfo serviceInfo = getServiceInfo(namespaceId, agentName, protocol, currentFacts);
         Map<EndpointNaturalKey, Endpoint> payloads =
             new TreeMap<EndpointNaturalKey, Endpoint>();
-        Map<EndpointNaturalKey, AgentDiscoveryEndpoint> result =
-            new TreeMap<EndpointNaturalKey, AgentDiscoveryEndpoint>();
+        Map<EndpointNaturalKey, Endpoint> result =
+            new TreeMap<EndpointNaturalKey, Endpoint>();
         for (Instance instance : serviceInfo.getHosts()) {
-            RuntimeEndpointSnapshotItem contribution =
-                mapInstance(instance, serviceInfo.getLastRefTime());
+            Endpoint contribution =
+                mapInstance(instance);
             List<RuntimeVersionBinding> matchingBindings =
                 matchingBindings(contribution.getBindings(), versions);
             if (matchingBindings.isEmpty()) {
                 continue;
             }
-            Endpoint endpoint = contribution.getEndpoint();
+            Endpoint endpoint = contribution;
             EndpointNaturalKey key =
                 EndpointNaturalKey.of(namespaceId, agentName, protocol, endpoint);
             Endpoint previous = payloads.putIfAbsent(key, endpoint);
@@ -291,7 +299,7 @@ public class AgentRuntimeRegistryService {
             if (!contribution.getEnabled()) {
                 continue;
             }
-            AgentDiscoveryEndpoint current = result.get(key);
+            Endpoint current = result.get(key);
             if (current == null) {
                 current = copyEndpoint(endpoint);
                 current.setHealthy(contribution.getHealthy());
@@ -303,7 +311,7 @@ public class AgentRuntimeRegistryService {
             }
         }
         validateCapacity(payloads.size());
-        return new ArrayList<AgentDiscoveryEndpoint>(result.values());
+        return new ArrayList<Endpoint>(result.values());
     }
     
     private ServiceInfo getServiceInfo(String namespaceId, String agentName, String protocol) {
@@ -322,9 +330,9 @@ public class AgentRuntimeRegistryService {
         return result;
     }
     
-    private RuntimeEndpointSnapshotItem mapInstance(Instance instance, long lastUpdatedTime) {
+    private Endpoint mapInstance(Instance instance) {
         try {
-            return AgentRuntimeEndpointMapper.fromInstance(instance, lastUpdatedTime);
+            return AgentRuntimeEndpointMapper.fromInstance(instance);
         } catch (IllegalArgumentException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR,
                 "Invalid Agent Runtime Endpoint in Naming ServiceStorage", e);
@@ -367,8 +375,8 @@ public class AgentRuntimeRegistryService {
         return new ArrayList<RuntimeVersionBinding>(bindings);
     }
     
-    private void mergeSnapshotItem(RuntimeEndpointSnapshotItem current,
-        RuntimeEndpointSnapshotItem contribution) {
+    private void mergeSnapshotItem(Endpoint current,
+        Endpoint contribution) {
         Set<RuntimeVersionBinding> bindings =
             new TreeSet<RuntimeVersionBinding>(BINDING_COMPARATOR);
         bindings.addAll(current.getBindings());
@@ -376,17 +384,6 @@ public class AgentRuntimeRegistryService {
         current.setBindings(new ArrayList<RuntimeVersionBinding>(bindings));
         current.setEnabled(current.getEnabled() || contribution.getEnabled());
         current.setHealthy(current.getHealthy() || contribution.getHealthy());
-        current.setState(runtimeState(current.getEnabled(), current.getHealthy()));
-    }
-    
-    private RuntimeEndpointState runtimeState(boolean enabled, boolean healthy) {
-        if (!enabled) {
-            return RuntimeEndpointState.DISABLED;
-        }
-        if (!healthy) {
-            return RuntimeEndpointState.UNHEALTHY;
-        }
-        return RuntimeEndpointState.AVAILABLE;
     }
     
     private void validateCapacity(int size) throws NacosException {
@@ -425,11 +422,11 @@ public class AgentRuntimeRegistryService {
     }
     
     private void sortRuntimeEndpoints(String namespaceId, String agentName, String protocol,
-        List<AgentDiscoveryEndpoint> endpoints) {
-        Collections.sort(endpoints, new Comparator<AgentDiscoveryEndpoint>() {
+        List<Endpoint> endpoints) {
+        Collections.sort(endpoints, new Comparator<Endpoint>() {
             
             @Override
-            public int compare(AgentDiscoveryEndpoint left, AgentDiscoveryEndpoint right) {
+            public int compare(Endpoint left, Endpoint right) {
                 int result = Integer.compare(left.getPriority(), right.getPriority());
                 if (result != 0) {
                     return result;
@@ -453,7 +450,7 @@ public class AgentRuntimeRegistryService {
         Endpoint second = EndpointCanonicalizer.canonicalize(right);
         return first.getUri().equals(second.getUri())
             && first.getTransport().equals(second.getTransport())
-            && first.getPriority().equals(second.getPriority())
+            && Objects.equals(first.getPriority(), second.getPriority())
             && sameWeight(first.getWeight(), second.getWeight())
             && Objects.equals(first.getMetadata(), second.getMetadata());
     }
@@ -464,8 +461,8 @@ public class AgentRuntimeRegistryService {
         return Double.doubleToLongBits(first) == Double.doubleToLongBits(second);
     }
     
-    private static AgentDiscoveryEndpoint copyEndpoint(Endpoint source) {
-        AgentDiscoveryEndpoint result = new AgentDiscoveryEndpoint();
+    private static Endpoint copyEndpoint(Endpoint source) {
+        Endpoint result = new Endpoint();
         result.setUri(source.getUri());
         result.setTransport(source.getTransport());
         result.setPriority(source.getPriority());

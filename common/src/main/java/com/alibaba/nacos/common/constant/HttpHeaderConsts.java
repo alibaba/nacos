@@ -34,6 +34,7 @@ public interface HttpHeaderConsts {
     String CONTENT_ENCODING = "Content-Encoding";
     String CONNECTION = "Requester";
     String REQUEST_ID = "RequestId";
+    String NACOS_REQUEST_ID = "Nacos-Request-Id";
     String REQUEST_MODULE = "Request-Module";
     String APP_FILED = "app";
     String CLIENT_IP = "clientIp";

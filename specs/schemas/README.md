@@ -21,25 +21,28 @@ specifications. All schemas use JSON Schema Draft 2020-12.
 
 ## Public schemas
 
-Public protocol and management schemas use semantic-version directories:
+Public protocol and management schemas keep only the current contract at stable
+paths without semantic-version directories:
 
 ```text
-ai/<domain>/<MAJOR.MINOR.PATCH>/<schema-name>.schema.json
+ai/<domain>/<schema-name>.schema.json
+ai/<domain>/<binding>/<schema-name>.schema.json
 ```
 
-Public schemas use resolvable `https://nacos.io/schemas/...` identifiers and
-declare their lifecycle through `x-status`. A `0.x` schema marked
+Public schemas use logical `https://nacos.io/schemas/...` identifiers matching
+these paths and declare their lifecycle through `x-status`. Protocol/schema
+version metadata remains in the documents. A `0.x` schema marked
 `experimental` is available for implementation and interoperability testing,
 but is not yet a stable compatibility promise.
 
-Public schema versions follow these rules:
+Public schema revisions follow these rules:
 
-- a breaking contract change creates a new semantic version;
-- an additive, backward-compatible contract change also creates a new version;
-- an editorial clarification that does not alter validation belongs in the
-  prose specification, not in an already published schema; and
-- experimental status does not permit an existing version directory to be
-  rewritten after publication.
+- breaking and additive contract changes update the semantic-version metadata,
+  the affected schema files, and their companion specifications together;
+- keep one current definition per public schema in the working tree;
+- retain historical definitions through Git tags/commits instead of duplicate
+  version directories; and
+- editorial clarifications do not require a contract version change.
 
 ## Internal schemas
 
@@ -55,13 +58,17 @@ rather than a public URL. Any change that affects stored bytes, physical-key
 composition, parsing, canonicalization, or generated internal objects creates
 the next integer version and requires an explicit reader or migration policy.
 
-## Frozen-version rule
+## Revision pinning
 
-Every version directory is immutable once merged into a release branch.
-Corrections that alter validation or serialization must be published under a
-new directory. Implementations may support several versions concurrently, but
-must select a schema explicitly and must never infer a newer contract from an
-older directory name.
+A versionless public `$id` identifies the current contract; it does not pin
+historical content. For reproducible validation, resolve the complete schema
+set from one pinned Git tag or commit, including all referenced schemas.
+Do not mix files from different revisions or fetch a moving current schema
+when validating against a historical contract. Tests load schemas directly
+from the checked-out repository.
+
+Internal version directories continue to identify storage formats and retain
+the explicit reader/migration rules described above.
 
 ## Bundle and entry-point convention
 
@@ -71,7 +78,7 @@ maps each supported object name to an explicit `$defs` reference. Validators
 must select the expected entry point, for example:
 
 ```text
-https://nacos.io/schemas/ai/rad/0.1.0/rad-protocol.schema.json#/$defs/AgentDiscoveryRequest
+https://nacos.io/schemas/ai/rad/rad-protocol.schema.json#/$defs/AgentDiscoveryRequest
 ```
 
 This keeps validation deterministic and prevents one transport message from
@@ -79,12 +86,18 @@ being accepted accidentally where another was expected.
 
 ## Current schemas
 
+Starting with `0.3.0`, RAD, its Watch binding, Agent management, and Agent
+Artifact share one public contract release version. Their cross-schema
+references select the same release from one Git revision. Historical public
+schema revisions are retained in Git; Artifact payload `schemaVersion: "1.0"`
+and internal storage `v1` are separate version domains.
+
 | Schema | Version | Status | Purpose |
 | --- | --- | --- | --- |
-| `ai/rad/0.1.0/rad-protocol.schema.json` | `0.1.0` | Experimental | RAD Search, Discover, logical Watch snapshot, and Runtime Endpoint publication objects. |
-| `ai/rad/watch/0.1.0/rad-watch-binding.schema.json` | `0.1.0` | Experimental | Nacos-specific gRPC fingerprint hints and HTTP batch-long-poll Watch binding objects. |
-| `ai/agent/0.1.0/agent-management.schema.json` | `0.1.0` | Experimental | Public Agent management resources and bounded read views. |
-| `ai/agent/0.2.0/agent-artifact.schema.json` | `0.2.0` | Experimental | Version-pinned protocol-neutral Agent artifact for ARD and other registry adaptors. |
+| `ai/rad/rad-protocol.schema.json` | `0.5.0` | Experimental | Discover adds current Agent description/tags; Watch compares tags as a set. |
+| `ai/rad/watch/rad-watch-binding.schema.json` | `0.5.0` | Experimental | Watch binding references RAD 0.5.0 and permits absent optional references as null. |
+| `ai/agent/agent-management.schema.json` | `0.5.0` | Experimental | Annotation-independent Agent management models and Endpoint defaults. |
+| `ai/agent/agent-artifact.schema.json` | `0.5.0` | Experimental | Artifact references management 0.5.0; payload schemaVersion remains 1.0. |
 | `ai/agent/internal/v1/agent-storage.schema.json` | `1` | Internal experimental | Agent resource extension, version content and storage pointer, Naming projection, codecs, composers, and digest contracts. |
 | `ai/mcp/internal/v1/mcp-resource-ext.schema.json` | `1` | Internal experimental | MCP Resource extension containing the deprecated physical-storage and legacy-API UUID alias. |
 | `ai/mcp/internal/v1/mcp-version-storage.schema.json` | `1` | Internal experimental | MCP Version storage pointers to unchanged Server, Tools, and Resources Config objects. |

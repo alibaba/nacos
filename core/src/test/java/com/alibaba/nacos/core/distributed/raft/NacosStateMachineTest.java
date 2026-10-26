@@ -21,6 +21,7 @@ import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
@@ -34,6 +35,7 @@ import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.entity.NodeId;
 import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
@@ -42,6 +44,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -53,6 +58,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -61,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -358,7 +365,9 @@ class NacosStateMachineTest {
     void testOnApplyFollowerWriteRequest() {
         byte[] prefix = new byte[] {(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
             ProtoMessageUtil.REQUEST_TYPE_WRITE};
-        byte[] body = WriteRequest.getDefaultInstance().toByteArray();
+        WriteRequest request = WriteRequest.newBuilder().setGroup("test_group").setOperation("put")
+            .setData(ByteString.copyFromUtf8("value")).build();
+        byte[] body = request.toByteArray();
         ByteBuffer data =
             ByteBuffer.allocate(prefix.length + body.length).put(prefix).put(body).flip();
         Iterator iter = org.mockito.Mockito.mock(Iterator.class);
@@ -370,8 +379,43 @@ class NacosStateMachineTest {
         
         stateMachine.onApply(iter);
         
-        verify(processor).onApply(any(WriteRequest.class));
+        ArgumentCaptor<WriteRequest> captor = ArgumentCaptor.forClass(WriteRequest.class);
+        verify(processor).onApply(captor.capture());
+        assertEquals(request.getGroup(), captor.getValue().getGroup());
+        assertEquals(request.getOperation(), captor.getValue().getOperation());
+        assertEquals(request.getData(), captor.getValue().getData());
         verify(iter).next();
+        verify(iter, never()).setErrorAndRollback(anyLong(), any(Status.class));
+    }
+    
+    @ParameterizedTest
+    @MethodSource("invalidLogData")
+    void testOnApplyInvalidLogRollsBackWithoutInvokingProcessor(byte[] bytes) {
+        Iterator iter = org.mockito.Mockito.mock(Iterator.class);
+        when(iter.hasNext()).thenReturn(true);
+        when(iter.done()).thenReturn(null);
+        when(iter.getData()).thenReturn(ByteBuffer.wrap(bytes));
+        
+        stateMachine.onApply(iter);
+        
+        verify(processor, never()).onRequest(any(ReadRequest.class));
+        verify(processor, never()).onApply(any(WriteRequest.class));
+        verify(iter, never()).next();
+        ArgumentCaptor<Status> captor = ArgumentCaptor.forClass(Status.class);
+        verify(iter).setErrorAndRollback(eq(1L), captor.capture());
+        assertEquals(RaftError.ESTATEMACHINE.getNumber(), captor.getValue().getCode());
+        assertTrue(captor.getValue().getErrorMsg()
+            .contains(ConsistencyException.class.getSimpleName()));
+    }
+    
+    private static Stream<byte[]> invalidLogData() {
+        return Stream.of(new byte[0], new byte[] {ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG},
+            new byte[] {ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG, 0},
+            new byte[] {ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG, 3},
+            new byte[] {ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
+                ProtoMessageUtil.REQUEST_TYPE_WRITE, (byte) 0x80},
+            WriteRequest.newBuilder().setGroup("test_group").setOperation("put").build()
+                .toByteArray());
     }
     
     /**

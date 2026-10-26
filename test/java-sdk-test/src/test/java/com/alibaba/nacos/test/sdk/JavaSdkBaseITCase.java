@@ -19,7 +19,7 @@ package com.alibaba.nacos.test.sdk;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiFactory;
 import com.alibaba.nacos.api.ai.AiService;
-import com.alibaba.nacos.api.ai.model.agent.AgentSearchQuery;
+import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -27,8 +27,8 @@ import com.alibaba.nacos.api.lock.LockService;
 import com.alibaba.nacos.api.lock.NacosLockFactory;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.utils.json.NacosTypeReference;
 import org.junit.jupiter.api.AfterEach;
 
 import java.io.InputStream;
@@ -37,6 +37,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -148,7 +149,7 @@ public abstract class JavaSdkBaseITCase {
 
     protected AiService createAiService(Properties properties) throws Exception {
         AiService service = createAiServiceWithoutReadiness(properties);
-        AgentSearchQuery probe = new AgentSearchQuery();
+        AgentSearchRequest probe = new AgentSearchRequest();
         probe.setAgentNameContains(AI_CONNECTION_PROBE);
         probe.setPageNo(1);
         probe.setPageSize(1);
@@ -317,11 +318,50 @@ public abstract class JavaSdkBaseITCase {
         connection.setRequestMethod(method);
         connection.setRequestProperty("Authorization", "Bearer " + adminAccessToken());
         try {
-            JsonNode response = readJsonResponse(connection);
+            Map<String, Object> response = readJsonResponse(connection);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
-                    || response.path("code").asInt(-1) != 0) {
+                    || !Integer.valueOf(0).equals(response.get("code"))) {
                 throw new AssertionError("Visibility fixture request failed: HTTP "
                         + connection.getResponseCode() + ", response=" + response);
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /**
+     * Configure an isolated authentication fixture on the external standalone server.
+     *
+     * @param method HTTP method
+     * @param resource auth resource name, such as user, role, or permission
+     * @param parameters fixture form fields
+     * @throws Exception when fixture mutation fails
+     */
+    protected void requestAuthFixture(String method, String resource,
+            Map<String, String> parameters) throws Exception {
+        String form = encodeForm(parameters);
+        URL url = new URL(SERVER_HTTP_BASE_URL + "/v3/auth/" + resource
+                + ("POST".equals(method) ? "" : "?" + form));
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+        connection.setRequestMethod(method);
+        authorizeAdmin(connection);
+        if ("POST".equals(method)) {
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        }
+        try {
+            if ("POST".equals(method)) {
+                try (java.io.OutputStream output = connection.getOutputStream()) {
+                    output.write(form.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+            Map<String, Object> response = readJsonResponse(connection);
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
+                    || !Integer.valueOf(0).equals(response.get("code"))) {
+                throw new AssertionError("Auth fixture " + resource + " failed: HTTP "
+                        + connection.getResponseCode());
             }
         } finally {
             connection.disconnect();
@@ -345,27 +385,31 @@ public abstract class JavaSdkBaseITCase {
         connection.setDoOutput(true);
         try {
             connection.getOutputStream().write(body);
-            JsonNode response = readJsonResponse(connection);
+            Map<String, Object> response = readJsonResponse(connection);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK
-                    || !response.hasNonNull("accessToken")) {
+                    || response.get("accessToken") == null) {
                 throw new AssertionError("Administrator authentication for fixture setup failed: HTTP "
                         + connection.getResponseCode());
             }
-            adminAccessToken = response.get("accessToken").asText();
+            adminAccessToken = String.valueOf(response.get("accessToken"));
             return adminAccessToken;
         } finally {
             connection.disconnect();
         }
     }
 
-    private JsonNode readJsonResponse(HttpURLConnection connection) throws Exception {
+    private Map<String, Object> readJsonResponse(HttpURLConnection connection) throws Exception {
         int responseCode = connection.getResponseCode();
         try (InputStream input = responseCode >= HttpURLConnection.HTTP_BAD_REQUEST
                 ? connection.getErrorStream() : connection.getInputStream()) {
             String response = input == null ? "" : new String(input.readAllBytes(),
                     StandardCharsets.UTF_8);
-            JsonNode result = JacksonUtils.toObj(response);
-            return result == null ? JacksonUtils.toObj("{}") : result;
+            if (response.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            Map<String, Object> result = JsonUtils.toObj(response,
+                    new NacosTypeReference<Map<String, Object>>() { });
+            return result == null ? Collections.emptyMap() : result;
         }
     }
 

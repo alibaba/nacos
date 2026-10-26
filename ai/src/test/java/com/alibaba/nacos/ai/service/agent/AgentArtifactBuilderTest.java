@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
+import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -28,7 +30,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgentArtifactBuilderTest {
@@ -54,7 +56,8 @@ class AgentArtifactBuilderTest {
     @Test
     void shouldBuildSchemaConstrainedNacosArtifact() {
         AgentVersionDetail version = version();
-        List<AgentCallInterface> interfaces = List.of(call("grpc", Map.of("service", "demo")));
+        List<AgentCallInterface> interfaces =
+            List.of(call("grpc", Map.of("service", "demo")));
         version.setCallInterfaces(interfaces);
         
         Map<String, Object> result = AgentArtifactBuilder.buildNacosAgentArtifact(version);
@@ -65,7 +68,9 @@ class AgentArtifactBuilderTest {
         assertEquals("demo", result.get("agentName"));
         assertEquals("1.0.0", result.get("version"));
         assertEquals("sha256:digest", result.get("contentDigest"));
-        assertSame(interfaces, result.get("callInterfaces"));
+        assertNotSame(interfaces, result.get("callInterfaces"));
+        assertEquals(JacksonUtils.toJson(interfaces),
+            JacksonUtils.toJson(result.get("callInterfaces")));
         assertThrows(IllegalArgumentException.class,
             () -> AgentArtifactBuilder.buildNacosAgentArtifact(null));
     }
@@ -82,6 +87,8 @@ class AgentArtifactBuilderTest {
         AgentCallInterface result = new AgentCallInterface();
         result.setProtocol(protocol);
         result.setNativeDescriptor(descriptor);
+        result.setDescriptorMediaType("application/json");
+        result.setEndpointSourceOrder(List.of(EndpointSource.DECLARED, EndpointSource.RUNTIME));
         return result;
     }
     

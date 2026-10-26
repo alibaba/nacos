@@ -107,6 +107,20 @@ HTTP 仍是兼容和部分操作的客户端传输方式。领域客户端可以
 HTTP fallback 必须由领域客户端显式定义。gRPC 请求失败后，不应自动通过 HTTP 修改资源状态，
 除非领域客户端已经定义该 fallback。
 
+### 5.1 HTTP 请求 ID
+
+Java Client SDK 的公共、Config 和 Naming HTTP client（包括复用它们的 AI 请求）在每次
+执行请求时，必须生成 UUID 并写入 `Nacos-Request-Id` header。SDK 发起重试、故障切换或
+下一次长轮询时生成新的 ID；底层 HTTP 实现内部的重放可以保留同一 ID。
+该 header 由 SDK 管理，即使请求携带已有值，也在发送时替换，且不得修改调用方传入的
+header 对象或共享 `Header.EMPTY`。
+
+请求 ID 只用于请求关联，不是 Client Id、鉴权凭证或幂等键。已有 `RequestId`、Client Id、
+`Request-Module` 等 header 保持原有行为。服务端按
+[请求上下文规范](../design/foundation-request-context-spec.md)读取该 header；客户端不依赖
+服务端回显或支持该 header，因此仍可访问旧服务端。
+直接访问外部 OIDC provider 的 HTTP 连接不属于此约定的范围。
+
 ## 6. TLS
 
 客户端 gRPC TLS 属于传输基础设施。运行时可以支持：
