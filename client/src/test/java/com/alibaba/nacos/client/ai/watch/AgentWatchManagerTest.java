@@ -72,12 +72,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -148,6 +150,114 @@ class AgentWatchManagerTest {
     @AfterEach
     void tearDown() {
         manager.shutdown();
+    }
+    
+    @Test
+    void notificationRefreshRetainsAttributionThroughRetryButNotLaterPolling() throws Exception {
+        AgentDiscoveryResult initial = result("1.0.0", DIGEST_A);
+        AgentDiscoveryResult changed = result("2.0.0", DIGEST_B);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(initial, changed);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class), eq(true)))
+            .thenThrow(new NacosException(NacosException.SERVER_ERROR, "temporary"))
+            .thenReturn(changed);
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        AgentWatchTransportCallback callback = transport.onlyCallback();
+        callback.invalidateFromNotification("different", false);
+        runScheduled(0);
+        callback.invalidate(null, true);
+        runScheduled(1);
+        callback.invalidate(null, true);
+        runScheduled(2);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+    }
+    
+    @Test
+    void notificationMergedDuringFailedPollingIsRetainedForRetry() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A)).thenAnswer(invocation -> {
+                transport.onlyCallback().invalidateFromNotification(null, true);
+                throw new NacosException(NacosException.SERVER_ERROR, "temporary");
+            });
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class), eq(true)))
+            .thenReturn(result("2.0.0", DIGEST_B));
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        transport.onlyCallback().invalidate(null, true);
+        runScheduled(0);
+        runScheduled(1);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+    }
+    
+    @Test
+    void notificationArrivingDuringRefreshBelongsToNextRefresh() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A));
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class), eq(true)))
+            .thenAnswer(invocation -> {
+                transport.onlyCallback().invalidateFromNotification(null, true);
+                return result("2.0.0", DIGEST_B);
+            }).thenReturn(result("2.0.0", DIGEST_B));
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        transport.onlyCallback().invalidateFromNotification(null, true);
+        runScheduled(0);
+        runScheduled(1);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+        assertEquals(2, scheduled.size());
+    }
+    
+    @Test
+    void equalNotificationDoesNotMarkLaterPolling() throws Exception {
+        AgentDiscoveryResult initial = result("1.0.0", DIGEST_A);
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class))).thenReturn(initial);
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        transport.onlyCallback().invalidateFromNotification(
+            AgentDiscoveryCanonicalizer.fingerprint(initial), false);
+        assertTrue(scheduled.isEmpty());
+        transport.onlyCallback().invalidate(null, true);
+        runScheduled(0);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy, never()).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+    }
+    
+    @Test
+    void initialSnapshotAndSubscribeHandshakeRefreshAreUnmarked() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        transport.startHook = (registration, callback) -> callback.invalidate(null, true);
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        runScheduled(0);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy, never()).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+    }
+    
+    @Test
+    void rejectedNotificationCannotAttributePendingRecovery() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        AgentWatchTransportCallback oldCallback = transport.onlyCallback();
+        oldCallback.unavailable(NacosException.CLIENT_DISCONNECT, "binding lost", true);
+        assertFalse(oldCallback.invalidateFromNotification(null, true));
+        runScheduled(0);
+        runScheduled(1);
+        verify(clientProxy, times(3)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy, never()).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
+    }
+    
+    @Test
+    void confirmedAbsenceEndsNotificationAttributionBeforePendingRecovery() throws Exception {
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class)))
+            .thenReturn(result("1.0.0", DIGEST_A), result("2.0.0", DIGEST_B));
+        when(clientProxy.discoverAgent(any(AgentDiscoveryRequest.class), eq(true)))
+            .thenThrow(notFound("removed"));
+        manager.subscribe(reference("agent-a"), null, new TestListener(null));
+        transport.onlyCallback().invalidateFromNotification(null, true);
+        runScheduled(0);
+        runScheduled(1);
+        verify(clientProxy, times(2)).discoverAgent(any(AgentDiscoveryRequest.class));
+        verify(clientProxy).discoverAgent(any(AgentDiscoveryRequest.class), eq(true));
     }
     
     @Test

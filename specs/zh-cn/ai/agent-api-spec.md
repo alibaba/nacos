@@ -748,3 +748,46 @@ CallInterface 默认值，tenant 不虚构。旧 facade 的选择和回退保持
 订阅状态。日志复用现有安全快照摘要，记录原始输入身份／结构及失败阶段／异常类型，不输出
 完整 descriptor、Endpoint metadata 或凭据；诊断渲染和日志失败不能覆盖转换异常。
 本能力不新增 HTTP/gRPC 操作或报文契约。
+
+### Discover 请求的 Watch 通知来源
+
+HTTP Discover 请求 Header 与 gRPC `Request.headers` 使用相同的可选标记：
+`X-Nacos-Agent-Discovery-Trigger: watch-notify`。它表示本次查询由已接受的
+gRPC `INVALIDATE` / `REVALIDATE` 通知或 HTTP Watch changed-ID 响应触发；
+它不是指纹变化的证明，重新查询的内容仍可能相同，HTTP changed 也可能源于可见性校验。
+
+- 主动 Discover、首次订阅的初始快照、Subscribe 响应中的 `refreshRequired` 补查、
+  重连握手补查、兼容 Discover 轮询及 Pending 恢复不设置该标记。HTTP 首轮返回的真实
+  changed-ID 仍属于 Watch 通知。
+- 相等指纹被忽略时不创建来源标记。异步待办合并采用通知来源的并集；执行时原子取走
+  本次来源，新到通知保留给下一次刷新。同一次刷新发生暂时失败、任务提交被拒绝、
+  HTTP 请求重试或 AUTO 从 gRPC 回退到 HTTP 时保留来源。
+- 成功物化快照、合法 Discover 确认目标缺失或绑定失效转入 Pending 恢复后，结束本次
+  通知刷新来源；不能污染之后的主动查询、初始化或轮询。
+- 标记是请求级诊断元数据，不进入 RAD Request、业务 label、缓存键、Watch 身份或指纹，
+  不修改公共 SDK 方法签名、响应、鉴权、配额及路由规则。服务端可从请求 Header 读取；
+  不将其作为鉴权依据，也不信任它证明内容已变化。缺失、空值及未知值均兼容接受，
+  表示未声明已知通知来源，不能据此判定调用一定为主动查询。无需新能力协商。
+
+### Discover 业务诊断事件
+
+HTTP/gRPC 入口对进入 Discover 业务查询的每次调用发布一个尽力而为的
+`AiResourceTraceEvent`，`resourceType=agent`、`operation=DISCOVER`。
+成功和失败分别记录 `SUCCESS`、`FAILURE`；`resourceId` 为请求的 `agentName`，
+`version` 成功时为实际解析的版本，失败时为请求的显式版本（未指定则为空）。
+操作者和客户端 IP 来自当前请求上下文。`ext` 为 JSON 文本，包含：
+
+| 字段 | 含义 |
+| --- | --- |
+| `namespaceId` | 归一化后的命名空间。 |
+| `protocol` | 访问类型 `HTTP` 或 `GRPC`。 |
+| `app` | 请求上下文中的来源应用名。 |
+| `clientId` / `connectionId` | HTTP Client 标识或 gRPC 连接标识，来源不可得时省略。 |
+| `subscriptionTriggered` | 仅已知 `watch-notify` 标记为 true；false 只代表未声明已知通知来源。 |
+| `requestedVersion` / `requestedLabel` | 原始版本选择器，未指定的值省略。 |
+
+事件在请求线程中提取必要摘要，经现有 Trace 通道异步投递；默认订阅者将其写入
+`ai-resource-trace.log`。不记录完整请求、过滤器、descriptor、Endpoint 或鉴权 Header。
+事件构建或发布失败不得改变查询结果或覆盖原异常；过载时允许丢弃，不能作为完整审计凭证。
+进入业务查询前的鉴权、HTTP 参数解析、迁移及 Client 绑定拒绝不保证产生此事件。
+服务端内部 Watch 投影、订阅校验和重算不作为外部 Discover 请求重复记录。

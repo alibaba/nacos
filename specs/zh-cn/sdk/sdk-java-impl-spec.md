@@ -469,3 +469,9 @@ SDK／用户 Executor 拒绝和 getExecutor 异常释放在途标记并保留差
 异常日志按有限类别限频，包含 Watch／Listener 标识、操作阶段、错误码、失败次数、
 重试间隔与可定位堆栈；后台恢复和回调提交恢复记录摘要。检查同时观察慢回调／排队时长，
 不打印完整 Card 或鉴权数据。用户回调与 Discover／连接线程隔离，内存不随变化次数增长。
+
+### Discover 通知来源透传
+
+Watch 通知触发的查询及同一刷新重试，通过 HTTP Header 或 gRPC Request Header
+携带 `X-Nacos-Agent-Discovery-Trigger: watch-notify`。初始化、握手补查和轮询回退
+不标记；合并、并发、恢复及兼容边界见 [Agent API 规范](../ai/agent-api-spec.md)。

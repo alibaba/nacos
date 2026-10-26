@@ -668,3 +668,13 @@ separate validation targets; these additional scenarios do not change surface-ro
 
 Existing Service Admin and Console IT cases are also reused to check persisted service metadata
 and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.
+
+### Agent Discover notification Header compatibility
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent Discover / `AgentDiscoveryClientOpenApiITCase` | GET `/v3/client/ai/agents` | Covered | `testDiscoveryTriggerHeaderDoesNotChangeSnapshotOrErrors` checks `watch-notify`, missing, empty, unknown and case-mismatched `X-Nacos-Agent-Discovery-Trigger` values against full snapshot, not-found and invalid version/label responses. SDK emission and retry attribution use client wire UT. Discover now emits best-effort `AiResourceTraceEvent` (`DISCOVER`) at HTTP/gRPC business-query boundaries; server UT verifies source, resolved/requested version, protocol, subscription attribution and diagnostic failure isolation. Event payload/log delivery is internal and has no public query API, so standalone HTTP IT verifies response compatibility rather than claiming event or SDK emission coverage. |
+
+This extends the existing Agent Discover row; API surface totals and strict/effective
+coverage denominators remain unchanged. The optional diagnostic header never changes
+authorization or discovery semantics.

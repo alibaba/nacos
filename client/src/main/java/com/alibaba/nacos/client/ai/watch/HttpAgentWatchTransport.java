@@ -410,7 +410,7 @@ public final class HttpAgentWatchTransport implements AgentWatchTransport {
         for (WireWatch watch : changed) {
             boolean accepted = false;
             try {
-                accepted = watch.callback.invalidate(null, true);
+                accepted = watch.callback.invalidateFromNotification(null, true);
             } catch (RuntimeException e) {
                 if (WARN_LOG_LIMITER.tryAcquire()) {
                     LOGGER.warn("[RAD-WATCH] HTTP invalidation failed: generation={}, "

@@ -241,11 +241,12 @@ final class GrpcAgentWatchTransport
         boolean accepted = false;
         switch (notifyRequest.getEventType()) {
             case INVALIDATE:
-                accepted = watch.callback.invalidate(notifyRequest.getObservedFingerprint(),
+                accepted = watch.callback.invalidateFromNotification(
+                    notifyRequest.getObservedFingerprint(),
                     false);
                 break;
             case REVALIDATE:
-                accepted = watch.callback.invalidate(null, true);
+                accepted = watch.callback.invalidateFromNotification(null, true);
                 break;
             case TERMINATED:
                 int errorCode = notifyRequest.getErrorCode();

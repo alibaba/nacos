@@ -128,6 +128,7 @@ class HttpAgentWatchTransportTest {
         transport.start(registration("watch-b", "agent-b", "fingerprint-b"), second);
         requestExecutor.runUntilRequests(client, 1, 10);
         assertEquals(1, first.invalidations);
+        assertEquals(1, first.notifications);
         assertEquals(0, second.invalidations);
         
         requestExecutor.runUntilRequests(client, 2, 10);
@@ -616,8 +617,10 @@ class HttpAgentWatchTransportTest {
     void invalidationFailureDoesNotStrandRefreshOrOtherItems() throws Exception {
         resetLogGate();
         AgentWatchTransportCallback callback = mock(AgentWatchTransportCallback.class);
-        when(callback.invalidate(null, true)).thenThrow(new IllegalStateException("first"),
-            new IllegalStateException("second")).thenReturn(true);
+        when(callback.invalidateFromNotification(null, true))
+            .thenThrow(new IllegalStateException("first"),
+                new IllegalStateException("second"))
+            .thenReturn(true);
         transport.start(registration("a", "agent-a", "a1"), callback);
         for (int i = 1; i <= 3; i++) {
             AgentWatchBatchResponse response = changed(1L, "a");
@@ -625,7 +628,8 @@ class HttpAgentWatchTransportTest {
             client.responses.add(response);
             requestExecutor.runUntilRequests(client, i, 10);
         }
-        org.mockito.Mockito.verify(callback, org.mockito.Mockito.times(3)).invalidate(null, true);
+        org.mockito.Mockito.verify(callback, org.mockito.Mockito.times(3))
+            .invalidateFromNotification(null, true);
     }
     
     @Test
@@ -785,11 +789,20 @@ class HttpAgentWatchTransportTest {
         
         private int invalidations;
         
+        private int notifications;
+        
         private boolean acceptInvalidation = true;
         
         private int unavailable;
         
         private boolean terminal;
+        
+        @Override
+        public boolean invalidateFromNotification(String observedFingerprint,
+            boolean forceRefresh) {
+            notifications++;
+            return invalidate(observedFingerprint, forceRefresh);
+        }
         
         @Override
         public boolean invalidate(String observedFingerprint, boolean forceRefresh) {

@@ -470,3 +470,18 @@ Migration-specific fixtures belong to
 [`migration-it.yml`](../../.github/workflows/migration-it.yml) and the
 [A2A migration matrix](A2A_MIGRATION_SDK_IT_SCENARIOS.md). Local binary/data upgrade
 experiments and their execution reports are not part of this functional matrix.
+
+### Watch-triggered Discover request attribution
+
+| Scenario | Expected behavior | Evidence |
+| --- | --- | --- |
+| gRPC INVALIDATE / REVALIDATE and HTTP changed-ID | Query carries `X-Nacos-Agent-Discovery-Trigger: watch-notify`; an equal hint causes no query | Transport and Manager UT |
+| Direct query, first snapshot, Subscribe refreshRequired, polling fallback | No notification marker, including after a prior marked refresh | Manager, transport and wire UT |
+| Retry, task merge and concurrent notification | Preserve source through transient failure and AUTO HTTP fallback; new notifications remain pending | Manager, HTTP and router UT |
+| Missing target / binding recovery | Pending recovery starts without stale notification attribution | Manager UT |
+| HTTP/gRPC public SDK workflow | Initial snapshot, notification snapshot and subsequent direct Discover remain equivalent | `AgentDiscoveryServiceJavaSdkITCase.shouldWatchExistingAgentOnlyWhenCompleteFingerprintChanges` |
+
+The public SDK surface and coverage denominator are unchanged. The optional request
+header is not exposed in SDK results; deterministic wire-capture UT verifies its
+emission and retry attribution. Standalone SDK IT verifies observable snapshot and
+Listener behavior rather than claiming to inspect server-side headers.

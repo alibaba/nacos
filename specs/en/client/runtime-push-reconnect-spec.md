@@ -251,3 +251,11 @@ through the same Listener, as specified in [Agent API](../ai/agent-api-spec.md).
 The existing Subscribe fingerprint comparison and first HTTP long-poll comparison close
 the Discover-to-Watch window. No wire fields or server behavior change. Local notification
 sequencing must prevent a stale initialization from following a newer delivered state.
+
+### Discover notification attribution
+
+Notification-triggered queries and retries of the same refresh carry
+`X-Nacos-Agent-Discovery-Trigger: watch-notify` through HTTP headers or gRPC request
+headers. Initialization, handshake reconciliation, and polling fallback omit it.
+Coalescing, concurrent refresh, recovery, and compatibility rules are defined in the
+[Agent API spec](../ai/agent-api-spec.md).

@@ -81,6 +81,10 @@ public class AiConstants {
      */
     public static class Agent {
         
+        public static final String DISCOVERY_TRIGGER_HEADER = "X-Nacos-Agent-Discovery-Trigger";
+        
+        public static final String DISCOVERY_TRIGGER_WATCH_NOTIFY = "watch-notify";
+        
         public static final String RESOURCE_STATUS_ENABLE = "enable";
         
         public static final String RESOURCE_STATUS_DISABLE = "disable";

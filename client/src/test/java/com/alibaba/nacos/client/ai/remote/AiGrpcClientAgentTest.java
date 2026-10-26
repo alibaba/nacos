@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
@@ -122,6 +125,25 @@ class AiGrpcClientAgentTest {
     @AfterEach
     void tearDown() throws NacosException {
         client.shutdown();
+    }
+    
+    @Test
+    void discoveryNotificationHeaderUsesRpcMetadataWithoutLeakingToDirectQuery() throws Exception {
+        support(AbilityKey.SERVER_RAD_V1);
+        AgentDiscoveryResponse response = new AgentDiscoveryResponse();
+        response.setDiscoveryResult(new AgentDiscoveryResult());
+        when(rpcClient.request(any(AgentDiscoveryRpcRequest.class))).thenReturn(response);
+        AgentDiscoveryRequest request = discoveryRequest();
+        client.discoverAgent(request, true);
+        client.discoverAgent(request);
+        List<Request> requests = rpcClientRequests();
+        Request notification = requests.get(0);
+        assertEquals(AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY,
+            GrpcUtils.convert(notification).getMetadata().getHeadersMap()
+                .get(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
+        assertEquals("alice", notification.getHeader("identity"));
+        assertSame(request, ((AgentDiscoveryRpcRequest) notification).getDiscoveryRequest());
+        assertNull(requests.get(1).getHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
     }
     
     @Test

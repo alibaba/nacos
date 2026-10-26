@@ -37,6 +37,17 @@ public interface AgentWatchTransportCallback {
     boolean invalidate(String observedFingerprint, boolean forceRefresh);
     
     /**
+     * Invalidate following a server notification, retaining attribution through refresh retries.
+     *
+     * @param observedFingerprint optional server-observed fingerprint
+     * @param forceRefresh whether equality must be ignored
+     * @return whether the signal was accepted
+     */
+    default boolean invalidateFromNotification(String observedFingerprint, boolean forceRefresh) {
+        return invalidate(observedFingerprint, forceRefresh);
+    }
+    
+    /**
      * Report a remote binding failure for internal recovery; this is not a data event.
      *
      * @param errorCode Nacos error code

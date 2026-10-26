@@ -259,6 +259,12 @@ public class AgentGrpcTransport implements AgentTransport {
     }
     
     @Override
+    public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
+        return clientProxy.discoverAgent(request, watchNotify);
+    }
+    
+    @Override
     public ClientLivenessInfo registerAgentEndpoints(String namespaceId,
         AgentEndpointRegistrationBatch batch)
         throws NacosException {

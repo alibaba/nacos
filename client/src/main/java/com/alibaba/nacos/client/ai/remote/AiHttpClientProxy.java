@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.constant.AiConstants.Capability;
 import com.alibaba.nacos.client.ai.remote.capability.AiCapabilityCache;
 import com.alibaba.nacos.client.ai.remote.capability.AiCapabilitySnapshot;
@@ -299,6 +300,12 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     @Override
     public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request)
         throws NacosException {
+        return discoverAgent(request, false);
+    }
+    
+    @Override
+    public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
         AgentReference reference = request.getReference();
         List<QueryParameter> parameters = new ArrayList<QueryParameter>();
         addParameter(parameters, "namespaceId", request.getNamespaceId());
@@ -308,7 +315,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         addDiscoveryFilter(parameters, request.getFilter());
         String response = requestAgentApi(AGENT_CLIENT_PATH, AgentHttpMethod.GET, parameters,
             Collections.<String, String>emptyMap(),
-            buildAgentResource(reference.getAgentName()));
+            buildAgentResource(reference.getAgentName()), true, watchNotify);
         Result<AgentDiscoveryResult> result = JsonUtils.toObj(response,
             new NacosTypeReference<Result<AgentDiscoveryResult>>() {
             });
@@ -669,6 +676,12 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     private String requestAgentApi(String api, AgentHttpMethod method,
         List<QueryParameter> parameters, Map<String, String> form, RequestResource resource,
         boolean replaySafe) throws NacosException {
+        return requestAgentApi(api, method, parameters, form, resource, replaySafe, false);
+    }
+    
+    private String requestAgentApi(String api, AgentHttpMethod method,
+        List<QueryParameter> parameters, Map<String, String> form, RequestResource resource,
+        boolean replaySafe, boolean watchNotify) throws NacosException {
         List<String> servers = serverListManager.getServerList();
         if (servers.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
@@ -679,7 +692,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         for (int i = 0; i < attempts; i++) {
             String server = servers.get(index % servers.size());
             try {
-                return callAgentServer(api, method, parameters, form, server, resource);
+                return callAgentServer(api, method, parameters, form, server, resource,
+                    watchNotify);
             } catch (NacosException e) {
                 if (!replaySafe || isPublicationCapacityRejected(e)
                     || e.getErrCode() == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()) {
@@ -749,9 +763,13 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     
     private String callAgentServer(String api, AgentHttpMethod method,
         List<QueryParameter> parameters, Map<String, String> form, String server,
-        RequestResource resource) throws NacosException {
+        RequestResource resource, boolean watchNotify) throws NacosException {
         Header header = Header.newInstance();
         header.addAll(securityProxy.getIdentityContext(resource));
+        if (watchNotify) {
+            header.addParam(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER,
+                AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY);
+        }
         header.addParam(HTTP_CLIENT_ID_HEADER, httpClientId);
         if (AgentHttpMethod.GET != method) {
             header.addParam(HttpHeaderConsts.REQUEST_MODULE, Constants.AI.AI_MODULE);
