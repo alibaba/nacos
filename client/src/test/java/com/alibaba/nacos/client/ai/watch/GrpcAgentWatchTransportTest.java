@@ -190,6 +190,7 @@ class GrpcAgentWatchTransportTest {
         transport.start(registration("watch-a", "fingerprint-a"), callback);
         assertTrue(callback.dirtyRecorded);
         assertEquals("fingerprint-b", callback.observedFingerprint);
+        assertEquals(0, callback.notifications);
         verify(client).subscribeAgentWatch(eq("watch-a"),
             any(AgentDiscoveryRequest.class), eq("fingerprint-a"));
     }
@@ -213,6 +214,10 @@ class GrpcAgentWatchTransportTest {
         assertTrue(callback.dirtyRecorded);
         assertEquals("fingerprint-b", callback.observedFingerprint);
         assertFalse(callback.forceRefresh);
+        assertEquals(1, callback.notifications);
+        assertTrue(
+            reply(notify("wire-a", AgentWatchEventType.REVALIDATE), connection).isAccepted());
+        assertEquals(2, callback.notifications);
         verify(client).subscribeAgentWatch(eq("watch-a"),
             any(AgentDiscoveryRequest.class), eq("fingerprint-a"));
     }
@@ -630,6 +635,8 @@ class GrpcAgentWatchTransportTest {
         
         private int invalidations;
         
+        private int notifications;
+        
         private int unavailable;
         
         private boolean dirtyRecorded;
@@ -643,6 +650,13 @@ class GrpcAgentWatchTransportTest {
         private Runnable onUnavailable;
         
         private boolean acceptInvalidation = true;
+        
+        @Override
+        public boolean invalidateFromNotification(String observedFingerprint,
+            boolean forceRefresh) {
+            notifications++;
+            return invalidate(observedFingerprint, forceRefresh);
+        }
         
         @Override
         public boolean invalidate(String observedFingerprint, boolean forceRefresh) {

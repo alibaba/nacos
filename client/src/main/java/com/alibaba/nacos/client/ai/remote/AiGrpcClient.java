@@ -367,9 +367,19 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request)
         throws NacosException {
+        return discoverAgent(request, false);
+    }
+    
+    @Override
+    public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentDiscoveryRpcRequest rpcRequest = new AgentDiscoveryRpcRequest();
         rpcRequest.setDiscoveryRequest(request);
+        if (watchNotify) {
+            rpcRequest.putHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER,
+                AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY);
+        }
         AgentDiscoveryResponse response =
             requestToServer(rpcRequest, AgentDiscoveryResponse.class);
         if (response.getDiscoveryResult() == null) {

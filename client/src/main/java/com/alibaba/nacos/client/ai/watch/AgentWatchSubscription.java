@@ -60,6 +60,8 @@ final class AgentWatchSubscription {
     
     boolean dirty;
     
+    boolean pendingWatchNotify;
+    
     boolean refreshing;
     
     boolean pendingDiscoverRunning;

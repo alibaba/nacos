@@ -16,6 +16,12 @@
 
 package com.alibaba.nacos.test.openapi.client.ai;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -56,6 +62,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITCase {
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"watch-notify", "future-trigger", "WATCH-NOTIFY"})
+    void testDiscoveryTriggerHeaderDoesNotChangeSnapshotOrErrors(String trigger) throws Exception {
+        String agentName = randomAiName("agent-discovery-trigger");
+        publishAgent(agentName, "1.0.0");
+        Query query = Query.newInstance().addParam("agentName", agentName);
+        JsonNode baseline = getJsonOk(AGENT_CLIENT_PATH, query).get("data");
+        HttpResponse response = discoverWithTrigger(query, trigger);
+        assertEquals(200, response.code(), response.body());
+        JsonNode body = JacksonUtils.toObj(response.body());
+        assertSuccess(body);
+        assertEquals(baseline, body.get("data"));
+        assertError(discoverWithTrigger(Query.newInstance()
+                .addParam("agentName", randomAiName("absent-trigger")), trigger),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "agent not found");
+        assertError(discoverWithTrigger(Query.newInstance().addParam("agentName", agentName)
+                .addParam("version", "1.0.0").addParam("label", "latest"), trigger),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "mutually exclusive");
+    }
+
+    private HttpResponse discoverWithTrigger(Query query, String trigger) throws Exception {
+        HttpGet request = new HttpGet(requestUrl(AGENT_CLIENT_PATH + "?" + query.toQueryUrl()));
+        if (trigger != null) {
+            request.setHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER, trigger);
+        }
+        return executeRaw(request);
+    }
     
     @Test
     public void testSearchAndDiscoverOnlineAgent() throws Exception {

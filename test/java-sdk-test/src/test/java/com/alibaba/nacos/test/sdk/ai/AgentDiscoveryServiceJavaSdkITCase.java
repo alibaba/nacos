@@ -1916,9 +1916,15 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         AgentEndpointRegistrationBatch replacementBatch =
             registration(agentName, PROTOCOL_A2A, Collections.singletonList(replacement));
         service.agent().registerAgentEndpoints(replacementBatch);
-        awaitEvent(listener, "Watch Hint must trigger Discover and a complete replacement snapshot",
+        AgentDiscoveryResult notified = awaitEvent(listener,
+            "Watch Hint must trigger Discover and a complete replacement snapshot",
             result -> containsEndpoint(result, PROTOCOL_A2A, replacement.getUri()),
             WATCH_HINT_TIMEOUT_MILLIS);
+
+        AgentDiscoveryResult queried = service.agent().discoverAgent(reference);
+        assertEquals(AgentDiscoveryCanonicalizer.fingerprint(notified),
+            AgentDiscoveryCanonicalizer.fingerprint(queried),
+            "notification attribution must not change the authoritative Discover snapshot");
         
         int countAfterReplacement = listener.eventCount.get();
         service.agent().registerAgentEndpoints(replacementBatch);

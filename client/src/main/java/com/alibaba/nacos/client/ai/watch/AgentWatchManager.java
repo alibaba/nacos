@@ -418,8 +418,13 @@ public class AgentWatchManager implements Closeable {
      * @param forceRefresh whether equality optimization must be skipped
      * @return whether the signal is known and safely represented
      */
-    public synchronized boolean markDirty(String clientWatchId, String observedFingerprint,
+    public boolean markDirty(String clientWatchId, String observedFingerprint,
         boolean forceRefresh) {
+        return markDirty(clientWatchId, observedFingerprint, forceRefresh, false);
+    }
+    
+    private synchronized boolean markDirty(String clientWatchId, String observedFingerprint,
+        boolean forceRefresh, boolean watchNotify) {
         AgentWatchSubscription intent = intentsById.get(clientWatchId);
         if (closed || intent == null || intent.state == WatchState.CLOSED) {
             return false;
@@ -437,6 +442,9 @@ public class AgentWatchManager implements Closeable {
             && !observedFingerprint.equals(intent.fingerprint)) {
             AgentWatchClientMetrics.record(AgentWatchClientMetrics.Event.FINGERPRINT_MISMATCH,
                 AgentWatchClientMetrics.Result.MISMATCH);
+        }
+        if (intent.state == WatchState.ACTIVE || intent.state == WatchState.ACTIVATING) {
+            intent.pendingWatchNotify |= watchNotify;
         }
         intent.setDirty(true);
         if (intent.state == WatchState.ACTIVATING || intent.refreshing
@@ -618,6 +626,7 @@ public class AgentWatchManager implements Closeable {
             intent.refreshing = false;
             cancel(intent.refreshFuture);
             intent.refreshFuture = null;
+            intent.pendingWatchNotify = false;
             intent.setState(WatchState.LOCAL_PENDING);
             intent.pendingFailureCount = Math.min(30, intent.pendingFailureCount + 1);
             schedulePending(intent);
@@ -630,6 +639,7 @@ public class AgentWatchManager implements Closeable {
         AgentWatchSubscription intent;
         AgentDiscoveryRequest request;
         ActivationBarrier activation;
+        boolean watchNotify;
         synchronized (this) {
             intent = intentsById.get(clientWatchId);
             if (closed || intent == null || intent.state != WatchState.ACTIVE
@@ -639,14 +649,16 @@ public class AgentWatchManager implements Closeable {
             intent.refreshFuture = null;
             intent.refreshing = true;
             intent.setDirty(false);
+            watchNotify = intent.pendingWatchNotify;
+            intent.pendingWatchNotify = false;
             request = intent.request;
             activation = intent.activationBarrier;
         }
-        DiscoveryAttempt attempt = discover(request);
+        DiscoveryAttempt attempt = discover(request, watchNotify);
         if (attempt.result != null) {
             handleRefreshSuccess(intent, attempt.result, activation);
         } else {
-            handleRefreshFailure(intent, attempt.error, activation);
+            handleRefreshFailure(intent, attempt.error, activation, watchNotify);
         }
     }
     
@@ -698,7 +710,7 @@ public class AgentWatchManager implements Closeable {
     }
     
     private void handleRefreshFailure(AgentWatchSubscription intent, NacosException exception,
-        ActivationBarrier activation) {
+        ActivationBarrier activation, boolean watchNotify) {
         List<ListenerRegistration> notifications = new ArrayList<ListenerRegistration>();
         synchronized (this) {
             if (closed || intentsById.get(intent.clientWatchId) != intent
@@ -711,6 +723,7 @@ public class AgentWatchManager implements Closeable {
             if (isNotFound(exception)) {
                 notifications.addAll(enterPending(intent, exception));
             } else {
+                intent.pendingWatchNotify |= watchNotify;
                 intent.setDirty(true);
                 intent.refreshFailureCount = Math.min(30, intent.refreshFailureCount + 1);
                 long delay = retryPolicy.nextDelayMillis(intent.refreshFailureCount,
@@ -733,6 +746,7 @@ public class AgentWatchManager implements Closeable {
         intent.current = null;
         intent.fingerprint = null;
         intent.setDirty(false);
+        intent.pendingWatchNotify = false;
         intent.refreshFailureCount = 0;
         intent.pendingFailureCount = 1;
         cancel(intent.refreshFuture);
@@ -825,6 +839,12 @@ public class AgentWatchManager implements Closeable {
             }
             
             @Override
+            public boolean invalidateFromNotification(String observedFingerprint,
+                boolean forceRefresh) {
+                return markDirty(clientWatchId, observedFingerprint, forceRefresh, true);
+            }
+            
+            @Override
             public void unavailable(int errorCode, String errorMessage, boolean terminal) {
                 markUnavailable(clientWatchId, errorCode, errorMessage, terminal);
             }
@@ -840,8 +860,13 @@ public class AgentWatchManager implements Closeable {
     }
     
     private DiscoveryAttempt discover(AgentDiscoveryRequest request) {
+        return discover(request, false);
+    }
+    
+    private DiscoveryAttempt discover(AgentDiscoveryRequest request, boolean watchNotify) {
         try {
-            AgentDiscoveryResult result = clientProxy.discoverAgent(request);
+            AgentDiscoveryResult result = watchNotify ? clientProxy.discoverAgent(request, true)
+                : clientProxy.discoverAgent(request);
             if (result == null) {
                 return DiscoveryAttempt.failed(
                     new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,

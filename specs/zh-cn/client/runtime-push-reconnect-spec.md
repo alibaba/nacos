@@ -206,3 +206,9 @@ Push delivery order 只在某个节点的本地 event 和 task path 内成立。
 [Agent API](../ai/agent-api-spec.md)。复用 Subscribe 指纹比较及 HTTP 首轮长轮询比较覆盖
 Discover 到 Watch 的窗口，不改变报文字段或服务端行为。本地通知序号必须防止新状态交付后
 再补发过期初始化结果。
+
+### Discover 通知来源透传
+
+Watch 通知触发的查询及同一刷新重试，通过 HTTP Header 或 gRPC Request Header
+携带 `X-Nacos-Agent-Discovery-Trigger: watch-notify`。初始化、握手补查和轮询回退
+不标记；合并、并发、恢复及兼容边界见 [Agent API 规范](../ai/agent-api-spec.md)。

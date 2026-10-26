@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -116,6 +118,29 @@ class AiHttpClientProxyAgentTest {
     @AfterEach
     void tearDown() throws NacosException {
         proxy.shutdown();
+    }
+    
+    @Test
+    void discoveryNotificationHeaderSurvivesHttpRetryWithoutLeakingToDirectQuery()
+        throws Exception {
+        doThrow(new java.io.IOException("response lost"))
+            .doReturn(success(new AgentDiscoveryResult())).when(restTemplate)
+            .get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class));
+        AgentDiscoveryRequest request = discoveryRequest();
+        String original = JacksonUtils.toJson(request);
+        AgentHttpTransport transport = new AgentHttpTransport(proxy);
+        transport.discoverAgent(request, true);
+        transport.discoverAgent(request);
+        ArgumentCaptor<Header> headers = ArgumentCaptor.forClass(Header.class);
+        verify(restTemplate, times(3)).get(anyString(), headers.capture(), eq(Query.EMPTY),
+            eq(String.class));
+        assertEquals(AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY,
+            headers.getAllValues().get(0).getValue(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
+        assertEquals(AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY,
+            headers.getAllValues().get(1).getValue(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
+        assertNull(headers.getAllValues().get(2)
+            .getValue(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
+        assertEquals(original, JacksonUtils.toJson(request));
     }
     
     @Test

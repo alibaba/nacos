@@ -30,6 +30,8 @@ import com.alibaba.nacos.api.model.Page;
 import io.grpc.Status;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -109,6 +111,38 @@ class AgentTransportRouterTest {
                 () -> router.discoverAgent(new AgentDiscoveryRequest())));
         verify(grpcTransport, never()).searchAgents(eq("public"), any());
         verify(grpcTransport, never()).discoverAgent(any());
+    }
+    
+    @Test
+    void notificationAttributionSurvivesAutoGrpcToHttpFallback() throws NacosException {
+        router = new AgentTransportRouter(AgentTransportMode.AUTO, grpcTransport, httpTransport);
+        when(grpcTransport.isAvailable(AgentGrpcTransport.Resource.AGENT)).thenReturn(true);
+        when(grpcTransport.getType()).thenReturn(AgentTransportType.GRPC);
+        AgentDiscoveryRequest request = new AgentDiscoveryRequest();
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        when(grpcTransport.discoverAgent(request, true))
+            .thenThrow(new NacosException(NacosException.CLIENT_DISCONNECT, "disconnected"));
+        when(httpTransport.discoverAgent(request, true)).thenReturn(result);
+        assertSame(result, router.discoverAgent(request, true));
+        verify(grpcTransport).discoverAgent(request, true);
+        verify(httpTransport).discoverAgent(request, true);
+        verify(httpTransport, never()).discoverAgent(any());
+    }
+    
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"HTTP", "GRPC"})
+    void notificationAttributionUsesTheSelectedTransport(AgentTransportMode mode)
+        throws NacosException {
+        router = new AgentTransportRouter(mode, grpcTransport, httpTransport);
+        AgentTransport selected = mode == AgentTransportMode.HTTP ? httpTransport : grpcTransport;
+        when(selected.getType()).thenReturn(mode == AgentTransportMode.HTTP
+            ? AgentTransportType.HTTP : AgentTransportType.GRPC);
+        AgentDiscoveryRequest request = new AgentDiscoveryRequest();
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        when(selected.discoverAgent(request, true)).thenReturn(result);
+        assertSame(result, router.discoverAgent(request, true));
+        verify(selected).discoverAgent(request, true);
+        verify(selected, never()).discoverAgent(any());
     }
     
     @Test

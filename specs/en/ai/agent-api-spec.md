@@ -954,3 +954,59 @@ change subscription state. Diagnostics use the existing safe snapshot renderer: 
 input identity/shape and failure stage/type without dumping descriptors, Endpoint
 metadata or credentials. Diagnostic rendering/logging failures cannot replace the
 conversion exception. This adds no HTTP/gRPC operation or wire contract.
+
+### Watch notification attribution on Discover requests
+
+HTTP Discover headers and gRPC `Request.headers` share the optional marker
+`X-Nacos-Agent-Discovery-Trigger: watch-notify`. It identifies a query triggered by
+an accepted gRPC `INVALIDATE` / `REVALIDATE` notification or HTTP Watch changed-ID
+response. It does not prove a fingerprint difference: the queried result can remain
+unchanged, and HTTP changed IDs can also indicate visibility revalidation.
+
+- Direct Discover, the initial subscription snapshot, Subscribe `refreshRequired`
+  reconciliation (including reconnect), compatibility Discover polling, and Pending
+  recovery omit the marker. An actual changed-ID response from the first HTTP poll
+  still counts as a Watch notification.
+- Ignored equal-fingerprint hints do not create attribution. Coalesced pending work
+  retains notification attribution if any merged signal has it. Execution atomically
+  takes that attribution while later notifications remain pending for the next query.
+  Transient refresh failures, rejected task submissions, HTTP request retries, and
+  AUTO gRPC-to-HTTP fallback retain the same logical refresh attribution.
+- A successfully materialized snapshot, an authorized Discover confirming absence,
+  or a binding failure entering Pending recovery ends that notification refresh.
+  Its attribution must not leak into later direct queries, initialization, or polling.
+- The marker is request-scoped diagnostic metadata, outside RAD request models,
+  business labels, cache keys, Watch identities, and fingerprints. Public SDK method
+  signatures, responses, authorization, quotas, and routing remain unchanged. Servers
+  can read it from the request headers; it grants no authority and proves no content
+  change. Missing, empty, and unknown values remain accepted and mean no recognized
+  notification attribution, not necessarily a direct query. No new capability
+  negotiation is required.
+
+### Discover diagnostic business events
+
+The HTTP/gRPC entry points publish one best-effort `AiResourceTraceEvent` per
+invocation entering the Discover business query, with `resourceType=agent` and
+`operation=DISCOVER`. Success and failure use `SUCCESS` and `FAILURE` respectively.
+`resourceId` is the requested `agentName`; `version` is the resolved version on
+success or the explicit requested version on failure (empty when unspecified).
+The operator and client IP come from the current request context. `ext` is JSON text:
+
+| Field | Meaning |
+| --- | --- |
+| `namespaceId` | Normalized namespace. |
+| `protocol` | Access type: `HTTP` or `GRPC`. |
+| `app` | Source application from the request context. |
+| `clientId` / `connectionId` | HTTP Client identity or gRPC connection identity, omitted when unavailable. |
+| `subscriptionTriggered` | True only for the recognized `watch-notify` marker; false means no declared recognized notification attribution. |
+| `requestedVersion` / `requestedLabel` | Original version selectors, omitted when unspecified. |
+
+Only the necessary summary is captured on the request thread, then dispatched
+asynchronously through the existing Trace channel. The default subscriber writes
+it to `ai-resource-trace.log`. Full requests, filters, descriptors, Endpoints and
+authentication headers are excluded. Event construction/publication failures must
+not change query results or replace the original exception. Events may be dropped
+under load and are not a complete audit trail. Authorization, HTTP parameter parsing,
+migration and Client binding rejection before the business query are outside this
+event's guaranteed scope. Internal Watch projection, subscription validation and
+recomputation are not recorded as external Discover requests.

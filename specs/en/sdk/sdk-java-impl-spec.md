@@ -566,3 +566,11 @@ recovery and callback submission recovery log summaries. Local checking also obs
 running/queued callbacks without logging full Cards or authentication material. User code
 remains isolated from Discover/connection threads and retained memory is independent of
 the number of changes.
+
+### Discover notification attribution
+
+Notification-triggered queries and retries of the same refresh carry
+`X-Nacos-Agent-Discovery-Trigger: watch-notify` through HTTP headers or gRPC request
+headers. Initialization, handshake reconciliation, and polling fallback omit it.
+Coalescing, concurrent refresh, recovery, and compatibility rules are defined in the
+[Agent API spec](../ai/agent-api-spec.md).
