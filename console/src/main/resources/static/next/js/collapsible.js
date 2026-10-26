@@ -1,1 +1,1 @@
-import{dt as e,ft as t,ut as n}from"./vendor-ui.js";var r=t,i=e,a=n;export{a as n,i as r,r as t};
+typeof Object.hasOwn!=`function`&&Object.defineProperty(Object,"hasOwn",{configurable:!0,writable:!0,value:function(e,t){return Object.prototype.hasOwnProperty.call(Object(e),t)}});import{dt as e,ft as t,pt as n}from"./vendor-ui.js";var r=n,i=t,a=e;export{a as n,i as r,r as t};

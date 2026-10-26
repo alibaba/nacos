@@ -1,1 +1,0 @@
-function e(e){if(!e)return[];try{let t=JSON.parse(e);return Array.isArray(t)?t.filter(e=>typeof e==`string`):[]}catch{return[]}}export{e as t};

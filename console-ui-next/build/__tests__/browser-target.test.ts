@@ -94,6 +94,8 @@ describe('browser compatibility target', () => {
         target: config.build?.target,
         rolldownOptions: {
           input: path.resolve(__dirname, 'fixtures/worker-host.ts'),
+          // Keep the exported worker constructor live when Vite prunes unused workers.
+          preserveEntrySignatures: 'strict',
         },
       },
     });
