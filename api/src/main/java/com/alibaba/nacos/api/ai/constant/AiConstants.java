@@ -131,6 +131,11 @@ public class AiConstants {
     
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
+    /**
+     * Include shared resources in runtime discovery; disabled by default.
+     */
+    public static final String AI_ACCESS_HUB = "nacosAiAccessHub";
+    
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL =
         "nacosAiMcpServerCacheUpdateInterval";
     
@@ -194,6 +199,11 @@ public class AiConstants {
          * Internal namespace ID for Agentic Resource Hub.
          */
         public static final String NAMESPACE_ID = "__nacos_ai_hub__";
+        
+        /**
+         * Logical resource used to authenticate guarded shared Skill reads.
+         */
+        public static final String ENTRY_RESOURCE = "ai-hub/entry";
         
         /**
          * Console administrator resource used for Hub governance.

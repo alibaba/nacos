@@ -18,7 +18,11 @@ package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+
+import java.util.List;
 
 /**
  * SkillService operations obtained from {@link AiService#skill()}.
@@ -27,6 +31,42 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @since 3.3.0
  */
 public interface SkillService {
+    
+    /**
+     * Search online skills in the bound namespace and, when configured, shared skills.
+     *
+     * @param query search text, optional
+     * @param tagsAll tags which must all match, optional
+     * @param pageNo one-based page number
+     * @param pageSize page size, from 1 to 100
+     * @return namespace-first result page, retaining each resource's origin
+     * @throws NacosException if arguments are invalid or either requested source fails
+     */
+    @Since("3.3.0")
+    default Page<SkillBasicInfo> searchSkills(String query, List<String> tagsAll, int pageNo,
+        int pageSize) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Skill search is not implemented by this SDK.");
+    }
+    
+    /**
+     * Download a selected search result, retaining its namespace and pinned shared version.
+     *
+     * @param skill skill returned by search
+     * @return ZIP file bytes
+     * @throws NacosException if the result is invalid or the download fails
+     */
+    @Since("3.3.0")
+    default byte[] downloadSkillZipBySearchResult(SkillBasicInfo skill) throws NacosException {
+        if (skill == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Skill must not be null.");
+        }
+        if ("HUB".equals(skill.getDiscoverySource())) {
+            throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "Shared Skill download is not implemented by this SDK.");
+        }
+        return downloadSkillZip(skill.getName());
+    }
     
     /**
      * Download skill as ZIP byte array by skill name. Defaults to latest version.

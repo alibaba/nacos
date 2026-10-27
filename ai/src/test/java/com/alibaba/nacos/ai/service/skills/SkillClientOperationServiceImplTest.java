@@ -71,22 +71,22 @@ class SkillClientOperationServiceImplTest {
     @Test
     void querySkillShouldRejectHubNamespaceBeforeAnyLookup() {
         NacosApiException exception =
-                assertThrows(NacosApiException.class,
-                        () -> service.querySkill(
-                                AiConstants.Hub.NAMESPACE_ID,
-                                "find-skills-101",
-                                "1.0.0",
-                                null,
-                                null));
+            assertThrows(NacosApiException.class,
+                () -> service.querySkill(
+                    AiConstants.Hub.NAMESPACE_ID,
+                    "find-skills-101",
+                    "1.0.0",
+                    null,
+                    null));
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.ILLEGAL_NAMESPACE.getCode(),
-                exception.getDetailErrCode());
+            exception.getDetailErrCode());
         
         verifyNoInteractions(
-                manifestService,
-                aiResourceVersionPersistService,
-                skillOperationService);
+            manifestService,
+            aiResourceVersionPersistService,
+            skillOperationService);
     }
     
     @Test

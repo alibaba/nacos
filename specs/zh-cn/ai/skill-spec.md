@@ -258,6 +258,62 @@ Nacos 不为 Skill 提供推送通道，客户端 SDK 通过周期性条件查�
 - **取消语义**：`unsubscribeSkill` 必须取消对应任务并移除 md5 缓存项，且不得继续向服务
   端发起轮询请求。
 
+### 6.2 共享命名空间发现与下载
+
+> 注意：`__nacos_ai_hub__` 是服务端保留的共享命名空间 ID。只有显式传入该 ID
+> 才访问共享 Skill；省略 namespace 仍只访问 `public`。它不允许普通资源写入。
+
+共享发现复用 `GET /v3/client/ai/skills/search`，参数仍为 namespaceId、query、tagsAll、
+pageNo、pageSize；不新增 source 参数和独立的 Client Hub 路由。共享结果返回现有
+`Page<SkillBasicInfo>`，附加字段由
+[`Skill discovery schema`](../../schemas/ai/skill/0.1.0/skill-discovery.schema.json)定义。
+
+- 普通结果 `discoverySource=NAMESPACE`，保留原 namespaceId/name；共享结果 `discoverySource=HUB`，
+  namespaceId 为保留 ID，name 为不透明的十进制 hubEntryId 字符串。
+- `displayName` 是展示名，允许不同共享条目同名；不得按展示名去重。`sourceDisplayName`
+  仅显示来源命名空间名称，不公开未授权的源 namespace ID、数据库身份、ext 或 storage。
+- `version` 是固定共享版本；`downloadCount` 是共享条目自身累计下载量。
+- 共享目录只计算当前有效、调用者可读的条目，先按 Hub downloadCount 降序、hubEntryId
+  升序排定，再分页。空或负下载量按零处理。pageSize 最大为 100；深分页保留前
+  offset+pageSize 个合格候选，内存成本随页深度增长。
+
+共享下载复用 `GET /v3/client/ai/skills?namespaceId=__nacos_ai_hub__&name=<hubEntryId>`。
+不按展示名猜测条目，不回退源 latest；version 若提供必须等于当前共享版本，省略 version
+时 label 只接受空或 latest。共享身份须经过普通鉴权链识别，再由共享读取守卫检查 PUBLIC、
+在线固定版本、共享开关和撤销状态；不要求读取者具备源命名空间 READ。
+
+200 返回 ZIP，带 `X-Nacos-Hub-Entry-Id` 和 `X-Nacos-Skill-Resolved-Version`。
+仅在已验证源版本的持久化 contentMd5 存在且匹配时返回无正文 304；缺少 digest 总是返回
+200，并按普通 Skill 口径计算、尽力回填内容摘要以支持后续订阅。304 不携带 Content-Type 或 resolved-version，也不增加下载量。
+
+每次成功的共享下载只增加 Hub 元数据和对应 Hub 引用版本行的下载量，不读取或增加源
+Skill 的计数。首次共享从零开始；同一 Hub 条目的重新共享、版本调整保留累计计数，版本
+计数按该引用版本单独统计。普通源下载只增加源计数。列表、详情和内容预览不计为下载。
+沿用现有异步计数管理器定期刷新（默认 10 秒），因此热度更新最终可见。
+
+管理列表沿用普通 Skill 的 `orderBy`：省略或为空时按 Hub 条目自身 `gmt_modified` 倒序，
+`download_count` 时按 Hub 自身下载量倒序；两种排序均以 hubEntryId 升序打破同值，
+且必须在有效性筛选之后、分页之前完成。缺失更新时间排在最后，不使用源 Skill 更新时间或下载量。
+Client `/search` 保持上述热度排序，不因管理页面默认排序改变而变化。
+
+Admin 和 Console 的管理读取也复用现有 Skill 接口：
+
+`GET /v3/{admin|console}/ai/skills/list`、`GET /v3/{admin|console}/ai/skills`、
+`GET /v3/{admin|console}/ai/skills/version` 和
+`GET /v3/{admin|console}/ai/skills/version/download`。传入保留 namespace，
+`skillName` 使用不透明 Hub ID；版本内容和下载选择固定共享版本。列表返回现有
+`Page<SkillSummary>`，详情返回现有 `SkillMeta`，包含相同来源字段和唯一的固定版本摘要；
+内容返回 `Skill`，两类下载均返回 ZIP 字节。跳转源资源所需的字段只在源 READ 授权通过后
+公开。共享读取经过身份鉴权与 Hub 读取守卫；普通 namespace 的权限及写入限制保持不变。
+不保留独立 Hub list/detail/content/download HTTP 路由或公开 Maintainer SDK 读取方法。
+分享、调整、撤销、治理状态、来源分享状态、导入和直接复制继续使用专用管理接口。
+
+客户端是否合并共享发现由 `nacosAiAccessHub`（默认 false）控制，与服务端
+`nacos.ai.hub.enabled`（既有默认 true）及状态 `ai_hub_enabled` 分离。合并规则见
+[SDK 规范](../sdk/sdk-spec.md)。默认或显式 false 时只查询业务 namespace，显式 true 时合并共享；SDK 配置
+不改变 HTTP 省略 namespace 时使用 public 的规则。控制台入口按资源类型组织；目前完整共享生命周期仅实现
+Skill，类型专属 Admin/Console 分享、撤销、导入和治理接口继续保留。
+
 ## 7. 待对齐问题
 
 - upload 时强制执行完整的上游 name 校验规则。
@@ -270,3 +326,8 @@ Nacos 不为 Skill 提供推送通道，客户端 SDK 通过周期性条件查�
 
 Skill 包约定可能随 AI Agent framework 演进而变化。新的 Skill 包格式应定义解析、
 校验、存储和迁移规则。除非明确废弃，已有 Skill 版本必须保持可获取。
+
+
+### Console 源资源共享管理区
+
+五类资源详情页统一在资源信息及生命周期操作下方、内容标签页/内容区域上方展示共享管理卡片，集中放置共享、调整版本、取消共享和跨命名空间复制。复制与共享 WRITE/PUBLIC 资格分开，提交时仍校验源 READ 和目标 WRITE。Skill 复用既有管理 /copy 接口，源须启用且指定版本 online；其余四类资源保留既有已发布版本复制规则。无可用版本时仍展示复制按钮，禁用并说明原因。Hub 关闭不展示卡片。Prompt 不显示 PUBLIC/PRIVATE 共享条件或新增 scope 操作。

@@ -28,9 +28,10 @@ import java.util.List;
  * source-detail deep link. Hub authorization alone never exposes these fields.
  * No internal Hub name, raw reference ext or storage descriptor is returned.</p>
  *
- * <p>Author, status, commit message and version downloads belong to the fixed
- * shared source version. The inherited download count is the source Skill total.
- * Version labels contain only names bound to that shared version.</p>
+ * <p>Author, status and commit message belong to the fixed shared source version.
+ * Download counters belong only to the Hub entry and its pinned Hub version,
+ * independent of the source counters. Version labels contain only names bound
+ * to that shared version.</p>
  *
  * @author nacos
  */

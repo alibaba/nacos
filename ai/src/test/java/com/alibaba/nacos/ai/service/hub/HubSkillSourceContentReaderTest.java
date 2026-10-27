@@ -18,11 +18,16 @@ package com.alibaba.nacos.ai.service.hub;
 
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
+import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillContent;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDownload;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
@@ -33,16 +38,21 @@ import org.mockito.MockedStatic;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Source storage reader rejects stale identities, missing main content, and poisoned file lists. */
@@ -50,8 +60,122 @@ class HubSkillSourceContentReaderTest {
     
     private final AiResourceManager manager = mock(AiResourceManager.class);
     private final HubSkillReadAccessService access = mock(HubSkillReadAccessService.class);
+    private final AiResourceVersionPersistService versionPersistence =
+        mock(AiResourceVersionPersistService.class);
     private final HubSkillSourceContentReader reader =
-        new HubSkillSourceContentReader(manager, access);
+        new HubSkillSourceContentReader(manager, access, versionPersistence);
+    
+    @Test
+    void persistedDigestDoesNotLoadContentOrIncrementDownloads() throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        version("{\"files\":[\"SKILL.md\"],\"contentMd5\":\"published-digest\"}");
+        try (MockedStatic<AiResourceStorageRouter> storage =
+            mockStatic(AiResourceStorageRouter.class);
+            MockedStatic<NotifyCenter> events = mockStatic(NotifyCenter.class)) {
+            assertEquals("published-digest", reader.readContentMd5(publication));
+            storage.verifyNoInteractions();
+            events.verifyNoInteractions();
+        }
+        verify(access).requireReadable(publication);
+        verify(access).requireStillReadable(publication);
+        verifyNoInteractions(versionPersistence);
+    }
+    
+    @Test
+    void missingOrMalformedPersistedDigestCannotProduceCacheHit() throws Exception {
+        for (String storage : new String[] {"{}", "null", "{bad",
+            "{\"contentMd5\":3}", "{\"contentMd5\":\" \"}"}) {
+            version(storage);
+            assertNull(reader.readContentMd5(publication()));
+        }
+        version("{}").setId(9999L);
+        assertThrows(NacosException.class, () -> reader.readContentMd5(publication()));
+        verifyNoInteractions(versionPersistence);
+    }
+    
+    @Test
+    void legacyBackfillUsesCanonicalTextAndBinaryContentWithoutCountingDownloads()
+        throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        try (MockedStatic<AiResourceStorageRouter> router = legacyContent();
+            MockedStatic<NotifyCenter> events = mockStatic(NotifyCenter.class)) {
+            String md5 = reader.backfillContentMd5(publication);
+            assertEquals(canonicalLegacyMd5(), md5);
+            verify(versionPersistence).updateStorageMd5("source-a", "find-skills", "skill",
+                "1.0.0", md5);
+            events.verifyNoInteractions();
+        }
+        verify(access, times(3)).requireStillReadable(publication);
+    }
+    
+    @Test
+    void persistenceFailureStillReturnsDigestAfterFinalRevocationFence() throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        when(versionPersistence.updateStorageMd5("source-a", "find-skills", "skill",
+            "1.0.0", canonicalLegacyMd5())).thenThrow(new IllegalStateException("db unavailable"));
+        try (MockedStatic<AiResourceStorageRouter> router = legacyContent()) {
+            assertEquals(canonicalLegacyMd5(), reader.backfillContentMd5(publication));
+        }
+        verify(access, times(3)).requireStillReadable(publication);
+    }
+    
+    @Test
+    void revokedShareCannotBackfillOrReturnDigest() throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        doNothing().doThrow(new NacosException(NacosException.NO_RIGHT, "revoked"))
+            .when(access).requireStillReadable(publication);
+        try (MockedStatic<AiResourceStorageRouter> router = legacyContent()) {
+            assertEquals(NacosException.NO_RIGHT,
+                assertThrows(NacosException.class,
+                    () -> reader.backfillContentMd5(publication)).getErrCode());
+        }
+        verifyNoInteractions(versionPersistence);
+    }
+    
+    @Test
+    void revocationAfterPersistenceStillPreventsReturningDigest() throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        doNothing().doNothing().doThrow(new NacosException(NacosException.NO_RIGHT, "revoked"))
+            .when(access).requireStillReadable(publication);
+        try (MockedStatic<AiResourceStorageRouter> router = legacyContent()) {
+            assertEquals(NacosException.NO_RIGHT,
+                assertThrows(NacosException.class,
+                    () -> reader.backfillContentMd5(publication)).getErrCode());
+        }
+        verify(versionPersistence).updateStorageMd5("source-a", "find-skills", "skill",
+            "1.0.0", canonicalLegacyMd5());
+    }
+    
+    private MockedStatic<AiResourceStorageRouter> legacyContent() throws Exception {
+        version("{\"files\":[\"SKILL.md\",\"scripts/run.sh\",\"assets/icon.png\",\"_meta.json\"]}");
+        AiResourceStorageRouter router = mock(AiResourceStorageRouter.class);
+        AiResourceStorage storage = mock(AiResourceStorage.class);
+        when(router.route(any(StorageKey.class))).thenReturn(storage);
+        when(storage.get(any(StorageKey.class))).thenAnswer(invocation -> {
+            StorageKey key = invocation.getArgument(0);
+            String text = key.getKey().endsWith("SKILL.md") ? "# Original"
+                : key.getKey().endsWith("icon.png") ? "AP+A" : "echo works";
+            return text.getBytes(StandardCharsets.UTF_8);
+        });
+        MockedStatic<AiResourceStorageRouter> mocked = mockStatic(AiResourceStorageRouter.class);
+        mocked.when(AiResourceStorageRouter::getInstance).thenReturn(router);
+        return mocked;
+    }
+    
+    private String canonicalLegacyMd5() {
+        Skill skill = new Skill();
+        skill.setSkillMd("# Original");
+        SkillResource script = new SkillResource();
+        script.setName("run.sh");
+        script.setType("scripts");
+        script.setContent("echo works");
+        SkillResource image = new SkillResource();
+        image.setName("icon.png");
+        image.setType("assets");
+        image.setContent("AP+A");
+        skill.setResource(Map.of("scripts::run.sh", script, "assets::icon.png", image));
+        return SkillContentDigestUtils.computeContentMd5(skill);
+    }
     
     @Test
     void loadsOnlyOriginalVersionAndDoesNotExposeMetaFile() throws Exception {

@@ -64,7 +64,7 @@ class HubSkillIndexGuardTest {
         storage = mock(HubEntryStorage.class);
         guard = new HubSkillIndexGuard(manager, storage);
         HubResourceReference ref = HubResourceReferenceJsonUtil.build(
-                "team-a", 41L, "find-skills", 1001L, "1.0.0");
+            "team-a", 41L, "find-skills", 1001L, "1.0.0");
         hub = new AiResource();
         hub.setId(501L);
         hub.setName("find-skills-41");
@@ -99,7 +99,7 @@ class HubSkillIndexGuardTest {
         when(storage.findByInternalName(hub.getName())).thenReturn(hub);
         when(manager.findMeta("team-a", "find-skills", "skill")).thenReturn(source);
         when(manager.findVersion("team-a", "find-skills", "skill", "1.0.0"))
-                .thenReturn(sourceVersion);
+            .thenReturn(sourceVersion);
     }
     
     @Test
@@ -147,7 +147,7 @@ class HubSkillIndexGuardTest {
     @Test
     void tamperedImmutableStorageMustDisappear() throws NacosException {
         HubResourceReference other = HubResourceReferenceJsonUtil.build(
-                "team-a", 41L, "find-skills", 9999L, "1.0.0");
+            "team-a", 41L, "find-skills", 9999L, "1.0.0");
         hubVersion.setStorage(HubResourceReferenceJsonUtil.toJson(other));
         assertFalse(guard.isIndexable(hub, hubVersion));
     }

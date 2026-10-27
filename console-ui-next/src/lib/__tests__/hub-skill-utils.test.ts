@@ -1,11 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeSourceVersion, distinctHubEntries, hubDetailPath,
-  revokeWarning, sourceSkillPath, validHubId, hubErrorMessage,
+  revokeWarning, sourceSkillPath, validHubId, hubErrorMessage, hubSkillInstallCommand,
 } from '../hub-skill-utils';
 import type { HubSkillDetail, HubSkillSummary } from '@/types/hub-skill';
 
 describe('S5 Hub Skill links and safe identity', () => {
+  it('pins CLI installs to distinct shared entries and versions without switching namespace', () => {
+    const base = { displayName: 'find-skills', hubEntryId: '901', sharedVersion: '1.0.0' };
+    expect(hubSkillInstallCommand(base)).toBe('nacos-cli skill-get find-skills 901 --version 1.0.0');
+    expect(hubSkillInstallCommand({ ...base, hubEntryId: '9223372036854775807', sharedVersion: '2.0.0' }))
+      .toBe('nacos-cli skill-get find-skills 9223372036854775807 --version 2.0.0');
+  });
+  it('does not offer executable commands with missing pins, invalid IDs or shell metacharacters', () => {
+    const base = { displayName: 'find-skills', hubEntryId: '901', sharedVersion: '1.0.0' };
+    for (const displayName of ['', 'find skills', 'skill;whoami', '$(whoami)', '`whoami`', '-o']) {
+      expect(hubSkillInstallCommand({ ...base, displayName })).toBeNull();
+    }
+    for (const sharedVersion of ['', '1.0.0;whoami', '--help']) {
+      expect(hubSkillInstallCommand({ ...base, sharedVersion })).toBeNull();
+    }
+    expect(hubSkillInstallCommand({ ...base, hubEntryId: '9223372036854775808' })).toBeNull();
+  });
   it('keeps Java long IDs as strings and rejects lossy numbers', () => {
     expect(validHubId('9223372036854775807')).toBe(true);
     expect(validHubId(Number('9223372036854775807'))).toBe(false);
@@ -21,6 +37,7 @@ describe('S5 Hub Skill links and safe identity', () => {
       { hubEntryId: '902', displayName: 'find-skills' },
     ] as HubSkillSummary[];
     expect(distinctHubEntries(records)).toBe(true);
+    expect(hubDetailPath(records[0].hubEntryId)).toBe('/skill/shared/detail/901');
     expect(hubDetailPath(records[0].hubEntryId)).not.toBe(hubDetailPath(records[1].hubEntryId));
     expect(distinctHubEntries([...records, records[0]])).toBe(false);
   });

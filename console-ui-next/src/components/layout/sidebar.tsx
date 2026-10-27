@@ -58,7 +58,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { sidebarCollapsed } = useAppStore();
   const { globalAdmin } = useAuthStore();
-  const { version, startupMode, functionMode, copilotEnabled, aiEnabled, hubEnabled } = useServerStore();
+  const { version, startupMode, functionMode, copilotEnabled, aiEnabled } = useServerStore();
   const { currentNamespace, namespaceShowName } = useNamespaceStore();
   const platformPaths = [
     '/namespace',
@@ -85,7 +85,6 @@ export function Sidebar() {
       defaultOpen: true,
       children: [
         { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill', badge: 'new' },
-        ...(hubEnabled ? [{ key: 'hubSkillRegistry', label: t('menu.hubSkillRegistry'), path: '/hub/skills' }] : []),
         { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement', badge: 'new' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
         { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec', badge: 'Beta' },
@@ -173,9 +172,10 @@ export function Sidebar() {
     [navigate, currentNamespace, namespaceShowName]
   );
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path ||
+    (path === '/skill' && location.pathname.startsWith('/skill/'));
   const isGroupActive = (children?: { path: string }[]) =>
-    children?.some((c) => location.pathname === c.path) ?? false;
+    children?.some((c) => isActive(c.path)) ?? false;
 
   const iconForChild = (key: string) => {
     const map: Record<string, React.ReactNode> = {
@@ -188,7 +188,6 @@ export function Sidebar() {
       agentRegistry: <Bot size={16} />,
       agentSpecRegistry: <Package size={16} />,
       skillRegistry: <Wrench size={16} />,
-      hubSkillRegistry: <Globe size={16} />,
       promptRegistry: <MessageSquare size={16} />,
       userList: <Users size={16} />,
       roleManagement: <Key size={16} />,

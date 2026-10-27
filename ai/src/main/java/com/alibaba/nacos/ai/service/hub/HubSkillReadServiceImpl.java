@@ -22,14 +22,18 @@ import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillContent;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDetail;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDownload;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import org.springframework.stereotype.Service;
 
@@ -72,8 +76,7 @@ public class HubSkillReadServiceImpl implements HubSkillReadService {
         detail.setDescription(summary.getDescription());
         detail.setAuthor(version.getAuthor());
         detail.setVersionStatus(version.getStatus());
-        detail.setVersionDownloadCount(version.getDownloadCount() == null ? 0L
-            : Math.max(0L, version.getDownloadCount()));
+        detail.setVersionDownloadCount(publication.getVersionDownloadCount());
         detail.setCommitMsg(version.getDesc());
         List<String> labels = new ArrayList<>();
         AiResourceManager.requireVersionInfo(source).getLabels().forEach((label, target) -> {
@@ -99,22 +102,42 @@ public class HubSkillReadServiceImpl implements HubSkillReadService {
     
     @Override
     public HubSkillDownload download(Long hubEntryId) throws NacosException {
+        return download(hubEntryId, null);
+    }
+    
+    @Override
+    public HubSkillDownload download(Long hubEntryId, String version) throws NacosException {
         HubConfig.requireEnabled();
         ResolvedHubSkillReference publication = access.resolveReadable(hubEntryId);
+        requirePinnedVersion(publication, version);
         HubSkillDownload result = contentReader.download(publication);
         access.requireStillReadable(publication);
-        NotifyCenter.publishEvent(new SkillDownloadEvent(publication.getSourceNamespaceId(),
-            publication.getSourceName(), AiResourceConstants.RESOURCE_TYPE_SKILL,
+        NotifyCenter.publishEvent(new SkillDownloadEvent(AiConstants.Hub.NAMESPACE_ID,
+            publication.getInternalName(), AiResourceConstants.RESOURCE_TYPE_SKILL,
             publication.getSourceVersion()));
         return result;
     }
     
     @Override
     public HubSkillContent getContent(Long hubEntryId) throws NacosException {
+        return getContent(hubEntryId, null);
+    }
+    
+    @Override
+    public HubSkillContent getContent(Long hubEntryId, String version) throws NacosException {
         HubConfig.requireEnabled();
         ResolvedHubSkillReference publication = access.resolveReadable(hubEntryId);
+        requirePinnedVersion(publication, version);
         HubSkillContent result = contentReader.load(publication);
         access.requireStillReadable(publication);
         return result;
+    }
+    
+    private void requirePinnedVersion(ResolvedHubSkillReference publication, String version)
+        throws NacosApiException {
+        if (StringUtils.isNotBlank(version) && !publication.getSourceVersion().equals(version)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Shared Skill version not found or unavailable");
+        }
     }
 }

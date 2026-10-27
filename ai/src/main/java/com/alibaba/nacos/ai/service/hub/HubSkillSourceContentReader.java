@@ -17,21 +17,29 @@
 package com.alibaba.nacos.ai.service.hub;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.ResourceContentEncoder;
+import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillContent;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDownload;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillResource;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -55,6 +63,9 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class HubSkillSourceContentReader {
     
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(HubSkillSourceContentReader.class);
+    
     private static final int MAX_FILES = 128;
     private static final int MAX_FILE_BYTES = 2 * 1024 * 1024;
     private static final long MAX_TOTAL_BYTES = 16L * 1024 * 1024;
@@ -63,10 +74,86 @@ public class HubSkillSourceContentReader {
     
     private final HubSkillReadAccessService access;
     
+    private final AiResourceVersionPersistService versionPersistence;
+    
     public HubSkillSourceContentReader(AiResourceManager manager,
-        HubSkillReadAccessService access) {
+        HubSkillReadAccessService access, AiResourceVersionPersistService versionPersistence) {
         this.manager = manager;
         this.access = access;
+        this.versionPersistence = versionPersistence;
+    }
+    
+    /**
+     * Read the source version's persisted digest without loading or counting its package.
+     *
+     * @param publication already authorized Hub publication
+     * @return persisted content MD5, or null when legacy storage has no digest
+     * @throws NacosException if source identity or read authorization changed
+     */
+    public String readContentMd5(ResolvedHubSkillReference publication) throws NacosException {
+        if (publication == null) {
+            throw unavailable();
+        }
+        access.requireReadable(publication);
+        AiResourceVersion version;
+        try {
+            version = requireVersion(publication);
+        } catch (RuntimeException failure) {
+            throw unavailable();
+        }
+        String md5 = null;
+        try {
+            Map<?, ?> descriptor = JacksonUtils.toObj(version.getStorage(), Map.class);
+            Object value = descriptor == null ? null
+                : descriptor.get(Constants.Skills.STORAGE_KEY_CONTENT_MD5);
+            if (value instanceof String && StringUtils.isNotBlank((String) value)) {
+                md5 = (String) value;
+            }
+        } catch (RuntimeException missingDigest) {
+            // Invalid or legacy storage cannot produce a cache hit.
+        }
+        access.requireStillReadable(publication);
+        return md5;
+    }
+    
+    /**
+     * Compute and best-effort persist a legacy source digest through the public share grant.
+     * This does not call the ordinary source download path or emit download events.
+     *
+     * @param publication already authorized immutable Hub publication
+     * @return canonical content MD5 even if persistence failed
+     * @throws NacosException if content is unavailable or read authorization changed
+     */
+    public String backfillContentMd5(ResolvedHubSkillReference publication) throws NacosException {
+        HubSkillContent content = load(publication);
+        Skill skill = new Skill();
+        skill.setSkillMd(content.getSkillMd());
+        Map<String, SkillResource> resources = new LinkedHashMap<>();
+        content.getResource().forEach((path, original) -> {
+            SkillResource resource = new SkillResource();
+            resource.setName(original.getName());
+            resource.setType(original.getType());
+            resource.setContent(original.getContent());
+            resources.put(path, resource);
+        });
+        skill.setResource(resources);
+        String md5;
+        try {
+            md5 = SkillContentDigestUtils.computeContentMd5(skill);
+        } catch (RuntimeException invalidContent) {
+            throw unavailable();
+        }
+        access.requireStillReadable(publication);
+        try {
+            versionPersistence.updateStorageMd5(publication.getSourceNamespaceId(),
+                publication.getSourceName(), AiResourceConstants.RESOURCE_TYPE_SKILL,
+                publication.getSourceVersion(), md5);
+        } catch (RuntimeException persistenceFailure) {
+            LOGGER.warn("Failed to back-fill source content MD5 for shared Skill entry {}",
+                publication.getHubEntryId(), persistenceFailure);
+        }
+        access.requireStillReadable(publication);
+        return md5;
     }
     
     /** Read files from the source, not from the Hub namespace. */

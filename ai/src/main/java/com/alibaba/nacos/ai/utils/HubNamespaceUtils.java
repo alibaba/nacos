@@ -52,7 +52,7 @@ public final class HubNamespaceUtils {
         }
         
         throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.ILLEGAL_NAMESPACE,
-                "Namespace [" + namespaceId + "] is reserved for Nacos AI Resource Hub "
-                        + "and cannot be accessed through ordinary AI resource APIs");
+            "Namespace [" + namespaceId + "] is reserved for Nacos AI Resource Hub "
+                + "and cannot be accessed through ordinary AI resource APIs");
     }
 }

@@ -192,6 +192,36 @@ ID shapes, and Endpoint liveness reuses `ClientLivenessInfo`.
 
 ## 6. Security Rules
 
+### Shared Skill discovery
+
+Runtime Skill Search queries only the bound namespace (`public` when omitted)
+by default. The client option `nacosAiAccessHub` defaults to `false`; explicitly
+setting it to `true` combines the bound namespace with the reserved shared
+namespace `__nacos_ai_hub__`. This is a read-only discovery exception to namespace
+binding, not cross-namespace administration. This option is independent of the server's
+`nacos.ai.hub.enabled` capability switch.
+When enabled, clients query the existing Skill Search endpoint separately for
+the bound and shared namespaces, then paginate one namespace-first sequence.
+Namespace results retain server order; shared results retain download-count
+descending order with stable server tie-breaking. Equal display names from
+different origins remain separate results. Shared results carry `discoverySource=HUB`,
+`hubEntryId`, a download `name` equal to that ID, and the pinned `version`;
+ordinary results carry `discoverySource=NAMESPACE`. A shared result must be downloaded
+through the same Skill endpoint with the reserved namespace and opaque name.
+Errors from either requested source propagate; clients do not silently return
+an incomplete combined page. No `source` selector or separate Client Hub API is
+introduced. This initial implementation covers Skill only.
+
+Maintainer shared reads likewise reuse `listSkills`, `getSkillMeta`,
+`getSkillVersionDetail`, and `downloadSkillVersion` with the reserved namespace.
+Single-resource reads use the opaque entry ID as `skillName`. Their return
+types remain `Page<SkillSummary>`, `SkillMeta`, and `Skill` respectively;
+`SkillDownload` preserves raw ZIP bytes, the display name, the resolved version,
+and an optional shared entry ID. No separate Hub list/detail/content/download
+SDK methods or HTTP paths are exposed. Sharing, adjusting, unsharing,
+governance, state lookup, importing, and copying retain their dedicated Admin
+management operations.
+
 SDK capability design must follow least privilege:
 
 - Client SDK credentials should be scoped to runtime resources and should not

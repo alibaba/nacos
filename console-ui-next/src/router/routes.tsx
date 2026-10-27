@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { AuthGuard, AdminGuard, GuestGuard, AiGuard, HubGuard, getDefaultRoute } from './guards';
 import { useServerStore } from '@/stores/server-store';
+import { LegacyHubRedirect } from './LegacyHubRedirect';
 
 // Loading component
 function PageLoading() {
@@ -216,12 +217,20 @@ export const routes: RouteObject[] = [
                 element: <HubGuard />,
                 children: [
                   {
-                    path: 'hub/skills',
+                    path: 'skill/shared/list',
                     element: lazyPage(() => import('@/pages/hubSkillManagement')),
                   },
                   {
-                    path: 'hub/skills/:hubEntryId',
+                    path: 'skill/shared/detail/:hubEntryId',
                     element: lazyPage(() => import('@/pages/hubSkillDetail')),
+                  },
+                  {
+                    path: 'hub/skills',
+                    element: <LegacyHubRedirect />,
+                  },
+                  {
+                    path: 'hub/skills/:hubEntryId',
+                    element: <LegacyHubRedirect />,
                   },
                 ],
               },

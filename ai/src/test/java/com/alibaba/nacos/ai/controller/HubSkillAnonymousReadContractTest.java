@@ -32,7 +32,10 @@ class HubSkillAnonymousReadContractTest {
     @Test
     void everyHubReadOptsIntoAnonymousIdentityAndKeepsNormalAuthentication() {
         int count = 0;
-        for (Method method : HubSkillReadAdminController.class.getDeclaredMethods()) {
+        for (Method method : SkillAdminController.class.getDeclaredMethods()) {
+            if (!method.getName().contains("Shared")) {
+                continue;
+            }
             Secured secured = method.getAnnotation(Secured.class);
             if (secured != null) {
                 assertTrue(Arrays.asList(secured.tags()).contains(Constants.Tag.ALLOW_ANONYMOUS));

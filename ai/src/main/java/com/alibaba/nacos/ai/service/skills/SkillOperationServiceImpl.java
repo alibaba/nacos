@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.hub.HubSkillSourceLifecycleRevoker;
+import com.alibaba.nacos.ai.service.hub.HubSkillManagementAdapter;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -70,6 +71,7 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,6 +174,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     /** Required Spring dependency; fail application startup if the safety fence is missing. */
     private HubSkillSourceLifecycleRevoker hubSkillSourceLifecycleRevoker;
+    
+    private HubSkillManagementAdapter sharedSkills;
+    
+    @Autowired
+    public void setSharedSkills(@Lazy HubSkillManagementAdapter sharedSkills) {
+        this.sharedSkills = sharedSkills;
+    }
     
     /**
      * Inject the required Hub source lifecycle fence.
@@ -988,7 +997,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedSkills.getDetail(skillName);
+        }
         // Step 1: Find meta and verify read permission
         AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
@@ -1051,7 +1062,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill getSkillVersionDetail(String namespaceId, String skillName, String version)
         throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedSkills.getVersion(skillName, version);
+        }
         AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -1077,7 +1090,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill downloadSkillVersion(String namespaceId, String skillName, String version)
         throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedSkills.downloadAsSkill(skillName, version);
+        }
         Skill skill = getSkillVersionDetail(namespaceId, skillName, version);
         NotifyCenter.publishEvent(
             new SkillDownloadEvent(namespaceId, skillName, RESOURCE_TYPE_SKILL, version));
@@ -1110,7 +1125,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         int pageNo,
         int pageSize) throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
     }
     
@@ -1118,7 +1132,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         int pageNo, int pageSize) throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return listSkills(namespaceId, skillName, search, orderBy, null, null, pageNo, pageSize);
     }
     
@@ -1130,7 +1143,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search,
         String orderBy,
         String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
-        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedSkills.list(skillName, search, orderBy, owner, scope, bizTag, pageNo,
+                pageSize);
+        }
         // Step 1: Build name matching condition: exact match or fuzzy match (with wildcards)
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {

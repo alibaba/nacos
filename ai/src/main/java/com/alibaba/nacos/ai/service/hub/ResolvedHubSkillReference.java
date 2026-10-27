@@ -41,6 +41,10 @@ public final class ResolvedHubSkillReference {
     
     private final long hubVersionId;
     
+    private final long downloadCount;
+    
+    private final long versionDownloadCount;
+    
     private final String internalName;
     
     private final String description;
@@ -66,6 +70,10 @@ public final class ResolvedHubSkillReference {
         this.hubEntryId = meta.getId();
         this.hubMetaVersion = meta.getMetaVersion();
         this.hubVersionId = hubVersion.getId();
+        this.downloadCount = meta.getDownloadCount() == null ? 0L
+            : Math.max(0L, meta.getDownloadCount());
+        this.versionDownloadCount = hubVersion.getDownloadCount() == null ? 0L
+            : Math.max(0L, hubVersion.getDownloadCount());
         this.internalName = meta.getName();
         this.description = meta.getDesc();
         this.bizTags = meta.getBizTags();
@@ -88,6 +96,14 @@ public final class ResolvedHubSkillReference {
     
     public long getHubVersionId() {
         return hubVersionId;
+    }
+    
+    public long getDownloadCount() {
+        return downloadCount;
+    }
+    
+    public long getVersionDownloadCount() {
+        return versionDownloadCount;
     }
     
     public String getInternalName() {

@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+
 import com.alibaba.nacos.ai.constant.Constants.Hub;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.context.addition.AuthContext;
+import com.alibaba.nacos.console.handler.impl.remote.ai.HubRemoteCallerGuard;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -48,6 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -228,4 +234,47 @@ class ConsoleMaintainerClientAuthPluginTest {
         Resource resource = new Resource(null, null, "console/namespaces", "specified", properties);
         RequestContextHolder.getContext().getAuthContext().setResource(resource);
     }
+    
+    @Test
+    void sharedReadResourcePreservesVerifiedAnonymousWhenServerFallbackIsConfigured()
+        throws Exception {
+        mockServerIdentity();
+        AuthContext auth = RequestContextHolder.getContext().getAuthContext();
+        auth.setApiType(ApiType.CONSOLE_API.name());
+        auth.setAuthResult(AuthResult.successResult());
+        IdentityContext anonymous = new IdentityContext();
+        anonymous.setParameter(Constants.Identity.IDENTITY_ID, "anonymous");
+        auth.setIdentityContext(anonymous);
+        // An ordinary resource still follows the existing maintainer fallback policy.
+        RequestResource ordinary = RequestResource.aiBuilder().setNamespace(
+            AiConstants.Hub.NAMESPACE_ID).setResource("91").build();
+        assertEquals(MOCK_IDENTITY_VALUE,
+            authPlugin.getLoginIdentityContext(ordinary).getParameter(MOCK_IDENTITY_KEY));
+        clearInvocations(mockNacosAuthConfig);
+        RequestResource shared = RequestResource.aiBuilder().setNamespace(
+            AiConstants.Hub.NAMESPACE_ID).setResource(AiConstants.Hub.ENTRY_RESOURCE).build();
+        HubRemoteCallerGuard guard = new HubRemoteCallerGuard();
+        guard.requireForwardableRead();
+        assertTrue(authPlugin.getLoginIdentityContext(shared).getAllKey().isEmpty());
+        verifyNoInteractions(mockNacosAuthConfig);
+        assertThrows(NacosException.class, guard::requireForwardableUser);
+    }
+    
+    @Test
+    void sharedReadResourceForwardsOriginalUserCredentialsWithoutServerFallback()
+        throws Exception {
+        IdentityContext identity = setRequestIdentity(ACCESS_TOKEN, "original-user-token");
+        identity.setParameter(Constants.Identity.IDENTITY_ID, "alice");
+        AuthContext auth = RequestContextHolder.getContext().getAuthContext();
+        auth.setApiType(ApiType.CONSOLE_API.name());
+        auth.setAuthResult(AuthResult.successResult());
+        new HubRemoteCallerGuard().requireForwardableRead();
+        RequestResource shared = RequestResource.aiBuilder().setNamespace(
+            AiConstants.Hub.NAMESPACE_ID).setResource(AiConstants.Hub.ENTRY_RESOURCE).build();
+        LoginIdentityContext forwarded = authPlugin.getLoginIdentityContext(shared);
+        assertEquals("original-user-token", forwarded.getParameter(ACCESS_TOKEN));
+        assertFalse(forwarded.getAllKey().contains(MOCK_IDENTITY_KEY));
+        verifyNoInteractions(mockNacosAuthConfig);
+    }
+    
 }

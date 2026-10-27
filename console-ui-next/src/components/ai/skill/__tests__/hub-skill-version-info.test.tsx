@@ -30,24 +30,26 @@ function render(value = detail, downloading = false) {
   return renderToStaticMarkup(<HubSkillVersionInfo detail={value} onDownload={() => {}} downloading={downloading} />);
 }
 describe('Hub fixed-version information', () => {
-  it('shows distinct total and pinned version downloads with the actual version author and commit', () => {
+  it('shows independent shared downloads without source counters and retains pinned version metadata', () => {
     const html = render();
     expect(html).toContain('pinned-author');
-    expect(html).toContain('skill.downloads');
-    expect(html).toContain('skill.versionDownloads');
+    expect(html).toContain('hub.downloads');
+    expect(html).not.toContain('skill.versionDownloads');
     expect(html).toContain('>57<');
-    expect(html).toContain('>7<');
+    expect(html).not.toContain('>7<');
     expect(html).toContain('Fixed version instructions');
-    expect(html).toContain('skill.versionStatus.online');
+    expect(html).not.toContain('skill.versionStatus.online');
+    expect(html).not.toContain('skill.status');
     expect(html).toContain('find-skills-1.0.0.zip');
   });
-  it('shows read-only business and fixed-version labels without edit or unsupported CLI controls', () => {
+  it('shows the exact shared CLI install command and labels without edit controls', () => {
     const html = render();
     expect(html).toContain('discovery');
     expect(html).toContain('stable');
     expect(html).not.toContain('latest');
     expect(html).not.toContain('textarea');
-    expect(html).not.toContain('skill-get');
+    expect(html).toContain('nacos-cli skill-get find-skills 901 --version 1.0.0');
+    expect(html).not.toContain('__nacos_ai_hub__');
     expect(html).not.toContain('lucide-pencil');
   });
   it('renders empty labels and absent source metadata gracefully and prevents repeated download clicks', () => {

@@ -127,12 +127,15 @@ export default function SkillDetailPage() {
   const requestedVersion = searchParams.get('version')?.trim() || null;
   const { name: routeName } = useParams<{ name: string }>();
   const skillName = routeName ? decodeURIComponent(routeName) : '';
-  const { currentNamespace } = useNamespaceStore();
+  const { currentNamespace, namespaces, syncNamespaceFromSearch } = useNamespaceStore();
   const namespaceId =
     searchParams.get('namespaceId') ||
     searchParams.get('namespace') ||
     currentNamespace ||
     'public';
+  useEffect(() => {
+    syncNamespaceFromSearch(searchParams.toString());
+  }, [searchParams, namespaces, syncNamespaceFromSearch]);
   const { globalAdmin, username } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
   const hubEnabled = useServerStore((s) => s.hubEnabled);
@@ -1233,6 +1236,9 @@ export default function SkillDetailPage() {
         </div>
       </div>
 
+      {hubEnabled && <SkillHubShareControls key={`${namespaceId}:${skillName}`} namespaceId={namespaceId} skillName={skillName}
+        selectedVersion={selectedVersion} detail={detail} onShareChange={setHubActiveVersion} />}
+
       {detail.origin && <Card className="gap-0 py-0">
         <div className="border-b bg-muted/30 px-4 py-3 text-sm font-semibold">{t('hub.originTitle')}</div>
         <CardContent className="space-y-1 p-4 text-xs text-muted-foreground">
@@ -1243,8 +1249,7 @@ export default function SkillDetailPage() {
           <p>{t('hub.independentDraft')}</p>
         </CardContent>
       </Card>}
-      {hubEnabled && canWriteResource && <SkillHubShareControls namespaceId={namespaceId} skillName={skillName}
-        selectedVersion={selectedVersion} detail={detail} onShareChange={setHubActiveVersion} />}
+
       {/* ===== Tabs Content ===== */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
         <TabsList className="w-fit">

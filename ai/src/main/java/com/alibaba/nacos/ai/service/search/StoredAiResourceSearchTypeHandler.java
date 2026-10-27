@@ -230,29 +230,29 @@ public class StoredAiResourceSearchTypeHandler implements AiResourceSearchTypeHa
             return null;
         }
         boolean hubResource =
-                HubNamespaceUtils.isHubNamespace(namespaceId);
+            HubNamespaceUtils.isHubNamespace(namespaceId);
         if (hubResource && !validHub(resource, resourceVersion)) {
             return null;
         }
         
         AiResourceSearchDocument document =
-                hubResource
-                        ? documentBuilder.fromHubResource(
-                        resource, resourceVersion)
-                        : documentBuilder.fromAiResource(
-                                resource, resourceVersion);
+            hubResource
+                ? documentBuilder.fromHubResource(
+                    resource, resourceVersion)
+                : documentBuilder.fromAiResource(
+                    resource, resourceVersion);
         
         List<AiResourceIndexEnhancementContent> contents =
-                hubResource
-                        ? Collections.emptyList()
-                        : loadContents(
-                                document,
-                                resourceVersion);
+            hubResource
+                ? Collections.emptyList()
+                : loadContents(
+                    document,
+                    resourceVersion);
         
         return projectionBuilder.build(
-                document,
-                contents,
-                sourceChunkType(resourceType));
+            document,
+            contents,
+            sourceChunkType(resourceType));
     }
     
     private List<AiResourceIndexEnhancementContent> loadContents(

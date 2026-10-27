@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
@@ -146,14 +147,108 @@ class HubSkillDirectoryServiceTest {
     }
     
     @Test
-    void publicLabelAndDownloadsComeFromTheSourceRatherThanTheHubRow() throws Exception {
+    void managementFiltersApplyBeforeSharedPopularityAndPagination() throws Exception {
+        add(1L, "team-a", "alice");
+        add(2L, "team-b", "bob");
+        add(700L, "team-c", "alice");
+        setHubDownloads(1L, 3L);
+        setHubDownloads(2L, 100L);
+        setHubDownloads(700L, 20L);
+        HubSkillManagementAdapter adapter = new HubSkillManagementAdapter(
+            mock(HubSkillReadService.class), directory);
+        Page<SkillSummary> page = adapter.list("FIND", "blur", "download_count", "alice", "PUBLIC",
+            "tool", 1, 1);
+        assertEquals(2, page.getTotalCount());
+        assertEquals(2, page.getPagesAvailable());
+        assertEquals("700", page.getPageItems().get(0).getName());
+        assertEquals(20L, page.getPageItems().get(0).getDownloadCount());
+        assertEquals("alice", page.getPageItems().get(0).getOwner());
+        assertFalse(page.getPageItems().get(0).isWritable());
+        assertEquals(0, adapter.list(null, null, null, "PRIVATE", null, 1, 10).getTotalCount());
+        assertEquals(0, adapter.list("find", "accurate", null, null, null, 1, 10).getTotalCount());
+        assertEquals(3,
+            adapter.list("find-skills", "accurate", null, null, null, 1, 10).getTotalCount());
+    }
+    
+    @Test
+    void publicLabelUsesSourceButDownloadsBelongOnlyToTheHubEntry() throws Exception {
         add(31L, "public", "alice");
         sources.get(31L).setDownloadCount(57L);
-        rawEntries.get(31L).setDownloadCount(999L);
+        setHubDownloads(31L, 3L);
         HubSkillSummary item = directory.list(request(1, 10)).getPageItems().get(0);
         assertEquals("public", item.getSourceDisplayName());
-        assertEquals(57L, item.getDownloadCount());
+        assertEquals(3L, item.getDownloadCount());
         verifyNoInteractions(namespaces);
+    }
+    
+    @Test
+    void popularityIsRankedAcrossIdWindowsBeforePaginationWithStableTies() throws Exception {
+        add(1L, "a", "owner");
+        add(2L, "b", "owner");
+        add(700L, "c", "owner");
+        add(800L, "d", "owner");
+        add(900L, "e", "owner");
+        setHubDownloads(1L, 3L);
+        setHubDownloads(2L, 10L);
+        setHubDownloads(700L, 10L);
+        setHubDownloads(800L, 20L);
+        setHubDownloads(900L, 100L);
+        withdrawn.add(900L);
+        sources.get(1L).setDownloadCount(9999L);
+        HubSkillListRequest popular = request(1, 2);
+        popular.setOrderBy("download_count");
+        Page<HubSkillSummary> first = directory.list(popular);
+        popular.setPageNo(2);
+        Page<HubSkillSummary> second = directory.list(popular);
+        assertEquals(Arrays.asList(800L, 2L), entryIds(first));
+        assertEquals(Arrays.asList(700L, 1L), entryIds(second));
+        assertEquals(4, first.getTotalCount());
+        assertEquals(4, second.getTotalCount());
+        assertEquals(2, first.getPagesAvailable());
+        assertEquals(20L, first.getPageItems().get(0).getDownloadCount());
+    }
+    
+    @Test
+    void missingAndNegativeHubDownloadsAreZeroRegardlessOfSourceDownloads() throws Exception {
+        add(1L, "a", "owner");
+        add(2L, "b", "owner");
+        add(3L, "c", "owner");
+        setHubDownloads(2L, -1L);
+        setHubDownloads(3L, 0L);
+        sources.get(1L).setDownloadCount(900L);
+        sources.get(2L).setDownloadCount(800L);
+        Page<HubSkillSummary> page = directory.list(request(1, 3));
+        assertEquals(Arrays.asList(1L, 2L, 3L), entryIds(page));
+        for (HubSkillSummary summary : page.getPageItems()) {
+            assertEquals(0L, summary.getDownloadCount());
+        }
+    }
+    
+    @Test
+    void defaultSortUsesHubUpdateTimeBeforePagingWithStableTiesAndNullsLast() throws Exception {
+        add(1L, "a", "owner");
+        add(2L, "b", "owner");
+        add(700L, "c", "owner");
+        add(800L, "d", "owner");
+        add(900L, "e", "owner");
+        setHubUpdatedAt(1L, 3000L);
+        setHubUpdatedAt(2L, 9000L);
+        setHubUpdatedAt(700L, 9000L);
+        setHubUpdatedAt(800L, null);
+        setHubUpdatedAt(900L, 99999L);
+        withdrawn.add(900L);
+        setHubDownloads(1L, 999L);
+        sources.get(800L).setGmtModified(new Timestamp(999999L));
+        Page<HubSkillSummary> first = directory.list(request(1, 2));
+        Page<HubSkillSummary> second = directory.list(request(2, 2));
+        assertEquals(Arrays.asList(2L, 700L), entryIds(first));
+        assertEquals(Arrays.asList(1L, 800L), entryIds(second));
+        assertEquals(4, first.getTotalCount());
+        assertEquals(2, first.getPagesAvailable());
+        assertEquals(9000L, first.getPageItems().get(0).getSharedAt());
+        HubSkillListRequest popular = request(1, 2);
+        popular.setOrderBy("download_count");
+        assertEquals(Arrays.asList(1L, 2L), entryIds(directory.list(popular)));
     }
     
     @Test
@@ -467,6 +562,20 @@ class HubSkillDirectoryServiceTest {
         source.setDesc("public skill");
         source.setBizTags("[\"tools\",\"search\"]");
         sources.put(id, source);
+    }
+    
+    private void setHubDownloads(long id, Long count) throws Exception {
+        AiResource hub = rawEntries.get(id);
+        hub.setDownloadCount(count);
+        ResolvedHubSkillReference original = publications.get(id);
+        AiResourceVersion pinned = new AiResourceVersion();
+        pinned.setId(original.getHubVersionId());
+        publications.put(id, new ResolvedHubSkillReference(hub, pinned, original.toReference()));
+    }
+    
+    private void setHubUpdatedAt(long id, Long timestamp) throws Exception {
+        rawEntries.get(id).setGmtModified(timestamp == null ? null : new Timestamp(timestamp));
+        setHubDownloads(id, rawEntries.get(id).getDownloadCount());
     }
     
     @Test

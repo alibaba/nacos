@@ -17,9 +17,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Globe, MessageSquare, Tag, Wand2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { Card, CardContent } from '@/components/ui/card';
 import { CliCommandCard } from '@/components/ai/CliCommandCard';
+import { hubSkillInstallCommand } from '@/lib/hub-skill-utils';
 import type { HubSkillDetail } from '@/types/hub-skill';
 
 /** Read-only metadata and download of exactly the published Hub version. */
@@ -29,27 +30,21 @@ export function HubSkillVersionInfo({ detail, onDownload, downloading }: {
   downloading: boolean;
 }) {
   const { t } = useTranslation();
+  const installCommand = hubSkillInstallCommand(detail);
   return <aside className="w-full space-y-4 lg:w-[320px] lg:shrink-0">
-    <CliCommandCard commands={[]} onDownload={onDownload} downloadDisabled={downloading}
+    <CliCommandCard commands={installCommand ? [{ label: t('common.cliUsage.cliInstall'), command: installCommand }] : []}
+      onDownload={onDownload} downloadDisabled={downloading}
       downloadFileName={`${detail.displayName}-${detail.sharedVersion}.zip`} />
     <InfoCard title={t('skill.basicInfo')} icon={<Wand2 className="h-4 w-4" />}>
-      <dl className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l">
-        <InfoCell label={t('skill.status')} icon={<Tag className="h-3.5 w-3.5" />}>
-          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600">
-            {detail.versionStatus ? t(`skill.versionStatus.${detail.versionStatus}`) : '-'}
-          </Badge>
-        </InfoCell>
+      <dl className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
         <InfoCell label={t('skill.author')} icon={<Globe className="h-3.5 w-3.5" />}>
           {detail.author || '-'}
         </InfoCell>
-        <InfoCell label={t('skill.downloads')} icon={<Download className="h-3.5 w-3.5" />}>
+        <InfoCell label={t('hub.downloads')} icon={<Download className="h-3.5 w-3.5" />}>
           {detail.downloadCount ?? 0}
         </InfoCell>
-        <InfoCell label={t('skill.versionDownloads')} icon={<Download className="h-3.5 w-3.5" />}>
-          {detail.versionDownloadCount ?? 0}
-        </InfoCell>
         <InfoCell label={t('skill.commitMsg')} icon={<MessageSquare className="h-3.5 w-3.5" />} wide>
-          <span className="whitespace-pre-wrap font-normal">{detail.commitMsg?.trim() || '-'}</span>
+          <span className="text-xs font-normal font-sans text-muted-foreground whitespace-pre-wrap">{detail.commitMsg?.trim() || '-'}</span>
         </InfoCell>
       </dl>
     </InfoCard>
@@ -80,19 +75,17 @@ function InfoCard({ title, icon, children }: { title: string; icon: ReactNode; c
 function InfoCell({ label, icon, children, wide }: {
   label: string; icon: ReactNode; children: ReactNode; wide?: boolean;
 }) {
-  return <div className={`flex min-w-0 items-start gap-2 px-3.5 py-3 ${wide ? 'col-span-2' : ''}`}>
-    <span className="mt-1 text-muted-foreground">{icon}</span>
-    <div className="min-w-0">
-      <dt className="text-[10px] text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 break-words text-xs font-medium">{children}</dd>
+  return <div className={`flex min-w-0 items-center gap-2.5 px-4 py-2.5 ${wide ? 'col-span-2' : ''}`}>
+    <span className="text-muted-foreground/60 shrink-0">{icon}</span>
+    <div className="min-w-0 flex-1">
+      <dt className="text-[11px] text-muted-foreground leading-none mb-1">{label}</dt>
+      <dd className="text-[13px] font-medium break-all">{children}</dd>
     </div>
   </div>;
 }
 
 function Tags({ tags, empty }: { tags?: string[] | null; empty: string }) {
   return tags?.length ? <div className="flex flex-wrap gap-1.5">
-    {tags.map(tag => <Badge key={tag} variant="secondary" className="max-w-full whitespace-normal break-all">
-      {tag}
-    </Badge>)}
+    {tags.map(tag => <DetailTagChip key={tag} label={tag} className="max-w-full h-auto min-h-6 py-1 whitespace-normal break-all" />)}
   </div> : <p className="text-xs text-muted-foreground">{empty}</p>;
 }

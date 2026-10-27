@@ -37,7 +37,7 @@ public class HubSkillIndexNotifier {
     private static final Logger LOGGER = LoggerFactory.getLogger(HubSkillIndexNotifier.class);
     
     private AiResourceIndexMaintenanceService maintenanceService =
-            AiResourceIndexMaintenanceService.NOOP;
+        AiResourceIndexMaintenanceService.NOOP;
     
     /**
      * Injects the optional index maintenance runtime without requiring search to be enabled.
@@ -59,7 +59,7 @@ public class HubSkillIndexNotifier {
     public void entryChanged(String internalName) {
         try {
             maintenanceService.schedule(AiConstants.Hub.NAMESPACE_ID,
-                    AiResourceConstants.RESOURCE_TYPE_SKILL, internalName);
+                AiResourceConstants.RESOURCE_TYPE_SKILL, internalName);
         } catch (RuntimeException failure) {
             LOGGER.warn("Hub Skill index schedule failed for {}", internalName, failure);
         }

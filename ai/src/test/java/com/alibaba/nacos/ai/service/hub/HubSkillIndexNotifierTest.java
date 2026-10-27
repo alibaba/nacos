@@ -31,7 +31,7 @@ class HubSkillIndexNotifierTest {
     @Test
     void successfulMutationSchedulesCanonicalHubResourceKey() {
         AiResourceIndexMaintenanceService maintenance =
-                mock(AiResourceIndexMaintenanceService.class);
+            mock(AiResourceIndexMaintenanceService.class);
         HubSkillIndexNotifier notifier = new HubSkillIndexNotifier();
         notifier.setMaintenanceService(maintenance);
         notifier.entryChanged("find-skills-41");
@@ -41,9 +41,9 @@ class HubSkillIndexNotifierTest {
     @Test
     void schedulingFailureDoesNotMaskSuccessfulMutation() {
         AiResourceIndexMaintenanceService maintenance =
-                mock(AiResourceIndexMaintenanceService.class);
+            mock(AiResourceIndexMaintenanceService.class);
         when(maintenance.schedule(AiConstants.Hub.NAMESPACE_ID, "skill", "find-skills-41"))
-                .thenThrow(new IllegalStateException("index offline"));
+            .thenThrow(new IllegalStateException("index offline"));
         HubSkillIndexNotifier notifier = new HubSkillIndexNotifier();
         notifier.setMaintenanceService(maintenance);
         assertDoesNotThrow(() -> notifier.entryChanged("find-skills-41"));

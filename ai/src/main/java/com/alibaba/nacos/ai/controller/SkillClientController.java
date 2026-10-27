@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
 import com.alibaba.nacos.ai.form.search.client.AiResourcePageSearchForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
+import com.alibaba.nacos.ai.service.hub.HubSkillClientService;
 import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
@@ -42,6 +43,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.ai.constant.Constants.Hub.ENTRY_RESOURCE;
 
 /**
  * Skill client controller for runtime read query.
@@ -58,10 +62,38 @@ public class SkillClientController {
     
     private final AiResourceSearchApplicationService searchService;
     
+    private final HubSkillClientService sharedSkills;
+    
     public SkillClientController(SkillClientOperationService skillClientOperationService,
-        AiResourceSearchApplicationService searchService) {
+        AiResourceSearchApplicationService searchService, HubSkillClientService sharedSkills) {
         this.skillClientOperationService = skillClientOperationService;
         this.searchService = searchService;
+        this.sharedSkills = sharedSkills;
+    }
+    
+    /** The same search API, explicitly selecting the shared namespace. */
+    @Since("3.3.0")
+    @GetMapping(value = "/search", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.OPEN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public Result<Page<SkillBasicInfo>> searchShared(AiResourcePageSearchForm form,
+        PageForm pageForm) throws NacosException {
+        form.validate();
+        pageForm.validate();
+        return Result
+            .success(sharedSkills.search(form, pageForm.getPageNo(), pageForm.getPageSize()));
+    }
+    
+    /** The existing download API resolves the opaque name inside the shared namespace. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.OPEN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public ResponseEntity<byte[]> getShared(SkillQueryForm form) throws NacosException {
+        form.validate();
+        return sharedSkills.download(form);
     }
     
     /**

@@ -19,11 +19,13 @@ package com.alibaba.nacos.api.ai.model.hub;
 import java.util.List;
 
 /**
- * Query parameters for the dedicated Hub Skill directory.
+ * Query parameters for the shared Skill directory.
  *
- * <p>The Hub namespace is never a client-supplied parameter. Ordinary Skill
- * list methods retain their original single-namespace semantics. The server
- * validates and normalizes these fields before executing a query.</p>
+ * <p>Resource APIs select this directory with the reserved shared namespace.
+ * This internal request always addresses that shared directory. Results use
+ * entry update time descending by default, or Hub download count descending
+ * when orderBy is download_count. Immutable entry ID ascending breaks ties
+ * before pagination.</p>
  *
  * @author nacos
  */
@@ -36,6 +38,16 @@ public class HubSkillListRequest {
     private int pageNo = 1;
     
     private int pageSize = 20;
+    
+    private String orderBy;
+    
+    public String getOrderBy() {
+        return orderBy;
+    }
+    
+    public void setOrderBy(String orderBy) {
+        this.orderBy = orderBy;
+    }
     
     public String getQuery() {
         return query;

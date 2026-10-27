@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillContent;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDetail;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillDownload;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Read API never returns an unresolved descriptor or bypasses the post-read fence. */
@@ -50,6 +52,22 @@ class HubSkillReadServiceImplTest {
     private final HubSkillSourceContentReader loader = mock(HubSkillSourceContentReader.class);
     private final HubSkillReadServiceImpl service =
         new HubSkillReadServiceImpl(directory, access, loader);
+    
+    @Test
+    void versionMismatchFailsBeforeReadingContentOrCountingDownload() throws Exception {
+        when(access.resolveReadable(5L)).thenReturn(publication());
+        try (MockedStatic<NotifyCenter> events =
+            org.mockito.Mockito.mockStatic(NotifyCenter.class)) {
+            assertEquals(NacosException.NOT_FOUND,
+                assertThrows(NacosException.class, () -> service.getContent(5L, "2.0.0"))
+                    .getErrCode());
+            assertEquals(NacosException.NOT_FOUND,
+                assertThrows(NacosException.class, () -> service.download(5L, "2.0.0"))
+                    .getErrCode());
+            verifyNoInteractions(loader);
+            events.verifyNoInteractions();
+        }
+    }
     
     @Test
     void detailWithoutSourceReadHidesDirectSourceIdentity() throws Exception {
@@ -70,7 +88,7 @@ class HubSkillReadServiceImplTest {
         assertEquals("Hub Test A", detail.getSourceDisplayName());
         assertEquals("version-author", detail.getAuthor());
         assertEquals("online", detail.getVersionStatus());
-        assertEquals(7L, detail.getVersionDownloadCount());
+        assertEquals(2L, detail.getVersionDownloadCount());
         assertEquals("Pinned version commit", detail.getCommitMsg());
         assertEquals(57L, detail.getDownloadCount());
         assertFalse(detail.isSourceReadable());
@@ -122,6 +140,7 @@ class HubSkillReadServiceImplTest {
         hub.setName("same-name-101");
         AiResourceVersion version = new AiResourceVersion();
         version.setId(99L);
+        version.setDownloadCount(2L);
         return new ResolvedHubSkillReference(hub, version,
             HubResourceReferenceJsonUtil.build("source-a", 101L, "same-name", 199L, "1.0.0"));
     }
@@ -149,7 +168,7 @@ class HubSkillReadServiceImplTest {
     }
     
     @Test
-    void downloadCountsOnlyThePinnedSourceAfterTheFinalReadFence() throws Exception {
+    void downloadCountsOnlyTheHubEntryAndPinnedHubVersionAfterTheFinalReadFence() throws Exception {
         ResolvedHubSkillReference publication = publication();
         when(access.resolveReadable(5L)).thenReturn(publication);
         HubSkillDownload archive = new HubSkillDownload();
@@ -161,8 +180,8 @@ class HubSkillReadServiceImplTest {
                 .thenAnswer(invocation -> {
                     verify(access).requireStillReadable(publication);
                     SkillDownloadEvent event = invocation.getArgument(0);
-                    assertEquals("source-a", event.getNamespaceId());
-                    assertEquals("same-name", event.getName());
+                    assertEquals(AiConstants.Hub.NAMESPACE_ID, event.getNamespaceId());
+                    assertEquals("same-name-101", event.getName());
                     assertEquals("1.0.0", event.getVersion());
                     return true;
                 });
@@ -178,6 +197,18 @@ class HubSkillReadServiceImplTest {
         when(access.resolveReadable(5L)).thenReturn(publication);
         when(loader.download(publication)).thenReturn(new HubSkillDownload());
         doThrow(new NacosException(404, "revoked")).when(access).requireStillReadable(publication);
+        try (MockedStatic<NotifyCenter> events =
+            org.mockito.Mockito.mockStatic(NotifyCenter.class)) {
+            assertThrows(NacosException.class, () -> service.download(5L));
+            events.verifyNoInteractions();
+        }
+    }
+    
+    @Test
+    void failedArchiveReadDoesNotEmitADownloadEvent() throws Exception {
+        ResolvedHubSkillReference publication = publication();
+        when(access.resolveReadable(5L)).thenReturn(publication);
+        when(loader.download(publication)).thenThrow(new NacosException(500, "storage failure"));
         try (MockedStatic<NotifyCenter> events =
             org.mockito.Mockito.mockStatic(NotifyCenter.class)) {
             assertThrows(NacosException.class, () -> service.download(5L));

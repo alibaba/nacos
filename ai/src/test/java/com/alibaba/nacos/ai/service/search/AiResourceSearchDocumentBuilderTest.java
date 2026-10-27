@@ -52,7 +52,8 @@ class AiResourceSearchDocumentBuilderTest {
         
         resource.setExt("{\"entryKind\":\"HUB_REFERENCE\"}");
         
-        assertThrows(NacosException.class, () -> builder.fromHubResource(resource, version("1.0.0")));
+        assertThrows(NacosException.class,
+            () -> builder.fromHubResource(resource, version("1.0.0")));
     }
     
     @Test
@@ -63,14 +64,14 @@ class AiResourceSearchDocumentBuilderTest {
         first.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
         
         first.setExt(HubResourceReferenceJsonUtil.toJson(
-                HubResourceReferenceJsonUtil.build("namespace-a", 101L, "find-skills", 501L, "1.0.0")));
+            HubResourceReferenceJsonUtil.build("namespace-a", 101L, "find-skills", 501L, "1.0.0")));
         
         AiResource second = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "find-skills-201");
         
         second.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
         
         second.setExt(HubResourceReferenceJsonUtil.toJson(
-                HubResourceReferenceJsonUtil.build("namespace-b", 201L, "find-skills", 601L, "1.0.0")));
+            HubResourceReferenceJsonUtil.build("namespace-b", 201L, "find-skills", 601L, "1.0.0")));
         
         AiResourceSearchDocument firstDocument = builder.fromHubResource(first, version("1.0.0"));
         
@@ -91,7 +92,8 @@ class AiResourceSearchDocumentBuilderTest {
         resource.setId(305L);
         resource.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
         
-        HubResourceReference reference = HubResourceReferenceJsonUtil.build("222", 101L, "find-skills", 501L, "1.0.0");
+        HubResourceReference reference =
+            HubResourceReferenceJsonUtil.build("222", 101L, "find-skills", 501L, "1.0.0");
         
         resource.setExt(HubResourceReferenceJsonUtil.toJson(reference));
         
@@ -124,7 +126,7 @@ class AiResourceSearchDocumentBuilderTest {
     @Test
     void fromAiResourceShouldBuildSkillSearchEntry() {
         AiResourceSearchDocument entry = builder.fromAiResource(
-                resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "avatar skill"), version("1.0.0"));
+            resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "avatar skill"), version("1.0.0"));
         
         assertEquals(AiResourceConstants.RESOURCE_TYPE_SKILL, entry.getResourceType());
         assertEquals("avatar skill", entry.getResourceName());
@@ -136,7 +138,7 @@ class AiResourceSearchDocumentBuilderTest {
     @Test
     void fromAiResourceShouldBuildPromptSearchEntry() {
         AiResourceSearchDocument entry = builder.fromAiResource(
-                resource(AiResourceConstants.RESOURCE_TYPE_PROMPT, "avatar prompt"), version("2.0.0"));
+            resource(AiResourceConstants.RESOURCE_TYPE_PROMPT, "avatar prompt"), version("2.0.0"));
         
         assertEquals(AiResourceConstants.RESOURCE_TYPE_PROMPT, entry.getResourceType());
         assertEquals("avatar prompt", entry.getResourceName());

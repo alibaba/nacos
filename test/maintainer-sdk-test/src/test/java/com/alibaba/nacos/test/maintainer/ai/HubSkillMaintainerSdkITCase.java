@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.test.maintainer.ai;
 
-import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
-import com.alibaba.nacos.api.ai.model.hub.HubSkillSummary;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferRequest;
 import com.alibaba.nacos.api.model.Page;
 import java.util.UUID;
@@ -90,31 +90,35 @@ class HubSkillMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     }
 
     @Test
-    void readContractsPreserveLocalValidationAndRemoteNotFound() {
-        assertEquals(400, assertThrows(NacosException.class, () -> skill.listHubSkills(null)).getErrCode());
-        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillDetail(-1L)).getErrCode());
-        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillContent(null)).getErrCode());
-        assertEquals(400, assertThrows(NacosException.class, () -> skill.getHubSkillDownload(null)).getErrCode());
-        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillDownload(Long.MAX_VALUE)).getErrCode());
-        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillDetail(Long.MAX_VALUE)).getErrCode());
-        assertEquals(404, assertThrows(NacosException.class, () -> skill.getHubSkillContent(Long.MAX_VALUE)).getErrCode());
+    void sharedReadContractsReuseExistingNamespaceAwareMethods() {
+        String namespaceId = AiConstants.Hub.NAMESPACE_ID;
+        String missingEntry = String.valueOf(Long.MAX_VALUE);
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> skill.getSkillMeta(namespaceId, missingEntry)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> skill.getSkillVersionDetail(namespaceId, missingEntry, "1.0.0")).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> skill.downloadSkillVersion(namespaceId, missingEntry, "1.0.0")).getErrCode());
     }
 
     @Test
-    void anonymousReadTransportPreservesTypedPageAndMissingEntry() throws Exception {
+    void anonymousReadUsesExistingRoutesAndPreservesMissingEntry() throws Exception {
         SkillMaintainerService anonymous = createAiMaintainerService(AuthIdentity.ANONYMOUS).skill();
-        assertNotNull(anonymous.listHubSkills(new HubSkillListRequest()));
-        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillDetail(Long.MAX_VALUE)).getErrCode());
-        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillContent(Long.MAX_VALUE)).getErrCode());
-        assertEquals(404, assertThrows(NacosException.class, () -> anonymous.getHubSkillDownload(Long.MAX_VALUE)).getErrCode());
+        String namespaceId = AiConstants.Hub.NAMESPACE_ID;
+        String missingEntry = String.valueOf(Long.MAX_VALUE);
+        assertNotNull(anonymous.listSkills(namespaceId, "", "blur", 1, 20));
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> anonymous.getSkillMeta(namespaceId, missingEntry)).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> anonymous.getSkillVersionDetail(namespaceId, missingEntry, "1.0.0")).getErrCode());
+        assertEquals(404, assertThrows(NacosException.class,
+                () -> anonymous.downloadSkillVersion(namespaceId, missingEntry, "1.0.0")).getErrCode());
     }
 
     @Test
-    void authenticatedDirectoryReadReturnsATypedEmptyPage() throws Exception {
-        HubSkillListRequest request =
-            new HubSkillListRequest();
-        request.setQuery("no-hub-match-" + UUID.randomUUID());
-        Page<HubSkillSummary> page = skill.listHubSkills(request);
+    void sharedDirectoryReturnsExistingTypedSkillPage() throws Exception {
+        Page<SkillSummary> page = skill.listSkills(AiConstants.Hub.NAMESPACE_ID,
+                "no-hub-match-" + UUID.randomUUID(), "blur", 1, 20);
         assertEquals(0, page.getTotalCount());
         assertEquals(1, page.getPageNumber());
         assertEquals(0, page.getPageItems().size());

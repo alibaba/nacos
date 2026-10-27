@@ -92,12 +92,25 @@ Common properties include:
 | `accessKey`, `secretKey`, `ramRoleName`, `signatureRegionId` | common | RAM-style authentication properties. |
 | `configRequestTimeout` | config | Config RPC request timeout override. |
 | `namingRequestTimeout` | naming | Naming RPC request timeout override. |
+| `nacosAiAccessHub` | AI Skill discovery | Include the shared namespace; defaults to `false`. Independent of the server capability switch. |
 | `nacos.server.grpc.port.offset` | connection | gRPC port offset used by the Java client. |
 
 Deprecated historical properties should remain compatible, but new behavior
 should not depend on them.
 
 ## 4. Java Client SDK Extension Points
+
+`AiConstants.AI_ACCESS_HUB` names the `nacosAiAccessHub` property (default
+`false`, limiting discovery to the bound namespace; explicit `true` enables combined discovery).
+`AiService.skill().searchSkills(query, tagsAll, pageNo, pageSize)`
+returns `Page<SkillBasicInfo>` through `/v3/client/ai/skills/search`. Combined
+paging reads only bounded source pages; it does not load the full catalogue.
+`downloadSkillZipBySearchResult(SkillBasicInfo)` preserves a selected result's origin and
+pinned shared Version. Both additions are default interface methods, rejecting
+unsupported discovery with `SERVER_NOT_IMPLEMENTED` on third-party SDKs;
+ordinary downloads still delegate to the existing name method. Existing
+String-based download and subscription methods remain bound to the configured
+namespace and do not automatically fall back to shared resources.
 
 Java Client SDK extension points run inside the application process. They are
 loaded from the client classpath or registered through SDK APIs, and they are

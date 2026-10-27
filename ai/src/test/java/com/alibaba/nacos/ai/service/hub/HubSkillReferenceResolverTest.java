@@ -314,6 +314,18 @@ class HubSkillReferenceResolverTest {
     }
     
     @Test
+    void hubDownloadCountersAreSnapshotsButDoNotChangePublicationIdentity() throws Exception {
+        entry.setDownloadCount(12L);
+        version.setDownloadCount(4L);
+        ResolvedHubSkillReference resolved = resolver.resolve(901L);
+        entry.setDownloadCount(13L);
+        version.setDownloadCount(5L);
+        assertEquals(12L, resolved.getDownloadCount());
+        assertEquals(4L, resolved.getVersionDownloadCount());
+        resolver.requireUnchanged(resolved);
+    }
+    
+    @Test
     void versionIdReplacementIsDetectedEvenWhenMetaIsUnchanged() throws Exception {
         ResolvedHubSkillReference resolved = resolver.resolve(901L);
         version.setId(3002L);

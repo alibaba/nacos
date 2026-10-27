@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * Validate and normalize requests to the dedicated Hub read API.
+ * Validate and normalize internal shared directory requests.
  *
  * <p>Call this at the service boundary, not only at a Console controller,
  * so local and remote deployment paths enforce the same rules.</p>

@@ -1,26 +1,27 @@
+import { HubResourceCard } from '@/components/ai/hub/HubResourceCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowRight, ChevronLeft, ChevronRight, Search, Wand2, RefreshCw, Download, UserRound, Clock } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Search, Tag, Wand2, RefreshCw } from 'lucide-react';
 import { hubSkillApi } from '@/api/hub-skill';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SkillManagementTabs } from '@/components/ai/skill/SkillManagementTabs';
 import { hubDetailPath, hubErrorMessage, distinctHubEntries } from '@/lib/hub-skill-utils';
 import type { HubSkillSummary } from '@/types/hub-skill';
-import dayjs from 'dayjs';
 
 const PAGE_SIZE = 12;
 
-/** Dedicated Hub directory. Never queries the ordinary Skill API with the internal Hub namespace. */
+/** Shared Skill directory within Skill management; uses the type-specific Console facade. */
 export default function HubSkillManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [queryInput, setQueryInput] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [query, setQuery] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [bizTag, setBizTag] = useState('');
+  const [orderBy, setOrderBy] = useState<'' | 'download_count'>('');
   const [pageNo, setPageNo] = useState(1);
   const [data, setData] = useState<HubSkillSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -31,7 +32,7 @@ export default function HubSkillManagementPage() {
   const refresh = useCallback(() => setRefreshId(x => x + 1), []);
   const search = useCallback(() => {
     setQuery(queryInput.trim());
-    setTags(tagInput.split(',').map(s => s.trim()).filter(Boolean));
+    setBizTag(tagInput.trim());
     setPageNo(1);
     refresh();
   }, [queryInput, tagInput, refresh]);
@@ -42,7 +43,8 @@ export default function HubSkillManagementPage() {
       if (cancelled) return;
       setLoading(true);
       setError('');
-      return hubSkillApi.list({ query: query || undefined, tagsAll: tags, pageNo, pageSize: PAGE_SIZE });
+      return hubSkillApi.list({ query: query || undefined, bizTag: bizTag || undefined,
+        orderBy: orderBy || undefined, pageNo, pageSize: PAGE_SIZE });
     })
       .then(response => {
         if (cancelled || !response) return;
@@ -64,33 +66,53 @@ export default function HubSkillManagementPage() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [query, tags, pageNo, refreshId, t]);
+  }, [query, bizTag, orderBy, pageNo, refreshId, t]);
 
   const errorText = error === 'permission' ? t('hub.authRequired')
     : error === 'unavailable' ? t('hub.unavailable') : t('hub.requestFailed');
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="space-y-5 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-5 relative">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('hub.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t('hub.subtitle')}</p>
+          <h1 className="text-xl font-bold tracking-tight">{t('hub.catalogTitle', { managementTitle: t('skill.title') })}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {t('skill.totalSkills', { total })}
+          </p>
         </div>
         <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
-          <RefreshCw className="mr-1.5 h-4 w-4" />{t('common.refresh')}
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />{t('common.refresh')}
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input aria-label={t('hub.search')} className="min-w-40 flex-1" value={queryInput}
-          placeholder={t('hub.searchPlaceholder')}
-          onChange={e => setQueryInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') search(); }} />
-        <Input aria-label={t('hub.tags')} className="w-52" value={tagInput}
-          placeholder={t('hub.tagsPlaceholder')} onChange={e => setTagInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') search(); }} />
-        <Button size="sm" onClick={search}>{t('common.search')}</Button>
+      <SkillManagementTabs shared />
+      <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">
+        <div className="relative min-w-[12rem] flex-1 max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input aria-label={t('hub.search')} className="pl-8 h-8 text-sm" value={queryInput}
+            placeholder={t('skill.searchPlaceholder')}
+            onChange={e => setQueryInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') search(); }} />
+        </div>
+        <div className="relative w-[10.5rem] shrink-0">
+          <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input aria-label={t('hub.tags')} className="pl-8 h-8 text-sm" value={tagInput}
+            placeholder={t('skill.filterBizTagPlaceholder')} onChange={e => setTagInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') search(); }} />
+        </div>
+        <Button size="sm" variant="secondary" className="h-8 shrink-0" onClick={search}>{t('common.search')}</Button>
+        <Select value={orderBy || 'default'} onValueChange={value => {
+          setOrderBy(value === 'download_count' ? 'download_count' : '');
+          setPageNo(1);
+        }}>
+          <SelectTrigger className="w-[8.5rem] h-8 text-xs shrink-0" aria-label={t('skill.sortDefault')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">{t('skill.sortDefault')}</SelectItem>
+            <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       {error ? (
         <div role="alert" className="rounded-xl border border-destructive/40 p-8 text-center space-y-3">
@@ -103,63 +125,28 @@ export default function HubSkillManagementPage() {
       ) : data.length === 0 ? (
         <p className="py-16 text-center text-muted-foreground">{t('hub.noResults')}</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {data.map(item => (
-            <Card key={item.hubEntryId}
-              role="button" tabIndex={0} aria-label={`${t('hub.preview')}: ${item.displayName} @ ${item.sharedVersion}`}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(hubDetailPath(item.hubEntryId)); } }}
-              className="group flex cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all hover:shadow-sm hover:border-primary/30"
-              onClick={() => navigate(hubDetailPath(item.hubEntryId))}>
-              <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-400">
-                  <Wand2 className="h-4.5 w-4.5 text-white" />
-                </div>
-                <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-                  <h2 className="min-w-0 flex-1 truncate text-sm font-semibold leading-6" title={item.displayName}>{item.displayName}</h2>
-                  <Badge variant="outline" title={item.sourceDisplayName || t('hub.unknownNamespace')}
-                    className="max-w-[55%] shrink-0 rounded-full border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400">
-                    <span className="truncate">@{item.sourceDisplayName || t('hub.unknownNamespace')}</span>
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex-1 px-4 pb-3">
-                <p className="min-h-12 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{item.description || t('skill.noDescription')}</p>
-                <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                  <Badge variant="secondary" className="rounded-full bg-muted/50 font-mono text-[11px]">{item.sharedVersion}</Badge>
-                  <span className="inline-flex items-center gap-1 tabular-nums" title={t('hub.downloads')}
-                    aria-label={`${t('hub.downloads')}: ${item.downloadCount ?? 0}`}>
-                    <Download className="h-3.5 w-3.5" />{item.downloadCount ?? 0}
-                  </span>
-                </div>
-                {(item.tags || []).length > 0 && <div className="mt-2 flex flex-wrap gap-1">
-                  {item.tags?.slice(0, 3).map(tag => <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>)}
-                </div>}
-              </div>
-              <CardFooter className="flex items-center justify-between gap-3 border-t px-4 py-2 text-xs text-muted-foreground [.border-t]:pt-2">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex min-w-0 items-center gap-1" title={`${t('hub.owner')}: ${item.author || '—'}`}>
-                    <UserRound className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{item.author || '—'}</span>
-                  </span>
-                  {item.sharedAt && <span className="inline-flex shrink-0 items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />{dayjs(item.sharedAt).format('YYYY-MM-DD')}
-                  </span>}
-                </div>
-                <span className="inline-flex shrink-0 items-center gap-1">{t('hub.preview')}<ArrowRight className="h-3.5 w-3.5" /></span>
-              </CardFooter>
-            </Card>
-          ))}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-muted-foreground">{t('skill.totalSkills', { total: data.length })}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {data.map(item => (
+              <HubResourceCard key={item.hubEntryId} name={item.displayName} version={item.sharedVersion}
+                sourceDisplayName={item.sourceDisplayName} description={item.description} author={item.author}
+                tags={item.tags} downloadCount={item.downloadCount} updatedAt={item.sharedAt} icon={Wand2}
+                gradient="from-violet-500 to-fuchsia-400 shadow-violet-500/15"
+                onOpen={() => navigate(hubDetailPath(item.hubEntryId))} />
+            ))}
+          </div>
         </div>
       )}
-      {!error && !loading && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{t('hub.total', { count: total })}</span>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" aria-label={t('common.previous')} disabled={pageNo <= 1}
-              onClick={() => setPageNo(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="tabular-nums">{pageNo} / {pages}</span>
-            <Button variant="outline" size="icon" aria-label={t('common.next')} disabled={pageNo >= pages}
-              onClick={() => setPageNo(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
-          </div>
+      {!error && !loading && total > 0 && pages > 1 && (
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t('common.previous')} disabled={pageNo <= 1}
+            onClick={() => setPageNo(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="text-xs text-muted-foreground px-1.5 tabular-nums">{pageNo} / {pages}</span>
+          <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t('common.next')} disabled={pageNo >= pages}
+            onClick={() => setPageNo(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       )}
     </div>

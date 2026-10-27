@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.skills;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 
 /**
@@ -25,6 +27,39 @@ import java.util.List;
  * @author nacos
  */
 public class SkillMeta extends SkillSummary {
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean sourceReadable;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String sourceNamespaceId;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String sourceName;
+    
+    public Boolean getSourceReadable() {
+        return sourceReadable;
+    }
+    
+    public void setSourceReadable(Boolean sourceReadable) {
+        this.sourceReadable = sourceReadable;
+    }
+    
+    public String getSourceNamespaceId() {
+        return Boolean.TRUE.equals(sourceReadable) ? sourceNamespaceId : null;
+    }
+    
+    public void setSourceNamespaceId(String sourceNamespaceId) {
+        this.sourceNamespaceId = sourceNamespaceId;
+    }
+    
+    public String getSourceName() {
+        return Boolean.TRUE.equals(sourceReadable) ? sourceName : null;
+    }
+    
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
     
     /** Sanitized S3 copy/import provenance; never expose raw ext. */
     private SkillOriginSummary origin;

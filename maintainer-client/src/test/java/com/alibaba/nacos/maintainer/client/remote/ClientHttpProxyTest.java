@@ -45,6 +45,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,6 +97,40 @@ public class ClientHttpProxyTest {
     void tearDown() throws NacosException {
         clientHttpProxy.shutdown();
         ParamUtil.setReadTimeout(cachedReadTimeout);
+    }
+    
+    @Test
+    void binaryDownloadKeepsBytesAndResponseHeaders() throws Exception {
+        when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
+        byte[] bytes = new byte[] {0, (byte) 255, (byte) 128};
+        Header headers = Header.newInstance();
+        headers.addParam("X-Nacos-Skill-Resolved-Version", "v2");
+        HttpRestResult<Object> response = new HttpRestResult<>(headers, 200, bytes, "OK");
+        when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(byte[].class)))
+            .thenReturn(response);
+        HttpRequest request = new HttpRequest("GET", "/skills/version/download", new HashMap<>(),
+            new HashMap<>(), null, REQUEST_RESOURCE);
+        HttpRestResult<byte[]> result =
+            clientHttpProxy.executeSyncHttpRequest(request, byte[].class);
+        assertArrayEquals(bytes, result.getData());
+        assertEquals("v2", result.getHeader().getValue("X-Nacos-Skill-Resolved-Version"));
+    }
+    
+    @Test
+    void binaryDownloadPreservesJsonErrorMessageAndCode() throws Exception {
+        when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
+        HttpRestResult<Object> response = new HttpRestResult<>();
+        response.setCode(404);
+        response.setData("{\"code\":404,\"message\":\"Shared Skill is unavailable\"}"
+            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(byte[].class)))
+            .thenReturn(response);
+        HttpRequest request = new HttpRequest("GET", "/skills/version/download", new HashMap<>(),
+            new HashMap<>(), null, REQUEST_RESOURCE);
+        NacosException error = assertThrows(NacosException.class,
+            () -> clientHttpProxy.executeSyncHttpRequest(request, byte[].class));
+        assertEquals(404, error.getErrCode());
+        assertTrue(error.getErrMsg().contains("Shared Skill is unavailable"));
     }
     
     @Test

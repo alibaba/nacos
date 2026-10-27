@@ -67,7 +67,7 @@ public class AiResourceSearchDocumentBuilder {
     public AiResourceSearchDocument fromAiResource(AiResource meta, AiResourceVersion version) {
         return buildAiResourceDocument(meta, version, meta.getName(), null);
     }
-
+    
     /**
      * Build a search document from a Hub reference resource.
      *
@@ -84,7 +84,7 @@ public class AiResourceSearchDocumentBuilder {
         HubResourceReference reference = HubResourceReferenceJsonUtil.parse(meta.getExt());
         return buildAiResourceDocument(meta, version, reference.getSourceName(), reference);
     }
-
+    
     private AiResourceSearchDocument buildAiResourceDocument(AiResource meta,
         AiResourceVersion version, String displayName, HubResourceReference hubReference) {
         Map<String, Object> metadata = baseMetadata(meta.getNamespaceId(), meta.getType(),

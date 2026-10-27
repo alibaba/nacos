@@ -31,6 +31,7 @@ import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
 import { ImportSkillDialog } from '@/components/ai/skill/ImportSkillDialog';
+import { SkillManagementTabs } from '@/components/ai/skill/SkillManagementTabs';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -239,6 +240,8 @@ export default function SkillManagementPage() {
           </Button>
         </div>
       </div>
+
+      <SkillManagementTabs />
 
       {/* Search & filters (single row; py gives room so focus rings are not clipped by overflow-x-auto) */}
       <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">

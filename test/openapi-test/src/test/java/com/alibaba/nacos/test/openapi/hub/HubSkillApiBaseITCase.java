@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Base64;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -130,9 +129,11 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
 
     @Test
     void allOperationsRejectAnonymousIdentity() throws Exception {
-        for (String suffix : new String[] {"share", "adjust", "unshare", "force-unshare"}) {
-            assertError(postRaw(hubPath() + "/" + suffix, Query.newInstance(), AuthIdentity.ANONYMOUS),
-                403, ErrorCode.ACCESS_DENIED, "");
+        for (String suffix : new String[] {"share", "adjust", "unshare", "force-unshare", "import", "copy"}) {
+            for (AuthIdentity identity : new AuthIdentity[] {AuthIdentity.ANONYMOUS, AuthIdentity.INVALID}) {
+                assertError(postRaw(hubPath() + "/" + suffix, Query.newInstance(), identity),
+                        403, ErrorCode.ACCESS_DENIED, "");
+            }
         }
     }
 
@@ -157,28 +158,49 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         assertFalse(result.has("ext"));
     }
 
+    private String skillReadPath() {
+        return hubPath().replace("/hub/skills", "/skills");
+    }
+
+    private Query sharedEntry(String id) {
+        return Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__")
+                .addParam("skillName", id).addParam("version", "1.0.0");
+    }
+
+    private Query sharedList(String name) {
+        return Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__")
+                .addParam("skillName", name).addParam("search", "blur");
+    }
+
     @Test
     void readParametersAndMissingEntriesReturnControlledErrors() throws Exception {
-        assertError(getRaw(hubPath() + "/list", Query.newInstance().addParam("pageNo", "abc")),
-            400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
-        assertError(getRaw(hubPath() + "/list", Query.newInstance().addParam("pageSize", "101")),
-            400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
-        for (String suffix : new String[] {"detail", "content", "download"}) {
-            assertError(getRaw(hubPath() + "/" + suffix, Query.newInstance().addParam("hubEntryId", "9223372036854775808")),
+        assertError(getRaw(skillReadPath() + "/list", sharedList("").addParam("pageNo", "abc")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
-            assertError(getRaw(hubPath() + "/" + suffix, Query.newInstance().addParam("hubEntryId", String.valueOf(Long.MAX_VALUE))),
-                404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assertError(getRaw(skillReadPath() + "/list", sharedList("").addParam("pageSize", "101")),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+        for (String suffix : new String[] {"", "/version", "/version/download"}) {
+            assertError(getRaw(skillReadPath() + suffix, sharedEntry("9223372036854775808")),
+                    400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+            assertError(getRaw(skillReadPath() + suffix, sharedEntry(String.valueOf(Long.MAX_VALUE))),
+                    404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        }
+    }
+
+    @Test
+    void removedDedicatedReadRoutesDoNotRemainAsAliases() throws Exception {
+        for (String suffix : new String[] {"list", "detail", "content", "download"}) {
+            assertEquals(404, getRaw(hubPath() + "/" + suffix,
+                    Query.newInstance().addParam("hubEntryId", "1")).code());
         }
     }
 
     @Test
     void anonymousReadsReachHubValidationWithoutGrantingMutationAccess() throws Exception {
-        // These scenarios require the existing anonymous.ai.enabled switch on the deployed auth plugin.
-        assertEquals(200, getRaw(hubPath() + "/list", Query.newInstance(), AuthIdentity.ANONYMOUS).code());
-        for (String suffix : new String[] {"detail", "content", "download"}) {
-            assertError(getRaw(hubPath() + "/" + suffix,
-                    Query.newInstance().addParam("hubEntryId", String.valueOf(Long.MAX_VALUE)), AuthIdentity.ANONYMOUS),
-                    404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assumeTrue(EXPECTED_ANONYMOUS_AI_ENABLED, "Requires anonymous AI access");
+        assertEquals(200, getRaw(skillReadPath() + "/list", sharedList(""), AuthIdentity.ANONYMOUS).code());
+        for (String suffix : new String[] {"", "/version", "/version/download"}) {
+            assertError(getRaw(skillReadPath() + suffix, sharedEntry(String.valueOf(Long.MAX_VALUE)),
+                    AuthIdentity.ANONYMOUS), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
         }
     }
 
@@ -198,54 +220,50 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
                     "expectedMetaVersion", cleanupShare[0].get("metaVersion").asText(), "reason", "read IT cleanup"));
             }
         });
-        Query entry = Query.newInstance().addParam("hubEntryId", share.get("hubEntryId").asText());
-        JsonNode directory = getJsonOk(hubPath() + "/list", Query.newInstance().addParam("query", name)).get("data");
+        Query entry = sharedEntry(share.get("hubEntryId").asText()).addParam("hubEntryId", share.get("hubEntryId").asText());
+        JsonNode directory = getJsonOk(skillReadPath() + "/list", sharedList(name)).get("data");
         assertEquals(1, directory.get("totalCount").asInt());
         assertEquals(name, directory.get("pageItems").get(0).get("displayName").asText());
         assertEquals("public", directory.get("pageItems").get(0).get("sourceDisplayName").asText());
         assertTrue(directory.get("pageItems").get(0).get("downloadCount").isNumber());
-        JsonNode detail = getJsonOk(hubPath() + "/detail", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        JsonNode detail = getJsonOk(skillReadPath(), entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
         assertFalse(detail.get("sourceReadable").asBoolean());
         assertFalse(detail.has("sourceNamespaceId"));
         assertEquals("public", detail.get("sourceDisplayName").asText());
         assertTrue(detail.get("downloadCount").isNumber());
-        assertEquals("online", detail.get("versionStatus").asText());
-        assertTrue(detail.get("versionDownloadCount").isNumber());
-        assertTrue(detail.get("versionLabels").isArray());
+        assertEquals("online", detail.get("versions").get(0).get("status").asText());
+        assertTrue(detail.get("versions").get(0).get("downloadCount").isNumber());
+        assertTrue(detail.get("labels").isObject());
         postFormOk(ADMIN_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
         postFormOk(ADMIN_SKILL_PATH + "/force-publish", withUpdateLatestLabel(skillPublishForm(name, "2.0.0")));
-        JsonNode content = getJsonOk(hubPath() + "/content", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
-        assertEquals("1.0.0", content.get("sharedVersion").asText());
+        JsonNode content = getJsonOk(skillReadPath() + "/version", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals("__nacos_ai_hub__", content.get("namespaceId").asText());
         assertTrue(content.get("skillMd").asText().contains("Pinned original instructions."));
-        detail = getJsonOk(hubPath() + "/detail", entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
-        assertEquals("1.0.0", detail.get("sharedVersion").asText());
-        assertEquals(0, detail.get("versionLabels").size());
-        JsonNode anonymousDetail = getJsonOk(hubPath() + "/detail", entry, AuthIdentity.ANONYMOUS).get("data");
-        assertFalse(anonymousDetail.get("sourceReadable").asBoolean());
-        assertFalse(anonymousDetail.has("sourceNamespaceId"));
-        assertEquals("1.0.0", anonymousDetail.get("sharedVersion").asText());
-        JsonNode anonymousContent = getJsonOk(hubPath() + "/content", entry, AuthIdentity.ANONYMOUS).get("data");
-        assertEquals("1.0.0", anonymousContent.get("sharedVersion").asText());
-        assertTrue(anonymousContent.get("skillMd").asText().contains("Pinned original instructions."));
-        byte[] archive;
-        if (hubPath().contains("/console/")) {
-            ByteResponse download = executeRawBytes(new HttpGet(requestUrl(hubPath() + "/download")
-                + "?hubEntryId=" + share.get("hubEntryId").asText()), AuthIdentity.ANONYMOUS);
-            assertEquals(200, download.code());
-            assertTrue(download.contentType().contains("application/zip"));
-            archive = download.body();
-        } else {
-            JsonNode download = getJsonOk(hubPath() + "/download", entry, AuthIdentity.ANONYMOUS).get("data");
-            assertEquals("1.0.0", download.get("sharedVersion").asText());
-            assertFalse(download.has("sourceNamespaceId"));
-            archive = Base64.getDecoder().decode(download.get("zipBytes").asText());
+        detail = getJsonOk(skillReadPath(), entry, AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals("1.0.0", detail.get("version").asText());
+        assertEquals(0, detail.get("labels").size());
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            JsonNode anonymousDetail = getJsonOk(skillReadPath(), entry, AuthIdentity.ANONYMOUS).get("data");
+            assertFalse(anonymousDetail.get("sourceReadable").asBoolean());
+            assertFalse(anonymousDetail.has("sourceNamespaceId"));
+            assertEquals("1.0.0", anonymousDetail.get("version").asText());
+            JsonNode anonymousContent = getJsonOk(skillReadPath() + "/version", entry, AuthIdentity.ANONYMOUS).get("data");
+            assertEquals("__nacos_ai_hub__", anonymousContent.get("namespaceId").asText());
+            assertTrue(anonymousContent.get("skillMd").asText().contains("Pinned original instructions."));
         }
+        ByteResponse download = executeRawBytes(new HttpGet(requestUrl(skillReadPath() + "/version/download")
+                + "?" + entry.toQueryUrl()), AuthIdentity.CLIENT_NO_PERMISSION);
+        assertEquals(200, download.code());
+        assertTrue(download.contentType().contains("application/zip"));
+        byte[] archive = download.body();
         assertTrue(unzipTextEntries(archive).get(name + "/SKILL.md").contains("Pinned original instructions."));
         cleanupShare[0] = postFormOk(hubPath() + "/unshare", entryParams(share)).get("data");
-        assertError(getRaw(hubPath() + "/download", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
-        assertError(getRaw(hubPath() + "/content", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
-        assertError(getRaw(hubPath() + "/content", entry, AuthIdentity.ANONYMOUS), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
-        assertEquals(0, getJsonOk(hubPath() + "/list", Query.newInstance().addParam("query", name)).get("data").get("totalCount").asInt());
+        assertError(getRaw(skillReadPath() + "/version/download", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assertError(getRaw(skillReadPath() + "/version", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            assertError(getRaw(skillReadPath() + "/version", entry, AuthIdentity.ANONYMOUS), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        }
+        assertEquals(0, getJsonOk(skillReadPath() + "/list", sharedList(name)).get("data").get("totalCount").asInt());
     }
 
     @Test
@@ -316,8 +334,8 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         for (String operation : new String[] {"delete", "disable", "private"}) {
             String name = "hub-s4-" + operation + "-" + UUID.randomUUID();
             JsonNode publication = createS4Publication(name);
-            Query entry = Query.newInstance().addParam("hubEntryId", publication.get("hubEntryId").asText());
-            getJsonOk(hubPath() + "/content", entry, AuthIdentity.CLIENT_NO_PERMISSION);
+            Query entry = sharedEntry(publication.get("hubEntryId").asText()).addParam("hubEntryId", publication.get("hubEntryId").asText());
+            getJsonOk(skillReadPath() + "/version", entry, AuthIdentity.CLIENT_NO_PERMISSION);
             if ("delete".equals(operation)) {
                 deleteJsonOk(ADMIN_SKILL_PATH, skillQuery(name));
             } else if ("disable".equals(operation)) {
@@ -326,13 +344,13 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
             } else {
                 putFormOk(ADMIN_SKILL_PATH + "/scope", skillScopeForm(name, "PRIVATE"));
             }
-            assertError(getRaw(hubPath() + "/content", entry, AuthIdentity.CLIENT_NO_PERMISSION),
+            assertError(getRaw(skillReadPath() + "/version", entry, AuthIdentity.CLIENT_NO_PERMISSION),
                 404, ErrorCode.RESOURCE_NOT_FOUND, "");
-            assertEquals(0, getJsonOk(hubPath() + "/list", Query.newInstance().addParam("query", name))
+            assertEquals(0, getJsonOk(skillReadPath() + "/list", sharedList(name))
                 .get("data").get("totalCount").asInt());
             if ("private".equals(operation)) {
                 putFormOk(ADMIN_SKILL_PATH + "/scope", skillScopeForm(name, "PUBLIC"));
-                assertError(getRaw(hubPath() + "/content", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+                assertError(getRaw(skillReadPath() + "/version", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
             }
         }
     }
@@ -341,21 +359,21 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
     void unrelatedVersionOfflinePreservesShareAndPinnedVersionOnlineDoesNotRepublish() throws Exception {
         String name = "hub-s4-version-" + UUID.randomUUID();
         JsonNode publication = createS4Publication(name);
-        Query entry = Query.newInstance().addParam("hubEntryId", publication.get("hubEntryId").asText());
+        Query entry = sharedEntry(publication.get("hubEntryId").asText()).addParam("hubEntryId", publication.get("hubEntryId").asText());
         postFormOk(ADMIN_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
         postFormOk(ADMIN_SKILL_PATH + "/force-publish", withUpdateLatestLabel(skillPublishForm(name, "2.0.0")));
         postFormOk(ADMIN_SKILL_PATH + "/offline",
             Map.of("namespaceId", "public", "skillName", name, "scope", "version", "version", "2.0.0"));
-        assertEquals("1.0.0", getJsonOk(hubPath() + "/content", entry).get("data").get("sharedVersion").asText());
+        assertTrue(getJsonOk(skillReadPath() + "/version", entry).get("data").get("skillMd").asText().contains("S4 pinned content."));
         postFormOk(ADMIN_SKILL_PATH + "/offline",
             Map.of("namespaceId", "public", "skillName", name, "scope", "version", "version", "1.0.0"));
-        assertError(getRaw(hubPath() + "/content", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assertError(getRaw(skillReadPath() + "/version", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
         postFormOk(ADMIN_SKILL_PATH + "/online",
             Map.of("namespaceId", "public", "skillName", name, "scope", "version", "version", "1.0.0"));
-        assertError(getRaw(hubPath() + "/content", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
+        assertError(getRaw(skillReadPath() + "/version", entry), 404, ErrorCode.RESOURCE_NOT_FOUND, "");
         postFormOk(hubPath() + "/share", Map.of("sourceNamespaceId", "public", "sourceName", name,
             "sourceVersion", "1.0.0"));
-        getJsonOk(hubPath() + "/content", entry);
+        getJsonOk(skillReadPath() + "/version", entry);
     }
 
     private JsonNode createS4Publication(String name) throws Exception {
@@ -385,7 +403,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         assertTrue(ownerState.get("active").asBoolean());
         assertFalse(ownerState.has("ext"));
         assertFalse(ownerState.has("sourceNamespaceId"));
-        Query entry = Query.newInstance().addParam("hubEntryId", share.get("hubEntryId").asText());
+        Query entry = sharedEntry(share.get("hubEntryId").asText()).addParam("hubEntryId", share.get("hubEntryId").asText());
         assertEquals(ownerState, getJsonOk(hubPath() + "/governance-state", entry).get("data"));
         assertError(getRaw(hubPath() + "/source-share", source, AuthIdentity.CLIENT_NO_PERMISSION),
                 403, ErrorCode.ACCESS_DENIED, "");
@@ -398,8 +416,10 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
     @Test
     void mutationStateRejectsAnonymousAndOrdinaryGovernanceUsers() throws Exception {
         for (String endpoint : new String[] {"source-share", "governance-state"}) {
-            assertError(getRaw(hubPath() + "/" + endpoint, Query.newInstance(), AuthIdentity.ANONYMOUS),
-                    403, ErrorCode.ACCESS_DENIED, "");
+            for (AuthIdentity identity : new AuthIdentity[] {AuthIdentity.ANONYMOUS, AuthIdentity.INVALID}) {
+                assertError(getRaw(hubPath() + "/" + endpoint, Query.newInstance(), identity),
+                        403, ErrorCode.ACCESS_DENIED, "");
+            }
         }
         assertError(getRaw(hubPath() + "/governance-state",
                 Query.newInstance().addParam("hubEntryId", "1"), AuthIdentity.CLIENT_NO_PERMISSION),
@@ -407,6 +427,40 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         assertError(getRaw(hubPath() + "/governance-state",
                 Query.newInstance().addParam("hubEntryId", "9223372036854775808")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+    }
+
+    @Test
+    void sharedManagementListSortsBeforePaginationUsingExistingOrderBy() throws Exception {
+        String prefix = "hub-sort-it-" + UUID.randomUUID();
+        for (String suffix : new String[] {"-first", "-second"}) {
+            String name = prefix + suffix;
+            postFormOk(ADMIN_SKILL_PATH + "/draft", skillDraftForm(name, "1.0.0", "Sort fixture", null));
+            addCleanup(() -> deleteSkillQuietly(name));
+            postFormOk(ADMIN_SKILL_PATH + "/force-publish", withUpdateLatestLabel(skillPublishForm(name, "1.0.0")));
+            putFormOk(ADMIN_SKILL_PATH + "/scope", skillScopeForm(name, "PUBLIC"));
+            JsonNode share = postFormOk(hubPath() + "/share", Map.of("sourceNamespaceId", "public",
+                "sourceName", name, "sourceVersion", "1.0.0")).get("data");
+            addCleanup(() -> postFormOk(hubPath() + "/force-unshare", Map.of("hubEntryId", share.get("hubEntryId").asText(),
+                "expectedMetaVersion", share.get("metaVersion").asText(), "reason", "sort IT cleanup")));
+        }
+        JsonNode page = getJsonOk(skillReadPath() + "/list", sharedList(prefix).addParam("pageSize", "2")).get("data");
+        assertEquals(2, page.get("totalCount").asInt());
+        JsonNode first = page.get("pageItems").get(0);
+        JsonNode second = page.get("pageItems").get(1);
+        assertTrue(first.get("updateTime").asLong() >= second.get("updateTime").asLong());
+        if (first.get("updateTime").asLong() == second.get("updateTime").asLong()) {
+            assertTrue(first.get("hubEntryId").asLong() < second.get("hubEntryId").asLong());
+        }
+        JsonNode next = getJsonOk(skillReadPath() + "/list", sharedList(prefix)
+            .addParam("pageSize", "1").addParam("pageNo", "2")).get("data");
+        assertEquals(second.get("hubEntryId"), next.get("pageItems").get(0).get("hubEntryId"));
+        JsonNode popular = getJsonOk(skillReadPath() + "/list", sharedList(prefix)
+            .addParam("orderBy", "download_count").addParam("pageSize", "2")).get("data");
+        JsonNode popularFirst = popular.get("pageItems").get(0);
+        JsonNode popularSecond = popular.get("pageItems").get(1);
+        assertEquals(0, popularFirst.get("downloadCount").asLong());
+        assertEquals(0, popularSecond.get("downloadCount").asLong());
+        assertTrue(popularFirst.get("hubEntryId").asLong() < popularSecond.get("hubEntryId").asLong());
     }
 
 }

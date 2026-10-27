@@ -1,6 +1,7 @@
 import type { HubSkillDetail, HubSkillSummary } from '@/types/hub-skill';
 
 export const HUB_SYSTEM_NAMESPACE = '__nacos_ai_hub__';
+export const SHARED_SKILLS_PATH = '/skill/shared/list';
 
 /** Reject unsafe or lossy 64-bit IDs; never Number(...) a Java database ID. */
 export function validHubId(value: unknown): value is string {
@@ -10,7 +11,17 @@ export function validHubId(value: unknown): value is string {
 
 export function hubDetailPath(hubEntryId: string): string {
   if (!validHubId(hubEntryId)) throw new Error('Invalid Hub entry ID');
-  return `/hub/skills/${encodeURIComponent(hubEntryId)}`;
+  return `/skill/shared/detail/${encodeURIComponent(hubEntryId)}`;
+}
+
+/** Pin copied install commands to this share, preserving long IDs and safe shell arguments. */
+export function hubSkillInstallCommand(
+  detail: Pick<HubSkillDetail, 'displayName' | 'hubEntryId' | 'sharedVersion'>,
+): string | null {
+  const safeArgument = /^[a-zA-Z0-9_][a-zA-Z0-9_.+-]*$/;
+  if (!validHubId(detail.hubEntryId) || !safeArgument.test(detail.displayName) ||
+      !safeArgument.test(detail.sharedVersion)) return null;
+  return `nacos-cli skill-get ${detail.displayName} ${detail.hubEntryId} --version ${detail.sharedVersion}`;
 }
 
 export function sourceSkillPath(detail: HubSkillDetail): string | null {

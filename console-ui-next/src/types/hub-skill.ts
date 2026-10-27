@@ -10,7 +10,7 @@ export interface HubSkillSummary {
   sharedVersion: string;
   tags?: string[] | null;
   sharedAt?: number | null;
-  /** Existing aggregate download count of the source Skill. */
+  /** Downloads through this shared entry, independent of source Skill counters. */
   downloadCount?: number | null;
   origin: 'HUB';
 }
@@ -18,6 +18,7 @@ export interface HubSkillSummary {
 export interface HubSkillDetail extends HubSkillSummary {
   /** Metadata of the immutable shared source version. */
   versionStatus?: string | null;
+  /** Shared entry downloads for the pinned version, independent of source version counters. */
   versionDownloadCount?: number | null;
   commitMsg?: string | null;
   versionLabels?: string[] | null;

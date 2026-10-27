@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.skills;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.util.Objects;
 
 /**
@@ -26,6 +28,68 @@ import java.util.Objects;
 public class SkillBasicInfo extends SkillBase {
     
     private Long updateTime;
+    
+    /** Discovery source; ordinary namespace results keep the original namespace/name identity. */
+    private String discoverySource = "NAMESPACE";
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Long hubEntryId;
+    
+    private String displayName;
+    
+    private String sourceDisplayName;
+    
+    private Long downloadCount;
+    
+    private String version;
+    
+    public String getDiscoverySource() {
+        return discoverySource;
+    }
+    
+    public void setDiscoverySource(String discoverySource) {
+        this.discoverySource = discoverySource;
+    }
+    
+    public Long getHubEntryId() {
+        return hubEntryId;
+    }
+    
+    public void setHubEntryId(Long hubEntryId) {
+        this.hubEntryId = hubEntryId;
+    }
+    
+    public String getDisplayName() {
+        return displayName;
+    }
+    
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+    
+    public String getSourceDisplayName() {
+        return sourceDisplayName;
+    }
+    
+    public void setSourceDisplayName(String sourceDisplayName) {
+        this.sourceDisplayName = sourceDisplayName;
+    }
+    
+    public Long getDownloadCount() {
+        return downloadCount;
+    }
+    
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
+    }
+    
+    public String getVersion() {
+        return version;
+    }
+    
+    public void setVersion(String version) {
+        this.version = version;
+    }
     
     public Long getUpdateTime() {
         return updateTime;

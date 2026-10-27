@@ -64,19 +64,23 @@ class HubDisabledApiOpenApiITCase extends AiAdminApiBaseITCase {
     }
 
     private void verifyDisabled(String path) throws Exception {
-        JsonNode page = getJsonOk(path + "/list", Query.newInstance()
+        String skillPath = path.replace("/hub/skills", "/skills");
+        JsonNode page = getJsonOk(skillPath + "/list", Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__")
                 .addParam("pageNo", "3").addParam("pageSize", "10")).path("data");
         assertEquals(3, page.path("pageNumber").asInt());
         assertEquals(0, page.path("totalCount").asInt());
         assertEquals(0, page.path("pagesAvailable").asInt());
         assertTrue(page.path("pageItems").isArray());
         assertEquals(0, page.path("pageItems").size());
-        assertError(getRaw(path + "/list", Query.newInstance().addParam("pageNo", "0")),
+        assertError(getRaw(skillPath + "/list", Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__").addParam("pageNo", "0")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
-        for (String suffix : new String[] {"detail", "content", "download", "governance-state"}) {
-            assertError(getRaw(path + "/" + suffix, Query.newInstance().addParam("hubEntryId", "1")),
-                    501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
+        for (String suffix : new String[] {"", "/version", "/version/download"}) {
+            assertError(getRaw(skillPath + suffix, Query.newInstance()
+                    .addParam("namespaceId", "__nacos_ai_hub__").addParam("skillName", "1")
+                    .addParam("version", "1.0.0")), 501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
         }
+        assertError(getRaw(path + "/governance-state", Query.newInstance().addParam("hubEntryId", "1")),
+                501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
         assertError(getRaw(path + "/source-share", Query.newInstance()
                 .addParam("sourceNamespaceId", "public").addParam("sourceName", "hub-disabled-it")),
                 501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");

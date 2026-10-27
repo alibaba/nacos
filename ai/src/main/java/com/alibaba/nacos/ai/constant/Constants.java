@@ -450,8 +450,6 @@ public class Constants {
         
         public static final String CONSOLE_PATH = "/v3/console/ai/hub/skills";
         
-        public static final String CLIENT_PATH = "/v3/client/ai/hub/skills";
-        
-        public static final String ENTRY_RESOURCE = "ai-hub/entry";
+        public static final String ENTRY_RESOURCE = AiConstants.Hub.ENTRY_RESOURCE;
     }
 }

@@ -3,13 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Copy, Download, ExternalLink, FileText, RefreshCw, ShieldAlert, Wand2 } from 'lucide-react';
 import { HubSkillVersionInfo } from '@/components/ai/skill/HubSkillVersionInfo';
+import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { HubSkillMarkdown } from '@/components/ai/skill/HubSkillMarkdown';
 import { toast } from 'sonner';
 import { hubSkillApi } from '@/api/hub-skill';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth-store';
@@ -18,7 +18,7 @@ import { HubImportDialog } from '@/components/ai/skill/HubImportDialog';
 import { SkillResourcePanel } from '@/pages/skillDetail/SkillResourcePanel';
 import type { SkillResource } from '@/types/skill';
 import type { HubSkillDetail, HubSkillContent, HubShareState } from '@/types/hub-skill';
-import { hubErrorMessage, sourceSkillPath, validHubId } from '@/lib/hub-skill-utils';
+import { hubErrorMessage, sourceSkillPath, validHubId, SHARED_SKILLS_PATH } from '@/lib/hub-skill-utils';
 
 export default function HubSkillDetailPage() {
   const { t } = useTranslation();
@@ -54,8 +54,10 @@ export default function HubSkillDetailPage() {
       return;
     }
     setBusy(true);
-    Promise.all([hubSkillApi.detail(hubEntryId), hubSkillApi.content(hubEntryId)])
-      .then(([d, c]) => {
+    hubSkillApi.detail(hubEntryId)
+      .then(async d => {
+        if (cancelled) return;
+        const c = await hubSkillApi.content(hubEntryId, d.data.sharedVersion, d.data.displayName);
         if (cancelled) return;
         if (d.data.hubEntryId !== hubEntryId || c.data.hubEntryId !== hubEntryId ||
             d.data.sharedVersion !== c.data.sharedVersion) {
@@ -136,7 +138,7 @@ export default function HubSkillDetailPage() {
       });
       setTakedownOpen(false);
       toast.success(t('hub.takedownSuccess'));
-      navigate('/hub/skills', { replace: true });
+      navigate(SHARED_SKILLS_PATH, { replace: true });
     } catch (err) {
       const code = hubErrorMessage(err, 'request');
       toast.error(code === 'conflict' ? t('hub.staleVersion') : t('hub.requestFailed'));
@@ -145,10 +147,10 @@ export default function HubSkillDetailPage() {
     } finally { setActionBusy(false); }
   };
 
-  return <div className="space-y-5 pb-8">
+  return <div className="space-y-5 pb-5">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/hub/skills')}>
-        <ArrowLeft className="mr-1 h-4 w-4" />{t('hub.backToHub')}
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-muted-foreground hover:text-foreground -ml-2" onClick={() => navigate(SHARED_SKILLS_PATH)}>
+        <ArrowLeft className="h-3.5 w-3.5" />{t('hub.backToHub')}
       </Button>
       <Button size="sm" variant="outline" disabled={busy} onClick={() => setRefresh(x => x + 1)}>
         <RefreshCw className="mr-1 h-4 w-4" />{t('common.refresh')}
@@ -163,20 +165,19 @@ export default function HubSkillDetailPage() {
       </div>
     )}
     {!busy && !error && detail && content && <>
-      <div className="rounded-xl border bg-card p-5">
+      <div className="rounded-xl border bg-card px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-400">
-              <Wand2 className="h-6 w-6 text-white" />
+          <div className="flex min-w-0 flex-1 items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-400 shadow-lg shadow-violet-500/20">
+              <Wand2 className="h-7 w-7 text-white" />
             </div>
-            <div className="min-w-0">
-              <h1 className="break-words text-xl font-semibold">{detail.displayName}</h1>
-              <div className="mt-1 flex items-center gap-2">
-                <Badge variant="secondary">{t('hub.readOnly')}</Badge>
-                <Badge variant="outline">{detail.sharedVersion}</Badge>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5 mb-1">
+                <h1 className="break-words text-xl font-bold tracking-tight">{detail.displayName}</h1>
+                <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">{detail.sharedVersion}</span>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{detail.description || t('skill.noDescription')}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">{detail.description || t('skill.noDescription')}</p>
+              <p className="mt-2 text-xs text-muted-foreground leading-normal">
                 {t('hub.source')}: {detail.sourceDisplayName || t('hub.hidden')}
                 {detail.author ? ` · ${t('hub.author')}: ${detail.author}` : ''}
               </p>
@@ -195,7 +196,7 @@ export default function HubSkillDetailPage() {
           </div>
         </div>
         {(detail.tags || []).length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">
-          {detail.tags?.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
+          {detail.tags?.map(tag => <DetailTagChip key={tag} label={tag} />)}
         </div>}
       </div>
       <Tabs value={tab} onValueChange={setTab} className="flex w-full min-w-0 flex-col">
@@ -204,22 +205,22 @@ export default function HubSkillDetailPage() {
           <TabsTrigger value="resources" className="gap-1.5"><Wand2 className="h-3.5 w-3.5" />{t('skill.resources')}</TabsTrigger>
         </TabsList>
         <TabsContent value="markdown">
-          <div className="flex flex-col items-start gap-4 lg:flex-row">
-            <Card className="w-full min-w-0 flex-1 overflow-hidden gap-0 py-0">
-              <div className="flex items-center justify-between border-b bg-muted/30 px-5 py-3">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <Card className="overflow-hidden py-0 gap-0 min-w-0 min-h-[580px]">
+              <div className="flex h-11 items-center justify-between gap-3 border-b bg-muted/30 px-5">
                 <h2 className="flex items-center gap-2 text-sm font-semibold">
                   <FileText className="h-4 w-4 text-muted-foreground" />SKILL.md
                 </h2>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('skill.resourceCopyFile')} onClick={copyMarkdown}>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" aria-label={t('skill.resourceCopyFile')} onClick={copyMarkdown}>
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('skill.resourceDownloadFile')} onClick={saveMarkdown}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" aria-label={t('skill.resourceDownloadFile')} onClick={saveMarkdown}>
                     <Download className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
-              <CardContent className="p-5" data-color-mode="light">
+              <CardContent className="p-5">
                 <HubSkillMarkdown source={content.skillMd ?? ''} />
               </CardContent>
             </Card>

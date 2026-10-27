@@ -29,16 +29,25 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => k
 
 const { Sidebar } = await import('../sidebar');
 
-describe('Hub sidebar entry', () => {
-  it.each([false, true])('follows the server capability: %s', hubEnabled => {
+describe('shared resource navigation', () => {
+  it.each([false, true])('keeps sharing inside resource management with Hub enabled: %s', hubEnabled => {
     server.hubEnabled = hubEnabled;
     const html = renderToStaticMarkup(
       <MemoryRouter initialEntries={['/skill']}>
         <TooltipProvider><Sidebar /></TooltipProvider>
       </MemoryRouter>,
     );
-    expect(html.includes('menu.hubSkillRegistry')).toBe(hubEnabled);
+    expect(html).not.toContain('menu.hubSkillRegistry');
+    expect(html).not.toContain('/hub/skills');
     expect(html).toContain('menu.skillRegistry');
     expect(html).toContain('menu.promptRegistry');
+  });
+  it('keeps Skill management highlighted on the shared directory', () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter initialEntries={['/skill/shared/list']}>
+        <TooltipProvider><Sidebar /></TooltipProvider>
+      </MemoryRouter>,
+    );
+    expect(html).toMatch(/text-sidebar-primary font-medium bg-sidebar-accent[^>]*>[\s\S]*?menu\.skillRegistry/);
   });
 });

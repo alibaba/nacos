@@ -49,7 +49,7 @@ public class HubSkillSummary {
     
     private Long sharedAt;
     
-    /** Total downloads of the source Skill, matching the ordinary Skill directory. */
+    /** Total successful downloads through this Hub entry, independent of source downloads. */
     private Long downloadCount;
     
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

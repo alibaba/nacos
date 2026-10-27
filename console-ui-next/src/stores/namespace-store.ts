@@ -15,6 +15,7 @@ interface NamespaceState {
 
 interface NamespaceActions {
   setNamespace: (id: string, showName: string) => void;
+  syncNamespaceFromSearch: (search: string) => void;
   setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => void;
   getNamespaceChangeGuard: () => NamespaceChangeGuard | null;
   fetchNamespaces: () => Promise<void>;
@@ -80,6 +81,19 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       currentNamespace: id,
       namespaceShowName: showName,
     });
+  },
+
+  // Ordinary detail routes own their explicit namespace; shared routes do not call this.
+  syncNamespaceFromSearch: (search: string) => {
+    const params = new URLSearchParams(search);
+    const namespaceId = params.get('namespaceId') || params.get('namespace');
+    if (!namespaceId || namespaceId === HUB_SYSTEM_NAMESPACE) return;
+    const state = get();
+    const showName = state.namespaces.find(ns => ns.namespace === namespaceId)?.namespaceShowName
+      || namespaceId;
+    if (state.currentNamespace !== namespaceId || state.namespaceShowName !== showName) {
+      state.setNamespace(namespaceId, showName);
+    }
   },
 
   setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => {

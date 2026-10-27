@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
 /**
- * Dedicated read contract for the global Hub Skill directory.
+ * Internal read contract for the global Hub Skill directory.
  *
  * <p>Implementations must enforce Hub share authorization and revalidate the
  * current Hub pointer, source metadata identity, pinned source version ID,
@@ -66,6 +66,9 @@ public interface HubSkillReadService {
      */
     HubSkillContent getContent(Long hubEntryId) throws NacosException;
     
+    /** Read only when the requested version is the currently pinned version. */
+    HubSkillContent getContent(Long hubEntryId, String version) throws NacosException;
+    
     /**
      * Download real bytes of the fixed, currently eligible shared version.
      *
@@ -74,4 +77,7 @@ public interface HubSkillReadService {
      * @throws NacosException when authorization, eligibility or storage fails
      */
     HubSkillDownload download(Long hubEntryId) throws NacosException;
+    
+    /** Validate an optional pinned version before reading bytes or counting a download. */
+    HubSkillDownload download(Long hubEntryId, String version) throws NacosException;
 }

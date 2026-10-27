@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexMaintenanceService;
+import com.alibaba.nacos.ai.service.hub.HubSkillManagementAdapter;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
@@ -3365,101 +3366,103 @@ class SkillOperationServiceImplTest {
         String hubNamespaceId = AiConstants.Hub.NAMESPACE_ID;
         
         SkillUploadRequest uploadRequest =
-                SkillUploadRequest.builder()
-                        .namespaceId(hubNamespaceId)
-                        .build();
+            SkillUploadRequest.builder()
+                .namespaceId(hubNamespaceId)
+                .build();
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.uploadSkillFromZip(uploadRequest));
+            () -> skillOperationService.uploadSkillFromZip(uploadRequest));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.precheckUploadSkillFromZip(
-                        hubNamespaceId, null));
+            () -> skillOperationService.precheckUploadSkillFromZip(
+                hubNamespaceId, null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.batchUploadSkillsFromZip(
-                        hubNamespaceId, null, false));
+            () -> skillOperationService.batchUploadSkillsFromZip(
+                hubNamespaceId, null, false));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.bootstrapSkillFromZip(
-                        hubNamespaceId, null));
+            () -> skillOperationService.bootstrapSkillFromZip(
+                hubNamespaceId, null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.bootstrapSkillFromZip(
-                        hubNamespaceId, null, "test"));
+            () -> skillOperationService.bootstrapSkillFromZip(
+                hubNamespaceId, null, "test"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.getSkillDetail(
-                        hubNamespaceId, "find-skills-101"));
+            () -> skillOperationService.deleteSkill(
+                hubNamespaceId, "find-skills-101"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.getSkillVersionDetail(
-                        hubNamespaceId, "find-skills-101", "1.0.0"));
+            () -> skillOperationService.createDraft(
+                hubNamespaceId, "find-skills-101",
+                null, null, null, null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.downloadSkillVersion(
-                        hubNamespaceId, "find-skills-101", "1.0.0"));
+            () -> skillOperationService.updateDraft(
+                hubNamespaceId, null, null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.deleteSkill(
-                        hubNamespaceId, "find-skills-101"));
+            () -> skillOperationService.deleteDraft(
+                hubNamespaceId, "find-skills-101"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.listSkills(
-                        hubNamespaceId, null, null, 1, 10));
+            () -> skillOperationService.submit(
+                hubNamespaceId, "find-skills-101", "1.0.0"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.createDraft(
-                        hubNamespaceId, "find-skills-101",
-                        null, null, null, null));
+            () -> skillOperationService.publish(
+                hubNamespaceId, "find-skills-101",
+                "1.0.0", true));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.updateDraft(
-                        hubNamespaceId, null, null));
+            () -> skillOperationService.forcePublish(
+                hubNamespaceId, "find-skills-101",
+                "1.0.0", true));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.deleteDraft(
-                        hubNamespaceId, "find-skills-101"));
+            () -> skillOperationService.redraft(
+                hubNamespaceId, "find-skills-101", "1.0.0"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.submit(
-                        hubNamespaceId, "find-skills-101", "1.0.0"));
+            () -> skillOperationService.updateLabels(
+                hubNamespaceId, "find-skills-101", null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.publish(
-                        hubNamespaceId, "find-skills-101",
-                        "1.0.0", true));
+            () -> skillOperationService.updateBizTags(
+                hubNamespaceId, "find-skills-101", null));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.forcePublish(
-                        hubNamespaceId, "find-skills-101",
-                        "1.0.0", true));
+            () -> skillOperationService.changeOnlineStatus(
+                hubNamespaceId, "find-skills-101",
+                "skill", null, true));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.redraft(
-                        hubNamespaceId, "find-skills-101", "1.0.0"));
+            () -> skillOperationService.updateScope(
+                hubNamespaceId, "find-skills-101", "PUBLIC"));
         
         assertHubNamespaceRejected(
-                () -> skillOperationService.updateLabels(
-                        hubNamespaceId, "find-skills-101", null));
-        
-        assertHubNamespaceRejected(
-                () -> skillOperationService.updateBizTags(
-                        hubNamespaceId, "find-skills-101", null));
-        
-        assertHubNamespaceRejected(
-                () -> skillOperationService.changeOnlineStatus(
-                        hubNamespaceId, "find-skills-101",
-                        "skill", null, true));
-        
-        assertHubNamespaceRejected(
-                () -> skillOperationService.updateScope(
-                        hubNamespaceId, "find-skills-101", "PUBLIC"));
-        
-        assertHubNamespaceRejected(
-                () -> skillOperationService.querySkill(
-                        hubNamespaceId, "find-skills-101",
-                        "1.0.0", null));
+            () -> skillOperationService.querySkill(
+                hubNamespaceId, "find-skills-101",
+                "1.0.0", null));
+    }
+    
+    @Test
+    void sharedReadsReuseOrdinarySkillOperationsThroughGuardedAdapter() throws Exception {
+        HubSkillManagementAdapter adapter = mock(HubSkillManagementAdapter.class);
+        skillOperationService.setSharedSkills(adapter);
+        String namespace = AiConstants.Hub.NAMESPACE_ID;
+        skillOperationService.getSkillDetail(namespace, "101");
+        skillOperationService.getSkillVersionDetail(namespace, "101", "1.0.0");
+        skillOperationService.downloadSkillVersion(namespace, "101", "1.0.0");
+        skillOperationService.listSkills(namespace, "find", "blur", 1, 10);
+        skillOperationService.listSkills(namespace, "find", "blur", "download_count", "owner",
+            "PUBLIC", "tag", 2, 5);
+        verify(adapter).getDetail("101");
+        verify(adapter).getVersion("101", "1.0.0");
+        verify(adapter).downloadAsSkill("101", "1.0.0");
+        verify(adapter).list("find", "blur", null, null, null, null, 1, 10);
+        verify(adapter).list("find", "blur", "download_count", "owner", "PUBLIC", "tag", 2, 5);
     }
     
     private String uploadSkill(String namespaceId, byte[] zipBytes) throws NacosException {
@@ -3499,10 +3502,10 @@ class SkillOperationServiceImplTest {
     
     private void assertHubNamespaceRejected(Executable executable) {
         NacosApiException exception =
-                assertThrows(NacosApiException.class, executable);
+            assertThrows(NacosApiException.class, executable);
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.ILLEGAL_NAMESPACE.getCode(),
-                exception.getDetailErrCode());
+            exception.getDetailErrCode());
     }
 }

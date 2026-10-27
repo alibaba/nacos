@@ -36,9 +36,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.PriorityQueue;
+import java.util.function.BiPredicate;
 
 /**
  * Source-of-truth S2-4 Hub Skill directory with correct eligible-first pagination.
@@ -46,7 +49,9 @@ import java.util.Locale;
  * <p>Scans only Hub-owned Skill rows in bounded primary-key ID windows. Every
  * candidate passes the S2-2 immutable-pointer resolver and the S2-3 live source
  * and read authorization checks before it counts toward a page. Only the
- * requested output page is kept in memory. Keyword and tag matching use
+ * highest ranked entries through the requested page are kept in memory in a
+ * bounded top-k heap. Deep paging costs O(min(pageNo * pageSize, candidates))
+ * memory. Keyword and tag matching use
  * canonical source display names and current tags, not lossy Hub internal names.
  * The search index is optional: closing it does not make directory search lie.</p>
  *
@@ -67,6 +72,15 @@ public class HubSkillDirectoryService {
     private static final String SKILL_TYPE = AiResourceConstants.RESOURCE_TYPE_SKILL;
     
     private static final String HUB_ORIGIN = "hub";
+    
+    private static final Comparator<DirectoryEntry> POPULARITY_ORDER = Comparator
+        .comparingLong((DirectoryEntry entry) -> entry.publication.getDownloadCount()).reversed()
+        .thenComparingLong(entry -> entry.publication.getHubEntryId());
+    
+    private static final Comparator<DirectoryEntry> UPDATED_ORDER = Comparator
+        .comparing((DirectoryEntry entry) -> entry.publication.getUpdatedAt(),
+            Comparator.nullsLast(Comparator.reverseOrder()))
+        .thenComparingLong(entry -> entry.publication.getHubEntryId());
     
     private final HubEntryStorage hubStorage;
     
@@ -94,10 +108,15 @@ public class HubSkillDirectoryService {
      * for a stable data set. This is an internal read service, not an HTTP API.
      *
      * @param request validated page options without a caller-selected namespace
-     * @return page of sanitized Hub summaries ordered by immutable entry ID ASC
+     * @return sanitized Hub summaries in the requested order, with entry ID ASC ties
      * @throws NacosException when validation, authorization or storage fails
      */
     public Page<HubSkillSummary> list(HubSkillListRequest request) throws NacosException {
+        return list(request, (publication, source) -> true);
+    }
+    
+    Page<HubSkillSummary> list(HubSkillListRequest request,
+        BiPredicate<ResolvedHubSkillReference, AiResource> filter) throws NacosException {
         HubSkillReadRequestValidator.validate(request);
         // Admission precedes every scan, including an empty or unsupported query.
         permissionGuard.requireHubRead();
@@ -105,7 +124,7 @@ public class HubSkillDirectoryService {
             return emptyPage(request);
         }
         try {
-            Page<HubSkillSummary> result = scan(request);
+            Page<HubSkillSummary> result = scan(request, filter);
             return HubConfig.isEnabled() ? result : emptyPage(request);
         } catch (RuntimeException failure) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
@@ -122,11 +141,17 @@ public class HubSkillDirectoryService {
         return result;
     }
     
-    private Page<HubSkillSummary> scan(HubSkillListRequest request) throws NacosException {
+    private Page<HubSkillSummary> scan(HubSkillListRequest request,
+        BiPredicate<ResolvedHubSkillReference, AiResource> filter) throws NacosException {
         long offset = ((long) request.getPageNo() - 1L) * request.getPageSize();
         long validCount = 0L;
-        List<DirectoryEntry> selected = new ArrayList<>(request.getPageSize());
         long maxId = hubStorage.maxEntryId();
+        // IDs are positive: an offset beyond maxId cannot contain any result.
+        long rankLimit = offset >= maxId ? 0L : offset + request.getPageSize();
+        Comparator<DirectoryEntry> order = "download_count".equals(request.getOrderBy())
+            ? POPULARITY_ORDER : UPDATED_ORDER;
+        PriorityQueue<DirectoryEntry> ranked = new PriorityQueue<>(request.getPageSize(),
+            order.reversed());
         long afterId = 0L;
         while (afterId < maxId) {
             Long firstId = hubStorage.nextEntryId(afterId, maxId);
@@ -155,19 +180,27 @@ public class HubSkillDirectoryService {
                 }
                 previousId = candidate.getId();
                 DirectoryEntry qualified = qualify(candidate.getId());
-                if (qualified == null || !matches(request, qualified)) {
+                if (qualified == null || !matches(request, qualified)
+                    || !filter.test(qualified.publication, qualified.source)) {
                     continue;
                 }
-                if (validCount >= offset && selected.size() < request.getPageSize()) {
-                    selected.add(qualified);
+                if (ranked.size() < rankLimit) {
+                    ranked.add(qualified);
+                } else if (rankLimit > 0L
+                    && order.compare(qualified, ranked.peek()) < 0) {
+                    ranked.poll();
+                    ranked.add(qualified);
                 }
                 validCount++;
             }
             // Advance the numeric window even if its rows were removed after MIN(id).
             afterId = upper;
         }
-        List<HubSkillSummary> items = new ArrayList<>(selected.size());
-        for (DirectoryEntry entry : selected) {
+        List<DirectoryEntry> selected = new ArrayList<>(ranked);
+        selected.sort(order);
+        List<HubSkillSummary> items = new ArrayList<>(request.getPageSize());
+        for (long index = offset; index < selected.size(); index++) {
+            DirectoryEntry entry = selected.get((int) index);
             // Reject a newly withdrawn selected share rather than returning stale data.
             readAccess.requireStillReadable(entry.publication);
             items.add(toSummary(entry.publication, entry.source));
@@ -206,8 +239,7 @@ public class HubSkillDirectoryService {
         result.setDisplayName(publication.getSourceName());
         // The public Hub label contains only the Namespace display name, never a raw source ID.
         result.setSourceDisplayName(resolveSourceDisplayName(publication.getSourceNamespaceId()));
-        result.setDownloadCount(
-            source.getDownloadCount() == null ? 0L : Math.max(0L, source.getDownloadCount()));
+        result.setDownloadCount(publication.getDownloadCount());
         result.setAuthor(source.getOwner());
         result.setDescription(source.getDesc());
         result.setSharedVersion(publication.getSourceVersion());
