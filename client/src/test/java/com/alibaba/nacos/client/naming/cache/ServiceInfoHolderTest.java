@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -343,7 +344,8 @@ class ServiceInfoHolderTest {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "non-exist");
         holder.shutdown();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
-        assertEquals(System.getProperty("user.home") + "/nacos/non-exist/naming/aa",
+        assertEquals(System.getProperty("user.home") + File.separator + "nacos" + File.separator
+            + "non-exist" + File.separator + "naming" + File.separator + "aa",
             holder.getCacheDir());
         assertTrue(holder.getServiceInfoMap().isEmpty());
     }

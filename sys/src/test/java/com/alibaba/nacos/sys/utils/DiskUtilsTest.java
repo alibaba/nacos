@@ -123,7 +123,7 @@ class DiskUtilsTest {
     @Test
     void testTouchWithIllegalFileName2() throws IOException {
         String fileName = UUID.randomUUID().toString();
-        File expectedFile = Paths.get("/", fileName).toFile();
+        File expectedFile = Paths.get("/" + fileName).toFile();
         assertFalse(expectedFile.exists());
         DiskUtils.touch("", "/" + fileName);
         assertFalse(expectedFile.exists());
