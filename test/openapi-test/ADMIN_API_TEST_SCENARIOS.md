@@ -180,9 +180,9 @@ JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 ena
 | Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |
 | Bounded custom projection | Resource snapshot excludes reserved fields, prioritizes standard fields, and enforces entry/key/value/serialized-size limits with an explicit truncation flag; complete version metadata remains unchanged. | Service unit tests; standalone IT does not inspect internal metadata rows. |
 | Malformed historical metadata | List and detail remain available and return null frontmatter when `ai_resource.ext` is malformed. | Service unit test; standalone IT cannot seed malformed internal metadata through the public API. |
-| Online v1 plus editing v2 | List continues returning v1; deleting v2 preserves v1. | `testSkillFrontMatterLifecycle` |
+| Online v1 plus editing v2 | List/detail descriptions and frontmatter remain on v1 while saving v2; deleting v2 preserves v1. Last-online offline selects v2 while it is unpublished. | `testSkillFrontMatterLifecycle` |
 | Publish v2; offline/online v2 | List switches to v2, falls back to v1, then returns v2 again. | `testSkillFrontMatterLifecycle` |
-| No display version | List returns null frontmatter. | `testSkillFrontMatterLifecycle` |
+| No display version (#15949) | Taking the last online v1 offline preserves its correct description, even with a higher offline v2. List/detail have no latest and onlineCnt=0; frontmatter is null. Repeating offline for historical v2 does not replace the retained description; bringing v1 online restores its snapshot. | `testSkillFrontMatterLifecycle` |
 | Legacy or mismatched snapshot | Null without per-item reads; no historical repair. | Service unit tests; standalone IT does not inject internal historical database rows. |
 | CAS conflict / retry exhaustion | Recompute against the current version; lifecycle operations remain successful and an unmatched snapshot reads as null when best-effort refresh is exhausted. | Service unit tests; deterministic concurrency is not injected through standalone HTTP. |
 C11 migration regression uses an isolated released 3.2.4 SDK for historical-wire

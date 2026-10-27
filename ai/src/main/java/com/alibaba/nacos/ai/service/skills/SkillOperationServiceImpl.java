@@ -959,7 +959,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, skill.getName(),
                 RESOURCE_TYPE_SKILL, editing, storageJson);
         }
-        resourceManager.bumpMetaDescription(namespaceId, meta, skill.getDescription());
         refreshFrontMatter(namespaceId, skill.getName(), editing);
     }
     
@@ -1296,7 +1295,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Normalize frontmatter before writing to storage (editing = existing skill, not first create)
         SkillRequestUtil.normalizeSkillFrontmatter(draftSkill, name, editing, false);
         
-        // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
+        // Step 3: Overwrite storage files and refresh metadata for the selected display version
         String provider = parseStorageProvider(draftVersion.getStorage());
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing, provider);
         deleteRemovedSkillStorageFiles(namespaceId, name, editing, draftVersion.getStorage(),
@@ -1312,7 +1311,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 storageJson);
         }
-        resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
         refreshFrontMatter(namespaceId, name, editing);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing,
             AiResourceTraceService.OP_UPDATE_DRAFT,
@@ -1355,12 +1353,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // Step 3: If the version is still being reviewed, submit is idempotent.
         if (AiResourceManager.isReviewingVersion(v)) {
+            refreshFrontMatter(namespaceId, name, null);
             return finalTarget;
         }
         
         // Step 4: Move draft or reviewed version status to reviewing.
         resourceManager.moveToReviewing(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, meta,
             info);
+        refreshFrontMatter(namespaceId, name, null);
         
         // Step 5: Build pipeline context (containing SKILL.md and all resource files)
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
@@ -1528,8 +1528,26 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         
         // Single version toggle: switch version status and sync index manifest
-        AiResourceVersion v =
-            resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info, version, online);
+        String lastOfflineDescription = null;
+        if (!online) {
+            AiResourceVersion source = resourceManager.findVersion(namespaceId, name,
+                RESOURCE_TYPE_SKILL, version);
+            if (source != null
+                && AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(source.getStatus())) {
+                Map<String, String> frontMatter =
+                    readFrontMatter(parseMetadata(source.getStorage()));
+                lastOfflineDescription =
+                    frontMatter == null ? null : frontMatter.get("description");
+                if (lastOfflineDescription == null) {
+                    LOGGER.warn(
+                        "Cannot retain Skill description on offline: version frontmatter description "
+                            + "unavailable, namespace [{}], skill [{}], version [{}]; retaining metadata",
+                        namespaceId, name, version);
+                }
+            }
+        }
+        AiResourceVersion v = resourceManager.toggleVersionOnlineStatus(namespaceId, meta, info,
+            version, online, lastOfflineDescription);
         if (v == null) {
             refreshFrontMatter(namespaceId, name, null);
             return;
@@ -1656,7 +1674,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // 3) create or update meta for editingVersion
         resourceManager.initOrUpdateMetaForDraft(namespaceId, skillName, RESOURCE_TYPE_SKILL,
-            skill.getDescription(), null, version, existedMeta, isNewSkill);
+            isNewSkill ? skill.getDescription() : null, null, version, existedMeta, isNewSkill);
         refreshFrontMatter(namespaceId, skillName, version);
     }
     
@@ -1700,56 +1718,69 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 0; attempt < AiResourceConstants.MAX_WORKING_VERSION_RETRY; attempt++) {
                 AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
                 if (meta == null) {
+                    LOGGER.debug(
+                        "Skip Skill display metadata refresh: resource missing, namespace [{}], skill [{}]",
+                        namespaceId, name);
                     return;
                 }
                 String displayVersion = resolveDisplayVersion(meta);
                 Map<String, Object> ext = parseMetadata(meta.getExt());
                 if (changedVersion != null && !changedVersion.equals(displayVersion)) {
+                    LOGGER.debug("Skip Skill display metadata refresh for non-display content: "
+                        + "namespace [{}], skill [{}], changed version [{}], display version [{}]",
+                        namespaceId, name, changedVersion, displayVersion);
                     return;
                 }
-                if (changedVersion == null && displayVersion != null
-                    && displayVersion.equals(ext.get(FRONT_MATTER_VERSION))) {
-                    return;
-                }
-                Map<String, String> frontMatter = null;
-                if (StringUtils.isNotBlank(displayVersion)) {
-                    AiResourceVersion version = resourceManager.findVersion(namespaceId, name,
-                        RESOURCE_TYPE_SKILL, displayVersion);
-                    if (version != null) {
-                        frontMatter = readFrontMatter(parseMetadata(version.getStorage()));
+                AiResourceVersion source = displayVersion == null ? null
+                    : resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL,
+                        displayVersion);
+                Map<String, String> frontMatter = source == null ? null
+                    : readFrontMatter(parseMetadata(source.getStorage()));
+                String description = frontMatter == null ? null : frontMatter.get("description");
+                if (description == null) {
+                    description = meta.getDesc();
+                    if (displayVersion != null) {
+                        LOGGER.warn(
+                            "Cannot synchronize Skill description: version frontmatter description "
+                                + "unavailable, namespace [{}], skill [{}], version [{}]; retaining metadata",
+                            namespaceId, name,
+                            displayVersion);
                     }
                 }
                 Map<String, Object> updatedExt = new LinkedHashMap<>(ext);
                 updatedExt.remove(FRONT_MATTER);
                 updatedExt.remove(FRONT_MATTER_VERSION);
                 updatedExt.remove(FRONT_MATTER_TRUNCATED);
-                if (frontMatter != null) {
+                if (displayVersion != null && frontMatter != null) {
                     FrontMatterSnapshot snapshot = buildFrontMatterSnapshot(frontMatter);
                     updatedExt.put(FRONT_MATTER, snapshot.customFields);
                     updatedExt.put(FRONT_MATTER_VERSION, displayVersion);
                     updatedExt.put(FRONT_MATTER_TRUNCATED, snapshot.truncated);
                 }
-                if (ext.equals(updatedExt)) {
+                if (ext.equals(updatedExt) && Objects.equals(meta.getDesc(), description)) {
                     return;
                 }
                 AiResource update = new AiResource();
                 update.setStatus(meta.getStatus());
-                update.setDesc(meta.getDesc());
+                update.setDesc(description);
                 update.setBizTags(meta.getBizTags());
                 update.setVersionInfo(meta.getVersionInfo());
                 update.setExt(updatedExt.isEmpty() ? null : JacksonUtils.toJson(updatedExt));
                 if (meta.getMetaVersion() != null
                     && aiResourcePersistService.updateMetaCas(namespaceId, name,
                         RESOURCE_TYPE_SKILL, meta.getMetaVersion(), update)) {
+                    LOGGER.debug("Refreshed Skill display metadata: namespace [{}], skill [{}], "
+                        + "display version [{}], description version [{}]", namespaceId, name,
+                        displayVersion, source == null ? null : source.getVersion());
                     return;
                 }
             }
-            LOGGER.warn("Failed to refresh Skill frontmatter snapshot for namespace [{}], "
+            LOGGER.warn("Failed to refresh Skill display metadata for namespace [{}], "
                 + "skill [{}] after {} CAS retries", namespaceId, name,
                 AiResourceConstants.MAX_WORKING_VERSION_RETRY);
         } catch (Exception e) {
-            LOGGER.warn("Failed to refresh Skill frontmatter snapshot for namespace [{}], "
-                + "skill [{}]: {}", namespaceId, name, e.getMessage());
+            LOGGER.warn("Failed to refresh Skill display metadata for namespace [{}], "
+                + "skill [{}]", namespaceId, name, e);
         }
     }
     

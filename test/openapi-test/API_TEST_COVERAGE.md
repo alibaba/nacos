@@ -418,6 +418,12 @@ package storage. HTTP IT verifies generated reserved fields and an untruncated
 projection; service unit tests cover custom-field priority and all snapshot
 limits while preserving complete version metadata. They also verify that malformed
 historical `ai_resource.ext` metadata cannot fail list or detail requests.
+Skill description lifecycle consistency (#15949) is asserted in the Admin and Console
+frontmatter workflows with different descriptions per version: draft edits do not
+overwrite online metadata, last-online offline selects a working draft when
+present, and otherwise retains the just-offlined version's description without
+choosing a higher historical version. Service tests cover uploads, overwrites,
+forks, stale descriptions, unchanged snapshots, legacy descriptors and CAS retries.
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
