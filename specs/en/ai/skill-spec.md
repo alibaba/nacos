@@ -121,6 +121,9 @@ Standard-compatible Skill packages follow these rules:
   instruction content.
 - `name` and `description` are required frontmatter fields. Nacos maps `name`
   to the AI resource name and maps `description` to searchable metadata.
+- `description` supports YAML literal (`|`) and folded (`>`) block scalars,
+  including chomping indicators. Creation, upload, reads, lists, and details use
+  the complete parsed text; colons within that text must not create nested fields.
 - `license`, `compatibility`, `metadata`, and `allowed-tools` are optional
   standard fields. Nacos must preserve them in `SKILL.md`; it may index selected
   fields later, but the descriptor remains the source of truth for package
@@ -128,6 +131,9 @@ Standard-compatible Skill packages follow these rules:
 - Standard package roots may include optional `scripts/`, `references/`, and
   `assets/` directories. Nacos stores and distributes these files as Skill
   resources.
+- Ordinary resource files may be zero-byte or whitespace-only. Storage, reads,
+  and downloads must preserve the files and their content instead of treating
+  empty content as a missing file.
 - Upload parsing must ignore platform-generated ZIP metadata files, such as
   macOS `.DS_Store`, `._*` AppleDouble files, and the `__MACOSX/` directory.
   These files must not be stored or distributed as Skill resources. This

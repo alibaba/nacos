@@ -175,6 +175,11 @@ JSON-03/06：声明版本状态不进入存储摘要，运行时返回真实 ena
 
 ### Skill frontmatter response scenarios (#15345)
 
+`SkillUploadAdminApiOpenApiITCase.testCreateAndUploadPreserveEmptyFilesAndMultilineDescription`
+covers both draft creation and ZIP upload with a literal multiline description
+containing a colon and a zero-byte resource. It checks list/detail description and
+frontmatter consistency, version content, and preservation of the empty ZIP entry.
+
 | Scenario | Expected result | Coverage |
 | --- | --- | --- |
 | Create/update draft | List and detail generate name, description and version from summary state, return cached custom fields, and report `frontMatterTruncated=false` for a complete projection. | `testSkillFrontMatterLifecycle` |

@@ -100,11 +100,14 @@ Skill 定义为“一个目录，至少包含一个 `SKILL.md` 文件”。Nacos
 - `SKILL.md` 必须存在，内容由 YAML frontmatter 和 Markdown 指令正文组成。
 - `name` 与 `description` 是必填 frontmatter 字段。Nacos 将 `name` 映射为
   AI resource name，将 `description` 映射为可搜索元数据。
+- `description` 支持 YAML literal (`|`) 和 folded (`>`) 多行标量及其换行控制标记。
+  创建、上传、读取及列表/详情中的描述使用解析后的完整文本；正文中的冒号不得生成嵌套字段。
 - `license`、`compatibility`、`metadata` 与 `allowed-tools` 是标准定义的可选字段。
   Nacos 必须在 `SKILL.md` 中保留这些字段；后续可以选择索引其中一部分字段，但描述文件
   仍是包内容的事实来源。
 - 标准包根目录可以包含可选的 `scripts/`、`references/` 与 `assets/` 目录。
   Nacos 将这些文件作为 Skill resource 存储和分发。
+- 普通资源文件允许零字节或仅含空白。存储、读取和下载必须保留文件及原内容，不得将空内容视为文件缺失。
 - 上传解析必须忽略平台生成的 ZIP 元数据文件，例如 macOS 的 `.DS_Store`、
   `._*` AppleDouble 文件和 `__MACOSX/` 目录；这些文件不得作为 Skill resource
   存储或分发。该过滤不得影响普通资源文件，也不得把嵌套 Skill 目录特殊隐藏。
