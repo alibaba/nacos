@@ -182,7 +182,10 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
     
     @Override
     public int hashCode() {
-        return Objects.hash(ip, port);
+        if (StringUtils.isBlank(address)) {
+            return Objects.hash(ip, port);
+        }
+        return Objects.hash(address);
     }
     
     @Override
