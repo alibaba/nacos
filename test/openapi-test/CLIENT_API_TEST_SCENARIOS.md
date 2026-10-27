@@ -60,6 +60,15 @@ Client APIs. Focused Auth and AI module tests continue to verify that the
 AgentSpec detail endpoint keeps its `OPEN_API`/`AI` metadata and resolves the
 authorization resource from the client `name` parameter.
 
+The parameter-qualified shared Skill handlers reuse `/v3/client/ai/skills` and
+`/v3/client/ai/skills/search` with `namespaceId=__nacos_ai_hub__`. Their specified
+`ai-hub/entry` resource uses `OPEN_API`, `READ`, and
+`ONLY_IDENTITY`/`ALLOW_ANONYMOUS`; they accept a valid no-permission identity
+without a source visibility grant. `IdentityOnlyAuthorizationITCase` checks
+valid, invalid, blank, and conditionally anonymous credentials;
+`ConditionalAnonymousAuthorizationITCase` checks both shared handlers directly.
+Ordinary namespace handlers retain their existing authorization contract.
+
 ## Config
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
@@ -79,7 +88,7 @@ authorization resource from the client `name` parameter.
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | `PromptClientOpenApiITCase` | `GET /v3/client/ai/prompt` | Partial | Queries an exactly granted online prompt as the restricted Client identity by latest, explicit version, and label; verifies namespace defaulting, version-over-label priority, md5 conditional HTTP 304, missing promptKey/version resolution, absent prompt, unknown version, and offline/not-online errors. Direct cross-identity unreadable-as-not-found and grant-revocation convergence remain covered by focused service tests until the Stage 3 authorization matrix is merged. |
-| `SkillClientOpenApiITCase` | `GET /v3/client/ai/skills` | Covered | Downloads online skills as ZIP by latest, version, and label with resource entries; covers namespace defaulting, version-over-label priority, missing skillName, absent skill, unknown version/label, and controlled not-found JSON for download failures. |
+| `SkillClientOpenApiITCase`, `SharedSkillClientOpenApiITCase` | `GET /v3/client/ai/skills`<br>`GET /v3/client/ai/skills/search?namespaceId=__nacos_ai_hub__` | Covered | Downloads ordinary online Skills by latest/version/label. Shared scenarios publish and share through Admin helpers, then search the existing Client route with the reserved namespace as an identity with no source permission; verify opaque downloadable `name=hubEntryId`, `discoverySource=HUB`, display provenance without source identifiers, pinned ZIP content and headers, md5 304, explicit-version priority, malformed/noncanonical/overflow handles, version/label mismatch, pagination boundaries, and immediate removal after unshare. Omitted namespace still uses public. Independent persisted Hub counters start at zero despite source downloads; successful shared transfers leave source counts unchanged and later source transfers leave Hub counts unchanged. Two shared resources with a common query verify downloads DESC, ID ASC ties, sorting before page slicing, exact totals, and out-of-range pages. |
 | `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Covered | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing name, absent AgentSpec, unknown version, and controlled not-found errors. |
 | `AgentSpecSearchClientOpenApiITCase` | `GET /v3/client/ai/agentspecs/search` | Covered | Searches shared-index AgentSpec projections with online versions, literal keyword filtering, and `tagsAll`; covers eventual index convergence, optional keyword, namespace defaulting, page defaults and validation, empty page success, and invalid pagination errors. |
 | `AiCapabilitiesClientOpenApiITCase` | `GET /v3/client/ai/capabilities` | Covered | Five HTTP features; four real identity roles; denied anonymous/invalid/expired/replaced credentials; resource-free parsing and continued business authorization; no Client creation or Endpoint lease renewal; secured 405 method errors. C06 also executes Client/Admin/Console auth-switch isolation and records directed dual-JSON/old-server component probes separately. |
@@ -306,3 +315,15 @@ Capability declares GET only. MVC supplies secured HEAD without a response body 
 contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出展示及管理字段。
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+| `McpPublishClientOpenApiITCase`, `McpEndpointClientOpenApiITCase` | `GET,POST /v3/client/ai/mcp`<br>`POST,DELETE /v3/client/ai/mcp/endpoints`<br>`PUT /v3/client/ai/mcp/endpoints/heartbeat` | Covered | Runs against stable `LIFECYCLE_MANAGED` state and verifies latest/exact MCP query; omitted and explicit-false direct-online release plus `createDraft=true`; Tool, Resource, and auto-REF Form JSON fields; duplicate, malformed, and missing errors; Runtime Endpoint register/query/idempotent-register/deregister; stable Agent/MCP shared HTTP Client identity; heartbeat renewal while either module still owns a publication; `HTTP_CLIENT_NOT_FOUND` before creation and after the final publication is removed; and required header, identity, namespace, address, port, missing-target, and non-REF error envelopes. `McpMigrationAdminApiOpenApiITCase` owns the pre-cutover client draft gate. Shared-client expiration and replay are exercised through the Java SDK directed-restart scenario because they require a long-lived client process across server replacement. |
+
+`SharedSkillClientOpenApiITCase` requires an auth-enabled standalone deployment,
+enabled Hub capability, the default visibility plugin, and the configured
+no-permission identity. Anonymous success is checked when the existing anonymous
+AI switch is enabled. Counter assertions poll for at most 30 seconds to cover
+the normal 10-second asynchronous flush; they never alter the server's timer.
+The class does not start a server. These deployed-server scenarios must be run
+after rebuilding and starting the changed server; compilation alone does not
+establish HTTP or persistence success. Service-level tests additionally cover
+failed archive reads, post-read revocation fences, and no event on 304.

@@ -31,9 +31,11 @@ import { SkillCard } from './components/SkillCard';
 import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
 import { ImportSkillDialog } from '@/components/ai/skill/ImportSkillDialog';
+import { SkillManagementTabs } from '@/components/ai/skill/SkillManagementTabs';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useServerStore } from '@/stores/server-store';
 import { skillApi } from '@/api/skill';
 
 export default function SkillManagementPage() {
@@ -42,6 +44,7 @@ export default function SkillManagementPage() {
   const location = useLocation();
   const { currentNamespace } = useNamespaceStore();
   const { globalAdmin, username } = useAuthStore();
+  const hubEnabled = useServerStore((s) => s.hubEnabled);
   const {
     items,
     loading,
@@ -237,6 +240,8 @@ export default function SkillManagementPage() {
           </Button>
         </div>
       </div>
+
+      <SkillManagementTabs />
 
       {/* Search & filters (single row; py gives room so focus rings are not clipped by overflow-x-auto) */}
       <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">
@@ -505,6 +510,7 @@ export default function SkillManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('skill.deleteConfirm', { name: deleteTarget })}
+              {hubEnabled && <span className="mt-2 block text-amber-600">{t('hub.deleteWarning')}</span>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -349,6 +349,81 @@ any SDK implementing this contract must respect:
   remove the md5 cache entry, and stop emitting polling requests to the
   server.
 
+### 6.2 Shared namespace discovery and download
+
+> Note: `__nacos_ai_hub__` is the reserved sharing namespace. Only explicitly
+> selecting it reads shared Skills; omitting namespace still selects only
+> `public`. Ordinary resource mutations remain forbidden in this namespace.
+
+Sharing reuses `GET /v3/client/ai/skills/search` with namespaceId, query, tagsAll,
+pageNo and pageSize. There is no source selector or separate Client Hub route.
+`Page<SkillBasicInfo>` adds provenance fields defined by the
+[Skill discovery schema](../../schemas/ai/skill/0.1.0/skill-discovery.schema.json).
+
+- Ordinary results use `discoverySource=NAMESPACE` and retain their namespace/name.
+  Shared results use `discoverySource=HUB`, the reserved namespace and a decimal opaque
+  hubEntryId string as `name`, suitable for downloading the selected entry.
+- `displayName` is non-unique; never collapse same-name shared entries.
+  `sourceDisplayName` exposes a namespace label, not unauthorized source IDs,
+  database identities, reference ext or storage descriptors.
+- `version` is the pinned version; `downloadCount` counts Hub use only.
+- Eligible, readable entries sort by Hub downloadCount DESC, hubEntryId ASC
+  before pagination. Missing/negative counts mean zero; pageSize is at most 100.
+  Deep-page selection retains the best offset+pageSize candidates, so memory
+  cost grows with page depth.
+
+Download reuses `GET /v3/client/ai/skills?namespaceId=__nacos_ai_hub__&name=<hubEntryId>`.
+Display names never guess an entry, and a share never falls back to source
+latest. An explicit version must equal the pinned version; without a version
+only absent/latest labels are supported. Existing identity authentication is
+followed by Hub admission, PUBLIC/online source, switch and revocation checks.
+Reading the source namespace independently is not required.
+
+ZIP responses carry `X-Nacos-Hub-Entry-Id` and `X-Nacos-Skill-Resolved-Version`.
+A persisted digest from the revalidated source version may produce an empty
+304 on an exact md5 match. Missing digests always transfer a 200 response. A
+legacy response computes and best-effort persists the canonical content digest
+for later subscriptions. A 304 has no content type/resolved-version and is not
+counted as a download.
+
+Successful Hub transfers increment only Hub metadata/reference-version counts,
+never source counts. New shares start at zero; re-sharing or adjusting the same
+entry preserves its aggregate count with separate reference-version counts.
+Ordinary source downloads remain independent. Directory/detail/content previews
+do not count. Existing asynchronous count flushing (10 seconds by default)
+makes popularity eventually visible.
+
+Management lists honor the existing Skill `orderBy` option: omitted or blank means
+the Hub entry's own modification time descending; `download_count` means the Hub
+entry's own download count descending. Both use ascending hubEntryId for ties,
+after eligibility filtering and before pagination. Missing timestamps sort last;
+source Skill timestamps and counters do not determine Hub ordering. Client
+`/search` retains its popularity ordering independently of the management default.
+
+Admin and Console management reads also reuse their existing Skill routes:
+
+`GET /v3/{admin|console}/ai/skills/list`, `GET /v3/{admin|console}/ai/skills`,
+`GET /v3/{admin|console}/ai/skills/version`, and
+`GET /v3/{admin|console}/ai/skills/version/download`. Select the reserved
+namespace and use the opaque Hub ID as `skillName`; version reads/downloads
+must select the pinned version. Lists return `Page<SkillSummary>` and detail
+returns `SkillMeta` with the same provenance fields and exactly one pinned
+version summary. Content returns `Skill`; downloads return ZIP bytes for both
+audiences. Source navigation fields are disclosed only after source READ
+authorization. Shared reads use identity authentication and Hub admission;
+ordinary namespace authorization and write restrictions remain unchanged.
+There are no dedicated Hub list/detail/content/download HTTP routes or public
+Maintainer SDK read methods. Special share/adjust/unshare, governance-state,
+source-share, import and copy operations retain their management routes.
+
+`nacosAiAccessHub` defaults to false independently from the existing server
+`nacos.ai.hub.enabled` switch (default true) and `ai_hub_enabled` state. See the
+[SDK specification](../sdk/sdk-spec.md) for merge paging. Omitted or explicit false selects
+only the business namespace; explicit true combines shared results. This option never changes the HTTP API's
+default namespace. Console sharing belongs
+to each resource domain; only Skill currently implements the full lifecycle.
+Type-specific Admin/Console sharing, import and governance APIs remain available.
+
 ## 7. Pending Alignment Issues
 
 - Enforce the full upstream name validation rule during upload.
@@ -363,3 +438,8 @@ Skill package conventions may change with AI Agent frameworks. New Skill
 package formats should define parsing, validation, storage, and migration
 rules. Existing Skill versions must remain retrievable unless explicitly
 deprecated.
+
+
+### Console Source Sharing Panel
+
+All five resource detail pages place the same sharing-management card immediately below the resource summary and lifecycle actions, above the content tabs/grid. The card groups share/adjust/unshare and direct cross-namespace copy. Copy authorization is independent of share WRITE/public eligibility; source READ and target WRITE are checked on submission. Skill direct copy reuses the existing management /copy route and requires an enabled online source version; the other four types retain their existing published-version copy rules. An unavailable version leaves the copy button visible and disabled with a reason. Hub-disabled pages show no sharing card. Prompt omits PUBLIC/private eligibility messages and adds no scope control.

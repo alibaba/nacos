@@ -27,7 +27,10 @@ import java.net.SocketTimeoutException;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.never;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -94,6 +97,59 @@ class AiHttpClientProxyTest {
         if (httpClientProxy != null) {
             httpClientProxy.shutdown();
         }
+    }
+    
+    @Test
+    void searchSharedSkillsUsesExistingEndpointAndRepeatedTags() throws Exception {
+        Page<SkillBasicInfo> expected = new Page<>();
+        SkillBasicInfo item = new SkillBasicInfo();
+        item.setName("17");
+        item.setHubEntryId(17L);
+        item.setDiscoverySource("HUB");
+        item.setDownloadCount(9L);
+        expected.setTotalCount(1);
+        expected.setPageItems(Collections.singletonList(item));
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setCode(200);
+        response.setData(JacksonUtils.toJson(Result.success(expected)));
+        when(serverListManager.getServerList())
+            .thenReturn(Collections.singletonList("127.0.0.1:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        doReturn(response).when(nacosRestTemplate)
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+        
+        Page<SkillBasicInfo> actual = httpClientProxy.searchSkills(AiConstants.Hub.NAMESPACE_ID,
+            "search text", Arrays.asList("one", "two"), 1, 5);
+        assertEquals(Long.valueOf(17), actual.getPageItems().get(0).getHubEntryId());
+        assertEquals(Long.valueOf(9), actual.getPageItems().get(0).getDownloadCount());
+        ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
+        verify(nacosRestTemplate).get(url.capture(), any(Header.class), any(Query.class),
+            eq(String.class));
+        assertTrue(url.getValue().contains("/v3/client/ai/skills/search?"));
+        assertTrue(url.getValue().contains("namespaceId=__nacos_ai_hub__"));
+        assertTrue(url.getValue().contains("tagsAll=one&tagsAll=two"));
+        assertTrue(url.getValue().contains("query=search+text"));
+    }
+    
+    @Test
+    void searchSkillsRejectsInvalidPayloadAndKeepsServerError() throws Exception {
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setCode(200);
+        response.setData("{\"code\":0,\"data\":null}");
+        when(serverListManager.getServerList())
+            .thenReturn(Collections.singletonList("127.0.0.1:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        doReturn(response).when(nacosRestTemplate)
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class,
+                () -> httpClientProxy.searchSkills("public", null, null, 1, 20)).getErrCode());
+        response.setData("{\"code\":403,\"message\":\"denied\",\"data\":null}");
+        assertEquals(403,
+            assertThrows(NacosException.class,
+                () -> httpClientProxy.searchSkills("public", null, null, 1, 20)).getErrCode());
     }
     
     @Test

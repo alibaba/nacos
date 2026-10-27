@@ -68,6 +68,8 @@ import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useServerStore } from '@/stores/server-store';
 import { skillApi } from '@/api/skill';
+import { SkillHubShareControls } from '@/components/ai/skill/SkillHubShareControls';
+import { HUB_SYSTEM_NAMESPACE, activeSourceVersion, hubDetailPath, revokeWarning, validHubId } from '@/lib/hub-skill-utils';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
@@ -111,20 +113,32 @@ function renderSkillMarkdownPreview(source: string) {
 
 const skillMarkdownEditorComponents = { preview: renderSkillMarkdownPreview };
 
+type HubLifecycleConfirmation = {
+  action: 'offline' | 'disable' | 'private';
+  version?: string;
+  namespaceId: string;
+  skillName: string;
+};
+
 export default function SkillDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedVersion = searchParams.get('version')?.trim() || null;
   const { name: routeName } = useParams<{ name: string }>();
   const skillName = routeName ? decodeURIComponent(routeName) : '';
-  const { currentNamespace } = useNamespaceStore();
+  const { currentNamespace, namespaces, syncNamespaceFromSearch } = useNamespaceStore();
   const namespaceId =
     searchParams.get('namespaceId') ||
     searchParams.get('namespace') ||
     currentNamespace ||
     'public';
+  useEffect(() => {
+    syncNamespaceFromSearch(searchParams.toString());
+  }, [searchParams, namespaces, syncNamespaceFromSearch]);
   const { globalAdmin, username } = useAuthStore();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
+  const hubEnabled = useServerStore((s) => s.hubEnabled);
 
   const {
     currentDetail,
@@ -138,6 +152,23 @@ export default function SkillDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [hubActiveVersion, setHubActiveVersion] = useState<string | null>(null);
+  const [hubLifecycleConfirmation, setHubLifecycleConfirmation] = useState<HubLifecycleConfirmation | null>(null);
+  useEffect(() => {
+    if (!hubEnabled) {
+      setHubActiveVersion(null);
+      setHubLifecycleConfirmation(null);
+    }
+  }, [hubEnabled]);
+  const selectVersion = useCallback((version: string) => {
+    setSelectedVersion(version);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (version) next.set('version', version);
+      else next.delete('version');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [versionDoc, setVersionDoc] = useState<SkillDocument | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -202,13 +233,14 @@ export default function SkillDetailPage() {
   const [forcePublishConfirmOpen, setForcePublishConfirmOpen] = useState(false);
 
   const loadDetail = useCallback(() => {
-    if (skillName) {
+    if (skillName && namespaceId !== HUB_SYSTEM_NAMESPACE) {
       return fetchDetail(namespaceId, skillName);
     }
   }, [fetchDetail, namespaceId, skillName]);
 
   useEffect(() => {
     setVersionDoc(null);
+    setHubLifecycleConfirmation(null);
     setSelectedVersion('');
     setIsEditingDraft(false);
     setIsCreatingNewDraft(false);
@@ -220,24 +252,16 @@ export default function SkillDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skillName, namespaceId]);
 
-  // Auto-select version when detail loads: prefer "latest" label, then first by sort order
+  // URL ?version is an exact pin. Missing versions must not silently switch to latest.
   useEffect(() => {
     if (!currentDetail || detailLoading) return;
     const versions = sortVersionsDescending(currentDetail.versions || []);
-    const latestLabelled = currentDetail.labels?.latest;
-    const preferredVersion = (latestLabelled && versions.some(v => v.version === latestLabelled))
-      ? latestLabelled
-      : versions[0]?.version;
-    // If no version selected, auto-select preferred
-    if (preferredVersion && !selectedVersion) {
-      setSelectedVersion(preferredVersion);
-      return;
-    }
-    // If selected version no longer exists (e.g. deleted), switch to preferred or clear
-    if (selectedVersion && !versions.some((v) => v.version === selectedVersion)) {
-      setSelectedVersion(preferredVersion || '');
-    }
-  }, [currentDetail, detailLoading, selectedVersion]);
+    const preferred = activeSourceVersion(requestedVersion, versions, currentDetail.labels?.latest);
+    setSelectedVersion(previous => {
+      if (requestedVersion) return preferred;
+      return previous && versions.some(v => v.version === previous) ? previous : preferred;
+    });
+  }, [currentDetail, detailLoading, requestedVersion]);
 
   useEffect(() => {
     setBizTags(parseBizTags(currentDetail?.bizTags));
@@ -251,7 +275,7 @@ export default function SkillDetailPage() {
 
   // Load version document when selected version changes
   useEffect(() => {
-    if (!selectedVersion || !skillName) {
+    if (!selectedVersion || !skillName || namespaceId === HUB_SYSTEM_NAMESPACE) {
       setVersionDoc(null);
       return;
     }
@@ -332,7 +356,7 @@ export default function SkillDetailPage() {
         await fetchDetail(namespaceId, skillName);
         const updated = useSkillStore.getState().currentDetail;
         if (updated?.editingVersion) {
-          setSelectedVersion(updated.editingVersion);
+          selectVersion(updated.editingVersion);
         }
       } else {
         // Editing existing draft: updateDraft
@@ -379,6 +403,14 @@ export default function SkillDetailPage() {
   // ===== Enable/disable handler =====
 
   const handleToggleEnable = async () => {
+    if (hubEnabled && currentDetail?.enable && hubActiveVersion) {
+      setHubLifecycleConfirmation({ action: 'disable', namespaceId, skillName });
+      return;
+    }
+    await performToggleEnable();
+  };
+
+  const performToggleEnable = async () => {
     if (!currentDetail) return;
     setEnableToggling(true);
     try {
@@ -397,6 +429,14 @@ export default function SkillDetailPage() {
   };
 
   const handleToggleScope = async () => {
+    if (hubEnabled && currentDetail?.scope === 'PUBLIC' && hubActiveVersion) {
+      setHubLifecycleConfirmation({ action: 'private', namespaceId, skillName });
+      return;
+    }
+    await performToggleScope();
+  };
+
+  const performToggleScope = async () => {
     if (!currentDetail) return;
     setScopeToggling(true);
     try {
@@ -498,7 +538,7 @@ export default function SkillDetailPage() {
       await fetchDetail(namespaceId, skillName);
       const updated = useSkillStore.getState().currentDetail;
       if (updated?.editingVersion) {
-        setSelectedVersion(updated.editingVersion);
+        selectVersion(updated.editingVersion);
       }
       setActiveTab('overview');
     } catch {
@@ -538,7 +578,7 @@ export default function SkillDetailPage() {
       await fetchDetail(namespaceId, skillName);
       const updated = useSkillStore.getState().currentDetail;
       const remaining = sortVersionsDescending(updated?.versions || []);
-      setSelectedVersion(remaining[0]?.version || '');
+      selectVersion(remaining[0]?.version || '');
     } catch {
       await loadDetail();
     } finally {
@@ -616,6 +656,14 @@ export default function SkillDetailPage() {
   };
 
   const handleOffline = async (version: string) => {
+    if (hubEnabled && revokeWarning(!!hubActiveVersion, version, hubActiveVersion || undefined)) {
+      setHubLifecycleConfirmation({ action: 'offline', version, namespaceId, skillName });
+      return;
+    }
+    await performOffline(version);
+  };
+
+  const performOffline = async (version: string) => {
     setActionLoading(true);
     try {
       await skillApi.offline({ namespaceId, skillName, version });
@@ -625,6 +673,28 @@ export default function SkillDetailPage() {
       await loadDetail();
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const hubLifecycleBusy = actionLoading || enableToggling || scopeToggling;
+
+  const confirmHubLifecycle = async () => {
+    const pending = hubLifecycleConfirmation;
+    if (!pending || hubLifecycleBusy) return;
+    if (pending.namespaceId !== namespaceId || pending.skillName !== skillName) {
+      setHubLifecycleConfirmation(null);
+      return;
+    }
+    try {
+      if (pending.action === 'offline' && pending.version) {
+        await performOffline(pending.version);
+      } else if (pending.action === 'disable' && currentDetail?.enable) {
+        await performToggleEnable();
+      } else if (pending.action === 'private' && currentDetail?.scope === 'PUBLIC') {
+        await performToggleScope();
+      }
+    } finally {
+      setHubLifecycleConfirmation(null);
     }
   };
 
@@ -663,7 +733,7 @@ export default function SkillDetailPage() {
   }, [hasSkillMdContent, skillMdContent]);
 
   const handleSelectVersion = (version: string) => {
-    setSelectedVersion(version);
+    selectVersion(version);
   };
 
   // Build CLI commands for current skill (must be before early returns to keep hooks order stable)
@@ -676,6 +746,10 @@ export default function SkillDetailPage() {
   }, [skillName, selectedVersion, t]);
 
   // ===== Loading skeleton =====
+  if (namespaceId === HUB_SYSTEM_NAMESPACE) {
+    return <div role="alert" className="p-8 text-center">{t('hub.unavailable')}</div>;
+  }
+
   if (detailLoading && !currentDetail) {
     return (
       <div className="space-y-5">
@@ -763,6 +837,7 @@ export default function SkillDetailPage() {
   const showVersionDiff = !isEditingDraft && versions.length >= 2;
   const canManageVisibility = globalAdmin || detail.owner === username;
   const canWriteResource = detail.writable;
+  const missingPinnedVersion = !!requestedVersion && !versions.some(v => v.version === requestedVersion);
 
   return (
     <div className="space-y-5 pb-5">
@@ -899,7 +974,10 @@ export default function SkillDetailPage() {
                 )}
               </div>
 
-              {/* Version lifecycle action buttons */}
+               {missingPinnedVersion && <p role="alert" className="mt-2 text-sm text-destructive">
+                 {t('hub.pinnedNotFound', { version: requestedVersion })}
+               </p>}
+               {/* Version lifecycle action buttons */}
               {canWriteResource && selectedVersion && currentVersionStatus && (
                 <VersionLifecycleActionBar warning={!detail.enable ? (
                     <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mb-2">
@@ -1157,6 +1235,20 @@ export default function SkillDetailPage() {
           </div>
         </div>
       </div>
+
+      {hubEnabled && <SkillHubShareControls key={`${namespaceId}:${skillName}`} namespaceId={namespaceId} skillName={skillName}
+        selectedVersion={selectedVersion} detail={detail} onShareChange={setHubActiveVersion} />}
+
+      {detail.origin && <Card className="gap-0 py-0">
+        <div className="border-b bg-muted/30 px-4 py-3 text-sm font-semibold">{t('hub.originTitle')}</div>
+        <CardContent className="space-y-1 p-4 text-xs text-muted-foreground">
+          <p>{t('hub.source')}: {detail.origin.sourceName} @ {detail.origin.sourceVersion}</p>
+          <p>{t('hub.importMode')}: {detail.origin.mode === 'HUB_IMPORT' ? t('hub.import') : t('hub.directCopy')}</p>
+          {hubEnabled && detail.origin.hubEntryId && validHubId(detail.origin.hubEntryId) && <Button size="sm" variant="outline"
+            onClick={() => navigate(hubDetailPath(detail.origin!.hubEntryId!))}>{t('hub.openHubReference')}</Button>}
+          <p>{t('hub.independentDraft')}</p>
+        </CardContent>
+      </Card>}
 
       {/* ===== Tabs Content ===== */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
@@ -1581,6 +1673,30 @@ export default function SkillDetailPage() {
         resourceName={skillName}
         onSuccess={loadDetail}
       />
+
+      <Dialog open={hubEnabled && !!hubLifecycleConfirmation} onOpenChange={open => {
+        if (!open && !hubLifecycleBusy) setHubLifecycleConfirmation(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {hubLifecycleConfirmation?.action === 'offline'
+                ? `${t('skill.offline')} ${hubLifecycleConfirmation.version}`
+                : hubLifecycleConfirmation?.action === 'disable'
+                  ? t('skill.toggleEnable') : t('skill.toggleScope')}
+            </DialogTitle>
+            <DialogDescription>{t('hub.lifecycleConfirm')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={hubLifecycleBusy} onClick={() => setHubLifecycleConfirmation(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" disabled={hubLifecycleBusy} onClick={confirmHubLifecycle}>
+              {t('common.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Force-publish confirmation dialog */}
       <Dialog open={forcePublishConfirmOpen} onOpenChange={setForcePublishConfirmOpen}>

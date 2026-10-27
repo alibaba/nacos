@@ -58,6 +58,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -138,6 +139,8 @@ public class NacosAiService implements AiService {
     
     private final AiHttpClientProxy httpProxy;
     
+    private final SkillDiscoveryClient skillDiscoveryClient;
+    
     private final AiClientProxy aiClientProxy;
     
     private final AgentGrpcTransport grpcTransport;
@@ -204,6 +207,8 @@ public class NacosAiService implements AiService {
             transportMode);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
+        this.skillDiscoveryClient = new SkillDiscoveryClient(httpProxy, namespaceId,
+            Boolean.parseBoolean(clientProperties.getProperty(AiConstants.AI_ACCESS_HUB, "false")));
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.grpcTransport = new AgentGrpcTransport(agentMode, mcpMode, promptMode, grpcClient,
@@ -586,6 +591,17 @@ public class NacosAiService implements AiService {
     }
     
     private final class SkillServiceDelegate implements SkillService {
+        
+        @Override
+        public Page<SkillBasicInfo> searchSkills(String query, List<String> tagsAll, int pageNo,
+            int pageSize) throws NacosException {
+            return skillDiscoveryClient.search(query, tagsAll, pageNo, pageSize);
+        }
+        
+        @Override
+        public byte[] downloadSkillZipBySearchResult(SkillBasicInfo skill) throws NacosException {
+            return skillDiscoveryClient.download(skill);
+        }
         
         @Override
         public byte[] downloadSkillZip(String skillName) throws NacosException {

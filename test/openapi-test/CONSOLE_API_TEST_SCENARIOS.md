@@ -206,3 +206,31 @@ independent Console deployment. Agent Runtime assertions require enabled/healthy
 and absence of the removed state field. These executions do not change the
 API-surface denominator; final outcomes and prior intermittent Prompt observations
 are recorded separately in the SDK scenario and coverage records.
+
+
+## Shared Skill namespace contract (2026-10-21 meeting)
+
+`HubSkillConsoleApiOpenApiITCase` inherits `HubSkillApiBaseITCase`. Shared list, detail, content and ZIP download
+reuse `GET /v3/console/ai/skills/list`, `GET /v3/console/ai/skills`,
+`GET /v3/console/ai/skills/version`, and `GET /v3/console/ai/skills/version/download`.
+Select `namespaceId=__nacos_ai_hub__`, with the opaque Hub ID in `skillName`
+and the pinned `version` for content/download. Lists/details use existing
+`SkillSummary`/`SkillMeta` DTOs. Scenarios cover anonymous identity policy,
+a valid identity without source permission, pinned content, source lifecycle
+revocation, safe source navigation, invalid/overflow IDs and page limits,
+and raw ZIP downloads for both audiences. Removed dedicated Hub
+list/detail/content/download routes must return 404, without compatibility aliases.
+
+Only share/adjust/unshare/force-unshare, source-share/governance-state, import/copy
+retain special management routes. Existing CAS, source and target authorization,
+independent draft copy, lifecycle revocation and state scenarios remain.
+`HubDisabledApiOpenApiITCase` covers empty shared lists and controlled 501
+reads/mutations while ordinary namespace reads still work. Functional scenarios
+require a rebuilt auth-enabled standalone server with the default visibility
+plugin; anonymous cases additionally require the existing anonymous AI switch.
+
+Shared Skill sorting coverage: `HubSkillApiBaseITCase.sharedManagementListSortsBeforePaginationUsingExistingOrderBy`
+runs for both Admin and Console audiences through the existing Skill list path.
+It verifies the default Hub update-time order, stable Hub ID ties, download-count
+order using Hub counters, and page-two consistency after server-side ordering.
+Client discovery keeps its popularity order; no new route or Client sort parameter is added.

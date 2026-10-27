@@ -131,6 +131,11 @@ public class AiConstants {
     
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
+    /**
+     * Include shared resources in runtime discovery; disabled by default.
+     */
+    public static final String AI_ACCESS_HUB = "nacosAiAccessHub";
+    
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL =
         "nacosAiMcpServerCacheUpdateInterval";
     
@@ -186,5 +191,23 @@ public class AiConstants {
         public static final String A2A_ENDPOINT_DEFAULT_TRANSPORT = "JSONRPC";
         
         public static final String A2A_ENDPOINT_DEFAULT_PROTOCOL = "HTTP";
+    }
+    
+    public static class Hub {
+        
+        /**
+         * Internal namespace ID for Agentic Resource Hub.
+         */
+        public static final String NAMESPACE_ID = "__nacos_ai_hub__";
+        
+        /**
+         * Logical resource used to authenticate guarded shared Skill reads.
+         */
+        public static final String ENTRY_RESOURCE = "ai-hub/entry";
+        
+        /**
+         * Console administrator resource used for Hub governance.
+         */
+        public static final String ADMIN_RESOURCE = "console/ai-hub";
     }
 }

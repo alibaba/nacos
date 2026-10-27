@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.ai.constant.Constants.Hub;
+import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.core.context.addition.AuthContext;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
@@ -56,7 +59,12 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
         LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
-        if (isIdentityOnlyRequest() && addServerIdentity(loginIdentityContext)) {
+        boolean hubRequest = resource != null && Hub.ENTRY_RESOURCE.equals(resource.getResource());
+        // Hub reads retain the caller boundary, including an admitted anonymous viewer.
+        if (hubRequest && isAnonymousHubViewer()) {
+            return loginIdentityContext;
+        }
+        if (!hubRequest && isIdentityOnlyRequest() && addServerIdentity(loginIdentityContext)) {
             return loginIdentityContext;
         }
         if (addRequestIdentities(loginIdentityContext)) {
@@ -81,6 +89,18 @@ public class ConsoleMaintainerClientAuthPlugin extends AbstractClientAuthService
         Resource resource = RequestContextHolder.getContext().getAuthContext().getResource();
         return resource != null && resource.getProperties() != null
             && resource.getProperties().containsKey(Constants.Tag.ONLY_IDENTITY);
+    }
+    
+    private boolean isAnonymousHubViewer() {
+        AuthContext context =
+            RequestContextHolder.getContext().getAuthContext();
+        IdentityContext identity = context.getIdentityContext();
+        return ApiType.CONSOLE_API.name().equals(context.getApiType())
+            && context.getAuthResult() != null && context.getAuthResult().isSuccess()
+            && identity != null && "anonymous".equals(identity.getParameter(
+                Constants.Identity.IDENTITY_ID))
+            && !Boolean.parseBoolean(String.valueOf(identity.getParameter(
+                Constants.Identity.SERVER_IDENTITY)));
     }
     
     private boolean addRequestIdentities(LoginIdentityContext loginIdentityContext) {

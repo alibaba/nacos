@@ -103,6 +103,15 @@ documented `SignType.LOCK` guard.
 
 ## Client SDK
 
+Shared Skill discovery adds `SkillService.searchSkills` and
+`downloadSkillZipBySearchResult`, with default-off `nacosAiAccessHub` independent
+of the server capability flag. `AiServiceJavaSdkITCase` covers invalid paging,
+null selection and default local-only absent-query results through the standalone Client API.
+Deterministic client tests cover opt-in, cross-source pagination, provenance,
+same-name retention, error propagation and pinned shared downloads. The full
+share-to-SDK success fixture remains a documented gap because it requires Hub
+share-management setup; server API IT owns that publication/counter flow.
+
 | SDK interface | IT class | Status | Scenario coverage | Known gaps |
 | --- | --- | --- | --- | --- |
 | `ConfigService` | `ConfigServiceJavaSdkITCase` | Covered | Verifies factory creation, publish/query/getConfigWithResult/CAS/remove lifecycle, missing-result shape, missing/idempotent removal, standalone `addListener`, listener removal behavior, null listener rejection for add/sign/remove paths, client-side invalid parameter handling, valid `JSON` type metadata, unknown type compatibility, config filter request/response transformation, fuzzy-watch matched keys/add/delete/cancel behavior, missing config behavior, shutdown cleanup, Request/Result pattern API lifecycle (`GetConfigRequest`/`PublishConfigRequest`/`RemoveConfigRequest` with `PublishConfigResult`/`RemoveConfigResult`), CAS failure with detailed error code and message, and query result metadata assertion (content/md5/configType/encryptedDataKey). | `getConfig` timeout simulation is intentionally excluded from standalone Java SDK IT because it is not deterministic to force against the shared running server. Snapshot-switch initialization and cleanup failures are covered by `SnapShotSwitchTest`; standalone SDK IT does not currently isolate the JVM-global switch or inject local filesystem failures. |

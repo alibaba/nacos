@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.ai.service.repository;
 
+import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -219,9 +221,13 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
         long increment) {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
             TableConstant.AI_RESOURCE);
-        String sql = "UPDATE ai_resource SET download_count = download_count + ?, gmt_modified="
-            + mapper.getFunction("NOW()")
-            + " WHERE namespace_id=? AND name=? AND type=?";
+        boolean hubSkill = AiConstants.Hub.NAMESPACE_ID.equals(namespaceId)
+            && AiResourceConstants.RESOURCE_TYPE_SKILL.equals(type);
+        // Hub gmt_modified is the share timestamp; usage never republishes the share.
+        String sql = "UPDATE ai_resource SET download_count = download_count + ?"
+            + (hubSkill ? "" : ", gmt_modified=" + mapper.getFunction("NOW()"))
+            + " WHERE namespace_id=? AND name=? AND type=?"
+            + (hubSkill ? " AND c_from='hub'" : "");
         EmbeddedStorageContextHolder.addSqlContext(sql,
             new Object[] {increment, normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();

@@ -172,9 +172,10 @@ export function Sidebar() {
     [navigate, currentNamespace, namespaceShowName]
   );
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path ||
+    (path === '/skill' && location.pathname.startsWith('/skill/'));
   const isGroupActive = (children?: { path: string }[]) =>
-    children?.some((c) => location.pathname === c.path) ?? false;
+    children?.some((c) => isActive(c.path)) ?? false;
 
   const iconForChild = (key: string) => {
     const map: Record<string, React.ReactNode> = {

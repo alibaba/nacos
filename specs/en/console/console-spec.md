@@ -152,6 +152,71 @@ or rejected visual states. On MCP detail, a new draft is created from the select
 online Version; the generic new-Version entry is shown only for a retained MCP
 Resource that has no Version after its sole initial draft was deleted.
 
+### 5.1 Shared AI Resources
+
+Shared Skill management offers default and download-count sorting through the
+existing Skill list `orderBy` option. Default uses the shared entry's modification
+time descending; download mode uses its own download count descending. Changing
+the sort resets to page one. The UI preserves server ordering instead of sorting
+only the current page.
+
+Shared resources belong inside the management entry for their resource type.
+Console must not expose a standalone, cross-type Agentic Resource Hub menu.
+Skill management separates the current namespace's Skills from Shared Skills
+with explicit navigation. The shared directory is `/skill/shared/list`, with
+`/skill/shared/detail/{hubEntryId}` for details; old `/hub/skills` links redirect
+to these routes. These paths preserve `/skill/shared` for an ordinary Skill
+named `shared`. Only the shared directory and read-only detail routes preserve
+anonymous browsing; source management and mutations retain their existing
+authorization checks. The shared tab follows the server's `ai_hub_enabled`
+capability.
+
+The shared directory matches the current namespace list's search input dimensions,
+filter spacing, card grid breakpoints, icons, description line limit, and footer
+styles. It shows the total below the title and formats card timestamps as
+`YYYY-MM-DD HH:mm`, without the two explanatory lines about sharing scope and
+download ordering. Cards retain source namespace, pinned version, and independent
+download count information. Sharing, adjusting the shared version, unsharing,
+importing an independent draft, downloading, and administrator takedown remain
+available under their existing permissions. Resource types without an
+implemented sharing capability must not expose nonfunctional shared tabs.
+
+Shared Skill details use the ordinary Skill detail typography: matching title
+size, weight and tracking, monospace versions, description line height and width,
+and sidebar label/value sizes. Markdown reuses `app-markdown`; business and
+version labels reuse `DetailTagChip`. Shared Markdown continues to disable raw HTML.
+
+Shared details omit the read-only badge. The install card offers manual download
+and a copyable command for the Hub-capable CLI:
+`nacos-cli skill-get <displayName> <hubEntryId> --version <sharedVersion>`.
+The entry ID disambiguates equal names and the version pins the page snapshot;
+users do not switch to the internal namespace. IDs retain string precision.
+Invalid IDs, missing pins, or unsafe shell arguments must not produce install commands.
+
+Shared Skill cards and details display only the shared entry's independent
+download count, never source Skill or source version download counts. Shared
+results preserve server pagination and ordering for the selected sort mode.
+
+Shared Skill reads reuse the ordinary Skill Console API: `GET
+/v3/console/ai/skills/list`, `GET /v3/console/ai/skills`, `GET
+/v3/console/ai/skills/version`, and `GET
+/v3/console/ai/skills/version/download`. The UI selects
+`namespaceId=__nacos_ai_hub__`, passes the opaque shared entry ID as
+`skillName`, and pins content and download requests to the version returned by
+the detail response. The ordinary list's `skillName`/`search` and single
+`bizTag` filter are preserved, including filtering before pagination. Shared
+reads use the ordinary Skill response models and provenance fields; dedicated
+`/hub/skills/list`, `/detail`, `/content`, and `/download` routes are not exposed.
+Only sharing, unsharing, transfer, and governance-specific operations retain
+their special management routes.
+
+
+This increment enables Hub only for Skill. MCP Server, Agent, Prompt and AgentSpec retain their original management and runtime behavior; their Hub integration is deferred.
+Skill Hub details retain SKILL.md, resource files, the native ZIP download and pinned CLI installation command. Basic information omits lifecycle status and source counters; only the independent Hub counter is shown.
+Successful import or direct copy opens the ordinary target Skill draft using the returned namespace, name and draft version. It never publishes, synchronizes with the source, or repeats the import because the target page failed to load.
+
+Opening an ordinary Skill detail with an explicit `namespaceId` (or legacy `namespace`) synchronizes the header namespace selector to that business namespace, including in-app source-version links, imported/copied drafts, and browser history navigation. The URL's pinned version remains unchanged. Browsing shared Skill lists or details must not switch the business namespace to the source or the internal Hub namespace.
+
 ## 6. Handler And Proxy Boundary
 
 Console controllers must delegate through proxy and handler interfaces rather

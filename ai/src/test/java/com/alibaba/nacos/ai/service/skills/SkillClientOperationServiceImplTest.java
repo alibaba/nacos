@@ -20,9 +20,11 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -63,6 +66,27 @@ class SkillClientOperationServiceImplTest {
     void setUp() {
         service = new SkillClientOperationServiceImpl(skillOperationService, manifestService,
             aiResourceVersionPersistService);
+    }
+    
+    @Test
+    void querySkillShouldRejectHubNamespaceBeforeAnyLookup() {
+        NacosApiException exception =
+            assertThrows(NacosApiException.class,
+                () -> service.querySkill(
+                    AiConstants.Hub.NAMESPACE_ID,
+                    "find-skills-101",
+                    "1.0.0",
+                    null,
+                    null));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals(ErrorCode.ILLEGAL_NAMESPACE.getCode(),
+            exception.getDetailErrCode());
+        
+        verifyNoInteractions(
+            manifestService,
+            aiResourceVersionPersistService,
+            skillOperationService);
     }
     
     @Test

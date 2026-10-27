@@ -27,10 +27,11 @@ class NamespaceTypeEnumTest {
     void testValues() {
         NamespaceTypeEnum[] values = NamespaceTypeEnum.values();
         assertNotNull(values);
-        assertEquals(3, values.length);
+        assertEquals(4, values.length);
         assertEquals(NamespaceTypeEnum.GLOBAL, values[0]);
         assertEquals(NamespaceTypeEnum.CUSTOM, values[1]);
         assertEquals(NamespaceTypeEnum.AI_MCP, values[2]);
+        assertEquals(NamespaceTypeEnum.AI_HUB, values[3]);
     }
     
     @Test
@@ -53,9 +54,17 @@ class NamespaceTypeEnumTest {
     }
     
     @Test
+    void testAiHub() {
+        assertEquals(3, NamespaceTypeEnum.AI_HUB.getType());
+        assertEquals("Nacos AI Resource Hub namespace",
+                NamespaceTypeEnum.AI_HUB.getDescription());
+    }
+    
+    @Test
     void testValueOf() {
         assertEquals(NamespaceTypeEnum.GLOBAL, NamespaceTypeEnum.valueOf("GLOBAL"));
         assertEquals(NamespaceTypeEnum.CUSTOM, NamespaceTypeEnum.valueOf("CUSTOM"));
         assertEquals(NamespaceTypeEnum.AI_MCP, NamespaceTypeEnum.valueOf("AI_MCP"));
+        assertEquals(NamespaceTypeEnum.AI_HUB, NamespaceTypeEnum.valueOf("AI_HUB"));
     }
 }

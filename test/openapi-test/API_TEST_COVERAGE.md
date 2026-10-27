@@ -91,6 +91,8 @@ port cannot inherit a Nacos authorization header. The guard complements rather
 than replaces the functional scenario rows. The live
 [authorization operation registry](AUTHORIZATION_OPERATION_COVERAGE.md) maps all
 393 production `@Secured` methods in 57 Controllers to direct tests or reviewed
+
+416 production `@Secured` methods in 62 Controllers to direct tests or reviewed
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
@@ -101,6 +103,19 @@ administrator identity. Public endpoints and the independent ARD port remain
 explicitly anonymous. Private AI fixtures are made visible through resource-
 exact grants or are published by the client identity and observed as owner;
 the functional assertions and row counts are unchanged.
+
+The shared Skill contract strengthens the existing Skill Client scenario row
+without adding a URL or changing the API-surface totals. The existing search
+and ZIP routes select shared resources only with
+`namespaceId=__nacos_ai_hub__`. `SharedSkillClientOpenApiITCase` covers discovery
+provenance and opaque handles, pinned downloads and 304, no-source-permission
+reads, validation and unshare revocation, independent persisted download
+counters, and popularity ordering before pagination. The authorization
+inventory records the two parameter-qualified handlers separately, including
+their `ONLY_IDENTITY`/`ALLOW_ANONYMOUS` matrix. These success paths require a
+rebuilt standalone server with auth, Hub, and the default visibility plugin;
+counter polling allows the standard ten-second flush. They have not been
+executed merely by compiling the OpenAPI test module.
 
 Historical A2A and MCP reconciliation/cutover scenarios are intentionally excluded
 from that functional workflow. They run in `.github/workflows/migration-it.yml`
@@ -668,3 +683,19 @@ separate validation targets; these additional scenarios do not change surface-ro
 
 Existing Service Admin and Console IT cases are also reused to check persisted service metadata
 and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.
+
+
+Shared Skill Admin/Console coverage also uses the existing resource paths with
+the reserved namespace. `HubSkillApiBaseITCase` verifies identical public DTOs,
+pinned content, raw ZIP downloads, safe provenance, revocation and removed
+dedicated read URLs (404). Eight special management operations remain per
+audience; these are not runtime discovery APIs. `HubDisabledApiOpenApiITCase`
+exercises the same reused paths against a separately configured disabled server.
+`IdentityOnlyAuthorizationITCase` and `ConditionalAnonymousAuthorizationITCase`
+cover all eight namespace-qualified management read handlers.
+
+Shared Skill sorting coverage: `HubSkillApiBaseITCase.sharedManagementListSortsBeforePaginationUsingExistingOrderBy`
+runs for both Admin and Console audiences through the existing Skill list path.
+It verifies the default Hub update-time order, stable Hub ID ties, download-count
+order using Hub counters, and page-two consistency after server-side ordering.
+Client discovery keeps its popularity order; no new route or Client sort parameter is added.
