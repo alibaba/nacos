@@ -418,6 +418,10 @@ package storage. HTTP IT verifies generated reserved fields and an untruncated
 projection; service unit tests cover custom-field priority and all snapshot
 limits while preserving complete version metadata. They also verify that malformed
 historical `ai_resource.ext` metadata cannot fail list or detail requests.
+`SkillUploadAdminApiOpenApiITCase.testCreateAndUploadPreserveEmptyFilesAndMultilineDescription`
+also checks creation and upload with literal multiline descriptions and empty
+resource files through list/detail, version reads, and ZIP downloads. The focused
+parser tests cover folded scalars, chomping, indentation, and colons in the text.
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
