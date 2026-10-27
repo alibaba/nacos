@@ -88,6 +88,10 @@ The effective semantic order is:
    and config type.
 8. Resolve the response content type from the config type, defaulting to text.
 
+Existing formal config content may be empty or whitespace-only. Queries must
+return that content unchanged with its metadata. Only a `null` content read
+denotes missing formal content; blank-content checks must not determine existence.
+
 Runtime query must use cached and dumped content rather than broad persistence
 queries. The shared dump and cache boundary is defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).

@@ -29,7 +29,9 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -39,6 +41,8 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
@@ -226,6 +230,39 @@ class SkillFrontMatterTest {
         service.deleteDraft("public", "one");
         assertNull(summary("one").getFrontMatter());
         assertEquals("{\"custom\":\"preserved\"}", resources.get("one").getExt());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void creationAndUploadPreserveMultilineDescriptionAndEmptyFiles(boolean upload)
+        throws Exception {
+        String name = "rds-copilot";
+        String description = "RDS Copilot assistant.\nTriggers: RDS Copilot, SQL optimization\n";
+        Skill skill = skill(name, new StringBuilder("---\nname: ").append(name)
+            .append("\nversion: 0.0.1\ndescription: |\n  RDS Copilot assistant.\n")
+            .append("  Triggers: RDS Copilot, SQL optimization\n---\nInstructions\n"));
+        SkillResource empty = new SkillResource();
+        empty.setName("empty.txt");
+        empty.setType("references");
+        empty.setContent("");
+        String resourceId = SkillUtils.generateResourceId("references", "empty.txt");
+        skill.setResource(Map.of(resourceId, empty));
+        if (upload) {
+            service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
+                .zipBytes(SkillUtils.toZipBytes(skill)).build());
+        } else {
+            service.createDraft("public", name, null, "0.0.1", skill, null);
+        }
+        
+        SkillSummary summary = summary(name);
+        SkillMeta detail = service.getSkillDetail("public", name);
+        assertEquals(description, summary.getDescription());
+        assertEquals(description, detail.getDescription());
+        assertEquals(description, summary.getFrontMatter().get("description"));
+        assertEquals(summary.getFrontMatter(), detail.getFrontMatter());
+        assertFalse(summary.getFrontMatter().containsKey("description.Triggers"));
+        assertEquals(description, versionFrontMatter(name, "0.0.1").get("description"));
+        assertEquals(0, files.get("public:" + name + ":0.0.1:references/empty.txt").length);
     }
     
     @Test

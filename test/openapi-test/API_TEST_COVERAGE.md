@@ -424,6 +424,10 @@ overwrite online metadata, last-online offline selects a working draft when
 present, and otherwise retains the just-offlined version's description without
 choosing a higher historical version. Service tests cover uploads, overwrites,
 forks, stale descriptions, unchanged snapshots, legacy descriptors and CAS retries.
+`SkillUploadAdminApiOpenApiITCase.testCreateAndUploadPreserveEmptyFilesAndMultilineDescription`
+also checks creation and upload with literal multiline descriptions and empty
+resource files through list/detail, version reads, and ZIP downloads. The focused
+parser tests cover folded scalars, chomping, indentation, and colons in the text.
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
