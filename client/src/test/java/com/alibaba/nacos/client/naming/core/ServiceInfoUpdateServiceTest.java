@@ -22,27 +22,36 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -108,6 +117,44 @@ class ServiceInfoUpdateServiceTest {
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBackgroundQueryNotificationsHavePushFlag(boolean cached) throws NacosException {
+        nacosClientProperties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "false");
+        nacosClientProperties.setProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "false");
+        ServiceInfoHolder realHolder =
+            new ServiceInfoHolder("polling-push-flag", "scope-001", nacosClientProperties);
+        serviceInfoUpdateService =
+            new ServiceInfoUpdateService(nacosClientProperties, realHolder, proxy, notifier);
+        try {
+            Instance instance = new Instance();
+            instance.setIp("127.0.0.1");
+            instance.setPort(8080);
+            info.setClusters("");
+            info.setCacheMillis(60000L);
+            info.setHosts(Collections.singletonList(instance));
+            when(proxy.queryInstancesOfService(serviceName, group, "", false)).thenReturn(info);
+            when(notifier.isSubscribed(group, serviceName)).thenReturn(true);
+            if (cached) {
+                realHolder.processServiceInfo(new ServiceInfo(group + "@@" + serviceName));
+            }
+            List<InstancesChangeEvent> events = new ArrayList<>();
+            try (
+                MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+                notifications.when(() -> NotifyCenter.publishEvent(any(InstancesChangeEvent.class)))
+                    .thenAnswer(invocation -> events.add(invocation.getArgument(0)));
+                serviceInfoUpdateService.new UpdateTask(serviceName, group, "").run();
+            }
+            assertEquals(1, events.size());
+            assertTrue(events.get(0).isFromPush());
+            assertEquals(info.getHosts(), events.get(0).getHosts());
+            assertEquals(info.getHosts(), events.get(0).getInstancesDiff().getAddedInstances());
+        } finally {
+            serviceInfoUpdateService.shutdown();
+            realHolder.shutdown();
+        }
     }
     
     @Test

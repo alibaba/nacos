@@ -43,14 +43,26 @@ public class InstancesChangeEvent extends Event {
     
     private InstancesDiff instancesDiff;
     
+    private final boolean fromPush;
+    
     public InstancesChangeEvent(String eventScope, String serviceName, String groupName,
         String clusters, List<Instance> hosts, InstancesDiff diff) {
+        this(eventScope, serviceName, groupName, clusters, hosts, diff, false);
+    }
+    
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName,
+        String clusters, List<Instance> hosts, InstancesDiff diff, boolean fromPush) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.hosts = hosts;
         this.instancesDiff = diff;
+        this.fromPush = fromPush;
+    }
+    
+    public boolean isFromPush() {
+        return fromPush;
     }
     
     public String getServiceName() {

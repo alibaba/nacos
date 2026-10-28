@@ -84,6 +84,18 @@ Server push fan-out and retry work must follow the
 [Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md) and
 the [Task Execution Spec](../design/foundation-task-execution-spec.md).
 
+`NamingEvent.isFromPush()` identifies the notification processing path:
+synchronous subscription responses and direct cache replays return
+`false`; server pushes, background query refreshes, and Failover notifications return `true`.
+
+| Notification path | `isFromPush()` |
+| --- | --- |
+| Server push handled as `NotifySubscriberRequest`, including pushes after reconnect | `true` |
+| Synchronous subscription response processed by the client | `false` |
+| Existing cache replayed directly to a newly registered local listener | `false` |
+| Background polling/query refresh | `true` |
+| Failover data changes or switching back to the normal cached view | `true` |
+
 ## 4. Fuzzy Watch
 
 Fuzzy watch allows a client to watch service keys by `serviceName` and

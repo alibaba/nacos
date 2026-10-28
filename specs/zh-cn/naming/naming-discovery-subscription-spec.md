@@ -73,6 +73,17 @@ Java SDK 使用 `subscribe=true` 发现服务时，如果已有缓存视图且�
 [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)和
 [任务执行规范](../design/foundation-task-execution-spec.md)。
 
+`NamingEvent.isFromPush()` 标识通知的处理路径：订阅同步响应和直接缓存重放为 `false`；
+服务端推送、后台查询刷新及 Failover 通知为 `true`。
+
+| 通知路径 | `isFromPush()` |
+| --- | --- |
+| 通过 `NotifySubscriberRequest` 接收的服务端主动推送，包括重连后的推送 | `true` |
+| 客户端处理订阅请求的同步响应 | `false` |
+| 向新注册的本地 listener 直接重放已有缓存 | `false` |
+| 后台轮询／查询刷新 | `true` |
+| Failover 数据变化或切回正常缓存视图 | `true` |
+
 ## 4. 模糊订阅
 
 模糊订阅允许客户端在一个 namespace 内通过 `serviceName` 和 `groupName` pattern 订阅 service key。
