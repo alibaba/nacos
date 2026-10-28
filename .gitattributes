@@ -1,3 +1,10 @@
+*             text=auto eol=lf
+*.ps1         text eol=crlf
+*.psm1        text eol=crlf
+*.psd1        text eol=crlf
+*.cmd         text eol=crlf
+*.bat         text eol=crlf
+
 *.js linguist-language=java
 *.css linguist-language=java
 *.html linguist-language=java
