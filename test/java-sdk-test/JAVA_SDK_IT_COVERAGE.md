@@ -101,6 +101,15 @@ Lock functional lifecycle is authenticated, but authorization denial remains
 a precise gap because the current server Lock handler does not yet apply its
 documented `SignType.LOCK` guard.
 
+## Scope extension API boundary coverage
+
+AgentModelValidationJavaSdkITCase verifies the unchanged public Agent/summary/overview
+validator methods without a server or scope provider: PUBLIC/PRIVATE remain accepted,
+unregistered or malformed values fail, and other required fields remain validated.
+AI module tests exercise SPI discovery and dynamic catalog lookup on stored Agent/summary/
+overview projections. No caller passes a scope set. This is local public API boundary
+coverage, not a new remote SDK surface; classifications/counts remain unchanged.
+
 ## Client SDK
 
 | SDK interface | IT class | Status | Scenario coverage | Known gaps |

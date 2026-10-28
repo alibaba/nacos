@@ -53,6 +53,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeRegistry;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeDefinition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,6 +129,8 @@ class AgentOperationServiceTest {
         service.setAiResourceChangeNotifier(resourceChangeNotifier);
         service.setA2aMigrationAgentMutationGuard(migrationMutationGuard);
         visibilityHelper = org.mockito.Mockito.mockStatic(VisibilityHelper.class);
+        visibilityHelper.when(VisibilityHelper::scopeRegistry)
+            .thenReturn(VisibilityScopeRegistry.defaults());
         visibilityHelper.when(VisibilityHelper::resolveCurrentIdentity).thenReturn("alice");
         visibilityHelper.when(VisibilityHelper::resolveClientIp).thenReturn("127.0.0.1");
         visibilityHelper.when(() -> VisibilityHelper.resolveDefaultScopeForCreate(
@@ -166,6 +170,62 @@ class AgentOperationServiceTest {
         }
         verifyNoInteractions(resourceManager, persistenceService, indexMaintenanceService,
             resourceChangeNotifier);
+    }
+    
+    @Test
+    void testRegisteredScopeUpdateRetainsWriteChecksAndRuntimeRevocation() throws Exception {
+        VisibilityScopeRegistry registry = new VisibilityScopeRegistry(Collections.singletonList(
+            new VisibilityScopeDefinition("TEAM_EDIT", true)));
+        visibilityHelper.when(VisibilityHelper::scopeRegistry).thenReturn(registry);
+        AiResource meta = meta(VERSION, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
+        NacosApiException denied = new NacosApiException(NacosException.NO_RIGHT,
+            ErrorCode.ACCESS_DENIED, "write denied");
+        visibilityHelper.when(() -> VisibilityHelper.checkWritableResource(meta)).thenThrow(denied);
+        assertSame(denied, assertThrows(NacosApiException.class,
+            () -> service.updateScope(NAMESPACE_ID, AGENT_NAME, "team_edit")));
+        verify(resourceManager, never()).doUpdateScope(anyString(), anyString(), anyString(),
+            anyString());
+        verifyNoInteractions(migrationMutationGuard, indexMaintenanceService,
+            resourceChangeNotifier);
+        
+        visibilityHelper.when(() -> VisibilityHelper.checkWritableResource(meta))
+            .thenAnswer(invocation -> null);
+        service.updateScope(NAMESPACE_ID, AGENT_NAME, "team_edit");
+        verify(migrationMutationGuard).checkMutable(meta);
+        verify(resourceManager).doUpdateScope(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, "team_edit");
+        visibilityHelper.when(VisibilityHelper::scopeRegistry)
+            .thenReturn(VisibilityScopeRegistry.defaults());
+        assertThrows(NacosApiException.class,
+            () -> service.updateScope(NAMESPACE_ID, AGENT_NAME, "team_edit"));
+        verify(resourceManager).doUpdateScope(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, "team_edit");
+    }
+    
+    @Test
+    void testRegisteredScopeListRetainsPluginQueryAndRuntimeRevocation() throws Exception {
+        visibilityHelper.when(VisibilityHelper::scopeRegistry).thenReturn(
+            new VisibilityScopeRegistry(Collections.singletonList(
+                new VisibilityScopeDefinition("TEAM_EDIT", true))));
+        QueryCondition query = new QueryCondition();
+        query.setScope("TEAM_EDIT");
+        query.setOwner("alice");
+        Page<AgentSummary> expected = new Page<>();
+        when(resourceManager.buildQueryCondition(NAMESPACE_ID,
+            Constants.Agent.RESOURCE_TYPE_AGENT, null, null, "TEAM_EDIT", "alice",
+            VisibilityConstants.ACTION_READ)).thenReturn(query);
+        when(persistenceService.listAgents(query, 1, 20)).thenReturn(expected);
+        assertSame(expected,
+            service.listAgents(NAMESPACE_ID, null, null, "TEAM_EDIT", "alice", null, 1, 20));
+        assertEquals("TEAM_EDIT", query.getScope());
+        assertEquals("alice", query.getOwner());
+        visibilityHelper.when(VisibilityHelper::scopeRegistry)
+            .thenReturn(VisibilityScopeRegistry.defaults());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.listAgents(NAMESPACE_ID, null, null, "TEAM_EDIT", "alice", null, 1, 20));
+        verify(persistenceService).listAgents(query, 1, 20);
     }
     
     @Test

@@ -16,6 +16,12 @@
 
 # Client API IT Scenario Index
 
+The cross-cutting [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md)
+checks five-resource Client Search and the opted-in Skill/AgentSpec download paths alongside
+the Admin resource matrix. ARD anonymous reads are measured separately from ordinary Client
+API entry authorization. PUBLIC Prompt fixtures remain unavailable through the current HTTP
+contract; surface classifications and coverage totals are unchanged.
+
 This document records which client OpenAPI operations are covered by the
 standalone-server IT classes under
 `src/test/java/com/alibaba/nacos/test/openapi/client`.
