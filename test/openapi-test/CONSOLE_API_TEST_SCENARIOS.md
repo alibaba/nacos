@@ -211,15 +211,15 @@ are recorded separately in the SDK scenario and coverage records.
 ## Config publish operation messages (#10978)
 
 `ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
-`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover A/M1,
-B/M2, C/M3 ordering, selected detail/previous operation identity despite old
-snapshot content, omitted messages, a 512-code-point emoji round-trip, and
-513-character rejection with unchanged content and history count.
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
 
 Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
-metadata preservation, RPC/service propagation, and embedded gray CAS history
-being queued before commit with rollback on conflict. Maintainer SDK IT covers
-formal/Beta message-to-history and controlled oversized-input exceptions.
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history and
+controlled oversized-input exceptions.
 Database-specific transaction fault injection, rolling-version deployments,
 independent-console deployment, and interactive UI behavior remain deployment
 validation scenarios; test definitions do not imply those environments were run.

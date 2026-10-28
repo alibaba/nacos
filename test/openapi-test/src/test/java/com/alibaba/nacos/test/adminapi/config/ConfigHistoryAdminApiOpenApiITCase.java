@@ -191,13 +191,16 @@ public class ConfigHistoryAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase
         JsonNode rows = getJsonOk(ADMIN_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems");
         assertEquals(3, rows.size());
-        for (int i = 0; i < messages.length; i++) {
-            assertEquals(messages[2 - i], rows.get(i).path("changeMessage").asText());
+        for (JsonNode row : rows) {
+            assertFalse(row.has("changeMessage"), row.toString());
         }
         JsonNode detail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
                 .addParam("nid", rows.get(0).path("id").asText())).get("data");
         assertEquals("content-1", detail.path("content").asText());
         assertEquals(messages[2], detail.path("changeMessage").asText());
+        JsonNode createdDetail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", rows.get(2).path("id").asText())).get("data");
+        assertEquals(messages[0], createdDetail.path("changeMessage").asText());
         JsonNode current = queryConfig(dataId, groupName, "").get("data");
         JsonNode previous = getJsonOk(ADMIN_HISTORY_PATH + "/previous", configQuery(dataId, groupName, "")
                 .addParam("id", current.path("id").asText())).get("data");
@@ -211,18 +214,20 @@ public class ConfigHistoryAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase
         String unicodeMessage = "🚀".repeat(512);
         postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "")
                 .addParam("content", "unicode").addParam("changeMessage", unicodeMessage));
-        assertEquals(unicodeMessage, getJsonOk(ADMIN_HISTORY_LIST_PATH,
-                historyQuery(dataId, groupName, "", 1, 10)).get("data")
-                .get("pageItems").get(0).path("changeMessage").asText());
+        JsonNode unicodeRow = getJsonOk(ADMIN_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
+        JsonNode unicodeDetail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", unicodeRow.path("id").asText())).get("data");
+        assertEquals(unicodeMessage, unicodeDetail.path("changeMessage").asText());
         postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "").addParam("content", "legacy"));
         JsonNode latest = getJsonOk(ADMIN_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
         assertFalse(latest.hasNonNull("changeMessage"), latest.toString());
-        assertCasOperationMessage(dataId, groupName, "legacy", null);
+        assertCasOperationMessage(dataId, groupName, "legacy");
     }
 
     @Test
-    public void testGrayPublishOperationMessage() throws Exception {
+    public void testGrayPublishDoesNotRecordOperationMessage() throws Exception {
         String dataId = randomDataId("gray-message");
         String groupName = randomGroupName("gray-message");
         String grayName = "tagv2_message_it";
@@ -235,37 +240,31 @@ public class ConfigHistoryAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase
         }
         JsonNode rows = getJsonOk(ADMIN_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems");
-        assertEquals("gray operation 1", rows.get(0).path("changeMessage").asText());
+        assertFalse(rows.get(0).has("changeMessage"), rows.get(0).toString());
         JsonNode detail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
                 .addParam("nid", rows.get(0).path("id").asText())).get("data");
         assertEquals("gray-0", detail.path("content").asText());
-        assertEquals("gray operation 1", detail.path("changeMessage").asText());
+        assertFalse(detail.hasNonNull("changeMessage"), detail.toString());
         JsonNode ext = JacksonUtils.toObj(detail.path("extInfo").asText());
         assertEquals(grayName, ext.path("gray_name").asText());
         assertTrue(ext.path("gray_rule").asText().contains("tagv2"));
-        assertCasOperationMessage(dataId, groupName, "gray-1", grayName);
     }
 
-    private void assertCasOperationMessage(String dataId, String groupName, String oldContent,
-            String grayName) throws Exception {
-        String path = grayName == null ? ADMIN_CONFIG_PATH : ADMIN_CONFIG_GRAY_PATH;
+    private void assertCasOperationMessage(String dataId, String groupName, String oldContent)
+            throws Exception {
+        String path = ADMIN_CONFIG_PATH;
         Map<String, String> form = new HashMap<>();
         form.put("dataId", dataId);
         form.put("groupName", groupName);
         form.put("content", "cas-success");
         form.put("changeMessage", "successful CAS");
-        if (grayName != null) {
-            form.put("grayName", grayName);
-            form.put("grayRuleExp", "region=hz");
-            form.put("grayVersion", "1.0.0");
-        }
         String oldMd5 = MD5Utils.md5Hex(oldContent, "UTF-8");
         postFormOk(path, Header.newInstance().addParam("casMd5", oldMd5), form);
         JsonNode before = getJsonOk(ADMIN_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data");
-        assertEquals("successful CAS", before.path("pageItems").get(0).path("changeMessage").asText());
         JsonNode detail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
                 .addParam("nid", before.path("pageItems").get(0).path("id").asText())).get("data");
+        assertEquals("successful CAS", detail.path("changeMessage").asText());
         assertEquals(oldContent, detail.path("content").asText());
         form.put("content", "cas-rejected");
         form.put("changeMessage", "failed CAS");

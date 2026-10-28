@@ -25,8 +25,6 @@ public class ConfigHistoryBasicInfo extends ConfigBasicInfo {
     
     private static final long serialVersionUID = -5429814695967367742L;
     
-    private String changeMessage;
-    
     private String srcIp;
     
     private String srcUser;
@@ -37,24 +35,6 @@ public class ConfigHistoryBasicInfo extends ConfigBasicInfo {
     private String opType;
     
     private String publishType;
-    
-    /**
-     * Return the optional message for this publish operation.
-     *
-     * @return change message
-     */
-    public String getChangeMessage() {
-        return changeMessage;
-    }
-    
-    /**
-     * Set the optional message for this publish operation.
-     *
-     * @param changeMessage change message
-     */
-    public void setChangeMessage(String changeMessage) {
-        this.changeMessage = changeMessage;
-    }
     
     public String getSrcIp() {
         return srcIp;

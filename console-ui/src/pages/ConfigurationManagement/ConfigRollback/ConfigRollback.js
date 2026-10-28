@@ -146,7 +146,6 @@ class ConfigRollback extends React.Component {
           dataId: self.dataId,
           groupName: self.group,
           content: self.field.getValue('content'),
-          changeMessage: self.field.getValue('changeMessage'),
           namespaceId: self.tenant,
           ...(extInfo.type ? { type: extInfo.type } : {}),
           ...(extInfo.config_tags ? { config_tags: extInfo.config_tags } : {}),
@@ -170,7 +169,6 @@ class ConfigRollback extends React.Component {
           data: postData,
           success(res) {
             if (res.data === true) {
-              self.field.setValue('changeMessage', '');
               Dialog.alert({ content: locale.rollbackSuccessful });
             }
           },
@@ -229,11 +227,6 @@ class ConfigRollback extends React.Component {
           <FormItem label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly value={getOpType(init('opType').value, locale)} />
           </FormItem>
-          {this.opType && this.opType.trim() !== 'I' && (
-            <FormItem label={locale.changeMessage} {...formItemLayout}>
-              <Input.TextArea rows={3} {...init('changeMessage')} />
-            </FormItem>
-          )}
           <FormItem label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />
           </FormItem>

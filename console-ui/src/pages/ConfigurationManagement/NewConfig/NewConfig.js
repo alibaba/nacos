@@ -341,7 +341,6 @@ class NewConfig extends React.Component {
       groupName: this.field.getValue('group'),
       content,
       desc: this.field.getValue('desc'),
-      changeMessage: this.field.getValue('changeMessage'),
       configTags: config_tags.join(),
       type: configType,
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
@@ -368,7 +367,6 @@ class NewConfig extends React.Component {
           self.group = payload.group;
           self.dataId = payload.dataId;
           setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
-          self.field.setValue('changeMessage', '');
           _payload.isok = true;
         } else {
           _payload.isok = false;
@@ -572,9 +570,6 @@ class NewConfig extends React.Component {
             <Input {...init('appName')} readOnly={this.inApp} />
           </FormItem>
 
-          <FormItem label={locale.changeMessage}>
-            <Input.TextArea rows={3} {...init('changeMessage')} />
-          </FormItem>
           <FormItem label={locale.description}>
             <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
           </FormItem>

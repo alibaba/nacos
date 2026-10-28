@@ -183,10 +183,17 @@ Rules:
 - handler implementations must return the same domain meaning across deployment
   modes even if the transport path differs.
 
-Both the default next UI and the legacy UI accept an optional `changeMessage`
-in config create, edit, gray publish, and publish-based rollback workflows. It is independent of configuration description and is
-never copied from the rollback target. Clear the input after success and retain
-it after failure. History list and detail render the message as plain text.
+The first-phase target offers optional `changeMessage` input for ordinary and
+CAS updates to existing formal configs, with plain-text display in history
+detail. Create and delete workflows have no input; Beta/gray and rollback gain
+no message input. Backend ordinary and CAS publish APIs handle inserts and
+updates identically and must not ignore an API caller's message for new configs.
+History-list display and searching, sorting, or indexing by message are out of
+scope. This is a proposed design, not evidence that both UIs already conform.
+The message is independent of description and is never prefilled from config or
+history. Clear input after success and retain it after failure. If an adapter
+does not preserve the JSON property, history detail may omit the message; actual
+database persistence failures retain their existing behavior.
 Merged and independent console handlers must preserve the same semantics defined
 by the [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
 

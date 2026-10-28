@@ -338,8 +338,6 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 "two publishes should produce at least two history rows");
 
         ConfigHistoryBasicInfo newestHistory = historyPage.getPageItems().get(0);
-        assertEquals("current operation", newestHistory.getChangeMessage());
-        assertNull(historyPage.getPageItems().get(1).getChangeMessage());
         assertEquals(dataId, newestHistory.getDataId());
         assertEquals(group, newestHistory.getGroupName());
         assertEquals(namespaceId, newestHistory.getNamespaceId());
@@ -381,10 +379,6 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         String content = "maintainer.config.beta=true";
         String betaIps = "127.0.0.1";
-        NacosException oversized = assertThrows(NacosException.class,
-                () -> maintainerService.publishConfig(dataId, group, namespaceId, content,
-                        null, null, null, null, "text", "x".repeat(513)));
-        assertEquals(NacosException.INVALID_PARAM, oversized.getErrCode());
         addCleanup(() -> stopBetaIfPresent(maintainerService, dataId, group, namespaceId));
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
 
@@ -395,9 +389,11 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
 
         assertTrue(maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
                 "maintainer-sdk-it", "maintainer", "beta", "beta config",
-                ConfigType.TEXT.getType(), betaIps, "beta operation"));
-        assertEquals("beta operation", maintainerService.listConfigHistory(dataId, group, namespaceId,
-                1, 10).getPageItems().get(0).getChangeMessage());
+                ConfigType.TEXT.getType(), betaIps));
+        ConfigHistoryBasicInfo betaHistory = maintainerService.listConfigHistory(dataId, group,
+                namespaceId, 1, 10).getPageItems().get(0);
+        assertNull(maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
+                betaHistory.getId()).getChangeMessage());
         ConfigGrayInfo beta = maintainerService.queryBeta(dataId, group, namespaceId);
         assertConfigDetail(beta, dataId, group, namespaceId, content);
         assertEquals("beta", beta.getGrayName());

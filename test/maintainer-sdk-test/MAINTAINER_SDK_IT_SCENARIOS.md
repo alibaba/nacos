@@ -124,10 +124,10 @@ round-trip unit tests cover that boundary.
 
 ## Config operation messages (#10978)
 
-The application ConfigService public methods are unchanged. Old application SDK publishes remain valid and produce history without a message. ConfigHistoryBasicInfo adds optional changeMessage for management queries. Maintainer formal/Beta publish overloads carry the optional text; its integration suite covers publish-to-history and controlled oversized-input exceptions. RPC transport accepts the optional addition parameter without changing ConfigService signatures.
+The application ConfigService public methods are unchanged. Old application SDK publishes remain valid. ConfigHistoryDetailInfo exposes optional changeMessage; history-list models do not. Maintainer formal publish overloads carry the optional text, including when the API creates a config. Beta publish has no message overload. RPC transport accepts the optional addition parameter without changing ConfigService signatures.
 
 `ConfigMaintainerServiceMaintainerSdkITCase#shouldQueryConfigHistory` checks
-formal message list/detail/previous deserialization and old-overload absence.
-`shouldManageBetaConfig` checks the Beta overload and local oversized-input
-`NacosException.INVALID_PARAM`. Independent-console and mixed-version deployment
+formal detail/previous message deserialization and history-list compatibility.
+`shouldManageBetaConfig` checks that Beta history has no operation message.
+Independent-console and mixed-version deployment
 validation remain separate from this external-client suite.

@@ -133,14 +133,13 @@ public class ResponseUtil {
         ConfigHistoryDetailInfo result = new ConfigHistoryDetailInfo();
         BeanUtils.copyProperties(historyInfo, result);
         injectHistoryBasicInfo(result, historyInfo);
+        result.setChangeMessage(ConfigExtInfoUtil.getChangeMessage(historyInfo.getExtInfo()));
         result.setSchema(ConfigExtInfoUtil.getSchemaFromExtInfo(historyInfo.getExtInfo()));
         return result;
     }
     
     private static void injectHistoryBasicInfo(ConfigHistoryBasicInfo historyBasicInfo,
         ConfigHistoryInfo historyInfo) {
-        historyBasicInfo
-            .setChangeMessage(ConfigExtInfoUtil.getChangeMessage(historyInfo.getExtInfo()));
         historyBasicInfo.setNamespaceId(historyInfo.getTenant());
         historyBasicInfo.setGroupName(historyInfo.getGroup());
         historyBasicInfo.setCreateTime(historyInfo.getCreatedTime().getTime());

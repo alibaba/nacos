@@ -161,7 +161,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 Constants.GRAY, grayNameTmp,
                 ConfigExtInfoUtil.withChangeMessage(
                     ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser),
-                    configInfo.getChangeMessage()));
+                    null));
             
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
                 srcIp, now);
@@ -308,7 +308,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 ConfigExtInfoUtil.withChangeMessage(
                     ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                         oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()),
-                    configInfo.getChangeMessage()));
+                    null));
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
                 srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -384,7 +384,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     oldConfigAllInfo4Gray.getGrayName(),
                     oldConfigAllInfo4Gray.getGrayRule(),
                     oldConfigAllInfo4Gray.getSrcUser()),
-                    configInfo.getChangeMessage()));
+                    null));
             Boolean success = databaseOperate.blockUpdate();
             if (success) {
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),

@@ -129,17 +129,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
             betaIps, null);
     }
     
-    @Override
-    public boolean publishBetaConfig(String dataId, String groupName, String namespaceId,
-        String content, String appName, String srcUser, String configTags, String desc,
-        String type, String betaIps, String changeMessage) throws NacosException {
-        if (StringUtils.isBlank(betaIps)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "betaIps is empty");
-        }
-        return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
-            configTags, desc, type, betaIps, changeMessage);
-    }
-    
     private boolean doPublishConfig(String dataId, String groupName, String namespaceId,
         String content, String appName,
         String srcUser, String configTags, String desc, String type, String betaIps,

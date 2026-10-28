@@ -315,9 +315,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
             Mockito.verify(historyConfigInfoPersistService).insertConfigHistoryAtomic(
                 eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp), eq(srcUser),
                 any(Timestamp.class), eq("U"), eq("gray"), eq(grayName),
-                org.mockito.ArgumentMatchers.argThat(ext -> "CAS current operation".equals(
-                    com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil
-                        .getChangeMessage(ext))));
+                org.mockito.ArgumentMatchers
+                    .argThat(ext -> com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil
+                        .getChangeMessage(ext) == null && "{\"src_user\":\"user\"}".equals(ext)));
             return true;
         });
         ConfigOperateResult configOperateResult =

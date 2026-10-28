@@ -104,8 +104,7 @@ public class ConfigRemoteHandler implements ConfigHandler {
             return configMaintainerService.publishBetaConfig(configForm.getDataId(),
                 configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),
                 configForm.getAppName(), configForm.getSrcUser(), configForm.getConfigTags(),
-                configForm.getDesc(), configForm.getType(), configRequestInfo.getBetaIps(),
-                configForm.getChangeMessage());
+                configForm.getDesc(), configForm.getType(), configRequestInfo.getBetaIps());
         }
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             return configMaintainerService.publishConfig(configForm.getDataId(),

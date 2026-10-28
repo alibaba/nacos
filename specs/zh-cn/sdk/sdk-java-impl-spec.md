@@ -338,11 +338,14 @@ namespace，不表示跨 namespace 全局删除。
 Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 `ids`，属于兼容方法并待移除。
 新的 maintainer 契约应按 `namespaceId`、`groupName`、`dataId`，或这些身份元组的显式列表选择配置。
 
-正式发布与 Beta 发布重载接受可选 `changeMessage`，保留已有重载兼容性。
-HTTP 调用前在本地校验 512 个码点上限，超长时报告 `NacosException.INVALID_PARAM`。
-历史模型返回所选操作的说明，遵循
+若增加 `changeMessage` 重载，普通和 CAS 发布 API 对插入和更新采用相同处理，保留已有
+重载兼容性，不扩展 Beta、灰度、回滚和删除能力。SDK 不通过先查询来猜测创建或更新。
+输入校验和可选历史详情说明遵循
 [Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
-共享 HTTP 客户端必须保留未声明 charset 的 UTF-8 JSON 响应字节，包括历史响应中的非 ASCII 说明。
+按待审阅的 512 码点规则实现时，本地超长校验映射为 `NacosException.INVALID_PARAM`。
+数据源不支持说明时保留原发布结果；真实发布错误保持原异常映射。共享 HTTP 客户端必须
+保留未声明 charset 的 UTF-8 JSON 响应字节，包括历史响应中的非 ASCII 说明。
+此处定义目标合同；新增公开方法前须审阅签名，并更新 SDK IT、场景及覆盖登记。
 
 ### 7.3 NamingMaintainerService
 

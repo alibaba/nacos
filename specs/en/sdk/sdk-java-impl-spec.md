@@ -398,13 +398,19 @@ batch delete, are compatibility methods and are pending removal. New maintainer
 contracts should select configs by `namespaceId`, `groupName`, and `dataId`, or
 by explicit lists of that identity tuple.
 
-Formal and Beta publish overloads accept optional `changeMessage`, while the
-existing overloads remain compatible. Validate the 512-code-point limit locally
-before HTTP and report `NacosException.INVALID_PARAM` for oversized input.
-History models expose the selected operation's message; see the
+If `changeMessage` overloads are added, ordinary and CAS publish APIs handle
+inserts and updates identically. Preserve existing overload compatibility; do
+not extend Beta, gray, rollback, or deletion capabilities. The SDK must not
+guess create/update state by querying before publishing. Input validation and optional
+history-detail messages follow the
 [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
-The shared HTTP client must preserve UTF-8 JSON response bytes when the server
-omits a charset, including non-ASCII messages in history responses.
+When implementing the proposed 512-code-point limit, local oversized-input
+validation maps to `NacosException.INVALID_PARAM`. Unsupported datasource message
+capability preserves the original publish result; real errors retain their
+exception mappings. The shared HTTP client must preserve UTF-8 JSON response
+bytes when the server omits a charset, including non-ASCII messages in history.
+This is a target contract. Review new public signatures and update SDK ITs,
+scenarios, and coverage registry before completing a public API addition.
 
 ### 7.3 NamingMaintainerService
 

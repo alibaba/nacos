@@ -262,4 +262,11 @@ public class ConfigFormTest {
         assertEquals("  reason\n ", original.getChangeMessage());
     }
     
+    @Test
+    void testValidateWithContentDoesNotValidateOutOfScopeMessage() throws Exception {
+        original.setChangeMessage("x".repeat(513));
+        
+        assertDoesNotThrow(original::validateWithContent);
+    }
+    
 }

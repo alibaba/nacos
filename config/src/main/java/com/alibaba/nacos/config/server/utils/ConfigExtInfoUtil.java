@@ -67,13 +67,13 @@ public class ConfigExtInfoUtil {
             JsonNode parsed = StringUtils.isBlank(extInfo) ? OBJECT_MAPPER.createObjectNode()
                 : OBJECT_MAPPER.readTree(extInfo);
             if (parsed == null || !parsed.isObject()) {
-                throw new IllegalArgumentException("History extension must be a JSON object");
+                return extInfo;
             }
             ObjectNode node = (ObjectNode) parsed;
             node.put("change_message", changeMessage);
             return OBJECT_MAPPER.writeValueAsString(node);
         } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException("Unable to serialize publish operation message", ex);
+            return extInfo;
         }
     }
     

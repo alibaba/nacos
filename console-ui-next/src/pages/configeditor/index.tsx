@@ -270,7 +270,7 @@ export default function ConfigEditorPage() {
         groupName,
         content,
         desc,
-        changeMessage,
+        ...(isEditing ? { changeMessage } : {}),
         configTags,
         type,
         appName,
@@ -319,7 +319,6 @@ export default function ConfigEditorPage() {
           groupName,
           content: betaContent,
           desc,
-          changeMessage,
           configTags,
           type,
           appName,
@@ -438,16 +437,18 @@ export default function ConfigEditorPage() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
-            <Textarea
-              id="changeMessage"
-              value={changeMessage}
-              onChange={(e) => setChangeMessage(e.target.value)}
-              placeholder={t('config.changeMessagePlaceholder')}
-              rows={3}
-            />
-          </div>
+          {isEditing && activeTab === 'production' && (
+            <div className="space-y-2">
+              <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
+              <Textarea
+                id="changeMessage"
+                value={changeMessage}
+                onChange={(e) => setChangeMessage(e.target.value)}
+                placeholder={t('config.changeMessagePlaceholder')}
+                rows={3}
+              />
+            </div>
+          )}
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="rounded-lg border border-dashed bg-muted/20">

@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -202,8 +201,8 @@ class ConfigExtInfoUtilTest {
         assertEquals("{}", ConfigExtInfoUtil.withChangeMessage("{}", null));
         assertEquals(message,
             ConfigExtInfoUtil.getChangeMessage(ConfigExtInfoUtil.withChangeMessage(null, message)));
-        assertThrows(IllegalArgumentException.class,
-            () -> ConfigExtInfoUtil.withChangeMessage("{broken", message));
+        assertEquals("{broken", ConfigExtInfoUtil.withChangeMessage("{broken", message));
+        assertEquals("[]", ConfigExtInfoUtil.withChangeMessage("[]", message));
     }
     
     @Test

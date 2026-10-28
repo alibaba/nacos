@@ -47,7 +47,6 @@ export interface ConfigCreateData {
 }
 
 export interface ConfigHistory {
-  changeMessage?: string | null;
   id: string;
   dataId: string;
   groupName: string;
@@ -64,6 +63,7 @@ export interface ConfigHistory {
 }
 
 export interface ConfigHistoryDetail extends ConfigHistory {
+  changeMessage?: string | null;
   content: string;
   md5: string;
   type: ConfigType;

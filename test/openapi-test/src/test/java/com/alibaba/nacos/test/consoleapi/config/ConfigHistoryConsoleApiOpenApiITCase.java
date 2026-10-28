@@ -182,8 +182,8 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
         JsonNode rows = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems");
         assertEquals(3, rows.size());
-        for (int i = 0; i < messages.length; i++) {
-            assertEquals(messages[2 - i], rows.get(i).path("changeMessage").asText());
+        for (JsonNode row : rows) {
+            assertFalse(row.has("changeMessage"), row.toString());
         }
         JsonNode detail = getJsonOk(CONSOLE_HISTORY_PATH, configQuery(dataId, groupName, "")
                 .addParam("nid", rows.get(0).path("id").asText())).get("data");
@@ -202,9 +202,11 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
         String unicodeMessage = "🚀".repeat(512);
         postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
                 .addParam("content", "unicode").addParam("changeMessage", unicodeMessage));
-        assertEquals(unicodeMessage, getJsonOk(CONSOLE_HISTORY_LIST_PATH,
-                historyQuery(dataId, groupName, "", 1, 10)).get("data")
-                .get("pageItems").get(0).path("changeMessage").asText());
+        JsonNode unicodeRow = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
+        JsonNode unicodeDetail = getJsonOk(CONSOLE_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", unicodeRow.path("id").asText())).get("data");
+        assertEquals(unicodeMessage, unicodeDetail.path("changeMessage").asText());
         postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "").addParam("content", "legacy"));
         JsonNode latest = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);

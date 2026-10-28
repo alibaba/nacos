@@ -305,7 +305,6 @@ public class ConfigForm implements NacosForm, Cloneable {
      */
     public void validateWithContent() throws NacosApiException {
         validate();
-        validateChangeMessage();
         if (StringUtils.isBlank(content)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                 "Required parameter 'content' type String is not present");

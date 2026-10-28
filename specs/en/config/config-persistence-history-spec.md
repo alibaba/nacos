@@ -107,6 +107,117 @@ changes:
 History list and detail APIs are management APIs. Page size must be bounded.
 History cleanup uses the configured retention window, default `30` days.
 
+### Publish operation messages
+
+This section defines the first-phase target contract for #10978. Maintainers
+clarified that the console has no message control in create or delete workflows,
+but backend ordinary and CAS publish APIs handle inserts and updates identically
+and must not ignore a message based on whether the config is new. Deletion,
+Beta/gray, and rollback are out of scope. Only history-detail display is required;
+history-list display is not.
+
+#### Operation scope and input
+
+| Operation | First-phase behavior |
+| --- | --- |
+| Ordinary publish API (insert or update) | May record the operation message; insert and update use the same handling. |
+| CAS publish API | Records the message after successful CAS validation and write; failed CAS does not record it. |
+| Console create workflow | Provides no message input; the backend API does not add a create/update branch for this. |
+| Config deletion | Adds no message input or recording capability. |
+| Beta, tag/gray publish, and rollback | Adds no message input or recording capability in this phase. |
+| Metadata-only update, import, export, and clone | Adds no message input and copies no history message. |
+
+Ordinary and CAS publish APIs handle an optional message identically regardless
+of whether the resource is newly inserted. The console create form has no input,
+but other API callers may provide a message on creation. Import and clone gain
+no message input and do not copy history messages. Messages must not carry
+across operations.
+
+Ordinary and CAS publishes accept optional `changeMessage` text, with a limit of
+512 Unicode code points. Longer input is a parameter-validation error. Missing,
+empty, or whitespace-only text means no message; preserve nonblank text including
+whitespace and newlines. The message
+belongs to the successful update operation, not its snapshot or description, and
+does not affect content, md5, dump, or listener payloads. Failed validation or
+CAS creates no message or history. Existing skip-history behavior is unchanged.
+
+#### JSON storage and history detail
+
+Use the JSON object property `change_message` in the existing
+`his_config_info.ext_info`, rather than storing a bare text value. For example:
+
+```json
+{"change_message": "Adjust connection timeout"}
+```
+
+Preserve the same history record's existing snapshot extension properties,
+including `c_schema` and unknown properties. An omitted message must not inherit
+an earlier message. Do not overwrite existing non-object or malformed extension
+data with an empty object to merge a message; if merging is unsafe, retain the
+original extension and omit the new message. Use the existing publish transaction
+for message/history writes without introducing a separate config write.
+
+An update history row continues to store the old content under existing rules;
+an insert history row stores the new content. The message describes the publish
+operation producing that row, never the current config or an adjacent history
+row. V3 Admin and Console history detail expose optional
+`changeMessage` from the selected row while retaining its original `extInfo`.
+Missing extension data, non-object JSON, malformed JSON, or a nontext property
+produces null (which serialization may omit) without failing the query. Do not
+backfill old records or change retention. History-list responses do not include
+the message field. History detail and previous-version detail may return the
+message from the selected row. Searching, sorting, and indexing by message are
+out of scope.
+
+#### Datasource plugins and upgrade compatibility
+
+Reuse the existing history extension column; no new message column, index, or
+schema migration is required in this phase. Built-in adapters still require
+read/write validation. The presence of a column in built-in schemas does not
+prove third-party plugin support.
+
+`ext_info` is already read and written by history mappers as an ordinary string
+column. Adding an optional property to its JSON object does not change SQL,
+Mapper SPI, or datasource plugin interfaces and requires no capability
+negotiation. An adapter that reads and writes `ext_info` under the existing contract
+can store and return the property. If a plugin filters or does not recognize the
+property, history detail may omit the message while config publish and history
+writes continue through the existing path. Missing or invalid extension data is
+handled as a legacy history record without a message.
+
+Do not implement degradation by catching arbitrary database errors and retrying
+the publish. Real connection, SQL, transaction, and config-write failures retain
+their original error behavior and must not be swallowed or repeat a successful
+update. Verify third-party plugins against their existing `ext_info` contract;
+this feature does not claim compatibility with plugins that violate that contract.
+
+Old clients that omit the parameter retain existing behavior. Mixed-version
+clusters and older independent consoles do not guarantee message persistence or
+display; missing messages must not change config-update results. Upgrade the
+relevant nodes and validate datasource adaptation before relying on the feature.
+
+#### Acceptance scenarios
+
+These scenarios require implementation and validation; they are not claims of
+existing test coverage or passing results:
+
+| Scenario | Expected result |
+| --- | --- |
+| API first insert with a message, ordinary update, and successful CAS update | Same persistence path is used; history detail reads the corresponding operation message. |
+| Console create workflow, deletion, and out-of-scope operations | Console has no create message control; out-of-scope operations gain no message capability. |
+| CAS mismatch or validation failure | Config and history remain unchanged; no message is stored. |
+| Omitted/blank text, 512/513 code points, Chinese, supplementary characters, and newlines | Input rules, code-point counting, and text round trips are correct. |
+| Legacy history, absent extension, malformed JSON, non-object or nontext values | Queries succeed without a message; original extension data is not overwritten. |
+| Built-in and third-party datasources | Verify preservation and retrieval of the property under the existing `ext_info` contract; Mapper SPI is unchanged. |
+| Database or transaction failure | Preserve original errors and transaction semantics; no error swallowing or republishing. |
+| Old clients, mixed versions, and merged/independent consoles | Config-update semantics remain; messages may be absent, and detail renders plain text. |
+
+HTTP implementation changes must update `test/openapi-test` scenarios, coverage
+registry, and tests together. Public SDK contract additions must also update the
+appropriate SDK ITs, scenarios, and coverage registry. Persistence tests must
+verify plugin compatibility and transaction boundaries; HTTP success alone is
+not sufficient evidence.
+
 ## 6. Recovery And Operations
 
 Admin local-cache operation may trigger a full dump from persistence to local
@@ -127,33 +238,3 @@ serving state.
 - [Task Execution Spec](../design/foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](../design/foundation-event-dispatch-spec.md)
 - [Datasource Dialect Plugin Spec](../plugin/datasource-dialect-plugin-spec.md)
-
-### Publish operation messages
-
-Formal, CAS, Beta, and tag/gray publishes accept optional `changeMessage` text,
-limited to 512 Unicode code points. Longer input is a parameter-validation error;
-missing, empty, or whitespace-only text means no message. Nonblank text is
-preserved, including whitespace and newlines. The message belongs to the
-successful publish operation, not the configuration snapshot or its description.
-It does not affect runtime content, md5, dump, or listener payloads.
-
-The existing history `ext_info` JSON stores the message under `change_message`,
-alongside the unchanged snapshot metadata. No new database column or mapper SPI
-method is required. History list, detail, and previous responses expose optional
-`changeMessage` from the selected operation row. Missing, malformed, or nontextual
-legacy extension values produce null (which serialization may omit).
-An update row still stores the old content: its message describes the update
-that produced that row, never the next row. Failed validation or CAS produces no
-new history. Message/history writes share the existing publish transaction.
-Existing internal skip-history operations retain that behavior.
-
-Rollback through publish accepts a fresh message and must not inherit the target
-history's message. Delete, metadata-only updates, import, export, and clone do
-not gain a message input or copy prior messages. Retention remains unchanged.
-Console provides optional publish/rollback input and history display as plain
-text, clearing the input after success and retaining it after failure.
-The Maintainer SDK adds compatible overloads for formal and Beta publish; old
-signatures remain valid. The application ConfigService API is unchanged; RPC
-publish may carry `changeMessage` as an addition parameter.
-Upgrade all server and independent-console nodes before using the feature:
-older nodes may ignore the new parameter and cannot guarantee its persistence.

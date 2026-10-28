@@ -38,12 +38,32 @@ public class ConfigHistoryDetailInfo extends ConfigHistoryBasicInfo {
      */
     private String schema;
     
+    private String changeMessage;
+    
     public String getSchema() {
         return schema;
     }
     
     public void setSchema(String schema) {
         this.schema = schema;
+    }
+    
+    /**
+     * Return the optional message for this publish operation.
+     *
+     * @return change message
+     */
+    public String getChangeMessage() {
+        return changeMessage;
+    }
+    
+    /**
+     * Set the optional message for this publish operation.
+     *
+     * @param changeMessage change message
+     */
+    public void setChangeMessage(String changeMessage) {
+        this.changeMessage = changeMessage;
     }
     
     public String getContent() {

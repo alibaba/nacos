@@ -153,7 +153,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     ConfigExtInfoUtil.withChangeMessage(
                         ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp,
                             srcUser),
-                        configInfo.getChangeMessage()));
+                        null));
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, grayNameTmp);
             } catch (Exception e) {
@@ -294,7 +294,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                         oldConfigAllInfo4Gray.getGrayName(),
                         oldConfigAllInfo4Gray.getGrayRule(),
                         oldConfigAllInfo4Gray.getSrcUser()),
-                        configInfo.getChangeMessage()));
+                        null));
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, grayNameTmp);
             } catch (CannotGetJdbcConnectionException e) {
@@ -361,7 +361,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                                 oldConfigAllInfo4Gray.getGrayName(),
                                 oldConfigAllInfo4Gray.getGrayRule(),
                                 oldConfigAllInfo4Gray.getSrcUser()),
-                            configInfo.getChangeMessage()));
+                            null));
                     return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                         tenantTmp, grayNameTmp);
                 } else {

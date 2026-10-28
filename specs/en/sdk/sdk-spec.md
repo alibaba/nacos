@@ -86,12 +86,17 @@ The Maintainer SDK should be treated as a typed facade over the Nacos Admin API
 surface. When a capability is only useful for management, UI, gateway, or
 operation tools, it belongs here instead of the Client SDK.
 
-Config publish and beta publish overloads accept an optional `changeMessage` of at
-most 512 Unicode code points. Existing overloads retain their behavior. History
-models expose the selected operation's message, as defined by the
+If the Maintainer SDK exposes `changeMessage`, ordinary and CAS publish APIs
+handle inserts and updates identically. Preserve existing signature compatibility
+and behavior when the message is omitted. Deletion, Beta/gray, and rollback gain
+no message capability. Optional history-detail messages and `ext_info`
+compatibility follow the
 [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
-An older custom Maintainer implementation must reject a nonempty message rather
-than silently discard it. The application `ConfigService` interface is unchanged.
+An otherwise successful publish must not become an SDK error solely because the
+server datasource lacks optional message support; real publish errors retain
+their mappings. Add no application `ConfigService` method in this phase. Review
+SDK signatures and transport entry points with the interface design; public
+contract changes must update the appropriate SDK ITs and scenario documentation.
 
 ## 4. Agent And RAD Target Contract
 

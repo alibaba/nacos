@@ -159,9 +159,13 @@ Import, export, and clone are management operations:
 
 ### Publish operation messages
 
-Formal, CAS, Beta, and tag/gray publishes accept optional `changeMessage` text,
-limited to 512 Unicode code points. Missing, empty, or whitespace-only text means
-no message; nonblank text is preserved. The message belongs to the successful
-publish operation and is separate from configuration description and content.
+Ordinary and CAS publish APIs may accept optional `changeMessage` and handle
+inserts and updates identically, without checking whether the config is new.
+Console create and delete workflows have no message input. Delete, Beta, tag/gray,
+and rollback APIs are out of scope in this phase. Messages belong to the
+successful publish, not config description or content. Omitting the parameter
+preserves existing behavior; failed CAS records no message.
 See [Config Persistence And History Spec](config-persistence-history-spec.md#publish-operation-messages)
-for storage, response, rollback, compatibility, and console requirements.
+for proposed input rules (512 Unicode code points), JSON storage, history-detail
+display, plugin degradation, and acceptance scenarios. This is a target for
+review, not a claim that current APIs implement and validate this scope.
