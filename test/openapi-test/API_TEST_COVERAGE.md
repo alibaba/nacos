@@ -419,6 +419,26 @@ delegation instead of applying the target Admin API's unrelated resource permiss
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
 
+`AiVisibilityAccountMatrixOpenApiITCase` adds a cross-cutting
+[account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md) over the existing five AI resource
+surfaces. This diagnostic suite requires `nacos.test.visibility.matrix.enabled=true` and is
+not counted as passing coverage when disabled in ordinary CI. It separates ordinary API
+permission from explicit visibility grants and records
+anonymous-disabled/enabled outcomes for detail, list/count/pages, search, labels and deletion.
+PUBLIC Prompt fixtures are blocked by the current HTTP contract. Failed scenarios remain
+failures, and unexecuted lifecycle or Console combinations are not marked covered. Existing
+surface counts, classifications and strict/effective coverage totals remain unchanged.
+
+The [2026-10-28 execution](AI_VISIBILITY_ACCOUNT_MATRIX_RESULTS.md) recorded 59 passing,
+4 failing and 7 blocked account combinations. PRIVATE MCP Client Search failed for four
+authorized identities; Agent draft creation returned intermittent 500 responses before two
+successful focused reruns. These findings are retained rather than counted as passing coverage.
+An explicitly authorized offline Derby fixture experiment then passed all seven PUBLIC Prompt
+combinations and 43 checks, bringing the combined matrix to 66 passing and four failing rows.
+This manual fixture coverage does not remove the ordinary IT's PUBLIC Prompt preparation gap.
+Its administrator grant-revocation cleanup returned 403; isolated leftover grants/roles were
+removed and verified separately, with the cleanup exception retained in the execution report.
+
 Skill frontmatter (#15345) is covered on Admin and Console lists through draft
 creation/update, draft deletion, publish and version online/offline transitions.
 Both Skill API scenario matrices record null/legacy behavior and deterministic

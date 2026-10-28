@@ -16,6 +16,11 @@
 
 # Admin API IT Scenario Index
 
+The cross-cutting [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md)
+adds owner/admin/non-owner/grantee checks over existing AI resource detail, list, label and
+delete operations. It records failures and fixture gaps independently and does not imply
+complete account coverage for every lifecycle operation or change the surface row totals.
+
 This document records which admin API operations are covered by the
 standalone-server IT classes under
 `src/test/java/com/alibaba/nacos/test/adminapi`.
