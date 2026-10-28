@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service.visibility;
 
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
@@ -55,7 +54,7 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
             return result;
         }
         BaseVisibilityPredicate base = advisor.getBasePredicate();
-        BaseResolution resolution = resolveBase(base, result, identity);
+        BaseResolution resolution = resolveBase(base, result, identity, advisor.getPublicScopes());
         
         List<String> authorized =
             advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
@@ -69,25 +68,28 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
     }
     
     private BaseResolution resolveBase(BaseVisibilityPredicate base, QueryCondition condition,
-        String identity) {
+        String identity, List<String> publicScopes) {
         switch (base) {
             case ALL:
                 return BaseResolution.alwaysTrue();
             case PUBLIC:
-                return resolvePublic(condition);
+                return resolvePublic(condition, publicScopes);
             case OWNER:
                 return resolveOwner(condition, identity);
             case PUBLIC_AND_OWNER:
             default:
-                return resolvePublicAndOwner(condition, identity);
+                return resolvePublicAndOwner(condition, identity, publicScopes);
         }
     }
     
-    private BaseResolution resolvePublic(QueryCondition condition) {
-        if (StringUtils.isBlank(condition.getScope())) {
-            return BaseResolution.branches(singleBranch("scope", VisibilityConstants.SCOPE_PUBLIC));
+    private BaseResolution resolvePublic(QueryCondition condition, List<String> publicScopes) {
+        if (publicScopes.isEmpty()) {
+            return BaseResolution.alwaysFalse();
         }
-        if (VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope())) {
+        if (StringUtils.isBlank(condition.getScope())) {
+            return BaseResolution.branches(singleBranch("scope", scopeBranch(publicScopes)));
+        }
+        if (matchesScope(publicScopes, condition.getScope())) {
             return BaseResolution.alwaysTrue();
         }
         return BaseResolution.alwaysFalse();
@@ -111,12 +113,16 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         return BaseResolution.alwaysFalse();
     }
     
-    private BaseResolution resolvePublicAndOwner(QueryCondition condition, String identity) {
+    private BaseResolution resolvePublicAndOwner(QueryCondition condition, String identity,
+        List<String> publicScopes) {
+        if (publicScopes.isEmpty()) {
+            return resolveOwner(condition, identity);
+        }
         if (StringUtils.isBlank(identity)) {
-            return resolvePublic(condition);
+            return resolvePublic(condition, publicScopes);
         }
         boolean scopeIsPublic =
-            VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
+            matchesScope(publicScopes, condition.getScope());
         boolean hasScope = StringUtils.isNotBlank(condition.getScope());
         boolean ownerIsIdentity = identity.equals(condition.getOwner());
         boolean hasOwner = StringUtils.isNotBlank(condition.getOwner());
@@ -131,12 +137,20 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         }
         Map<String, Object> branches = new LinkedHashMap<>();
         if (!hasScope) {
-            branches.put("scope", VisibilityConstants.SCOPE_PUBLIC);
+            branches.put("scope", scopeBranch(publicScopes));
         }
         if (!hasOwner) {
             branches.put("owner", identity);
         }
         return BaseResolution.branches(branches);
+    }
+    
+    private boolean matchesScope(List<String> publicScopes, String scope) {
+        return scope != null && publicScopes.stream().anyMatch(scope::equalsIgnoreCase);
+    }
+    
+    private Object scopeBranch(List<String> publicScopes) {
+        return publicScopes.size() == 1 ? publicScopes.get(0) : publicScopes;
     }
     
     private Map<String, Object> singleBranch(String field, Object value) {
@@ -187,7 +201,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
         Map.Entry<String, Object> only = orGroup.entrySet().iterator().next();
         String key = only.getKey();
         Object value = only.getValue();
-        if ("scope".equals(key) && StringUtils.isBlank(condition.getScope())) {
+        if ("scope".equals(key) && value instanceof String
+            && StringUtils.isBlank(condition.getScope())) {
             condition.setScope(String.valueOf(value));
             condition.setOrGroup(new LinkedHashMap<>());
             return;

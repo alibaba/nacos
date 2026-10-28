@@ -24,10 +24,12 @@ import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,18 @@ class DefaultVisibilityAdvisorConverterTest {
     
     private final DefaultVisibilityAdvisorConverter converter =
         new DefaultVisibilityAdvisorConverter();
+    
+    @Test
+    void testSimplificationNeverOverwritesAnExistingBusinessScope() {
+        QueryCondition condition = new QueryCondition();
+        condition.setScope("PRIVATE");
+        condition.putOrGroup("scope", "PUBLIC");
+        
+        ReflectionTestUtils.invokeMethod(converter, "simplifyOrGroup", condition);
+        
+        assertEquals("PRIVATE", condition.getScope());
+        assertEquals("PUBLIC", condition.getOrGroup().get("scope"));
+    }
     
     @Test
     void convertShouldReturnDefaultConditionWhenConditionAndAdvisorAreNull() {
@@ -525,4 +539,86 @@ class DefaultVisibilityAdvisorConverterTest {
         advisor.setBasePredicate(predicate);
         return advisor;
     }
+    
+    @Test
+    void multiplePublicScopesRemainAnInConditionForAnonymousQueries() {
+        QueryAdvisor advice = advisor(BaseVisibilityPredicate.PUBLIC_AND_OWNER);
+        advice.setPublicScopes(List.of("PUBLIC", "TEAM_EDIT"));
+        QueryCondition actual =
+            converter.convert(new QueryCondition(), null, advice, new VisibilityQueryContext());
+        assertEquals(null, actual.getScope());
+        assertEquals(List.of("PUBLIC", "TEAM_EDIT"), actual.getOrGroup().get("scope"));
+    }
+    
+    @Test
+    void extendedScopeQueriesMatchBusinessFiltersAndVisibilityUnion() {
+        List<List<String>> scopeSets = List.of(List.of(), List.of("PUBLIC"),
+            List.of("PUBLIC", "TEAM_EDIT"), List.of("TEAM_EDIT"));
+        for (BaseVisibilityPredicate base : BaseVisibilityPredicate.values()) {
+            for (List<String> publicScopes : scopeSets) {
+                for (String identity : Arrays.asList(null, "me")) {
+                    for (String scopeFilter : Arrays.asList(null, "PUBLIC", "PRIVATE",
+                        "TEAM_EDIT")) {
+                        for (String ownerFilter : Arrays.asList(null, "me", "other")) {
+                            for (boolean granted : List.of(false, true)) {
+                                QueryCondition condition = new QueryCondition();
+                                condition.setScope(scopeFilter);
+                                condition.setOwner(ownerFilter);
+                                QueryAdvisor advice = advisor(base);
+                                advice.setPublicScopes(publicScopes);
+                                if (granted) {
+                                    advice.setAuthorizedPredicate(authorizedResources("granted"));
+                                }
+                                QueryCondition actual =
+                                    converter.convert(condition, identity, advice,
+                                        new VisibilityQueryContext());
+                                for (String rowScope : List.of("PUBLIC", "PRIVATE", "TEAM_EDIT",
+                                    "UNKNOWN")) {
+                                    for (String rowOwner : List.of("me", "other")) {
+                                        for (String rowName : List.of("granted", "ungranted")) {
+                                            boolean business = (scopeFilter == null
+                                                || scopeFilter.equals(rowScope))
+                                                && (ownerFilter == null
+                                                    || ownerFilter.equals(rowOwner));
+                                            boolean publicAccess = publicScopes.contains(rowScope);
+                                            boolean ownerAccess = rowOwner.equals(identity);
+                                            boolean visible = base == BaseVisibilityPredicate.ALL
+                                                || base == BaseVisibilityPredicate.PUBLIC
+                                                    && publicAccess
+                                                || base == BaseVisibilityPredicate.OWNER
+                                                    && ownerAccess
+                                                || base == BaseVisibilityPredicate.PUBLIC_AND_OWNER
+                                                    && (publicAccess || ownerAccess);
+                                            boolean expected = business && (visible
+                                                || granted && "granted".equals(rowName));
+                                            assertEquals(expected,
+                                                matchesCondition(actual, rowScope, rowOwner,
+                                                    rowName),
+                                                base + " " + publicScopes + " " + scopeFilter + " "
+                                                    + ownerFilter);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private boolean matchesCondition(QueryCondition condition, String scope, String owner,
+        String name) {
+        if (condition.isAlwaysEmpty()
+            || condition.getScope() != null && !condition.getScope().equals(scope)
+            || condition.getOwner() != null && !condition.getOwner().equals(owner)) {
+            return false;
+        }
+        Map<String, String> row = Map.of("scope", scope, "owner", owner, "name", name);
+        return condition.getOrGroup().isEmpty() || condition.getOrGroup().entrySet().stream()
+            .anyMatch(entry -> entry.getValue() instanceof List
+                ? ((List<?>) entry.getValue()).contains(row.get(entry.getKey()))
+                : entry.getValue().equals(row.get(entry.getKey())));
+    }
+    
 }

@@ -29,6 +29,15 @@ Destructive process-restart and multi-node variants are orchestrated by
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md) rather
 than stopping the server shared by the required standalone suite.
 
+## Scope extension API boundary coverage
+
+AgentModelValidationJavaSdkITCase verifies the unchanged public Agent/summary/overview
+validator methods without a server or scope provider: PUBLIC/PRIVATE remain accepted,
+unregistered or malformed values fail, and other required fields remain validated.
+AI module tests exercise SPI discovery and dynamic catalog lookup on stored Agent/summary/
+overview projections. No caller passes a scope set. This is local public API boundary
+coverage, not a new remote SDK surface; classifications/counts remain unchanged.
+
 ## Status Legend
 
 | Status | Meaning |

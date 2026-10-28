@@ -19,6 +19,8 @@
 本文档定义 AI Registry 资源的标准元数据和版本模型，并细化
 [AI Registry 规范](ai-registry-spec.md)。
 
+scope 校验使用所选可见性插件的声明集合；内置值与默认创建行为保持不变。
+
 ## 1. 身份
 
 AI 资源元数据身份为：

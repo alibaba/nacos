@@ -33,6 +33,15 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+## Visibility scope extension compatibility
+
+VisibilityScopeAdminApiOpenApiITCase and VisibilityScopeConsoleApiOpenApiITCase reject
+unregistered TEAM_EDIT on Agent/Skill/AgentSpec list
+and scope updates with HTTP 400 / PARAMETER_VALIDATE_ERROR. PUBLIC/PRIVATE lifecycle,
+missing parameters and pagination remain covered by existing scenarios. Plugin success
+is covered by registry/Form/query tests. Extended-plugin deployments are outside the
+default standalone HTTP suite. Surface counts and classifications remain unchanged.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI
