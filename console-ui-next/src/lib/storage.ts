@@ -1,3 +1,5 @@
+import { detectBrowserLanguage, isSupportedLanguage, type Language } from '@/locales/languages';
+
 const LANGUAGE_KEY = 'docsite_language';
 const THEME_KEY = 'nacos_theme';
 const SIDEBAR_KEY = 'nacos_sidebar_collapsed';
@@ -5,20 +7,17 @@ const TOKEN_KEY = 'token';
 const LOGIN_PAGE_ENABLED_KEY = 'login_page_enabled';
 
 // Language
-export function getLanguage(): 'zh-CN' | 'en-US' {
+export function getLanguage(): Language {
   const lang = localStorage.getItem(LANGUAGE_KEY);
-  if (lang === 'zh-CN' || lang === 'en-US') {
+  if (isSupportedLanguage(lang)) {
     return lang;
   }
   // Detect browser language
   const browserLang = navigator.language || (navigator as { userLanguage?: string }).userLanguage;
-  if (browserLang?.startsWith('zh')) {
-    return 'zh-CN';
-  }
-  return 'en-US';
+  return detectBrowserLanguage(browserLang);
 }
 
-export function setLanguage(language: 'zh-CN' | 'en-US'): void {
+export function setLanguage(language: Language): void {
   localStorage.setItem(LANGUAGE_KEY, language);
 }
 

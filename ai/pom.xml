@@ -58,6 +58,10 @@
             <version>1.26.0</version>
         </dependency>
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.16.1</version>
@@ -81,6 +85,11 @@
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
             <scope>test</scope>
         </dependency>
 

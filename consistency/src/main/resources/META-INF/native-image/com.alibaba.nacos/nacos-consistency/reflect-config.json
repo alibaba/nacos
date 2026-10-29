@@ -1,0 +1,10 @@
+[
+  {
+    "name": "com.alibaba.nacos.consistency.entity.WriteRequest",
+    "allPublicMethods": true
+  },
+  {
+    "name": "com.alibaba.nacos.consistency.entity.WriteRequest$Builder",
+    "allPublicMethods": true
+  }
+]

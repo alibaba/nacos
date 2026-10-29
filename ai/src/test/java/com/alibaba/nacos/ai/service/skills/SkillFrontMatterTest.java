@@ -29,7 +29,9 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -39,6 +41,8 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
@@ -134,7 +138,8 @@ class SkillFrontMatterTest {
             .thenAnswer(call -> {
                 AiResource current = resources.get(call.<String>getArgument(1));
                 AiResource update = call.getArgument(4);
-                boolean cacheUpdate = !java.util.Objects.equals(current.getExt(), update.getExt());
+                boolean cacheUpdate = !java.util.Objects.equals(current.getExt(), update.getExt())
+                    || !java.util.Objects.equals(current.getDesc(), update.getDesc());
                 if (cacheUpdate && rejectCache) {
                     return false;
                 }
@@ -212,12 +217,14 @@ class SkillFrontMatterTest {
     void creationUpdateAndDraftDeletion() throws Exception {
         create("one", "1.0.0", "First");
         assertEquals("First", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "First");
         AiResource meta = resources.get("one");
         Map<String, Object> ext = JacksonUtils.toObj(meta.getExt(), Map.class);
         ext.put("custom", "preserved");
         meta.setExt(JacksonUtils.toJson(ext));
         service.updateDraft("public", skill("one", "Updated"), null);
         assertEquals("Updated", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Updated");
         assertTrue(resources.get("one").getExt().contains("preserved"));
         assertTrue(versions.get(key("one", "1.0.0")).getStorage().contains("Updated"));
         service.deleteDraft("public", "one");
@@ -225,12 +232,45 @@ class SkillFrontMatterTest {
         assertEquals("{\"custom\":\"preserved\"}", resources.get("one").getExt());
     }
     
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void creationAndUploadPreserveMultilineDescriptionAndEmptyFiles(boolean upload)
+        throws Exception {
+        String name = "rds-copilot";
+        String description = "RDS Copilot assistant.\nTriggers: RDS Copilot, SQL optimization\n";
+        Skill skill = skill(name, new StringBuilder("---\nname: ").append(name)
+            .append("\nversion: 0.0.1\ndescription: |\n  RDS Copilot assistant.\n")
+            .append("  Triggers: RDS Copilot, SQL optimization\n---\nInstructions\n"));
+        SkillResource empty = new SkillResource();
+        empty.setName("empty.txt");
+        empty.setType("references");
+        empty.setContent("");
+        String resourceId = SkillUtils.generateResourceId("references", "empty.txt");
+        skill.setResource(Map.of(resourceId, empty));
+        if (upload) {
+            service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
+                .zipBytes(SkillUtils.toZipBytes(skill)).build());
+        } else {
+            service.createDraft("public", name, null, "0.0.1", skill, null);
+        }
+        
+        SkillSummary summary = summary(name);
+        SkillMeta detail = service.getSkillDetail("public", name);
+        assertEquals(description, summary.getDescription());
+        assertEquals(description, detail.getDescription());
+        assertEquals(description, summary.getFrontMatter().get("description"));
+        assertEquals(summary.getFrontMatter(), detail.getFrontMatter());
+        assertFalse(summary.getFrontMatter().containsKey("description.Triggers"));
+        assertEquals(description, versionFrontMatter(name, "0.0.1").get("description"));
+        assertEquals(0, files.get("public:" + name + ":0.0.1:references/empty.txt").length);
+    }
+    
     @Test
     void snapshotStoresOnlyCustomFieldsAndResponseBuildsReservedFields() throws Exception {
         create("one", "1.0.0", "Display");
         Map<String, String> versionFrontMatter = versionFrontMatter("one", "1.0.0");
         assertEquals("one", versionFrontMatter.get("name"));
-        assertEquals("Description", versionFrontMatter.get("description"));
+        assertEquals("Display", versionFrontMatter.get("description"));
         
         Map<String, Object> ext = JacksonUtils.toObj(resources.get("one").getExt(), Map.class);
         Map<String, String> cached = cachedFrontMatter(ext);
@@ -309,14 +349,18 @@ class SkillFrontMatterTest {
         clearInvocations(storage, rows);
         service.updateDraft("public", skill("one", "Unpublished"), null);
         assertEquals("Published", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Published");
         verify(rows, never()).find("public", "one", "skill", "1.0.0");
         verify(storage, never()).get(any());
         service.forcePublish("public", "one", "2.0.0", true);
         assertEquals("Unpublished", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Unpublished");
         service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
         assertEquals("Published", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Published");
         service.changeOnlineStatus("public", "one", "version", "2.0.0", true);
         assertEquals("Unpublished", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Unpublished");
         service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
         service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
         assertNull(summary("one").getFrontMatter());
@@ -331,6 +375,7 @@ class SkillFrontMatterTest {
         service.updateDraft("public", skill("one", "Draft"), null);
         service.deleteDraft("public", "one");
         assertEquals("Published", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Published");
     }
     
     @Test
@@ -342,6 +387,7 @@ class SkillFrontMatterTest {
         assertNull(summary("one").getFrontMatter());
         service.updateDraft("public", skill("one", "Updated"), null);
         assertEquals("Updated", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Updated");
         verify(storage, never()).get(any());
     }
     
@@ -413,6 +459,7 @@ class SkillFrontMatterTest {
         };
         service.forcePublish("public", "one", "2.0.0", true);
         assertEquals("First", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "First");
         assertTrue(resources.get("one").getExt().contains("concurrent"));
     }
     
@@ -432,6 +479,7 @@ class SkillFrontMatterTest {
         service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
         service.changeOnlineStatus("public", "one", "version", "2.0.0", true);
         assertEquals("Second", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Second");
     }
     
     @Test
@@ -441,6 +489,7 @@ class SkillFrontMatterTest {
         versions.get(key("one", "1.0.0")).setStatus("reviewed");
         service.redraft("public", "one", "1.0.0");
         assertEquals("Reviewed", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Reviewed");
     }
     
     @Test
@@ -460,9 +509,159 @@ class SkillFrontMatterTest {
         service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
             .zipBytes(zip("one", "Uploaded")).targetVersion("1.0.0").build());
         assertEquals("Uploaded", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Uploaded");
         service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
             .zipBytes(zip("one", "Overwritten")).targetVersion("1.0.0").overwrite(true).build());
         assertEquals("Overwritten", summary("one").getFrontMatter().get("alias"));
+        assertDescription("one", "Overwritten");
+    }
+    
+    @Test
+    void creatingAndOverwritingUploadedDraftPreservesOnlineDescription() throws Exception {
+        create("one", "1.0.0", "Published");
+        service.forcePublish("public", "one", "1.0.0", true);
+        service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
+            .zipBytes(zip("one", "Uploaded")).targetVersion("2.0.0").build());
+        assertDescription("one", "Published");
+        service.uploadSkillFromZip(SkillUploadRequest.builder().namespaceId("public")
+            .zipBytes(zip("one", "Overwritten")).targetVersion("2.0.0").overwrite(true).build());
+        assertDescription("one", "Published");
+        service.submit("public", "one", "2.0.0");
+        assertDescription("one", "Overwritten");
+    }
+    
+    @Test
+    void descriptionOnlyUpdateRefreshesUnchangedCustomSnapshot() throws Exception {
+        create("one", "1.0.0", "Initial");
+        Skill updated = skill("one", "Initial");
+        updated
+            .setSkillMd(updated.getSkillMd().replace("description: Initial", "description: New"));
+        service.updateDraft("public", updated, null);
+        assertDescription("one", "New");
+        assertEquals("Initial", summary("one").getFrontMatter().get("alias"));
+    }
+    
+    @Test
+    void lastOfflineRetainsCorrectDescriptionInsteadOfHigherHistoricalVersion() throws Exception {
+        create("one", "1.0.0", "Last online");
+        service.forcePublish("public", "one", "1.0.0", true);
+        service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
+        service.updateDraft("public", skill("one", "Higher historical"), null);
+        service.forcePublish("public", "one", "2.0.0", true);
+        service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
+        resources.get("one").setDesc("|");
+        clearInvocations(storage, rows);
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        assertDescription("one", "Last online");
+        assertNull(summary("one").getFrontMatter());
+        assertEquals(0, summary("one").getOnlineCnt());
+        assertFalse(summary("one").getLabels().containsKey("latest"));
+        verify(storage, never()).get(any());
+        verify(rows, never()).find("public", "one", "skill", "2.0.0");
+        service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
+        assertDescription("one", "Last online");
+    }
+    
+    @Test
+    void lastOfflineSelectsUnpublishedDraftOrReviewingVersion() throws Exception {
+        create("one", "1.0.0", "Published");
+        service.forcePublish("public", "one", "1.0.0", true);
+        service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
+        service.updateDraft("public", skill("one", "Working"), null);
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        assertDescription("one", "Working");
+        assertEquals("2.0.0", summary("one").getFrontMatter().get("version"));
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", true);
+        resources.get("one").setVersionInfo(
+            "{\"labels\":{\"latest\":\"1.0.0\"},\"onlineCnt\":1,\"reviewingVersion\":\"2.0.0\"}");
+        versions.get(key("one", "2.0.0")).setStatus("reviewing");
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        assertDescription("one", "Working");
+    }
+    
+    @Test
+    void lifecycleRefreshRepairsDescriptionEvenWhenSnapshotVersionIsUnchanged() throws Exception {
+        create("one", "1.0.0", "Published");
+        service.forcePublish("public", "one", "1.0.0", true);
+        resources.get("one").setDesc("|");
+        service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
+        service.deleteDraft("public", "one");
+        assertDescription("one", "Published");
+        resources.get("one").setDesc("|");
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", true);
+        assertDescription("one", "Published");
+    }
+    
+    @Test
+    void forkWithoutOnlineVersionRefreshesDescriptionFromCopiedContent() throws Exception {
+        create("one", "1.0.0", "Stored description");
+        service.forcePublish("public", "one", "1.0.0", true);
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        resources.get("one").setDesc("|");
+        service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
+        assertDescription("one", "Stored description");
+        service.forcePublish("public", "one", "2.0.0", true);
+        assertDescription("one", "Stored description");
+    }
+    
+    @Test
+    void offlineRefreshConflictUsesNewlySelectedOnlineVersion() throws Exception {
+        create("one", "1.0.0", "First");
+        service.forcePublish("public", "one", "1.0.0", true);
+        service.createDraft("public", "one", "1.0.0", "2.0.0", null, null);
+        service.updateDraft("public", skill("one", "Second"), null);
+        service.forcePublish("public", "one", "2.0.0", true);
+        service.changeOnlineStatus("public", "one", "version", "2.0.0", false);
+        cacheConflict = () -> {
+            AiResource current = resources.get("one");
+            current.setVersionInfo("{\"labels\":{\"latest\":\"2.0.0\"},\"onlineCnt\":1}");
+            current.setMetaVersion(current.getMetaVersion() + 1);
+            versions.get(key("one", "2.0.0")).setStatus("online");
+        };
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        assertDescription("one", "Second");
+        assertEquals("2.0.0", summary("one").getFrontMatter().get("version"));
+    }
+    
+    @Test
+    void delayedOfflineRefreshDoesNotOverwriteNewerRetainedDescription() throws Exception {
+        create("one", "1.0.0", "First");
+        service.forcePublish("public", "one", "1.0.0", true);
+        cacheConflict = () -> {
+            AiResource current = resources.get("one");
+            // A later online/offline cycle has already persisted its description and cleared its snapshot.
+            current.setDesc("Later offline description");
+            current.setExt(null);
+            current.setMetaVersion(current.getMetaVersion() + 1);
+        };
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", false);
+        assertDescription("one", "Later offline description");
+        assertNull(summary("one").getFrontMatter());
+    }
+    
+    @Test
+    void descriptionOnlyConflictExhaustionCanBeRetriedWithoutChangingVersion() throws Exception {
+        create("one", "1.0.0", "Published");
+        service.forcePublish("public", "one", "1.0.0", true);
+        resources.get("one").setDesc("|");
+        rejectCache = true;
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", true);
+        assertEquals("|", resources.get("one").getDesc());
+        rejectCache = false;
+        service.changeOnlineStatus("public", "one", "version", "1.0.0", true);
+        assertDescription("one", "Published");
+    }
+    
+    private void assertDescription(String name, String description) throws Exception {
+        SkillSummary item = summary(name);
+        SkillMeta detail = service.getSkillDetail("public", name);
+        assertEquals(description, item.getDescription());
+        assertEquals(description, detail.getDescription());
+        assertEquals(description, resources.get(name).getDesc());
+        if (item.getFrontMatter() != null) {
+            assertEquals(description, item.getFrontMatter().get("description"));
+            assertEquals(item.getFrontMatter(), detail.getFrontMatter());
+        }
     }
     
     private static byte[] zip(String name, String alias) throws Exception {
@@ -485,7 +684,8 @@ class SkillFrontMatterTest {
     }
     
     private static Skill skill(String name, String alias) {
-        return skill(name, frontMatterHeader(name).append("alias: ").append(alias)
+        return skill(name, new StringBuilder("---\nname: ").append(name)
+            .append("\ndescription: ").append(alias).append("\nalias: ").append(alias)
             .append("\n---\nInstructions\n"));
     }
     

@@ -100,11 +100,14 @@ Skill 定义为“一个目录，至少包含一个 `SKILL.md` 文件”。Nacos
 - `SKILL.md` 必须存在，内容由 YAML frontmatter 和 Markdown 指令正文组成。
 - `name` 与 `description` 是必填 frontmatter 字段。Nacos 将 `name` 映射为
   AI resource name，将 `description` 映射为可搜索元数据。
+- `description` 支持 YAML literal (`|`) 和 folded (`>`) 多行标量及其换行控制标记。
+  创建、上传、读取及列表/详情中的描述使用解析后的完整文本；正文中的冒号不得生成嵌套字段。
 - `license`、`compatibility`、`metadata` 与 `allowed-tools` 是标准定义的可选字段。
   Nacos 必须在 `SKILL.md` 中保留这些字段；后续可以选择索引其中一部分字段，但描述文件
   仍是包内容的事实来源。
 - 标准包根目录可以包含可选的 `scripts/`、`references/` 与 `assets/` 目录。
   Nacos 将这些文件作为 Skill resource 存储和分发。
+- 普通资源文件允许零字节或仅含空白。存储、读取和下载必须保留文件及原内容，不得将空内容视为文件缺失。
 - 上传解析必须忽略平台生成的 ZIP 元数据文件，例如 macOS 的 `.DS_Store`、
   `._*` AppleDouble 文件和 `__MACOSX/` 目录；这些文件不得作为 Skill resource
   存储或分发。该过滤不得影响普通资源文件，也不得把嵌套 Skill 目录特殊隐藏。
@@ -164,6 +167,21 @@ Admin 和 Console 的 Skill 列表及元数据详情响应提供可空的
 
 展示版本优先使用服务端维护的 `latest`，其次是 `editingVersion`，最后是
 `reviewingVersion`。编辑草稿不能覆盖已上线版本的 frontmatter；没有展示版本时返回 null。
+
+Skill 资源描述必须与展示版本的 `storage.frontMatter.description` 一致，不能使用版本的
+提交说明字段。草稿创建、上传、覆盖和保存不得直接覆盖其他线上展示版本的描述；描述与
+自定义 frontmatter 快照在同一次元数据 CAS 中更新。生命周期刷新即使展示版本或自定义
+字段未变化，也必须检查并修正描述；冲突后重新选择展示版本。
+
+最后一个在线版本下线后，若仍有编辑中或审核中版本，按上述优先级同步其描述。若没有
+未发布展示版本，则保留本次刚下线版本的正确描述，不清空，也不回查历史最大已发布版本；
+该描述仅供管理展示，`latest` 必须删除且 `onlineCnt=0`，frontmatter 仍返回 null。
+不得盲目保留被草稿覆盖或为 `|` 的旧资源描述。该描述与下线后的生命周期指针在同一次
+CAS 中保存，避免延迟的快照刷新覆盖并发操作已经保留的描述。
+
+缺少解析后 frontmatter 或 description 的历史描述符不触发文件读取或自动迁移；保留已有
+资源描述并记录包含 namespace、Skill 和版本的 WARN，待内容更新后恢复同步。刷新失败或
+CAS 重试耗尽必须记录诊断日志，不输出描述内容；不将已经完成的生命周期操作改报失败。
 
 新增或更新内容时，在版本存储描述符中保存完整的解析后 `frontMatter`。上传、覆盖上传、
 创建/更新/派生草稿及新增内置 Skill 均从实际保存的 SKILL.md 内容提取这些字段；

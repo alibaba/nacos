@@ -14,7 +14,7 @@
 | UI 组件库 | Shadcn/ui（基于 Radix UI） |
 | 状态管理 | Zustand v5（stores: auth, server, namespace, app, config, history, service） |
 | 路由 | React Router v7（HashRouter, 懒加载, AuthGuard/AdminGuard/GuestGuard） |
-| 国际化 | react-i18next（zh-CN / en-US） |
+| 国际化 | react-i18next（zh-CN / en-US / ru-RU） |
 | HTTP 客户端 | Axios（请求/响应拦截器, Token 处理） |
 | 代码编辑器 | @monaco-editor/react |
 
@@ -310,7 +310,7 @@ console-ui-next/
 │   │   ├── layout/    # 布局组件（sidebar.tsx, header.tsx）
 │   │   └── ui/        # Shadcn/ui 组件（21+ 个）
 │   ├── layouts/       # 应用布局（AppLayout.tsx）
-│   ├── locales/       # 国际化 JSON 文件（zh-CN.json, en-US.json）
+│   ├── locales/       # 国际化 JSON 文件（zh-CN.json, en-US.json, ru-RU.json）
 │   ├── pages/         # 页面组件
 │   │   ├── configurationManagement/  # 配置列表
 │   │   ├── newconfig/                # 新建配置

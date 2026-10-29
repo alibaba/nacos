@@ -33,6 +33,15 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+## Visibility scope extension compatibility
+
+VisibilityScopeAdminApiOpenApiITCase and VisibilityScopeConsoleApiOpenApiITCase reject
+unregistered TEAM_EDIT on Agent/Skill/AgentSpec list
+and scope updates with HTTP 400 / PARAMETER_VALIDATE_ERROR. PUBLIC/PRIVATE lifecycle,
+missing parameters and pagination remain covered by existing scenarios. Plugin success
+is covered by registry/Form/query tests. Extended-plugin deployments are outside the
+default standalone HTTP suite. Surface counts and classifications remain unchanged.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI
@@ -410,6 +419,26 @@ delegation instead of applying the target Admin API's unrelated resource permiss
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
 
+`AiVisibilityAccountMatrixOpenApiITCase` adds a cross-cutting
+[account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md) over the existing five AI resource
+surfaces. This diagnostic suite requires `nacos.test.visibility.matrix.enabled=true` and is
+not counted as passing coverage when disabled in ordinary CI. It separates ordinary API
+permission from explicit visibility grants and records
+anonymous-disabled/enabled outcomes for detail, list/count/pages, search, labels and deletion.
+PUBLIC Prompt fixtures are blocked by the current HTTP contract. Failed scenarios remain
+failures, and unexecuted lifecycle or Console combinations are not marked covered. Existing
+surface counts, classifications and strict/effective coverage totals remain unchanged.
+
+The [2026-10-28 execution](AI_VISIBILITY_ACCOUNT_MATRIX_RESULTS.md) recorded 59 passing,
+4 failing and 7 blocked account combinations. PRIVATE MCP Client Search failed for four
+authorized identities; Agent draft creation returned intermittent 500 responses before two
+successful focused reruns. These findings are retained rather than counted as passing coverage.
+An explicitly authorized offline Derby fixture experiment then passed all seven PUBLIC Prompt
+combinations and 43 checks, bringing the combined matrix to 66 passing and four failing rows.
+This manual fixture coverage does not remove the ordinary IT's PUBLIC Prompt preparation gap.
+Its administrator grant-revocation cleanup returned 403; isolated leftover grants/roles were
+removed and verified separately, with the cleanup exception retained in the execution report.
+
 Skill frontmatter (#15345) is covered on Admin and Console lists through draft
 creation/update, draft deletion, publish and version online/offline transitions.
 Both Skill API scenario matrices record null/legacy behavior and deterministic
@@ -418,6 +447,16 @@ package storage. HTTP IT verifies generated reserved fields and an untruncated
 projection; service unit tests cover custom-field priority and all snapshot
 limits while preserving complete version metadata. They also verify that malformed
 historical `ai_resource.ext` metadata cannot fail list or detail requests.
+Skill description lifecycle consistency (#15949) is asserted in the Admin and Console
+frontmatter workflows with different descriptions per version: draft edits do not
+overwrite online metadata, last-online offline selects a working draft when
+present, and otherwise retains the just-offlined version's description without
+choosing a higher historical version. Service tests cover uploads, overwrites,
+forks, stale descriptions, unchanged snapshots, legacy descriptors and CAS retries.
+`SkillUploadAdminApiOpenApiITCase.testCreateAndUploadPreserveEmptyFilesAndMultilineDescription`
+also checks creation and upload with literal multiline descriptions and empty
+resource files through list/detail, version reads, and ZIP downloads. The focused
+parser tests cover folded scalars, chomping, indentation, and colons in the text.
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
@@ -643,6 +682,41 @@ contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出�
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
+## ARD online relevance filtering
+
+| Scenario | Coverage |
+| --- | --- |
+| Default-off Search header, unchanged JSON, invalid cursor | `ArdAdaptorOpenApiITCase.testSearchEnhancementStatusAndCursorBoundary` against standalone ARD |
+| Enabled empty result bypass | Same IT with server enhancement enabled and `-Dnacos.test.ard.relevance.empty-status=bypassed` |
+| Jev protocol, invalid scores/IDs, 429, no retry | `JevRelevanceProviderTest`, deterministic local HTTP stub |
+| Concurrent batches, timeout/cancel, node saturation, all-or-nothing fallback | `AiResourceRelevanceFilterTest` |
+| Threshold, stable order/score, empty continuation, fallback boundary, currentness, cursor binding | `AiResourceSearchRelevanceTest` |
+| Header propagation and no JSON field leakage | `ArdSearchControllerTest` |
+
+The paid-provider success path is not a prerequisite for standalone IT. Deterministic provider
+and Search Core tests exercise nonempty success and failure paths without external credentials.
+Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
+nonempty Jev filtering coverage. No public Java SDK contract changes.
+
+## Native binding and serialization regression
+
+The existing Config Admin and Console CRUD rows also verify non-empty inherited `srcUser` and
+`appName` parameters and persisted `createUser` / `appName` detail fields. This catches missing
+Native form-binding metadata without changing the API contract. Native and JVM execution are
+separate validation targets; these additional scenarios do not change surface-row coverage totals.
+
+Existing Service Admin and Console IT cases are also reused to check persisted service metadata
+and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.
+
+### Agent Discover notification Header compatibility
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent Discover / `AgentDiscoveryClientOpenApiITCase` | GET `/v3/client/ai/agents` | Covered | `testDiscoveryTriggerHeaderDoesNotChangeSnapshotOrErrors` checks `watch-notify`, missing, empty, unknown and case-mismatched `X-Nacos-Agent-Discovery-Trigger` values against full snapshot, not-found and invalid version/label responses. SDK emission and retry attribution use client wire UT. Discover now emits best-effort `AiResourceTraceEvent` (`DISCOVER`) at HTTP/gRPC business-query boundaries; server UT verifies source, resolved/requested version, protocol, subscription attribution and diagnostic failure isolation. Event payload/log delivery is internal and has no public query API, so standalone HTTP IT verifies response compatibility rather than claiming event or SDK emission coverage. |
+
+This extends the existing Agent Discover row; API surface totals and strict/effective
+coverage denominators remain unchanged. The optional diagnostic header never changes
+authorization or discovery semantics.
 
 ## Config publish operation messages (#10978)
 

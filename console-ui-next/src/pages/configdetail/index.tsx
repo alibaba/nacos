@@ -201,9 +201,9 @@ export default function ConfigDetailPage() {
   }
 
   return (
-    <div className="space-y-5 px-6 pb-6 pt-2">
+    <div className="flex h-[calc(100vh-6.5rem)] min-h-[560px] flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4" />
@@ -228,7 +228,7 @@ export default function ConfigDetailPage() {
 
       {/* Info Card */}
       <Collapsible open={metadataOpen} onOpenChange={setMetadataOpen} asChild>
-        <Card className="overflow-hidden">
+        <Card className="shrink-0 overflow-hidden py-0">
           <CardContent className="p-0">
             {/* Hero identity banner — Data ID prominently displayed with type-tinted bg */}
             <div className="px-6 py-4 border-b border-border/60">
@@ -349,9 +349,9 @@ export default function ConfigDetailPage() {
       {/* Content Card */}
       <Card className={contentFullscreen
         ? 'fixed inset-0 z-50 flex flex-col rounded-none border-0 bg-background'
-        : ''}
+        : 'min-h-0 flex-1 gap-3 py-4'}
       >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 px-5">
           <CardTitle>{t('config.content')}</CardTitle>
           <Button
             variant="outline"
@@ -364,13 +364,13 @@ export default function ConfigDetailPage() {
             {contentFullscreen ? t('config.exitFullscreen') : t('config.viewFullscreen')}
           </Button>
         </CardHeader>
-        <CardContent className={contentFullscreen ? 'min-h-0 flex-1 p-6 pt-0' : 'p-6 pt-0'}>
+        <CardContent className={contentFullscreen ? 'min-h-0 flex-1 p-6 pt-0' : 'min-h-0 flex-1 px-5'}>
           <MonacoEditor
             value={currentConfig.content || ''}
             language={(currentConfig.type as ConfigType) || 'text'}
             readOnly
-            height={contentFullscreen ? '100%' : 'max(420px, calc(100vh - 320px))'}
-            className={contentFullscreen ? 'h-full' : undefined}
+            height="100%"
+            className="h-full"
           />
         </CardContent>
       </Card>

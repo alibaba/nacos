@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentResourceExt;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentResourceExtSerializer;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionCatalogBuilder;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionStorageDescriptorSerializer;
@@ -42,11 +43,14 @@ import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionSummary;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
+import com.alibaba.nacos.api.ai.utils.AgentModelValidator;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeDefinition;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeRegistry;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.AfterEach;
@@ -56,6 +60,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
@@ -86,6 +91,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -1263,6 +1269,50 @@ class AgentPersistenceServiceTest {
         row.setVersionInfo("{\"onlineCnt\":1,\"labels\":{\"latest\":\"2.0.0\"}}");
         assertEquals(NacosException.SERVER_ERROR, assertThrows(NacosApiException.class,
             () -> service.getAgent(NAMESPACE_ID, AGENT_NAME)).getErrCode());
+    }
+    
+    @Test
+    void testRegisteredScopeSurvivesStoredAgentAndSummaryProjection() throws NacosException {
+        AiResource row = storedResource();
+        row.setScope("TEAM_EDIT");
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(row);
+        QueryCondition condition = new QueryCondition();
+        condition.setNamespaceId(NAMESPACE_ID);
+        Page<AiResource> source = new Page<>();
+        source.setPageNumber(1);
+        source.setTotalCount(1);
+        source.setPagesAvailable(1);
+        source.setPageItems(Collections.singletonList(row));
+        when(resourcePersistService.list(condition, 1, 10)).thenReturn(source);
+        VisibilityScopeRegistry registry = new VisibilityScopeRegistry(Collections.singletonList(
+            new VisibilityScopeDefinition("TEAM_EDIT", true)));
+        try (MockedStatic<VisibilityHelper> helper = mockStatic(VisibilityHelper.class)) {
+            helper.when(VisibilityHelper::scopeRegistry).thenReturn(registry);
+            AgentSummary result = service.getAgent(NAMESPACE_ID, AGENT_NAME);
+            assertEquals("TEAM_EDIT", result.getScope());
+            AgentOverview overview = new AgentOverview();
+            overview.setAgent(result);
+            Page<AgentVersionSummary> versions = new Page<>();
+            versions.setPageNumber(1);
+            versions.setTotalCount(0);
+            versions.setPagesAvailable(0);
+            versions.setPageItems(Collections.emptyList());
+            overview.setVersionPage(versions);
+            assertDoesNotThrow(() -> AgentModelValidator.validateOverview(overview));
+            result.setOwner("");
+            assertThrows(IllegalArgumentException.class,
+                () -> AgentModelValidator.validateAgent(result));
+            result.setOwner(row.getOwner());
+            assertEquals("TEAM_EDIT",
+                service.listAgents(condition, 1, 10).getPageItems().get(0).getScope());
+            helper.when(VisibilityHelper::scopeRegistry)
+                .thenReturn(VisibilityScopeRegistry.defaults());
+            assertThrows(NacosApiException.class, () -> service.getAgent(NAMESPACE_ID, AGENT_NAME));
+            assertThrows(NacosApiException.class, () -> service.listAgents(condition, 1, 10));
+            assertThrows(IllegalArgumentException.class,
+                () -> AgentModelValidator.validateOverview(overview));
+        }
     }
     
     @Test

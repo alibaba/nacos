@@ -63,6 +63,19 @@ public interface AgentClientProxy {
     AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request) throws NacosException;
     
     /**
+     * Discover with request-scoped Watch notification attribution.
+     *
+     * @param request namespace-bound discovery request
+     * @param watchNotify whether this query refreshes an accepted Watch notification
+     * @return complete discovery result
+     * @throws NacosException when the transport request fails
+     */
+    default AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
+        return discoverAgent(request);
+    }
+    
+    /**
      * Replace one complete Agent Endpoint publication.
      *
      * @param batch namespace-bound complete batch

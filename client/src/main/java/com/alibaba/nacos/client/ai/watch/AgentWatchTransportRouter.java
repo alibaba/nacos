@@ -19,10 +19,12 @@ package com.alibaba.nacos.client.ai.watch;
 import com.alibaba.nacos.api.ai.AgentTransportMode;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AgentHttpWatchClient;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -40,6 +42,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * the compatibility fallback. Canonical intent and listener state stay in
  * {@link AgentWatchManager}.</p>
  *
+ * <p>Ownership is per canonical Watch, so different Watches can use different transports.
+ * A single Watch does not keep both gRPC hints and periodic Discover polling in steady
+ * state. On upgrade, the router starts gRPC before stopping the previous owner, preserving
+ * observation if activation fails. This allows brief overlap, including a Discover already
+ * triggered by the old polling timer; both paths use the same manager and result
+ * fingerprint comparison.</p>
+ *
  * @author Nacos
  */
 public final class AgentWatchTransportRouter
@@ -47,6 +56,8 @@ public final class AgentWatchTransportRouter
     HttpAgentWatchTransport.WireLifecycleListener {
     
     private static final Logger LOGGER = LogUtils.logger(AgentWatchTransportRouter.class);
+    
+    private static final LogRateLimiter WARN_LOG_LIMITER = new LogRateLimiter(60000L);
     
     private final AgentTransportMode mode;
     
@@ -257,7 +268,7 @@ public final class AgentWatchTransportRouter
             route.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), false);
             return;
         }
-        if (isTerminal(exception)) {
+        if (blocksTransportFallback(exception)) {
             route.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
             return;
         }
@@ -276,8 +287,10 @@ public final class AgentWatchTransportRouter
             }
             fallback.stop(clientWatchId);
         } catch (NacosException e) {
+            logFallbackFailure(route, e);
             route.callback.unavailable(e.getErrCode(), e.getErrMsg(), true);
         } catch (RuntimeException e) {
+            logFallbackFailure(route, e);
             route.callback.unavailable(NacosException.CLIENT_ERROR,
                 "Failed to start fallback Agent Watch polling.", true);
         }
@@ -301,7 +314,7 @@ public final class AgentWatchTransportRouter
             }
         }
         for (Route route : candidates) {
-            if (isHttpTerminal(exception)) {
+            if (blocksHttpFallback(exception)) {
                 route.callback.unavailable(exception.getErrCode(), exception.getErrMsg(), true);
             } else {
                 fallbackHttpRoute(route);
@@ -345,13 +358,7 @@ public final class AgentWatchTransportRouter
         try {
             grpcTransport.start(route.registration, route.callback);
         } catch (NacosException e) {
-            if (isNotFound(e)) {
-                route.callback.unavailable(e.getErrCode(), e.getErrMsg(), false);
-            } else if (isTerminal(e)) {
-                route.callback.unavailable(e.getErrCode(), e.getErrMsg(), true);
-            } else {
-                LOGGER.debug("Agent Watch remains on polling after gRPC upgrade failure.", e);
-            }
+            LOGGER.debug("Agent Watch retains its previous binding after gRPC upgrade failure.", e);
             return;
         } catch (RuntimeException e) {
             LOGGER.debug("Agent Watch remains on polling after gRPC upgrade failure.", e);
@@ -428,14 +435,26 @@ public final class AgentWatchTransportRouter
                 pollingTransport.stop(route.registration.getClientWatchId());
             }
         } catch (NacosException e) {
+            logFallbackFailure(route, e);
             route.callback.unavailable(e.getErrCode(), e.getErrMsg(), true);
         } catch (RuntimeException e) {
+            logFallbackFailure(route, e);
             route.callback.unavailable(NacosException.CLIENT_ERROR,
                 "Failed to start fallback Agent Watch polling.", true);
         }
     }
     
-    private boolean isHttpTerminal(NacosException exception) {
+    private void logFallbackFailure(Route route, Exception failure) {
+        if (WARN_LOG_LIMITER.tryAcquire()) {
+            LOGGER.warn("[RAD-WATCH] Fallback binding failed; retaining local subscription: "
+                + "clientWatchId={}, {}",
+                AgentWatchLogUtils.token(route.registration.getClientWatchId()),
+                AgentWatchLogUtils.describeRequest(route.registration.getDiscoveryRequest()),
+                failure);
+        }
+    }
+    
+    private boolean blocksHttpFallback(NacosException exception) {
         int code = exception.getErrCode();
         return code == NacosException.OVER_THRESHOLD
             || code == NacosException.CLIENT_OVER_THRESHOLD
@@ -467,7 +486,7 @@ public final class AgentWatchTransportRouter
     }
     
     private boolean canFallback(NacosException exception) {
-        return !isNotFound(exception) && !isTerminal(exception);
+        return !isNotFound(exception) && !blocksTransportFallback(exception);
     }
     
     private boolean isNotFound(NacosException exception) {
@@ -475,9 +494,10 @@ public final class AgentWatchTransportRouter
             || exception.getErrCode() == NacosException.RESOURCE_NOT_FOUND;
     }
     
-    private boolean isTerminal(NacosException exception) {
+    private boolean blocksTransportFallback(NacosException exception) {
         int code = exception.getErrCode();
-        return code == NacosException.NO_RIGHT || code == NacosException.OVER_THRESHOLD
+        return code == ErrorCode.AGENT_MIGRATION_IN_PROGRESS.getCode()
+            || code == NacosException.NO_RIGHT || code == NacosException.OVER_THRESHOLD
             || code == NacosException.CLIENT_OVER_THRESHOLD
             || code == NacosException.INVALID_PARAM
             || code == NacosException.CLIENT_INVALID_PARAM || code == NacosException.CONFLICT;

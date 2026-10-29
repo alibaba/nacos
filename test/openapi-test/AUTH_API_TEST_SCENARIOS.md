@@ -52,6 +52,15 @@ coverage calculation.
 
 ## Cross-Cutting Authorization Coverage
 
+- `AiVisibilityAccountMatrixOpenApiITCase` adds the
+  [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md) for Agent, MCP,
+  Prompt, Skill and AgentSpec. It requires `nacos.test.visibility.matrix.enabled=true`;
+  ordinary CI does not execute or count this diagnostic suite as passing. It records independent detail/list/search/write/delete
+  results with anonymous access disabled and enabled, and exercises visibility grants,
+  downgrade/revoke, management authority, the separate API permission gate, mixed pagination
+  and cross-type/namespace grant isolation. Coverage is partial: PUBLIC Prompt has no supported
+  HTTP fixture path; per-operation lifecycle and full Console account matrices remain gaps.
+
 - [AUTHORIZATION_OPERATION_COVERAGE.md](AUTHORIZATION_OPERATION_COVERAGE.md) is the live
   method-level inventory for all 386 production `@Secured` operations across 56 Controllers.
   `ModuleAuthorizationITCase` compares every operation and normalized annotation tuple with

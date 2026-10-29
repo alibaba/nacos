@@ -63,7 +63,8 @@ Runtime 双物化是独立的连接态兼容行为，不创建第二个定义权
 心跳保留既有身份和归属检查。需要 Register 提交剩余列表的 SDK 局部注销仍返回 50105，
 不改变已确认缓存，也不能扩大为整份删除。拒绝的 Register/Watch 不创建 owner 或补注册。
 HTTP 已挂起 Watch 完成前重查；gRPC Watch 在后续推送时返回带 50105 的 TERMINATED，
-后续 Discover 也受门禁。迁移完成后由调用者显式重新发起业务/订阅。
+后续 Discover 也受门禁。初次被拒绝的调用需在迁移完成后重新发起；已接受的 Java SDK
+订阅保留本地状态并持续重试，50105 不进入数据 Listener。
 
 门禁仅用于外部 RAD binding，不加入共享领域服务。旧 A2A wire、Admin/Console、内部迁移、
 索引和投影继续沿用已有规则，避免阻断迁移自身。旧 API 的 QUIESCING 写屏障保持不变。
@@ -430,3 +431,10 @@ Shadow 及其配置计划在 Nacos 4.0 删除。删除时不得改写已经标�
 本轮不改变迁移状态机或历史 A2A 公开模型，但转换器、Storage 读回、Runtime 比较器和 Search gate 依赖的地址模型将统一。必须用新结构验证正常 SYNCING/QUIESCING/终态和两种 shadow 策略，不能因不支持 BETA 升级而省略历史 A2A 迁移回归；故障恢复和集群注入按本轮约定延期。
 
 统一模型和 Schema 遵循已确认的地址契约。完整字段政策、样例、16 组验收及已知缺口见 [地址模型测试方案](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)。测试计划和实际执行证据分别登记。
+
+### Java SDK Watch 生命周期
+
+Wire 终止（包含迁移拒绝 50105）仅结束远程绑定，不结束已接受的 Java SDK 订阅。
+SDK 保留订阅及确认数据，在正常鉴权和配额下持续重试。只有合法 Discover 确认目标不存在
+产生 SDK UNAVAILABLE，其他错误内部处理。旧 A2A 保留完整 Card 回调与默认推空保护，
+不增加生命周期回调。

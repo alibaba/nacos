@@ -277,23 +277,7 @@ public class SkillRequestUtil {
         if (!matcher.find()) {
             return null;
         }
-        String frontmatterBlock = matcher.group(1);
-        for (String line : frontmatterBlock.split("\\r?\\n")) {
-            int colonIdx = line.indexOf(':');
-            if (colonIdx > 0) {
-                String key = line.substring(0, colonIdx).trim();
-                if (field.equals(key)) {
-                    String value = line.substring(colonIdx + 1).trim();
-                    // Strip surrounding quotes
-                    if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
-                        || (value.startsWith("'") && value.endsWith("'")))) {
-                        value = value.substring(1, value.length() - 1);
-                    }
-                    return value;
-                }
-            }
-        }
-        return null;
+        return SkillZipParser.parseYamlFrontMatter(matcher.group(1)).get(field);
     }
     
     private static void validateSkillField(String fieldName, String fieldValue)

@@ -135,16 +135,23 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     public ArdSearchResponse search(ArdSearchRequest request) throws NacosException {
         SearchContext context = validateAndBuildContext(request);
         if (!matchesProtocolFilters(context.filter)) {
-            return searchResponse(Collections.emptyList(), null);
+            ArdSearchResponse response = searchResponse(Collections.emptyList(), null);
+            response.setEnhancementStatus(
+                searchService.isRelevanceFilteringEnabled() ? "bypassed" : "disabled");
+            return response;
         }
-        Page page = searchService.search(toSearchQuery(context));
+        AiResourceSearchService.Query query = toSearchQuery(context);
+        query.setRelevanceRequested(true);
+        Page page = searchService.search(query);
         List<ArdSearchResult> results = new ArrayList<>();
         for (AiResourceSearchResult item : page.getItems()) {
             ArdSearchResult result = toResult(item, context.kinds);
             result.setScore(item.getScore());
             results.add(result);
         }
-        return searchResponse(results, page.getNextCursor());
+        ArdSearchResponse response = searchResponse(results, page.getNextCursor());
+        response.setEnhancementStatus(page.getEnhancementStatus());
+        return response;
     }
     
     @Override

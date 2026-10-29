@@ -27,6 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeRegistry;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -214,6 +215,18 @@ public class VisibilityHelper {
             .filter(StringUtils::isNotBlank)
             .map(each -> each.toUpperCase(Locale.ROOT))
             .orElse(VisibilityConstants.SCOPE_PRIVATE);
+    }
+    
+    /**
+     * Resolve scope declarations only from the selected, enabled visibility service.
+     */
+    public static VisibilityScopeRegistry scopeRegistry() {
+        if (EnvUtil.getEnvironment() == null) {
+            return VisibilityScopeRegistry.defaults();
+        }
+        return findVisibilityService()
+            .map(service -> new VisibilityScopeRegistry(service.getAdditionalScopes()))
+            .orElseGet(VisibilityScopeRegistry::defaults);
     }
     
     private static String resolveVisibilityServiceName() {

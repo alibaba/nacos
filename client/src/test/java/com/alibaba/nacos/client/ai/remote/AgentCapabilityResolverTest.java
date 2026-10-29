@@ -264,6 +264,104 @@ class AgentCapabilityResolverTest {
         return new AgentCapabilityResolver(mode, grpc, client, http);
     }
     
+    @ParameterizedTest
+    @EnumSource(AbilityStatus.class)
+    void queryGrpcUsesCurrentEvidenceWithoutHttpOrRouteSelection(AbilityStatus status)
+        throws Exception {
+        connected(status, AbilityStatus.UNKNOWN);
+        AgentCapabilityResolver resolver = resolver(AgentTransportMode.GRPC);
+        assertEquals(status, resolver.getDiscoveryCapability());
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+        when(client.isEnable()).thenReturn(false);
+        assertEquals(AbilityStatus.UNKNOWN, resolver.getDiscoveryCapability());
+        verify(http, never()).getCapabilities();
+        verifyNoInteractions(grpc);
+    }
+    
+    @Test
+    void queryGrpcDistinguishesLegacyNegotiationFromMissingEvidence() throws Exception {
+        AgentCapabilityResolver resolver = resolver(AgentTransportMode.GRPC);
+        assertEquals(AbilityStatus.UNKNOWN, resolver.getDiscoveryCapability());
+        connected(AbilityStatus.UNKNOWN, AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.NOT_SUPPORTED, resolver.getDiscoveryCapability());
+        connected(null, null);
+        assertEquals(AbilityStatus.UNKNOWN, resolver.getDiscoveryCapability());
+        verifyNoInteractions(grpc);
+        verify(http, never()).getCapabilities();
+    }
+    
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"HTTP", "AUTO"})
+    void queryHttpEvidenceDoesNotAcquireGrpcOrFixRoute(AgentTransportMode mode) throws Exception {
+        AgentCapabilityResolver resolver = resolver(mode);
+        assertEquals(AbilityStatus.UNKNOWN, resolver.getDiscoveryCapability());
+        when(http.getCapabilities()).thenReturn(snapshot(false));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, resolver.getDiscoveryCapability());
+        when(http.getCapabilities()).thenReturn(snapshot(true));
+        assertEquals(AbilityStatus.SUPPORTED, resolver.getDiscoveryCapability());
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+        verifyNoInteractions(grpc);
+        // An earlier negative query must not latch the legacy facade.
+        assertTrue(resolver.useRad());
+    }
+    
+    @Test
+    void queryRespectsIndependentHttpAndAutoBindings() throws Exception {
+        connected(AbilityStatus.SUPPORTED, AbilityStatus.SUPPORTED);
+        when(http.getCapabilities()).thenReturn(snapshot(false));
+        AgentCapabilityResolver auto = resolver(AgentTransportMode.AUTO);
+        assertEquals(AbilityStatus.SUPPORTED, auto.getDiscoveryCapability());
+        verify(http, never()).getCapabilities();
+        assertEquals(AbilityStatus.NOT_SUPPORTED,
+            resolver(AgentTransportMode.HTTP).getDiscoveryCapability());
+        connected(AbilityStatus.NOT_SUPPORTED, AbilityStatus.SUPPORTED);
+        when(http.getCapabilities()).thenReturn(snapshot(true));
+        assertEquals(AbilityStatus.SUPPORTED, auto.getDiscoveryCapability());
+    }
+    
+    @ParameterizedTest
+    @EnumSource(value = AgentTransportMode.class, names = {"HTTP", "AUTO"})
+    void queryLegacyInferenceRequiresSoleMatchingTarget(AgentTransportMode mode) throws Exception {
+        connected(AbilityStatus.UNKNOWN, AbilityStatus.SUPPORTED);
+        when(client.getCurrentServerAddress()).thenReturn("127.0.0.1:8848");
+        AgentCapabilityResolver resolver = resolver(mode);
+        assertEquals(AbilityStatus.UNKNOWN, resolver.getDiscoveryCapability());
+        when(http.isOnlyServer("127.0.0.1:8848")).thenReturn(true);
+        assertEquals(AbilityStatus.NOT_SUPPORTED, resolver.getDiscoveryCapability());
+        when(http.getCapabilities()).thenReturn(snapshot(true));
+        assertEquals(AbilityStatus.SUPPORTED, resolver.getDiscoveryCapability());
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+    }
+    
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {401, 403, 500, 50105})
+    void queryPreservesProbeFailureAndAllowsRecovery(int code) throws Exception {
+        NacosException error = new NacosException(code, "capability probe failed");
+        when(http.getCapabilities()).thenThrow(error);
+        AgentCapabilityResolver resolver = resolver(AgentTransportMode.HTTP);
+        assertSame(error, assertThrows(NacosException.class, resolver::getDiscoveryCapability));
+        assertEquals(A2aModeSelector.Mode.UNDECIDED, resolver.current());
+        doReturn(snapshot(true)).when(http).getCapabilities();
+        assertEquals(AbilityStatus.SUPPORTED, resolver.getDiscoveryCapability());
+        verifyNoInteractions(grpc);
+    }
+    
+    @Test
+    void queryRefreshesEvidenceWithoutChangingEitherFixedRoute() throws Exception {
+        connected(AbilityStatus.UNKNOWN, AbilityStatus.SUPPORTED);
+        AgentCapabilityResolver legacy = resolver(AgentTransportMode.AUTO);
+        assertFalse(legacy.useRad());
+        connected(AbilityStatus.SUPPORTED, AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, legacy.getDiscoveryCapability());
+        assertFalse(legacy.useRad());
+        AgentCapabilityResolver rad = resolver(AgentTransportMode.AUTO);
+        assertTrue(rad.useRad());
+        when(client.isEnable()).thenReturn(false);
+        when(http.getCapabilities()).thenReturn(snapshot(false));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, rad.getDiscoveryCapability());
+        assertTrue(rad.useRad());
+    }
+    
     private void connected(AbilityStatus rad, AbilityStatus legacy) {
         when(client.isEnable()).thenReturn(true);
         when(client.getServerAbility(AbilityKey.SERVER_RAD_V1)).thenReturn(rad);

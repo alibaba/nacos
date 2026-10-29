@@ -17,19 +17,34 @@
 package com.alibaba.nacos.client.ai.watch;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.LogRateLimiter;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Compatibility Watch transport that emits bounded periodic Discover invalidations.
+ *
+ * <p>This is a client-side timer, not HTTP long polling. It does not call a Wire Watch
+ * endpoint or choose Discover's transport. The manager performs ordinary Discover through
+ * its query proxy after each tick; routing can still use HTTP or gRPC.</p>
+ *
+ * <p>{@link AgentWatchTransportRouter} selects this fallback when the configured server
+ * Watch binding is unavailable, or a binding failure permits fallback. For example, a
+ * gRPC-only client can still Discover when the server advertises RAD support but disables
+ * its Watch ability. The standard SDK wiring uses a ten-second interval. Discover support
+ * is still required; polling does not make a server without RAD compatible.</p>
+ *
+ * <p>The timer is an alternative owner, not a permanent companion to gRPC Watch. A later
+ * gRPC availability event may upgrade the binding. The router stops this timer after the
+ * new binding starts; cancellation prevents further ticks but does not interrupt a refresh
+ * already triggered through the manager. Brief overlap during handover is therefore
+ * possible, with both signals sharing the same refresh and fingerprint comparison.</p>
  *
  * @author Nacos
  */
@@ -43,11 +58,19 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
     
     private final long intervalMillis;
     
+    private final AgentWatchTaskScheduler taskScheduler;
+    
     private final Map<String, PollingTask> tasks = new HashMap<String, PollingTask>();
     
     private boolean closed;
     
     PollingAgentWatchTransport(ScheduledExecutorService executor, long intervalMillis) {
+        this(executor, intervalMillis, new AgentWatchTaskScheduler());
+    }
+    
+    PollingAgentWatchTransport(ScheduledExecutorService executor, long intervalMillis,
+        AgentWatchTaskScheduler taskScheduler) {
+        this.taskScheduler = taskScheduler;
         this.executor = executor;
         this.intervalMillis = intervalMillis;
     }
@@ -64,10 +87,7 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
         }
         PollingTask task = new PollingTask(registration.getClientWatchId(), callback);
         tasks.put(task.clientWatchId, task);
-        if (schedule(task) == ScheduleResult.REJECTED) {
-            throw new NacosException(NacosException.CLIENT_ERROR,
-                "Agent Watch polling scheduling was rejected.");
-        }
+        schedule(task);
     }
     
     @Override
@@ -93,22 +113,12 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
             task.cancel();
         }
         tasks.clear();
+        taskScheduler.shutdown();
     }
     
-    private synchronized ScheduleResult schedule(PollingTask task) {
-        if (closed || tasks.get(task.clientWatchId) != task) {
-            return ScheduleResult.STALE;
-        }
-        try {
-            task.future = executor.schedule(task, intervalMillis, TimeUnit.MILLISECONDS);
-            return ScheduleResult.SCHEDULED;
-        } catch (RejectedExecutionException e) {
-            tasks.remove(task.clientWatchId);
-            if (WARN_LOG_LIMITER.tryAcquire()) {
-                LOGGER.warn("Agent Watch polling scheduling was rejected: {}",
-                    e.getClass().getSimpleName());
-            }
-            return ScheduleResult.REJECTED;
+    private synchronized void schedule(PollingTask task) {
+        if (!closed && tasks.get(task.clientWatchId) == task) {
+            task.future = taskScheduler.schedule(executor, task, intervalMillis);
         }
     }
     
@@ -134,10 +144,16 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
             if (!isActive(this)) {
                 return;
             }
-            callback.invalidate(null, true);
-            if (schedule(this) == ScheduleResult.REJECTED) {
-                callback.unavailable(NacosException.CLIENT_ERROR,
-                    "Agent Watch polling scheduling was rejected.", true);
+            try {
+                callback.invalidate(null, true);
+            } catch (RuntimeException e) {
+                if (WARN_LOG_LIMITER.tryAcquire()) {
+                    LOGGER.warn("[RAD-WATCH] Polling invalidation failed: clientWatchId={}, "
+                        + "retryDelayMillis={}", AgentWatchLogUtils.token(clientWatchId),
+                        intervalMillis, e);
+                }
+            } finally {
+                schedule(this);
             }
         }
         
@@ -148,9 +164,4 @@ final class PollingAgentWatchTransport implements AgentWatchTransport {
         }
     }
     
-    private enum ScheduleResult {
-        SCHEDULED,
-        STALE,
-        REJECTED
-    }
 }

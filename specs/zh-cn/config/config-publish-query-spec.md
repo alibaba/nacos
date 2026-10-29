@@ -73,6 +73,9 @@ entry/cache lock
 7. 否则返回正式配置内容、md5、`encryptedDataKey`、最后修改时间和配置类型。
 8. 根据配置类型解析响应 content type，默认使用 text。
 
+已存在的正式配置内容允许为空字符串或仅含空白，查询必须原样返回内容和元数据。
+读取结果为 `null` 时才表示正式配置内容缺失，不得使用空白判断代替存在性判断。
+
 运行时查询必须使用缓存和 dump 内容，而不是大范围持久化查询。共享 dump 与 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 

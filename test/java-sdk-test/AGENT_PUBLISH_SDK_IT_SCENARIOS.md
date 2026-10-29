@@ -24,11 +24,11 @@ external Java clients against the standalone server.
 
 | Scenario group | Required assertions | Stable IT / focused test |
 | --- | --- | --- |
-| `autoSubmit=false` | Create the first direct-content Version as `draft`; Admin and Console read the same content and digest; RAD Discover and legacy A2A query do not expose the draft. | Java SDK IT, OpenAPI IT |
+| `autoSubmit=false` | A newly created first Version is submitted even with false; without a Pipeline it becomes online/latest. A later new Version or existing editable draft remains draft; Admin/Console can read it while discovery excludes it. | Java SDK IT, OpenAPI IT |
 | `autoSubmit=true` | Create and submit the first direct-content Version; without a review Pipeline it becomes `online`; RAD Discover and legacy A2A query expose the same A2A descriptor. | Java SDK IT, OpenAPI IT |
-| Resume | Publish a draft with `autoSubmit=false`, then repeat the equivalent request with only `autoSubmit=true`; the existing draft is submitted without a duplicate Version. | Java SDK IT, OpenAPI IT |
-| Retry convergence | Equivalent false retry returns the draft; equivalent true retry after online returns the existing Version; retry after a submit-result ambiguity converges by rereading state. | Java SDK IT plus focused unit fault injection |
-| Conflict and state | Same exact Version with different content, author, change description, or explicitly supplied initial metadata fails; false against an advanced Version and either mode against offline fail without overwrite. | Java SDK IT where stable; service unit tests for every branch |
+| Resume | Create a later Version or management draft, replace it with `autoSubmit=false`, then publish with true; the current editable draft is replaced and ordinarily submitted without a duplicate Version. | Java SDK IT, OpenAPI IT |
+| Retry convergence | A new explicit call against an editable draft replaces it and follows its flag; a call against a non-draft returns it unchanged. Each SDK call attempts each write once; it does not reread ambiguous results or replay publication. | Java SDK IT plus focused unit fault injection |
+| Conflict and state | The current editable draft accepts a complete replacement of content, author and change description. Existing non-drafts remain unchanged even with different input or autoSubmit=true; authorization still runs before returning them. | Java SDK IT where stable; service unit tests for every branch |
 | Version evolution | Publish a subsequent direct-content Version and a `basedOnVersion` Version; reject first-Version inheritance and both/neither content sources. | Java SDK IT, OpenAPI IT |
 | Namespace and caller isolation | Default and custom namespaces are isolated; a request cannot supply namespace; SDK copying preserves every caller-owned field and nested value. | Java SDK IT plus proxy unit tests |
 | Transport parity | The same request and error categories work through explicitly selected gRPC and HTTP transports; unsupported negotiated ability fails locally before a remote request. | Java SDK IT plus proxy unit tests |

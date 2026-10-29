@@ -133,7 +133,7 @@ Agent 资源包含以下字段：
 | `extensions` | 否 | 用于公开 Agent 级扩展的命名空间化 `Map<String, JsonValue>`。 |
 | `status` | 是 | `enable` 或 `disable`。 |
 | `owner` | 是 | 管理 owner。 |
-| `scope` | 是 | 共享可见性 scope；本版本为 `PUBLIC` 或 `PRIVATE`。 |
+| `scope` | 是 | 共享可见性 scope；默认 `PUBLIC` 或 `PRIVATE`，插件扩展遵循可见性规范。 |
 | `versionInfo` | 只读 | editingVersion、reviewingVersion、完整 labels 映射与 onlineVersions[]。 |
 | `metaVersion` | 只读 | 与 AI Resource 模型共享的单调元数据修订号；首版 Agent Admin API 不暴露条件写入参数。 |
 | `createTime`、`updateTime` | 只读 | 审计时间。 |
@@ -442,3 +442,5 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
 
 采用[管理 Schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。
+
+共享 JSON Schema 保留默认 PUBLIC/PRIVATE 契约。AgentModelValidator 内部通过 AgentScopeProvider 查询允许值，调用方签名不变；没有 Provider 时仅接受内置值。声明额外 scope 的部署同步扩展自己的 Schema 发行版本，开源 Schema 不放宽为接受任意字符串。

@@ -17,6 +17,18 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.mockito.MockedStatic;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -95,7 +107,7 @@ class AgentClientControllerTest {
         AgentDiscoveryForm discovery = mock(AgentDiscoveryForm.class);
         when(discovery.toRequest()).thenReturn(new AgentDiscoveryRequest());
         assertSame(migrating, assertThrows(NacosApiException.class,
-            () -> controller.discover(discovery, "client")));
+            () -> controller.discover(discovery, "client", null)));
         assertSame(migrating, assertThrows(NacosApiException.class,
             () -> controller.search(mock(AgentSearchForm.class), "client")));
         assertSame(migrating, assertThrows(NacosApiException.class,
@@ -144,8 +156,61 @@ class AgentClientControllerTest {
         when(form.toRequest()).thenReturn(request);
         when(discoveryService.discover(request)).thenReturn(discovery);
         
-        assertSame(discovery, controller.discover(form, "client").getData());
+        assertSame(discovery, controller.discover(form, "client", null).getData());
         verify(lifecycleService).renewForQuery("client", "team");
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"watch-notify", "future-trigger"})
+    void testDiscoverPublishesTrace(String trigger) throws Exception {
+        AgentDiscoveryForm form = new AgentDiscoveryForm();
+        form.setAgentName("demo");
+        form.setLabel("latest");
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setVersion("2.0.0");
+        when(discoveryService.discover(any())).thenReturn(result);
+        try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
+            assertSame(result, controller.discover(form, "client", trigger).getData());
+            ArgumentCaptor<AiResourceTraceEvent> event =
+                ArgumentCaptor.forClass(AiResourceTraceEvent.class);
+            notifyCenter.verify(() -> NotifyCenter.publishEvent(event.capture()));
+            assertEquals("DISCOVER", event.getValue().getOperation());
+            assertEquals("demo", event.getValue().getResourceId());
+            assertEquals("2.0.0", event.getValue().getVersion());
+            assertEquals("SUCCESS", event.getValue().getStatus());
+            JsonNode ext =
+                JacksonUtils.toObj(event.getValue().getExt());
+            assertEquals("public", ext.get("namespaceId").asText());
+            assertEquals("HTTP", ext.get("protocol").asText());
+            assertEquals("client", ext.get("clientId").asText());
+            assertEquals("latest", ext.get("requestedLabel").asText());
+            assertEquals(AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY.equals(trigger),
+                ext.get("subscriptionTriggered").asBoolean());
+        }
+    }
+    
+    @Test
+    void testDiscoverFailurePublishesTraceWithoutReplacingException() throws Exception {
+        AgentDiscoveryForm form = new AgentDiscoveryForm();
+        form.setAgentName("absent");
+        form.setVersion("1.0.0");
+        NacosApiException failure = new NacosApiException(NacosException.NOT_FOUND,
+            ErrorCode.RESOURCE_NOT_FOUND, "absent");
+        when(discoveryService.discover(any())).thenThrow(failure);
+        try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
+            assertSame(failure, assertThrows(NacosApiException.class,
+                () -> controller.discover(form, "client", "watch-notify")));
+            ArgumentCaptor<AiResourceTraceEvent> event =
+                ArgumentCaptor.forClass(AiResourceTraceEvent.class);
+            notifyCenter.verify(() -> NotifyCenter.publishEvent(event.capture()));
+            assertEquals("FAILURE", event.getValue().getStatus());
+            assertEquals("1.0.0", event.getValue().getVersion());
+            notifyCenter.when(() -> NotifyCenter.publishEvent(any(AiResourceTraceEvent.class)))
+                .thenThrow(new IllegalStateException("trace unavailable"));
+            assertSame(failure, assertThrows(NacosApiException.class,
+                () -> controller.discover(form, "client", "watch-notify")));
+        }
     }
     
     @Test

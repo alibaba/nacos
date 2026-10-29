@@ -252,3 +252,28 @@ migration cutover. An additional embedded cutover attempt found node-local Searc
 documents/tasks despite shared Config readiness; it is not counted as passing.
 See [cluster fixture boundaries](../DEFAULT_AUTH_RELIABILITY_IT.md)
 for data evidence, impact, and the separate persistence-consistency work required.
+
+
+## Agent capability and Watch functional regression
+
+The fixed [`migration-it.yml`](../../.github/workflows/migration-it.yml) selects
+`A2aUpgradeMigrationJavaSdkITCase` with SYNCING, cutover and terminal fixture
+properties, including both frozen Naming-shadow policies. The existing migration
+rows above describe those reproducible scenarios; local old-to-new server binary
+upgrade experiments do not add coverage claims to this matrix.
+
+The normal [`it-new.yml`](../../.github/workflows/it-new.yml) job covers the public
+capability query before RAD-backed A2A operations, full Card callbacks,
+empty-Card suppression, and later updates after recreation.
+See the [Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression)
+for the executable methods and the separately selected restart/cluster cases.
+
+Capability queries do not select the A2A route or bypass migration admission.
+Accepted RAD-backed subscriptions keep their local intent during background failures;
+UNAVAILABLE describes confirmed Agent absence rather than access or transport errors.
+A2A still suppresses empty Cards and shares bounded latest-state delivery. Exact
+50105/binding failure recovery, initialization ordering, and bridge projection races
+are covered by deterministic Manager/transport/router/bridge UTs, separately from
+real-server migration scenarios. Contract references are the
+[Agent API spec](../../specs/en/ai/agent-api-spec.md#21-java-sdk-contract) and
+[SDK accepted Watch recovery](../../specs/en/sdk/sdk-java-impl-spec.md#accepted-agent-watch-recovery).

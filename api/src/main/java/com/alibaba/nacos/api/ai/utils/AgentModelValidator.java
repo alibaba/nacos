@@ -29,13 +29,18 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.spi.AgentScopeProvider;
 import com.alibaba.nacos.api.model.Page;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -351,8 +356,15 @@ public final class AgentModelValidator {
     }
     
     private static void validateScope(String scope) {
-        if (!"PUBLIC".equals(scope) && !"PRIVATE".equals(scope)) {
-            throw new IllegalArgumentException("scope must be PUBLIC or PRIVATE");
+        Set<String> allowedScopes = new LinkedHashSet<>();
+        allowedScopes.add("PUBLIC");
+        allowedScopes.add("PRIVATE");
+        for (AgentScopeProvider provider : ScopeProviders.INSTANCES) {
+            allowedScopes.addAll(provider.getScopeNames());
+        }
+        if (scope == null || scope.isEmpty() || !allowedScopes.contains(scope)) {
+            throw new IllegalArgumentException(
+                "scope must be " + String.join(" or ", allowedScopes));
         }
     }
     
@@ -639,4 +651,22 @@ public final class AgentModelValidator {
         }
         return value;
     }
+    
+    /**
+     * Discover provider instances once, but resolve scope names for every validation.
+     */
+    private static class ScopeProviders {
+        
+        private static final List<AgentScopeProvider> INSTANCES = loadProviders();
+        
+        private static List<AgentScopeProvider> loadProviders() {
+            List<AgentScopeProvider> result = new ArrayList<>();
+            for (AgentScopeProvider provider : ServiceLoader.load(AgentScopeProvider.class,
+                AgentModelValidator.class.getClassLoader())) {
+                result.add(provider);
+            }
+            return Collections.unmodifiableList(result);
+        }
+    }
+    
 }

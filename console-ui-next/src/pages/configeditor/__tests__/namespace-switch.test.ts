@@ -33,7 +33,7 @@ describe('Config editor namespace switching', () => {
 describe('Config editor compact layout', () => {
   it('uses responsive horizontal form rows for primary fields', () => {
     expect(CONFIG_EDITOR_SOURCE).toContain("md:grid-cols-[4rem_minmax(0,1fr)]");
-    expect(CONFIG_EDITOR_SOURCE).toContain('<Card className="gap-3 py-4">');
+    expect(CONFIG_EDITOR_SOURCE).toContain('<Card className="flex-1 gap-3 py-4">');
     expect(CONFIG_EDITOR_SOURCE).toContain('rows={2}');
   });
 

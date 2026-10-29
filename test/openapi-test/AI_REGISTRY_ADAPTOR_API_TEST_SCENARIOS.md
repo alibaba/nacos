@@ -62,3 +62,19 @@ CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [�
 ## Agent JSON / Artifact Schema 更新（2026-09-16）
 
 `testPublicAgentIndexAndUnifiedArtifacts` 验证 Artifact 声明地址的 0/1/true/true 生效值，允许未使用的维护字段为 null，仍禁止非空 Runtime bindings/state/观测值及旧嵌套 endpoint；contentDigest 与管理版本详情一致。采用 Artifact 0.3.0（管理 Schema 0.2.0）。
+
+## ARD online relevance filtering
+
+| Scenario | Coverage |
+| --- | --- |
+| Default-off Search header, unchanged JSON, invalid cursor | `ArdAdaptorOpenApiITCase.testSearchEnhancementStatusAndCursorBoundary` against standalone ARD |
+| Enabled empty result bypass | Same IT with server enhancement enabled and `-Dnacos.test.ard.relevance.empty-status=bypassed` |
+| Jev protocol, invalid scores/IDs, 429, no retry | `JevRelevanceProviderTest`, deterministic local HTTP stub |
+| Concurrent batches, timeout/cancel, node saturation, all-or-nothing fallback | `AiResourceRelevanceFilterTest` |
+| Threshold, stable order/score, empty continuation, fallback boundary, currentness, cursor binding | `AiResourceSearchRelevanceTest` |
+| Header propagation and no JSON field leakage | `ArdSearchControllerTest` |
+
+The paid-provider success path is not a prerequisite for standalone IT. Deterministic provider
+and Search Core tests exercise nonempty success and failure paths without external credentials.
+Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
+nonempty Jev filtering coverage. No public Java SDK contract changes.
