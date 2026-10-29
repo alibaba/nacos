@@ -86,6 +86,7 @@ export default function ConfigEditorPage() {
   const [groupName, setGroupName] = useState('');
   const [content, setContent] = useState('');
   const [desc, setDesc] = useState('');
+  const [changeMessage, setChangeMessage] = useState('');
   const [appName, setAppName] = useState('');
   const [configTags, setConfigTags] = useState('');
   const [type, setType] = useState<ConfigType>('text');
@@ -118,13 +119,14 @@ export default function ConfigEditorPage() {
   }), [appName, configTags, content, dataId, desc, groupName, type]);
 
   const hasUnsavedChanges = loadedSnapshot !== null
-    && !isSameConfigEditorSnapshot(currentSnapshot, loadedSnapshot);
+    && (!isSameConfigEditorSnapshot(currentSnapshot, loadedSnapshot) || changeMessage.length > 0);
 
   const clearEditorState = useCallback(() => {
     setDataId('');
     setGroupName('');
     setContent('');
     setDesc('');
+    setChangeMessage('');
     setAppName('');
     setConfigTags('');
     setType('text');
@@ -171,6 +173,7 @@ export default function ConfigEditorPage() {
         setGroupName(nextSnapshot.groupName);
         setContent(nextSnapshot.content);
         setDesc(nextSnapshot.desc);
+        setChangeMessage('');
         setAppName(nextSnapshot.appName);
         setConfigTags(nextSnapshot.configTags);
         setType(nextSnapshot.type);
@@ -267,11 +270,13 @@ export default function ConfigEditorPage() {
         groupName,
         content,
         desc,
+        ...(isEditing ? { changeMessage } : {}),
         configTags,
         type,
         appName,
         namespaceId: urlNamespace,
       });
+      setChangeMessage('');
       toast.success(t('config.publishSuccess'));
       setPublishConfirmOpen(false);
       navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
@@ -321,6 +326,7 @@ export default function ConfigEditorPage() {
         },
         betaIps.trim()
       );
+      setChangeMessage('');
       toast.success(t('config.betaPublishSuccess'));
       setBetaExists(true);
     } catch {
@@ -430,6 +436,19 @@ export default function ConfigEditorPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {isEditing && activeTab === 'production' && (
+            <div className="space-y-2">
+              <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
+              <Textarea
+                id="changeMessage"
+                value={changeMessage}
+                onChange={(e) => setChangeMessage(e.target.value)}
+                placeholder={t('config.changeMessagePlaceholder')}
+                rows={3}
+              />
+            </div>
+          )}
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="rounded-lg border border-dashed bg-muted/20">

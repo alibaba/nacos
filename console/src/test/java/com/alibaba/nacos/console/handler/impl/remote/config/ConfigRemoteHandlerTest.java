@@ -280,4 +280,18 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         assertThrows(NacosException.class,
             () -> configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId"));
     }
+    
+    @Test
+    void publishConfigForwardsOperationMessage() throws NacosException {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("dataId");
+        form.setGroup("group");
+        form.setNamespaceId("namespaceId");
+        form.setContent("content");
+        form.setChangeMessage("current operation");
+        when(configMaintainerService.publishConfig("dataId", "group", "namespaceId", "content",
+            null, null, null, null, null, "current operation")).thenReturn(true);
+        assertTrue(configRemoteHandler.publishConfig(form, new ConfigRequestInfo()));
+    }
+    
 }

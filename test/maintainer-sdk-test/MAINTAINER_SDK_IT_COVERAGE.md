@@ -144,3 +144,14 @@ content update, publication and version offline/online, including the generated
 description and `frontMatterTruncated=false` for a complete projection. Historical
 responses may omit frontmatter and the truncation flag or return null; API model
 round-trip unit tests cover that boundary.
+
+
+## Config operation messages (#10978)
+
+The application ConfigService public methods are unchanged. Old application SDK publishes remain valid. ConfigHistoryDetailInfo exposes optional changeMessage; history-list models do not. Maintainer formal publish overloads carry the optional text, including when the API creates a config. Beta publish has no message overload. RPC transport accepts the optional addition parameter without changing ConfigService signatures.
+
+`ConfigMaintainerServiceMaintainerSdkITCase#shouldQueryConfigHistory` checks
+formal detail/previous message deserialization and history-list compatibility.
+`shouldManageBetaConfig` checks that Beta history has no operation message.
+Independent-console and mixed-version deployment
+validation remain separate from this external-client suite.

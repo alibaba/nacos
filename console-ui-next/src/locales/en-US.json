@@ -146,6 +146,8 @@
     }
   },
   "config": {
+    "changeMessage": "Publish message",
+    "changeMessagePlaceholder": "Optional, up to 512 Unicode characters",
     "title": "Configuration List",
     "newConfig": "New Config",
     "editConfig": "Edit Config",

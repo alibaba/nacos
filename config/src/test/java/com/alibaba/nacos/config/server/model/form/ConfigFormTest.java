@@ -244,4 +244,29 @@ public class ConfigFormTest {
         assertEquals("1.0", form.getGrayVersion());
         assertEquals(10, form.getGrayPriority());
     }
+    
+    @Test
+    void testChangeMessageUnicodeBoundaryAndWhitespace() throws Exception {
+        original.setChangeMessage("🚀".repeat(512));
+        original.validateChangeMessage();
+        assertEquals(1024, original.getChangeMessage().length());
+        original.setChangeMessage("🚀".repeat(513));
+        assertThrows(NacosApiException.class, original::validateChangeMessage);
+        for (String blank : new String[] {null, "", " \t\n\u00a0\u3000"}) {
+            original.setChangeMessage(blank);
+            original.validateChangeMessage();
+            assertEquals(null, original.getChangeMessage());
+        }
+        original.setChangeMessage("  reason\n ");
+        original.validateChangeMessage();
+        assertEquals("  reason\n ", original.getChangeMessage());
+    }
+    
+    @Test
+    void testValidateWithContentDoesNotValidateOutOfScopeMessage() throws Exception {
+        original.setChangeMessage("x".repeat(513));
+        
+        assertDoesNotThrow(original::validateWithContent);
+    }
+    
 }

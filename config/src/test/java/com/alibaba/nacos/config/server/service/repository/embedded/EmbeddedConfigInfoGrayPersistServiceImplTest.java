@@ -282,6 +282,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key23456");
         configInfo.setMd5("casMd5");
+        configInfo.setChangeMessage("CAS current operation");
         //mock query config state and return obj after update
         ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
         configInfoStateWrapper.setLastModified(System.currentTimeMillis());
@@ -310,13 +311,21 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         String srcUser = "user1234567";
         
         //mock cas update return 1
-        Mockito.when(databaseOperate.blockUpdate()).thenReturn(true);
+        Mockito.when(databaseOperate.blockUpdate()).thenAnswer(invocation -> {
+            Mockito.verify(historyConfigInfoPersistService).insertConfigHistoryAtomic(
+                eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), eq("U"), eq("gray"), eq(grayName),
+                org.mockito.ArgumentMatchers
+                    .argThat(ext -> com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil
+                        .getChangeMessage(ext) == null && "{\"src_user\":\"user\"}".equals(ext)));
+            return true;
+        });
         ConfigOperateResult configOperateResult =
             embeddedConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-            () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+            () -> EmbeddedStorageContextHolder.addSqlContext(eq(true), anyString(), eq(content),
                 eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                 eq(appName),
                 eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName),

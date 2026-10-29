@@ -146,6 +146,8 @@
     }
   },
   "config": {
+    "changeMessage": "发布说明",
+    "changeMessagePlaceholder": "选填，最多 512 个 Unicode 字符",
     "title": "配置列表",
     "newConfig": "新建配置",
     "editConfig": "编辑配置",

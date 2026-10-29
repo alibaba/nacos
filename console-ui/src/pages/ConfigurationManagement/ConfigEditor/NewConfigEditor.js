@@ -67,6 +67,7 @@ class ConfigEditor extends React.Component {
     super(props);
     this.state = {
       loading: false,
+      changeMessage: '',
       isBeta: false,
       isNewConfig: true,
       betaPublishSuccess: false,
@@ -254,7 +255,7 @@ class ConfigEditor extends React.Component {
       headers.casMd5 = this.state.casMd5;
     }
     const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
-    const payload = {};
+    const payload = beta ? {} : { changeMessage: this.state.changeMessage };
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
@@ -275,6 +276,7 @@ class ConfigEditor extends React.Component {
     }).then(
       res => {
         if (res.data) {
+          this.setState({ changeMessage: '' });
           if (isNewConfig) {
             this.setState({ isNewConfig: false });
           }
@@ -561,6 +563,15 @@ class ConfigEditor extends React.Component {
                   <Input value={form.appName} onChange={appName => this.changeForm({ appName })} />
                 </Form.Item>
               </>
+            )}
+            {!isNewConfig && !isBeta && tabActiveKey === 'production' && (
+              <Form.Item label={locale.changeMessage}>
+                <Input.TextArea
+                  value={this.state.changeMessage}
+                  rows={3}
+                  onChange={changeMessage => this.setState({ changeMessage })}
+                />
+              </Form.Item>
             )}
             <Form.Item label={locale.description}>
               <Input.TextArea

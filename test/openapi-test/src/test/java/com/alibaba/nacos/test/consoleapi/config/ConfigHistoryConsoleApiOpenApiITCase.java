@@ -168,4 +168,49 @@ public class ConfigHistoryConsoleApiOpenApiITCase extends ConfigConsoleApiBaseIT
                 Query.newInstance().addParam("namespaceId", "invalid namespace")), 400,
                 ErrorCode.PARAMETER_VALIDATE_ERROR, "namespaceId");
     }
+    @Test
+    public void testPublishOperationMessages() throws Exception {
+        String dataId = randomDataId("change-message");
+        String groupName = randomGroupName("change-message");
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, ""));
+        String[] messages = {"create", "second operation", "  third\noperation  "};
+        for (int i = 0; i < messages.length; i++) {
+            postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
+                    .addParam("content", "content-" + i).addParam("type", DEFAULT_TYPE)
+                    .addParam("desc", "configuration description").addParam("changeMessage", messages[i]));
+        }
+        JsonNode rows = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems");
+        assertEquals(3, rows.size());
+        for (JsonNode row : rows) {
+            assertFalse(row.has("changeMessage"), row.toString());
+        }
+        JsonNode detail = getJsonOk(CONSOLE_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", rows.get(0).path("id").asText())).get("data");
+        assertEquals("content-1", detail.path("content").asText());
+        assertEquals(messages[2], detail.path("changeMessage").asText());
+        JsonNode current = queryConfig(dataId, groupName, "").get("data");
+        JsonNode previous = getJsonOk(CONSOLE_HISTORY_PATH + "/previous", configQuery(dataId, groupName, "")
+                .addParam("id", current.path("id").asText())).get("data");
+        assertEquals(messages[2], previous.path("changeMessage").asText());
+        assertError(postRaw(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "rejected").addParam("changeMessage", "x".repeat(513))),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "changeMessage");
+        assertEquals("content-2", queryConfig(dataId, groupName, "").get("data").path("content").asText());
+        assertEquals(3, getJsonOk(CONSOLE_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").path("totalCount").asInt());
+        String unicodeMessage = "🚀".repeat(512);
+        postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "")
+                .addParam("content", "unicode").addParam("changeMessage", unicodeMessage));
+        JsonNode unicodeRow = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
+        JsonNode unicodeDetail = getJsonOk(CONSOLE_HISTORY_PATH, configQuery(dataId, groupName, "")
+                .addParam("nid", unicodeRow.path("id").asText())).get("data");
+        assertEquals(unicodeMessage, unicodeDetail.path("changeMessage").asText());
+        postFormOk(CONSOLE_CONFIG_PATH, configQuery(dataId, groupName, "").addParam("content", "legacy"));
+        JsonNode latest = getJsonOk(CONSOLE_HISTORY_LIST_PATH,
+                historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
+        assertFalse(latest.hasNonNull("changeMessage"), latest.toString());
+    }
+
 }

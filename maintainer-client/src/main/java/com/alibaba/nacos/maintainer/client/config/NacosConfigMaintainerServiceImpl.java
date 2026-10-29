@@ -81,7 +81,15 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         String content, String appName,
         String srcUser, String configTags, String desc, String type) throws NacosException {
         return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
-            configTags, desc, type, null);
+            configTags, desc, type, null, null);
+    }
+    
+    @Override
+    public boolean publishConfig(String dataId, String groupName, String namespaceId,
+        String content, String appName, String srcUser, String configTags, String desc,
+        String type, String changeMessage) throws NacosException {
+        return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
+            configTags, desc, type, null, changeMessage);
     }
     
     @Override
@@ -118,18 +126,27 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         }
         return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
             configTags, desc, type,
-            betaIps);
+            betaIps, null);
     }
     
     private boolean doPublishConfig(String dataId, String groupName, String namespaceId,
         String content, String appName,
-        String srcUser, String configTags, String desc, String type, String betaIps)
+        String srcUser, String configTags, String desc, String type, String betaIps,
+        String changeMessage)
         throws NacosException {
+        if (changeMessage != null
+            && changeMessage.codePointCount(0, changeMessage.length()) > 512) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "changeMessage must not exceed 512 Unicode code points");
+        }
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
         params.put("content", content);
+        if (changeMessage != null) {
+            params.put("changeMessage", changeMessage);
+        }
         params.put("appName", appName);
         params.put("srcUser", srcUser);
         params.put("configTags", configTags);

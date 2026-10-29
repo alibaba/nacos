@@ -717,3 +717,25 @@ and populated service-list names/groups. HTTP 200 with empty serialized objects 
 This extends the existing Agent Discover row; API surface totals and strict/effective
 coverage denominators remain unchanged. The optional diagnostic header never changes
 authorization or discovery semantics.
+
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history and
+controlled oversized-input exceptions.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.
+
+`ConfigHistoryAdminApiOpenApiITCase#testGrayPublishDoesNotRecordOperationMessage`
+checks that out-of-scope gray publishes omit the message. The Admin case also
+verifies successful CAS messages and unchanged history after a stale-md5
+conflict. Execution results are reported separately from these scenario
+definitions.

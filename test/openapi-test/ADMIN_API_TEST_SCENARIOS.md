@@ -209,3 +209,26 @@ mutations and the current SDK for RAD admission/terminal assertions. ARD reads i
 `A2aMigrationAdminApiOpenApiITCase` use the explicit Client identity. Normal Admin,
 QUIESCING, terminal-marker and restart reports remain separate; see
 the SDK scenario and coverage records for final execution.
+
+
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history and
+controlled oversized-input exceptions.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.
+
+`ConfigHistoryAdminApiOpenApiITCase#testGrayPublishDoesNotRecordOperationMessage`
+checks that out-of-scope gray publishes omit the message. The Admin case also
+verifies successful CAS messages and unchanged history after a stale-md5
+conflict. Execution results are reported separately from these scenario
+definitions.

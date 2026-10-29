@@ -363,7 +363,7 @@ class NewConfig extends React.Component {
         _payload.content = '';
         _payload.dataId = payload.dataId;
         _payload.group = payload.group;
-        if (res === true) {
+        if (res === true || (res && res.data === true)) {
           self.group = payload.group;
           self.dataId = payload.dataId;
           setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
@@ -373,10 +373,12 @@ class NewConfig extends React.Component {
           _payload.message = res.message;
         }
         self.successDialog.current.getInstance().openDialog(_payload);
+        if (_payload.isok) {
+          self.goList();
+        }
       },
       complete: () => {
         this.closeLoading();
-        this.goList();
       },
       error: res => {
         this.closeLoading();

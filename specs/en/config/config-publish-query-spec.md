@@ -160,3 +160,16 @@ Import, export, and clone are management operations:
 | HTTP Console API | Console clone uses `namespaceId` as source namespace and `targetNamespaceId` as target namespace; omitted `namespaceId` defaults source to target. |
 | gRPC API | Query, publish compatibility, remove compatibility, listen, fuzzy watch, and push messages must preserve the same Config identity and md5 semantics. |
 | Client SDK | Runtime query and listener APIs should be preferred for applications; broad management APIs belong to Maintainer SDK. |
+
+### Publish operation messages
+
+Ordinary and CAS publish APIs may accept optional `changeMessage` and handle
+inserts and updates identically, without checking whether the config is new.
+Console create and delete workflows have no message input. Delete, Beta, tag/gray,
+and rollback APIs are out of scope in this phase. Messages belong to the
+successful publish, not config description or content. Omitting the parameter
+preserves existing behavior; failed CAS records no message.
+See [Config Persistence And History Spec](config-persistence-history-spec.md#publish-operation-messages)
+for proposed input rules (512 Unicode code points), JSON storage, history-detail
+display, plugin degradation, and acceptance scenarios. This is a target for
+review, not a claim that current APIs implement and validate this scope.
