@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ChangePasswordDialog } from '@/components/layout/change-password-dialog';
+import { cn } from '@/lib/utils';
 import { SUPPORTED_LANGUAGES, getLanguageMeta, isSupportedLanguage } from '@/locales/languages';
 
 // Not translated on purpose: users who switched to a language they cannot read
@@ -107,7 +108,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 min-w-0">
       {/* Left - Sidebar toggle and namespace selector */}
       <div className="flex items-center gap-2 shrink-0">
         <Tooltip>
@@ -144,7 +145,7 @@ export function Header() {
       </div>
 
       {/* Center - Navigation links */}
-      <nav className="hidden md:flex items-center gap-0.5">
+      <nav className="hidden xl:flex items-center gap-0.5 min-w-0">
         {NAV_LINKS.map((link) => {
           const href = typeof link.href === 'function' ? link.href(baseUrl) : link.href;
           return (
@@ -153,7 +154,10 @@ export function Header() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent"
+              className={cn(
+                'items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent',
+                link.hot ? 'hidden 2xl:inline-flex' : 'inline-flex'
+              )}
             >
               {t(`header.${link.key}`)}
               {link.hot && (
@@ -174,7 +178,7 @@ export function Header() {
             <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" asChild>
               <a href="../legacy/">
                 <ArrowLeftRight size={14} />
-                {t('common.legacyConsole')}
+                <span className="hidden sm:inline">{t('common.legacyConsole')}</span>
               </a>
             </Button>
           </TooltipTrigger>
