@@ -67,6 +67,11 @@ Micrometer global registry 可用时挂载到对应 registry。
 - 指标可以描述队列长度、重试延迟、请求延迟、异常数、连接数和资源数，但不得作为权威数据源；
 - 创建高吞吐 task 或 event 路径的模块，应暴露 queue、worker、retry、failure 或 latency 观测。
 
+内置 bootstrap 和发行包配置必须通过 `management.elastic.metrics.export.enabled=false`
+及 `management.influx.metrics.export.enabled=false` 默认关闭 Elastic 和 Influx 指标导出。
+导出器配置示例必须使用随包 Spring Boot 版本支持的 `management.<backend>.metrics.export.*`
+前缀，不得使用已移除的 `management.metrics.export.<backend>.*` 配置控制这些导出器。
+
 ## 4. 领域指标
 
 Core 指标覆盖 Raft read/apply 行为、gRPC 请求耗时、长连接、按模块连接数和 gRPC server executor

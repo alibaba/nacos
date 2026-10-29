@@ -77,6 +77,15 @@ Rules:
 - modules that create high-volume task or event paths should expose queue,
   worker, retry, failure, or latency observations.
 
+The bundled bootstrap and distribution configuration must disable Elastic and
+Influx metrics export by default using
+`management.elastic.metrics.export.enabled=false` and
+`management.influx.metrics.export.enabled=false`. Exporter configuration examples
+must use the corresponding `management.<backend>.metrics.export.*` prefixes
+supported by the bundled Spring Boot version. The removed
+`management.metrics.export.<backend>.*` properties must not be used to control
+these exporters.
+
 ## 4. Domain Metrics
 
 Core metrics cover Raft read and apply behavior, gRPC request timing, long
