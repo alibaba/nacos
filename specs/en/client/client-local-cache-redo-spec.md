@@ -86,6 +86,10 @@ Naming service-info cache stores `ServiceInfo` objects keyed by grouped service
 name and clusters. Server push or query responses update the in-memory map and
 schedule a disk-cache refresh when the instance view changes.
 
+For an accepted update, replacing the cached value and obtaining the previous
+value must be atomic. Instance differences must use the value actually replaced
+by that update, including when push and query responses are processed concurrently.
+
 The cache is a recovery aid:
 
 - it may be loaded at startup when the load-cache option is enabled;
