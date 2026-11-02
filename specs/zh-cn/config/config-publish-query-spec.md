@@ -134,6 +134,6 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 是否首次创建。控制台新建和删除流程不提供说明入口；删除、Beta、Tag/灰度和回滚 API 不在
 首期支持范围。说明属于本次成功发布，不属于配置描述或正文；省略参数保持原行为，CAS
 失败不得记录说明。
-输入细则（拟限制 512 个 Unicode 码点）、JSON 存储、历史详情展示、插件降级和验收场景见
+输入细则（最多 512 个 Unicode 码点）、JSON 存储、历史详情展示、插件降级和验收场景见
 [Config 持久化与历史规范](config-persistence-history-spec.md#发布操作说明)。
 本节描述待审阅的目标，不代表当前 API 已按该范围完成实现和验证。

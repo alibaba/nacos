@@ -414,11 +414,11 @@ not extend Beta, gray, rollback, or deletion capabilities. The SDK must not
 guess create/update state by querying before publishing. Input validation and optional
 history-detail messages follow the
 [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
-When implementing the proposed 512-code-point limit, local oversized-input
-validation maps to `NacosException.INVALID_PARAM`. Unsupported datasource message
-capability preserves the original publish result; real errors retain their
-exception mappings. The shared HTTP client must preserve UTF-8 JSON response
-bytes when the server omits a charset, including non-ASCII messages in history.
+The 512-code-point limit maps local oversized-input validation to
+`NacosException.INVALID_PARAM`. Unsupported datasource message capability
+preserves the original publish result; real errors retain their exception mappings.
+The overload is needed for independent-console forwarding; existing publish
+signatures and the shared HTTP client's response handling remain unchanged.
 This is a target contract. Review new public signatures and update SDK ITs,
 scenarios, and coverage registry before completing a public API addition.
 

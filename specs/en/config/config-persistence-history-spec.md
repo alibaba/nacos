@@ -114,7 +114,11 @@ clarified that the console has no message control in create or delete workflows,
 but backend ordinary and CAS publish APIs handle inserts and updates identically
 and must not ignore a message based on whether the config is new. Deletion,
 Beta/gray, and rollback are out of scope. Only history-detail display is required;
-history-list display is not.
+history-list display is not. UI changes are limited to the new console.
+Existing publish, CAS, transaction, SQL execution order, and notification behavior
+remain unchanged; this feature only merges the optional message at existing
+formal-history write sites. Gray persistence and shared HTTP response handling
+are outside this PR.
 
 #### Operation scope and input
 

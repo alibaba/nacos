@@ -141,6 +141,7 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configForm.setGroup("group");
         configForm.setNamespaceId("namespaceId");
         configForm.setContent("content");
+        configForm.setChangeMessage("ignored Beta message");
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setBetaIps("127.0.0.1");
         when(configMaintainerService.publishBetaConfig(eq("dataId"), eq("group"), eq("namespaceId"),

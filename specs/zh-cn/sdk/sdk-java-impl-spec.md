@@ -350,9 +350,9 @@ Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 
 重载兼容性，不扩展 Beta、灰度、回滚和删除能力。SDK 不通过先查询来猜测创建或更新。
 输入校验和可选历史详情说明遵循
 [Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
-按待审阅的 512 码点规则实现时，本地超长校验映射为 `NacosException.INVALID_PARAM`。
-数据源不支持说明时保留原发布结果；真实发布错误保持原异常映射。共享 HTTP 客户端必须
-保留未声明 charset 的 UTF-8 JSON 响应字节，包括历史响应中的非 ASCII 说明。
+512 码点限制的本地超长校验映射为 `NacosException.INVALID_PARAM`。
+数据源不支持说明时保留原发布结果；真实发布错误保持原异常映射。
+该重载用于独立控制台转发；已有发布签名及共享 HTTP 客户端的响应读取行为保持不变。
 此处定义目标合同；新增公开方法前须审阅签名，并更新 SDK IT、场景及覆盖登记。
 
 ### 7.3 NamingMaintainerService

@@ -170,6 +170,6 @@ and rollback APIs are out of scope in this phase. Messages belong to the
 successful publish, not config description or content. Omitting the parameter
 preserves existing behavior; failed CAS records no message.
 See [Config Persistence And History Spec](config-persistence-history-spec.md#publish-operation-messages)
-for proposed input rules (512 Unicode code points), JSON storage, history-detail
+for input rules (512 Unicode code points), JSON storage, history-detail
 display, plugin degradation, and acceptance scenarios. This is a target for
 review, not a claim that current APIs implement and validate this scope.
