@@ -44,7 +44,8 @@ class AgentCardJacksonConfigurationTest {
                             String json = "{\"securityRequirements\":" + requirements + "}";
                             AgentCardDetailInfo card =
                                 mapper.readValue(json, AgentCardDetailInfo.class);
-                            assertEquals(mapper.readTree(json).get("securityRequirements"),
+                            assertEquals(
+                                mapper.readTree("[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]"),
                                 mapper.readTree(mapper.writeValueAsString(card))
                                     .get("securityRequirements"));
                         }

@@ -60,20 +60,45 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     private static final String SEARCH_BLUR = "blur";
 
     @ParameterizedTest
-    @ValueSource(strings = {"[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\"]}}}]",
-        "[{\"apiKey\":[],\"oauth2\":[\"read\"]}]"})
-    void testSecurityRequirementsRegisterAndQuery(String requirements) throws Exception {
+    @ValueSource(strings = {"standard", "flat", "legacy", "both", "empty", "anonymous", "absent"})
+    void testSecurityRequirementsRegisterAndQuery(String scenario) throws Exception {
         String name = "openapi-security-" + UUID.randomUUID();
         String version = "1.0.0";
-        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
-        card.set("securityRequirements", JacksonUtils.toObj(requirements));
-        card.set("security", JacksonUtils.toObj("[{\"legacy\":[\"unchanged\"]}]"));
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version,
+            "legacy".equals(scenario) ? "0.3" : "1.0"));
+        String standard = "[{\"schemes\":{\"apiKey\":{\"list\":[]},"
+            + "\"oauth2\":{\"list\":[\"read\",\"profile\"]}}},{\"schemes\":{\"bearer\":{\"list\":[]}}}]";
+        String flat = "[{\"apiKey\":[],\"oauth2\":[\"read\",\"profile\"]},{\"bearer\":[]}]";
+        if ("absent".equals(scenario)) {
+            standard = "null";
+            flat = "null";
+        } else if ("legacy".equals(scenario)) {
+            card.set("security", JacksonUtils.toObj(flat));
+        } else {
+            if ("both".equals(scenario) || "empty".equals(scenario) || "anonymous".equals(scenario)) {
+                card.set("security", JacksonUtils.toObj("[{\"obsolete\":[\"old-scope\"]}]"));
+            }
+            if ("empty".equals(scenario)) {
+                standard = "[]";
+                flat = "[]";
+            } else if ("anonymous".equals(scenario)) {
+                standard = "[{\"schemes\":{}}]";
+                flat = "[{}]";
+            }
+            card.set("securityRequirements", JacksonUtils.toObj("flat".equals(scenario) ? flat : standard));
+        }
         try {
             JsonNode registered = registerAgent(name, version, REGISTRATION_TYPE_URL, card.toString());
             assertEquals(ErrorCode.SUCCESS.getCode(), registered.get("code").asInt());
             JsonNode result = getAgentCard(name, version, REGISTRATION_TYPE_URL).get("data");
-            assertEquals(card.get("securityRequirements"), result.get("securityRequirements"));
-            assertEquals(card.get("security"), result.get("security"));
+            if ("absent".equals(scenario)) {
+                assertTrue(result.path("securityRequirements").isMissingNode()
+                    || result.path("securityRequirements").isNull());
+                assertTrue(result.path("security").isMissingNode() || result.path("security").isNull());
+            } else {
+                assertEquals(JacksonUtils.toObj(standard), result.get("securityRequirements"));
+                assertEquals(JacksonUtils.toObj(flat), result.get("security"));
+            }
         } finally {
             deleteAgentQuietly(name, version, REGISTRATION_TYPE_URL);
         }
@@ -87,6 +112,17 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         card.set("securityRequirements", JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":42}}]"));
         assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
             "Can't be parsed");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[null]", "[{\"oauth2\":null}]"})
+    void testMalformedLegacySecurityReturnBadRequest(String security) throws Exception {
+        String name = "openapi-security-invalid-" + UUID.randomUUID();
+        String version = "1.0.0";
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "0.3"));
+        card.set("security", JacksonUtils.toObj(security));
+        assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
+            "must not be null");
     }
     
     @Test

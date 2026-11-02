@@ -38,19 +38,22 @@ HTTP API IT CI and should build this module without executing SDK IT cases.
 Destructive restart and cluster cases run through
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md).
 
-## JSON Runtime Dependency Isolation (#15788)
+## Card-level A2A security requirements (#15975, item 1)
 
 Card-level A2A security requirements (#15975, item 1) are covered by
 `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`:
 standard JSON import, historical flat import, facade release/query, native RAD
 query/conversion, initial subscriptions, and changed latest-version callbacks
-over both gRPC and HTTP. API/common unit tests cover malformed requirements,
-empty/absent values, unchanged Java accessors and 0.x `security`, inherited
-Card DTOs, legacy gRPC envelopes, and both Jackson adapters. Skill-level
-requirements are a separate issue item. Historical JSON and plain Java maps
-retain flat output for pre-fix decoders; standard input retains wrapped output
-and requires upgraded decoders. Existing surface classifications and totals
+over both gRPC and HTTP. Old-field-only 0.3 input and explicit empty new fields
+verify bidirectional projection, new-field precedence, and caller isolation.
+API/common unit tests cover malformed requirements, empty/absent values, mutable
+Java accessors, conflict precedence, inherited Card DTOs, legacy gRPC envelopes,
+and both Jackson adapters. Skill-level requirements are a separate issue item.
+Requirements always use standard output and require upgraded decoders; legacy
+`security` retains the 0.3 flat shape. Existing surface classifications and totals
 remain unchanged.
+
+## JSON Runtime Dependency Isolation (#15788)
 
 The `jackson3-sdk-test` profile verifies Jackson 2/3 coexistence and explicit
 Jackson 3 selection. It does not prove that Jackson 2 can be removed.

@@ -23,10 +23,15 @@ import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,6 +116,75 @@ class A2aAgentCardUtilsTest {
         card.setCapabilities(capabilities);
         A2aAgentCardUtils.validateAgentCard(card);
         assertFalse(card.getSupportsAuthenticatedExtendedCard());
+    }
+    
+    @Test
+    void legacySecurityBecomesRequirementsWithoutSharingMutableCollections() {
+        AgentCard card = legacy();
+        List<Map<String, List<String>>> security = securityRequirements();
+        card.setSecurity(security);
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertEquals(security, card.getSecurityRequirements());
+        card.getSecurityRequirements().get(0).get("oauth2").add("write");
+        card.getSecurityRequirements().get(0).put("extra", Collections.emptyList());
+        card.getSecurityRequirements().add(Collections.emptyMap());
+        assertEquals(securityRequirements(), security);
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertEquals(card.getSecurityRequirements(), card.getSecurity());
+    }
+    
+    @Test
+    void currentSecurityWinsAndProjectsIndependentLegacyCollections() {
+        AgentCard card = legacy();
+        card.setSecurity(Collections.singletonList(Collections.singletonMap("obsolete",
+            Collections.singletonList("old-scope"))));
+        List<Map<String, List<String>>> requirements = securityRequirements();
+        card.setSecurityRequirements(requirements);
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertEquals(requirements, card.getSecurity());
+        card.getSecurity().get(0).get("oauth2").clear();
+        card.getSecurity().get(0).clear();
+        card.getSecurity().clear();
+        assertEquals(securityRequirements(), requirements);
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertEquals(requirements, card.getSecurity());
+    }
+    
+    @Test
+    void emptyCurrentSecurityOverridesLegacyWhileAbsentFieldsStayAbsent() {
+        AgentCard card = legacy();
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertNull(card.getSecurity());
+        assertNull(card.getSecurityRequirements());
+        card.setSecurity(securityRequirements());
+        card.setSecurityRequirements(Collections.emptyList());
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertTrue(card.getSecurity().isEmpty());
+        assertTrue(card.getSecurityRequirements().isEmpty());
+        card.setSecurityRequirements(null);
+        A2aAgentCardUtils.normalizeAgentCard(card);
+        assertTrue(card.getSecurityRequirements().isEmpty());
+    }
+    
+    private List<Map<String, List<String>>> securityRequirements() {
+        Map<String, List<String>> schemes = new LinkedHashMap<>();
+        schemes.put("oauth2", new ArrayList<>(Arrays.asList("read", "profile")));
+        schemes.put("apiKey", new ArrayList<>());
+        List<Map<String, List<String>>> result = new ArrayList<>();
+        result.add(schemes);
+        result.add(new LinkedHashMap<>());
+        return result;
+    }
+    
+    @Test
+    void malformedLegacySecurityFailsWithParameterErrorInsteadOfNullPointer() {
+        AgentCard card = legacy();
+        card.setSecurity(Collections.singletonList(null));
+        assertThrows(IllegalArgumentException.class,
+            () -> A2aAgentCardUtils.normalizeAgentCard(card));
+        card.setSecurity(Collections.singletonList(Collections.singletonMap("oauth2", null)));
+        assertThrows(IllegalArgumentException.class,
+            () -> A2aAgentCardUtils.normalizeAgentCard(card));
     }
     
     @Test

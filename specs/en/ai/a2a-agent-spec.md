@@ -92,20 +92,31 @@ descriptor with a synthetic generic Agent object.
 Card-level `securityRequirements` follows the A2A 1.0 `SecurityRequirement`
 and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
 JSON readers also accept Nacos's historical flat representation
-`[{"oauth2":["read"]}]`. Writers retain each requirement's input representation:
-standard input stays wrapped and historical input stays flat. Existing Java
-`List<Map<String,List<String>>>` getters/setters keep their mutable scope-map
-contract; requirements built from plain Java maps keep their historical flat
-output. Parsed standard maps retain their wrapped representation through these
-accessors and Card-to-detail copies, without adding a wire marker property.
-The independent 0.x `security` property keeps its flat wire format and is not
-merged with or substituted for `securityRequirements`. Alternatives, all
+`[{"oauth2":["read"]}]`. Writers always emit the standard `schemes/list` wrappers.
+Existing Java `List<Map<String,List<String>>>` getters/setters keep their mutable
+scope-map contract, without special Map subclasses recording the input format.
+
+Both `security` and `securityRequirements` remain available. `security` retains
+the 0.3 flat wire format and is deprecated, pending removal when Nacos stops
+supporting the 0.3 `protocolVersion`; its replacement is `securityRequirements`.
+Existing Card adapters synchronize them during normalization: a non-null
+`securityRequirements` takes precedence, including an explicitly empty list;
+otherwise `security` supplies it. Equivalent content is then projected to
+`security`. If both are absent/null, no empty requirement is created. Conflicting
+fields use the new field rather than concatenating alternatives and changing
+authentication semantics. Synchronization belongs to the adapter normalization
+boundary, not model setters or JSON parsing. The projection copies lists, maps,
+and scope lists to avoid mutable aliases. This follows the existing precedence
+for interface fields and extended Card capabilities.
+
+Alternatives, all
 schemes within an alternative, scope ordering, and empty scopes survive Card
 registration, query, and subscription. An omitted `StringList.list` means an
 empty scope list; malformed requirements must fail decoding rather than lose
 access declarations. Missing/null requirements and an empty requirements list
-remain distinct. Standard wrapped Cards require a decoder with this fix;
-historical JSON and Java-map callers remain compatible with pre-fix decoders.
+remain distinct. Historical flat input remains readable, but standard output
+requires a decoder supporting that shape; including legacy `security` does not
+guarantee that a pre-fix Nacos decoder can parse the new field.
 
 AgentCard remains a plain Java model without Jackson annotations or JSON bridge
 accessors. The shared JSON layer owns requirement conversion, with equivalent
@@ -118,6 +129,10 @@ mapper reused by HTTP child contexts.
 
 Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
 and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).
+The official Python SDK 1.3.0 [0.3 conversion layer](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
+maps these security fields in both directions in `to_core_agent_card` and
+`to_compat_agent_card`. This is version-adapter behavior, not automatic alias
+handling by a plain JSON parser.
 
 An A2A call interface in the exact common-latest Version declares the ARD
 representation `application/a2a-agent-card+json` only when it passes complete

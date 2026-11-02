@@ -78,16 +78,22 @@ A2A Binding 是一个 `AgentCallInterface`：
 
 Card 级 `securityRequirements` 遵循 A2A 1.0 的 `SecurityRequirement` 和
 `StringList` 定义：`[{"schemes":{"oauth2":{"list":["read"]}}}]`。
-JSON 读取同时兼容 Nacos 历史扁平格式 `[{"oauth2":["read"]}]`，写出时保留每项的输入
-表示：标准输入保持包装，历史输入保持扁平。Java `List<Map<String,List<String>>>`
-getter/setter 保留可修改 scope map 契约；普通 Java map 构造的要求保持历史扁平输出。
-解析得到的标准 map 经这些访问器和 Card/detail 复制后仍保留包装，不新增 wire 标记字段。
-独立的 0.x
-`security` 属性保留扁平 wire 格式，不与 `securityRequirements` 合并或互相替代。
+JSON 读取同时兼容 Nacos 历史扁平格式 `[{"oauth2":["read"]}]`，写出时统一使用标准
+`schemes/list` 包装。Java `List<Map<String,List<String>>>` getter/setter 保留可修改
+scope map 契约，不通过特殊 Map 子类记录输入格式。
+
+`security` 与 `securityRequirements` 同时保留。`security` 保持 0.3 扁平 wire 格式，
+标记为已废弃、待移除；替代字段为 `securityRequirements`，移除条件是 Nacos 不再支持
+0.3 `protocolVersion`，本次不提前移除。现有 Card adapter 在规范化时同步两个字段：
+`securityRequirements` 非 null 时以其为准（包括显式空列表），否则从 `security` 补齐；
+随后将等价内容投影到 `security`。两者均缺失/null 时不生成空要求。两字段冲突时采用新
+字段，不拼接候选要求，以免改变鉴权语义。同步发生在现有 adapter 规范化边界，普通模型
+setter 和 JSON 解析本身不隐式修改另一个字段。投影复制列表、map 和 scope 列表，避免可变
+集合共享。该规则与现有接口字段、扩展 Card 能力的新字段优先规则一致。
 Card 注册、查询和订阅必须保留各候选要求、同一候选内全部 scheme、scope 顺序及空 scope。
 省略 `StringList.list` 表示空 scope 列表；非法要求必须解析失败，不能丢弃鉴权声明。
-缺失/null 要求和空要求列表保持区分。标准包装 Card 需要使用已修复的解码器；
-历史 JSON 和普通 Java map 调用者仍与修复前的解码器兼容。
+缺失/null 要求和空要求列表保持区分。历史扁平输入仍可读取，但标准输出需要支持该格式的
+解码器；同时提供旧 `security` 字段不保证修复前的 Nacos 解码器能解析新字段。
 
 AgentCard 保持普通 Java 模型，不携带 Jackson 注解或 JSON 桥接访问器。要求格式转换由
 共享 JSON 层负责，等价的 Jackson 2/3 模块接入 SDK adapter、历史 `JacksonUtils`、
@@ -98,6 +104,9 @@ Jackson mapper 时，须注册对应的 `AgentCardJackson2Module` 或
 
 参考：[A2A 规范](https://a2a-protocol.org/latest/specification/) 和
 [v1.0.1 protobuf 定义](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto)。
+官方 Python SDK 1.3.0 的 [0.3 转换层](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
+在 `to_core_agent_card` / `to_compat_agent_card` 中进行这两个鉴权字段的双向语义转换；
+这属于版本 adapter 行为，并非普通 JSON 解析器自动识别别名。
 
 common latest 精确 Version 中的 A2A CallInterface 只有通过该版本基线的完整 AgentCard 校验时，
 才声明 ARD 表示 `application/a2a-agent-card+json`。Artifact 直接返回保存的 native descriptor，

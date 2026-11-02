@@ -21,7 +21,7 @@ Admin surface without changing coverage totals:
 
 | API surface / IT class | Covered API operations | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| A2A Card security requirements / `A2aAdminApiOpenApiITCase` | POST and GET `/v3/admin/ai/a2a` | Covered | Standard `schemes/list` and historical flat import; each input representation survives query; independent 0.x `security`; malformed requirements return HTTP 400. Skill-level requirements are outside this item. |
+| A2A Card security requirements / `A2aAdminApiOpenApiITCase` | POST and GET `/v3/admin/ai/a2a` | Covered | Standard and historical flat import; standard output plus synchronized 0.3 `security`; old-field-only input, new-field precedence on conflicts, empty lists, anonymous alternatives, absent fields, and malformed requirement HTTP 400. Skill-level requirements are outside this item. |
 
 The cross-cutting [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md)
 adds owner/admin/non-owner/grantee checks over existing AI resource detail, list, label and

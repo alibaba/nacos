@@ -251,6 +251,23 @@ class AgentRequestUtilTest {
     }
     
     @Test
+    void testNormalizedInterfacesMustNotSkipSecurityConversionOnHistoricalReads() {
+        AgentCard card = createValidAgentCard();
+        AgentRequestUtil.normalizeAgentCard(card);
+        card.setSecurity(Collections.singletonList(Collections.singletonMap("oauth2",
+            Collections.singletonList("read"))));
+        assertEquals(false, AgentRequestUtil.isAgentCardNormalized(card));
+        AgentRequestUtil.normalizeAgentCard(card);
+        assertEquals(card.getSecurity(), card.getSecurityRequirements());
+        assertEquals(true, AgentRequestUtil.isAgentCardNormalized(card));
+        card.setSecurityRequirements(Collections.emptyList());
+        assertEquals(false, AgentRequestUtil.isAgentCardNormalized(card));
+        AgentRequestUtil.normalizeAgentCard(card);
+        assertEquals(Collections.emptyList(), card.getSecurity());
+        assertEquals(true, AgentRequestUtil.isAgentCardNormalized(card));
+    }
+    
+    @Test
     void testIsAgentCardNormalizedShouldReturnFalseWhenLegacyMirrorNotMatch() {
         AgentCard agentCard = createValidAgentCard();
         AgentInterface preferred = new AgentInterface();

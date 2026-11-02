@@ -39,10 +39,6 @@ final class AgentCardSecurityRequirements {
         List<Map<String, Object>> result = new ArrayList<>(requirements.size());
         for (Map<String, List<String>> requirement : requirements) {
             require(requirement != null);
-            if (!(requirement instanceof WrappedRequirement)) {
-                result.add(new LinkedHashMap<String, Object>(requirement));
-                continue;
-            }
             Map<String, Object> schemes = new LinkedHashMap<>();
             for (Map.Entry<String, List<String>> entry : requirement.entrySet()) {
                 schemes.put(entry.getKey(), Collections.singletonMap("list", entry.getValue()));
@@ -67,8 +63,7 @@ final class AgentCardSecurityRequirements {
                 require(wrapped instanceof Map && requirement.size() == 1);
                 schemes = (Map<?, ?>) wrapped;
             }
-            Map<String, List<String>> scopesByScheme = standard
-                ? new WrappedRequirement() : new LinkedHashMap<>();
+            Map<String, List<String>> scopesByScheme = new LinkedHashMap<>();
             for (Map.Entry<?, ?> entry : schemes.entrySet()) {
                 Object scopes = entry.getValue();
                 if (standard) {
@@ -97,9 +92,4 @@ final class AgentCardSecurityRequirements {
         }
     }
     
-    /** Retain standard wire shape through the existing mutable Java scope-map API. */
-    private static final class WrappedRequirement extends LinkedHashMap<String, List<String>> {
-        
-        private static final long serialVersionUID = 1L;
-    }
 }

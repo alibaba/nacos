@@ -68,6 +68,13 @@ public class AgentCard extends AgentCardBasicInfo {
     
     private Map<String, SecurityScheme> securitySchemes;
     
+    /**
+     * Legacy A2A 0.3 field, pending removal when A2A 0.3 protocol support ends.
+     * Use {@link #securityRequirements} for A2A 1.0.
+     *
+     * @deprecated For A2A 0.3 protocol compatibility only.
+     */
+    @Deprecated
     private List<Map<String, List<String>>> security;
     
     /**

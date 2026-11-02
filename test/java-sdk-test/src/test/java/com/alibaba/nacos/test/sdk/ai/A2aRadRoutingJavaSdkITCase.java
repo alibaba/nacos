@@ -111,14 +111,27 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
             waitUntil("both subscriptions preserve initial requirements",
                 () -> sameSecurityRequirements(first, legacyEvent.get())
                     && sameSecurityRequirements(first, nativeEvent.get()));
-            AgentCard second = securityCard(name, V2, false);
-            service.releaseAgentCard(second, "URL", true);
-            waitUntil("both subscriptions preserve changed requirements", () -> legacyEvent.get() != null
-                && nativeEvent.get() != null && V2.equals(legacyEvent.get().getVersion())
-                && V2.equals(nativeEvent.get().getVersion())
-                && sameSecurityRequirements(second, legacyEvent.get())
-                && sameSecurityRequirements(second, nativeEvent.get()));
-            assertTrue(sameSecurityRequirements(second, service.getAgentCard(name)));
+            AgentCard historicalFlat = securityCard(name, V2, false);
+            AgentCard legacyOnly = securityCard(name, "1.3.0", false);
+            legacyOnly.setSecurity(legacyOnly.getSecurityRequirements());
+            legacyOnly.setSecurityRequirements(null);
+            legacyOnly.getSupportedInterfaces().get(0).setProtocolVersion("0.3");
+            AgentCard empty = securityCard(name, "1.4.0", true);
+            empty.setSecurity(first.getSecurityRequirements());
+            empty.setSecurityRequirements(Collections.emptyList());
+            for (AgentCard next : Arrays.asList(historicalFlat, legacyOnly, empty)) {
+                service.releaseAgentCard(next, "URL", true);
+                waitUntil("both subscriptions synchronize changed requirements", () -> legacyEvent.get() != null
+                    && nativeEvent.get() != null && next.getVersion().equals(legacyEvent.get().getVersion())
+                    && next.getVersion().equals(nativeEvent.get().getVersion())
+                    && sameSecurityRequirements(next, legacyEvent.get())
+                    && sameSecurityRequirements(next, nativeEvent.get()));
+                assertTrue(sameSecurityRequirements(next, service.getAgentCard(name)));
+                assertTrue(sameSecurityRequirements(next, service.agent().a2aConverter()
+                    .convert(service.agent().discoverAgent(reference(name, next.getVersion())))));
+            }
+            assertNull(legacyOnly.getSecurityRequirements(), "release must not mutate the caller's Card");
+            assertNull(first.getSecurity(), "release must not mutate the caller's Card");
         } finally {
             service.unsubscribeAgentCard(name, legacyListener);
             service.agent().unsubscribeAgent(latest, nativeListener);
@@ -126,9 +139,16 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     private static boolean sameSecurityRequirements(AgentCard expected, AgentCard actual) {
-        return actual != null && expected.getSecurityRequirements().equals(actual.getSecurityRequirements())
-            && JsonUtils.toObj(JsonUtils.toJson(expected), Map.class).get("securityRequirements")
-                .equals(JsonUtils.toObj(JsonUtils.toJson(actual), Map.class).get("securityRequirements"));
+        List<Map<String, List<String>>> requirements = expected.getSecurityRequirements() != null
+            ? expected.getSecurityRequirements() : expected.getSecurity();
+        if (actual == null || !requirements.equals(actual.getSecurityRequirements())
+            || !requirements.equals(actual.getSecurity())) {
+            return false;
+        }
+        AgentCard normalized = new AgentCard();
+        normalized.setSecurityRequirements(requirements);
+        return JsonUtils.toObj(JsonUtils.toJson(normalized), Map.class).get("securityRequirements")
+            .equals(JsonUtils.toObj(JsonUtils.toJson(actual), Map.class).get("securityRequirements"));
     }
 
     private static AgentCard securityCard(String name, String version, boolean standard) {

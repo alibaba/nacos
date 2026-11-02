@@ -74,7 +74,7 @@ class JacksonAdapterCompatibilityTest {
             + "\"oauth2\":[\"read\",\"write\"]}]}";
         AgentCard legacy = JsonUtils.toObj(legacyJson, AgentCard.class);
         assertEquals(card, legacy);
-        assertEquals(JsonUtils.toObj(legacyJson, Map.class).get("securityRequirements"),
+        assertEquals(JsonUtils.toObj(cardJson, Map.class).get("securityRequirements"),
             JsonUtils.toObj(JsonUtils.toJson(legacy), Map.class).get("securityRequirements"));
         assertEquals(JsonUtils.toObj(cardJson, Map.class).get("securityRequirements"),
             JsonUtils.toObj(JsonUtils.toJson(card), Map.class).get("securityRequirements"));
@@ -111,7 +111,7 @@ class JacksonAdapterCompatibilityTest {
             assertEquals(Collections.emptyList(),
                 card.getSecurityRequirements().get(1).get("bearer"));
             String encoded = JsonUtils.toJson(card);
-            String expected = requirements.replace("\"bearer\":{}", "\"bearer\":{\"list\":[]}");
+            String expected = standard.replace("\"bearer\":{}", "\"bearer\":{\"list\":[]}");
             assertEquals(JsonUtils.toObj(expected, List.class),
                 jsonProperty(encoded, "securityRequirements"));
             assertEquals(jsonProperty(json, "security"), jsonProperty(encoded, "security"));
@@ -141,7 +141,9 @@ class JacksonAdapterCompatibilityTest {
         card.setSecurityRequirements(new ArrayList<>(Collections.singletonList(requirement)));
         card.getSecurityRequirements().get(0).get("schemes").add("write");
         String encoded = JsonUtils.toJson(card);
-        assertEquals(JsonUtils.toObj("[{\"schemes\":[\"read\",\"write\"]}]", List.class),
+        assertEquals(
+            JsonUtils.toObj("[{\"schemes\":{\"schemes\":{\"list\":[\"read\",\"write\"]}}}]",
+                List.class),
             jsonProperty(encoded, "securityRequirements"));
         assertEquals(Arrays.asList("read", "write"),
             JsonUtils.toObj(encoded, AgentCard.class).getSecurityRequirements().get(0)
@@ -159,7 +161,8 @@ class JacksonAdapterCompatibilityTest {
         for (String requirements : new String[] {"[]", "[{}, {\"schemes\":{}}]"}) {
             AgentCard card = JsonUtils.toObj("{\"securityRequirements\":" + requirements + "}",
                 AgentCard.class);
-            assertEquals(JsonUtils.toObj(requirements, List.class),
+            assertEquals(
+                JsonUtils.toObj(requirements.replace("[{},", "[{\"schemes\":{}},"), List.class),
                 jsonProperty(JsonUtils.toJson(card), "securityRequirements"));
         }
         for (String invalid : new String[] {"[null]", "[1]", "{}", "[{\"schemes\":null}]",

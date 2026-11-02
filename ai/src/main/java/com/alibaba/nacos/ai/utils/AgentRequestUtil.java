@@ -110,6 +110,9 @@ public class AgentRequestUtil {
         if (null == agentCard || !isV1AgentCard(agentCard)) {
             return false;
         }
+        if (!Objects.equals(agentCard.getSecurityRequirements(), agentCard.getSecurity())) {
+            return false;
+        }
         AgentInterface preferred = agentCard.getSupportedInterfaces().get(0);
         if (!Objects.equals(agentCard.getUrl(), preferred.getUrl()) || !Objects.equals(
             agentCard.getPreferredTransport(), preferred.getProtocolBinding())

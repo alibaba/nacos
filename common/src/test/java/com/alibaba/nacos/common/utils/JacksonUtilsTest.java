@@ -61,7 +61,8 @@ class JacksonUtilsTest {
             AgentCardDetailInfo card = JacksonUtils.toObj(json, AgentCardDetailInfo.class);
             assertEquals(Collections.emptyList(),
                 card.getSecurityRequirements().get(0).get("apiKey"));
-            assertEquals(JacksonUtils.toObj(json, Map.class).get("securityRequirements"),
+            assertEquals(
+                JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]", List.class),
                 JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class)
                     .get("securityRequirements"));
         }

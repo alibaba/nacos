@@ -52,7 +52,7 @@ public class AgentCardJackson3Module extends SimpleModule {
         public abstract List<Map<String, List<String>>> getSecurityRequirements();
     }
     
-    /** Preserve the input representation when writing requirements. */
+    /** Write requirements using the standard A2A schemes/list wrappers. */
     public static class RequirementsWriter
         extends StdConverter<List<Map<String, List<String>>>, List<Map<String, Object>>> {
         
