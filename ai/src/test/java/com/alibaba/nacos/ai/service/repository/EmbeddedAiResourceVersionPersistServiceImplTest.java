@@ -104,6 +104,16 @@ class EmbeddedAiResourceVersionPersistServiceImplTest {
     }
     
     @Test
+    void conditionalStorageReplacementRequiresAffectedRowAndClearsTransactionContext() {
+        when(databaseOperate.blockUpdate()).thenAnswer(invocation -> {
+            assertEquals(1, EmbeddedStorageContextHolder.getCurrentSqlContext().size());
+            return false;
+        });
+        assertEquals(false, service.replaceStorageIfUnchanged(7L, "old", "repair"));
+        assertEquals(0, EmbeddedStorageContextHolder.getCurrentSqlContext().size());
+    }
+    
+    @Test
     void findAndListShouldReadFromDatabaseOperate() {
         AiResourceVersion version = newVersion();
         when(databaseOperate.queryOne(anyString(), any(Object[].class),
@@ -208,6 +218,11 @@ class EmbeddedAiResourceVersionPersistServiceImplTest {
     }
     
     private static class UnitTestAiResourceVersionMapper implements AiResourceVersionMapper {
+        
+        @Override
+        public String replaceStorageIfUnchanged() {
+            return "UPDATE ai_resource_version SET storage=? WHERE id=? AND CAST(storage AS VARCHAR(32672)) = ?";
+        }
         
         @Override
         public String select(List<String> columns, List<String> where) {

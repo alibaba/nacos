@@ -36,7 +36,7 @@ coverage-count row:
 
 | Public SDK surface | Required scenarios | Current status | Current/missing coverage |
 | --- | --- | --- | --- |
-| AgentCard security requirements | Decode standard and historical JSON; release/query; facade and native RAD subscriptions synchronize new and old fields across version changes | Covered | `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`, gRPC and HTTP; standard, historical flat, 0.3 old-field-only, explicit empty new field, and caller isolation. Standard requirements output needs upgraded decoders. Malformed/absent input, inherited DTOs, mutable Java accessors, conflict precedence and Jackson 2/3 are unit-tested. Skill-level requirements are outside this item. |
+| AgentCard security requirements | Decode standard and historical JSON; release/query; facade and native RAD subscriptions synchronize new and old fields across version changes | Covered | `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`, gRPC and HTTP; standard POJO, 0.3 old-field-only, explicit empty new field, and caller isolation. Standard requirements output needs upgraded decoders; Java accessors now use List<SecurityRequirement>, with schemes/StringList POJOs. Historical raw input is covered by HTTP IT and boundary unit tests. Malformed/absent input, inherited DTOs, mutable Java accessors, conflict precedence and Jackson 2/3 are unit-tested. Skill-level requirements are outside this item. |
 
 ## Scope extension API boundary coverage
 

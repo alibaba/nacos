@@ -146,6 +146,22 @@ class AiHttpResourceParserTest {
     
     @Test
     @Secured(signType = "ai")
+    void testParseAgentNameBeforeBindingHistoricalSecurityRequirements()
+        throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        String json =
+            "{\"name\":\"cardAgent\",\"securityRequirements\":[{\"schemes\":[\"read\"]}]}";
+        Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("agentCard", new String[] {json});
+        when(request.getRequestURI()).thenReturn("/ai/a2a");
+        when(request.getParameter("agentCard")).thenReturn(json);
+        when(request.getParameterMap()).thenReturn(parameters);
+        
+        assertEquals("cardAgent", resourceParser.parse(request, secured).getName());
+    }
+    
+    @Test
+    @Secured(signType = "ai")
     void testParseWithA2aPathWithInvalidAgentCard() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Map<String, String[]> paramMap = new HashMap<>();

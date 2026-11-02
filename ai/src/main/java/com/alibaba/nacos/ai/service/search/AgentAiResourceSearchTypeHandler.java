@@ -155,7 +155,8 @@ public class AgentAiResourceSearchTypeHandler implements AiResourceSearchTypeHan
             return null;
         }
         AgentVersionDetail latest =
-            persistenceService.getAgentVersion(namespaceId, resourceName, latestVersion);
+            persistenceService.getAgentVersionForProjection(namespaceId, resourceName,
+                latestVersion);
         if (!AiConstants.Agent.VERSION_STATUS_ONLINE.equals(latest.getStatus())) {
             return null;
         }

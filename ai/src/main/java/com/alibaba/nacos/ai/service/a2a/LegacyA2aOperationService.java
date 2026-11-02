@@ -77,16 +77,19 @@ public class LegacyA2aOperationService implements A2aOperationService {
     
     private final AgentIdCodecHolder agentIdCodecHolder;
     
+    private final A2aSecurityReadRepair securityReadRepair;
+    
     public LegacyA2aOperationService(ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService, ConfigDetailService configDetailService,
         SyncEffectService syncEffectService, ServiceStorage serviceStorage,
-        AgentIdCodecHolder agentIdCodecHolder) {
+        AgentIdCodecHolder agentIdCodecHolder, A2aSecurityReadRepair securityReadRepair) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
         this.serviceStorage = serviceStorage;
         this.agentIdCodecHolder = agentIdCodecHolder;
+        this.securityReadRepair = securityReadRepair;
     }
     
     /**
@@ -444,7 +447,8 @@ public class LegacyA2aOperationService implements A2aOperationService {
                     version));
         }
         AgentCardDetailInfo result =
-            JacksonUtils.toObj(response.getContent(), AgentCardDetailInfo.class);
+            JacksonUtils.toObj(securityReadRepair.readLegacy(namespaceId, versionDataId,
+                response.getContent()), AgentCardDetailInfo.class);
         if (!AgentRequestUtil.isAgentCardNormalized(result)) {
             AgentRequestUtil.normalizeAgentCard(result);
         }

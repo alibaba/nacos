@@ -208,6 +208,9 @@ class OracleMapperCoverageTest {
     @Test
     void testAiResourceVersionMapper() {
         AiResourceVersionMapperByOracle mapper = new AiResourceVersionMapperByOracle();
+        assertEquals(
+            "UPDATE ai_resource_version SET storage=? WHERE id=? AND DBMS_LOB.COMPARE(storage, TO_CLOB(?)) = 0",
+            mapper.replaceStorageIfUnchanged());
         assertEquals(DataSourceConstant.ORACLE, mapper.getDataSource());
         assertResult(mapper.findAiResourceVersionFetchRows(context),
             "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,"

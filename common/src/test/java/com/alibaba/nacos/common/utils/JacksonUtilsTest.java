@@ -56,11 +56,11 @@ class JacksonUtilsTest {
     @Test
     void testAgentCardSecurityRequirements() {
         for (String requirements : new String[] {
-            "[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]", "[{\"apiKey\":[]}]"}) {
+            "[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]"}) {
             String json = "{\"securityRequirements\":" + requirements + "}";
             AgentCardDetailInfo card = JacksonUtils.toObj(json, AgentCardDetailInfo.class);
             assertEquals(Collections.emptyList(),
-                card.getSecurityRequirements().get(0).get("apiKey"));
+                card.getSecurityRequirements().get(0).getSchemes().get("apiKey").getList());
             assertEquals(
                 JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]", List.class),
                 JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class)

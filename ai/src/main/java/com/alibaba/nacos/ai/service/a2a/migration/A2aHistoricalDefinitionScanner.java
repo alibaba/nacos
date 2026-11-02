@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.A2aCanonicalDefinitionConverter;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.utils.AgentValidationUtils;
@@ -345,6 +346,9 @@ public class A2aHistoricalDefinitionScanner {
     
     private <T> T parse(String content, Class<T> type, String description) {
         try {
+            if (AgentCardDetailInfo.class == type) {
+                return type.cast(A2aSecurityUtils.readCard(content, AgentCardDetailInfo.class));
+            }
             return JacksonUtils.toObj(content, type);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Invalid " + description + " JSON", e);

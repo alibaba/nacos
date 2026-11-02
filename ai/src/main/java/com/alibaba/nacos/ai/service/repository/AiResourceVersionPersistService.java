@@ -44,6 +44,20 @@ public interface AiResourceVersionPersistService {
     
     int updateStorage(String namespaceId, String name, String type, String version, String storage);
     
+    /**
+     * Replace only storage when the exact Version row still refers to the observed descriptor.
+     *
+     * @param id original row identifier
+     * @param expectedStorage original complete descriptor
+     * @param replacementStorage replacement complete descriptor
+     * @return whether the conditional update succeeded
+     */
+    default boolean replaceStorageIfUnchanged(long id, String expectedStorage,
+        String replacementStorage) {
+        throw new UnsupportedOperationException(
+            "Conditional Version storage replacement is unsupported");
+    }
+    
     int updateStorageAndDesc(String namespaceId, String name, String type, String version,
         String storage, String desc);
     

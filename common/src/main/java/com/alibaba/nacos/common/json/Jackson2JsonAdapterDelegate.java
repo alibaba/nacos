@@ -149,7 +149,6 @@ class Jackson2JsonAdapterDelegate implements NacosJsonAdapter {
     
     private static ObjectMapper createObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new AgentCardJackson2Module());
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         return objectMapper;

@@ -222,6 +222,22 @@ public class EmbeddedAiResourceVersionPersistServiceImpl
     }
     
     @Override
+    public boolean replaceStorageIfUnchanged(long id, String expectedStorage,
+        String replacementStorage) {
+        AiResourceVersionMapper mapper =
+            mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        try {
+            EmbeddedStorageContextHolder.addSqlContext(Boolean.TRUE,
+                mapper.replaceStorageIfUnchanged(),
+                new Object[] {replacementStorage, id, expectedStorage});
+            return Boolean.TRUE.equals(databaseOperate.blockUpdate());
+        } finally {
+            EmbeddedStorageContextHolder.cleanAllContext();
+        }
+    }
+    
+    @Override
     public int updateStorageAndDesc(String namespaceId, String name, String type, String version,
         String storage,
         String desc) {

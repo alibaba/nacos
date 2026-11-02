@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement;
+import com.alibaba.nacos.api.ai.model.a2a.StringList;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
@@ -124,13 +126,13 @@ class A2aAgentCardUtilsTest {
         List<Map<String, List<String>>> security = securityRequirements();
         card.setSecurity(security);
         A2aAgentCardUtils.normalizeAgentCard(card);
-        assertEquals(security, card.getSecurityRequirements());
-        card.getSecurityRequirements().get(0).get("oauth2").add("write");
-        card.getSecurityRequirements().get(0).put("extra", Collections.emptyList());
-        card.getSecurityRequirements().add(Collections.emptyMap());
+        assertEquals(A2aSecurityUtils.fromLegacy(security), card.getSecurityRequirements());
+        card.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().add("write");
+        card.getSecurityRequirements().get(0).getSchemes().put("extra", new StringList());
+        card.getSecurityRequirements().add(new SecurityRequirement());
         assertEquals(securityRequirements(), security);
         A2aAgentCardUtils.normalizeAgentCard(card);
-        assertEquals(card.getSecurityRequirements(), card.getSecurity());
+        assertEquals(A2aSecurityUtils.toLegacy(card.getSecurityRequirements()), card.getSecurity());
     }
     
     @Test
@@ -138,16 +140,17 @@ class A2aAgentCardUtilsTest {
         AgentCard card = legacy();
         card.setSecurity(Collections.singletonList(Collections.singletonMap("obsolete",
             Collections.singletonList("old-scope"))));
-        List<Map<String, List<String>>> requirements = securityRequirements();
+        List<SecurityRequirement> requirements =
+            A2aSecurityUtils.fromLegacy(securityRequirements());
         card.setSecurityRequirements(requirements);
         A2aAgentCardUtils.normalizeAgentCard(card);
-        assertEquals(requirements, card.getSecurity());
+        assertEquals(A2aSecurityUtils.toLegacy(requirements), card.getSecurity());
         card.getSecurity().get(0).get("oauth2").clear();
         card.getSecurity().get(0).clear();
         card.getSecurity().clear();
-        assertEquals(securityRequirements(), requirements);
+        assertEquals(A2aSecurityUtils.fromLegacy(securityRequirements()), requirements);
         A2aAgentCardUtils.normalizeAgentCard(card);
-        assertEquals(requirements, card.getSecurity());
+        assertEquals(A2aSecurityUtils.toLegacy(requirements), card.getSecurity());
     }
     
     @Test

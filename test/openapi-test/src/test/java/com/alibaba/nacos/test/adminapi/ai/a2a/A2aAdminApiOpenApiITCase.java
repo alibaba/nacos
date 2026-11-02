@@ -111,7 +111,7 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
         card.set("securityRequirements", JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":42}}]"));
         assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
-            "Can't be parsed");
+            "Invalid AgentCard securityRequirements or security");
     }
 
     @ParameterizedTest
@@ -122,7 +122,7 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "0.3"));
         card.set("security", JacksonUtils.toObj(security));
         assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
-            "must not be null");
+            "Invalid AgentCard securityRequirements or security");
     }
     
     @Test

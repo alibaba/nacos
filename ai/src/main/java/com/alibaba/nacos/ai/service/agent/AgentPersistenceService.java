@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.service.a2a.A2aSecurityReadRepair;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -93,12 +95,15 @@ public class AgentPersistenceService {
     
     private final AgentVersionStorageService storageService;
     
+    private final A2aSecurityReadRepair securityReadRepair;
+    
     public AgentPersistenceService(AiResourcePersistService resourcePersistService,
         AiResourceVersionPersistService versionPersistService,
-        AgentVersionStorageService storageService) {
+        AgentVersionStorageService storageService, A2aSecurityReadRepair securityReadRepair) {
         this.resourcePersistService = resourcePersistService;
         this.versionPersistService = versionPersistService;
         this.storageService = storageService;
+        this.securityReadRepair = securityReadRepair;
     }
     
     /**
@@ -367,6 +372,26 @@ public class AgentPersistenceService {
      */
     public AgentVersionDetail getAgentVersion(String namespaceId, String agentName, String version)
         throws NacosException {
+        return loadAgentVersion(namespaceId, agentName, version, true);
+    }
+    
+    /**
+     * Load a normalized definition for background indexing without triggering format repair.
+     *
+     * @param namespaceId namespace identifier
+     * @param agentName Agent identity
+     * @param version exact Version
+     * @return verified and normalized definition
+     * @throws NacosException when the Version cannot be read
+     */
+    public AgentVersionDetail getAgentVersionForProjection(String namespaceId, String agentName,
+        String version) throws NacosException {
+        return loadAgentVersion(namespaceId, agentName, version, false);
+    }
+    
+    private AgentVersionDetail loadAgentVersion(String namespaceId, String agentName,
+        String version,
+        boolean repairSecurity) throws NacosException {
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         AgentValidationUtils.validateVersion(version);
@@ -380,6 +405,11 @@ public class AgentPersistenceService {
             requireStorageDescriptor(row, agentName, version);
         AgentVersionContent content = storageService.load(descriptor);
         try {
+            if (repairSecurity) {
+                securityReadRepair.readCanonical(row, descriptor, content);
+            } else {
+                A2aSecurityReadRepair.normalizeContent(content);
+            }
             AgentVersionDetail result = toVersionDetail(row, descriptor, content);
             AgentModelValidator.validateVersionDetail(result);
             return result;

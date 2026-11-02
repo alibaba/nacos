@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.common.json.AgentCardJackson2Module;
-
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -48,7 +46,6 @@ public final class JacksonUtils {
     static ObjectMapper mapper = new ObjectMapper();
     
     static {
-        mapper.registerModule(new AgentCardJackson2Module());
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(Include.NON_NULL);
     }

@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -113,11 +114,11 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
                     && sameSecurityRequirements(first, nativeEvent.get()));
             AgentCard historicalFlat = securityCard(name, V2, false);
             AgentCard legacyOnly = securityCard(name, "1.3.0", false);
-            legacyOnly.setSecurity(legacyOnly.getSecurityRequirements());
+            legacyOnly.setSecurity(A2aSecurityUtils.toLegacy(legacyOnly.getSecurityRequirements()));
             legacyOnly.setSecurityRequirements(null);
             legacyOnly.getSupportedInterfaces().get(0).setProtocolVersion("0.3");
             AgentCard empty = securityCard(name, "1.4.0", true);
-            empty.setSecurity(first.getSecurityRequirements());
+            empty.setSecurity(A2aSecurityUtils.toLegacy(first.getSecurityRequirements()));
             empty.setSecurityRequirements(Collections.emptyList());
             for (AgentCard next : Arrays.asList(historicalFlat, legacyOnly, empty)) {
                 service.releaseAgentCard(next, "URL", true);
@@ -140,13 +141,13 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
 
     private static boolean sameSecurityRequirements(AgentCard expected, AgentCard actual) {
         List<Map<String, List<String>>> requirements = expected.getSecurityRequirements() != null
-            ? expected.getSecurityRequirements() : expected.getSecurity();
-        if (actual == null || !requirements.equals(actual.getSecurityRequirements())
+            ? A2aSecurityUtils.toLegacy(expected.getSecurityRequirements()) : expected.getSecurity();
+        if (actual == null || !requirements.equals(A2aSecurityUtils.toLegacy(actual.getSecurityRequirements()))
             || !requirements.equals(actual.getSecurity())) {
             return false;
         }
         AgentCard normalized = new AgentCard();
-        normalized.setSecurityRequirements(requirements);
+        normalized.setSecurityRequirements(A2aSecurityUtils.fromLegacy(requirements));
         return JsonUtils.toObj(JsonUtils.toJson(normalized), Map.class).get("securityRequirements")
             .equals(JsonUtils.toObj(JsonUtils.toJson(actual), Map.class).get("securityRequirements"));
     }
@@ -154,7 +155,7 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
     private static AgentCard securityCard(String name, String version, boolean standard) {
         String requirements = standard
             ? "[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\"]}}}]"
-            : "[{\"apiKey\":[],\"oauth2\":[\"read\",\"write\"]}]";
+            : "[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]";
         AgentCard card = JsonUtils.toObj("{\"description\":\"security requirements\",\"capabilities\":{},"
             + "\"supportedInterfaces\":[{\"url\":\"http://127.0.0.1:19001/agent\","
             + "\"protocolBinding\":\"JSONRPC\",\"protocolVersion\":\"1.0\"}],"

@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEventType;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.SecurityScheme;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -398,7 +399,7 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertEquals(name, card.getName());
         assertEquals(VERSION, card.getVersion());
         assertEquals("X-Agent-Key", card.getSecuritySchemes().get("apiKey").get("name"));
-        assertTrue(card.getSecurityRequirements().get(0).containsKey("apiKey"));
+        assertTrue(card.getSecurityRequirements().get(0).getSchemes().containsKey("apiKey"));
         assertEquals(runtime.getUri(), card.getUrl());
         assertEquals("1.1", card.getProtocolVersion());
         assertEquals("converter-tenant", card.getSupportedInterfaces().get(0).getTenant());
@@ -500,8 +501,8 @@ class AgentDiscoveryServiceJavaSdkITCase extends JavaSdkBaseITCase {
         scheme.put("in", "header");
         scheme.put("name", "X-Agent-Key");
         card.setSecuritySchemes(Collections.singletonMap("apiKey", scheme));
-        card.setSecurityRequirements(Collections.singletonList(
-            Collections.singletonMap("apiKey", Collections.emptyList())));
+        card.setSecurityRequirements(A2aSecurityUtils.fromLegacy(Collections.singletonList(
+            Collections.singletonMap("apiKey", Collections.emptyList()))));
         AgentCallInterface call = legacyCompatibleCallInterface(card);
         call.setEndpointSourceOrder(Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
         AgentPublishRequest request = new AgentPublishRequest();

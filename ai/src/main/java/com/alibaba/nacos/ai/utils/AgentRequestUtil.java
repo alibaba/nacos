@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.utils.A2aAgentCardUtils;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
@@ -26,9 +27,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +53,7 @@ public class AgentRequestUtil {
     public static AgentCard parseAgentCard(AgentCardForm agentCardForm) throws NacosApiException {
         try {
             AgentCard result =
-                JacksonUtils.toObj(agentCardForm.getAgentCard(), new TypeReference<>() {
-                });
+                A2aSecurityUtils.readCard(agentCardForm.getAgentCard(), AgentCard.class);
             normalizeAgentCard(result);
             validateAgentCard(result);
             return result;
@@ -110,7 +108,7 @@ public class AgentRequestUtil {
         if (null == agentCard || !isV1AgentCard(agentCard)) {
             return false;
         }
-        if (!Objects.equals(agentCard.getSecurityRequirements(), agentCard.getSecurity())) {
+        if (!A2aSecurityUtils.isNormalized(agentCard)) {
             return false;
         }
         AgentInterface preferred = agentCard.getSupportedInterfaces().get(0);

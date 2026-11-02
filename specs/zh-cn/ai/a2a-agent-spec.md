@@ -78,9 +78,12 @@ A2A Binding 是一个 `AgentCallInterface`：
 
 Card 级 `securityRequirements` 遵循 A2A 1.0 的 `SecurityRequirement` 和
 `StringList` 定义：`[{"schemes":{"oauth2":{"list":["read"]}}}]`。
-JSON 读取同时兼容 Nacos 历史扁平格式 `[{"oauth2":["read"]}]`，写出时统一使用标准
-`schemes/list` 包装。Java `List<Map<String,List<String>>>` getter/setter 保留可修改
-scope map 契约，不通过特殊 Map 子类记录输入格式。
+Java 模型直接使用 `List<SecurityRequirement>`，每项的 `schemes` 为
+`Map<String,StringList>`，`StringList.list` 为 `List<String>`。普通 JSON mapper 即可读写
+标准结构，不需要 Jackson 注解、Module 或特殊 Map。发布和历史读取边界在绑定 POJO 前
+兼容历史扁平格式 `[{"oauth2":["read"]}]`；正常序列化不执行格式转换。
+这是对历史错误模型的修正：原 `securityRequirements` Java getter/setter 的元素类型改变，
+调用方需重新编译并使用标准 POJO，不能把 List 类型擦除视作已有调用代码的兼容保证。
 
 `security` 与 `securityRequirements` 同时保留。`security` 保持 0.3 扁平 wire 格式，
 标记为已废弃、待移除；替代字段为 `securityRequirements`，移除条件是 Nacos 不再支持
@@ -95,12 +98,15 @@ Card 注册、查询和订阅必须保留各候选要求、同一候选内全部
 缺失/null 要求和空要求列表保持区分。历史扁平输入仍可读取，但标准输出需要支持该格式的
 解码器；同时提供旧 `security` 字段不保证修复前的 Nacos 解码器能解析新字段。
 
-AgentCard 保持普通 Java 模型，不携带 Jackson 注解或 JSON 桥接访问器。要求格式转换由
-共享 JSON 层负责，等价的 Jackson 2/3 模块接入 SDK adapter、历史 `JacksonUtils`、
-服务端和控制台 HTTP mapper。SDK 调用者使用中立 `JsonUtils` 门面；应用自行创建
-Jackson mapper 时，须注册对应的 `AgentCardJackson2Module` 或
-`AgentCardJackson3Module` 才能获得此兼容能力。
-服务端必须在 core 父上下文创建 mapper 前完成模块注册，HTTP 子上下文复用该 mapper。
+存量格式按访问迁移：更新时写入标准格式；查询遇到历史格式时先转换返回，再提交有界、
+去重的异步修复；无更新和无查询的 Agent 不扫描、不改写。修复只修改 Card 级两个鉴权字段，
+保留原始持久化对象的其他字段，禁止写回已经注入运行时地址的查询结果。不涉及 Skill 字段。
+历史 Config 使用仅更新的 MD5 CAS，冲突或已删除时放弃，不得通过 upsert 复活数据。
+标准 Agent Version 修复须先校验原始 bytes 的摘要，再写独立副本，按原 Version 行及 storage
+条件切换完整 pointer/size/digest。失败不影响查询，不改变 Version、状态、latest 或作者；
+旧对象不就地覆盖，不在不确定情况下删除可能被引用的内容。后续查询可以重试失败修复。
+混合版本节点和旧 Nacos SDK 不保证能读取已修正的标准字段；上线应先升级读取方并保留
+升级前备份，回滚不能假定旧程序可读取新格式。保留 `security` 不消除这一限制。
 
 参考：[A2A 规范](https://a2a-protocol.org/latest/specification/) 和
 [v1.0.1 protobuf 定义](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto)。

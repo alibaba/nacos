@@ -649,3 +649,20 @@ Client 发布复用原有固定 key 内容存储和草稿流程，仅增加首�
 跨存储写入一致性、并发草稿更新等既有边界留待统一 AI Resource 存储机制设计处理。
 
 历史空 protocolVersion 按缺省处理；空 tenant 保留。
+
+### A2A Card 鉴权格式的按需修复
+
+历史扁平 securityRequirements 属于错误的协议编码。普通更新通过发布边界写成标准 POJO
+结构。查询只在发现错误结构或缺少对应兼容字段时触发有界异步修复，不全量扫描。
+这是 Version 不可变规则的限量格式修复例外，不改变 Version 身份、生命周期、latest、作者
+或非鉴权内容。原始内容必须先通过 size/digest 校验，返回副本再做标准化。
+
+标准存储修复写入同 provider 的独立修复 key（内部随机版本段不改变公开 Version），不覆盖
+已有 key；共享 AI Resource 持久化层以原 row id 和完整 storage 值作条件更新，一次替换
+pointer、size 和 digest，保留其他行字段。查询缓存按新 digest 刷新，派生检索通过资源变化
+通知更新。冲突、删除或失败均不强制覆盖；未引用副本及旧对象留待明确引用关系后的清理，
+不得在结果不确定时删除。修复任务不调用普通发布/更新生命周期接口。
+
+历史 Config 使用原始 MD5 的仅更新 CAS，并发送正常 Config 变化通知。无访问数据不动。
+混合版本与回滚读取方必须能识别标准 securityRequirements，不能依赖旧 security 字段绕过
+对新字段的错误解码。

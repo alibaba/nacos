@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
+import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -124,7 +127,21 @@ public class GrpcUtils {
         if (classType != null) {
             ByteString byteString = payload.getBody().getValue();
             ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
-            Object obj = JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), classType);
+            Object obj;
+            if (ReleaseAgentCardRequest.class == classType
+                || QueryAgentCardResponse.class == classType) {
+                Map<String, Object> envelope =
+                    JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), Map.class);
+                String field = ReleaseAgentCardRequest.class == classType ? "agentCard"
+                    : "agentCardDetailInfo";
+                Object card = envelope.get(field);
+                if (card instanceof Map) {
+                    A2aSecurityUtils.normalize((Map<String, Object>) card);
+                }
+                obj = JsonUtils.toObj(JsonUtils.toJson(envelope), classType);
+            } else {
+                obj = JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), classType);
+            }
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }

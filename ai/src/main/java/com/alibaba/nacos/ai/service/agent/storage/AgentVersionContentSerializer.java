@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent.storage;
 
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
+
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
@@ -193,7 +195,13 @@ public final class AgentVersionContentSerializer {
             result.put("protocolVersion", callInterface.getProtocolVersion());
         }
         result.put("descriptorMediaType", callInterface.getDescriptorMediaType());
-        result.put("nativeDescriptor", callInterface.getNativeDescriptor());
+        Object descriptor = callInterface.getNativeDescriptor();
+        if ("a2a".equals(callInterface.getProtocol()) && descriptor instanceof Map) {
+            Map<String, Object> card = new LinkedHashMap<>((Map<String, Object>) descriptor);
+            A2aSecurityUtils.normalize(card);
+            descriptor = card;
+        }
+        result.put("nativeDescriptor", descriptor);
         List<String> sources = new ArrayList<String>();
         for (EndpointSource source : callInterface.getEndpointSourceOrder()) {
             sources.add(source.name());

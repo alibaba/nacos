@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.service.a2a.A2aSecurityReadRepair;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -112,6 +113,9 @@ class AgentPersistenceServiceTest {
     private static final long RESOURCE_ID = 201L;
     
     @Mock
+    private A2aSecurityReadRepair securityReadRepair;
+    
+    @Mock
     private AiResourcePersistService resourcePersistService;
     
     @Mock
@@ -137,7 +141,7 @@ class AgentPersistenceServiceTest {
         previousEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
         service = new AgentPersistenceService(resourcePersistService, versionPersistService,
-            storageService);
+            storageService, securityReadRepair);
         agent = newAgent();
         initialDraft = newInitialDraft();
         content = new AgentVersionContent(initialDraft.getCallInterfaces());
@@ -1623,6 +1627,19 @@ class AgentPersistenceServiceTest {
         assertEquals(3000L, result.getCreateTime());
         assertEquals(4000L, result.getUpdateTime());
         verify(storageService).load(any(AgentVersionStorageDescriptor.class));
+    }
+    
+    @Test
+    void testIndexProjectionDoesNotScheduleReadRepair() throws NacosException {
+        when(resourcePersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(storedResource());
+        when(versionPersistService.find(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT, VERSION)).thenReturn(storedVersion());
+        when(storageService.load(any(AgentVersionStorageDescriptor.class))).thenReturn(content);
+        
+        service.getAgentVersionForProjection(NAMESPACE_ID, AGENT_NAME, VERSION);
+        
+        verifyNoInteractions(securityReadRepair);
     }
     
     @Test

@@ -18,6 +18,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -103,10 +104,11 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
             .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<AgentCardDetailInfo> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<AgentCardDetailInfo>>() {
+        Result<Map<String, Object>> result = JsonUtils.toObj(restResult.getData(),
+            new NacosTypeReference<Result<Map<String, Object>>>() {
             });
-        return result.getData();
+        return result.getData() == null ? null : A2aSecurityUtils.readCard(
+            JsonUtils.toJson(result.getData()), AgentCardDetailInfo.class);
     }
     
     @Override

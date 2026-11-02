@@ -25,9 +25,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Shared normalization of legacy and current A2A Cards for server and SDK adapters.
@@ -110,41 +108,7 @@ public final class A2aAgentCardUtils {
             }
         }
         normalizeExtendedAgentCard(agentCard);
-        normalizeSecurityRequirements(agentCard);
-    }
-    
-    private static void normalizeSecurityRequirements(AgentCard agentCard) {
-        List<Map<String, List<String>>> requirements = agentCard.getSecurityRequirements();
-        if (requirements == null) {
-            requirements = agentCard.getSecurity();
-            if (requirements == null) {
-                return;
-            }
-            agentCard.setSecurityRequirements(copySecurityRequirements(requirements));
-        } else {
-            agentCard.setSecurity(copySecurityRequirements(requirements));
-        }
-    }
-    
-    private static List<Map<String, List<String>>> copySecurityRequirements(
-        List<Map<String, List<String>>> requirements) {
-        List<Map<String, List<String>>> result = new ArrayList<>(requirements.size());
-        for (Map<String, List<String>> requirement : requirements) {
-            if (requirement == null) {
-                throw new IllegalArgumentException(
-                    "AgentCard security requirement must not be null");
-            }
-            Map<String, List<String>> schemes = new LinkedHashMap<>();
-            for (Map.Entry<String, List<String>> entry : requirement.entrySet()) {
-                if (entry.getValue() == null) {
-                    throw new IllegalArgumentException(
-                        "AgentCard security scopes must not be null");
-                }
-                schemes.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-            }
-            result.add(schemes);
-        }
-        return result;
+        A2aSecurityUtils.normalize(agentCard);
     }
     
     private static List<AgentInterface> normalizeSupportedInterfaces(AgentCard agentCard) {

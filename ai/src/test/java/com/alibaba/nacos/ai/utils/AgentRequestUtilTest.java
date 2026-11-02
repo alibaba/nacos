@@ -258,7 +258,8 @@ class AgentRequestUtilTest {
             Collections.singletonList("read"))));
         assertEquals(false, AgentRequestUtil.isAgentCardNormalized(card));
         AgentRequestUtil.normalizeAgentCard(card);
-        assertEquals(card.getSecurity(), card.getSecurityRequirements());
+        assertEquals(com.alibaba.nacos.api.ai.utils.A2aSecurityUtils.fromLegacy(card.getSecurity()),
+            card.getSecurityRequirements());
         assertEquals(true, AgentRequestUtil.isAgentCardNormalized(card));
         card.setSecurityRequirements(Collections.emptyList());
         assertEquals(false, AgentRequestUtil.isAgentCardNormalized(card));

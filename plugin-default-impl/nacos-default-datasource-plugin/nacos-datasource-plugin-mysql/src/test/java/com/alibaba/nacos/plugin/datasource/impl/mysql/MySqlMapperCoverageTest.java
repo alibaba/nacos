@@ -235,6 +235,9 @@ class MySqlMapperCoverageTest {
     @Test
     void testAiResourceVersionMapper() {
         AiResourceVersionMapperByMySql mapper = new AiResourceVersionMapperByMySql();
+        assertEquals(
+            "UPDATE ai_resource_version SET storage=? WHERE id=? AND BINARY storage = BINARY ?",
+            mapper.replaceStorageIfUnchanged());
         assertEquals(DataSourceConstant.MYSQL, mapper.getDataSource());
         assertEquals("NOW(3)", mapper.getFunction("NOW()"));
         assertEquals(TableConstant.AI_RESOURCE_VERSION, mapper.getTableName());

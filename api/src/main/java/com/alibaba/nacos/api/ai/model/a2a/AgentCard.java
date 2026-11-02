@@ -82,7 +82,7 @@ public class AgentCard extends AgentCardBasicInfo {
      *
      * @since 3.2.1
      */
-    private List<Map<String, List<String>>> securityRequirements;
+    private List<SecurityRequirement> securityRequirements;
     
     private List<String> defaultInputModes;
     
@@ -168,11 +168,11 @@ public class AgentCard extends AgentCardBasicInfo {
         this.security = security;
     }
     
-    public List<Map<String, List<String>>> getSecurityRequirements() {
+    public List<SecurityRequirement> getSecurityRequirements() {
         return securityRequirements;
     }
     
-    public void setSecurityRequirements(List<Map<String, List<String>>> securityRequirements) {
+    public void setSecurityRequirements(List<SecurityRequirement> securityRequirements) {
         this.securityRequirements = securityRequirements;
     }
     

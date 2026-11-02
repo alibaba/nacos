@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.param;
 
-import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import java.util.Map;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -50,8 +50,9 @@ public class AgentHttpParamExtractor extends AbstractHttpParamExtractor {
     
     private String deserializeAndGetAgentName(String agentCardJson) {
         try {
-            AgentCard agentCard = JacksonUtils.toObj(agentCardJson, AgentCard.class);
-            return agentCard.getName();
+            Map<?, ?> agentCard = JacksonUtils.toObj(agentCardJson, Map.class);
+            Object name = agentCard.get("name");
+            return name instanceof String ? (String) name : StringUtils.EMPTY;
         } catch (Exception ignored) {
             return StringUtils.EMPTY;
         }

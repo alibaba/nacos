@@ -32,6 +32,16 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 public interface AiResourceVersionMapper extends Mapper {
     
     /**
+     * Conditionally replace a Version storage descriptor without changing lifecycle columns.
+     *
+     * @return SQL binding replacement storage, row id, and original storage in that order
+     */
+    default String replaceStorageIfUnchanged() {
+        throw new UnsupportedOperationException(
+            "Conditional Version storage replacement is unsupported");
+    }
+    
+    /**
      * Query count rows for ai_resource_version list.
      *
      * <p>Filters: namespace_id (required), name (required), type(optional), status(optional), version(optional).</p>

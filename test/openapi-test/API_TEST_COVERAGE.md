@@ -39,6 +39,12 @@ assert this internal state. Endpoint coverage counts remain unchanged.
 Card-level `securityRequirements` imports, standard query output, synchronized
 legacy `security`, old-field-only input, conflict precedence, empty/anonymous/
 absent requirements, and malformed requirement HTTP 400 responses.
+The dedicated AUTO/SYNCING fixture additionally runs
+`A2aMigrationAdminApiOpenApiITCase.testHistoricalSecurityReadRepairAndUpdateWithoutScanningUntouchedCards`:
+raw persisted flat data is readable, repaired asynchronously, and upgraded on update;
+untouched Cards remain flat. Canonical pointer CAS, failure/deletion races, raw-field
+preservation, and digest/cache behavior have component tests because public Agent APIs
+cannot seed deliberately inconsistent historical storage descriptors.
 This extends the existing A2A Admin surface; classifications and API-surface
 totals remain unchanged. Skill-level requirements are separate.
 

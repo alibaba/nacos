@@ -269,6 +269,8 @@ class PostgresqlMapperCoverageTest {
     @Test
     void testAiResourceVersionMapper() {
         AiResourceVersionMapperByPostgresql mapper = new AiResourceVersionMapperByPostgresql();
+        assertEquals("UPDATE ai_resource_version SET storage=? WHERE id=? AND storage = ?",
+            mapper.replaceStorageIfUnchanged());
         assertEquals(DatabaseTypeConstant.POSTGRESQL, mapper.getDataSource());
         assertEquals("NOW()", mapper.getFunction("NOW()"));
         assertEquals(TableConstant.AI_RESOURCE_VERSION, mapper.getTableName());

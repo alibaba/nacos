@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.json;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
@@ -59,6 +60,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JacksonAdapterCompatibilityTest {
     
+    @Test
+    void plainMappersReadAndWriteStandardRequirementsWithoutModules() throws Exception {
+        String json =
+            "{\"securityRequirements\":[{\"schemes\":{\"oauth2\":{\"list\":[\"read\"]}}}]}";
+        com.fasterxml.jackson.databind.ObjectMapper jackson2 =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+        tools.jackson.databind.json.JsonMapper jackson3 =
+            tools.jackson.databind.json.JsonMapper.builder().build();
+        AgentCard card2 = jackson2.readValue(json, AgentCard.class);
+        AgentCard card3 = jackson3.readValue(json, AgentCard.class);
+        assertEquals(card2, card3);
+        assertEquals(card2,
+            jackson3.readValue(jackson2.writeValueAsString(card2), AgentCard.class));
+        assertEquals(card3,
+            jackson2.readValue(jackson3.writeValueAsString(card3), AgentCard.class));
+        assertEquals(Collections.singletonList("read"),
+            card2.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+    }
+    
     @ParameterizedTest
     @ValueSource(strings = {"jackson2", "jackson3"})
     void testAgentCardSecurityRequirementsWireCompatibility(String adapterName) throws Exception {
@@ -68,12 +88,12 @@ class JacksonAdapterCompatibilityTest {
             + "\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]";
         String cardJson = "{\"securityRequirements\":" + requirements + "}";
         AgentCard card = JsonUtils.toObj(cardJson, AgentCard.class);
-        assertEquals(2, card.getSecurityRequirements().get(0).size());
+        assertEquals(2, card.getSecurityRequirements().get(0).getSchemes().size());
         assertEquals(card, JsonUtils.toObj(JsonUtils.toJsonBytes(card), AgentCard.class));
         String legacyJson = "{\"securityRequirements\":[{\"apiKey\":[],"
             + "\"oauth2\":[\"read\",\"write\"]}]}";
-        AgentCard legacy = JsonUtils.toObj(legacyJson, AgentCard.class);
-        assertEquals(card, legacy);
+        AgentCard legacy = A2aSecurityUtils.readCard(legacyJson, AgentCard.class);
+        assertEquals(card.getSecurityRequirements(), legacy.getSecurityRequirements());
         assertEquals(JsonUtils.toObj(cardJson, Map.class).get("securityRequirements"),
             JsonUtils.toObj(JsonUtils.toJson(legacy), Map.class).get("securityRequirements"));
         assertEquals(JsonUtils.toObj(cardJson, Map.class).get("securityRequirements"),
@@ -102,21 +122,22 @@ class JacksonAdapterCompatibilityTest {
         for (String requirements : new String[] {standard, legacy}) {
             String json = "{\"securityRequirements\":" + requirements
                 + ",\"security\":[{\"legacy\":[\"legacy-scope\"]}]}";
-            AgentCard card = JsonUtils.toObj(json, AgentCard.class);
+            AgentCard card = A2aSecurityUtils.readCard(json, AgentCard.class);
             assertEquals(2, card.getSecurityRequirements().size());
             assertEquals(Arrays.asList("read", "write"),
-                card.getSecurityRequirements().get(0).get("oauth2"));
+                card.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
             assertEquals(Collections.emptyList(),
-                card.getSecurityRequirements().get(0).get("apiKey"));
+                card.getSecurityRequirements().get(0).getSchemes().get("apiKey").getList());
             assertEquals(Collections.emptyList(),
-                card.getSecurityRequirements().get(1).get("bearer"));
+                card.getSecurityRequirements().get(1).getSchemes().get("bearer").getList());
             String encoded = JsonUtils.toJson(card);
             String expected = standard.replace("\"bearer\":{}", "\"bearer\":{\"list\":[]}");
             assertEquals(JsonUtils.toObj(expected, List.class),
                 jsonProperty(encoded, "securityRequirements"));
-            assertEquals(jsonProperty(json, "security"), jsonProperty(encoded, "security"));
+            assertEquals(A2aSecurityUtils.toLegacy(card.getSecurityRequirements()),
+                jsonProperty(encoded, "security"));
             assertEquals(card, JsonUtils.toObj(encoded, AgentCard.class));
-            AgentCardDetailInfo detail = JsonUtils.toObj(json, AgentCardDetailInfo.class);
+            AgentCardDetailInfo detail = A2aSecurityUtils.readCard(json, AgentCardDetailInfo.class);
             assertEquals(card.getSecurityRequirements(), detail.getSecurityRequirements());
             assertEquals(jsonProperty(encoded, "securityRequirements"),
                 jsonProperty(JsonUtils.toCanonicalJson(detail), "securityRequirements"));
@@ -125,7 +146,7 @@ class JacksonAdapterCompatibilityTest {
             + "\"oauth2\":{\"list\":[\"read\"]}}}]}", AgentCard.class);
         AgentCardDetailInfo target = new AgentCardDetailInfo();
         target.setSecurityRequirements(source.getSecurityRequirements());
-        target.getSecurityRequirements().get(0).get("oauth2").add("write");
+        target.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().add("write");
         assertEquals(JsonUtils.toObj("[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]",
             List.class), jsonProperty(JsonUtils.toJson(target), "securityRequirements"));
     }
@@ -138,8 +159,9 @@ class JacksonAdapterCompatibilityTest {
         AgentCard card = new AgentCard();
         Map<String, List<String>> requirement = new HashMap<>();
         requirement.put("schemes", new ArrayList<>(Collections.singletonList("read")));
-        card.setSecurityRequirements(new ArrayList<>(Collections.singletonList(requirement)));
-        card.getSecurityRequirements().get(0).get("schemes").add("write");
+        card.setSecurityRequirements(
+            A2aSecurityUtils.fromLegacy(Collections.singletonList(requirement)));
+        card.getSecurityRequirements().get(0).getSchemes().get("schemes").getList().add("write");
         String encoded = JsonUtils.toJson(card);
         assertEquals(
             JsonUtils.toObj("[{\"schemes\":{\"schemes\":{\"list\":[\"read\",\"write\"]}}}]",
@@ -147,7 +169,7 @@ class JacksonAdapterCompatibilityTest {
             jsonProperty(encoded, "securityRequirements"));
         assertEquals(Arrays.asList("read", "write"),
             JsonUtils.toObj(encoded, AgentCard.class).getSecurityRequirements().get(0)
-                .get("schemes"));
+                .getSchemes().get("schemes").getList());
     }
     
     @ParameterizedTest
@@ -169,7 +191,7 @@ class JacksonAdapterCompatibilityTest {
             "[{\"schemes\":{\"apiKey\":[]}}]", "[{\"schemes\":{\"oauth2\":{\"list\":\"read\"}}}]",
             "[{\"schemes\":{\"oauth2\":{\"list\":[1]}}}]", "[{\"oauth2\":[null]}]",
             "[{\"schemes\":{},\"apiKey\":[]}]"}) {
-            assertThrows(NacosDeserializationException.class, () -> JsonUtils.toObj(
+            assertThrows(IllegalArgumentException.class, () -> A2aSecurityUtils.readCard(
                 "{\"securityRequirements\":" + invalid + "}", AgentCard.class), invalid);
         }
     }

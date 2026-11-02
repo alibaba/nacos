@@ -111,6 +111,66 @@ public class A2aMigrationAdminApiOpenApiITCase extends AgentClientOpenApiBaseITC
     private static final AsciiAgentIdCodec AGENT_ID_CODEC = new AsciiAgentIdCodec();
 
     @Test
+    @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "syncing")
+    public void testHistoricalSecurityReadRepairAndUpdateWithoutScanningUntouchedCards() throws Exception {
+        String queried = randomAiName("a2a-security-read");
+        String untouched = randomAiName("a2a-security-idle");
+        String version = "1.0.0";
+        String flat = "[{\"oauth2\":[\"read\"]}]";
+        JsonNode standard = JacksonUtils.toObj("[{\"schemes\":{\"oauth2\":{\"list\":[\"read\"]}}}]");
+        try {
+            for (String name : new String[] {queried, untouched}) {
+                postFormOk(ADMIN_A2A_PATH, historicalForm(DEFAULT_NAMESPACE, name, version,
+                    REGISTRATION_TYPE_URL, buildV1AgentCard(name, version, "1.0")));
+                String id = historicalVersionDataId(name, version);
+                ObjectNode stored = (ObjectNode) JacksonUtils.toObj(
+                    getConfigContent(id, Constants.A2A.AGENT_VERSION_GROUP, DEFAULT_NAMESPACE));
+                stored.set("securityRequirements", JacksonUtils.toObj(flat));
+                stored.remove("security");
+                stored.put("preservedExtension", "keep");
+                postFormOk(ADMIN_CONFIG_PATH, configForm(id, Constants.A2A.AGENT_VERSION_GROUP,
+                    DEFAULT_NAMESPACE, stored.toString()));
+            }
+            JsonNode response = null;
+            for (int i = 0; i < MAX_RETRIES; i++) {
+                response = getJsonOk(ADMIN_A2A_PATH,
+                    historicalIdentity(DEFAULT_NAMESPACE, queried, version, REGISTRATION_TYPE_URL)).path("data");
+                if (standard.equals(response.get("securityRequirements"))) {
+                    break;
+                }
+                retry();
+            }
+            assertEquals(standard, response.get("securityRequirements"));
+            assertEquals(JacksonUtils.toObj(flat), response.get("security"));
+            JsonNode repaired = null;
+            for (int i = 0; i < MAX_RETRIES; i++) {
+                repaired = JacksonUtils.toObj(getConfigContent(historicalVersionDataId(queried, version),
+                    Constants.A2A.AGENT_VERSION_GROUP, DEFAULT_NAMESPACE));
+                if (standard.equals(repaired.get("securityRequirements"))) {
+                    break;
+                }
+                retry();
+            }
+            assertEquals(standard, repaired.get("securityRequirements"));
+            assertEquals("keep", repaired.path("preservedExtension").asText());
+            assertEquals(version, repaired.path("version").asText());
+            ObjectNode idle = (ObjectNode) JacksonUtils.toObj(getConfigContent(
+                historicalVersionDataId(untouched, version), Constants.A2A.AGENT_VERSION_GROUP, DEFAULT_NAMESPACE));
+            assertEquals(JacksonUtils.toObj(flat), idle.get("securityRequirements"),
+                "reading another Agent must not migrate an untouched Card");
+            putFormOk(ADMIN_A2A_PATH, historicalForm(DEFAULT_NAMESPACE, untouched, version,
+                REGISTRATION_TYPE_URL, idle.toString()));
+            JsonNode updated = JacksonUtils.toObj(getConfigContent(historicalVersionDataId(untouched, version),
+                Constants.A2A.AGENT_VERSION_GROUP, DEFAULT_NAMESPACE));
+            assertEquals(standard, updated.get("securityRequirements"));
+        } finally {
+            for (String name : new String[] {queried, untouched}) {
+                deleteQuietly(ADMIN_A2A_PATH, historicalIdentity(DEFAULT_NAMESPACE, name, null, REGISTRATION_TYPE_URL));
+            }
+        }
+    }
+
+    @Test
     @EnabledIfSystemProperty(named = CUTOVER_PHASE_PROPERTY, matches = "prepare")
     public void testQuiescingFencesHistoricalMutationsAndKeepsReadsAvailable()
             throws Exception {

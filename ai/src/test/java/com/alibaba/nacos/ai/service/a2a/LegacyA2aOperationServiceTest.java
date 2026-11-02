@@ -103,6 +103,9 @@ public class LegacyA2aOperationServiceTest {
         ENCODED_AGENT_NAME + "-" + TEST_AGENT_VERSION;
     
     @Mock
+    private A2aSecurityReadRepair securityReadRepair;
+    
+    @Mock
     private ConfigQueryChainService configQueryChainService;
     
     @Mock
@@ -126,7 +129,11 @@ public class LegacyA2aOperationServiceTest {
     void setUp() {
         a2aServerOperationService =
             new LegacyA2aOperationService(configQueryChainService, configOperationService,
-                configDetailService, syncEffectService, serviceStorage, agentIdCodecHolder);
+                configDetailService, syncEffectService, serviceStorage, agentIdCodecHolder,
+                securityReadRepair);
+        org.mockito.Mockito.lenient()
+            .when(securityReadRepair.readLegacy(anyString(), anyString(), anyString()))
+            .thenAnswer(invocation -> invocation.getArgument(2));
         
         when(agentIdCodecHolder.encode(anyString())).thenReturn(ENCODED_AGENT_NAME);
         when(agentIdCodecHolder.encodeForSearch(anyString())).thenReturn(ENCODED_AGENT_NAME);

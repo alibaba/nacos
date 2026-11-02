@@ -42,13 +42,13 @@ Destructive restart and cluster cases run through
 
 Card-level A2A security requirements (#15975, item 1) are covered by
 `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`:
-standard JSON import, historical flat import, facade release/query, native RAD
+standard POJO publication, facade release/query, native RAD
 query/conversion, initial subscriptions, and changed latest-version callbacks
 over both gRPC and HTTP. Old-field-only 0.3 input and explicit empty new fields
 verify bidirectional projection, new-field precedence, and caller isolation.
 API/common unit tests cover malformed requirements, empty/absent values, mutable
 Java accessors, conflict precedence, inherited Card DTOs, legacy gRPC envelopes,
-and both Jackson adapters. Skill-level requirements are a separate issue item.
+and plain Jackson 2/3 mappers without registered modules. Boundary tests verify old flat JSON before POJO binding, including gRPC release/query and Maintainer HTTP responses. Skill-level requirements are a separate issue item.
 Requirements always use standard output and require upgraded decoders; legacy
 `security` retains the 0.3 flat shape. Existing surface classifications and totals
 remain unchanged.

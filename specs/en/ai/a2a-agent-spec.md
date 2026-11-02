@@ -91,10 +91,14 @@ descriptor with a synthetic generic Agent object.
 
 Card-level `securityRequirements` follows the A2A 1.0 `SecurityRequirement`
 and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
-JSON readers also accept Nacos's historical flat representation
-`[{"oauth2":["read"]}]`. Writers always emit the standard `schemes/list` wrappers.
-Existing Java `List<Map<String,List<String>>>` getters/setters keep their mutable
-scope-map contract, without special Map subclasses recording the input format.
+The Java model directly uses `List<SecurityRequirement>`, whose `schemes` is
+`Map<String,StringList>` and whose `StringList.list` is `List<String>`.
+Plain JSON mappers read and write this shape without annotations, modules, or
+special Map types. Publication and historical-read boundaries accept the old
+flat representation `[{"oauth2":["read"]}]` before POJO binding. Ordinary
+serialization performs no conversion. Correcting the historical model changes
+the getter/setter element type: callers must rebuild against the standard POJOs;
+List type erasure does not make old source or compiled callers compatible.
 
 Both `security` and `securityRequirements` remain available. `security` retains
 the 0.3 flat wire format and is deprecated, pending removal when Nacos stops
@@ -118,14 +122,21 @@ remain distinct. Historical flat input remains readable, but standard output
 requires a decoder supporting that shape; including legacy `security` does not
 guarantee that a pre-fix Nacos decoder can parse the new field.
 
-AgentCard remains a plain Java model without Jackson annotations or JSON bridge
-accessors. The shared JSON layer owns requirement conversion, with equivalent
-Jackson 2/3 modules installed in SDK adapters, legacy `JacksonUtils`, and server
-and console HTTP mappers. SDK callers use the neutral `JsonUtils` facade;
-applications using their own Jackson mapper must register the matching
-`AgentCardJackson2Module` or `AgentCardJackson3Module` for this compatibility.
-Server registration must occur before the core parent context creates the
-mapper reused by HTTP child contexts.
+Migration is access-driven: updates write standard data; queries normalize old
+data before returning it and submit a bounded, deduplicated asynchronous repair.
+Untouched Agents are not scanned. Repairs change only Card-level security fields,
+preserving all other persisted fields; runtime-enriched query responses must never
+be written back. Skill-level fields are outside this change.
+Historical Config repairs use update-only MD5 CAS, abandoning conflicts or missing
+rows without upserting deleted data. Canonical Version repair verifies original
+bytes first, writes an independent copy, then conditionally switches the complete
+pointer/size/digest against the original Version row and storage descriptor.
+Repair failures do not fail queries. Version, lifecycle, latest, and author stay
+unchanged. Old objects are not overwritten; potentially referenced objects are
+not deleted on uncertain outcomes. Later queries may retry failed repairs.
+Older Nacos nodes and SDKs may not decode the corrected standard field. Upgrade
+readers first and retain pre-upgrade backups; rollback cannot assume old binaries
+can read repaired data. Keeping `security` does not remove this limitation.
 
 Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
 and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).

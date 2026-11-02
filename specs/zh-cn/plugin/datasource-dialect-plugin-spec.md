@@ -221,3 +221,9 @@ schema 或 [资源模型](../design/resource-model-spec.md)。
 - 保持 repository 期望的生成主键行为；
 - 通过 `getFunction(functionName)` 隐藏 SQL 函数差异；
 - 记录数据库版本要求和迁移要求。
+
+AI Resource Version 格式修复使用可选 mapper 操作 `replaceStorageIfUnchanged`，仅修改
+storage，并以原 row id 和完整旧 descriptor 为条件。MySQL 使用二进制比较，PostgreSQL
+比较 text，Derby 将有界 descriptor CLOB 转为 VARCHAR，Oracle 使用 DBMS_LOB.COMPARE。
+未实现此外部方言可选操作时，应使修复失败，不能退化为无条件更新；查询仍返回转换后的内容。
+本次不新增数据库列。

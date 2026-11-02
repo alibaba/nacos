@@ -33,6 +33,11 @@ public class AiResourceVersionMapperByOracle extends AbstractMapperByOracle
     implements AiResourceVersionMapper {
     
     @Override
+    public String replaceStorageIfUnchanged() {
+        return "UPDATE ai_resource_version SET storage=? WHERE id=? AND DBMS_LOB.COMPARE(storage, TO_CLOB(?)) = 0";
+    }
+    
+    @Override
     public MapperResult findAiResourceVersionFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
             "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
