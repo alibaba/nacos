@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.json;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
@@ -41,6 +42,8 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +51,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -85,6 +89,90 @@ class JacksonAdapterCompatibilityTest {
         assertThrows(NacosDeserializationException.class, () -> JsonUtils.toObj(
             "{\"securityRequirements\":[{\"schemes\":{\"apiKey\":\"invalid\"}}]}",
             AgentCard.class));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void testAgentCardRequirementAlternativesAndCopies(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        String standard = "[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]},"
+            + "\"apiKey\":{\"list\":[]}}},{\"schemes\":{\"bearer\":{}}}]";
+        String legacy = "[{\"oauth2\":[\"read\",\"write\"],\"apiKey\":[]},{\"bearer\":[]}]";
+        for (String requirements : new String[] {standard, legacy}) {
+            String json = "{\"securityRequirements\":" + requirements
+                + ",\"security\":[{\"legacy\":[\"legacy-scope\"]}]}";
+            AgentCard card = JsonUtils.toObj(json, AgentCard.class);
+            assertEquals(2, card.getSecurityRequirements().size());
+            assertEquals(Arrays.asList("read", "write"),
+                card.getSecurityRequirements().get(0).get("oauth2"));
+            assertEquals(Collections.emptyList(),
+                card.getSecurityRequirements().get(0).get("apiKey"));
+            assertEquals(Collections.emptyList(),
+                card.getSecurityRequirements().get(1).get("bearer"));
+            String encoded = JsonUtils.toJson(card);
+            String expected = requirements.replace("\"bearer\":{}", "\"bearer\":{\"list\":[]}");
+            assertEquals(JsonUtils.toObj(expected, List.class),
+                jsonProperty(encoded, "securityRequirements"));
+            assertEquals(jsonProperty(json, "security"), jsonProperty(encoded, "security"));
+            assertEquals(card, JsonUtils.toObj(encoded, AgentCard.class));
+            AgentCardDetailInfo detail = JsonUtils.toObj(json, AgentCardDetailInfo.class);
+            assertEquals(card.getSecurityRequirements(), detail.getSecurityRequirements());
+            assertEquals(jsonProperty(encoded, "securityRequirements"),
+                jsonProperty(JsonUtils.toCanonicalJson(detail), "securityRequirements"));
+        }
+        AgentCard source = JsonUtils.toObj("{\"securityRequirements\":[{\"schemes\":{"
+            + "\"oauth2\":{\"list\":[\"read\"]}}}]}", AgentCard.class);
+        AgentCardDetailInfo target = new AgentCardDetailInfo();
+        target.setSecurityRequirements(source.getSecurityRequirements());
+        target.getSecurityRequirements().get(0).get("oauth2").add("write");
+        assertEquals(JsonUtils.toObj("[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]",
+            List.class), jsonProperty(JsonUtils.toJson(target), "securityRequirements"));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void testAgentCardRequirementJavaAccessors(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        AgentCard card = new AgentCard();
+        Map<String, List<String>> requirement = new HashMap<>();
+        requirement.put("schemes", new ArrayList<>(Collections.singletonList("read")));
+        card.setSecurityRequirements(new ArrayList<>(Collections.singletonList(requirement)));
+        card.getSecurityRequirements().get(0).get("schemes").add("write");
+        String encoded = JsonUtils.toJson(card);
+        assertEquals(JsonUtils.toObj("[{\"schemes\":[\"read\",\"write\"]}]", List.class),
+            jsonProperty(encoded, "securityRequirements"));
+        assertEquals(Arrays.asList("read", "write"),
+            JsonUtils.toObj(encoded, AgentCard.class).getSecurityRequirements().get(0)
+                .get("schemes"));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void testAgentCardRequirementsEmptyAndMalformed(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        assertNull(JsonUtils.toObj("{}", AgentCard.class).getSecurityRequirements());
+        assertNull(JsonUtils.toObj("{\"securityRequirements\":null}", AgentCard.class)
+            .getSecurityRequirements());
+        for (String requirements : new String[] {"[]", "[{}, {\"schemes\":{}}]"}) {
+            AgentCard card = JsonUtils.toObj("{\"securityRequirements\":" + requirements + "}",
+                AgentCard.class);
+            assertEquals(JsonUtils.toObj(requirements, List.class),
+                jsonProperty(JsonUtils.toJson(card), "securityRequirements"));
+        }
+        for (String invalid : new String[] {"[null]", "[1]", "{}", "[{\"schemes\":null}]",
+            "[{\"schemes\":{\"apiKey\":[]}}]", "[{\"schemes\":{\"oauth2\":{\"list\":\"read\"}}}]",
+            "[{\"schemes\":{\"oauth2\":{\"list\":[1]}}}]", "[{\"oauth2\":[null]}]",
+            "[{\"schemes\":{},\"apiKey\":[]}]"}) {
+            assertThrows(NacosDeserializationException.class, () -> JsonUtils.toObj(
+                "{\"securityRequirements\":" + invalid + "}", AgentCard.class), invalid);
+        }
+    }
+    
+    private Object jsonProperty(String json, String property) {
+        return JsonUtils.toObj(json, Map.class).get(property);
     }
     
     @AfterEach
@@ -213,6 +301,12 @@ class JacksonAdapterCompatibilityTest {
     
     private void assertJsonRoundTrip(ClassLoader loader, String expected) throws Exception {
         Class<?> jsonUtils = loader.loadClass(JsonUtils.class.getName());
+        String cardJson = "{\"securityRequirements\":[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]}";
+        Object card = jsonUtils.getMethod("toObj", String.class, Class.class)
+            .invoke(null, cardJson, AgentCard.class);
+        String encodedCard =
+            (String) jsonUtils.getMethod("toJson", Object.class).invoke(null, card);
+        assertTrue(encodedCard.contains("\"schemes\":{\"apiKey\":{\"list\":[]}}"));
         assertEquals(expected, jsonUtils.getMethod("selectedAdapterName").invoke(null));
         assertEquals("{\"issue\":15788}", jsonUtils.getMethod("toJson", Object.class)
             .invoke(null, Collections.singletonMap("issue", 15788)));

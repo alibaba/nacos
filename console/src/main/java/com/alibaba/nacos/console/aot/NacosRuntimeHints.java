@@ -307,6 +307,12 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region Nacos Hints
     private final Class<?>[] nacosClasses = {
+        com.alibaba.nacos.common.json.AgentCardJackson2Module.AgentCardMixin.class,
+        com.alibaba.nacos.common.json.AgentCardJackson2Module.RequirementsReader.class,
+        com.alibaba.nacos.common.json.AgentCardJackson2Module.RequirementsWriter.class,
+        com.alibaba.nacos.common.json.AgentCardJackson3Module.AgentCardMixin.class,
+        com.alibaba.nacos.common.json.AgentCardJackson3Module.RequirementsReader.class,
+        com.alibaba.nacos.common.json.AgentCardJackson3Module.RequirementsWriter.class,
         // reflect
         com.alibaba.nacos.common.notify.SlowEvent.class,
         com.alibaba.nacos.common.packagescan.PackageScan.class,

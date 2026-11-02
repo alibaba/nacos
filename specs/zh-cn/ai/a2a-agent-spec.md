@@ -89,6 +89,13 @@ Card 注册、查询和订阅必须保留各候选要求、同一候选内全部
 缺失/null 要求和空要求列表保持区分。标准包装 Card 需要使用已修复的解码器；
 历史 JSON 和普通 Java map 调用者仍与修复前的解码器兼容。
 
+AgentCard 保持普通 Java 模型，不携带 Jackson 注解或 JSON 桥接访问器。要求格式转换由
+共享 JSON 层负责，等价的 Jackson 2/3 模块接入 SDK adapter、历史 `JacksonUtils`、
+服务端和控制台 HTTP mapper。SDK 调用者使用中立 `JsonUtils` 门面；应用自行创建
+Jackson mapper 时，须注册对应的 `AgentCardJackson2Module` 或
+`AgentCardJackson3Module` 才能获得此兼容能力。
+服务端必须在 core 父上下文创建 mapper 前完成模块注册，HTTP 子上下文复用该 mapper。
+
 参考：[A2A 规范](https://a2a-protocol.org/latest/specification/) 和
 [v1.0.1 protobuf 定义](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto)。
 

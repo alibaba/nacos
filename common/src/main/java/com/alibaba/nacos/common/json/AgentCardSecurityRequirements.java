@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.a2a;
+package com.alibaba.nacos.common.json;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,9 +27,9 @@ import java.util.Map;
  *
  * @author nacos
  */
-final class SecurityRequirements {
+final class AgentCardSecurityRequirements {
     
-    private SecurityRequirements() {
+    private AgentCardSecurityRequirements() {
     }
     
     static List<Map<String, Object>> toJson(List<Map<String, List<String>>> requirements) {

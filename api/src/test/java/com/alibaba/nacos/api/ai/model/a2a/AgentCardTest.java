@@ -19,8 +19,6 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,100 +30,9 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentCardTest extends BasicRequestTest {
-    
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]},\"apiKey\":{\"list\":[]}}},"
-            + "{\"schemes\":{\"bearer\":{}}}]",
-        "[{\"oauth2\":[\"read\",\"write\"],\"apiKey\":[]},{\"bearer\":[]}]"
-    })
-    void testSecurityRequirementsRoundTrip(String requirements) throws Exception {
-        String json = "{\"securityRequirements\":" + requirements
-            + ",\"security\":[{\"legacy\":[\"legacy-scope\"]}]}";
-        AgentCard card = mapper.readValue(json, AgentCard.class);
-        assertEquals(2, card.getSecurityRequirements().size());
-        assertEquals(Arrays.asList("read", "write"),
-            card.getSecurityRequirements().get(0).get("oauth2"));
-        assertEquals(Collections.emptyList(), card.getSecurityRequirements().get(0).get("apiKey"));
-        assertEquals(Collections.emptyList(), card.getSecurityRequirements().get(1).get("bearer"));
-        String encoded = mapper.writeValueAsString(card);
-        String expected = requirements.contains("\"list\"")
-            ? "[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]},"
-                + "\"apiKey\":{\"list\":[]}}},{\"schemes\":{\"bearer\":{\"list\":[]}}}]"
-            : requirements;
-        assertEquals(mapper.readTree(expected),
-            mapper.readTree(encoded).get("securityRequirements"));
-        assertEquals(mapper.readTree(json).get("security"),
-            mapper.readTree(encoded).get("security"));
-        assertEquals(card, mapper.readValue(encoded, AgentCard.class));
-        AgentCardDetailInfo detail = mapper.readValue(json, AgentCardDetailInfo.class);
-        assertEquals(card.getSecurityRequirements(), detail.getSecurityRequirements());
-        assertEquals(mapper.readTree(encoded).get("securityRequirements"),
-            mapper.readTree(mapper.writeValueAsString(detail)).get("securityRequirements"));
-    }
-    
-    @Test
-    void testSecurityRequirementsJavaAccessorsRemainCompatible() throws Exception {
-        AgentCard card = new AgentCard();
-        Map<String, List<String>> requirement = new HashMap<>();
-        requirement.put("schemes", new ArrayList<>(Collections.singletonList("read")));
-        card.setSecurityRequirements(new ArrayList<>(Collections.singletonList(requirement)));
-        card.getSecurityRequirements().get(0).get("schemes").add("write");
-        String encoded = mapper.writeValueAsString(card);
-        assertEquals(mapper.readTree("[{\"schemes\":[\"read\",\"write\"]}]"),
-            mapper.readTree(encoded).get("securityRequirements"));
-        assertEquals(Arrays.asList("read", "write"),
-            mapper.readValue(encoded, AgentCard.class).getSecurityRequirements().get(0)
-                .get("schemes"));
-        AgentCard legacy = mapper.readValue("{\"securityRequirements\":[{\"schemes\":[\"read\"]}]}",
-            AgentCard.class);
-        assertEquals(Collections.singletonList("read"),
-            legacy.getSecurityRequirements().get(0).get("schemes"));
-    }
-    
-    @Test
-    void testStandardRequirementsSurviveJavaModelCopiesAndMutations() throws Exception {
-        AgentCard source = mapper.readValue("{\"securityRequirements\":[{\"schemes\":{"
-            + "\"oauth2\":{\"list\":[\"read\"]}}}]}", AgentCard.class);
-        AgentCardDetailInfo target = new AgentCardDetailInfo();
-        target.setSecurityRequirements(source.getSecurityRequirements());
-        target.getSecurityRequirements().get(0).get("oauth2").add("write");
-        assertEquals(
-            mapper.readTree("[{\"schemes\":{\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]"),
-            mapper.readTree(mapper.writeValueAsString(target)).get("securityRequirements"));
-    }
-    
-    @Test
-    void testSecurityRequirementsEmptyAndAbsent() throws Exception {
-        assertNull(mapper.readValue("{}", AgentCard.class).getSecurityRequirements());
-        assertNull(mapper.readValue("{\"securityRequirements\":null}", AgentCard.class)
-            .getSecurityRequirements());
-        AgentCard empty = mapper.readValue("{\"securityRequirements\":[]}", AgentCard.class);
-        assertTrue(empty.getSecurityRequirements().isEmpty());
-        assertTrue(mapper.readTree(mapper.writeValueAsString(empty)).get("securityRequirements")
-            .isArray());
-        AgentCard emptyAlternative =
-            mapper.readValue("{\"securityRequirements\":[{}, {\"schemes\":{}}]}",
-                AgentCard.class);
-        assertEquals(Arrays.asList(Collections.emptyMap(), Collections.emptyMap()),
-            emptyAlternative.getSecurityRequirements());
-    }
-    
-    @ParameterizedTest
-    @ValueSource(strings = {"[null]", "[1]", "{}", "[{\"schemes\":null}]",
-        "[{\"schemes\":{\"apiKey\":[]}}]", "[{\"schemes\":{\"oauth2\":{\"list\":\"read\"}}}]",
-        "[{\"schemes\":{\"oauth2\":{\"list\":[1]}}}]", "[{\"oauth2\":[null]}]",
-        "[{\"schemes\":{},\"apiKey\":[]}]"})
-    void testMalformedSecurityRequirementsFailDecoding(String requirements) {
-        assertThrows(JsonProcessingException.class,
-            () -> mapper.readValue("{\"securityRequirements\":" + requirements + "}",
-                AgentCard.class));
-    }
     
     @Test
     void testSerialize() throws JsonProcessingException {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
+import com.alibaba.nacos.common.json.AgentCardJackson3Module;
 import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.console.filter.XssFilter;
@@ -129,7 +130,10 @@ public class ConsoleWebConfig {
     
     @Bean
     public JsonMapperBuilderCustomizer jacksonJsonMapperCustomization() {
-        return jsonMapperBuilder -> jsonMapperBuilder.defaultTimeZone(TimeZone.getDefault());
+        return jsonMapperBuilder -> {
+            jsonMapperBuilder.defaultTimeZone(TimeZone.getDefault());
+            jsonMapperBuilder.addModule(new AgentCardJackson3Module());
+        };
     }
     
     @Bean

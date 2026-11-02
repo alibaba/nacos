@@ -107,6 +107,15 @@ access declarations. Missing/null requirements and an empty requirements list
 remain distinct. Standard wrapped Cards require a decoder with this fix;
 historical JSON and Java-map callers remain compatible with pre-fix decoders.
 
+AgentCard remains a plain Java model without Jackson annotations or JSON bridge
+accessors. The shared JSON layer owns requirement conversion, with equivalent
+Jackson 2/3 modules installed in SDK adapters, legacy `JacksonUtils`, and server
+and console HTTP mappers. SDK callers use the neutral `JsonUtils` facade;
+applications using their own Jackson mapper must register the matching
+`AgentCardJackson2Module` or `AgentCardJackson3Module` for this compatibility.
+Server registration must occur before the core parent context creates the
+mapper reused by HTTP child contexts.
+
 Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
 and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).
 
