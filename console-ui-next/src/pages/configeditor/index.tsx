@@ -326,7 +326,6 @@ export default function ConfigEditorPage() {
         },
         betaIps.trim()
       );
-      setChangeMessage('');
       toast.success(t('config.betaPublishSuccess'));
       setBetaExists(true);
     } catch {

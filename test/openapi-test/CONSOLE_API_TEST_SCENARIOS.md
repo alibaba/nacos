@@ -227,8 +227,10 @@ emoji round-trip, and 513-character rejection with unchanged content/history.
 
 Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
 metadata preservation, RPC/service propagation, and embedded gray history
-without messages. Maintainer SDK IT covers formal message-to-history and
-controlled oversized-input exceptions.
+without messages. Maintainer SDK IT covers formal message-to-history;
+Maintainer SDK unit tests cover controlled oversized-input exceptions.
+`ConfigRemoteHandlerTest` covers rejection before forwarding with the same
+parameter-validation error, blank-message normalization, and Beta bypass.
 Database-specific transaction fault injection, rolling-version deployments,
 independent-console deployment, and interactive UI behavior remain deployment
 validation scenarios; test definitions do not imply those environments were run.

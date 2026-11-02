@@ -192,7 +192,8 @@ updates identically and must not ignore an API caller's message for new configs.
 History-list display and searching, sorting, or indexing by message are out of
 scope. This contract does not require a legacy-console UI change.
 The message is independent of description and is never prefilled from config or
-history. Clear input after success and retain it after failure. If an adapter
+history. Clear input after a successful formal publish and retain it after
+failure. Beta publishes do not submit or clear an unsent formal message. If an adapter
 does not preserve the JSON property, history detail may omit the message; actual
 database persistence failures retain their existing behavior.
 Merged and independent console handlers must preserve the same semantics defined

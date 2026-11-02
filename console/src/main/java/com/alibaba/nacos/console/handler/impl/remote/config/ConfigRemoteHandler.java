@@ -94,14 +94,14 @@ public class ConfigRemoteHandler implements ConfigHandler {
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo)
         throws NacosException {
         ConfigMaintainerService configMaintainerService = clientHolder.getConfigMaintainerService();
-        if (StringUtils.isBlank(configRequestInfo.getBetaIps())
-            && configForm.getChangeMessage() != null) {
-            return configMaintainerService.publishConfig(configForm.getDataId(),
-                configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),
-                configForm.getAppName(), configForm.getSrcUser(), configForm.getConfigTags(),
-                configForm.getDesc(), configForm.getType(), configForm.getChangeMessage());
-        }
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
+            configForm.validateChangeMessage();
+            if (configForm.getChangeMessage() != null) {
+                return configMaintainerService.publishConfig(configForm.getDataId(),
+                    configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),
+                    configForm.getAppName(), configForm.getSrcUser(), configForm.getConfigTags(),
+                    configForm.getDesc(), configForm.getType(), configForm.getChangeMessage());
+            }
             return configMaintainerService.publishConfig(configForm.getDataId(),
                 configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getContent(), configForm.getAppName(),

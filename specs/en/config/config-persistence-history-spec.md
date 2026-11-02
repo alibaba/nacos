@@ -141,7 +141,7 @@ Ordinary and CAS publishes accept optional `changeMessage` text, with a limit of
 512 Unicode code points. Longer input is a parameter-validation error. Missing,
 empty, or whitespace-only text means no message; preserve nonblank text including
 whitespace and newlines. The message
-belongs to the successful update operation, not its snapshot or description, and
+belongs to the successful publish operation, not its snapshot or description, and
 does not affect content, md5, dump, or listener payloads. Failed validation or
 CAS creates no message or history. Existing skip-history behavior is unchanged.
 
