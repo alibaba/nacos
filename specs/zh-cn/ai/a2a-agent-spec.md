@@ -76,6 +76,22 @@ A2A Binding 是一个 `AgentCallInterface`：
 当前 descriptor 基线支持 A2A 1.0 字段和现有 0.x 兼容字段。Adapter 规范化时不得
 用拼装出的通用 Agent 对象替换保存的 native descriptor。
 
+Card 级 `securityRequirements` 遵循 A2A 1.0 的 `SecurityRequirement` 和
+`StringList` 定义：`[{"schemes":{"oauth2":{"list":["read"]}}}]`。
+JSON 读取同时兼容 Nacos 历史扁平格式 `[{"oauth2":["read"]}]`，写出时保留每项的输入
+表示：标准输入保持包装，历史输入保持扁平。Java `List<Map<String,List<String>>>`
+getter/setter 保留可修改 scope map 契约；普通 Java map 构造的要求保持历史扁平输出。
+解析得到的标准 map 经这些访问器和 Card/detail 复制后仍保留包装，不新增 wire 标记字段。
+独立的 0.x
+`security` 属性保留扁平 wire 格式，不与 `securityRequirements` 合并或互相替代。
+Card 注册、查询和订阅必须保留各候选要求、同一候选内全部 scheme、scope 顺序及空 scope。
+省略 `StringList.list` 表示空 scope 列表；非法要求必须解析失败，不能丢弃鉴权声明。
+缺失/null 要求和空要求列表保持区分。标准包装 Card 需要使用已修复的解码器；
+历史 JSON 和普通 Java map 调用者仍与修复前的解码器兼容。
+
+参考：[A2A 规范](https://a2a-protocol.org/latest/specification/) 和
+[v1.0.1 protobuf 定义](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto)。
+
 common latest 精确 Version 中的 A2A CallInterface 只有通过该版本基线的完整 AgentCard 校验时，
 才声明 ARD 表示 `application/a2a-agent-card+json`。Artifact 直接返回保存的 native descriptor，
 不得把多协议 Nacos Agent 外层对象伪装成 AgentCard。旧 online Version 支持 A2A 只影响 RAD

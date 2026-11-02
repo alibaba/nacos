@@ -22,6 +22,9 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +58,36 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     private static final String REGISTRATION_TYPE_URL = "URL";
     
     private static final String SEARCH_BLUR = "blur";
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\"]}}}]",
+        "[{\"apiKey\":[],\"oauth2\":[\"read\"]}]"})
+    void testSecurityRequirementsRegisterAndQuery(String requirements) throws Exception {
+        String name = "openapi-security-" + UUID.randomUUID();
+        String version = "1.0.0";
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
+        card.set("securityRequirements", JacksonUtils.toObj(requirements));
+        card.set("security", JacksonUtils.toObj("[{\"legacy\":[\"unchanged\"]}]"));
+        try {
+            JsonNode registered = registerAgent(name, version, REGISTRATION_TYPE_URL, card.toString());
+            assertEquals(ErrorCode.SUCCESS.getCode(), registered.get("code").asInt());
+            JsonNode result = getAgentCard(name, version, REGISTRATION_TYPE_URL).get("data");
+            assertEquals(card.get("securityRequirements"), result.get("securityRequirements"));
+            assertEquals(card.get("security"), result.get("security"));
+        } finally {
+            deleteAgentQuietly(name, version, REGISTRATION_TYPE_URL);
+        }
+    }
+
+    @Test
+    void testMalformedSecurityRequirementsReturnBadRequest() throws Exception {
+        String name = "openapi-security-invalid-" + UUID.randomUUID();
+        String version = "1.0.0";
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
+        card.set("securityRequirements", JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":42}}]"));
+        assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
+            "Can't be parsed");
+    }
     
     @Test
     public void testRegisterLegacyAgentCardAndGetAgentCardSuccess() throws Exception {

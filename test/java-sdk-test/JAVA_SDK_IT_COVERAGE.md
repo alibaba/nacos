@@ -40,6 +40,18 @@ Destructive restart and cluster cases run through
 
 ## JSON Runtime Dependency Isolation (#15788)
 
+Card-level A2A security requirements (#15975, item 1) are covered by
+`A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`:
+standard JSON import, historical flat import, facade release/query, native RAD
+query/conversion, initial subscriptions, and changed latest-version callbacks
+over both gRPC and HTTP. API/common unit tests cover malformed requirements,
+empty/absent values, unchanged Java accessors and 0.x `security`, inherited
+Card DTOs, legacy gRPC envelopes, and both Jackson adapters. Skill-level
+requirements are a separate issue item. Historical JSON and plain Java maps
+retain flat output for pre-fix decoders; standard input retains wrapped output
+and requires upgraded decoders. Existing surface classifications and totals
+remain unchanged.
+
 The `jackson3-sdk-test` profile verifies Jackson 2/3 coexistence and explicit
 Jackson 3 selection. It does not prove that Jackson 2 can be removed.
 

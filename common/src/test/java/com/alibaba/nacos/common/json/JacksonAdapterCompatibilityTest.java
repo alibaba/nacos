@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.common.json;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
+import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRegisterRpcRequest;
 import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
@@ -50,6 +54,38 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JacksonAdapterCompatibilityTest {
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void testAgentCardSecurityRequirementsWireCompatibility(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        String requirements = "[{\"schemes\":{\"apiKey\":{\"list\":[]},"
+            + "\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]";
+        String cardJson = "{\"securityRequirements\":" + requirements + "}";
+        AgentCard card = JsonUtils.toObj(cardJson, AgentCard.class);
+        assertEquals(2, card.getSecurityRequirements().get(0).size());
+        assertEquals(card, JsonUtils.toObj(JsonUtils.toJsonBytes(card), AgentCard.class));
+        String legacyJson = "{\"securityRequirements\":[{\"apiKey\":[],"
+            + "\"oauth2\":[\"read\",\"write\"]}]}";
+        AgentCard legacy = JsonUtils.toObj(legacyJson, AgentCard.class);
+        assertEquals(card, legacy);
+        assertEquals(JsonUtils.toObj(legacyJson, Map.class).get("securityRequirements"),
+            JsonUtils.toObj(JsonUtils.toJson(legacy), Map.class).get("securityRequirements"));
+        assertEquals(JsonUtils.toObj(cardJson, Map.class).get("securityRequirements"),
+            JsonUtils.toObj(JsonUtils.toJson(card), Map.class).get("securityRequirements"));
+        ReleaseAgentCardRequest release = JsonUtils.toObj("{\"agentCard\":" + cardJson + "}",
+            ReleaseAgentCardRequest.class);
+        assertEquals(card, release.getAgentCard());
+        QueryAgentCardResponse response =
+            JsonUtils.toObj("{\"agentCardDetailInfo\":" + cardJson + "}",
+                QueryAgentCardResponse.class);
+        assertEquals(card.getSecurityRequirements(),
+            response.getAgentCardDetailInfo().getSecurityRequirements());
+        assertThrows(NacosDeserializationException.class, () -> JsonUtils.toObj(
+            "{\"securityRequirements\":[{\"schemes\":{\"apiKey\":\"invalid\"}}]}",
+            AgentCard.class));
+    }
     
     @AfterEach
     void tearDown() throws Exception {

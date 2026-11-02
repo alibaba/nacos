@@ -17,6 +17,9 @@
 
 package com.alibaba.nacos.api.ai.model.a2a;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -161,12 +164,24 @@ public class AgentCard extends AgentCardBasicInfo {
         this.security = security;
     }
     
+    @JsonIgnore
     public List<Map<String, List<String>>> getSecurityRequirements() {
         return securityRequirements;
     }
     
+    @JsonIgnore
     public void setSecurityRequirements(List<Map<String, List<String>>> securityRequirements) {
         this.securityRequirements = securityRequirements;
+    }
+    
+    @JsonProperty("securityRequirements")
+    private List<Map<String, Object>> getSecurityRequirementsJson() {
+        return SecurityRequirements.toJson(securityRequirements);
+    }
+    
+    @JsonProperty("securityRequirements")
+    private void setSecurityRequirementsJson(List<Map<String, Object>> requirements) {
+        securityRequirements = SecurityRequirements.fromJson(requirements);
     }
     
     public List<String> getDefaultInputModes() {

@@ -89,6 +89,27 @@ The current descriptor baseline supports A2A 1.0 fields and the existing 0.x
 compatibility fields. Adapter normalization must not replace the stored native
 descriptor with a synthetic generic Agent object.
 
+Card-level `securityRequirements` follows the A2A 1.0 `SecurityRequirement`
+and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
+JSON readers also accept Nacos's historical flat representation
+`[{"oauth2":["read"]}]`. Writers retain each requirement's input representation:
+standard input stays wrapped and historical input stays flat. Existing Java
+`List<Map<String,List<String>>>` getters/setters keep their mutable scope-map
+contract; requirements built from plain Java maps keep their historical flat
+output. Parsed standard maps retain their wrapped representation through these
+accessors and Card-to-detail copies, without adding a wire marker property.
+The independent 0.x `security` property keeps its flat wire format and is not
+merged with or substituted for `securityRequirements`. Alternatives, all
+schemes within an alternative, scope ordering, and empty scopes survive Card
+registration, query, and subscription. An omitted `StringList.list` means an
+empty scope list; malformed requirements must fail decoding rather than lose
+access declarations. Missing/null requirements and an empty requirements list
+remain distinct. Standard wrapped Cards require a decoder with this fix;
+historical JSON and Java-map callers remain compatible with pre-fix decoders.
+
+Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
+and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).
+
 An A2A call interface in the exact common-latest Version declares the ARD
 representation `application/a2a-agent-card+json` only when it passes complete
 AgentCard validation for that baseline. The artifact returns the stored native

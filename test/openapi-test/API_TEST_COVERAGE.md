@@ -33,6 +33,14 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+## Card-level A2A security requirements (#15975, item 1)
+
+`A2aAdminApiOpenApiITCase` additionally covers standard and historical flat
+Card-level `securityRequirements` imports, preserved query wire representation,
+independent legacy `security`, and malformed requirement HTTP 400 responses.
+This extends the existing A2A Admin surface; classifications and API-surface
+totals remain unchanged. Skill-level requirements are separate.
+
 ## Visibility scope extension compatibility
 
 VisibilityScopeAdminApiOpenApiITCase and VisibilityScopeConsoleApiOpenApiITCase reject
