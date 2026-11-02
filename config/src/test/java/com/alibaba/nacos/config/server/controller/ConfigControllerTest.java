@@ -61,6 +61,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -530,5 +531,57 @@ class ConfigControllerTest {
         assertNotNull(resultMap);
         Mockito.verify(cloneSourceNamespaceAuthUtil).checkReadPermission(sourceTenant);
         Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(null, null, sourceTenant, null, idList);
+    }
+
+    @Test
+    void testCloneConfigFromPublicNamespace() throws Exception {
+        String targetTenant = "targetTenant";
+        when(namespacePersistService.tenantInfoCountByTenantId(targetTenant)).thenReturn(1);
+        List<Long> idList = mockCloneSourceConfig("");
+
+        MockHttpServletRequestBuilder builder = buildCloneRequest(targetTenant).param("sourceTenant", "");
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        assertEquals("200", JacksonUtils.toObj(actualValue).get("code").toString());
+        Mockito.verify(cloneSourceNamespaceAuthUtil).checkReadPermission("");
+        Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(null, null, "", null, idList);
+    }
+
+    @Test
+    void testCloneConfigWithoutSourceTenant() throws Exception {
+        String targetTenant = "targetTenant";
+        when(namespacePersistService.tenantInfoCountByTenantId(targetTenant)).thenReturn(1);
+        List<Long> idList = mockCloneSourceConfig(targetTenant);
+
+        MockHttpServletRequestBuilder builder = buildCloneRequest(targetTenant);
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        assertEquals("200", JacksonUtils.toObj(actualValue).get("code").toString());
+        Mockito.verify(cloneSourceNamespaceAuthUtil).checkReadPermission(targetTenant);
+        Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(null, null, targetTenant, null, idList);
+    }
+
+    private List<Long> mockCloneSourceConfig(String sourceTenant) throws Exception {
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setId(1L);
+        configAllInfo.setDataId("test");
+        configAllInfo.setGroup("test");
+        configAllInfo.setContent("test");
+        List<Long> idList = Collections.singletonList(1L);
+        when(configInfoPersistService.findAllConfigInfo4Export(null, null, sourceTenant, null, idList)).thenReturn(
+                Collections.singletonList(configAllInfo));
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
+        return idList;
+    }
+
+    private MockHttpServletRequestBuilder buildCloneRequest(String targetTenant) {
+        SameNamespaceCloneConfigBean cloneConfigBean = new SameNamespaceCloneConfigBean();
+        cloneConfigBean.setCfgId(1L);
+        cloneConfigBean.setDataId("test");
+        cloneConfigBean.setGroup("test");
+        return MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH).param("clone", "true")
+                .param("src_user", "test").param("tenant", targetTenant).param("policy", "ABORT")
+                .content(JacksonUtils.toJson(Collections.singletonList(cloneConfigBean)))
+                .contentType(MediaType.APPLICATION_JSON);
     }
 }

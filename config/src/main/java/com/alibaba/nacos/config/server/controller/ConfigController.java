@@ -877,7 +877,8 @@ public class ConfigController {
         
         ParamUtils.checkTenant(sourceTenant);
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
-        sourceTenant = StringUtils.isBlank(sourceTenant) ? namespace : NamespaceUtil.processNamespaceParameter(sourceTenant);
+        // An empty sourceTenant is the public namespace; only an absent one falls back to the target namespace.
+        sourceTenant = sourceTenant == null ? namespace : NamespaceUtil.processNamespaceParameter(sourceTenant);
         if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
