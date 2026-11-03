@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -93,7 +95,14 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
     
     @Override
     public Result<Boolean> isDuplicatePermission(String role, String resource, String action) {
-        List<PermissionInfo> permissionInfos = getPermissions(role);
+        // Duplicate check must read the latest data from the source (database or remote server)
+        // instead of the local cache, because other instances may have deleted the permission
+        // while the local cache has not been refreshed yet.
+        Page<PermissionInfo> permissionInfoPage =
+            getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+        List<PermissionInfo> permissionInfos =
+            permissionInfoPage == null ? Collections.emptyList()
+                : permissionInfoPage.getPageItems();
         if (CollectionUtils.isEmpty(permissionInfos)) {
             return Result.success(Boolean.FALSE);
         }
