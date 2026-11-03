@@ -731,3 +731,11 @@ and populated service-list names/groups. HTTP 200 with empty serialized objects 
 This extends the existing Agent Discover row; API surface totals and strict/effective
 coverage denominators remain unchanged. The optional diagnostic header never changes
 authorization or discovery semantics.
+
+## A2A Skill security requirements (#15975, item 2)
+
+`A2aAdminApiOpenApiITCase` now verifies standard Skill requirement registration/query,
+independence from Card requirements, absent/null/empty lists, and controlled HTTP 400
+for malformed or flat Skill structures. See the A2A Skill scenario matrix in
+`ADMIN_API_TEST_SCENARIOS.md`. This extends an existing surface; row classifications,
+strict/effective coverage totals, API paths, and storage mechanisms are unchanged.

@@ -102,7 +102,7 @@ Card 注册、查询和订阅必须保留各候选要求、同一候选内全部
 历史扁平格式兼容解析；只修正本次返回对象，不重写存储、不提交异步任务、不更改摘要或版本。
 标准解析器可能忽略未知字段，因此缺少 `schemes` 不得被当作空鉴权要求接受。兼容重试仍须
 验证旧格式为 scheme 到字符串数组的映射；无法解释的数据继续报错，不降级为空权限。
-发布/更新使用标准模型正常写入；本次不执行存量数据修复或扫描。不涉及 Skill 字段。
+发布/更新使用标准模型正常写入；不执行存量数据修复或扫描。历史扁平兼容仅限 Card 级字段。
 兼容解析需要原始 Card JSON，放在 A2A 读取边界；通用 gRPC 解析不识别 A2A 请求或响应类型。
 旧对端若在强类型 gRPC Payload 中发送扁平 `securityRequirements`，A2A 发布/查询边界拒绝
 结构不完整的解析结果，不能把丢失的 scope 当作空鉴权要求，也不能恢复解析器已丢弃的字段。
@@ -115,6 +115,19 @@ Card 注册、查询和订阅必须保留各候选要求、同一候选内全部
 官方 Python SDK 1.3.0 的 [0.3 转换层](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
 在 `to_core_agent_card` / `to_compat_agent_card` 中进行这两个鉴权字段的双向语义转换；
 这属于版本 adapter 行为，并非普通 JSON 解析器自动识别别名。
+
+`AgentCard.skills[].securityRequirements` 使用同一套 A2A 1.0 标准 POJO
+`List<SecurityRequirement>` 和 `schemes/list` JSON 结构，不使用 Jackson 注解或 Module。
+Skill 要求独立于 Card 要求和其他 Skill；Nacos 保留声明，不提升、合并或填充有效权限。
+缺失/null 与显式空列表保持区分；保留候选要求、scheme 和 scope，省略 `list` 表示空 scope。
+A2A 发布和读取边界验证要求项、`schemes`、scope 容器及字符串列表；结构不完整或非法时
+返回受控错误，不能静默丢弃声明。此新增字段没有历史扁平回退，也不增加 0.3 Skill `security`
+字段或转换。旧数据缺少此字段时正常读取，不改写存量；旧模型已经丢弃的声明须由发布方重新提交。
+
+完整 Skill 声明随 Card 保存在 `nativeDescriptor`，并在查询、转换和 RAD 订阅中保留。
+复用现有内容摘要和 RAD 指纹算法；仅 Skill 要求变化也属于 descriptor 内容变化，相同快照不应
+重复通知。本次不修改旧轮询订阅机制。旧 SDK 或旧服务端仍可能忽略新增字段，端到端保留需升级
+相关类型化读取/写入方和下游适配器；不承诺旧版本新增此能力。
 
 common latest 精确 Version 中的 A2A CallInterface 只有通过该版本基线的完整 AgentCard 校验时，
 才声明 ARD 表示 `application/a2a-agent-card+json`。Artifact 直接返回保存的 native descriptor，

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.json;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
 import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
@@ -63,6 +64,65 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 
 class JacksonAdapterCompatibilityTest {
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void skillRequirementsSurvivePlainBindingAndCardCompatibility(String adapterName)
+        throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        String skills = "[{\"id\":\"protected\",\"securityRequirements\":[{\"schemes\":{"
+            + "\"oauth2\":{\"list\":[\"read\",\"profile\"]},\"apiKey\":{\"list\":[]}}},"
+            + "{\"schemes\":{\"bearer\":{}}}]},{\"id\":\"absent\"},"
+            + "{\"id\":\"empty\",\"securityRequirements\":[]},"
+            + "{\"id\":\"null\",\"securityRequirements\":null}]";
+        String standard = "{\"skills\":" + skills + "}";
+        AgentCard card = A2aSecurityUtils.readCard(standard, AgentCard.class);
+        assertNull(card.getSecurity());
+        assertNull(card.getSecurityRequirements());
+        assertNull(card.getSkills().get(1).getSecurityRequirements());
+        assertTrue(card.getSkills().get(2).getSecurityRequirements().isEmpty());
+        assertNull(card.getSkills().get(3).getSecurityRequirements());
+        assertEquals(Arrays.asList("read", "profile"), card.getSkills().get(0)
+            .getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+        assertTrue(card.getSkills().get(0).getSecurityRequirements().get(1)
+            .getSchemes().get("bearer").getList().isEmpty());
+        assertEquals(card.getSkills(),
+            JsonUtils.toObj(JsonUtils.toJson(card), AgentCard.class).getSkills());
+        AgentSkill skill = card.getSkills().get(0);
+        assertEquals(skill, JsonUtils.toObj(JsonUtils.toJson(skill), AgentSkill.class));
+        String historical = "{\"securityRequirements\":[{\"cardOnly\":[\"card-scope\"]}],"
+            + "\"skills\":" + skills + "}";
+        AgentCard legacy = A2aSecurityUtils.readCard(historical, AgentCard.class);
+        assertEquals(card.getSkills(), legacy.getSkills());
+        assertEquals(Collections.singletonList("card-scope"), legacy.getSecurityRequirements()
+            .get(0).getSchemes().get("cardOnly").getList());
+        QueryAgentCardResponse response = JsonUtils.toObj(
+            "{\"agentCardDetailInfo\":" + standard + "}", QueryAgentCardResponse.class);
+        assertEquals(card.getSkills(), response.getAgentCardDetailInfo().getSkills());
+        ReleaseAgentCardRequest request = JsonUtils.toObj(
+            "{\"agentCard\":" + standard + "}", ReleaseAgentCardRequest.class);
+        assertEquals(card.getSkills(), request.getAgentCard().getSkills());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void invalidSkillRequirementsNeverUseCardFlatFallback(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        for (String invalid : new String[] {"[null]", "[{}]", "[{\"oauth2\":[\"read\"]}]",
+            "[{\"schemes\":null}]", "[{\"schemes\":{\"oauth2\":null}}]",
+            "[{\"schemes\":{\"oauth2\":{\"list\":null}}}]",
+            "[{\"schemes\":{\"oauth2\":{\"list\":[null]}}}]"}) {
+            String json = "{\"skills\":[{\"id\":\"s\",\"securityRequirements\":" + invalid + "}]}";
+            assertThrows(NacosDeserializationException.class,
+                () -> A2aSecurityUtils.readCard(json, AgentCard.class), invalid);
+            String withLegacyCard =
+                "{\"securityRequirements\":[{\"cardOnly\":[]}]," + json.substring(1);
+            assertThrows(NacosDeserializationException.class,
+                () -> A2aSecurityUtils.readCard(withLegacyCard, AgentCard.class), invalid);
+        }
+    }
     
     @ParameterizedTest
     @ValueSource(strings = {"jackson2", "jackson3"})

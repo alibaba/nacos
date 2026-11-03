@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.maintainer.ai;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -178,6 +179,12 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         AgentCard agentCard = buildAgentCard(agentName, VERSION, "Maintainer SDK IT agent");
         agentCard.setSecurityRequirements(A2aSecurityUtils.fromLegacy(Collections.singletonList(
                 Collections.singletonMap("oauth2", Collections.singletonList("read")))));
+        AgentSkill skill = new AgentSkill();
+        skill.setId("protected");
+        skill.setName("Protected Skill");
+        skill.setSecurityRequirements(A2aSecurityUtils.fromLegacy(Collections.singletonList(
+                Collections.singletonMap("skillOauth", Collections.singletonList("skill-read")))));
+        agentCard.setSkills(Collections.singletonList(skill));
         
         assertTrue(maintainerService.a2a().registerAgent(agentCard, NAMESPACE_ID,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL));
@@ -189,6 +196,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
         assertAgentCard(detail, agentName, VERSION, "Maintainer SDK IT agent");
         assertEquals(agentCard.getSecurityRequirements(), detail.getSecurityRequirements());
         assertEquals(A2aSecurityUtils.toLegacy(agentCard.getSecurityRequirements()), detail.getSecurity());
+        assertEquals(agentCard.getSkills(), detail.getSkills());
         
         List<AgentVersionDetail> versions =
                 maintainerService.a2a().listAllVersionOfAgent(agentName, NAMESPACE_ID);
@@ -211,6 +219,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                 buildAgentCard(agentName, UPDATED_VERSION, "Maintainer SDK IT agent updated");
         updatedCard.setSecurityRequirements(Collections.emptyList());
         updatedCard.setSecurity(detail.getSecurity());
+        updatedCard.setSkills(agentCard.getSkills());
         assertTrue(maintainerService.a2a().updateAgentCard(updatedCard, NAMESPACE_ID, true,
                 AiConstants.A2a.A2A_ENDPOINT_TYPE_URL));
         
@@ -221,6 +230,7 @@ class AiMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
                 "Maintainer SDK IT agent updated");
         assertEquals(Collections.emptyList(), updated.getSecurityRequirements());
         assertEquals(Collections.emptyList(), updated.getSecurity());
+        assertEquals(agentCard.getSkills(), updated.getSkills(), "clearing Card requirements must preserve Skill requirements");
         
         assertTrue(maintainerService.a2a().deleteAgent(agentName, NAMESPACE_ID, ""));
         assertNoPageItem(maintainerService.a2a().listAgentCards(NAMESPACE_ID, agentName, 1, 10),

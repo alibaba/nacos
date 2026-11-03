@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
 import com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement;
 import com.alibaba.nacos.api.ai.model.a2a.StringList;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
@@ -61,6 +62,7 @@ public final class A2aSecurityUtils {
                 // The compatibility retry is deliberately limited to this historical field.
                 Map<String, Object> legacy = JsonUtils.toObj(json, Map.class);
                 require(legacy != null && legacy.get(REQUIREMENTS) != null);
+                validateRawSkillRequirements(legacy.get("skills"));
                 legacy.put(REQUIREMENTS, fromLegacy(readLegacyScopes(legacy.get(REQUIREMENTS))));
                 T card = JsonUtils.toObj(JsonUtils.toJson(legacy), type);
                 normalize(card);
@@ -81,6 +83,7 @@ public final class A2aSecurityUtils {
      */
     public static void normalize(AgentCard card) {
         require(card != null);
+        validateSkillRequirements(card);
         if (card.getSecurityRequirements() == null) {
             if (card.getSecurity() != null) {
                 card.setSecurityRequirements(fromLegacy(card.getSecurity()));
@@ -98,6 +101,65 @@ public final class A2aSecurityUtils {
      */
     public static boolean isNormalized(AgentCard card) {
         return Objects.equals(toLegacy(card.getSecurityRequirements()), card.getSecurity());
+    }
+    
+    private static void validateSkillRequirements(AgentCard card) {
+        if (card.getSkills() == null) {
+            return;
+        }
+        for (AgentSkill skill : card.getSkills()) {
+            if (skill == null || skill.getSecurityRequirements() == null) {
+                continue;
+            }
+            try {
+                for (SecurityRequirement item : skill.getSecurityRequirements()) {
+                    require(item != null && item.getSchemes() != null);
+                    for (Map.Entry<String, StringList> scheme : item.getSchemes().entrySet()) {
+                        require(scheme.getKey() != null && scheme.getValue() != null);
+                        List<String> scopes = scheme.getValue().getList();
+                        require(scopes != null);
+                        for (Object scope : scopes) {
+                            require(scope instanceof String);
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException invalid) {
+                throw new IllegalArgumentException(
+                    "Invalid AgentSkill securityRequirements: expected A2A schemes/list objects",
+                    invalid);
+            }
+        }
+    }
+    
+    private static void validateRawSkillRequirements(Object skills) {
+        if (skills == null) {
+            return;
+        }
+        require(skills instanceof List);
+        for (Object skill : (List<?>) skills) {
+            if (skill == null) {
+                continue;
+            }
+            require(skill instanceof Map);
+            Object requirements = ((Map<?, ?>) skill).get(REQUIREMENTS);
+            if (requirements == null) {
+                continue;
+            }
+            require(requirements instanceof List);
+            for (Object item : (List<?>) requirements) {
+                require(item instanceof Map);
+                Object schemes = ((Map<?, ?>) item).get("schemes");
+                require(schemes instanceof Map);
+                for (Object scopes : ((Map<?, ?>) schemes).values()) {
+                    require(scopes instanceof Map);
+                    // Reject explicit nulls before JSON serialization can omit them. An absent
+                    // list is the standard empty StringList, but a null list is invalid.
+                    if (((Map<?, ?>) scopes).containsKey("list")) {
+                        copyScopes(((Map<?, ?>) scopes).get("list"));
+                    }
+                }
+            }
+        }
     }
     
     /**

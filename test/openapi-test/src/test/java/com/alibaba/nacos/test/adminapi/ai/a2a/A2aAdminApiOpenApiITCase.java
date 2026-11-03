@@ -60,6 +60,57 @@ public class A2aAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
     private static final String SEARCH_BLUR = "blur";
 
     @ParameterizedTest
+    @ValueSource(strings = {"standard", "empty", "absent", "null"})
+    void testSkillSecurityRequirementsRegisterAndQuery(String scenario) throws Exception {
+        String name = "openapi-skill-security-" + UUID.randomUUID();
+        String version = "1.0.0";
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
+        JsonNode cardRequirements = JacksonUtils.toObj("[{\"schemes\":{\"cardOnly\":{\"list\":[\"card-read\"]}}}]");
+        card.set("securityRequirements", cardRequirements);
+        ObjectNode skill = (ObjectNode) JacksonUtils.toObj("{\"id\":\"protected\",\"name\":\"Protected\","
+            + "\"description\":\"Skill requirements\",\"tags\":[]}");
+        if (!"absent".equals(scenario)) {
+            String requirements = "standard".equals(scenario)
+                ? "[{\"schemes\":{\"skillOauth\":{\"list\":[\"skill-read\",\"profile\"]},"
+                    + "\"apiKey\":{\"list\":[]}}},{\"schemes\":{\"bearer\":{\"list\":[]}}}]"
+                : "empty".equals(scenario) ? "[]" : "null";
+            skill.set("securityRequirements", JacksonUtils.toObj(requirements));
+        }
+        card.putArray("skills").add(skill);
+        try {
+            assertEquals(ErrorCode.SUCCESS.getCode(),
+                registerAgent(name, version, REGISTRATION_TYPE_URL, card.toString()).get("code").asInt());
+            JsonNode result = getAgentCard(name, version, REGISTRATION_TYPE_URL).get("data");
+            JsonNode actual = result.path("skills").get(0).path("securityRequirements");
+            if ("absent".equals(scenario) || "null".equals(scenario)) {
+                assertTrue(actual.isMissingNode() || actual.isNull());
+            } else {
+                assertEquals(skill.get("securityRequirements"), actual);
+            }
+            assertEquals(cardRequirements, result.get("securityRequirements"));
+        } finally {
+            deleteAgentQuietly(name, version, REGISTRATION_TYPE_URL);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[{}]", "[null]", "[{\"oauth2\":[\"read\"]}]",
+        "[{\"schemes\":{\"oauth2\":{\"list\":null}}}]"})
+    void testMalformedSkillSecurityRequirementsReturnBadRequest(String requirements) throws Exception {
+        String name = "openapi-skill-invalid-" + UUID.randomUUID();
+        String version = "1.0.0";
+        ObjectNode card = (ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, version, "1.0"));
+        card.set("skills", JacksonUtils.toObj("[{\"id\":\"s\",\"name\":\"Skill\",\"tags\":[],"
+            + "\"securityRequirements\":" + requirements + "}]"));
+        try {
+            assertBadRequestContains(buildAgentCardForm(name, version, REGISTRATION_TYPE_URL, card.toString()),
+                "Can't be parsed");
+        } finally {
+            deleteAgentQuietly(name, version, REGISTRATION_TYPE_URL);
+        }
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"standard", "flat", "legacy", "both", "empty", "anonymous", "absent"})
     void testSecurityRequirementsRegisterAndQuery(String scenario) throws Exception {
         String name = "openapi-security-" + UUID.randomUUID();

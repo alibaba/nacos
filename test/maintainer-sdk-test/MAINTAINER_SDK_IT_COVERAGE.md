@@ -144,3 +144,10 @@ content update, publication and version offline/online, including the generated
 description and `frontMatterTruncated=false` for a complete projection. Historical
 responses may omit frontmatter and the truncation flag or return null; API model
 round-trip unit tests cover that boundary.
+
+## A2A Skill security requirements (#15975, item 2)
+
+The existing A2A lifecycle in `AiMaintainerServiceMaintainerSdkITCase` additionally
+asserts standard Skill requirement preservation on register/query and new-Version
+update/query, including independent retention when Card requirements are cleared.
+Existing API-surface rows, classifications, and coverage totals remain unchanged.

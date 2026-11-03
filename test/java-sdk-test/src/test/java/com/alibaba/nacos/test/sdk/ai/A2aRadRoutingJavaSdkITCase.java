@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
+import com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement;
 import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
@@ -73,6 +75,88 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String V1 = "1.0.0";
     private static final String V2 = "1.2.0";
+
+    @ParameterizedTest
+    @ValueSource(strings = {"grpc", "http"})
+    void skillSecurityRequirementsSurviveRadQueryAndSubscription(String mode) throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode);
+        AiService service = createAiServiceWithoutReadiness(properties);
+        waitUntil("RAD capability is ready",
+            () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        AiMaintainerService maintainer = AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
+        String name = randomServiceName("a2a-skill-security-" + mode);
+        addCleanup(() -> maintainer.a2a().deleteAgent(name));
+        String initial = "[{\"schemes\":{\"skillOauth\":{\"list\":[\"skill-read\",\"profile\"]},"
+            + "\"apiKey\":{\"list\":[]}}},{\"schemes\":{\"bearer\":{\"list\":[]}}}]";
+        AgentCard first = skillSecurityCard(name, V1, initial);
+        service.releaseAgentCard(first, "URL", true);
+        assertTrue(sameSkills(first, service.getAgentCard(name)));
+        assertTrue(sameSkills(first, service.agent().a2aConverter()
+            .convert(service.agent().discoverAgent(reference(name, V1)))));
+        assertEquals(first.getSkills(), maintainer.a2a().getAgentCard(name).getSkills());
+        AtomicReference<AgentCard> facadeEvent = new AtomicReference<>();
+        AbstractNacosAgentCardListener facadeListener = new AbstractNacosAgentCardListener() {
+            @Override
+            public void onEvent(NacosAgentCardEvent event) {
+                facadeEvent.set(event.getAgentCard());
+            }
+        };
+        AtomicReference<AgentCard> nativeEvent = new AtomicReference<>();
+        AbstractNacosAgentDiscoveryListener nativeListener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                nativeEvent.set(service.agent().a2aConverter().convert(event.getAgentDiscoveryResult()));
+            }
+        };
+        AgentReference latest = reference(name, null);
+        latest.setLabel("latest");
+        try {
+            service.subscribeAgentCard(name, facadeListener);
+            service.agent().subscribeAgent(latest, nativeListener);
+            waitUntil("both RAD subscriptions preserve initial Skill requirements",
+                () -> sameSkills(first, facadeEvent.get()) && sameSkills(first, nativeEvent.get()));
+            String[] updates = {"[{\"schemes\":{\"skillOauth\":{\"list\":[\"skill-write\"]}}}]", "[]", "null"};
+            for (int i = 0; i < updates.length; i++) {
+                AgentCard next = skillSecurityCard(name, "1." + (i + 1) + ".0", updates[i]);
+                service.releaseAgentCard(next, "URL", true);
+                waitUntil("RAD subscriptions preserve changed, empty and removed Skill requirements",
+                    () -> sameSkills(next, facadeEvent.get()) && sameSkills(next, nativeEvent.get()));
+                assertTrue(sameSkills(next, service.getAgentCard(name)));
+                assertTrue(sameSkills(next, service.agent().a2aConverter()
+                    .convert(service.agent().discoverAgent(reference(name, next.getVersion())))));
+            }
+            assertNull(first.getSecurity(), "publication must not mutate the caller's Card");
+            assertEquals(Arrays.asList("skill-read", "profile"), first.getSkills().get(0)
+                .getSecurityRequirements().get(0).getSchemes().get("skillOauth").getList());
+            AgentCard invalid = skillSecurityCard(name, "2.0.0", "[]");
+            invalid.getSkills().get(0).setSecurityRequirements(Collections.singletonList(new SecurityRequirement()));
+            assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+                () -> service.releaseAgentCard(invalid, "URL", true)).getErrCode());
+        } finally {
+            service.unsubscribeAgentCard(name, facadeListener);
+            service.agent().unsubscribeAgent(latest, nativeListener);
+        }
+    }
+
+    private static boolean sameSkills(AgentCard expected, AgentCard actual) {
+        return actual != null && expected.getVersion().equals(actual.getVersion())
+            && expected.getSkills().equals(actual.getSkills())
+            && expected.getSecurityRequirements().equals(actual.getSecurityRequirements());
+    }
+
+    private static AgentCard skillSecurityCard(String name, String version, String requirements) {
+        AgentCard card = securityCard(name, version, true);
+        AgentSkill protectedSkill = JsonUtils.toObj("{\"id\":\"protected\",\"name\":\"Protected\","
+            + "\"description\":\"Skill requirements\",\"tags\":[],\"securityRequirements\":"
+            + requirements + "}", AgentSkill.class);
+        AgentSkill absent = JsonUtils.toObj("{\"id\":\"absent\",\"name\":\"Absent\","
+            + "\"description\":\"No declaration\",\"tags\":[]}", AgentSkill.class);
+        AgentSkill empty = JsonUtils.toObj("{\"id\":\"empty\",\"name\":\"Empty\","
+            + "\"description\":\"Empty declaration\",\"tags\":[],\"securityRequirements\":[]}", AgentSkill.class);
+        card.setSkills(Arrays.asList(protectedSkill, absent, empty));
+        return card;
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"grpc", "http"})

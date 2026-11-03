@@ -35,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -77,6 +78,32 @@ class ReleaseAgentCardRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         verifyNoInteractions(a2aServerOperationService);
+    }
+    
+    @Test
+    void rejectsIncompleteSkillRequirementsAfterGenericJsonBinding() throws NacosException {
+        ReleaseAgentCardRequest request = readSecurityRequest(
+            "\"skills\":[{\"id\":\"s\",\"securityRequirements\":[{\"oauth2\":[\"read\"]}]}]");
+        ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        assertTrue(response.getMessage().contains("AgentSkill securityRequirements"));
+        verifyNoInteractions(a2aServerOperationService);
+    }
+    
+    @Test
+    void preservesSkillRequirementsWithoutFillingCardSecurity() throws NacosException {
+        ReleaseAgentCardRequest request = readSecurityRequest(
+            "\"skills\":[{\"id\":\"s\",\"securityRequirements\":[{\"schemes\":{"
+                + "\"oauth2\":{\"list\":[\"skill-read\"]}}}]}]");
+        assertEquals(ResponseCode.SUCCESS.getCode(),
+            requestHandler.handle(request, meta).getResultCode());
+        assertEquals("skill-read", request.getAgentCard().getSkills().get(0)
+            .getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().get(0));
+        assertNull(request.getAgentCard().getSecurityRequirements());
+        assertNull(request.getAgentCard().getSecurity());
+        verify(a2aServerOperationService).releaseAgent(request.getAgentCard(), "public", "SERVICE",
+            false);
     }
     
     @Test

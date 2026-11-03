@@ -21,14 +21,45 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSkillTest extends BasicRequestTest {
+    
+    @Test
+    void testStandardSecurityRequirementsRoundTripAndEquality() throws Exception {
+        String json = "{\"id\":\"protected\",\"securityRequirements\":[{\"schemes\":{"
+            + "\"oauth2\":{\"list\":[\"read\",\"write\"]},\"apiKey\":{\"list\":[]}}}]}";
+        AgentSkill first = mapper.readValue(json, AgentSkill.class);
+        AgentSkill second = mapper.readValue(mapper.writeValueAsString(first), AgentSkill.class);
+        assertEquals(Arrays.asList("read", "write"), first.getSecurityRequirements().get(0)
+            .getSchemes().get("oauth2").getList());
+        assertEquals(mapper.readTree(json).get("securityRequirements"),
+            mapper.readTree(mapper.writeValueAsString(second)).get("securityRequirements"));
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        second.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().clear();
+        assertNotEquals(first, second);
+    }
+    
+    @Test
+    void testMissingAndEmptySecurityRequirementsStayDistinct() throws Exception {
+        AgentSkill absent = mapper.readValue("{\"id\":\"s\"}", AgentSkill.class);
+        AgentSkill explicitNull = mapper.readValue(
+            "{\"id\":\"s\",\"securityRequirements\":null}", AgentSkill.class);
+        assertNull(absent.getSecurityRequirements());
+        assertEquals(absent, explicitNull);
+        explicitNull.setSecurityRequirements(Collections.emptyList());
+        assertNotEquals(absent, explicitNull);
+        assertTrue(mapper.readTree(mapper.writeValueAsString(explicitNull))
+            .get("securityRequirements").isArray());
+    }
     
     @Test
     void testSerialize() throws JsonProcessingException {
