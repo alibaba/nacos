@@ -128,7 +128,7 @@ ignores unknown fields must not silently accept lost security declarations as an
 empty requirement. The retry validates scheme-to-string-array entries and changes
 only the returned object; it never rewrites storage, enqueues repairs, or changes
 Version digests. Invalid data still fails. Publications use the standard model;
-this change adds no historical data rewrite or scan. Skill-level fields are excluded.
+there is no historical data rewrite or scan. Flat compatibility applies only to Card-level fields.
 Compatibility decoding requires the original Card JSON and belongs to A2A read
 boundaries. Generic gRPC parsing does not recognize A2A request or response types.
 If an old peer sends flat `securityRequirements` in a typed gRPC payload, the A2A
@@ -145,6 +145,28 @@ The official Python SDK 1.3.0 [0.3 conversion layer](https://github.com/a2aproje
 maps these security fields in both directions in `to_core_agent_card` and
 `to_compat_agent_card`. This is version-adapter behavior, not automatic alias
 handling by a plain JSON parser.
+
+`AgentCard.skills[].securityRequirements` uses the same A2A 1.0 POJOs,
+`List<SecurityRequirement>` and the `schemes/list` JSON structure, without Jackson
+annotations or modules. Skill requirements remain independent of Card requirements
+and other Skills. Nacos preserves declarations rather than merging, promoting, or
+materializing effective permissions. Missing/null and explicitly empty lists stay
+distinct. Alternatives, schemes, scope ordering, and empty scopes are preserved;
+an omitted `list` means empty scopes. A2A publication and read boundaries validate
+requirement items, `schemes`, scope containers, and string lists. Malformed or
+incomplete structures fail with controlled errors instead of losing declarations.
+This additive field has no historical flat fallback and does not introduce the
+0.3 Skill `security` field or conversion. Missing historical fields remain readable
+without storage rewrites; declarations already discarded by old models require
+republication by their owner.
+
+Complete Skill declarations remain in `nativeDescriptor`, queries, conversions,
+and RAD subscriptions. Existing content digest and RAD fingerprint algorithms are
+unchanged: a Skill requirement change is a descriptor change, while identical
+snapshots do not trigger repeated notifications. Legacy polling subscriptions are
+unchanged. Old SDKs or servers may still ignore the new field; end-to-end preservation
+requires upgrading typed readers/writers and downstream adapters, and does not add
+this capability to old versions.
 
 An A2A call interface in the exact common-latest Version declares the ARD
 representation `application/a2a-agent-card+json` only when it passes complete

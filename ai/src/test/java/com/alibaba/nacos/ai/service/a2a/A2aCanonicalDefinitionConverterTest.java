@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.admin.AgentDraftCreateRequest;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +81,24 @@ class A2aCanonicalDefinitionConverterTest {
         assertFalse(descriptor.containsKey("registrationType"));
         assertEquals(3, card.getSupportedInterfaces().size());
         assertNull(card.getUrl());
+    }
+    
+    @Test
+    void shouldPreserveSkillRequirementsInIsolatedNativeDescriptor() throws NacosException {
+        AgentCard source = card();
+        AgentSkill skill = JsonUtils.toObj("{\"id\":\"protected\",\"securityRequirements\":[{"
+            + "\"schemes\":{\"oauth2\":{\"list\":[\"skill-read\"]}}}]}", AgentSkill.class);
+        source.setSkills(Collections.singletonList(skill));
+        AgentDraftCreateRequest request = converter.convert(NAMESPACE_ID, source, "URL", true);
+        AgentCard stored = JsonUtils.toObj(JsonUtils.toJson(request.getCallInterfaces().get(0)
+            .getNativeDescriptor()), AgentCard.class);
+        assertEquals(source.getSkills(), stored.getSkills());
+        assertNull(stored.getSecurityRequirements());
+        assertNull(stored.getSecurity());
+        stored.getSkills().get(0).getSecurityRequirements().get(0).getSchemes().get("oauth2")
+            .getList().clear();
+        assertEquals(Collections.singletonList("skill-read"), skill.getSecurityRequirements()
+            .get(0).getSchemes().get("oauth2").getList());
     }
     
     @Test

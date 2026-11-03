@@ -451,3 +451,14 @@ directed restart/cluster cases use the existing
 Coverage is scoped to these behavior groups and does not promote unrelated SDK
 registry rows. Local upgrade experiments and one-off coverage/run summaries are
 kept outside the committed scenario matrix.
+
+## A2A Skill security requirements (#15975, item 2)
+
+Status: Covered = important contract verified; Partial = representative scenarios; Pending = no IT.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A facade and native RAD / `A2aRadRoutingJavaSdkITCase` | Publish, query, converter, initial and updated RAD callbacks, removal, invalid POJO | Covered | HTTP/gRPC preserve independent Card and Skill declarations, multiple Skills, OR/AND schemes, scopes, absent/empty fields; newer Versions change/clear/remove Skill requirements, and incomplete typed requirements fail with INVALID_PARAM. Source Card remains unchanged. Same-Version descriptor-only fingerprint changes and unchanged snapshot suppression use deterministic RAD Watch UT; canonical online definitions remain immutable. |
+
+Legacy polling behavior and 0.3 Skill adaptation are unchanged and outside this increment.
+Old peers that discard unknown Skill fields do not gain support; end-to-end preservation requires upgraded typed paths.

@@ -524,3 +524,13 @@ The public SDK surface and coverage denominator are unchanged. The optional requ
 header is not exposed in SDK results; deterministic wire-capture UT verifies its
 emission and retry attribution. Standalone SDK IT verifies observable snapshot and
 Listener behavior rather than claiming to inspect server-side headers.
+
+## A2A Skill security requirements (#15975, item 2)
+
+`A2aRadRoutingJavaSdkITCase.skillSecurityRequirementsSurviveRadQueryAndSubscription`
+verifies HTTP/gRPC facade release/query, native RAD query/conversion, both RAD-backed
+subscription APIs, changed/empty/removed declarations across latest Versions, independent
+Card requirements, caller isolation, and controlled invalid-POJO errors. Unit tests
+cover plain binding, Jackson 2/3, native descriptor preservation, descriptor-only RAD
+fingerprint changes, and identical-snapshot suppression. No legacy polling or 0.3 Skill
+behavior changes. Existing surface classifications and strict/effective totals remain unchanged.

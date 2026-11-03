@@ -216,3 +216,13 @@ mutations and the current SDK for RAD admission/terminal assertions. ARD reads i
 `A2aMigrationAdminApiOpenApiITCase` use the explicit Client identity. Normal Admin,
 QUIESCING, terminal-marker and restart reports remain separate; see
 the SDK scenario and coverage records for final execution.
+
+## A2A Skill security requirements (#15975, item 2)
+
+Status: Covered = deployed contract verified; Partial = representative scenarios; Pending = no IT.
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A Admin / `A2aAdminApiOpenApiITCase` | Register and query AgentCard with Skill requirements | Covered | Standard `schemes/list`, OR alternatives, multiple schemes/scopes, independent Card requirements, absent/null/empty values; malformed or flat Skill requirements return HTTP 400. No 0.3 Skill conversion or historical rewrite. |
+
+These scenarios extend the existing A2A Admin surface; surface counts and overall classifications remain unchanged.

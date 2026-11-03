@@ -120,3 +120,11 @@ content update, publication and version offline/online, including the generated
 description and `frontMatterTruncated=false` for a complete projection. Historical
 responses may omit frontmatter and the truncation flag or return null; API model
 round-trip unit tests cover that boundary.
+
+## A2A Skill security requirements (#15975, item 2)
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A Maintainer / `AiMaintainerServiceMaintainerSdkITCase.shouldManageA2aAgentLifecycle` | Register/get and new-Version update/get | Covered | Standard Skill requirements survive independently of Card requirements; clearing Card requirements retains Skill declarations. Existing lifecycle cleanup/conflict assertions remain. No legacy Skill conversion or storage rewrite. |
+
+Status follows the existing Covered/Partial/Pending legend; existing surface counts do not change.
