@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
-import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
-import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -128,36 +124,7 @@ public class GrpcUtils {
         if (classType != null) {
             ByteString byteString = payload.getBody().getValue();
             ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
-            Object obj;
-            try {
-                obj = JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), classType);
-                if (obj instanceof ReleaseAgentCardRequest) {
-                    ReleaseAgentCardRequest release = (ReleaseAgentCardRequest) obj;
-                    if (release.getAgentCard() != null) {
-                        A2aSecurityUtils.normalize(release.getAgentCard());
-                    }
-                } else if (obj instanceof QueryAgentCardResponse) {
-                    QueryAgentCardResponse query = (QueryAgentCardResponse) obj;
-                    if (query.getAgentCardDetailInfo() != null) {
-                        A2aSecurityUtils.normalize(query.getAgentCardDetailInfo());
-                    }
-                }
-            } catch (NacosDeserializationException | IllegalArgumentException original) {
-                if (ReleaseAgentCardRequest.class != classType
-                    && QueryAgentCardResponse.class != classType) {
-                    throw original;
-                }
-                Map<String, Object> envelope =
-                    JsonUtils.toObj(byteString.toStringUtf8(), Map.class);
-                String field = ReleaseAgentCardRequest.class == classType ? "agentCard"
-                    : "agentCardDetailInfo";
-                Object card = envelope.get(field);
-                if (card instanceof Map) {
-                    envelope.put(field, A2aSecurityUtils.readCard(JsonUtils.toJson(card),
-                        com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo.class));
-                }
-                obj = JsonUtils.toObj(JsonUtils.toJson(envelope), classType);
-            }
+            Object obj = JsonUtils.toObj(new ByteBufferInputStream(byteBuffer), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }

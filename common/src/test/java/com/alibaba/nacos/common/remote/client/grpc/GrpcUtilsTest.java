@@ -18,10 +18,6 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
-import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -41,28 +37,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GrpcUtilsTest {
-    
-    @Test
-    void historicalCardRequirementsAreNormalizedBeforeRpcBinding() {
-        String card = "{\"securityRequirements\":[{\"oauth2\":[\"read\"]}]}";
-        Payload release = Payload.newBuilder().setMetadata(Metadata.newBuilder()
-            .setType("ReleaseAgentCardRequest").putHeaders("test", "header"))
-            .setBody(
-                Any.newBuilder().setValue(ByteString.copyFromUtf8("{\"agentCard\":" + card + "}")))
-            .build();
-        ReleaseAgentCardRequest decoded = (ReleaseAgentCardRequest) GrpcUtils.parse(release);
-        assertEquals("read", decoded.getAgentCard().getSecurityRequirements().get(0)
-            .getSchemes().get("oauth2").getList().get(0));
-        assertEquals("header", decoded.getHeader("test"));
-        Payload response = Payload.newBuilder().setMetadata(Metadata.newBuilder()
-            .setType("QueryAgentCardResponse"))
-            .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(
-                "{\"agentCardDetailInfo\":" + card + "}")))
-            .build();
-        QueryAgentCardResponse result = (QueryAgentCardResponse) GrpcUtils.parse(response);
-        assertEquals(decoded.getAgentCard().getSecurityRequirements(),
-            result.getAgentCardDetailInfo().getSecurityRequirements());
-    }
     
     private ServiceQueryRequest request;
     

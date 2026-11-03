@@ -129,6 +129,12 @@ empty requirement. The retry validates scheme-to-string-array entries and change
 only the returned object; it never rewrites storage, enqueues repairs, or changes
 Version digests. Invalid data still fails. Publications use the standard model;
 this change adds no historical data rewrite or scan. Skill-level fields are excluded.
+Compatibility decoding requires the original Card JSON and belongs to A2A read
+boundaries. Generic gRPC parsing does not recognize A2A request or response types.
+If an old peer sends flat `securityRequirements` in a typed gRPC payload, the A2A
+release/query boundary rejects an incomplete bound object instead of treating lost
+scopes as empty requirements. It cannot recover fields already discarded by the
+JSON parser. Standard requirements and 0.3 `security` remain supported on this path.
 Older Nacos nodes and SDKs may not decode the corrected standard field. Upgrade
 readers first and retain pre-upgrade backups; rollback cannot assume old binaries
 can read newly published standard data. Keeping `security` does not remove this limitation.

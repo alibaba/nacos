@@ -47,8 +47,15 @@ query/conversion, initial subscriptions, and changed latest-version callbacks
 over both gRPC and HTTP. Old-field-only 0.3 input and explicit empty new fields
 verify bidirectional projection, new-field precedence, and caller isolation.
 API/common unit tests cover malformed requirements, empty/absent values, mutable
-Java accessors, conflict precedence, inherited Card DTOs, legacy gRPC envelopes,
-and plain Jackson 2/3 mappers without registered modules. Boundary tests verify old flat JSON before POJO binding, including gRPC release/query and Maintainer HTTP responses. Skill-level requirements are a separate issue item.
+Java accessors, conflict precedence, inherited Card DTOs,
+and plain Jackson 2/3 mappers without registered modules. Boundary tests verify
+compatibility retry with original stored Card JSON and Maintainer HTTP responses.
+A2A handler/client unit tests cover typed gRPC release/query: standard requirements
+and 0.3 `security` are normalized; incompletely decoded flat new-field payloads
+are rejected without losing scopes. The standard SDK POJO cannot construct that
+historical malformed wire shape, so its rejection is covered at these boundaries
+rather than by the standalone SDK IT. Generic gRPC parsing remains unchanged.
+Skill-level requirements are a separate issue item.
 Requirements always use standard output and require upgraded decoders; legacy
 `security` retains the 0.3 flat shape. Existing surface classifications and totals
 remain unchanged.
