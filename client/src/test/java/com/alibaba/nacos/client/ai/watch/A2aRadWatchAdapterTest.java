@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -57,6 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -236,6 +239,52 @@ class A2aRadWatchAdapterTest {
             "the legacy equals method ignores the compatibility registrationType field");
         assertEquals("URL", listener.cards.get(0).getRegistrationType());
         assertEquals("SERVICE", listener.cards.get(1).getRegistrationType());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"changed", "empty", "removed"})
+    void skillRequirementsChangeFingerprintAndNotifyOnce(String change) throws Exception {
+        AgentDiscoveryResult first = skillSnapshot("read");
+        AgentDiscoveryResult second = skillSnapshot("write");
+        AgentCard changed = JsonUtils.toObj(JsonUtils.toJson(second.getCallInterfaces().get(0)
+            .getNativeDescriptor()), AgentCard.class);
+        if ("empty".equals(change)) {
+            changed.getSkills().get(0).setSecurityRequirements(Collections.emptyList());
+        } else if ("removed".equals(change)) {
+            changed.getSkills().get(0).setSecurityRequirements(null);
+        }
+        second.getCallInterfaces().get(0).setNativeDescriptor(
+            JsonUtils.toObj(JsonUtils.toJson(changed), Map.class));
+        assertEquals(first.getVersion(), second.getVersion());
+        assertEquals(first.getContentDigest(), second.getContentDigest());
+        assertNotEquals(AgentDiscoveryCanonicalizer.fingerprint(first),
+            AgentDiscoveryCanonicalizer.fingerprint(second));
+        when(proxy.discoverAgent(any())).thenReturn(first, second, second);
+        CardListener listener = new CardListener();
+        adapter.subscribe("demo", null, listener);
+        drain();
+        assertEquals(Collections.singletonList("read"), listener.cards.get(0).getSkills().get(0)
+            .getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+        refresh();
+        assertEquals(2, listener.cards.size());
+        assertEquals(changed.getSkills(), listener.cards.get(1).getSkills());
+        assertEquals(listener.cards.get(0).getSecurityRequirements(),
+            listener.cards.get(1).getSecurityRequirements());
+        refresh();
+        assertEquals(2, listener.cards.size(),
+            "identical Skill declarations must not notify again");
+    }
+    
+    private AgentDiscoveryResult skillSnapshot(String scope) throws Exception {
+        AgentDiscoveryResult snapshot = snapshot("URL");
+        AgentCard card = JsonUtils.toObj(JsonUtils.toJson(snapshot.getCallInterfaces().get(0)
+            .getNativeDescriptor()), AgentCard.class);
+        card.getSkills().get(0).setSecurityRequirements(A2aSecurityUtils.fromLegacy(
+            Collections.singletonList(
+                Collections.singletonMap("oauth2", Collections.singletonList(scope)))));
+        snapshot.getCallInterfaces().get(0)
+            .setNativeDescriptor(JsonUtils.toObj(JsonUtils.toJson(card), Map.class));
+        return snapshot;
     }
     
     @Test
@@ -553,7 +602,8 @@ class A2aRadWatchAdapterTest {
             + "\"skills\":[{\"id\":\"s\",\"name\":\"skill\",\"tags\":[\"tag\"]}],"
             + "\"provider\":{\"organization\":\"Nacos\",\"url\":\"https://nacos.io\"},"
             + "\"securitySchemes\":{\"token\":{\"type\":\"http\",\"scheme\":\"bearer\"}},"
-            + "\"security\":[{\"token\":[]}],\"securityRequirements\":[{\"token\":[]}],"
+            + "\"security\":[{\"token\":[]}],"
+            + "\"securityRequirements\":[{\"schemes\":{\"token\":{\"list\":[]}}}],"
             + "\"signatures\":[{\"protected\":\"header\",\"signature\":\"signature\"}],"
             + "\"documentationUrl\":\"https://docs.example\","
             + "\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"]}",

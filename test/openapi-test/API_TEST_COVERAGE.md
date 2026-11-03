@@ -33,6 +33,20 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+## Card-level A2A security requirements (#15975, item 1)
+
+`A2aAdminApiOpenApiITCase` additionally covers standard and historical flat
+Card-level `securityRequirements` imports, standard query output, synchronized
+legacy `security`, old-field-only input, conflict precedence, empty/anonymous/
+absent requirements, and malformed requirement HTTP 400 responses.
+The dedicated AUTO/SYNCING fixture additionally runs
+`A2aMigrationAdminApiOpenApiITCase.testHistoricalSecurityReadFallsBackWithoutChangingStorage`:
+queries decode historical flat requirements into standard POJOs while the original
+persisted data remains unchanged. The same scenario can run on a LEGACY fixture.
+No asynchronous repair or storage migration is part of this fix.
+This extends the existing A2A Admin surface; classifications and API-surface
+totals remain unchanged. Skill-level requirements are separate.
+
 ## Visibility scope extension compatibility
 
 VisibilityScopeAdminApiOpenApiITCase and VisibilityScopeConsoleApiOpenApiITCase reject
@@ -741,3 +755,11 @@ checks that out-of-scope gray publishes omit the message. The Admin case also
 verifies successful CAS messages and unchanged history after a stale-md5
 conflict. Execution results are reported separately from these scenario
 definitions.
+
+## A2A Skill security requirements (#15975, item 2)
+
+`A2aAdminApiOpenApiITCase` now verifies standard Skill requirement registration/query,
+independence from Card requirements, absent/null/empty lists, and controlled HTTP 400
+for malformed or flat Skill structures. See the A2A Skill scenario matrix in
+`ADMIN_API_TEST_SCENARIOS.md`. This extends an existing surface; row classifications,
+strict/effective coverage totals, API paths, and storage mechanisms are unchanged.

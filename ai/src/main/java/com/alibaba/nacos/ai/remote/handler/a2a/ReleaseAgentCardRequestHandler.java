@@ -98,7 +98,12 @@ public class ReleaseAgentCardRequestHandler
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "parameters `agentCard` can't be null");
         }
-        AgentRequestUtil.validateAgentCard(request.getAgentCard());
+        try {
+            AgentRequestUtil.validateAgentCard(request.getAgentCard());
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "agentCard is invalid: " + e.getMessage());
+        }
     }
     
     private void doHandler(ReleaseAgentCardRequest request, RequestMeta meta)

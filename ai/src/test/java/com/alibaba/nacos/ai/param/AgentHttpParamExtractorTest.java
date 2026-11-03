@@ -104,6 +104,17 @@ class AgentHttpParamExtractorTest {
     }
     
     @Test
+    void extractNameWithoutBindingHistoricalRequirements() throws NacosException {
+        String json = "{\"name\":\"legacy\",\"securityRequirements\":[{\"schemes\":[\"read\"]}]}";
+        when(request.getParameter("namespaceId")).thenReturn("testNs");
+        when(request.getParameter("agentName")).thenReturn("ignored");
+        when(request.getParameterMap()).thenReturn(Map.of("agentCard", new String[] {json}));
+        when(request.getParameter("agentCard")).thenReturn(json);
+        
+        assertEquals("legacy", httpParamExtractor.extractParam(request).get(0).getAgentName());
+    }
+    
+    @Test
     void extractParamWithEmptyParameters() throws NacosException {
         when(request.getParameterMap()).thenReturn(new java.util.HashMap<>());
         

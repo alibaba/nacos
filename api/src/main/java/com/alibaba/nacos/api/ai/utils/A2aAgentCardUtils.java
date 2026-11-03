@@ -84,7 +84,7 @@ public final class A2aAgentCardUtils {
     }
     
     /**
-     * Normalize supported and historical interface fields in place.
+     * Normalize current and historical Card fields in place, preferring current fields.
      * @param agentCard Card to normalize, or null
      */
     public static void normalizeAgentCard(AgentCard agentCard) {
@@ -108,6 +108,7 @@ public final class A2aAgentCardUtils {
             }
         }
         normalizeExtendedAgentCard(agentCard);
+        A2aSecurityUtils.normalize(agentCard);
     }
     
     private static List<AgentInterface> normalizeSupportedInterfaces(AgentCard agentCard) {

@@ -18,10 +18,12 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -103,10 +105,21 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH)
             .build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(request);
-        Result<AgentCardDetailInfo> result = JsonUtils.toObj(restResult.getData(),
-            new NacosTypeReference<Result<AgentCardDetailInfo>>() {
-            });
-        return result.getData();
+        try {
+            Result<AgentCardDetailInfo> result = JsonUtils.toObj(restResult.getData(),
+                new NacosTypeReference<Result<AgentCardDetailInfo>>() {
+                });
+            if (result.getData() != null) {
+                A2aSecurityUtils.normalize(result.getData());
+            }
+            return result.getData();
+        } catch (NacosDeserializationException | IllegalArgumentException original) {
+            Result<Map<String, Object>> result = JsonUtils.toObj(restResult.getData(),
+                new NacosTypeReference<Result<Map<String, Object>>>() {
+                });
+            return result.getData() == null ? null : A2aSecurityUtils.readCard(
+                JsonUtils.toJson(result.getData()), AgentCardDetailInfo.class);
+        }
     }
     
     @Override

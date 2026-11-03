@@ -16,6 +16,13 @@
 
 # Admin API IT Scenario Index
 
+Card-level A2A security requirements (#15975, item 1) extend the existing A2A
+Admin surface without changing coverage totals:
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A Card security requirements / `A2aAdminApiOpenApiITCase` | POST and GET `/v3/admin/ai/a2a` | Covered | Standard and historical flat import; standard output plus synchronized 0.3 `security`; old-field-only input, new-field precedence on conflicts, empty lists, anonymous alternatives, absent fields, and malformed requirement HTTP 400. Dedicated AUTO/SYNCING migration IT verifies that historical flat reads return standard requirements without changing stored data. Standard parsing precedes the compatibility retry; malformed data remains an error. No read repair is scheduled. Skill-level requirements are outside this item. |
+
 The cross-cutting [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md)
 adds owner/admin/non-owner/grantee checks over existing AI resource detail, list, label and
 delete operations. It records failures and fixture gaps independently and does not imply
@@ -232,3 +239,13 @@ checks that out-of-scope gray publishes omit the message. The Admin case also
 verifies successful CAS messages and unchanged history after a stale-md5
 conflict. Execution results are reported separately from these scenario
 definitions.
+
+## A2A Skill security requirements (#15975, item 2)
+
+Status: Covered = deployed contract verified; Partial = representative scenarios; Pending = no IT.
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A Admin / `A2aAdminApiOpenApiITCase` | Register and query AgentCard with Skill requirements | Covered | Standard `schemes/list`, OR alternatives, multiple schemes/scopes, independent Card requirements, absent/null/empty values; malformed or flat Skill requirements return HTTP 400. No 0.3 Skill conversion or historical rewrite. |
+
+These scenarios extend the existing A2A Admin surface; surface counts and overall classifications remain unchanged.

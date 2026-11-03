@@ -333,7 +333,8 @@ class A2aRadConverterTest {
             + "\"skills\":[{\"id\":\"s\",\"name\":\"skill\",\"tags\":[\"tag\"]}],"
             + "\"provider\":{\"organization\":\"Nacos\",\"url\":\"https://nacos.io\"},"
             + "\"securitySchemes\":{\"token\":{\"type\":\"http\",\"scheme\":\"bearer\"}},"
-            + "\"security\":[{\"token\":[]}],\"securityRequirements\":[{\"token\":[]}],"
+            + "\"security\":[{\"token\":[]}],"
+            + "\"securityRequirements\":[{\"schemes\":{\"token\":{\"list\":[]}}}],"
             + "\"signatures\":[{\"protected\":\"header\",\"signature\":\"signature\"}],"
             + "\"documentationUrl\":\"https://docs.example\","
             + "\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"]}",
