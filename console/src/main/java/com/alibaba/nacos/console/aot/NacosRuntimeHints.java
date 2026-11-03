@@ -308,6 +308,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     // region Nacos Hints
     private final Class<?>[] nacosClasses = {
         // reflect
+        com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement.class,
+        com.alibaba.nacos.api.ai.model.a2a.StringList.class,
         com.alibaba.nacos.common.notify.SlowEvent.class,
         com.alibaba.nacos.common.packagescan.PackageScan.class,
         com.alibaba.nacos.common.packagescan.DefaultPackageScan.class,

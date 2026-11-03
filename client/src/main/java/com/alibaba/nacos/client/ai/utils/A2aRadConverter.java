@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.utils;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -160,8 +161,9 @@ public final class A2aRadConverter {
                 throw notFound();
             }
             AgentCallInterface call = requireInterface(source);
-            AgentCardDetailInfo card = JsonUtils.toObj(JsonUtils.toJson(call.getNativeDescriptor()),
-                AgentCardDetailInfo.class);
+            AgentCardDetailInfo card =
+                A2aSecurityUtils.readCard(JsonUtils.toJson(call.getNativeDescriptor()),
+                    AgentCardDetailInfo.class);
             A2aAgentCardUtils.validateAgentCard(card);
             if (!source.getAgentName().equals(card.getName())
                 || !source.getVersion().equals(card.getVersion())) {

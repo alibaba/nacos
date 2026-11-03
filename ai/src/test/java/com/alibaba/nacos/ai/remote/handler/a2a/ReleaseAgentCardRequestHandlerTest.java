@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class ReleaseAgentCardRequestHandlerTest {
@@ -65,6 +67,46 @@ class ReleaseAgentCardRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         assertEquals("parameters `agentCard` can't be null", response.getMessage());
+    }
+    
+    @Test
+    void rejectsIncompleteRequirementsAfterGenericJsonBinding() throws NacosException {
+        ReleaseAgentCardRequest request = readSecurityRequest(
+            "\"securityRequirements\":[{\"oauth2\":[\"read\"]}]");
+        ReleaseAgentCardResponse response = requestHandler.handle(request, meta);
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        verifyNoInteractions(a2aServerOperationService);
+    }
+    
+    @Test
+    void normalizesLegacySecurityAtReleaseBoundary() throws NacosException {
+        ReleaseAgentCardRequest request = readSecurityRequest(
+            "\"security\":[{\"oauth2\":[\"read\"]}]");
+        assertEquals(ResponseCode.SUCCESS.getCode(),
+            requestHandler.handle(request, meta).getResultCode());
+        assertEquals("read", request.getAgentCard().getSecurityRequirements().get(0)
+            .getSchemes().get("oauth2").getList().get(0));
+        verify(a2aServerOperationService).releaseAgent(request.getAgentCard(), "public",
+            "SERVICE", false);
+    }
+    
+    @Test
+    void normalizesStandardRequirementsAtReleaseBoundary() throws NacosException {
+        ReleaseAgentCardRequest request = readSecurityRequest(
+            "\"securityRequirements\":[{\"schemes\":{\"oauth2\":{\"list\":[\"read\"]}}}]");
+        assertEquals(ResponseCode.SUCCESS.getCode(),
+            requestHandler.handle(request, meta).getResultCode());
+        assertEquals("read", request.getAgentCard().getSecurity().get(0).get("oauth2").get(0));
+        verify(a2aServerOperationService).releaseAgent(request.getAgentCard(), "public",
+            "SERVICE", false);
+    }
+    
+    private ReleaseAgentCardRequest readSecurityRequest(String securityJson) {
+        return JsonUtils.toObj("{\"namespaceId\":\"public\",\"agentCard\":{\"name\":\"test\","
+            + "\"version\":\"1.0.0\",\"protocolVersion\":\"0.3.0\","
+            + "\"preferredTransport\":\"JSONRPC\",\"url\":\"https://example.com\","
+            + securityJson + "}}", ReleaseAgentCardRequest.class);
     }
     
     @Test

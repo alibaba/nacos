@@ -68,6 +68,13 @@ public class AgentCard extends AgentCardBasicInfo {
     
     private Map<String, SecurityScheme> securitySchemes;
     
+    /**
+     * Legacy A2A 0.3 field, pending removal when A2A 0.3 protocol support ends.
+     * Use {@link #securityRequirements} for A2A 1.0.
+     *
+     * @deprecated For A2A 0.3 protocol compatibility only.
+     */
+    @Deprecated
     private List<Map<String, List<String>>> security;
     
     /**
@@ -75,7 +82,7 @@ public class AgentCard extends AgentCardBasicInfo {
      *
      * @since 3.2.1
      */
-    private List<Map<String, List<String>>> securityRequirements;
+    private List<SecurityRequirement> securityRequirements;
     
     private List<String> defaultInputModes;
     
@@ -161,11 +168,11 @@ public class AgentCard extends AgentCardBasicInfo {
         this.security = security;
     }
     
-    public List<Map<String, List<String>>> getSecurityRequirements() {
+    public List<SecurityRequirement> getSecurityRequirements() {
         return securityRequirements;
     }
     
-    public void setSecurityRequirements(List<Map<String, List<String>>> securityRequirements) {
+    public void setSecurityRequirements(List<SecurityRequirement> securityRequirements) {
         this.securityRequirements = securityRequirements;
     }
     

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardBasicInfo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -118,7 +118,8 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
     private String deserializeAndGetAgentName(String agentCardJson) {
         try {
-            AgentCard agentCard = JacksonUtils.toObj(agentCardJson, AgentCard.class);
+            AgentCardBasicInfo agentCard =
+                JacksonUtils.toObj(agentCardJson, AgentCardBasicInfo.class);
             return agentCard.getName();
         } catch (Exception ignored) {
             return StringUtils.EMPTY;

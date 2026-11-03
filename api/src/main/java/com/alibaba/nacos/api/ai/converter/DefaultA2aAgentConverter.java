@@ -17,6 +17,8 @@
 package com.alibaba.nacos.api.ai.converter;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -27,7 +29,6 @@ import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
 import com.alibaba.nacos.api.ai.utils.AgentWatchLogUtils;
 import com.alibaba.nacos.api.ai.utils.RadModelValidator;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.utils.json.JsonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +97,8 @@ final class DefaultA2aAgentConverter implements AgentConverter<AgentCard> {
             throw new IllegalArgumentException("nativeDescriptor must be an A2A JSON object");
         }
         try {
-            return JsonUtils.toObj(JsonUtils.toJson(call.getNativeDescriptor()), AgentCard.class);
+            return A2aSecurityUtils.readCard(JsonUtils.toJson(call.getNativeDescriptor()),
+                AgentCard.class);
         } catch (RuntimeException cause) {
             throw new IllegalArgumentException("nativeDescriptor cannot be decoded as AgentCard",
                 cause);

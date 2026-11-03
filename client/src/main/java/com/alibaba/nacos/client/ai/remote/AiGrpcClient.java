@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -744,7 +745,16 @@ public class AiGrpcClient implements AiClientProxy {
         request.setVersion(version);
         request.setRegistrationType(registrationType);
         QueryAgentCardResponse response = requestToServer(request, QueryAgentCardResponse.class);
-        return response.getAgentCardDetailInfo();
+        AgentCardDetailInfo result = response.getAgentCardDetailInfo();
+        if (result != null) {
+            try {
+                A2aSecurityUtils.normalize(result);
+            } catch (IllegalArgumentException e) {
+                throw new NacosException(NacosException.SERVER_ERROR,
+                    "Invalid AgentCard securityRequirements in response", e);
+            }
+        }
+        return result;
     }
     
     /**

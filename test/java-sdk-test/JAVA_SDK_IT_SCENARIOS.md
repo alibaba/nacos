@@ -29,6 +29,15 @@ Destructive process-restart and multi-node variants are orchestrated by
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md) rather
 than stopping the server shared by the required standalone suite.
 
+## Card-level A2A security requirements (#15975, item 1)
+
+This matrix extends the existing A2A/RAD surface without adding a new
+coverage-count row:
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| AgentCard security requirements | Decode standard and historical JSON; release/query; facade and native RAD subscriptions synchronize new and old fields across version changes | Covered | `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`, gRPC and HTTP; standard POJO, 0.3 old-field-only, explicit empty new field, and caller isolation. Standard requirements output needs upgraded decoders; Java accessors now use List<SecurityRequirement>, with schemes/StringList POJOs. Historical raw input is covered by HTTP IT and boundary unit tests. Malformed/absent input, inherited DTOs, mutable Java accessors, conflict precedence and Jackson 2/3 are unit-tested. Skill-level requirements are outside this item. |
+
 ## Scope extension API boundary coverage
 
 AgentModelValidationJavaSdkITCase verifies the unchanged public Agent/summary/overview

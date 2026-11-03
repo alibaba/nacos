@@ -89,6 +89,63 @@ The current descriptor baseline supports A2A 1.0 fields and the existing 0.x
 compatibility fields. Adapter normalization must not replace the stored native
 descriptor with a synthetic generic Agent object.
 
+Card-level `securityRequirements` follows the A2A 1.0 `SecurityRequirement`
+and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
+The Java model directly uses `List<SecurityRequirement>`, whose `schemes` is
+`Map<String,StringList>` and whose `StringList.list` is `List<String>`.
+Plain JSON mappers read and write this shape without annotations, modules, or
+special Map types. Historical reads try the standard POJO first and retry the old
+flat representation `[{"oauth2":["read"]}]` only after decoding fails. Ordinary
+serialization performs no conversion. Correcting the historical model changes
+the getter/setter element type: callers must rebuild against the standard POJOs;
+List type erasure does not make old source or compiled callers compatible.
+
+Both `security` and `securityRequirements` remain available. `security` retains
+the 0.3 flat wire format and is deprecated, pending removal when Nacos stops
+supporting the 0.3 `protocolVersion`; its replacement is `securityRequirements`.
+Existing Card adapters synchronize them during normalization: a non-null
+`securityRequirements` takes precedence, including an explicitly empty list;
+otherwise `security` supplies it. Equivalent content is then projected to
+`security`. If both are absent/null, no empty requirement is created. Conflicting
+fields use the new field rather than concatenating alternatives and changing
+authentication semantics. Synchronization belongs to the adapter normalization
+boundary, not model setters or JSON parsing. The projection copies lists, maps,
+and scope lists to avoid mutable aliases. This follows the existing precedence
+for interface fields and extended Card capabilities.
+
+Alternatives, all
+schemes within an alternative, scope ordering, and empty scopes survive Card
+registration, query, and subscription. An omitted `StringList.list` means an
+empty scope list; malformed requirements must fail decoding rather than lose
+access declarations. Missing/null requirements and an empty requirements list
+remain distinct. Historical flat input remains readable, but standard output
+requires a decoder supporting that shape; including legacy `security` does not
+guarantee that a pre-fix Nacos decoder can parse the new field.
+
+Queries first bind the standard POJO. Only a decoding failure or a missing
+`schemes` structure retries the historical flat representation. A parser that
+ignores unknown fields must not silently accept lost security declarations as an
+empty requirement. The retry validates scheme-to-string-array entries and changes
+only the returned object; it never rewrites storage, enqueues repairs, or changes
+Version digests. Invalid data still fails. Publications use the standard model;
+this change adds no historical data rewrite or scan. Skill-level fields are excluded.
+Compatibility decoding requires the original Card JSON and belongs to A2A read
+boundaries. Generic gRPC parsing does not recognize A2A request or response types.
+If an old peer sends flat `securityRequirements` in a typed gRPC payload, the A2A
+release/query boundary rejects an incomplete bound object instead of treating lost
+scopes as empty requirements. It cannot recover fields already discarded by the
+JSON parser. Standard requirements and 0.3 `security` remain supported on this path.
+Older Nacos nodes and SDKs may not decode the corrected standard field. Upgrade
+readers first and retain pre-upgrade backups; rollback cannot assume old binaries
+can read newly published standard data. Keeping `security` does not remove this limitation.
+
+Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
+and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).
+The official Python SDK 1.3.0 [0.3 conversion layer](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
+maps these security fields in both directions in `to_core_agent_card` and
+`to_compat_agent_card`. This is version-adapter behavior, not automatic alias
+handling by a plain JSON parser.
+
 An A2A call interface in the exact common-latest Version declares the ARD
 representation `application/a2a-agent-card+json` only when it passes complete
 AgentCard validation for that baseline. The artifact returns the stored native

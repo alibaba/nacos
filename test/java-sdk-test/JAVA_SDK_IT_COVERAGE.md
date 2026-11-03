@@ -38,6 +38,28 @@ HTTP API IT CI and should build this module without executing SDK IT cases.
 Destructive restart and cluster cases run through
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md).
 
+## Card-level A2A security requirements (#15975, item 1)
+
+Card-level A2A security requirements (#15975, item 1) are covered by
+`A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`:
+standard POJO publication, facade release/query, native RAD
+query/conversion, initial subscriptions, and changed latest-version callbacks
+over both gRPC and HTTP. Old-field-only 0.3 input and explicit empty new fields
+verify bidirectional projection, new-field precedence, and caller isolation.
+API/common unit tests cover malformed requirements, empty/absent values, mutable
+Java accessors, conflict precedence, inherited Card DTOs,
+and plain Jackson 2/3 mappers without registered modules. Boundary tests verify
+compatibility retry with original stored Card JSON and Maintainer HTTP responses.
+A2A handler/client unit tests cover typed gRPC release/query: standard requirements
+and 0.3 `security` are normalized; incompletely decoded flat new-field payloads
+are rejected without losing scopes. The standard SDK POJO cannot construct that
+historical malformed wire shape, so its rejection is covered at these boundaries
+rather than by the standalone SDK IT. Generic gRPC parsing remains unchanged.
+Skill-level requirements are a separate issue item.
+Requirements always use standard output and require upgraded decoders; legacy
+`security` retains the 0.3 flat shape. Existing surface classifications and totals
+remain unchanged.
+
 ## JSON Runtime Dependency Isolation (#15788)
 
 The `jackson3-sdk-test` profile verifies Jackson 2/3 coexistence and explicit
