@@ -138,6 +138,39 @@ storage, and authorization continue to use the infrastructure configured by
 `auth:nacos`; those shared settings are not duplicated in `auth:ldap`
 definitions.
 
+## Oracle Storage Adaptation Plugin
+
+The `nacos-oracle-auth-plugin` module adapts the default auth plugin's
+external-storage persistence to Oracle databases without modifying any default
+auth plugin class. It is activated by the storage dialect, not by an auth type:
+with `nacos.plugin.datasource-dialect.type=oracle` on a server or merged
+deployment with external storage, it registers primary user, role and
+permission persist services, so every by-type injection of the default persist
+service interfaces resolves to the Oracle-adapted implementations. The default
+persistence beans stay registered but unused.
+
+Requirements and behavior:
+
+- The auth type stays `nacos`: identity model, login, admin initialization,
+  token, caching and visibility grants continue to use the default auth plugin
+  unchanged.
+- The permission column is named `resources` (`resource` is an Oracle reserved
+  word) and is selected with a quoted `"resource"` alias, so the shared
+  permission row mapper keeps reading by the same column label.
+- List queries paginate with Oracle `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`
+  syntax through the plugin's own pagination helper, because the default
+  pagination factory has no Oracle adapter and its fallback would run SQL
+  without any paging clause.
+- `LIKE` searches append an explicit `ESCAPE '\'` clause, mirroring what the
+  default plugin does for embedded Derby storage.
+- Deployment requires Oracle Database 12c or later: list queries paginate with
+  the ANSI `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY` syntax introduced in 12c.
+- The plugin fails fast at startup if the actual datasource dialect is not
+  Oracle.
+- On any non-Oracle dialect, embedded storage or a standalone console, the
+  configuration backs off completely and behavior is identical to the default
+  auth plugin.
+
 ## Identity
 
 The plugin accepts these identity inputs:
@@ -333,7 +366,8 @@ Explicit visibility permission resources use:
 ```
 
 The exact canonical resource string must be stored in the default RBAC
-`permissions.resource` column. The column must support at least 512 characters
+`permissions.resource` column (named `permissions.resources` on Oracle, because
+`resource` is a reserved word there). The column must support at least 512 characters
 so namespaced resources can be persisted without truncation. Resource matching
 is exact and case-sensitive; the default MySQL schema therefore uses
 `utf8mb4_bin` for this column and `ROW_FORMAT=DYNAMIC` for the `permissions`
@@ -353,7 +387,7 @@ Upgrade scripts for this change are delivered in `distribution/conf`:
 | MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
 | Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
 | PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
-| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resources VARCHAR2(512 CHAR) NOT NULL);` — the column is named `resources` because `resource` is an Oracle reserved word. |
 
 The MySQL script documents these preflight checks:
 

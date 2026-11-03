@@ -26,8 +26,8 @@ CREATE TABLE config_info (
     app_name VARCHAR2(128),
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
-    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     src_user VARCHAR2(128) DEFAULT NULL,
     src_ip VARCHAR2(50) DEFAULT NULL,
     c_desc VARCHAR2(256) DEFAULT NULL,
@@ -53,8 +53,8 @@ CREATE TABLE his_config_info (
     app_name VARCHAR2(128),
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
-    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     src_user VARCHAR2(128),
     src_ip VARCHAR2(50) DEFAULT NULL,
     publish_type VARCHAR2(50) DEFAULT 'formal',
@@ -82,8 +82,8 @@ CREATE TABLE config_info_gray (
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
     encrypted_data_key VARCHAR2(256) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
-    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT configinfogray_id_key PRIMARY KEY (id),
     CONSTRAINT uk_configinfogray_datagrouptenantgrayname UNIQUE (data_id, group_id, tenant_id, gray_name)
 );
@@ -142,8 +142,8 @@ CREATE TABLE tenant_info (
     tenant_name VARCHAR2(128) DEFAULT '',
     tenant_desc VARCHAR2(256) DEFAULT NULL,
     create_source VARCHAR2(32) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
-    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT tenant_info_id_key PRIMARY KEY (id),
     CONSTRAINT uk_tenant_info_kptenantid UNIQUE (kp, tenant_id)
 );
@@ -153,7 +153,7 @@ CREATE INDEX tenant_info_tenant_id_idx ON tenant_info(tenant_id);
 CREATE TABLE users (
     username VARCHAR2(50) NOT NULL PRIMARY KEY,
     password VARCHAR2(500) NOT NULL,
-    enabled NUMBER(1) NOT NULL DEFAULT 1
+    enabled NUMBER(1) DEFAULT 1 NOT NULL
 );
 
 CREATE TABLE roles (
@@ -162,11 +162,12 @@ CREATE TABLE roles (
     CONSTRAINT uk_username_role UNIQUE (username, role)
 );
 
+-- Note: the column is named `resources` because `resource` is a reserved word in Oracle.
 CREATE TABLE permissions (
     role VARCHAR2(50) NOT NULL,
-    resource VARCHAR2(512 CHAR) NOT NULL,
+    resources VARCHAR2(512 CHAR) NOT NULL,
     action VARCHAR2(8) NOT NULL,
-    CONSTRAINT uk_role_permission UNIQUE (role, resource, action)
+    CONSTRAINT uk_role_permission UNIQUE (role, resources, action)
 );
 
 
