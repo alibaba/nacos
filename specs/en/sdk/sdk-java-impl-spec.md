@@ -574,3 +574,10 @@ Notification-triggered queries and retries of the same refresh carry
 headers. Initialization, handshake reconciliation, and polling fallback omit it.
 Coalescing, concurrent refresh, recovery, and compatibility rules are defined in the
 [Agent API spec](../ai/agent-api-spec.md).
+
+### Agent request construction
+
+The API module exposes connection-free `AgentRequestBuilder` chains following the
+[Agent API builder contract](../ai/agent-api-spec.md). Existing SDK/server A2A facades
+and migration reuse the conversion kernel while retaining compatibility projection.
+Java SDK IT covers real publication, endpoint replacement, conversion, validation and isolation.

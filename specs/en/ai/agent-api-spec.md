@@ -1010,3 +1010,46 @@ under load and are not a complete audit trail. Authorization, HTTP parameter par
 migration and Client binding rejection before the business query are outside this
 event's guaranteed scope. Internal Watch projection, subscription validation and
 recomputation are not recorded as external Discover requests.
+
+## Offline Agent request builders
+
+`com.alibaba.nacos.api.ai.builder.AgentRequestBuilder` exposes `publishAgent()` and
+`registerEndpoints()` for the existing `AgentPublishRequest` and
+`AgentEndpointRegistrationBatch`. The generic chains set request fields; `.a2a()`
+selects an A2A convenience chain. Builders create no clients, perform no network
+requests and do not change submission or online policies. Mutable inputs and each
+`build()` result are isolated. Invalid arguments produce `IllegalArgumentException`.
+The invoking SDK still binds the namespace; the server validates full requests and permissions.
+
+- `publishAgent().a2a().fromAgentCard(card).build()` copies and normalizes the Nacos
+  AgentCard, maps name/version, description/icon/provider, the complete nativeDescriptor,
+  and one A2A CallInterface with DECLARED endpoints. Source order defaults to
+  RUNTIME, DECLARED and can be set with `endpointSourceOrder(...)`. autoSubmit
+  retains its false request default. Presentation setters after fromAgentCard override
+  extracted values; agentName/version must agree with the Card. The A2A chain rejects
+  manual callInterfaces to protect the native declaration.
+- `registerEndpoints().a2a().fromAgentCard(card).fromAgentInterfaces(interfaces).build()`
+  reads name, business version as runtimeVersion and default supportedInterfaces.
+  A subsequent fromAgentInterfaces replaces the full interface list without modifying
+  the Card. A Card is optional if agentName/runtimeVersion/interfaces are explicit.
+  Only identity and interfaces are required from this Card; tenant is never inferred
+  from the namespace.
+- New A2A chains require url, protocolBinding and protocolVersion per interface.
+  They map url to uri, protocolBinding to transport, and protocolVersion/tenant to
+  existing public Endpoint metadata keys, preserving missing versus empty tenant.
+  Input order becomes zero-based priority; weight/healthy/enabled retain existing
+  defaults. RAD absolute URI rules apply; no TLS or scheme is guessed for bare gRPC
+  addresses. Duplicate Endpoint natural keys are rejected rather than silently discarded.
+- Runtime versionRange retains the existing exact-version default and per-Endpoint
+  binding overrides. Registration is still a complete replacement for the publisher.
+  Builders do not merge historical publications or change redo, migration, lifecycle,
+  HTTP/gRPC schemas or subscriptions.
+
+Existing SDK/server A2A facades and historical migration share API-module pure
+conversion primitives. Compatibility entrypoints retain validation/error mapping,
+Card normalization, source ordering and metadata inclusion switches. Their declared
+projection still uses only URI/transport, priority zero and first-wins natural-key
+deduplication, without newly adding endpoint metadata. Historical Version content
+and digests therefore remain unchanged. Legacy runtime conversion keeps its current
+metadata and exact-version mapping. Complete metadata, ordered priorities and strict
+duplicate rejection apply only to explicitly selected new builders.
