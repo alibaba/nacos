@@ -31,7 +31,6 @@ import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorageChangeListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -105,28 +104,6 @@ public class AgentVersionStorageService {
         AgentVersionStorageDescriptor descriptor =
             buildReplacementDescriptor(currentDescriptor, serializedContent);
         return new PreparedAgentVersionWrite(descriptor, serializedContent);
-    }
-    
-    /**
-     * Prepare a separate object for an encoding repair, leaving the currently referenced bytes intact.
-     *
-     * @param currentDescriptor original verified storage descriptor
-     * @param namespaceId namespace identifier
-     * @param agentName Agent identity
-     * @param content repaired definition
-     * @return prepared independent object on the same provider
-     */
-    public PreparedAgentVersionWrite prepareRepair(AgentVersionStorageDescriptor currentDescriptor,
-        String namespaceId, String agentName, AgentVersionContent content) {
-        AgentVersionStorageDescriptorSerializer.validate(currentDescriptor);
-        StorageKey key = AgentVersionStorageKeyComposer.compose(currentDescriptor.getProvider(),
-            namespaceId, agentName, "0.0.0-security-repair." + UUID.randomUUID());
-        AgentVersionContentSerializer.SerializedContent serialized =
-            AgentVersionContentSerializer.serialize(content);
-        AgentVersionStorageDescriptor descriptor =
-            buildReplacementDescriptor(currentDescriptor, serialized);
-        descriptor.setKey(key.getKey());
-        return new PreparedAgentVersionWrite(descriptor, serialized);
     }
     
     /**

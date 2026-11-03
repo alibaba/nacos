@@ -208,9 +208,6 @@ class DerbyMapperCoverageTest {
     @Test
     void testAiResourceVersionMapper() {
         AiResourceVersionMapperByDerby mapper = new AiResourceVersionMapperByDerby();
-        assertEquals(
-            "UPDATE ai_resource_version SET storage=? WHERE id=? AND CAST(storage AS VARCHAR(32672)) = ?",
-            mapper.replaceStorageIfUnchanged());
         assertEquals(DataSourceConstant.DERBY, mapper.getDataSource());
         assertResult(mapper.findAiResourceVersionFetchRows(context),
             namespaceId, "nacos", "mcp", "stable", "1.0.0");

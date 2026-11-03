@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai.converter;
 
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -96,7 +97,7 @@ final class DefaultA2aAgentConverter implements AgentConverter<AgentCard> {
             throw new IllegalArgumentException("nativeDescriptor must be an A2A JSON object");
         }
         try {
-            return A2aSecurityUtils.readCard((Map<String, Object>) call.getNativeDescriptor(),
+            return A2aSecurityUtils.readCard(JsonUtils.toJson(call.getNativeDescriptor()),
                 AgentCard.class);
         } catch (RuntimeException cause) {
             throw new IllegalArgumentException("nativeDescriptor cannot be decoded as AgentCard",

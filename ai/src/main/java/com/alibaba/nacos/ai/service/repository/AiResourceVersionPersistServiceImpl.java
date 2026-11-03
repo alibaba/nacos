@@ -196,16 +196,6 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
     }
     
     @Override
-    public boolean replaceStorageIfUnchanged(long id, String expectedStorage,
-        String replacementStorage) {
-        AiResourceVersionMapper mapper =
-            mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        return jt.update(mapper.replaceStorageIfUnchanged(), replacementStorage, id,
-            expectedStorage) == 1;
-    }
-    
-    @Override
     public int updateStorageAndDesc(String namespaceId, String name, String type, String version,
         String storage,
         String desc) {

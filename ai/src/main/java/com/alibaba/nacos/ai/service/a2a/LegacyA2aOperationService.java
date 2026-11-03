@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -77,19 +78,16 @@ public class LegacyA2aOperationService implements A2aOperationService {
     
     private final AgentIdCodecHolder agentIdCodecHolder;
     
-    private final A2aSecurityReadRepair securityReadRepair;
-    
     public LegacyA2aOperationService(ConfigQueryChainService configQueryChainService,
         ConfigOperationService configOperationService, ConfigDetailService configDetailService,
         SyncEffectService syncEffectService, ServiceStorage serviceStorage,
-        AgentIdCodecHolder agentIdCodecHolder, A2aSecurityReadRepair securityReadRepair) {
+        AgentIdCodecHolder agentIdCodecHolder) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
         this.serviceStorage = serviceStorage;
         this.agentIdCodecHolder = agentIdCodecHolder;
-        this.securityReadRepair = securityReadRepair;
     }
     
     /**
@@ -447,8 +445,7 @@ public class LegacyA2aOperationService implements A2aOperationService {
                     version));
         }
         AgentCardDetailInfo result =
-            JacksonUtils.toObj(securityReadRepair.readLegacy(namespaceId, versionDataId,
-                response.getContent()), AgentCardDetailInfo.class);
+            A2aSecurityUtils.readCard(response.getContent(), AgentCardDetailInfo.class);
         if (!AgentRequestUtil.isAgentCardNormalized(result)) {
             AgentRequestUtil.normalizeAgentCard(result);
         }

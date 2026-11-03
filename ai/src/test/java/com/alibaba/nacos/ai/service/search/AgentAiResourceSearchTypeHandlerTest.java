@@ -103,7 +103,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
-        when(persistenceService.getAgentVersionForProjection(NAMESPACE_ID, AGENT_NAME, VERSION))
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(latest);
         when(projector.project(agent, latest)).thenReturn(expected);
         
@@ -137,7 +137,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         
         AgentSummary agent = agent(VERSION);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
-        when(persistenceService.getAgentVersionForProjection(NAMESPACE_ID, AGENT_NAME, VERSION))
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(version("offline"));
         assertNull(handler.project(NAMESPACE_ID, Constants.Agent.RESOURCE_TYPE_AGENT,
             AGENT_NAME, null));
@@ -154,7 +154,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         AgentSummary goodAgent = agent(VERSION);
         AgentVersionDetail goodVersion = version("online");
         when(persistenceService.getAgent(NAMESPACE_ID, "good")).thenReturn(goodAgent);
-        when(persistenceService.getAgentVersionForProjection(NAMESPACE_ID, "good", VERSION))
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, "good", VERSION))
             .thenReturn(goodVersion);
         when(projector.project(goodAgent, goodVersion)).thenReturn(projection("good"));
         when(persistenceService.getAgent(NAMESPACE_ID, "failed"))
@@ -191,7 +191,7 @@ class AgentAiResourceSearchTypeHandlerTest {
         when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
             Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(meta);
         when(persistenceService.getAgent(NAMESPACE_ID, AGENT_NAME)).thenReturn(agent);
-        when(persistenceService.getAgentVersionForProjection(NAMESPACE_ID, AGENT_NAME, VERSION))
+        when(persistenceService.getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION))
             .thenReturn(latest);
         when(projector.project(agent, latest)).thenReturn(projection("digest"));
         

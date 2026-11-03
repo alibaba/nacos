@@ -773,25 +773,3 @@ it is not a new atomic concurrent-creation guarantee. Existing cross-store and c
 draft-write limitations remain for a separate shared AI Resource storage design.
 
 Historical empty protocol versions mean absent; empty tenant values are preserved.
-
-### On-demand repair of A2A Card security encoding
-
-Historical flat securityRequirements is an incorrect protocol encoding. Ordinary
-updates normalize it at publication. Queries trigger bounded asynchronous repair
-only when the security representation needs normalization; no full scan is added.
-This is a narrow encoding-repair exception to Version immutability. Identity,
-lifecycle, latest, author, and unrelated content do not change. Verify original
-size/digest before normalizing the returned copy.
-
-Canonical repair writes an independent key on the same provider (an internal random
-version segment does not change the public Version). The shared AI Resource store
-conditionally replaces the complete pointer/size/digest using the original row id
-and storage value, preserving other columns. Digest-keyed caches refresh and a
-resource-change notification refreshes derived search state. Conflicts, deletion,
-and failures never force an overwrite. Retain unreferenced copies and old objects
-for later reference-aware cleanup; uncertain outcomes must not delete possibly
-referenced objects. Repair does not invoke ordinary publication lifecycle APIs.
-
-Historical Config uses update-only MD5 CAS and normal Config change notification.
-Unaccessed data remains untouched. Mixed-version and rollback readers must support
-the standard new field; retaining security cannot bypass old decoders of that field.

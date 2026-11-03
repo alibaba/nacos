@@ -80,8 +80,8 @@ Card 级 `securityRequirements` 遵循 A2A 1.0 的 `SecurityRequirement` 和
 `StringList` 定义：`[{"schemes":{"oauth2":{"list":["read"]}}}]`。
 Java 模型直接使用 `List<SecurityRequirement>`，每项的 `schemes` 为
 `Map<String,StringList>`，`StringList.list` 为 `List<String>`。普通 JSON mapper 即可读写
-标准结构，不需要 Jackson 注解、Module 或特殊 Map。发布和历史读取边界在绑定 POJO 前
-兼容历史扁平格式 `[{"oauth2":["read"]}]`；正常序列化不执行格式转换。
+标准结构，不需要 Jackson 注解、Module 或特殊 Map。历史读取先标准解析，失败后兼容
+历史扁平格式 `[{"oauth2":["read"]}]`；正常序列化不执行格式转换。
 这是对历史错误模型的修正：原 `securityRequirements` Java getter/setter 的元素类型改变，
 调用方需重新编译并使用标准 POJO，不能把 List 类型擦除视作已有调用代码的兼容保证。
 
@@ -98,13 +98,11 @@ Card 注册、查询和订阅必须保留各候选要求、同一候选内全部
 缺失/null 要求和空要求列表保持区分。历史扁平输入仍可读取，但标准输出需要支持该格式的
 解码器；同时提供旧 `security` 字段不保证修复前的 Nacos 解码器能解析新字段。
 
-存量格式按访问迁移：更新时写入标准格式；查询遇到历史格式时先转换返回，再提交有界、
-去重的异步修复；无更新和无查询的 Agent 不扫描、不改写。修复只修改 Card 级两个鉴权字段，
-保留原始持久化对象的其他字段，禁止写回已经注入运行时地址的查询结果。不涉及 Skill 字段。
-历史 Config 使用仅更新的 MD5 CAS，冲突或已删除时放弃，不得通过 upsert 复活数据。
-标准 Agent Version 修复须先校验原始 bytes 的摘要，再写独立副本，按原 Version 行及 storage
-条件切换完整 pointer/size/digest。失败不影响查询，不改变 Version、状态、latest 或作者；
-旧对象不就地覆盖，不在不确定情况下删除可能被引用的内容。后续查询可以重试失败修复。
+查询先按标准 POJO 反序列化。解析异常，或结构校验发现要求项缺少 `schemes` 时，才尝试
+历史扁平格式兼容解析；只修正本次返回对象，不重写存储、不提交异步任务、不更改摘要或版本。
+标准解析器可能忽略未知字段，因此缺少 `schemes` 不得被当作空鉴权要求接受。兼容重试仍须
+验证旧格式为 scheme 到字符串数组的映射；无法解释的数据继续报错，不降级为空权限。
+发布/更新使用标准模型正常写入；本次不执行存量数据修复或扫描。不涉及 Skill 字段。
 混合版本节点和旧 Nacos SDK 不保证能读取已修正的标准字段；上线应先升级读取方并保留
 升级前备份，回滚不能假定旧程序可读取新格式。保留 `security` 不消除这一限制。
 

@@ -107,34 +107,6 @@ class AiResourceVersionPersistServiceImplTest {
     }
     
     @Test
-    void conditionalStorageReplacementPreservesLifecycleAndRejectsStaleOrDeletedRows() {
-        org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
-            new org.springframework.jdbc.datasource.DriverManagerDataSource();
-        dataSource.setDriverClassName("org.apache.derby.jdbc.EmbeddedDriver");
-        dataSource.setUrl("jdbc:derby:memory:a2a_security_cas;create=true");
-        JdbcTemplate database = new JdbcTemplate(dataSource);
-        database.execute("CREATE TABLE ai_resource_version (id BIGINT PRIMARY KEY, storage CLOB, "
-            + "status VARCHAR(32), author VARCHAR(64))");
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "jt", database);
-        database.update("INSERT INTO ai_resource_version VALUES (?, ?, ?, ?)", 7L, "old", "online",
-            "publisher");
-        assertEquals(false, service.replaceStorageIfUnchanged(7L, "stale", "repair"));
-        assertEquals(true, service.replaceStorageIfUnchanged(7L, "old", "repair"));
-        assertEquals(false, service.replaceStorageIfUnchanged(7L, "old", "stale-repair"));
-        assertEquals("repair",
-            database.queryForObject("SELECT storage FROM ai_resource_version", String.class));
-        assertEquals("online",
-            database.queryForObject("SELECT status FROM ai_resource_version", String.class));
-        assertEquals("publisher",
-            database.queryForObject("SELECT author FROM ai_resource_version", String.class));
-        database.update("DELETE FROM ai_resource_version WHERE id=7");
-        assertEquals(false, service.replaceStorageIfUnchanged(7L, "repair", "resurrected"));
-        assertEquals(0,
-            database.queryForObject("SELECT count(*) FROM ai_resource_version", Integer.class));
-        database.execute("DROP TABLE ai_resource_version");
-    }
-    
-    @Test
     void findShouldReturnNullWhenRowDoesNotExist() {
         when(jdbcTemplate.queryForObject(anyString(), any(Object[].class),
             eq(AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER)))
@@ -233,11 +205,6 @@ class AiResourceVersionPersistServiceImplTest {
     }
     
     private static class UnitTestAiResourceVersionMapper implements AiResourceVersionMapper {
-        
-        @Override
-        public String replaceStorageIfUnchanged() {
-            return "UPDATE ai_resource_version SET storage=? WHERE id=? AND CAST(storage AS VARCHAR(32672)) = ?";
-        }
         
         @Override
         public String select(List<String> columns, List<String> where) {

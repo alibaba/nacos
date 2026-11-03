@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement;
 import com.alibaba.nacos.api.ai.model.a2a.StringList;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,16 +31,14 @@ import java.util.Objects;
 /**
  * Card security compatibility at publication and historical read boundaries.
  *
- * <p>Normal POJO serialization needs no converter. This utility must run before binding historical
- * JSON to the standard model, since ignoring its unknown flat keys would lose security scopes.</p>
+ * <p>Standard Cards use normal POJO binding. Only a failed binding or an incomplete security
+ * structure retries the historical flat representation. This utility never writes storage.</p>
  *
  * @author nacos
  */
 public final class A2aSecurityUtils {
     
     private static final String REQUIREMENTS = "securityRequirements";
-    
-    private static final String SECURITY = "security";
     
     private A2aSecurityUtils() {
     }
@@ -54,54 +52,26 @@ public final class A2aSecurityUtils {
      * @return Card with equivalent standard and legacy authentication declarations
      */
     public static <T extends AgentCard> T readCard(String json, Class<T> type) {
-        Map<String, Object> card = JsonUtils.toObj(json, Map.class);
-        return readCard(card, type);
-    }
-    
-    /**
-     * Bind a native Card descriptor without changing the caller's map.
-     *
-     * @param source raw Card descriptor
-     * @param type Card model type
-     * @param <T> Card model
-     * @return normalized Card
-     */
-    public static <T extends AgentCard> T readCard(Map<String, Object> source, Class<T> type) {
-        require(source != null);
-        Map<String, Object> card = new LinkedHashMap<>(source);
-        normalize(card);
-        return JsonUtils.toObj(JsonUtils.toJson(card), type);
-    }
-    
-    /**
-     * Normalize only the two Card-level security fields in a caller-owned JSON object.
-     *
-     * @param card raw Card object, not a Skill or an arbitrary recursive JSON tree
-     * @return whether the JSON object changed
-     */
-    public static boolean normalize(Map<String, Object> card) {
-        Object current = card.get(REQUIREMENTS);
-        Object legacy = card.get(SECURITY);
-        if (current == null && legacy == null) {
-            return false;
-        }
-        List<Map<String, List<String>>> scopes = readScopes(current == null ? legacy : current,
-            current != null);
-        List<Map<String, Object>> standard = new ArrayList<>();
-        for (Map<String, List<String>> requirement : scopes) {
-            Map<String, Object> schemes = new LinkedHashMap<>();
-            for (Map.Entry<String, List<String>> entry : requirement.entrySet()) {
-                schemes.put(entry.getKey(),
-                    Collections.singletonMap("list", new ArrayList<>(entry.getValue())));
+        try {
+            T card = JsonUtils.toObj(json, type);
+            normalize(card);
+            return card;
+        } catch (NacosDeserializationException | IllegalArgumentException original) {
+            try {
+                // The compatibility retry is deliberately limited to this historical field.
+                Map<String, Object> legacy = JsonUtils.toObj(json, Map.class);
+                require(legacy != null && legacy.get(REQUIREMENTS) != null);
+                legacy.put(REQUIREMENTS, fromLegacy(readLegacyScopes(legacy.get(REQUIREMENTS))));
+                T card = JsonUtils.toObj(JsonUtils.toJson(legacy), type);
+                normalize(card);
+                return card;
+            } catch (NacosDeserializationException | IllegalArgumentException incompatible) {
+                if (original instanceof NacosDeserializationException) {
+                    throw (NacosDeserializationException) original;
+                }
+                throw new NacosDeserializationException(type, original);
             }
-            standard.add(Collections.singletonMap("schemes", schemes));
         }
-        boolean changed = !Objects.equals(current, standard) || !Objects.equals(legacy, scopes);
-        if (changed) {
-            card.put(REQUIREMENTS, standard);
-            card.put(SECURITY, scopes);
-        }
-        return changed;
     }
     
     /**
@@ -110,6 +80,7 @@ public final class A2aSecurityUtils {
      * @param card caller-isolated Card
      */
     public static void normalize(AgentCard card) {
+        require(card != null);
         if (card.getSecurityRequirements() == null) {
             if (card.getSecurity() != null) {
                 card.setSecurityRequirements(fromLegacy(card.getSecurity()));
@@ -143,6 +114,7 @@ public final class A2aSecurityUtils {
         for (Map<String, List<String>> item : legacy) {
             require(item != null);
             SecurityRequirement requirement = new SecurityRequirement();
+            requirement.setSchemes(new LinkedHashMap<>());
             for (Map.Entry<String, List<String>> scheme : item.entrySet()) {
                 require(scheme.getKey() != null);
                 StringList scopes = new StringList();
@@ -177,31 +149,15 @@ public final class A2aSecurityUtils {
         return result;
     }
     
-    private static List<Map<String, List<String>>> readScopes(Object value, boolean allowStandard) {
+    private static List<Map<String, List<String>>> readLegacyScopes(Object value) {
         require(value instanceof List);
         List<Map<String, List<String>>> result = new ArrayList<>();
         for (Object item : (List<?>) value) {
             require(item instanceof Map);
-            Map<?, ?> requirement = (Map<?, ?>) item;
-            Object wrapper = requirement.get("schemes");
-            boolean standard = allowStandard && requirement.containsKey("schemes")
-                && !(wrapper instanceof List);
-            Map<?, ?> schemes = requirement;
-            if (standard) {
-                require(wrapper instanceof Map && requirement.size() == 1);
-                schemes = (Map<?, ?>) wrapper;
-            }
             Map<String, List<String>> scopes = new LinkedHashMap<>();
-            for (Map.Entry<?, ?> entry : schemes.entrySet()) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) item).entrySet()) {
                 require(entry.getKey() instanceof String);
-                Object list = entry.getValue();
-                if (standard) {
-                    require(list instanceof Map);
-                    Map<?, ?> stringList = (Map<?, ?>) list;
-                    list = stringList.containsKey("list") ? stringList.get("list")
-                        : Collections.emptyList();
-                }
-                scopes.put((String) entry.getKey(), copyScopes(list));
+                scopes.put((String) entry.getKey(), copyScopes(entry.getValue()));
             }
             result.add(scopes);
         }

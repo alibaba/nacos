@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.a2a;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -27,7 +26,7 @@ import java.util.Objects;
  */
 public class SecurityRequirement {
     
-    private Map<String, StringList> schemes = new LinkedHashMap<>();
+    private Map<String, StringList> schemes;
     
     /**
      * Get the schemes that must all be satisfied for this alternative.

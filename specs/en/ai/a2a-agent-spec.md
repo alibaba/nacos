@@ -94,8 +94,8 @@ and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
 The Java model directly uses `List<SecurityRequirement>`, whose `schemes` is
 `Map<String,StringList>` and whose `StringList.list` is `List<String>`.
 Plain JSON mappers read and write this shape without annotations, modules, or
-special Map types. Publication and historical-read boundaries accept the old
-flat representation `[{"oauth2":["read"]}]` before POJO binding. Ordinary
+special Map types. Historical reads try the standard POJO first and retry the old
+flat representation `[{"oauth2":["read"]}]` only after decoding fails. Ordinary
 serialization performs no conversion. Correcting the historical model changes
 the getter/setter element type: callers must rebuild against the standard POJOs;
 List type erasure does not make old source or compiled callers compatible.
@@ -122,21 +122,16 @@ remain distinct. Historical flat input remains readable, but standard output
 requires a decoder supporting that shape; including legacy `security` does not
 guarantee that a pre-fix Nacos decoder can parse the new field.
 
-Migration is access-driven: updates write standard data; queries normalize old
-data before returning it and submit a bounded, deduplicated asynchronous repair.
-Untouched Agents are not scanned. Repairs change only Card-level security fields,
-preserving all other persisted fields; runtime-enriched query responses must never
-be written back. Skill-level fields are outside this change.
-Historical Config repairs use update-only MD5 CAS, abandoning conflicts or missing
-rows without upserting deleted data. Canonical Version repair verifies original
-bytes first, writes an independent copy, then conditionally switches the complete
-pointer/size/digest against the original Version row and storage descriptor.
-Repair failures do not fail queries. Version, lifecycle, latest, and author stay
-unchanged. Old objects are not overwritten; potentially referenced objects are
-not deleted on uncertain outcomes. Later queries may retry failed repairs.
+Queries first bind the standard POJO. Only a decoding failure or a missing
+`schemes` structure retries the historical flat representation. A parser that
+ignores unknown fields must not silently accept lost security declarations as an
+empty requirement. The retry validates scheme-to-string-array entries and changes
+only the returned object; it never rewrites storage, enqueues repairs, or changes
+Version digests. Invalid data still fails. Publications use the standard model;
+this change adds no historical data rewrite or scan. Skill-level fields are excluded.
 Older Nacos nodes and SDKs may not decode the corrected standard field. Upgrade
 readers first and retain pre-upgrade backups; rollback cannot assume old binaries
-can read repaired data. Keeping `security` does not remove this limitation.
+can read newly published standard data. Keeping `security` does not remove this limitation.
 
 Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
 and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).

@@ -35,6 +35,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -57,8 +58,39 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 
 class JacksonAdapterCompatibilityTest {
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void standardCardsDoNotEnterCompatibilityDecoding(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        String json =
+            "{\"securityRequirements\":[{\"schemes\":{\"oauth2\":{\"list\":[\"read\"]}}}]}";
+        try (MockedStatic<JsonUtils> decoder = mockStatic(JsonUtils.class, CALLS_REAL_METHODS)) {
+            AgentCard result = A2aSecurityUtils.readCard(json, AgentCard.class);
+            assertEquals(Collections.singletonList("read"),
+                result.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+            decoder.verify(() -> JsonUtils.toObj(json, Map.class), never());
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"jackson2", "jackson3"})
+    void silentlyIgnoredFlatKeysTriggerCompatibilityRetry(String adapterName) throws Exception {
+        System.setProperty(JsonUtils.ADAPTER_PROPERTY_NAME, adapterName);
+        resetJsonUtils();
+        String json = "{\"securityRequirements\":[{\"oauth2\":[\"read\"]}]}";
+        assertNull(
+            JsonUtils.toObj(json, AgentCard.class).getSecurityRequirements().get(0).getSchemes());
+        AgentCard result = A2aSecurityUtils.readCard(json, AgentCard.class);
+        assertEquals(Collections.singletonList("read"),
+            result.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+    }
     
     @Test
     void plainMappersReadAndWriteStandardRequirementsWithoutModules() throws Exception {
@@ -170,6 +202,11 @@ class JacksonAdapterCompatibilityTest {
         assertEquals(Arrays.asList("read", "write"),
             JsonUtils.toObj(encoded, AgentCard.class).getSecurityRequirements().get(0)
                 .getSchemes().get("schemes").getList());
+        String historical = "{\"securityRequirements\":[{\"schemes\":[\"read\",\"write\"]}]}";
+        assertThrows(NacosDeserializationException.class,
+            () -> JsonUtils.toObj(historical, AgentCard.class));
+        assertEquals(card.getSecurityRequirements(),
+            A2aSecurityUtils.readCard(historical, AgentCard.class).getSecurityRequirements());
     }
     
     @ParameterizedTest
@@ -180,18 +217,18 @@ class JacksonAdapterCompatibilityTest {
         assertNull(JsonUtils.toObj("{}", AgentCard.class).getSecurityRequirements());
         assertNull(JsonUtils.toObj("{\"securityRequirements\":null}", AgentCard.class)
             .getSecurityRequirements());
-        for (String requirements : new String[] {"[]", "[{}, {\"schemes\":{}}]"}) {
-            AgentCard card = JsonUtils.toObj("{\"securityRequirements\":" + requirements + "}",
-                AgentCard.class);
+        for (String requirements : new String[] {"[]", "[{}]", "[{\"schemes\":{}}]"}) {
+            AgentCard card =
+                A2aSecurityUtils.readCard("{\"securityRequirements\":" + requirements + "}",
+                    AgentCard.class);
             assertEquals(
-                JsonUtils.toObj(requirements.replace("[{},", "[{\"schemes\":{}},"), List.class),
+                JsonUtils.toObj(requirements.replace("[{}]", "[{\"schemes\":{}}]"), List.class),
                 jsonProperty(JsonUtils.toJson(card), "securityRequirements"));
         }
         for (String invalid : new String[] {"[null]", "[1]", "{}", "[{\"schemes\":null}]",
             "[{\"schemes\":{\"apiKey\":[]}}]", "[{\"schemes\":{\"oauth2\":{\"list\":\"read\"}}}]",
-            "[{\"schemes\":{\"oauth2\":{\"list\":[1]}}}]", "[{\"oauth2\":[null]}]",
-            "[{\"schemes\":{},\"apiKey\":[]}]"}) {
-            assertThrows(IllegalArgumentException.class, () -> A2aSecurityUtils.readCard(
+            "[{\"oauth2\":[null]}]", "[{\"oauth2\":[1]}]"}) {
+            assertThrows(NacosDeserializationException.class, () -> A2aSecurityUtils.readCard(
                 "{\"securityRequirements\":" + invalid + "}", AgentCard.class), invalid);
         }
     }

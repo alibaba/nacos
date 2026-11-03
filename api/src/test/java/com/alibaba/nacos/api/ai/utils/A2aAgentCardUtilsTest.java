@@ -129,7 +129,9 @@ class A2aAgentCardUtilsTest {
         assertEquals(A2aSecurityUtils.fromLegacy(security), card.getSecurityRequirements());
         card.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().add("write");
         card.getSecurityRequirements().get(0).getSchemes().put("extra", new StringList());
-        card.getSecurityRequirements().add(new SecurityRequirement());
+        SecurityRequirement anonymous = new SecurityRequirement();
+        anonymous.setSchemes(new LinkedHashMap<>());
+        card.getSecurityRequirements().add(anonymous);
         assertEquals(securityRequirements(), security);
         A2aAgentCardUtils.normalizeAgentCard(card);
         assertEquals(A2aSecurityUtils.toLegacy(card.getSecurityRequirements()), card.getSecurity());

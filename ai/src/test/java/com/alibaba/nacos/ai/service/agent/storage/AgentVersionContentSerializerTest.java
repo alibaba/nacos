@@ -409,29 +409,6 @@ class AgentVersionContentSerializerTest {
                 .getMetadata().get("az"));
     }
     
-    @Test
-    void writesStandardSecurityWithoutMutatingTheHistoricalInput() {
-        AgentVersionContent content = createGoldenContent();
-        Map<String, Object> card =
-            (Map<String, Object>) content.getCallInterfaces().get(0).getNativeDescriptor();
-        Object flat = Collections
-            .singletonList(Collections.singletonMap("oauth2", Collections.singletonList("read")));
-        card.put("securityRequirements", flat);
-        AgentVersionContentSerializer.SerializedContent serialized =
-            AgentVersionContentSerializer.serialize(content);
-        assertEquals(flat, card.get("securityRequirements"));
-        Map<?, ?> stored =
-            (Map<?, ?>) AgentVersionContentSerializer.deserialize(serialized.getBytes())
-                .getCallInterfaces().get(0).getNativeDescriptor();
-        assertEquals(
-            Collections.singletonList(Collections.singletonMap("schemes",
-                Collections.singletonMap("oauth2",
-                    Collections.singletonMap("list", Collections.singletonList("read"))))),
-            stored.get("securityRequirements"));
-        assertEquals(flat, stored.get("security"));
-        assertEquals(card.get("capabilities"), stored.get("capabilities"));
-    }
-    
     private AgentVersionContent createGoldenContent() {
         AgentCallInterface callInterface = new AgentCallInterface();
         callInterface.setProtocol("a2a");

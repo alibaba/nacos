@@ -492,25 +492,6 @@ class AgentDiscoveryApplicationServiceTest {
     }
     
     @Test
-    void testDiscoverRetriesStorageReadUntilSecurityRepairDigestIsCommitted()
-        throws NacosException {
-        List<AgentCallInterface> interfaces = completeInterfaces();
-        Map<String, Object> card = new LinkedHashMap<>();
-        card.put("name", "demo");
-        card.put("securityRequirements",
-            Collections.singletonList(Collections.singletonMap("schemes",
-                Collections.singletonMap("oauth2",
-                    Collections.singletonMap("list", Collections.singletonList("read"))))));
-        card.put("security", Collections.singletonList(Collections.singletonMap("oauth2",
-            Collections.singletonList("read"))));
-        interfaces.get(0).setNativeDescriptor(card);
-        stubDiscover(DIGEST, interfaces);
-        service.discover(discoveryRequest(VERSION, null, null));
-        service.discover(discoveryRequest(VERSION, null, null));
-        verify(persistenceService, times(2)).getAgentVersion(NAMESPACE_ID, AGENT_NAME, VERSION);
-    }
-    
-    @Test
     void testModelD01DefaultDiscoveryStillUsesSelectedDefinitionProtocols() throws NacosException {
         // Characterize the separately tracked MODEL-D01 limitation; this is not the desired
         // protocol union contract and must not be counted as its compatibility coverage.

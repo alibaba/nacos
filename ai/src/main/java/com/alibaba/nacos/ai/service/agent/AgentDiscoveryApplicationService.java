@@ -20,8 +20,6 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
-import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
-import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionComparator;
 import com.alibaba.nacos.ai.service.agent.runtime.AgentRuntimeRegistryService;
@@ -516,31 +514,9 @@ public class AgentDiscoveryApplicationService {
                 throw serverError("Agent Version changed while loading discovery content: "
                     + agentName + '@' + version, null);
             }
-            if (cacheableDefinition(result)) {
-                versionCache.put(key, result);
-            }
+            versionCache.put(key, result);
         }
         return result;
-    }
-    
-    private boolean cacheableDefinition(AgentVersionDetail detail) {
-        for (AgentCallInterface call : detail.getCallInterfaces()) {
-            if ("a2a".equals(call.getProtocol()) && call.getNativeDescriptor() instanceof Map) {
-                Map<?, ?> card = (Map<?, ?>) call.getNativeDescriptor();
-                if (card.get("securityRequirements") != null || card.get("security") != null) {
-                    // A normalized historical response still has the original storage digest.
-                    // Do not pin it in the cache: subsequent queries must retry failed read repair.
-                    try {
-                        String digest = AgentVersionContentSerializer.serialize(
-                            new AgentVersionContent(detail.getCallInterfaces())).getContentDigest();
-                        return digest.equals(detail.getContentDigest());
-                    } catch (IllegalArgumentException e) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
     }
     
     private String cacheKey(String namespaceId, String agentName, String version,
