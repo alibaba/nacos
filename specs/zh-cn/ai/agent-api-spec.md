@@ -791,3 +791,38 @@ HTTP/gRPC 入口对进入 Discover 业务查询的每次调用发布一个尽力
 事件构建或发布失败不得改变查询结果或覆盖原异常；过载时允许丢弃，不能作为完整审计凭证。
 进入业务查询前的鉴权、HTTP 参数解析、迁移及 Client 绑定拒绝不保证产生此事件。
 服务端内部 Watch 投影、订阅校验和重算不作为外部 Discover 请求重复记录。
+
+## 离线 Agent 请求 Builder
+
+`com.alibaba.nacos.api.ai.builder.AgentRequestBuilder` 提供 `publishAgent()` 和
+`registerEndpoints()`，分别构造现有 `AgentPublishRequest` 和
+`AgentEndpointRegistrationBatch`。通用链设置请求模型的字段；`.a2a()` 切换到 A2A
+便捷链。Builder 不创建客户端、不发起网络请求、不注册端点、不改变提交/上线策略。
+构造时及每次 `build()` 都隔离可变输入和输出；非法参数返回 `IllegalArgumentException`。
+namespace 仍由实际调用的 SDK 绑定。服务端继续验证完整请求与权限。
+
+- `publishAgent().a2a().fromAgentCard(card).build()` 复制并规范化 Nacos `AgentCard`，
+  提取 name/version、description/icon/provider 和完整 nativeDescriptor，生成 A2A
+  CallInterface 与 DECLARED EndpointSet。默认来源顺序为 RUNTIME、DECLARED；
+  `endpointSourceOrder(...)` 可显式选择顺序。`autoSubmit` 保持请求默认 false。
+  公共元数据 setter 可在 `fromAgentCard` 后覆盖；agentName/version 不得与 Card 不同。
+  A2A 链不接受手工 callInterfaces，避免替换其原生声明。
+- `registerEndpoints().a2a().fromAgentCard(card).fromAgentInterfaces(interfaces).build()`
+  从 Card 提取 name、业务 version 作为 runtimeVersion，以及 supportedInterfaces 默认值。
+  后续 `fromAgentInterfaces` 完整替换默认接口，不追加、不修改 Card。也可不提供 Card，
+  显式填写 agentName/runtimeVersion 与 interfaces。这里只需要 Card 身份和接口，
+  不要求其他声明字段完整；不从 namespace 推导 tenant。
+- 新 A2A 链要求每个 interface 的 url、protocolBinding、protocolVersion；映射
+  url -> uri、protocolBinding -> transport，protocolVersion/tenant 写入现有公开
+  Endpoint metadata key。tenant 缺失与显式空字符串保留区别。接口顺序转为从 0
+  递增的 priority；weight/healthy/enabled 保持现有默认值。URL 必须满足 RAD 绝对 URI
+  规则，不猜测裸 gRPC 地址的 TLS 或 scheme。重复 Endpoint 自然键拒绝，不能静默丢弃。
+- Runtime versionRange 缺省使用既有精确版本规则，Endpoint binding 可覆盖 Batch 默认；
+  最终仍为当前 publisher 的完整批次替换。Builder 不合并历史发布，不改变 redo、迁移、
+  生命周期、HTTP/gRPC schema 或订阅算法。
+
+现有 A2A SDK、服务端 facade 和历史迁移复用 API 模块的纯转换内核。兼容入口保留
+原有校验与异常映射、Card 规范化、来源顺序和元数据包含开关。旧定义投影继续只写
+URI/transport、priority=0、重复自然键取首项；不补写新的端点 metadata，因此历史
+Version 内容与摘要保持不变。旧 Runtime Endpoint 继续使用原有 metadata 与精确版本
+映射。完整 metadata、顺序 priority 和严格重复拒绝仅属于显式新 Builder。

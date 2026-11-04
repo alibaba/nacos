@@ -161,6 +161,9 @@ Nacos 以 ARD 上游 commit
 对应的草案为兼容基线。由于草案的版本标签仍可能变化，仓库内固定的 OpenAPI、JSON Schema
 和一致性测试 fixture 均以该 commit 为准，而不是只依赖版本标签。
 
+[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)记录待实施的升级契约。
+该提案尚未替换本节的当前基线，也不表示新版入口和查询语义已经可用。
+
 当 `nacos.ai.ard.enabled=true` 时，适配器通过自身 Web Context 暴露以下 ARD discovery
 端点：
 

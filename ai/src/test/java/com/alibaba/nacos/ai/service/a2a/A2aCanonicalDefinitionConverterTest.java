@@ -28,6 +28,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
+import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
+import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,6 +144,48 @@ class A2aCanonicalDefinitionConverterTest {
         invalid.getSupportedInterfaces().get(0).setUrl("relative");
         assertThrows(IllegalArgumentException.class,
             () -> converter.convert(NAMESPACE_ID, invalid, "URL", false));
+    }
+    
+    @ParameterizedTest
+    @CsvSource({
+        "false,URL,f1dc5ff7cdb9e74e3b83b5ca1722f9d97dc8f777d2156a161e3e3879534a9caa",
+        "false,SERVICE,3e7e63cc6a1f37ede9c34219f861a42b8ab571edfed151497bc7a2902958d34e",
+        "true,URL,21d9051582defe07e6e13f936b39c7e33ac7ba3b55db4d174835c0973989472a",
+        "true,SERVICE,fb770b2cf62e34273a9c129a26da0cf0c2d6e210576c1fe3b8524d29efbe04f4"
+    })
+    void preservesPreBuilderMigrationContentDigest(boolean legacy, String type, String digest)
+        throws Exception {
+        // Digests recorded with the converter at 7c546cfda, before extraction into API utilities.
+        AgentCard card = new AgentCard();
+        card.setName("fixture-agent");
+        card.setVersion("1.0.0");
+        card.setDescription("fixture");
+        card.setUrl("https://example.com/rpc");
+        card.setPreferredTransport("JSONRPC");
+        card.setProtocolVersion("0.3");
+        if (!legacy) {
+            List<AgentInterface> interfaces = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                AgentInterface address = agentInterface(i < 2 ? "https://example.com/" + i
+                    : "http://second.example/run", "JSONRPC", "1." + i);
+                address.setTenant(i == 2 ? "" : "opaque" + i);
+                interfaces.add(address);
+            }
+            card.setSupportedInterfaces(interfaces);
+        }
+        for (boolean includeMetadata : new boolean[] {false, true}) {
+            AgentDraftCreateRequest converted =
+                converter.convert("public", card, type, includeMetadata);
+            AgentVersionContent content = new AgentVersionContent(converted.getCallInterfaces());
+            assertEquals("sha256:" + digest,
+                AgentVersionContentSerializer.serialize(content).getContentDigest());
+            assertEquals(includeMetadata ? "fixture" : null, converted.getDescription());
+            converted.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints()
+                .forEach(endpoint -> {
+                    assertNull(endpoint.getMetadata());
+                    assertEquals(0, endpoint.getPriority());
+                });
+        }
     }
     
     private AgentCard card() {

@@ -484,3 +484,9 @@ SDK／用户 Executor 拒绝和 getExecutor 异常释放在途标记并保留差
 Watch 通知触发的查询及同一刷新重试，通过 HTTP Header 或 gRPC Request Header
 携带 `X-Nacos-Agent-Discovery-Trigger: watch-notify`。初始化、握手补查和轮询回退
 不标记；合并、并发、恢复及兼容边界见 [Agent API 规范](../ai/agent-api-spec.md)。
+
+### Agent 请求构造
+
+API 模块提供无连接的 `AgentRequestBuilder`；通用和 A2A 链遵循
+[Agent API Builder 契约](../ai/agent-api-spec.md)。转换内核由现有 SDK、服务端 A2A facade
+与迁移复用，兼容投影保留原行为。Java SDK IT 覆盖真实发布、端点替换、转换、校验与输入隔离。

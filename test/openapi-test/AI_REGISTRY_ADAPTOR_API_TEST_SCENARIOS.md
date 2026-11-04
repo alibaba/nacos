@@ -26,6 +26,13 @@ The contract source is the ARD revision pinned by the Nacos AI Registry
 Adaptor specification. Coverage targets response compatibility, protocol error
 handling, and routing across the adaptor and main-server web contexts.
 
+The [ARD v0.91 test design](ARD_V091_TEST_DESIGN.md) is the single catalog of
+planned per-feature UT/IT, fixtures, assertions and regression groups, including
+C05-14 token recovery. The [compatibility review](ARD_V091_COMPATIBILITY_REVIEW.md)
+owns BC01..20 code evidence and before/after migration analysis. These documents
+do not represent implemented or executed tests and do not promote coverage here
+or in API_TEST_COVERAGE.md.
+
 Live requests to the independent adaptor port use a dedicated external-request
 helper. The helper rejects Nacos `Authorization` headers before sending a
 request, and `AuthScopeGuardITCase` verifies both that boundary and anonymous
