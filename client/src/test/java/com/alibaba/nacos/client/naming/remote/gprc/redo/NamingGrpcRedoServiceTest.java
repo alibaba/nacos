@@ -43,6 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
@@ -269,6 +270,7 @@ class NamingGrpcRedoServiceTest {
         redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
         SubscriberRedoData actual = subscribes.entrySet().iterator().next().getValue();
         assertTrue(actual.isRegistered());
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
     }
     
     @Test
@@ -278,6 +280,7 @@ class NamingGrpcRedoServiceTest {
         redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
         SubscriberRedoData actual = subscribes.entrySet().iterator().next().getValue();
         assertTrue(actual.isUnregistering());
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
     }
     
     @Test
@@ -289,14 +292,77 @@ class NamingGrpcRedoServiceTest {
     }
     
     @Test
+    void testSubscriptionIntentExistsBeforeFirstSuccess() {
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        SubscriberRedoData original = getSubscriberRedoDataMap().values().iterator().next();
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        assertSame(original, getSubscriberRedoDataMap().values().iterator().next());
+        assertFalse(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+        assertEquals(1, redoService.findSubscriberRedoData().size());
+    }
+    
+    @Test
+    void testSubscriptionIntentIsScopedToServiceGroupAndCluster() {
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, "other-cluster"));
+        assertFalse(redoService.hasSubscriptionIntent("other-service", GROUP, CLUSTER));
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, "other-group", CLUSTER));
+    }
+    
+    @Test
+    void testSubscriptionIntentSurvivesDisconnectAndReconnect() {
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
+        SubscriberRedoData original = getSubscriberRedoDataMap().values().iterator().next();
+        redoService.onDisConnect(new TestConnection(new RpcClient.ServerInfo()));
+        
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        assertSame(original, getSubscriberRedoDataMap().values().iterator().next());
+        assertFalse(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+        assertEquals(1, redoService.findSubscriberRedoData().size());
+    }
+    
+    @Test
+    void testCancellingIntentIsInactiveBeforeRemoval() {
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        SubscriberRedoData redoData = getSubscriberRedoDataMap().values().iterator().next();
+        redoData.setUnregistering(true);
+        
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        redoData.setUnregistering(false);
+        redoData.setExpectedRegistered(false);
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+    }
+    
+    @Test
+    void testCancelledSubscriptionDoesNotHaveActiveIntent() {
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
+        assertTrue(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
+        assertEquals(1, getSubscriberRedoDataMap().size());
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+        redoService.removeSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        assertTrue(getSubscriberRedoDataMap().isEmpty());
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
+    }
+    
+    @Test
     void testRemoveSubscriberForRedo() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         assertTrue(subscribes.isEmpty());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertFalse(subscribes.isEmpty());
         redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
+        assertEquals(1, subscribes.size());
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
         redoService.removeSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertTrue(subscribes.isEmpty());
+        assertFalse(redoService.hasSubscriptionIntent(SERVICE, GROUP, CLUSTER));
     }
     
     @Test

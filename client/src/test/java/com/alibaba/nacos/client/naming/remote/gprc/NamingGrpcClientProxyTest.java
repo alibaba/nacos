@@ -60,6 +60,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,6 +80,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -518,6 +520,19 @@ class NamingGrpcClientProxyTest {
         when(this.rpcClient.request(any())).thenReturn(res);
         ServiceInfo actual = client.subscribe(SERVICE_NAME, GROUP_NAME, CLUSTERS);
         assertEquals(info, actual);
+    }
+    
+    @Test
+    void testHasSubscriptionIntentDoesNotRequireSuccessfulSubscription() throws Exception {
+        NamingGrpcRedoService redoService =
+            (NamingGrpcRedoService) ReflectUtils.getFieldValue(client, "redoService");
+        ((ScheduledExecutorService) ReflectUtils.getFieldValue(redoService, "redoExecutor"))
+            .shutdownNow();
+        assertFalse(client.hasSubscriptionIntent(SERVICE_NAME, GROUP_NAME, CLUSTERS));
+        redoService.cacheSubscriberForRedo(SERVICE_NAME, GROUP_NAME, CLUSTERS);
+        assertTrue(client.hasSubscriptionIntent(SERVICE_NAME, GROUP_NAME, CLUSTERS));
+        assertFalse(client.isSubscribed(SERVICE_NAME, GROUP_NAME, CLUSTERS));
+        verify(rpcClient, Mockito.never()).request(any());
     }
     
     @Test

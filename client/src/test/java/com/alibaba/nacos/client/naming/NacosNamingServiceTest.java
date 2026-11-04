@@ -26,35 +26,54 @@ import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.client.naming.remote.TestConnection;
+import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.RedoScheduledTask;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
+import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.naming.selector.NamingSelectorFactory.getUniqueClusterString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,7 +82,9 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -584,14 +605,126 @@ class NacosNamingServiceTest {
     }
     
     @Test
-    void testGetAllInstanceWithCacheAndSubscribed() throws NacosException {
+    void testDiskCacheWithoutIntentStillSubscribesSynchronously(@TempDir Path cacheRoot)
+        throws Exception {
+        String serviceName = "disk-cache";
+        ServiceInfo cached = new ServiceInfo(Constants.DEFAULT_GROUP + "@@" + serviceName);
+        cached.addHost(new Instance());
+        ServiceInfo remote = new ServiceInfo(Constants.DEFAULT_GROUP + "@@" + serviceName);
+        Instance current = new Instance();
+        current.setPort(8080);
+        remote.addHost(current);
+        when(proxy.subscribe(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(remote);
+        Properties properties = new Properties();
+        properties.setProperty("JM.SNAPSHOT.PATH", cacheRoot.toString());
+        properties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "true");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        DiskCache.write(cached, CacheDirUtil.initCacheDir("test", clientProperties));
+        ServiceInfoHolder diskHolder =
+            new ServiceInfoHolder("test", "disk-cache", clientProperties);
+        try {
+            assertEquals(cached.getHosts(),
+                diskHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP).getHosts());
+            Field field = NacosNamingService.class.getDeclaredField("serviceInfoHolder");
+            field.setAccessible(true);
+            field.set(client, diskHolder);
+            assertEquals(remote.getHosts(), client.getAllInstances(serviceName));
+            verify(proxy).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
+        } finally {
+            diskHolder.shutdown();
+        }
+    }
+    
+    @Test
+    void testCachedReadsDoNotWaitForSubscriptionRedoAndPreserveRecovery() throws Exception {
+        String serviceName = "runtime-cache";
+        String groupName = Constants.DEFAULT_GROUP;
+        ServiceInfo cached = new ServiceInfo(groupName + "@@" + serviceName);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        cached.addHost(instance);
+        when(serviceInfoHolder.getServiceInfo(serviceName, groupName)).thenReturn(cached);
+        NamingGrpcClientProxy recoveryProxy = mock(NamingGrpcClientProxy.class);
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(recoveryProxy,
+            mock(NamingFuzzyWatchServiceListHolder.class),
+            NacosClientProperties.PROTOTYPE.derive(new Properties()));
+        ((ScheduledExecutorService) ReflectUtils.getFieldValue(redoService, "redoExecutor"))
+            .shutdownNow();
+        CountDownLatch recoveryStarted = new CountDownLatch(1);
+        CountDownLatch releaseRecovery = new CountDownLatch(1);
+        CompletableFuture<Boolean> recoveryReleased = new CompletableFuture<>();
+        ExecutorService worker = Executors.newSingleThreadExecutor();
+        ExecutorService queryWorker = Executors.newSingleThreadExecutor();
+        try {
+            redoService.cacheSubscriberForRedo(serviceName, groupName, "");
+            redoService.subscriberRegistered(serviceName, groupName, "");
+            TestConnection connection = new TestConnection(new RpcClient.ServerInfo());
+            redoService.onDisConnect(connection);
+            redoService.onConnected(connection);
+            when(proxy.hasSubscriptionIntent(serviceName, groupName, ""))
+                .thenAnswer(invocation -> redoService.hasSubscriptionIntent(serviceName, groupName,
+                    ""));
+            when(recoveryProxy.isEnable()).thenReturn(true);
+            doAnswer(invocation -> {
+                recoveryStarted.countDown();
+                try {
+                    recoveryReleased.complete(releaseRecovery.await(15, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    recoveryReleased.completeExceptionally(e);
+                    throw e;
+                }
+                throw new NacosException(NacosException.SERVER_ERROR,
+                    "subscription response timeout");
+            }).when(recoveryProxy).doSubscribe(serviceName, groupName, "");
+            RedoScheduledTask task = new RedoScheduledTask(recoveryProxy, redoService);
+            Future<?> recovery = worker.submit(task);
+            assertTrue(recoveryStarted.await(5, TimeUnit.SECONDS));
+            
+            Future<List<Instance>> cachedReads = queryWorker.submit(() -> Arrays.asList(
+                client.getAllInstances(serviceName).get(0),
+                client.selectInstances(serviceName, true).get(0),
+                client.selectOneHealthyInstance(serviceName)));
+            assertEquals(Arrays.asList(instance, instance, instance),
+                cachedReads.get(5, TimeUnit.SECONDS));
+            assertFalse(recoveryReleased.isDone(),
+                "cached reads should finish while subscription redo is still blocked");
+            assertFalse(recovery.isDone());
+            verify(proxy, never()).subscribe(anyString(), anyString(), anyString());
+            assertFalse(redoService.isSubscriberRegistered(serviceName, groupName, ""));
+            assertEquals(1, redoService.findSubscriberRedoData().size());
+            
+            releaseRecovery.countDown();
+            assertTrue(recoveryReleased.get(5, TimeUnit.SECONDS),
+                "subscription redo should be released explicitly rather than time out");
+            recovery.get(5, TimeUnit.SECONDS);
+            assertTrue(redoService.hasSubscriptionIntent(serviceName, groupName, ""));
+            assertEquals(1, redoService.findSubscriberRedoData().size());
+            doAnswer(invocation -> {
+                redoService.subscriberRegistered(serviceName, groupName, "");
+                return cached;
+            }).when(recoveryProxy).doSubscribe(serviceName, groupName, "");
+            task.run();
+            assertTrue(redoService.isSubscriberRegistered(serviceName, groupName, ""));
+            assertTrue(redoService.findSubscriberRedoData().isEmpty());
+        } finally {
+            releaseRecovery.countDown();
+            queryWorker.shutdownNow();
+            worker.shutdownNow();
+            redoService.shutdown();
+        }
+    }
+    
+    @Test
+    void testGetAllInstanceWithCacheAndSubscriptionIntent() throws NacosException {
         String serviceName = "service1";
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setName(serviceName);
         serviceInfo.addHost(new Instance());
         when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
             .thenReturn(serviceInfo);
-        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(true);
+        when(proxy.hasSubscriptionIntent(serviceName, Constants.DEFAULT_GROUP, ""))
+            .thenReturn(true);
         List<Instance> result = client.getAllInstances(serviceName);
         assertEquals(serviceInfo.getHosts().get(0), result.get(0));
     }
@@ -1333,32 +1466,63 @@ class NacosNamingServiceTest {
     }
     
     @Test
-    void testTryToSubscribeUsesCacheWhenAlreadySubscribed() throws NacosException {
+    void testTryToSubscribeUsesCacheWithActiveSubscriptionIntent() throws NacosException {
         String serviceName = "svc-cached";
         ServiceInfo cached = new ServiceInfo();
         cached.setName(serviceName);
         cached.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
         when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
             .thenReturn(cached);
-        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(true);
+        when(proxy.hasSubscriptionIntent(serviceName, Constants.DEFAULT_GROUP, ""))
+            .thenReturn(true);
         List<Instance> result = client.selectInstances(serviceName, true);
         assertEquals(1, result.size());
         verify(proxy, never()).subscribe(anyString(), anyString(), anyString());
     }
     
     @Test
-    void testTryToSubscribeSwallowsSubscribeFailureAndUsesCache() throws NacosException {
+    void testTryToSubscribeReturnsEmptyCacheWithActiveSubscriptionIntent() throws NacosException {
         String serviceName = "svc-cached-not-subscribed";
         ServiceInfo cached = new ServiceInfo();
         cached.setName(serviceName);
-        cached.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
         when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
             .thenReturn(cached);
-        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(false);
-        when(proxy.subscribe(serviceName, Constants.DEFAULT_GROUP, ""))
-            .thenThrow(new NacosException(500, "boom"));
+        when(proxy.hasSubscriptionIntent(serviceName, Constants.DEFAULT_GROUP, ""))
+            .thenReturn(true);
         List<Instance> result = client.selectInstances(serviceName, true);
-        assertEquals(1, result.size());
+        assertTrue(result.isEmpty());
+        verify(proxy, never()).subscribe(anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testCachedDiscoveryUsesPendingIntentAfterInitialSubscriptionFailure() throws Exception {
+        String serviceName = "initial-subscription-failure";
+        String groupName = Constants.DEFAULT_GROUP;
+        ServiceInfo cached = new ServiceInfo(groupName + "@@" + serviceName);
+        cached.addHost(mockInstance(Constants.DEFAULT_CLUSTER_NAME, true));
+        when(serviceInfoHolder.getServiceInfo(serviceName, groupName)).thenReturn(cached);
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(
+            mock(NamingGrpcClientProxy.class), mock(NamingFuzzyWatchServiceListHolder.class),
+            NacosClientProperties.PROTOTYPE.derive(new Properties()));
+        ((ScheduledExecutorService) ReflectUtils.getFieldValue(redoService, "redoExecutor"))
+            .shutdownNow();
+        try {
+            when(proxy.hasSubscriptionIntent(serviceName, groupName, ""))
+                .thenAnswer(invocation -> redoService.hasSubscriptionIntent(serviceName, groupName,
+                    ""));
+            when(proxy.subscribe(serviceName, groupName, "")).thenAnswer(invocation -> {
+                redoService.cacheSubscriberForRedo(serviceName, groupName, "");
+                throw new NacosException(500, "subscription response timeout");
+            });
+            
+            assertEquals(cached.getHosts(), client.getAllInstances(serviceName));
+            assertFalse(redoService.isSubscriberRegistered(serviceName, groupName, ""));
+            assertEquals(cached.getHosts(), client.getAllInstances(serviceName));
+            verify(proxy).subscribe(serviceName, groupName, "");
+            assertEquals(1, redoService.findSubscriberRedoData().size());
+        } finally {
+            redoService.shutdown();
+        }
     }
     
     @Test
