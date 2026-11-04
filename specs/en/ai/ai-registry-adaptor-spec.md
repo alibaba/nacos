@@ -189,6 +189,10 @@ Nacos targets the ARD draft at upstream commit
 The commit, rather than the draft's mutable version label, is the compatibility
 baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 
+The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) records a proposed
+upgrade. It does not replace this current baseline or claim that the new routes
+and query semantics are already implemented.
+
 When `nacos.ai.ard.enabled=true`, the adaptor exposes these ARD discovery
 endpoints from the adaptor web context:
 

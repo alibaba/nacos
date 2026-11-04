@@ -30,6 +30,7 @@ behavior through the [HTTP API](../http-api/api-spec.md),
 - [AI Resource Lifecycle Spec](ai-resource-lifecycle-spec.md)
 - [AI Resource Search Spec](ai-resource-search-spec.md)
 - [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
+- [ARD v0.91 Adaptation Design (Proposal)](ard-v091-adaptation-spec.md)
 
 ## Agent Registry
 
