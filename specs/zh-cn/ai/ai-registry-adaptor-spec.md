@@ -163,7 +163,7 @@ Nacos 以 ARD 上游 commit
 
 [ARD v0.91 适配设计](ard-v091-adaptation-spec.md)定义升级契约。
 双版本离线 Schema、新 host 发现入口和 context 解析器已实现。
-Search 已接入 query context。
+Search 已接入 query context。Explore 同样解析 query 与 facet context。
 信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
 
 JSON-LD 1.1 解析器使用固定 base 离线加载、单请求文档缓存和部署控制的 URI 加载，
@@ -298,6 +298,10 @@ Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无�
 
 Namespace catalog 必须包含完整的合法资源集，通过标准 list service 连续分页，不能在
 100 条时静默停止。Host 级 well-known catalog 仍只包含 registry 条目。
+
+Explore facet与Search共用请求context/过滤解析，响应key保留原字段（沿用trim）；
+同字段不同别名各自应用limit/minCount，重复原key仍以后者覆盖。默认limit20、上限100、
+minCount最小1及非正数兼容处理保持。
 
 Explore facet 必须在可见性、当前版本和请求过滤后，对完整的有效结果集进行聚合，不能基于
 单页或固定长度的候选前缀计算。Publisher、source 和 trust identity 等协议常量由适配器

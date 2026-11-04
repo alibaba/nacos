@@ -17,7 +17,8 @@
 # ARD v0.91 Adaptation Design
 
 Implemented scope: dual-version offline schemas, host manifest discovery, query-example projections
-and JSON-LD context resolution, Search query-context matching.
+and JSON-LD context resolution, Search query-context matching and Explore query/facet-context
+matching.
 Trust authority policy and final conformance acceptance remain pending.
 The current conformance baseline is not promoted.
 

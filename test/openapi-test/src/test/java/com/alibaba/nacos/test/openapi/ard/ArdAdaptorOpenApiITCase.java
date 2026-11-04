@@ -257,6 +257,55 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         }
     }
 
+    @Test
+    public void testExploreResolvesContextAndKeepsFacetOptionsIndependent() throws Exception {
+        String marker = randomAiName("ard-explore");
+        Set<String> names = Set.of(marker + "-ab", marker + "-a", marker + "-b");
+        publishTaggedAgent(marker + "-ab", marker, List.of("a", "b"));
+        publishTaggedAgent(marker + "-a", marker, List.of("a"));
+        publishTaggedAgent(marker + "-b", marker, List.of("b"));
+        awaitSearch(searchRequest(marker, TYPE_A2A), names);
+        String ns = "https://agenticresourcediscovery.org/ns#";
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("query", Map.of("text", marker, "@context", Map.of("t", ns + "tags", "kind", ns + "mediaType"),
+            "filter", Map.of("kind", TYPE_A2A)));
+        request.put("resultType", Map.of("facets", List.of(Map.of("field", "type"), Map.of("field", "kind"),
+            Map.of("field", "tags", "limit", 1), Map.of("field", "t", "limit", 2))));
+        request.put("pageSize", 1);
+        JsonNode response = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request);
+        JsonNode facets = response.path("facets");
+        assertEquals(facets.path("type"), facets.path("kind"));
+        assertEquals(3, facets.path("kind").path("buckets").get(0).path("count").asInt());
+        assertEquals(1, facets.path("tags").path("buckets").size());
+        assertEquals(2, facets.path("tags").path("otherCount").asInt());
+        assertEquals(2, facets.path("t").path("buckets").size());
+        assertEquals(0, facets.path("t").path("otherCount").asInt());
+        assertResponseSchemas("ExploreResponse", response);
+        request.put("pageSize", 100);
+        assertEquals(response, ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        request.put("resultType", Map.of("facets", List.of(Map.of("field", "t", "limit", 1),
+            Map.of("field", "t", "limit", 2))));
+        assertEquals(2, ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request)
+            .path("facets").path("t").path("buckets").size());
+        for (Object query : List.of(Map.of("@context", 123), Map.of("filter", Map.of("tags", List.of(1))))) {
+            request.put("query", query);
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        }
+        for (Object query : List.of(Map.of(), Map.of("text", " "))) {
+            request.put("query", query);
+            request.put("resultType", Map.of("facets", List.of(Map.of("field", "type"))));
+            assertEquals(200, ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request).code());
+        }
+        request.remove("query");
+        assertEquals(200, ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request).code());
+        for (Object facetsRequest : List.of(List.of(), List.of(Map.of("field", " ")))) {
+            request.put("resultType", Map.of("facets", facetsRequest));
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        }
+        request.remove("resultType");
+        assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+    }
+
     private void publishTaggedAgent(String name, String marker, List<String> tags) throws Exception {
         publishPublicAgent(name, "1.0.0");
         Map<String, Object> update = agentUpdateRequest(DEFAULT_NAMESPACE, name, marker);

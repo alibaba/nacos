@@ -86,7 +86,7 @@ BC05须区分context缺省/显式null；BC09/14的HTTP基线已在查询语义�
 - token错误/客户端重查/升级启用规则仅在[目标契约§4.5](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md#token-contract)维护；
   [IT-C05-14](ARD_V091_TEST_DESIGN.md#recovery-case)负责可控失效及恢复证据。
 - 同版正常续页仍必测，跨版存活不是门禁；未运行的真实混跑不得标成已验证互通。
-- API scenario/coverage依实际实现和执行结果更新；本设计状态Planned，执行为Not run，不提升覆盖率。
+- API scenario/coverage依实际实现和执行结果更新；分别记录各功能的实现与执行，不把尚未交付阶段或原有Disabled计为通过；表中原行为保留为升级前审计基线。
 
 [s03]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L96-L124
 [s04]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L88-L94

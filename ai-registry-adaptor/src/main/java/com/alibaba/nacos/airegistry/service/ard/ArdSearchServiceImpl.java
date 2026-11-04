@@ -41,11 +41,9 @@ import com.alibaba.nacos.airegistry.model.ard.ArdCatalogEntry;
 import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
-import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
 import com.alibaba.nacos.airegistry.model.ard.ArdFacetRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdHostInfo;
 import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
-import com.alibaba.nacos.airegistry.model.ard.ArdSearchFilter;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchQuery;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdSearchResponse;
@@ -122,6 +120,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final Pattern LIST_FILTER_EXPRESSION = Pattern.compile(
         "^\\s*(" + LIST_FIELD_PATH_REGEX + ")\\s*(=|>)\\s*'((?:\\\\.|[^'\\\\])*)'\\s*$");
     
+    private static final String AGGREGATION_FACET_PREFIX = "facet:";
+    
     private static final String AGGREGATION_TYPE_RESOURCE = "__ard_type_resource";
     
     private static final String AGGREGATION_TYPE_AGENT_PRIMARY = "__ard_type_agent_primary";
@@ -164,8 +164,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             : new AggregationResult(0, Collections.emptyMap());
         ArdExploreResponse response = new ArdExploreResponse();
         Map<String, ArdExploreResponse.FacetResult> facets = new LinkedHashMap<>();
-        for (ArdFacetRequest facetRequest : context.facets) {
-            facets.put(facetRequest.getField(), facet(result, facetRequest, context.kinds));
+        for (ResolvedFacet resolved : context.facets) {
+            facets.put(resolved.original(),
+                facet(result, resolved.request(), resolved.original(), context.kinds));
         }
         response.setFacets(facets);
         return response;
@@ -402,17 +403,22 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         }
         ArdSearchQuery query = request.getQuery() == null ? new ArdSearchQuery()
             : request.getQuery();
-        Map<String, List<String>> filter = normalizeFilter(query);
-        validateFilterKeys(filter.keySet());
-        ArdExploreResultType resultType = request.getResultType();
+        ArdQueryMapper mapper = new ArdQueryMapper();
         ExploreContext context = new ExploreContext();
+        try {
+            ArdTermPathResolver resolver = mapper.resolver(query);
+            context.filter = mapper.map(query, resolver);
+            context.facets = normalizeFacets(request.getResultType().getFacets(), resolver);
+        } catch (IllegalArgumentException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                e, e.getMessage());
+        }
         context.namespaceId = normalizeNamespaceId(request.getNamespaceId());
         context.text = StringUtils.isBlank(query.getText()) ? null : query.getText().trim();
-        context.filter = ArdQueryMapper.legacy(filter);
         context.pageToken = null;
         context.kinds = resolveKinds(context.filter);
         context.resourceTypes = resourceTypes(context.kinds);
-        context.facets = normalizeFacets(resultType.getFacets());
         return context;
     }
     
@@ -436,9 +442,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             ? com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID : namespaceId;
     }
     
-    private List<ArdFacetRequest> normalizeFacets(List<ArdFacetRequest> facets)
-        throws NacosApiException {
-        List<ArdFacetRequest> result = new ArrayList<>();
+    private List<ResolvedFacet> normalizeFacets(List<ArdFacetRequest> facets,
+        ArdTermPathResolver resolver) throws NacosApiException {
+        List<ResolvedFacet> result = new ArrayList<>();
         for (ArdFacetRequest facet : facets) {
             if (facet == null || StringUtils.isBlank(facet.getField())) {
                 throw new NacosApiException(NacosException.INVALID_PARAM,
@@ -446,13 +452,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
                     "Required parameter `resultType.facets.field` not present");
             }
             String field = facet.getField().trim();
-            validateFilterKeys(Collections.singleton(field));
             ArdFacetRequest normalized = new ArdFacetRequest();
-            normalized.setField(field);
+            normalized.setField(resolver.resolve(field));
             normalized.setLimit(facetLimit(facet.getLimit()));
             normalized.setMinCount(facet.getMinCount() == null ? 1
                 : Math.max(1, facet.getMinCount()));
-            result.add(normalized);
+            result.add(new ResolvedFacet(field, normalized));
         }
         return result;
     }
@@ -641,55 +646,9 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         context.orderDescending = parts.length > 1 && "desc".equalsIgnoreCase(parts[1]);
     }
     
-    private Map<String, List<String>> normalizeFilter(ArdSearchQuery query)
-        throws NacosApiException {
-        Map<String, List<String>> result = new LinkedHashMap<>();
-        if (query.getFilter() != null && !query.getFilter().isEmpty()) {
-            for (Map.Entry<String, Object> entry : query.getFilter().entrySet()) {
-                addFilter(result, entry.getKey(),
-                    normalizeFilterValues(entry.getKey(), entry.getValue()));
-            }
-        }
-        if (query.getFilters() == null || query.getFilters().isEmpty()) {
-            return result;
-        }
-        for (ArdSearchFilter filter : query.getFilters()) {
-            if (filter == null) {
-                continue;
-            }
-            String fieldPath = filter.getFieldPath();
-            if (StringUtils.isBlank(fieldPath)) {
-                throw new NacosApiException(NacosException.INVALID_PARAM,
-                    ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `query.filters.fieldPath` not present");
-            }
-            Object value = filter.getValues() == null ? filter.getValue() : filter.getValues();
-            addFilter(result, fieldPath, normalizeFilterValues(fieldPath, value));
-        }
-        return result;
-    }
-    
     private void addFilter(Map<String, List<String>> result, String fieldPath,
         List<String> values) {
         result.computeIfAbsent(fieldPath, key -> new ArrayList<>()).addAll(values);
-    }
-    
-    private List<String> normalizeFilterValues(String key, Object value) throws NacosApiException {
-        if (value instanceof String) {
-            return Collections.singletonList((String) value);
-        }
-        if (value instanceof Collection) {
-            List<String> result = new ArrayList<>();
-            for (Object each : (Collection<?>) value) {
-                if (each != null) {
-                    result.add(String.valueOf(each));
-                }
-            }
-            return result;
-        }
-        throw new NacosApiException(NacosException.INVALID_PARAM,
-            ErrorCode.PARAMETER_VALIDATE_ERROR,
-            "Request parameter `query.filter." + key + "` should be string or string array");
     }
     
     private void validateFilterKeys(Set<String> keys) throws NacosApiException {
@@ -1028,9 +987,10 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             .encodeToString(value.getBytes(StandardCharsets.UTF_8)).replace('_', '.');
     }
     
-    private List<AggregationRequest> aggregationRequests(List<ArdFacetRequest> facets) {
+    private List<AggregationRequest> aggregationRequests(List<ResolvedFacet> facets) {
         List<AggregationRequest> result = new ArrayList<>();
-        for (ArdFacetRequest facet : facets) {
+        for (ResolvedFacet resolved : facets) {
+            ArdFacetRequest facet = resolved.request();
             if ("type".equals(facet.getField())) {
                 result.add(new AggregationRequest(AGGREGATION_TYPE_RESOURCE, "resourceType",
                     ResourceKind.values().length, 1));
@@ -1040,7 +1000,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             }
             String canonicalField = canonicalFacetField(facet.getField());
             if (canonicalField != null) {
-                result.add(new AggregationRequest(facet.getField(), canonicalField,
+                result.add(new AggregationRequest(AGGREGATION_FACET_PREFIX + resolved.original(),
+                    canonicalField,
                     facet.getLimit(), facet.getMinCount()));
             }
         }
@@ -1062,7 +1023,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     }
     
     private ArdExploreResponse.FacetResult facet(AggregationResult result,
-        ArdFacetRequest request, List<ResourceKind> allowedKinds) {
+        ArdFacetRequest request, String original, List<ResourceKind> allowedKinds) {
         String constantValue = protocolFacetValue(request.getField());
         if (constantValue != null) {
             return constantFacet(constantValue, result.getTotalMatched(), request);
@@ -1072,7 +1033,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         }
         ArdExploreResponse.FacetResult facet = new ArdExploreResponse.FacetResult();
         List<ArdExploreResponse.FacetBucket> buckets = new ArrayList<>();
-        Aggregation aggregation = result.getAggregations().get(request.getField());
+        Aggregation aggregation = result.getAggregations().get(AGGREGATION_FACET_PREFIX + original);
         if (aggregation != null) {
             for (AggregationBucket aggregated : aggregation.getBuckets()) {
                 ArdExploreResponse.FacetBucket bucket = new ArdExploreResponse.FacetBucket();
@@ -1328,9 +1289,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         String pageToken;
     }
     
+    private record ResolvedFacet(String original, ArdFacetRequest request) {
+    }
+    
     private static class ExploreContext extends SearchContext {
         
-        private List<ArdFacetRequest> facets;
+        private List<ResolvedFacet> facets;
     }
     
     private static class ListContext extends SearchContext {

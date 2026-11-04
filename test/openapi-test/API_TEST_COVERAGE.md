@@ -705,6 +705,7 @@ HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK I
 Existing adaptor rows cover Search context/IRI aliases, independent filter groups,
 standard-value validation with legacy binding preserved, namespace isolation,
 valid cursor continuation and explicit recovery.
+Explore adds query/facet aliases, independent facet options and full-set counts.
 Resolver/loader and enhanced-provider boundaries also have UT coverage;
 controlled remote contexts and enabled-provider deployments require separate test environments.
 See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)

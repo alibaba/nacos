@@ -107,6 +107,9 @@ Search 正式 HTTP 场景由`testQueryContextAndIndependentFilterGroups`（非�
 增强token的配置/查询指纹由真实Core+确定性provider UT验证，并在本地独立增强部署复跑HTTP续页；
 受控远程context的成功与加载错误由本地HTTP矩阵验证。不新增API，DAUTH-F03仍单独Disabled。
 
+`testExploreResolvesContextAndKeepsFacetOptionsIndependent` verifies query/facet aliases,
+independent limit/minCount options, nonempty full-set counts and agreement with Search.
+
 Query namespace isolation and query/body matching are covered by `ArdAdaptorOpenApiITCase.testQueryNamespaceBindingAndContextIsolation`, including same-name public resources in two namespaces and invalid credentials before body parsing.
 
 `ArdContextResolverTest` covers the offline base, IRI expansion, reset and

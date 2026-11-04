@@ -133,7 +133,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | 基线、Schema、发现与示例发布 | 已有离线契约、renderer、路由/鉴权 UT 和公开资源 HTTP IT。示例的精确数量组合由组件测试验证，公开 API 可能派生额外示例。 |
 | Context 解析 | `ArdContextResolverTest` 覆盖固定 base、IRI、reset 和受控 loader 成功/错误；loopback loader UT 不计为 API IT。 |
 | Search | `ArdQueryMapperTest`、服务 UT 及 `ArdAdaptorOpenApiITCase` 覆盖 context/过滤、绑定兼容、namespace 和分页恢复。增强模式另需确定性 provider 环境；普通部署不代表增强模式已执行。 |
-| Explore | 下文 query/facet context 接入用例待实现与执行。 |
+| Explore | 服务 UT 和 HTTP IT 覆盖 query/facet 别名、独立选项与完整集合统计。 |
 | 分页 | Search 100 上限及相应边界用例待实现与执行。 |
 | Trust 与最终一致性验收 | 待完成；身份冲突/无法验证的处理策略尚未确定。私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
 
@@ -316,6 +316,13 @@ E400-T仅为测试标签，不是新的wire错误码。
 <a id="explore"></a>
 
 ### Explore
+
+验证范围：ARD §5.3.1/5.3.3按同一context解释过滤及facet；保留original key与
+resolved field，聚合id使用独立前缀+original key以隔离两个别名的limit/minCount和内部type聚合键；重复原key后者覆盖。
+`exploreShouldAggregateAllPagesAndKeepAliasOptionsIndependent`验证501条跨仓储页，
+`exploreShouldPreserveFacetLimitAndMinCountBoundsForAliases`验证105个bucket及边界；
+正式HTTP由`testExploreResolvesContextAndKeepsFacetOptionsIndependent`验证非空对照、
+独立选项、Search集合一致、pageSize无关与错误。基线alias无bucket，目标与规范字段等价。
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |

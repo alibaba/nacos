@@ -1070,6 +1070,65 @@ class ArdSearchServiceImplTest {
         }
     }
     
+    @Test
+    void exploreShouldAggregateAllPagesAndKeepAliasOptionsIndependent() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (int i = 1; i <= 501; i++) {
+            var document = entry((long) i, "item-" + i);
+            document.setTags(JacksonUtils.toJson(List.of("tag-" + (i % 3))));
+            documents.add(document);
+        }
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents.subList(0, 500));
+        when(repository.scanEnabledEntries("public", List.of("skill"), 500L, 500))
+            .thenReturn(documents.subList(500, 501));
+        ArdExploreRequest request = exploreRequest("public",
+            Map.of("kind", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE),
+            List.of(facet("tags", 1, 1), facet("t", 2, 1), facet("kind", 20, 1),
+                facet("__ard_type_resource", 3, 1)));
+        request.getQuery().setContext(Map.of("t", "https://agenticresourcediscovery.org/ns#tags",
+            "kind", "https://agenticresourcediscovery.org/ns#mediaType",
+            "__ard_type_resource", "https://agenticresourcediscovery.org/ns#tags"));
+        ArdExploreResponse response = service.explore(request);
+        assertEquals(1, response.getFacets().get("tags").getBuckets().size());
+        assertEquals(334, response.getFacets().get("tags").getOtherCount());
+        assertEquals(2, response.getFacets().get("t").getBuckets().size());
+        assertEquals(167, response.getFacets().get("t").getOtherCount());
+        assertEquals(501, response.getFacets().get("kind").getBuckets().get(0).getCount());
+        request.getResultType().setFacets(List.of(facet("t", 1, 1), facet("t", 3, 1)));
+        assertEquals(3, service.explore(request).getFacets().get("t").getBuckets().size());
+        request.getQuery().setFilter(Map.of("kind", "application/unknown+json"));
+        assertTrue(service.explore(request).getFacets().get("t").getBuckets().isEmpty());
+    }
+    
+    @Test
+    void exploreShouldPreserveFacetLimitAndMinCountBoundsForAliases() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (int i = 1; i <= 105; i++) {
+            var document = entry((long) i, "item-" + i);
+            document.setTags(JacksonUtils.toJson(List.of("tag-" + i)));
+            documents.add(document);
+        }
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents);
+        for (Integer limit : java.util.Arrays.asList(null, -1, 0, 1, 20, 100, 101)) {
+            ArdFacetRequest facet = facet("t", 1, 0);
+            facet.setLimit(limit);
+            ArdExploreRequest request = exploreRequest("public",
+                Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE), List.of(facet));
+            request.getQuery()
+                .setContext(Map.of("t", "https://agenticresourcediscovery.org/ns#tags"));
+            int expected = limit == null || limit <= 0 ? 20 : Math.min(limit, 100);
+            var result = service.explore(request).getFacets().get("t");
+            assertEquals(expected, result.getBuckets().size());
+            assertEquals(105 - expected, result.getOtherCount());
+            facet.setMinCount(2);
+            assertTrue(service.explore(request).getFacets().get("t").getBuckets().isEmpty());
+        }
+    }
+    
     private List<String> resultNames(ArdSearchResponse response) {
         return response.getResults().stream().map(ArdSearchResult::getDisplayName).toList();
     }
