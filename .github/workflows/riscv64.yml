@@ -1,0 +1,351 @@
+# Copyright 1999-2026 Alibaba Group Holding Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: RISC-V64 JDK 17 Build and Selected IT
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nacos-riscv64-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_IMAGE: riscv64/ubuntu:24.04
+      CONTAINER_NAME: nacos-riscv64-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare run directory
+        run: |
+          set -euo pipefail
+          RUN_DIR="$RUNNER_TEMP/nacos-riscv64-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          printf 'RUN_DIR=%s\n' "$RUN_DIR" >> "$GITHUB_ENV"
+          mkdir "$RUN_DIR"
+          mkdir -p "$RUN_DIR"/{m2,home}
+          printf 'runner=%s\nimage=%s\n' "$RUNNER_NAME" "$BUILD_IMAGE"
+          printf 'virtualization=QEMU user-mode via binfmt_misc; Docker platform=linux/riscv64\n'
+          printf 'Host OS: '
+          sed -n 's/^PRETTY_NAME=//p' /etc/os-release
+          uname -a
+          docker version --format 'Docker Engine: {{.Server.Version}}'
+
+      - name: Set up QEMU for RISC-V64
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        with:
+          platforms: riscv64
+
+      - name: Restore Maven cache
+        id: maven-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.RUN_DIR }}/m2
+          key: ${{ runner.os }}-riscv64-ubuntu24-jdk17-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties', '**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-riscv64-ubuntu24-jdk17-wrapper-
+
+      - name: Build standard release and run selected IT on RISC-V64
+        id: build-test
+        timeout-minutes: 345
+        run: |
+          set -euo pipefail
+          docker run --rm --init --name "$CONTAINER_NAME" --platform linux/riscv64 \
+            --label "nacos.riscv64.run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace" \
+            --mount "type=bind,source=$RUN_DIR/m2,target=/cache/m2" \
+            --mount "type=bind,source=$RUN_DIR/home,target=/work/home" \
+            --env "BUILD_UID=$(id -u)" --env "BUILD_GID=$(id -g)" \
+            --env HOME=/work/home --env MAVEN_USER_HOME=/cache/m2 \
+            --env JAVA_TOOL_OPTIONS=-Duser.home=/work/home --env LC_ALL=C.UTF-8 \
+            --workdir /workspace -i "$BUILD_IMAGE" bash -euo pipefail <<'CONTAINER'
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=60 update
+          apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=60 install -y --no-install-recommends \
+            openjdk-17-jdk-headless ca-certificates curl git unzip util-linux \
+            openssl procps libatomic1 \
+            protobuf-compiler protobuf-compiler-grpc-java-plugin
+          rm -rf /var/lib/apt/lists/*
+          exec setpriv --reuid="$BUILD_UID" --regid="$BUILD_GID" --clear-groups \
+            bash -euo pipefail <<'BUILD'
+          test "$(uname -m)" = riscv64
+          test -x /usr/bin/protoc
+          test -x /usr/bin/grpc_java_plugin
+          java_info=$(java -XshowSettings:properties -version 2>&1)
+          grep -Eq 'java.specification.version = 17$' <<< "$java_info"
+          grep -Eq 'os.arch = riscv64$' <<< "$java_info"
+          printf 'Container OS: '
+          sed -n 's/^PRETTY_NAME=//p' /etc/os-release
+          uname -a
+          java -version
+          printf '%s\n' "$java_info" | grep -E 'os.arch = riscv64$'
+          printf 'System dependencies:\n'
+          dpkg-query -W -f='${binary:Package}=${Version}\n' \
+            libc6 libatomic1 ca-certificates curl git unzip util-linux openssl procps \
+            protobuf-compiler protobuf-compiler-grpc-java-plugin
+          /usr/bin/protoc --version
+          ./mvnw -version
+
+          mvn_repo="$MAVEN_USER_HOME/repository"
+          # Never resolve modules from a previous Nacos checkout.
+          rm -rf "$mvn_repo/com/alibaba/nacos"
+          ./mvnw -B -e "-Dmaven.repo.local=$mvn_repo" \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            '-Prelease-nacos,!dev' -Dmaven.test.skip=true \
+            -DprotocExecutable=/usr/bin/protoc \
+            -DprotocPluginExecutable=/usr/bin/grpc_java_plugin \
+            clean install
+          shopt -s nullglob
+          packages=(distribution/target/nacos-server-*.tar.gz)
+          test "${#packages[@]}" -eq 1
+
+          it_home="$HOME/nacos-riscv64-selected-it"
+          mkdir -p "$it_home"
+          tar -xzf "${packages[0]}" -C "$it_home"
+          NACOS_HOME="$it_home/nacos"
+          PROP_FILE="$NACOS_HOME/conf/application.properties"
+          # Preserve the packaged auth scopes and authorization cache defaults.
+          grep -Fxq 'nacos.core.auth.enabled=true' "$PROP_FILE"
+          grep -Fxq 'nacos.core.auth.admin.enabled=true' "$PROP_FILE"
+          grep -Fxq 'nacos.core.auth.console.enabled=true' "$PROP_FILE"
+
+          # Allow extra time for Derby's first connection under QEMU.
+          printf '\nnacos.plugin.datasource.db.pool.config.connection-timeout=30000\n' >> "$PROP_FILE"
+          echo 'QEMU Derby connection timeout: 30000 ms'
+
+          export NACOS_TEST_AUTH_ADMIN_USERNAME=nacos
+          export NACOS_TEST_AUTH_CLIENT_USERNAME=nacos_it_client_rw
+          export NACOS_TEST_AUTH_READONLY_USERNAME=nacos_it_client_readonly
+          export NACOS_TEST_AUTH_NO_PERMISSION_USERNAME=nacos_it_client_no_permission
+          NACOS_TEST_AUTH_ADMIN_PASSWORD="NacosIt-$(openssl rand -hex 16)-A1!"
+          NACOS_TEST_AUTH_CLIENT_PASSWORD="NacosIt-$(openssl rand -hex 16)-C1!"
+          NACOS_TEST_AUTH_READONLY_PASSWORD="NacosIt-$(openssl rand -hex 16)-R1!"
+          NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD="NacosIt-$(openssl rand -hex 16)-N1!"
+          NACOS_TEST_AUTH_TOKEN_SECRET="$(openssl rand -base64 48 | tr -d '\n')"
+          NACOS_TEST_AUTH_SERVER_IDENTITY_KEY="nacos-it-$(openssl rand -hex 8)"
+          NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE="$(openssl rand -hex 32)"
+          export NACOS_TEST_AUTH_ADMIN_PASSWORD NACOS_TEST_AUTH_CLIENT_PASSWORD
+          export NACOS_TEST_AUTH_READONLY_PASSWORD NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD
+          export NACOS_TEST_AUTH_TOKEN_SECRET
+          export NACOS_TEST_AUTH_SERVER_IDENTITY_KEY NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE
+          for secret in \
+            "$NACOS_TEST_AUTH_ADMIN_PASSWORD" \
+            "$NACOS_TEST_AUTH_CLIENT_PASSWORD" \
+            "$NACOS_TEST_AUTH_READONLY_PASSWORD" \
+            "$NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD" \
+            "$NACOS_TEST_AUTH_TOKEN_SECRET" \
+            "$NACOS_TEST_AUTH_SERVER_IDENTITY_KEY" \
+            "$NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE"; do
+            printf '::add-mask::%s\n' "$secret"
+          done
+          sed -i \
+            "s|^nacos.plugin.auth.nacos.token.secret.key=.*|nacos.plugin.auth.nacos.token.secret.key=$NACOS_TEST_AUTH_TOKEN_SECRET|" \
+            "$PROP_FILE"
+          sed -i \
+            "s|^nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=$NACOS_TEST_AUTH_SERVER_IDENTITY_KEY|" \
+            "$PROP_FILE"
+          sed -i \
+            "s|^nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=$NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE|" \
+            "$PROP_FILE"
+
+          server_pid=''
+          cleanup_it() {
+            local status=$?
+            trap - EXIT
+            if (( status != 0 )); then
+              echo '::group::Nacos startup diagnostics'
+              tail -n 150 "$NACOS_HOME/logs/startup.log" 2>/dev/null || true
+              tail -n 150 "$NACOS_HOME/logs/nacos.log" 2>/dev/null || true
+              echo '::endgroup::'
+            fi
+            if [[ -n "$server_pid" ]] && kill -0 "$server_pid" 2>/dev/null; then
+              if ps -p "$server_pid" -o args= | grep -Fq -- "-Dnacos.home=$NACOS_HOME "; then
+                kill "$server_pid" 2>/dev/null || true
+                for _ in $(seq 1 20); do
+                  kill -0 "$server_pid" 2>/dev/null || break
+                  sleep 1
+                done
+                if kill -0 "$server_pid" 2>/dev/null; then
+                  kill -9 "$server_pid" 2>/dev/null || true
+                  for _ in $(seq 1 5); do
+                    kill -0 "$server_pid" 2>/dev/null || break
+                    sleep 1
+                  done
+                fi
+                if kill -0 "$server_pid" 2>/dev/null; then
+                  echo 'Nacos cleanup failed: process still exists' >&2
+                  (( status != 0 )) || status=1
+                fi
+              else
+                echo 'Nacos cleanup refused: PID ownership mismatch' >&2
+                (( status != 0 )) || status=1
+              fi
+            fi
+            exit "$status"
+          }
+          trap cleanup_it EXIT
+
+          echo 'Starting Nacos standalone on RISC-V64...'
+          bash "$NACOS_HOME/bin/startup.sh" -m standalone
+          for _ in $(seq 1 40); do
+            server_pid=$(pgrep -f -- "-Dnacos.home=$NACOS_HOME " | head -n 1 || true)
+            [[ -n "$server_pid" ]] && break
+            sleep 1
+          done
+          test -n "$server_pid"
+
+          ready=false
+          ready_url="http://127.0.0.1:8080/v3/console/health/readiness"
+          health_body="$NACOS_HOME/logs/readiness-response.txt"
+
+          start_time=$SECONDS
+          max_deadline=$((start_time + 2100))
+
+          console_started=false
+          console_deadline=0
+
+          while (( SECONDS < max_deadline )); do
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Nacos exited before becoming ready" >&2
+              exit 1
+            fi
+
+            # Detect when the Console has actually completed startup.
+            if [[ "$console_started" == false ]] &&
+              grep -Fq "Nacos Console started successfully" \
+                "$NACOS_HOME/logs/startup.log" 2>/dev/null; then
+              console_started=true
+              console_deadline=$((SECONDS + 180))
+              echo "Nacos Console started; waiting up to 180s for readiness."
+            fi
+
+            remaining=$((max_deadline - SECONDS))
+            request_timeout=$((remaining < 5 ? remaining : 5))
+            (( request_timeout > 0 )) || break
+
+            http_code=$(curl --silent \
+              --connect-timeout 2 \
+              --max-time "$request_timeout" \
+              --output "$health_body" \
+              --write-out '%{http_code}' \
+              "$ready_url" 2>/dev/null || true)
+
+            if [[ "$http_code" == "200" ]]; then
+              ready=true
+              break
+            fi
+
+            # Once Console has started, readiness must converge.
+            if [[ "$console_started" == true ]] &&
+              (( SECONDS >= console_deadline )); then
+              echo "Console started, but readiness did not pass within 180s" >&2
+              break
+            fi
+
+            sleep 2
+          done
+
+          if [[ "$ready" != true ]]; then
+            echo "Nacos readiness failed after $((SECONDS - start_time))s" >&2
+            echo "Last HTTP status: $http_code" >&2
+            cat "$health_body" 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Nacos readiness check passed after $((SECONDS - start_time))s."
+
+          timeout 600 bash test/scripts/auth-it-identity.sh bootstrap >/dev/null
+          timeout 600 bash test/scripts/auth-it-identity.sh prepare >/dev/null
+
+          # Apply QEMU transport budgets to Maven and its test fork after starting the server.
+          JAVA_TOOL_OPTIONS+=' -Dnacos.remote.client.grpc.server.check.timeout=30000'
+          JAVA_TOOL_OPTIONS+=' -Dnacos.remote.client.grpc.channel.capability.negotiation.timeout=30000'
+          JAVA_TOOL_OPTIONS+=' -Dnacos.remote.client.grpc.health.timeout=30000'
+          JAVA_TOOL_OPTIONS+=' -Dnacos.remote.client.grpc.timeout=30000'
+          export JAVA_TOOL_OPTIONS
+          echo 'QEMU SDK gRPC connection, negotiation, health and default request timeouts: 30000 ms'
+
+          echo 'Running selected Java SDK integration tests...'
+          ./mvnw -B -e "-Dmaven.repo.local=$mvn_repo" \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            -pl test/java-sdk-test -Pjava-sdk-integration-test \
+            -Dmaven.test.skip=false -DskipTests=false \
+            -Dnacos.test.auth.enabled=true \
+            '-Dit.test=ConfigServiceJavaSdkITCase#testPublishQueryCasAndRemoveConfig,NamingServiceJavaSdkITCase#testRegisterQuerySelectListAndDeregisterInstance' \
+            clean verify
+
+          echo 'Running selected OpenAPI integration test...'
+          ./mvnw -B -e "-Dmaven.repo.local=$mvn_repo" \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            -pl test/openapi-test -Pintegration-test \
+            -Dmaven.test.skip=false -DskipTests=false \
+            -Dnacos.test.auth.enabled=true \
+            '-Dit.test=ConfigOpenApiITCase#testGetConfigSuccessAfterPublish' \
+            clean verify
+          echo 'Selected RISC-V64 IT passed.'
+
+          # Cache dependencies and the Wrapper distribution, not this checkout's installed artifacts.
+          rm -rf "$mvn_repo/com/alibaba/nacos"
+          find "$mvn_repo" -type f \
+            \( -name '*.lastUpdated' -o -name '*.part' -o -name '*.part.lock' \) -delete
+          BUILD
+          CONTAINER
+
+      - name: Save Maven cache
+        if: steps.build-test.outcome == 'success' && steps.maven-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.RUN_DIR }}/m2
+          key: ${{ steps.maven-cache.outputs.cache-primary-key }}
+
+      - name: Stop remaining build container
+        id: cleanup
+        if: always()
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          cid=$(docker ps -aq --filter "name=^/${CONTAINER_NAME}$")
+          if [[ -n $cid ]]; then
+            owner=$(docker inspect --format '{{index .Config.Labels "nacos.riscv64.run"}}' "$cid")
+            test "$owner" = "$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+            timeout 90 docker stop --time 60 "$cid" || timeout 20 docker kill "$cid"
+            remaining=$(docker ps -aq --filter "name=^/${CONTAINER_NAME}$")
+            if [[ -n $remaining ]]; then
+              timeout 20 docker rm "$remaining" || {
+                remaining=$(docker ps -aq --filter "name=^/${CONTAINER_NAME}$")
+                test -z "$remaining"
+              }
+            fi
+          fi
+
+      - name: Remove temporary run files
+        if: always() && steps.cleanup.outcome == 'success'
+        run: |
+          set -euo pipefail
+          RUN_DIR="${RUN_DIR:-$RUNNER_TEMP/nacos-riscv64-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT}"
+          test "${RUN_DIR%/*}" = "$RUNNER_TEMP"
+          rm -rf -- "$RUN_DIR"
