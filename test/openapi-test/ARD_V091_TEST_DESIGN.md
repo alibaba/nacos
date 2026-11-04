@@ -129,7 +129,11 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 执行状态另记Not run/Pass/Fail/Blocked，不能把设计已写当测试通过。
 DOC-C01-01的文档核验随设计PR记录。C02的UT-C02-01..04已实现于
 `ArdOpenApiContractTest`，复用离线`ArdContractSchemas`；2026-11-04执行通过，
-连同既有契约/服务基线共41项通过。C02无HTTP变化，其余新增产品测试仍为Not run。
+连同既有契约/服务基线共41项通过。C02无HTTP变化；未在下文记录的新增测试仍为Not run。
+C03的UT-C03-01/02与IT-C03-01..03已实现：73项ARD单元/组件测试通过，
+匿名开启的standalone suite为6项通过、1项原有DAUTH-F03跳过；匿名关闭补测2项通过。
+HTTP同时覆盖显式/请求推导base URL、105条公开资源目录与旧Schema、实际Search/List双版Schema。
+私有已授权资源的完整性仍归B01；未把Disabled用例计为通过。
 待决策略不能先写成强制失败预期。
 
 <a id="c01"></a>

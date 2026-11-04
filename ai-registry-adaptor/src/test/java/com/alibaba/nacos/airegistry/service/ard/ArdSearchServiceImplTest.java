@@ -774,6 +774,35 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void hostManifestShouldKeepLegacyProjectionAndRequestOriginIsolated() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/proxy/");
+        ArdSearchServiceImpl service = service();
+        JsonNode before =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class);
+        JsonNode manifest =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostManifest()), JsonNode.class);
+        var contracts = new com.alibaba.nacos.airegistry.contract.ArdContractSchemas();
+        var errors = contracts.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        assertEquals(1, manifest.size());
+        assertEquals(1, manifest.path("entries").size());
+        JsonNode entry = manifest.path("entries").get(0);
+        assertEquals(ArdProtocolConstants.BASE_CONTEXT, entry.path("@context").asText());
+        assertEquals("https://nacos.example.com/proxy/v3/ai/ard", entry.path("url").asText());
+        assertTrue(entry.path("score").isMissingNode());
+        assertTrue(entry.path("source").isMissingNode());
+        assertTrue(entry.path("trustManifest").isMissingNode());
+        assertTrue(entry.path("tags").isArray());
+        assertTrue(entry.path("capabilities").isArray());
+        assertTrue(entry.path("version").isMissingNode());
+        assertEquals(before,
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class));
+        assertTrue(contracts.validateLegacyCatalog(before).isEmpty());
+        assertTrue(before.path("entries").get(0).path("@context").isMissingNode());
+        verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
+    }
+    
+    @Test
     void catalogShouldUseConfiguredBaseUrlAndHostIdentifier() throws Exception {
         System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");

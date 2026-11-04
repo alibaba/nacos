@@ -16,8 +16,8 @@
 
 # ARD v0.91 Adaptation Design
 
-Implementation status (2026-11-04): C02 dual-version offline schema validation is
-implemented; the remaining runtime changes are pending. This does not promote the
+Implementation status (2026-11-04): C02 dual-version offline schema validation and
+C03 host manifest discovery are implemented; the remaining changes are pending. This does not promote the
 current conformance baseline.
 
 This document defines the target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)

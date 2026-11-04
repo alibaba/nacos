@@ -189,9 +189,21 @@ Nacos targets the ARD draft at upstream commit
 The commit, rather than the draft's mutable version label, is the compatibility
 baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 
-The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) records a proposed
-upgrade. It does not replace this current baseline or claim that the new routes
-and query semantics are already implemented.
+The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) records the staged
+upgrade. Dual-version offline schemas and the new host discovery route are
+implemented; query semantics and final acceptance remain pending, so the overall
+compatibility baseline is not promoted.
+
+`GET /.well-known/ard.json` on the adaptor port returns an `entries` manifest
+containing only this registry's complete entry with the official base `@context`.
+It omits legacy `specVersion/host` and search `score/source` fields. Both legacy
+`ai-catalog.json` routes retain their projections and authentication behavior.
+The new route uses the ARD switch, Open API authentication and explicit credential
+validation; it adds neither a namespace-level `ard.json` nor version negotiation.
+Proxy the public domain root `/.well-known/ard.json` to the adaptor. Pages can link
+with `<link rel="ard" href="https://registry.example.com/.well-known/ard.json">`.
+The registry `url` is a base URL: append `/search` once. For a proxy path prefix,
+set `nacos.ai.ard.catalog.base-url` to the public adaptor origin plus that prefix.
 
 When `nacos.ai.ard.enabled=true`, the adaptor exposes these ARD discovery
 endpoints from the adaptor web context:
@@ -204,6 +216,7 @@ endpoints from the adaptor web context:
 | `GET` | `/v3/ai/ard/ai-catalog.json` | Returns a namespace-scoped catalog. |
 | `GET` | `/v3/ai/ard/artifacts` | Returns the versioned artifact referenced by a catalog entry. |
 | `GET` | `/.well-known/ai-catalog.json` | Returns the host-level ARD catalog. |
+| `GET` | `/.well-known/ard.json` | Returns the current host manifest containing only this registry entry. |
 
 The global ARD switch starts the adaptor context even when the MCP and Skill
 compatibility switches remain disabled.

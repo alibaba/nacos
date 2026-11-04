@@ -118,6 +118,7 @@ class ArdWebAuthenticationTest {
                 "/v3/ai/ard/agents?namespaceId=public&pageSize=1&accessToken=invalid");
             
             assertEquals(401, rejected.statusCode());
+            assertEquals(401, get(port, "/.well-known/ard.json?accessToken=invalid").statusCode());
             assertEquals("{\"errorCode\":\"UNAUTHENTICATED\","
                 + "\"message\":\"Code: 401, Message: invalid token.\"}", rejected.body());
             
@@ -143,7 +144,11 @@ class ArdWebAuthenticationTest {
             
             assertEquals(200, accepted.statusCode());
             assertTrue(identityObserved.get());
-            verify(protocolAuthService).validateAuthority(eq(acceptedIdentity),
+            when(searchService.hostManifest())
+                .thenReturn(new com.alibaba.nacos.airegistry.model.ard.ArdManifest());
+            assertEquals(200, get(port, "/.well-known/ard.json?accessToken=valid").statusCode());
+            verify(protocolAuthService, org.mockito.Mockito.times(2)).validateAuthority(
+                eq(acceptedIdentity),
                 any(Permission.class));
         } finally {
             ReflectionTestUtils.setField(authConfig, "authEnabled", previousAuthEnabled);
@@ -187,7 +192,8 @@ class ArdWebAuthenticationTest {
         SecurityAutoConfiguration.class, ServletWebSecurityAutoConfiguration.class,
         UserDetailsServiceAutoConfiguration.class,
         ManagementWebSecurityAutoConfiguration.class})
-    @Import({ArdSearchController.class, ArdExceptionHandler.class, ArdWebConfiguration.class})
+    @Import({ArdSearchController.class, ArdWellKnownController.class, ArdExceptionHandler.class,
+        ArdWebConfiguration.class})
     static class AdaptorApplication {
         
         @Bean

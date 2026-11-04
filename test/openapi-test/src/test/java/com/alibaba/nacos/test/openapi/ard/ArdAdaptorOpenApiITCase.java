@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.openapi.ard;
 
+import com.alibaba.nacos.airegistry.contract.ArdContractSchemas;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -86,6 +88,134 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final int SEARCH_MAX_RETRIES = 120;
     
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
+
+    private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
+
+    @Test
+    public void testWellKnownManifestAndLegacyCatalogIsolation() throws Exception {
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        JsonNode legacyBefore = discoveryGet("/.well-known/ai-catalog.json", identity);
+        JsonNode manifest = discoveryGet("/.well-known/ard.json", identity);
+        var errors = CONTRACTS.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        assertFalse(manifest.has("specVersion"));
+        assertFalse(manifest.has("host"));
+        assertEquals(1, manifest.path("entries").size());
+        JsonNode registry = manifest.path("entries").get(0);
+        assertEquals("application/ai-registry+json", registry.path("type").asText());
+        assertEquals("https://agenticresourcediscovery.org/context/v1", registry.path("@context").asText());
+        assertFalse(registry.has("score"));
+        assertFalse(registry.has("source"));
+        String base = registry.path("url").asText();
+        assertTrue(URI.create(base).isAbsolute());
+        assertFalse(base.endsWith("/search"), base);
+        HttpPost search = new HttpPost(base + "/search?namespaceId=ard-empty-" + UUID.randomUUID());
+        search.setEntity(new StringEntity(JacksonUtils.toJson(searchRequest("discovery", null)),
+            ContentType.APPLICATION_JSON));
+        HttpResponse response = executeArdRaw(search, identity);
+        assertEquals(200, response.code(), response.body());
+        JsonNode result = JacksonUtils.toObj(response.body());
+        assertEquals(0, result.path("results").size());
+        assertResponseSchemas("SearchResponse", result);
+        JsonNode legacyAfter = discoveryGet("/.well-known/ai-catalog.json", identity);
+        assertEquals(legacyBefore, legacyAfter);
+        assertLegacyCatalog(legacyAfter);
+        assertEquals("1.0", legacyAfter.path("specVersion").asText());
+        assertTrue(legacyAfter.has("host"));
+        assertFalse(legacyAfter.path("entries").get(0).has("@context"));
+        assertEquals(registry.path("identifier"), legacyAfter.path("entries").get(0).path("identifier"));
+        assertEquals(404, executeArdRaw(new HttpGet(ARD_BASE_URL + ARD_PATH + "/ard.json"), identity).code());
+    }
+
+    @Test
+    public void testDiscoveryAuthenticationMatchesLegacyRoutes() throws Exception {
+        for (String path : List.of("/.well-known/ard.json", "/.well-known/ai-catalog.json",
+            ARD_PATH + "/ai-catalog.json")) {
+            HttpResponse anonymous = executeArdRaw(new HttpGet(ARD_BASE_URL + path), AuthIdentity.ANONYMOUS);
+            if (!AUTH_ENABLED || EXPECTED_ANONYMOUS_AI_ENABLED) {
+                assertEquals(200, anonymous.code(), anonymous.body());
+            } else {
+                assertArdUnauthenticated(anonymous);
+            }
+            if (AUTH_ENABLED) {
+                assertArdUnauthenticated(executeArdRaw(new HttpGet(ARD_BASE_URL + path), AuthIdentity.INVALID));
+                assertEquals(200, executeArdRaw(new HttpGet(ARD_BASE_URL + path), AuthIdentity.ADMIN).code());
+            }
+        }
+    }
+
+    @Test
+    public void testLegacyCatalogEnumeratesMoreThanOneHundredPublicResources() throws Exception {
+        Set<String> names = new LinkedHashSet<>();
+        String prefix = randomAiName("ard-catalog");
+        for (int i = 0; i < 105; i++) {
+            String name = prefix + '-' + i;
+            publishPublicAgent(name, "1.0.0");
+            names.add(name);
+        }
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        String path = ARD_PATH + "/ai-catalog.json?namespaceId=" + DEFAULT_NAMESPACE;
+        JsonNode catalog = null;
+        for (int i = 0; i <= SEARCH_MAX_RETRIES; i++) {
+            catalog = discoveryGet(path, identity);
+            if (resourceNames(catalog.path("entries")).containsAll(names)) {
+                break;
+            }
+            if (i < SEARCH_MAX_RETRIES) {
+                Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+            }
+        }
+        assertTrue(resourceNames(catalog.path("entries")).containsAll(names), catalog.toString());
+        assertLegacyCatalog(catalog);
+        JsonNode empty = discoveryGet(ARD_PATH + "/ai-catalog.json?namespaceId=ard-other-" + UUID.randomUUID(), identity);
+        assertEquals(1, empty.path("entries").size(), empty.toString());
+        assertLegacyCatalog(empty);
+        assertEquals(1, discoveryGet("/.well-known/ard.json", identity).path("entries").size());
+        assertEquals(1, discoveryGet("/.well-known/ai-catalog.json", identity).path("entries").size());
+    }
+
+    private JsonNode discoveryGet(String path, AuthIdentity identity) throws Exception {
+        HttpResponse response = executeArdRaw(new HttpGet(ARD_BASE_URL + path), identity);
+        assertEquals(200, response.code(), response.body());
+        return JacksonUtils.toObj(response.body());
+    }
+
+    private HttpResponse executeArdRaw(org.apache.hc.core5.http.ClassicHttpRequest request,
+        AuthIdentity identity) throws Exception {
+        URI uri = request.getUri();
+        URI allowed = URI.create(ARD_BASE_URL);
+        assertEquals(allowed.getScheme(), uri.getScheme());
+        assertEquals(allowed.getRawAuthority(), uri.getRawAuthority());
+        assertTrue(uri.getPath().startsWith(ARD_PATH + "/")
+            || List.of("/.well-known/ard.json", "/.well-known/ai-catalog.json").contains(uri.getPath()));
+        return executeRaw(request, identity);
+    }
+
+    private void assertArdUnauthenticated(HttpResponse response) throws Exception {
+        assertEquals(401, response.code(), response.body());
+        JsonNode body = JacksonUtils.toObj(response.body());
+        assertEquals("UNAUTHENTICATED", body.path("errorCode").asText());
+        assertFalse(body.path("message").asText().isBlank());
+        assertFalse(body.has("code"));
+        assertFalse(body.has("data"));
+    }
+
+    private void assertLegacyCatalog(JsonNode catalog) {
+        var errors = CONTRACTS.validateLegacyCatalog(catalog);
+        assertTrue(errors.isEmpty(), errors.toString());
+        for (JsonNode entry : catalog.path("entries")) {
+            assertFalse(entry.has("@context"));
+            assertFalse(entry.has("score"));
+            assertFalse(entry.has("source"));
+        }
+    }
+
+    private void assertResponseSchemas(String definition, JsonNode response) {
+        for (String version : List.of(ArdContractSchemas.LEGACY, ArdContractSchemas.CURRENT)) {
+            var errors = CONTRACTS.validateResponse(version, definition, response);
+            assertTrue(errors.isEmpty(), errors.toString());
+        }
+    }
     
     @Test
     public void testSearchEnhancementStatusAndCursorBoundary() throws Exception {
@@ -187,6 +317,10 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode nacosResult = findResource(nacosSearch.get("results"), agentName);
         JsonNode a2aSearch = awaitSearch(searchRequest(agentName, TYPE_A2A), Set.of(agentName));
         JsonNode a2aResult = findResource(a2aSearch.get("results"), agentName);
+        assertResponseSchemas("SearchResponse", nacosSearch);
+        assertResponseSchemas("SearchResponse", a2aSearch);
+        assertListRepresentation(agentName, TYPE_A2A);
+        assertCatalogsContain(Set.of(agentName));
         assertAgentArtifacts(a2aResult, nacosResult, agentName);
         JsonNode artifact = JacksonUtils.toObj(new String(
                 ardGetBytesOk(nacosResult.get("url").asText()).body(), StandardCharsets.UTF_8));
@@ -368,6 +502,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
                         + "' AND type = '" + type + "'")
                 .addParam("orderBy", "identifier asc").addParam("pageSize", "10");
         JsonNode list = ardGetJsonOk(ARD_PATH + "/agents", query);
+        assertResponseSchemas("ListResponse", list);
         assertEquals(1, list.get("items").size(), list.toString());
         JsonNode item = list.get("items").get(0);
         assertEquals(agentName, item.get("metadata").get("resourceName").asText(),
@@ -399,6 +534,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private void assertCatalogsContain(Set<String> expectedNames) throws Exception {
         JsonNode namespaceCatalog = ardGetJsonOk(ARD_PATH + "/ai-catalog.json",
                 Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE));
+        assertLegacyCatalog(namespaceCatalog);
         assertEquals("1.0", namespaceCatalog.get("specVersion").asText(),
                 namespaceCatalog.toString());
         assertTrue(resourceNames(namespaceCatalog.get("entries")).containsAll(expectedNames),

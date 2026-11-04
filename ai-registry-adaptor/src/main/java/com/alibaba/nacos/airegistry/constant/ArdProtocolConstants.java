@@ -29,6 +29,8 @@ public final class ArdProtocolConstants {
     
     public static final String SPEC_VERSION = "1.0";
     
+    public static final String BASE_CONTEXT = "https://agenticresourcediscovery.org/context/v1";
+    
     public static final String FEDERATION_AUTO = "auto";
     
     public static final String FEDERATION_REFERRALS = "referrals";

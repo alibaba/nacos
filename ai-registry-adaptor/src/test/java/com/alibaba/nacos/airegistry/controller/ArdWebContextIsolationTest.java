@@ -65,6 +65,8 @@ class ArdWebContextIsolationTest {
             
             assertEquals(200, get(mainPort, "/nacos/v3/client/ai/skills").statusCode());
             assertEquals(404, get(adaptorPort, "/v3/client/ai/skills").statusCode());
+            assertEquals(200, get(adaptorPort, "/.well-known/ard.json").statusCode());
+            assertEquals(404, get(mainPort, "/nacos/.well-known/ard.json").statusCode());
             
             String artifactPath = "/v3/ai/ard/artifacts?namespaceId=public"
                 + "&resourceType=skill&resourceName=demo&version=1.0.0";
@@ -127,7 +129,7 @@ class ArdWebContextIsolationTest {
         SecurityAutoConfiguration.class, ServletWebSecurityAutoConfiguration.class,
         UserDetailsServiceAutoConfiguration.class,
         ManagementWebSecurityAutoConfiguration.class})
-    @Import({ArdSearchController.class, ArdExceptionHandler.class})
+    @Import({ArdSearchController.class, ArdWellKnownController.class, ArdExceptionHandler.class})
     static class AdaptorApplication {
         
         @Bean

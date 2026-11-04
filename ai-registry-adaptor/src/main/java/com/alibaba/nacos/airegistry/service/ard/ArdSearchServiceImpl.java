@@ -38,6 +38,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalogEntry;
+import com.alibaba.nacos.airegistry.model.ard.ArdEntry;
+import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
@@ -790,8 +792,22 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return host;
     }
     
+    @Override
+    public ArdManifest hostManifest() {
+        ArdEntry entry = new ArdEntry();
+        populateRegistryEntry(entry);
+        ArdManifest manifest = new ArdManifest();
+        manifest.setEntries(List.of(entry));
+        return manifest;
+    }
+    
     private ArdCatalogEntry registryEntry() {
         ArdCatalogEntry result = new ArdCatalogEntry();
+        populateRegistryEntry(result);
+        return result;
+    }
+    
+    private void populateRegistryEntry(ArdCatalogEntry result) {
         result.setIdentifier("urn:air:" + catalogPublisherIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
@@ -807,7 +823,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         metadata.put("resourceTypes", "agent,skill,prompt,mcp");
         result.setMetadata(metadata);
         result.setTrustManifest(trustManifest());
-        return result;
     }
     
     private Map<String, String> endpoints() {
