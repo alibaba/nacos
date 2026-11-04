@@ -95,6 +95,26 @@ under the group's log URI:
 └── snapshot/
 ```
 
+The configured log URI and its ancestors may contain directory symbolic links.
+The constructor only records the absolute configuration path; initialization
+resolves it to a real directory before appending `file-log`. Missing configuration
+directories are created beneath their resolved existing ancestors. Resolution
+preserves filesystem semantics for relative links and `..`; it does not create
+the targets of dangling links. Link cycles, non-directory targets, permission
+errors, and other resolution failures fail initialization. Only a missing-path
+attribute lookup permits directory creation; if creation races with another
+initializer, the existing object must resolve to a directory before use.
+
+The resulting real root is fixed for the open instance and supplies every lock,
+Manifest, Segment, Index, reclamation, and synchronization path. Retargeting an
+entry link does not redirect an open store; after shutdown or failed initialization,
+the next initialization resolves the configured entry again. Different aliases
+of the same directory share its storeId and exclusive lock. This does not migrate
+data. Direct replacement or relocation of an open real storage directory is
+unsupported. The managed `file-log`, `segments`, and `index` directories must
+remain real directories, and managed files retain their existing `NOFOLLOW_LINKS`
+checks and reclamation rules.
+
 `LOCK` provides an exclusive lock through `FileChannel.tryLock()`. Creating the
 first Manifest generates a UUID `storeId`, which subsequent segment headers share.
 Recovery validates the Manifest groupId and each segment's storeId and ID. The
@@ -244,9 +264,10 @@ index would overflow.
 `init()` performs these steps:
 
 1. Check synchronous-write options, groupId, ConfigurationManager, and the LogEntry codec.
-2. Create the root directory, acquire its exclusive lock, and create `segments`
-   and `index`. Synchronize both subdirectories and the root's ancestor chain
-   through the filesystem root.
+2. Resolve or create the configured log directory, derive and validate the real
+   root, acquire its exclusive lock, and create `segments` and `index`.
+   Synchronize both subdirectories and the real root's ancestor chain through
+   the filesystem root.
 3. Read and validate the Manifest. Without one, only empty subdirectories, the
    lock file, and a regular temporary Manifest are allowed; then create empty storage.
 4. Calculate the segment ID high-water mark before cleanup.
@@ -291,7 +312,7 @@ continue to participate in ID allocation on subsequent initialization.
 | Atomic Manifest replacement | `writeManifest()` moves a same-directory temporary file with `ATOMIC_MOVE`, `REPLACE_EXISTING`. | Fail publication; validate existing disk changes on the next recovery. |
 | File type checks | Segment, Manifest, and directory checks use `NOFOLLOW_LINKS`. | Refuse to open paths that do not satisfy the required regular-file or real-directory type. |
 
-These operations act directly on the filesystem containing the configured path.
+These operations act directly on the filesystem containing the resolved real path.
 Initialization calls synchronization for `segments`, `index`, `file-log`, and all
 ancestor directories in the same order, even if directories already exist.
 JRaft's `Platform.isWindows()` identifies Windows, which automatically skips
@@ -326,7 +347,7 @@ published range valid.
 | State or operation | Observable behavior |
 | --- | --- |
 | Successful initialization | `init()` returns true, holds the directory lock, and has complete read/write resources. |
-| Failed initialization | `init()` cleans up resources and returns false; exception paths log ERROR with the root path and exception. |
+| Failed initialization | `init()` releases resources, clears the resolved-root runtime reference, and returns false; exception paths log ERROR with the configured log URI, resolved root when available, and exception. |
 | Unopened or closed | First/last indexes return 0, reads return null, appends return 0, and truncations/reset return false. |
 | Out-of-range read | `getEntry()` returns null; `getTerm()` returns 0. |
 | Read I/O or decoding failure | Log ERROR with directory, index, and exception; return null. |
@@ -336,8 +357,9 @@ published range valid.
 | Shutdown | `shutdown()` closes active resources, releases the lock, and clears runtime state. |
 
 Recovery after mutation failure requires `shutdown()` followed by `init()` on the
-original directory. Repeated `init()` while holding the lock only checks current
-runtime state and does not rerun recovery.
+original data. Reinitialization resolves the configured entry again, so operators
+must keep it pointing to the intended data directory. Repeated `init()` while
+holding the lock only checks current runtime state and does not rerun recovery.
 
 ### 8.2 Recovery Diagnostics
 
@@ -361,7 +383,8 @@ Changes to the file log backend must include focused tests for:
 - default backend selection, case/whitespace handling, invalid configuration,
   synchronous-write constraints, and factory selection for every group;
 - default metadata, snapshot, and codec delegation, plus property binding, group
-  assembly, writes, restart recovery, and continued commits without RocksDB classes;
+  assembly, writes, restart recovery, and continued commits without RocksDB classes,
+  including home and data directory links;
 - continuous appends, term reads, segment rolling, whole-batch validation failure,
   and absence of partial publication from a rejected batch;
 - prefix/suffix truncation within and across segments, empty reset, stale
@@ -374,6 +397,12 @@ Changes to the file log backend must include focused tests for:
 - ancestor synchronization ordering for new and existing directories, exclusive
   directory locking, and no early publication or writable state on required
   synchronization failure;
+- initial creation and restart through ancestor or log-URI links, relative and
+  chained links, `..` resolution, identity and complete logs across aliases,
+  exclusive locks across aliases, stable paths while links are retargeted,
+  re-resolution after shutdown or initialization failure, real ancestor
+  synchronization failures and retry, rejection of broken/cyclic/non-directory
+  paths, and unchanged managed-object link protection and external targets;
 - published-data corruption, unreferenced-file classification, preservation of
   unknown ownership, ID high-water calculation, and unchanged Manifest/segment
   bytes before the recovery barrier;
@@ -397,6 +426,8 @@ Integration verification must distinguish real files, real RPC, and independent
 node processes; mocks cannot replace the corresponding recovery assertions.
 Process control and diagnostics must share timeout budgets, preserve failure
 evidence, and continue cleaning other nodes when one node's cleanup fails.
+Linux link tests must use real symbolic links; Windows link tests run when link
+creation is permitted, with capability skips reported separately from passes.
 Local platform mocks do not replace verification on the actual platform.
 Calling the directory synchronization entry point does not establish that a
 real force occurred. Process termination does not simulate an operating-system

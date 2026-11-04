@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.distributed.raft.storage.FileJRaftServiceFactory;
 import com.alibaba.nacos.core.distributed.raft.storage.RaftProcessSupport;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.Node;
+import com.alipay.sofa.jraft.util.Platform;
 import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.io.CleanupMode;
@@ -35,6 +36,8 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 
+import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.net.ServerSocket;
@@ -49,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +73,32 @@ public class FileRaftAssemblyTest {
     @ValueSource(booleans = {false, true})
     void bindsFileBackendAndRestoresTwoProductionGroupsWithoutRocksDb(boolean delayedReplay)
         throws Exception {
+        runAssembly(directory, delayedReplay);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"home", "data"})
+    void restoresTwoProductionGroupsThroughDirectoryLinks(String linkedDirectory) throws Exception {
+        Path realHome = Files.createDirectory(directory.resolve("real-home"));
+        Path home = realHome;
+        Path data = realHome.resolve("data");
+        Path link;
+        if ("home".equals(linkedDirectory)) {
+            link = directoryLink(directory.resolve("home-link"), realHome);
+            home = link;
+        } else {
+            data = Files.createDirectory(directory.resolve("real-data"));
+            link = directoryLink(realHome.resolve("data"), data);
+        }
+        runAssembly(home, true);
+        assertTrue(Files.isSymbolicLink(link));
+        for (String group : List.of("assembly-a", "assembly-b")) {
+            assertTrue(Files.isRegularFile(data.resolve("protocol/raft")
+                .resolve(group).resolve("log/file-log/manifest")));
+        }
+    }
+    
+    private void runAssembly(Path home, boolean delayedReplay) throws Exception {
         int port;
         try (ServerSocket socket = new ServerSocket(0)) {
             port = socket.getLocalPort();
@@ -76,7 +106,7 @@ public class FileRaftAssemblyTest {
         for (String phase : List.of("write", "recover")) {
             Path log = directory.resolve(phase + ".log");
             Process child = RaftProcessSupport.start(FileRaftAssemblyTest.class, log,
-                directory.toString(), Integer.toString(port), phase,
+                home.toString(), Integer.toString(port), phase,
                 Boolean.toString(delayedReplay));
             try {
                 assertTrue(child.waitFor(PHASE_TIMEOUT_SECONDS + PROCESS_OVERHEAD_SECONDS,
@@ -187,6 +217,15 @@ public class FileRaftAssemblyTest {
         }
         System.out.println("ASSEMBLY_OK");
         System.exit(0);
+    }
+    
+    private static Path directoryLink(Path link, Path target) throws IOException {
+        try {
+            return Files.createSymbolicLink(link, target);
+        } catch (FileSystemException | UnsupportedOperationException e) {
+            assumeTrue(!Platform.isWindows(), "Windows cannot create symbolic links: " + e);
+            throw e;
+        }
     }
     
     private static long remainingNanos(long deadline) {

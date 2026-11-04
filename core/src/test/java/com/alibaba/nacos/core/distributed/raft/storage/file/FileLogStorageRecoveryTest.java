@@ -29,6 +29,7 @@ import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.codec.v2.LogEntryV2CodecFactory;
 import com.alipay.sofa.jraft.option.LogStorageOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
+import com.alipay.sofa.jraft.util.Platform;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -39,6 +40,7 @@ import org.mockito.MockedStatic;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
@@ -51,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -70,6 +73,186 @@ class FileLogStorageRecoveryTest {
     @AfterEach
     void closeStores() {
         stores.forEach(FileLogStorage::shutdown);
+    }
+    
+    @Test
+    void recoversPersistedLogsThroughAncestorLinkAndRealPath() throws Exception {
+        Path realHome = Files.createDirectory(directory.resolve("real-home"));
+        Path realLog = Files.createDirectories(realHome.resolve("data/group/log"));
+        Path homeLink = directoryLink(directory.resolve("home-link"), realHome);
+        FileLogStorage original = store(realLog);
+        assertTrue(original.init(context("group")));
+        assertTrue(original.appendEntry(entry(1)));
+        assertTrue(original.appendEntry(entry(2)));
+        java.util.UUID storeId = original.getManifest().getStoreId();
+        original.shutdown();
+        
+        FileLogStorage linked = store(homeLink.resolve("data/group/log"));
+        assertTrue(linked.init(context("group")));
+        assertEquals(storeId, linked.getManifest().getStoreId());
+        assertEquals(entry(1), linked.getEntry(1));
+        assertEquals(entry(2), linked.getEntry(2));
+        assertTrue(linked.appendEntry(entry(3)));
+        linked.shutdown();
+        
+        FileLogStorage real = store(realLog);
+        assertTrue(real.init(context("group")));
+        assertEquals(storeId, real.getManifest().getStoreId());
+        for (int index = 1; index <= 3; index++) {
+            assertEquals(entry(index), real.getEntry(index));
+        }
+        assertTrue(real.appendEntry(entry(4)));
+        real.shutdown();
+        assertTrue(linked.init(context("group")));
+        assertEquals(storeId, linked.getManifest().getStoreId());
+        assertEquals(1, linked.getFirstLogIndex());
+        assertEquals(4, linked.getLastLogIndex());
+        for (int index = 1; index <= 4; index++) {
+            assertEquals(entry(index), linked.getEntry(index));
+        }
+        assertTrue(Files.isSymbolicLink(homeLink));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"dangling", "danglingAncestor", "cycle", "cycleAncestor",
+        "file", "fileAncestor"})
+    void rejectsInvalidConfigurationLinksWithoutCreatingTargetsAndRetriesAfterRepair(String kind)
+        throws Exception {
+        Path link = directory.resolve("entry");
+        Path missing = directory.resolve("missing-target");
+        Path regularFile = Files.write(directory.resolve("regular-file"), new byte[] {42});
+        Path target = kind.startsWith("dangling") ? missing
+            : kind.startsWith("cycle") ? link.getFileName() : regularFile;
+        directoryLink(link, target);
+        Path configured = kind.endsWith("Ancestor") ? link.resolve("group/log") : link;
+        FileLogStorage store = store(configured);
+        assertFalse(store.init(context("group")));
+        assertFalse(Files.exists(missing));
+        assertArrayEquals(new byte[] {42}, Files.readAllBytes(regularFile));
+        assertTrue(Files.isSymbolicLink(link));
+        assertFalse(store.appendEntry(entry(1)));
+        assertEquals(0, store.getFirstLogIndex());
+        Files.delete(link);
+        Path repaired = Files.createDirectory(directory.resolve("repaired"));
+        directoryLink(link, repaired);
+        assertTrue(store.init(context("group")));
+        assertTrue(store.appendEntry(entry(1)));
+        store.shutdown();
+        assertTrue(store.init(context("group")));
+        assertEquals(entry(1), store.getEntry(1));
+        Path actual = kind.endsWith("Ancestor") ? repaired.resolve("group/log") : repaired;
+        assertTrue(Files.isRegularFile(actual.resolve("file-log/manifest")));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"file-log", "segments", "index"})
+    void rejectsManagedDirectoryLinksThroughAllowedEntryAndPreservesExternalContents(String name)
+        throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real-log"));
+        Path entry = directoryLink(directory.resolve("entry"), real);
+        Path external = Files.createDirectory(directory.resolve("external"));
+        Path sentinel = Files.write(external.resolve("sentinel"), new byte[] {42});
+        Path managed = "file-log".equals(name) ? real.resolve(name)
+            : Files.createDirectory(real.resolve("file-log")).resolve(name);
+        directoryLink(managed, external);
+        FileLogStorage store = store(entry);
+        assertFalse(store.init(context("group")));
+        assertFalse(store.appendEntry(entry(1)));
+        assertTrue(Files.isSymbolicLink(managed));
+        assertArrayEquals(new byte[] {42}, Files.readAllBytes(sentinel));
+        try (java.util.stream.Stream<Path> contents = Files.list(external)) {
+            assertEquals(List.of(sentinel), contents.toList());
+        }
+        Files.delete(managed);
+        assertTrue(store.init(context("group")));
+        assertTrue(store.appendEntry(entry(1)));
+        store.shutdown();
+        assertTrue(store.init(context("group")));
+        assertEquals(entry(1), store.getEntry(1));
+        assertArrayEquals(new byte[] {42}, Files.readAllBytes(sentinel));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"LOCK", "manifest", "segment", "index", "manifest.tmp"})
+    void rejectsManagedFileLinksAndLeavesExternalBytesUntouched(String name) throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real-log"));
+        Path link = directoryLink(directory.resolve("entry"), real);
+        Path root = real.resolve("file-log");
+        FileLogStorage store = store(link);
+        boolean published = !"manifest.tmp".equals(name);
+        java.util.UUID storeId = null;
+        if (published) {
+            assertTrue(store.init(context("group")));
+            assertTrue(store.appendEntry(entry(1)));
+            storeId = store.getManifest().getStoreId();
+            store.shutdown();
+        } else {
+            Files.createDirectory(root);
+        }
+        Path managed;
+        if ("segment".equals(name)) {
+            managed = root.resolve("segments").resolve(FileLogFormat.segmentName(1));
+        } else if ("index".equals(name)) {
+            managed = root.resolve("index").resolve(FileLogFormat.indexName(1));
+        } else {
+            managed = root.resolve(name);
+        }
+        Path external = directory.resolve("external-file");
+        if (published) {
+            Files.move(managed, external);
+        } else {
+            Files.write(external, new byte[] {42});
+        }
+        byte[] bytes = Files.readAllBytes(external);
+        directoryLink(managed, external);
+        assertFalse(store.init(context("group")));
+        assertFalse(store.appendEntry(entry(2)));
+        assertTrue(Files.isSymbolicLink(managed));
+        assertArrayEquals(bytes, Files.readAllBytes(external));
+        Files.delete(managed);
+        if (published) {
+            Files.move(external, managed);
+        }
+        assertTrue(store.init(context("group")));
+        if (published) {
+            assertEquals(storeId, store.getManifest().getStoreId());
+            assertEquals(entry(1), store.getEntry(1));
+        }
+        assertTrue(store.appendEntry(entry(published ? 2 : 1)));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void initializationFailureLogsConfiguredAndResolvedPathsWithOriginalException(boolean resolved)
+        throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real-log"));
+        Path link = directoryLink(directory.resolve("entry"), real);
+        Path configured = resolved ? link : directoryLink(directory.resolve("dangling"),
+            directory.resolve("missing"));
+        Path actualRoot = real.toRealPath().resolve("file-log");
+        if (resolved) {
+            Files.createDirectory(actualRoot);
+            Files.write(actualRoot.resolve("segments"), new byte[] {42});
+        }
+        Logger logger = (Logger) Loggers.RAFT;
+        Level previousLevel = logger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            logger.setLevel(Level.ERROR);
+            assertFalse(store(configured).init(context("group")));
+            assertTrue(appender.list.stream().anyMatch(event -> event.getLevel() == Level.ERROR
+                && event.getFormattedMessage().contains("configuredLogUri=" + configured)
+                && event.getFormattedMessage().contains(
+                    "resolvedRoot=" + (resolved ? actualRoot : null))
+                && event.getThrowableProxy() != null),
+                "Initialization diagnostics must retain both locations and the original failure");
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+            logger.setLevel(previousLevel);
+        }
     }
     
     @Test
@@ -564,7 +747,7 @@ class FileLogStorageRecoveryTest {
         Path target = directory.resolve("foreign");
         Files.write(target, new byte[] {42});
         Path orphan = root().resolve("segments").resolve(FileLogFormat.segmentName(2));
-        Files.createSymbolicLink(orphan, target);
+        directoryLink(orphan, target);
         assertFalse(store().init(context("group")));
         assertArrayEquals(new byte[] {42}, Files.readAllBytes(target));
         assertTrue(Files.isSymbolicLink(orphan));
@@ -841,9 +1024,22 @@ class FileLogStorageRecoveryTest {
     }
     
     private FileLogStorage store() {
-        FileLogStorage store = new FileLogStorage(directory, new RaftOptions());
+        return store(directory);
+    }
+    
+    private FileLogStorage store(Path logUri) {
+        FileLogStorage store = new FileLogStorage(logUri, new RaftOptions());
         stores.add(store);
         return store;
+    }
+    
+    private static Path directoryLink(Path link, Path target) throws IOException {
+        try {
+            return Files.createSymbolicLink(link, target);
+        } catch (FileSystemException | UnsupportedOperationException e) {
+            assumeTrue(!Platform.isWindows(), "Windows cannot create symbolic links: " + e);
+            throw e;
+        }
     }
     
     private Path root() {

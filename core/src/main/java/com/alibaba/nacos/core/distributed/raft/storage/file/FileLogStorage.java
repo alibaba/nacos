@@ -38,10 +38,13 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -66,7 +69,9 @@ public final class FileLogStorage implements LogStorage {
     
     private static final String MANIFEST_TEMP_NAME = "manifest.tmp";
     
-    private final Path root;
+    private final Path configuredLogUri;
+    
+    private Path root;
     
     private final RaftOptions raftOptions;
     
@@ -106,8 +111,7 @@ public final class FileLogStorage implements LogStorage {
             throw new IllegalArgumentException("Invalid maximum segment size");
         }
         this.maxSegmentBytes = maxSegmentBytes;
-        root = Objects.requireNonNull(logUri, "logUri").toAbsolutePath().normalize()
-            .resolve("file-log");
+        configuredLogUri = Objects.requireNonNull(logUri, "logUri").toAbsolutePath();
         this.raftOptions = Objects.requireNonNull(raftOptions, "raftOptions").copy();
     }
     
@@ -132,6 +136,7 @@ public final class FileLogStorage implements LogStorage {
             try {
                 validateInitializationOptions(options);
                 recordCodec = new LogRecordCodec(options.getLogEntryCodecFactory());
+                root = resolveLogDirectory(configuredLogUri).resolve("file-log");
                 createRootDirectory();
                 acquireDirectoryLock();
                 createStorageDirectories();
@@ -170,7 +175,8 @@ public final class FileLogStorage implements LogStorage {
                 }
                 return true;
             } catch (IOException | RuntimeException e) {
-                Loggers.RAFT.error("Failed to initialize file log storage at " + root, e);
+                Loggers.RAFT.error("Failed to initialize file log storage: configuredLogUri="
+                    + configuredLogUri + ", resolvedRoot=" + root, e);
                 clearRuntimeResources();
                 return false;
             }
@@ -186,6 +192,31 @@ public final class FileLogStorage implements LogStorage {
             throw new IOException("Missing file log initialization context");
         }
         encodeGroupId(options.getGroupId());
+    }
+    
+    private static Path resolveLogDirectory(Path path) throws IOException {
+        try {
+            // An existing dangling link must fail resolution, rather than create its target.
+            Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        } catch (NoSuchFileException e) {
+            Path parent = path.getParent();
+            if (parent == null) {
+                throw e;
+            }
+            Path candidate = resolveLogDirectory(parent).resolve(path.getFileName());
+            try {
+                Files.createDirectory(candidate);
+            } catch (FileAlreadyExistsException existing) {
+                // Another initializer may have created this configuration directory.
+                // Resolve and validate it below, including directory links at this boundary.
+            }
+            Path resolved = candidate.toRealPath();
+            requireDirectory(resolved);
+            return resolved;
+        }
+        Path resolved = path.toRealPath();
+        requireDirectory(resolved);
+        return resolved;
     }
     
     private void createRootDirectory() throws IOException {
@@ -1205,6 +1236,7 @@ public final class FileLogStorage implements LogStorage {
         }
         recordCodec = null;
         manifest = null;
+        root = null;
     }
     
 }

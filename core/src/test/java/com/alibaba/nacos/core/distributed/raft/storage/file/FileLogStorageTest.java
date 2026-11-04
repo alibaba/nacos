@@ -39,7 +39,11 @@ import org.mockito.MockedStatic;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -52,6 +56,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -62,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -207,11 +213,19 @@ class FileLogStorageTest {
     }
     
     @ParameterizedTest
-    @ValueSource(ints = {-1, 0, 1, 2})
-    void persistsNewDirectoryAncestorsBeforePublishingOrOpeningWrites(int failedParent)
+    @CsvSource({"-1, false", "0, false", "1, false", "2, false",
+        "-1, true", "0, true", "1, true", "2, true"})
+    void persistsNewDirectoryAncestorsBeforePublishingOrOpeningWrites(int failedParent,
+        boolean linked)
         throws Exception {
-        Path logUri = directory.resolve("new-parent").resolve("group").resolve("log");
-        Path logRoot = logUri.resolve("file-log");
+        Path base = directory.toRealPath();
+        Path configuredBase = base;
+        if (linked) {
+            base = Files.createDirectory(base.resolve("real-base"));
+            configuredBase = directoryLink(directory.resolve("entry"), base);
+        }
+        Path logUri = configuredBase.resolve("new-parent/group/log");
+        Path logRoot = base.resolve("new-parent/group/log/file-log");
         List<Path> ancestors = new ArrayList<>();
         for (Path path = logRoot; path != null; path = path.getParent()) {
             ancestors.add(path);
@@ -236,6 +250,10 @@ class FileLogStorageTest {
                 assertFalse(Files.exists(logRoot.resolve("manifest")));
                 assertFalse(store.appendEntry(entry(1)));
                 assertEquals(0, store.getFirstLogIndex());
+                try (FileChannel channel = FileChannel.open(logRoot.resolve("LOCK"),
+                    StandardOpenOption.WRITE); FileLock released = channel.tryLock()) {
+                    assertNotNull(released, "Failed initialization must release the real lock");
+                }
                 // Created directories remain visible. Retry must still persist their ancestors.
                 forced.clear();
                 directoryForces.when(() -> FileLogStorage.forceDirectory(any(Path.class)))
@@ -255,6 +273,205 @@ class FileLogStorageTest {
             store.shutdown();
             assertTrue(store.init(context(new ConfigurationManager())));
             assertEquals(entry(1), store.getEntry(1));
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"ancestor", "direct", "relative", "chain", "parent",
+        "relativeLogUri", "missingParent"})
+    void resolvesConfiguredDirectoryLinksBeforeCreatingManagedStorage(String kind)
+        throws Exception {
+        Path real = Files.createDirectories(directory.resolve("targets/release/current"));
+        Path target = real;
+        if ("relative".equals(kind)) {
+            target = directory.relativize(real);
+        } else if ("chain".equals(kind)) {
+            target = directoryLink(directory.resolve("hop"), real).getFileName();
+        }
+        Path link = directoryLink(directory.resolve("entry"), target);
+        Path configured = link.resolve("new/group/log");
+        Path expected = real.resolve("new/group/log");
+        if ("direct".equals(kind)) {
+            configured = link;
+            expected = real;
+        } else if ("parent".equals(kind)) {
+            configured = link.resolve("../new/group/log");
+            expected = real.getParent().resolve("new/group/log");
+        } else if ("missingParent".equals(kind)) {
+            configured = link.resolve("created/../new/group/log");
+        } else if ("relativeLogUri".equals(kind)) {
+            configured = Path.of("").toAbsolutePath().relativize(configured);
+        }
+        FileLogStorage store = create(configured);
+        assertFalse(Files.exists(expected.resolve("file-log")),
+            "Construction must not create storage directories");
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertTrue(store.appendEntry(entry(1)));
+        Path actualRoot = expected.toRealPath().resolve("file-log");
+        assertTrue(Files.isRegularFile(actualRoot.resolve("manifest")));
+        Manifest persisted = store.decodeManifest(
+            ByteBuffer.wrap(Files.readAllBytes(actualRoot.resolve("manifest"))));
+        assertEquals(store.getManifest().getStoreId(), persisted.getStoreId());
+        store.shutdown();
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertEquals(entry(1), store.getEntry(1));
+        assertTrue(Files.isSymbolicLink(link));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void realDirectoryAndAliasesShareIdentityAndExclusiveLock(boolean aliasFirst)
+        throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real-log"));
+        Path firstAlias = directoryLink(directory.resolve("first-alias"), real);
+        Path secondAlias = directoryLink(directory.resolve("second-alias"), real);
+        FileLogStorage first = create(aliasFirst ? firstAlias : real);
+        FileLogStorage second = create(aliasFirst ? real : firstAlias);
+        FileLogStorage third = create(secondAlias);
+        assertTrue(first.init(context(new ConfigurationManager())));
+        UUID storeId = first.getManifest().getStoreId();
+        assertTrue(first.appendEntry(entry(1)));
+        assertFalse(second.init(context(new ConfigurationManager())));
+        assertFalse(third.init(context(new ConfigurationManager())));
+        assertTrue(first.appendEntry(entry(2)));
+        first.shutdown();
+        assertTrue(second.init(context(new ConfigurationManager())));
+        assertEquals(storeId, second.getManifest().getStoreId());
+        assertEquals(entry(1), second.getEntry(1));
+        assertEquals(entry(2), second.getEntry(2));
+        assertFalse(third.init(context(new ConfigurationManager())));
+        second.shutdown();
+        assertTrue(third.init(context(new ConfigurationManager())));
+        assertEquals(storeId, third.getManifest().getStoreId());
+        assertEquals(entry(2), third.getEntry(2));
+    }
+    
+    @Test
+    void pinsAllOperationsAndLockUntilShutdownThenResolvesEntryAgain() throws Exception {
+        Path first = Files.createDirectory(directory.resolve("first"));
+        Path second = Files.createDirectory(directory.resolve("second"));
+        Path link = directoryLink(directory.resolve("entry"), first);
+        FileLogStorage store = create(link);
+        assertTrue(store.init(context(new ConfigurationManager())));
+        UUID firstId = store.getManifest().getStoreId();
+        assertTrue(store.appendEntry(entry(1)));
+        Files.delete(link);
+        directoryLink(link, second);
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertEquals(firstId, store.getManifest().getStoreId());
+        assertEquals(entry(1), store.getEntry(1));
+        assertTrue(store.appendEntry(entry(2)));
+        assertTrue(store.truncateSuffix(1));
+        assertTrue(store.appendEntry(entry(2)));
+        assertTrue(store.truncatePrefix(2));
+        assertTrue(store.reset(10));
+        assertTrue(store.appendEntry(entry(10)));
+        assertRange(store, 10, 10);
+        
+        FileLogStorage other = create(second);
+        assertTrue(other.init(context(new ConfigurationManager())));
+        UUID secondId = other.getManifest().getStoreId();
+        assertFalse(firstId.equals(secondId));
+        assertTrue(other.appendEntry(entry(1)));
+        other.shutdown();
+        FileLogStorage probe = create(first);
+        assertFalse(probe.init(context(new ConfigurationManager())));
+        store.shutdown();
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertEquals(secondId, store.getManifest().getStoreId());
+        assertEquals(entry(1), store.getEntry(1));
+        assertTrue(store.appendEntry(entry(2)));
+        assertTrue(probe.init(context(new ConfigurationManager())));
+        assertEquals(firstId, probe.getManifest().getStoreId());
+        assertRange(probe, 10, 10);
+        assertEquals(entry(10), probe.getEntry(10));
+        assertNull(probe.getEntry(1));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"attributes", "create"})
+    void propagatesPathAccessErrorsAndCanRetryInitialization(String operation) throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real"));
+        Path link = directoryLink(directory.resolve("entry"), real);
+        Path configured = link.resolve("new-log");
+        Path candidate = real.toRealPath().resolve("new-log");
+        FileLogStorage store = create(configured);
+        AtomicInteger injected = new AtomicInteger();
+        try (MockedStatic<Files> files = mockStatic(Files.class, invocation -> {
+            String method = invocation.getMethod().getName();
+            Path path = invocation.getArgument(0);
+            boolean attributes = "attributes".equals(operation)
+                && "readAttributes".equals(method) && configured.toAbsolutePath().equals(path);
+            boolean create = "create".equals(operation)
+                && "createDirectory".equals(method) && candidate.equals(path);
+            if (attributes || create) {
+                injected.incrementAndGet();
+                throw new AccessDeniedException(path.toString());
+            }
+            return invocation.callRealMethod();
+        })) {
+            assertFalse(store.init(context(new ConfigurationManager())));
+            assertEquals(1, injected.get(), "The requested I/O failure must be exercised");
+            assertFalse(Files.exists(candidate));
+            assertFalse(store.appendEntry(entry(1)));
+            assertEquals(0, store.getFirstLogIndex());
+        }
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertTrue(store.appendEntry(entry(1)));
+        store.shutdown();
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertEquals(entry(1), store.getEntry(1));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"directory", "link", "file", "dangling", "cycle"})
+    void validatesObjectCreatedByAnotherInitializer(String kind) throws Exception {
+        Path real = Files.createDirectory(directory.resolve("real"));
+        Path link = directoryLink(directory.resolve("entry"), real);
+        Path candidate = real.toRealPath().resolve("new-log");
+        Path target = Files.createDirectory(directory.resolve("target"));
+        Path missing = directory.resolve("missing");
+        FileLogStorage store = create(link.resolve("new-log"));
+        AtomicInteger raced = new AtomicInteger();
+        try (MockedStatic<Files> files = mockStatic(Files.class, invocation -> {
+            if ("createDirectory".equals(invocation.getMethod().getName())
+                && candidate.equals(invocation.getArgument(0))) {
+                raced.incrementAndGet();
+                if ("directory".equals(kind)) {
+                    invocation.callRealMethod();
+                } else if ("file".equals(kind)) {
+                    Files.write(candidate, new byte[] {42});
+                } else {
+                    Path destination = "link".equals(kind) ? target
+                        : "dangling".equals(kind) ? missing : candidate.getFileName();
+                    directoryLink(candidate, destination);
+                }
+                throw new FileAlreadyExistsException(candidate.toString());
+            }
+            return invocation.callRealMethod();
+        })) {
+            boolean valid = "directory".equals(kind) || "link".equals(kind);
+            assertEquals(valid, store.init(context(new ConfigurationManager())));
+            assertEquals(1, raced.get(), "Creation must encounter the concurrent object");
+            if (valid) {
+                assertTrue(store.appendEntry(entry(1)));
+            } else {
+                assertFalse(store.appendEntry(entry(1)));
+                assertFalse(Files.exists(missing));
+                if ("file".equals(kind)) {
+                    assertArrayEquals(new byte[] {42}, Files.readAllBytes(candidate));
+                }
+            }
+        }
+        store.shutdown();
+        if (!"directory".equals(kind) && !"link".equals(kind)) {
+            Files.delete(candidate);
+        }
+        assertTrue(store.init(context(new ConfigurationManager())));
+        if ("directory".equals(kind) || "link".equals(kind)) {
+            assertEquals(entry(1), store.getEntry(1));
+        } else {
+            assertTrue(store.appendEntry(entry(1)));
         }
     }
     
@@ -940,7 +1157,11 @@ class FileLogStorageTest {
     }
     
     private FileLogStorage create() {
-        FileLogStorage store = new FileLogStorage(directory, new RaftOptions(), 160);
+        return create(directory);
+    }
+    
+    private FileLogStorage create(Path logUri) {
+        FileLogStorage store = new FileLogStorage(logUri, new RaftOptions(), 160);
         stores.add(store);
         return store;
     }
@@ -949,6 +1170,15 @@ class FileLogStorageTest {
         FileLogStorage store = create();
         assertTrue(store.init(context(new ConfigurationManager())));
         return store;
+    }
+    
+    private static Path directoryLink(Path link, Path target) throws IOException {
+        try {
+            return Files.createSymbolicLink(link, target);
+        } catch (FileSystemException | UnsupportedOperationException e) {
+            assumeTrue(!Platform.isWindows(), "Windows cannot create symbolic links: " + e);
+            throw e;
+        }
     }
     
     private Path root() {
