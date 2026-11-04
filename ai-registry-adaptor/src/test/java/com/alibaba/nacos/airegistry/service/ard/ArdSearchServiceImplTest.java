@@ -928,6 +928,27 @@ class ArdSearchServiceImplTest {
         return new ArdSearchServiceImpl(searchService);
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 5, 6})
+    void queryProjectionShouldNotTrimIndexOrHideCatalogResources(int count) throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
+        AiResourceSearchDocument document = entry();
+        List<String> queries = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            queries.add("Find capability " + i);
+        }
+        String canonical = JacksonUtils.toJson(queries);
+        document.setRepresentativeQueries(canonical);
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill", "prompt", "mcp"),
+            0L, 500)).thenReturn(List.of(document));
+        ArdCatalog catalog = serviceWithAllResourcesCurrent().catalog("public");
+        assertEquals(2, catalog.getEntries().size());
+        assertEquals(count < 2 ? null : queries.subList(0, Math.min(count, 5)),
+            catalog.getEntries().get(1).getRepresentativeQueries());
+        assertEquals(canonical, document.getRepresentativeQueries());
+        assertCatalogSchemaValid(catalog);
+    }
+    
     private ArdSearchServiceImpl serviceWithAllResourcesCurrent() {
         AiResourceSearchTypeHandlerRegistry registry =
             new AiResourceSearchTypeHandlerRegistry(List.of(new AlwaysCurrentHandler()));

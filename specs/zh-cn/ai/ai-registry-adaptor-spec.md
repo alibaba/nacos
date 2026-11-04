@@ -216,6 +216,12 @@ ARD 响应生成的所有 artifact URL 均指向公开适配器 base URL 下、�
 `nacos.ai.ard.catalog.base-url` 表示完整的公开适配器 base URL，实现不得再向其追加
 Nacos 主服务 context path。
 
+新版Manifest Entry保留原始 `representativeQueries`，缺失或数量不在2..5时仅输出质量告警；
+新host Registry提供两个真实检索用途示例。旧catalog、Search和List为兼容旧Schema，
+稳定选取前5条，少于2条省略。共享索引和原始制品保留完整示例，因此未出现在返回子集中的
+示例仍可用于搜索；不得据示例数量隐藏资源或改变online状态。投影不新增字符串过滤或去重。
+升级前若旧响应曾返回超过5条示例，升级后该字段会缩为前5条；这不是资源或索引内容删除。
+
 对于 Skill 资源，artifact 端点以 `application/agent-skills+zip` 返回完整 Skill
 压缩包，其中包含 `SKILL.md` 及其打包资源。Prompt 和 MCP artifact 使用各自协议规定的
 表示形式。Agent 支持：

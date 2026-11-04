@@ -143,6 +143,31 @@ class ArdOpenApiContractTest {
             .put("url", "https://example.com/skill.zip");
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {-1, 0, 1, 2, 5, 6})
+    void shouldTreatRepresentativeQueryCountsAsCurrentRecommendations(int count) {
+        ObjectNode entry = completeEntry();
+        if (count >= 0) {
+            var queries = entry.putArray("representativeQueries");
+            for (int i = 0; i < count; i++) {
+                queries.add("Find capability " + i);
+            }
+        }
+        assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        boolean legacyValid = CONTRACTS.schema(ArdContractSchemas.LEGACY, "ai-catalog.schema.json",
+            "/$defs/catalogEntry").validate(entry).isEmpty();
+        assertEquals(count == -1 || count >= 2 && count <= 5, legacyValid);
+    }
+    
+    @Test
+    void shouldRejectNonStringRepresentativeQueriesInBothSchemas() {
+        ObjectNode entry = completeEntry();
+        entry.putArray("representativeQueries").add("Find a tool").add(1);
+        assertFalse(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        assertFalse(CONTRACTS.schema(ArdContractSchemas.LEGACY, "ai-catalog.schema.json",
+            "/$defs/catalogEntry").validate(entry).isEmpty());
+    }
+    
     private void assertValidBoth(String definition, ObjectNode response) {
         for (String version : List.of(ArdContractSchemas.LEGACY, ArdContractSchemas.CURRENT)) {
             var errors = CONTRACTS.validateResponse(version, definition, response);

@@ -92,6 +92,45 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
 
     @Test
+    public void testRepresentativeQueriesPreserveSearchAndArtifactContent() throws Exception {
+        String name = randomAiName("ard-query-examples");
+        String lastQuery = "tailquery" + UUID.randomUUID().toString().replace("-", "");
+        com.fasterxml.jackson.databind.node.ObjectNode card =
+            (com.fasterxml.jackson.databind.node.ObjectNode) JacksonUtils.toObj(buildV1AgentCard(name, "1.0.0", "1.0"));
+        var skill = card.putArray("skills").addObject();
+        skill.put("id", "query-helper").put("name", "Query helper").put("description", "Find a capability");
+        skill.putArray("tags").add("discovery");
+        var examples = skill.putArray("examples");
+        for (int i = 0; i < 5; i++) {
+            examples.add("Find capability " + i);
+        }
+        examples.add(lastQuery);
+        addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, name));
+        postFormOk(ADMIN_A2A_PATH, buildAgentCardForm(name, "1.0.0", "URL", card.toString()));
+
+        // The final example is outside the compatible five-item projection but remains searchable.
+        JsonNode response = awaitSearch(searchRequest(lastQuery, TYPE_A2A), Set.of(name));
+        JsonNode entry = findResource(response.path("results"), name);
+        assertEquals(5, entry.path("representativeQueries").size(), entry.toString());
+        assertFalse(entry.path("representativeQueries").toString().contains(lastQuery));
+        assertResponseSchemas("SearchResponse", response);
+        assertListRepresentation(name, TYPE_A2A);
+        assertCatalogsContain(Set.of(name));
+        JsonNode artifact = JacksonUtils.toObj(new String(
+            ardGetBytesOk(entry.path("url").asText()).body(), StandardCharsets.UTF_8));
+        assertEquals(6, artifact.path("skills").get(0).path("examples").size());
+        assertTrue(artifact.path("skills").get(0).path("examples").toString().contains(lastQuery));
+
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        JsonNode registry = discoveryGet("/.well-known/ard.json", identity).path("entries").get(0);
+        assertEquals(List.of("Find agents, skills, prompts and MCP servers for a task",
+            "Find AI resources by capability, type and tags"),
+            JacksonUtils.toObj(registry.path("representativeQueries").toString(), List.class));
+        assertFalse(discoveryGet("/.well-known/ai-catalog.json", identity)
+            .path("entries").get(0).has("representativeQueries"));
+    }
+
+    @Test
     public void testWellKnownManifestAndLegacyCatalogIsolation() throws Exception {
         AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
         JsonNode legacyBefore = discoveryGet("/.well-known/ai-catalog.json", identity);

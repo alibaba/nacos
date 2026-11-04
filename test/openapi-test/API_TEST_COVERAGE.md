@@ -703,6 +703,11 @@ HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK I
 
 ## ARD online relevance filtering
 
+The C07 example-projection IT also verifies that the legacy five-item response
+limit does not truncate the search index or the exact artifact. New manifest
+recommendations do not add a visibility gate. This extends the existing adaptor
+rows without changing the Nacos API-surface totals; `DAUTH-F03` remains excluded.
+
 | Scenario | Coverage |
 | --- | --- |
 | Default-off Search header, unchanged JSON, invalid cursor | `ArdAdaptorOpenApiITCase.testSearchEnhancementStatusAndCursorBoundary` against standalone ARD |

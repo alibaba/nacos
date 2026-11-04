@@ -205,6 +205,16 @@ with `<link rel="ard" href="https://registry.example.com/.well-known/ard.json">`
 The registry `url` is a base URL: append `/search` once. For a proxy path prefix,
 set `nacos.ai.ard.catalog.base-url` to the public adaptor origin plus that prefix.
 
+Current manifest entries retain all supplied `representativeQueries`; absence or
+a count outside 2–5 emits a quality warning without hiding the entry. The new host
+registry supplies two examples of its discovery purpose. Legacy catalogs,
+Search and List return the first five examples and omit the field when fewer
+than two exist. Canonical indexing and artifacts retain all examples, including
+those outside that response subset. Projection does not filter strings, deduplicate
+them, change resource eligibility or alter online status.
+Migration: a legacy response that previously returned more than five examples now
+returns its first five; this does not remove resources or indexed content.
+
 When `nacos.ai.ard.enabled=true`, the adaptor exposes these ARD discovery
 endpoints from the adaptor web context:
 

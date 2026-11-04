@@ -38,7 +38,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalogEntry;
-import com.alibaba.nacos.airegistry.model.ard.ArdEntry;
 import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
@@ -764,9 +763,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         result.setDescription(entry.getDescription());
         result.setTags(entry.getTags());
         result.setCapabilities(entry.getCapabilities());
-        List<String> representativeQueries = entry.getRepresentativeQueries();
-        result.setRepresentativeQueries(representativeQueries.size() < 2 ? null
-            : representativeQueries);
+        result.setRepresentativeQueries(
+            ArdEntryRenderer.legacyQueries(entry.getRepresentativeQueries()));
         result.setVersion(entry.getResourceVersion());
         result.setUpdatedAt(formatTimestamp(entry.getGmtModified()));
         Map<String, Object> metadata = protocolMetadata(entry.getMetadata());
@@ -794,10 +792,12 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     
     @Override
     public ArdManifest hostManifest() {
-        ArdEntry entry = new ArdEntry();
-        populateRegistryEntry(entry);
+        ArdCatalogEntry entry = registryEntry();
+        entry.setRepresentativeQueries(List.of(
+            "Find agents, skills, prompts and MCP servers for a task",
+            "Find AI resources by capability, type and tags"));
         ArdManifest manifest = new ArdManifest();
-        manifest.setEntries(List.of(entry));
+        manifest.setEntries(List.of(ArdEntryRenderer.manifestEntry(entry)));
         return manifest;
     }
     

@@ -19,8 +19,8 @@
 This document records the external Agentic Resource Discovery (ARD) protocol
 coverage in `ai-registry-adaptor`. ARD runs in a web context separate from the
 main Nacos server. Fast contract tests live with the adaptor, while
-`ArdAdaptorOpenApiITCase` starts that second web context with a real standalone
-server and verifies cross-context behavior through public APIs.
+`ArdAdaptorOpenApiITCase` connects to that second web context on an independently
+started standalone server and verifies cross-context behavior through public APIs.
 
 The contract source is the ARD revision pinned by the Nacos AI Registry
 Adaptor specification. Coverage targets response compatibility, protocol error
@@ -72,6 +72,15 @@ CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [�
 `testPublicAgentIndexAndUnifiedArtifacts` 验证 Artifact 声明地址的 0/1/true/true 生效值，允许未使用的维护字段为 null，仍禁止非空 Runtime bindings/state/观测值及旧嵌套 endpoint；contentDigest 与管理版本详情一致。采用 Artifact 0.3.0（管理 Schema 0.2.0）。
 
 ## ARD online relevance filtering
+
+C07 query-example publication is covered by `ArdEntryRendererTest`, the shared
+schema tests and `ArdAdaptorOpenApiITCase.testRepresentativeQueriesPreserveSearchAndArtifactContent`.
+Missing/0/1/2/5/6 counts are structurally valid in the new schema and warned when
+outside its recommendation. Legacy responses select at most five without altering
+the source. An Agent published through the existing API is found by its last
+example even when that example is omitted from Search/List; the downloaded
+artifact retains all six supplied examples. Exact projected 0/1 counts remain
+component cases because public resource projectors derive additional examples.
 
 | Scenario | Coverage |
 | --- | --- |
