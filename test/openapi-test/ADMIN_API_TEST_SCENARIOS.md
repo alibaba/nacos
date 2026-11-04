@@ -226,6 +226,12 @@ message on initial API insert and later updates, selected history detail and
 previous detail, message omission from history-list responses, a 512-code-point
 emoji round-trip, and 513-character rejection with unchanged content/history.
 
+The `unicodeDetail` history-detail read parses the raw response bytes to avoid the
+known lossy Apache test-response carrier's secondary encoding when the response
+has no charset. The complete Unicode equality assertion remains unchanged. Shared
+public HTTP response handling is outside #10978 and is not fixed by this
+scenario-local read path.
+
 Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
 metadata preservation, RPC/service propagation, and embedded gray history
 without messages. Maintainer SDK IT covers formal message-to-history;

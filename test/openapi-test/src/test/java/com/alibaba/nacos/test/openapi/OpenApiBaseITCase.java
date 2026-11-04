@@ -153,6 +153,15 @@ public abstract class OpenApiBaseITCase {
     protected ByteResponse getRawBytes(String path, Query query) throws Exception {
         return executeRawBytes(new HttpGet(requestUrl(path + "?" + query.toQueryUrl())));
     }
+
+    protected JsonNode getJsonBytesOk(String path, Query query) throws Exception {
+        ByteResponse response = getRawBytes(path, query);
+        assertTrue(response.code() >= 200 && response.code() < 300,
+                "HTTP status should be 2xx, code=" + response.code());
+        JsonNode root = JacksonUtils.toObj(response.body(), JsonNode.class);
+        assertSuccess(root);
+        return root;
+    }
     
     protected HttpResponse postRaw(String path, Query query) throws Exception {
         return executeRaw(new HttpPost(requestUrl(path + "?" + query.toQueryUrl())));

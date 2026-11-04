@@ -216,7 +216,7 @@ public class ConfigHistoryAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase
                 .addParam("content", "unicode").addParam("changeMessage", unicodeMessage));
         JsonNode unicodeRow = getJsonOk(ADMIN_HISTORY_LIST_PATH,
                 historyQuery(dataId, groupName, "", 1, 10)).get("data").get("pageItems").get(0);
-        JsonNode unicodeDetail = getJsonOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
+        JsonNode unicodeDetail = getJsonBytesOk(ADMIN_HISTORY_PATH, configQuery(dataId, groupName, "")
                 .addParam("nid", unicodeRow.path("id").asText())).get("data");
         assertEquals(unicodeMessage, unicodeDetail.path("changeMessage").asText());
         postFormOk(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, "").addParam("content", "legacy"));
