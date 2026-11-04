@@ -38,6 +38,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalogEntry;
+import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResultType;
@@ -762,9 +763,8 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         result.setDescription(entry.getDescription());
         result.setTags(entry.getTags());
         result.setCapabilities(entry.getCapabilities());
-        List<String> representativeQueries = entry.getRepresentativeQueries();
-        result.setRepresentativeQueries(representativeQueries.size() < 2 ? null
-            : representativeQueries);
+        result.setRepresentativeQueries(
+            ArdEntryRenderer.legacyQueries(entry.getRepresentativeQueries()));
         result.setVersion(entry.getResourceVersion());
         result.setUpdatedAt(formatTimestamp(entry.getGmtModified()));
         Map<String, Object> metadata = protocolMetadata(entry.getMetadata());
@@ -790,8 +790,24 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return host;
     }
     
+    @Override
+    public ArdManifest hostManifest() {
+        ArdCatalogEntry entry = registryEntry();
+        entry.setRepresentativeQueries(List.of(
+            "Find agents, skills, prompts and MCP servers for a task",
+            "Find AI resources by capability, type and tags"));
+        ArdManifest manifest = new ArdManifest();
+        manifest.setEntries(List.of(ArdEntryRenderer.manifestEntry(entry)));
+        return manifest;
+    }
+    
     private ArdCatalogEntry registryEntry() {
         ArdCatalogEntry result = new ArdCatalogEntry();
+        populateRegistryEntry(result);
+        return result;
+    }
+    
+    private void populateRegistryEntry(ArdCatalogEntry result) {
         result.setIdentifier("urn:air:" + catalogPublisherIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
@@ -807,7 +823,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         metadata.put("resourceTypes", "agent,skill,prompt,mcp");
         result.setMetadata(metadata);
         result.setTrustManifest(trustManifest());
-        return result;
     }
     
     private Map<String, String> endpoints() {

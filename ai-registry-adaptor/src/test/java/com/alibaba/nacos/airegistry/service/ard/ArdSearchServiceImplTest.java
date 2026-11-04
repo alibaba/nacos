@@ -774,6 +774,35 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void hostManifestShouldKeepLegacyProjectionAndRequestOriginIsolated() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/proxy/");
+        ArdSearchServiceImpl service = service();
+        JsonNode before =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class);
+        JsonNode manifest =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostManifest()), JsonNode.class);
+        var contracts = new com.alibaba.nacos.airegistry.contract.ArdContractSchemas();
+        var errors = contracts.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        assertEquals(1, manifest.size());
+        assertEquals(1, manifest.path("entries").size());
+        JsonNode entry = manifest.path("entries").get(0);
+        assertEquals(ArdProtocolConstants.BASE_CONTEXT, entry.path("@context").asText());
+        assertEquals("https://nacos.example.com/proxy/v3/ai/ard", entry.path("url").asText());
+        assertTrue(entry.path("score").isMissingNode());
+        assertTrue(entry.path("source").isMissingNode());
+        assertTrue(entry.path("trustManifest").isMissingNode());
+        assertTrue(entry.path("tags").isArray());
+        assertTrue(entry.path("capabilities").isArray());
+        assertTrue(entry.path("version").isMissingNode());
+        assertEquals(before,
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class));
+        assertTrue(contracts.validateLegacyCatalog(before).isEmpty());
+        assertTrue(before.path("entries").get(0).path("@context").isMissingNode());
+        verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
+    }
+    
+    @Test
     void catalogShouldUseConfiguredBaseUrlAndHostIdentifier() throws Exception {
         System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
@@ -897,6 +926,27 @@ class ArdSearchServiceImplTest {
             resourceManager, mcpServerOperationService, repository, embeddingService,
             vectorIndex);
         return new ArdSearchServiceImpl(searchService);
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 5, 6})
+    void queryProjectionShouldNotTrimIndexOrHideCatalogResources(int count) throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
+        AiResourceSearchDocument document = entry();
+        List<String> queries = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            queries.add("Find capability " + i);
+        }
+        String canonical = JacksonUtils.toJson(queries);
+        document.setRepresentativeQueries(canonical);
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill", "prompt", "mcp"),
+            0L, 500)).thenReturn(List.of(document));
+        ArdCatalog catalog = serviceWithAllResourcesCurrent().catalog("public");
+        assertEquals(2, catalog.getEntries().size());
+        assertEquals(count < 2 ? null : queries.subList(0, Math.min(count, 5)),
+            catalog.getEntries().get(1).getRepresentativeQueries());
+        assertEquals(canonical, document.getRepresentativeQueries());
+        assertCatalogSchemaValid(catalog);
     }
     
     private ArdSearchServiceImpl serviceWithAllResourcesCurrent() {

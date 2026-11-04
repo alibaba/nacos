@@ -16,8 +16,12 @@
 
 # ARD v0.91 Adaptation Design
 
-Status: proposal dated 2026-11-04; not implemented. This document defines the
-target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
+Implementation status (2026-11-04): C02 dual-version offline schema validation and
+C03 host manifest discovery and C07 query-example projections are implemented;
+the remaining changes are pending. This does not promote the
+current conformance baseline.
+
+This document defines the target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
 continues to describe current behavior. Maintainer discussion of the design
 and spec changes precedes implementation; opening an issue is not design approval.
 
@@ -322,8 +326,12 @@ real examples with diagnostics instead of truncating to satisfy a nonexistent
 hard limit. Legacy catalogs select at most five and omit fewer than two to
 satisfy the old schema; Search/List retain that compatibility projection.
 This is a Nacos compatibility choice. Do not change the shared index content or
-fabricate examples. The Registry entry may have two real discovery examples.
+fabricate examples. The new host Registry entry publishes two real discovery examples.
 Missing examples do not change visibility, online state or search eligibility.
+Projection preserves supplied strings and order, without adding blank filtering
+or deduplication; existing resource-projector behavior remains unchanged. This
+does not add a resource-manifest route: the new public host route contains only
+the registry, while other complete-entry projections are verified by component tests.
 
 ### 5.2 Publisher and trust
 

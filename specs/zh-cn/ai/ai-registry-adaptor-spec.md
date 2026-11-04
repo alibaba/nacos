@@ -161,8 +161,17 @@ Nacos 以 ARD 上游 commit
 对应的草案为兼容基线。由于草案的版本标签仍可能变化，仓库内固定的 OpenAPI、JSON Schema
 和一致性测试 fixture 均以该 commit 为准，而不是只依赖版本标签。
 
-[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)记录待实施的升级契约。
-该提案尚未替换本节的当前基线，也不表示新版入口和查询语义已经可用。
+[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)记录分批升级契约。
+双版本离线Schema与新host发现入口已实现；查询语义及完整验收尚未完成，不提升整体兼容基线。
+
+标准入口为适配器端口的 `GET /.well-known/ard.json`，返回仅含本Registry完整Entry的
+`entries` 容器，Entry带官方基础 `@context`，没有旧 `specVersion/host` 或搜索 `score/source`。
+旧两条 `ai-catalog.json` 路径继续使用原投影和鉴权。新入口同样受ARD开关、
+Open API鉴权及显式凭据校验约束，不增加namespace级 `ard.json` 或版本协商。
+部署时将公开域名根路径 `/.well-known/ard.json` 代理到适配器；
+网页可以用 `<link rel="ard" href="https://registry.example.com/.well-known/ard.json">` 指向它。
+Registry的 `url` 是base URL，消费者追加一次 `/search`；
+有路径前缀代理时配置 `nacos.ai.ard.catalog.base-url` 为适配器公开origin及前缀。
 
 当 `nacos.ai.ard.enabled=true` 时，适配器通过自身 Web Context 暴露以下 ARD discovery
 端点：
@@ -175,6 +184,7 @@ Nacos 以 ARD 上游 commit
 | `GET` | `/v3/ai/ard/ai-catalog.json` | 返回 namespace 维度的 catalog。 |
 | `GET` | `/v3/ai/ard/artifacts` | 返回 catalog 条目引用的版本化 artifact。 |
 | `GET` | `/.well-known/ai-catalog.json` | 返回 host 维度的 ARD catalog。 |
+| `GET` | `/.well-known/ard.json` | 返回新版 host ARD Manifest，只含本 Registry Entry。 |
 
 即使 MCP 和 Skill 兼容开关均未开启，ARD 总开关也会启动适配器 Context。
 
@@ -205,6 +215,12 @@ ARD 响应生成的所有 artifact URL 均指向公开适配器 base URL 下、�
 
 `nacos.ai.ard.catalog.base-url` 表示完整的公开适配器 base URL，实现不得再向其追加
 Nacos 主服务 context path。
+
+新版Manifest Entry保留原始 `representativeQueries`，缺失或数量不在2..5时仅输出质量告警；
+新host Registry提供两个真实检索用途示例。旧catalog、Search和List为兼容旧Schema，
+稳定选取前5条，少于2条省略。共享索引和原始制品保留完整示例，因此未出现在返回子集中的
+示例仍可用于搜索；不得据示例数量隐藏资源或改变online状态。投影不新增字符串过滤或去重。
+升级前若旧响应曾返回超过5条示例，升级后该字段会缩为前5条；这不是资源或索引内容删除。
 
 对于 Skill 资源，artifact 端点以 `application/agent-skills+zip` 返回完整 Skill
 压缩包，其中包含 `SKILL.md` 及其打包资源。Prompt 和 MCP artifact 使用各自协议规定的

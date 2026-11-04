@@ -62,12 +62,12 @@ coverage calculation.
   HTTP fixture path; per-operation lifecycle and full Console account matrices remain gaps.
 
 - [AUTHORIZATION_OPERATION_COVERAGE.md](AUTHORIZATION_OPERATION_COVERAGE.md) is the live
-  method-level inventory for all 386 production `@Secured` operations across 56 Controllers.
+  method-level inventory for all 394 production `@Secured` operations across 57 Controllers.
   `ModuleAuthorizationITCase` compares every operation and normalized annotation tuple with
   source on each run; 50 representative Controller scenarios exercise the common four-state
   matrix.
-- `ConditionalAnonymousAuthorizationITCase` directly covers all ten current
-  `ALLOW_ANONYMOUS` operations. Missing credentials enter the documented public path, while an
+- `ConditionalAnonymousAuthorizationITCase` directly covers all eleven current
+  `ALLOW_ANONYMOUS` operations, including the ARD host manifest. Missing credentials enter the documented public path, while an
   explicitly blank or invalid credential is rejected and never downgraded to anonymous.
 - `IdentityOnlyAuthorizationITCase` directly covers the three Console `ONLY_IDENTITY`
   operations in merged and independent Console deployments. Missing, blank, and invalid

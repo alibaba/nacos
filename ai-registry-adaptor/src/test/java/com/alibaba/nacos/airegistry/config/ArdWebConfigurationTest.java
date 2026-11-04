@@ -45,6 +45,8 @@ class ArdWebConfigurationTest {
             ArdSearchController.class, "search");
         assertSecuredMethod(methodsCache, "GET", "/nacos/.well-known/ai-catalog.json",
             ArdWellKnownController.class, "catalog");
+        assertSecuredMethod(methodsCache, "GET", "/nacos/.well-known/ard.json",
+            ArdWellKnownController.class, "manifest");
     }
     
     private void assertSecuredMethod(ControllerMethodsCache methodsCache, String httpMethod,

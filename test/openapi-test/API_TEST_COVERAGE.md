@@ -113,7 +113,7 @@ liveness probe available, and verifies that requests to the independent ARD
 port cannot inherit a Nacos authorization header. The guard complements rather
 than replaces the functional scenario rows. The live
 [authorization operation registry](AUTHORIZATION_OPERATION_COVERAGE.md) maps all
-393 production `@Secured` methods in 57 Controllers to direct tests or reviewed
+394 production `@Secured` methods in 57 Controllers to direct tests or reviewed
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
@@ -150,7 +150,12 @@ Visibility API workflows are now all `Covered` in the unified OpenAPI module.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
-has one covered scenario row and three partial rows. Its standalone conformance
+has two covered scenario rows and three partial rows (strict 40%, effective 70%,
+counted separately from Nacos API totals). The new host manifest is validated
+against the pinned v0.91 schema, followed to Search, and checked under both
+anonymous policies and invalid credentials. Legacy catalogs cover 105 public
+resources and namespace isolation; private completeness remains `DAUTH-F03`.
+Its standalone conformance
 suite publishes canonical resources through the main-server Admin APIs and then
 verifies the separate ARD port against the same shared index, including singular
 Agent catalog entries, A2A/Nacos representation selection and filtering,
@@ -697,6 +702,11 @@ HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK I
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
 ## ARD online relevance filtering
+
+The C07 example-projection IT also verifies that the legacy five-item response
+limit does not truncate the search index or the exact artifact. New manifest
+recommendations do not add a visibility gate. This extends the existing adaptor
+rows without changing the Nacos API-surface totals; `DAUTH-F03` remains excluded.
 
 | Scenario | Coverage |
 | --- | --- |
