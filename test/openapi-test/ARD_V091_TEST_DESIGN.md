@@ -16,12 +16,13 @@
 
 # ARD v0.91 功能测试设计
 
-状态：2026-11-04 测试设计，尚未编写或执行新增 UT/IT，不代表实际 coverage 提升。
+本文同时列出已实现测试和待完成的验收设计；各功能的覆盖范围见§4。
+覆盖等级由实际测试场景决定，不能由设计行数推导。
 本文件和对应正式 UT/IT 随功能提交；临时交叉矩阵、临时脚本及执行输出只保存在本地。
 目标规范见 [中文设计](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md)。
 所有上游引用固定到 f073b1ea9b01a5f068d0b0986426f2ea49fa30b2。
 本文件是全部正式用例、共用fixture/错误断言和RG回归组的唯一维护位置；
-原基础44组与兼容增补24组合并按C01–C10编排，保留68个ID，不再分两份维护。
+用例按功能编排，保留已有测试 ID，便于关联代码、兼容审计和历史验证。
 修改前代码事实与兼容影响见[兼容审计](ARD_V091_COMPATIBILITY_REVIEW.md)（BC01–BC20）；
 运行时契约以双语目标规范为准。本地矩阵另管环境组合，不复制正式用例。
 
@@ -29,17 +30,17 @@
 
 ## 1. 每项功能的前置门禁
 
-每个 C01..C10 工作单元开始改生产代码前，必须先完成：
+每项功能开始改生产代码前，必须先完成：
 需求章节及规范强度核对 -> 当前代码/已有测试核对 -> 正式 UT/IT 设计 ->
 本地交叉矩阵选择 -> 既有回归基线 -> 实现。
-每个案例记录前置数据、输入、正/负断言、清理、提交归属和修改前后预期。
+每个案例记录前置数据、输入、正/负断言、清理、功能归属和修改前后预期。
 不得按已写实现倒推预期，也不得把协议允许的输入自行列为错误。
 
 正式 UT/IT 以功能正确性为目标，覆盖正常、空集合、边界和预期错误。
 每项有 HTTP 行为变化时，UT 与真实 standalone IT 都必须具备；无法暴露的内部失败
 使用 UT/组件测试，并写明 IT 不适用原因，不添加生产故障注入 API。
-C01 是文档；C02 是 fixture；C04 是内部解析器，其 HTTP 集成在 C05/C06 开始前设计，
-由接入提交携带。不能用这些 N/A 省略最终 HTTP 验收。
+文档核验和离线 fixture 校验不替代 HTTP 验收。内部解析器由 UT 覆盖；
+Search/Explore 接入时同时覆盖 HTTP 输入绑定、成功结果与错误。
 
 现有类存在时扩展原测试类。UT 新方法使用 camelCase；共享 fixture/断言复用现有 helper。
 IT 使用外部独立服务器，不能在 IT 中启动 Spring/Nacos。鉴权遵循仓库现行默认开启基线
@@ -85,7 +86,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
   latest 为 custom 而旧 online Version 支持 A2A 的 Agent，以及 Skill、Prompt、MCP。
   全部带同一查询标记；不要通过直接写 search table 准备 IT。
 - F-AUTH：公开资源、显式授权的私有资源、无权限私有资源、不同 namespace 的同名资源。
-  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；B01 未解决的部分记阻塞。
+  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；私有资源完整性问题（DAUTH-F03）未解决的部分记阻塞。
 - F-PAGE：至少 105 个确定性公开候选，同一唯一标记；通过公开 API 创建及等待索引。
   UT 固定排序/分数；IT 比较完整 identifier 集合、无重复和稳定续页，不依赖任意排名分数。
 - F-SCHEMA：最小合法完整 Entry、仅 identifier 的 List item、
@@ -97,7 +98,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 - E400：HTTP 400，errorCode=INVALID_ARGUMENT，message 非空，无 Result code/data。
   E400-T为token失效场景别名，wire错误码仍是INVALID_ARGUMENT；无成功结果或新token。
   具体契约见[目标规范§4.5](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md#token-contract)，
-  参数化输入及可控恢复步骤见[C05分页组](#token-cases)，不把任意400当token错误。
+  参数化输入及可控恢复步骤见[Search分页组](#token-cases)，不把任意400当token错误。
   E401：HTTP 401，errorCode=UNAUTHENTICATED；E404：404/NOT_FOUND。
   不匹配合法过滤条件是 200 空集合，不能作为 E400。错误消息不锁死随机资源名或堆栈。
 - 429/500 由异常映射 UT/组件验证，除非已有确定性的外部触发手段；不故意破坏真实存储做 IT。
@@ -117,40 +118,37 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 分页测试先用同一请求取得非空pageToken，再只替换等价context；改变filter后分别验证
 基础锚点是否仍有效、增强指纹是否变化，不再要求两者一律400。详见BC15..18；
 不能用伪造token代替真实续页和可控失效；原条件重新查询属于必选正式测试，
-跨版本token复用不作保证，升级/回滚操作说明必选，真实双版本演练LX32可选。
+跨版本token复用不作保证；升级/回滚说明及本版恢复测试必选，真实双版本演练可选。
 无公开 API 可设置的深层 trust/data/示例数量由 UT 输入受控模型；IT 不直接写库。
 
 <a id="formal-cases"></a>
 
 ## 4. 正式 UT 与 IT 设计
 
-每行可展开为参数化案例；ID 是需求追踪标识，不表示已存在同名 Java 方法。
-设计状态Planned表示用例已列出，待决项为Blocked by design（注明P编号）；
-执行状态另记Not run/Pass/Fail/Blocked，不能把设计已写当测试通过。
-DOC-C01-01的文档核验随设计PR记录。C02的UT-C02-01..04已实现于
-`ArdOpenApiContractTest`，复用离线`ArdContractSchemas`；2026-11-04执行通过，
-连同既有契约/服务基线共41项通过。C02无HTTP变化；未在下文记录的新增测试仍为Not run。
-C03的UT-C03-01/02与IT-C03-01..03已实现：73项ARD单元/组件测试通过，
-匿名开启的standalone suite为6项通过、1项原有DAUTH-F03跳过；匿名关闭补测2项通过。
-HTTP同时覆盖显式/请求推导base URL、105条公开资源目录与旧Schema、实际Search/List双版Schema。
-私有已授权资源的完整性仍归B01；未把Disabled用例计为通过。
-C07的UT-C07-01/02与IT-C07-01/02已实现：最终ARD单元/组件92项通过，
-standalone suite为7项通过、1项原有DAUTH-F03跳过。通过公开A2A API提供6条示例，
-实际旧响应生成10条，升级后兼容响应为5条；末尾示例仍命中共享索引且制品保留原始6条。
-缺失/0/1/2/5/6的精确投影与告警由组件测试验证，公开API会自动派生其他示例，不伪造精确总数。
-共享检索/索引回归38项、相关性过滤及真实HTTP provider回归14项通过；
-后者首次受本机沙箱端口限制，允许测试端口后通过，未修改生产代码或测试断言。
-待决策略不能先写成强制失败预期。
+每行可展开为参数化案例；UT/IT/DOC ID 是本文件定义的稳定测试标识，
+不代表交付阶段，也不表示存在同名 Java 方法。未决策略必须注明具体缺口，不能先写成强制失败预期。
 
-<a id="c01"></a>
+| 功能 | 当前测试范围 |
+| --- | --- |
+| 基线、Schema、发现与示例发布 | 已有离线契约、renderer、路由/鉴权 UT 和公开资源 HTTP IT。示例的精确数量组合由组件测试验证，公开 API 可能派生额外示例。 |
+| Context 解析 | `ArdContextResolverTest` 覆盖固定 base、IRI、reset 和受控 loader 成功/错误；loopback loader UT 不计为 API IT。 |
+| Search | 下文 HTTP 接入用例待实现与执行。 |
+| Explore | 下文 query/facet context 接入用例待实现与执行。 |
+| 分页 | Search 100 上限及相应边界用例待实现与执行。 |
+| Trust 与最终一致性验收 | 待完成；身份冲突/无法验证的处理策略尚未确定。私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
 
-<a id="c02"></a>
+HTTP 场景及覆盖限制统一见[场景索引](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md)。
+设计、实现和执行分开记录；具体运行结果以对应提交的测试报告为准。
 
-### C01 / C02 基线与 schema
+<a id="baseline-design"></a>
+
+<a id="schemas"></a>
+
+### 基线与 Schema
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
-| DOC-C01-01 | 双语设计、pin、章节链接和案例 ID | 文档检查；无运行时变化，不新增镜像文档内容的 UT/IT | 无逐项链路 -> 有 source/delta/test/commit 映射 |
+| DOC-C01-01 | 双语设计、pin、章节链接和案例 ID | 文档检查；无运行时变化，不新增镜像文档内容的 UT/IT | 无逐项链路 -> 有 协议来源、差异和测试的对应关系 |
 | UT-C02-01 | 新旧原始 fixture、脱网 resolver | SHA-256/来源匹配，引用本地闭合；篡改或缺少引用明确失败，不下载 main | 只有旧 fixture -> 两版独立可验证 |
 | UT-C02-02 | F-SCHEMA：完整 Entry 与 entries 容器 | 最小合法通过；identifier/displayName/type 缺失、url/data 同时/均无失败；空 entries 合法 | 新 Schema 无覆盖 -> 完整模型有正负例 |
 | UT-C02-03 | List 仅 identifier；Search 额外 score/source | 部分结果通过；Search 缺少 score/source、score=-1/101/1.5、相对 source 失败；List 缺 identifier 失败 | 旧全 Entry 约束 -> 分别应用新版结果约束 |
@@ -161,11 +159,11 @@ UT-C02-03另验证共享响应契约的交集：现有完整Search/List响应在
 此负对照防止把“新Schema合法”错误等同于“旧客户端兼容”。
 
 依据 S01/S03/S08/S10/S11。优先扩展 ArdOpenApiContractTest 和现有 schema helper。
-C02 不新增 HTTP endpoint，IT 在 C03/C05 使用同一验证器校验真实响应，不伪造 HTTP 测试。
+离线 Schema 不新增 HTTP endpoint；发现入口和 Search 的 IT 使用同一验证器校验真实响应，不伪造 HTTP 测试。
 
-<a id="c03"></a>
+<a id="discovery"></a>
 
-### C03 新发现入口及旧封装
+### 发现入口及旧封装
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
@@ -184,24 +182,35 @@ UT-C03-01与IT-C03-03同时冻结旧字段的名称、类型、null/省略/空�
 ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 新增 namespace ard.json 并非协议要求，已经移出必做；不能把它的缺失算升级失败。
 
-<a id="c04"></a>
+<a id="context-processing"></a>
 
-### C04 Context 解析器，C05/C06 接入 HTTP
+### Context 解析与 HTTP 集成
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
 | UT-C04-01 | 缺省 context、官方 URI、inline prefix、等价 context array | type 与 a:mediaType/full IRI 解析成同一 ARD IRI，核心词未丢失 | 未解析 -> 标准上下文解析 |
 | UT-C04-02 | a 和 b 同指 ARD ns；type 被重定义为另一 namespace | 前缀拼写不影响 IRI；重定义不得仍命中原 type；IRI 大小写/URI 点号不被误改 | 字面字段 -> IRI 身份 |
 | UT-C04-03 | query.@context=123、整体 null、JSON 语法错误、非法 term definition | 前两者不符合 QueryModel 类型；非法 context 明确解析错误，不回退无 context；HTTP 错误由 IT-C05-04 验证 | 可能忽略未知输入 -> 可验证的语义错误 |
-| UT-C04-04 | 本地受控 context loader，解析成功/引用环/找不到文档 | 成功解析；环和实际解析失败受控，不能吞错；资源限额/网络策略在 P01 决策后另补边界值 | 无 loader -> 有可测试加载边界 |
+| UT-C04-04 | 本地受控 context loader，解析成功/引用环/找不到文档 | 成功解析；环和实际解析失败受控，不能吞错；资源限额和网络策略按目标规范§4.1验证边界 | 无 loader -> 有可测试加载边界 |
 
-依据 S04/S05 和上游 JSON-LD 语义。只在解析器没有既有类时建立新 UT 类。
-不得把“任意 HTTPS context 一律 400”、数组内 null 一律非法、64 KiB/16/8 固定限制
-写成 ARD 测试预期。这些不是 ARD 明定的契约；P01 未决时相关生产策略不得实施。
+依据 S04/S05 和上游 JSON-LD 语义；加载策略见双语目标规范§4.1。
+以下用例覆盖解析器以及 Search/Explore 的 HTTP 集成边界。
 
-<a id="c05"></a>
+| 所属ID | 补充输入/清理 | 精确预期 |
+| --- | --- | --- |
+| UT-C04-01/02 | 数组中alias→null→后续alias，远程顶层同样reset；protected term→reset；term=null | reset移除旧alias并恢复base，后续alias可用；protected reset失败；显式term=null不回退 |
+| UT-C04-04 | 测试自建loopback HTTP文档，精确allowlist；嵌套相对引用；重复URI；下一请求改变文档 | 允许的URI/相对引用成功；单次只下载一次，下次重新加载；测试finally停止server，不访问公网 |
+| UT-C04-04 | 不在allowlist、不同path、file URI、userinfo、fragment；302到未允许地址、Link头 | 拒绝且不跟随；不传播请求凭据；官方base始终离线 |
+| UT-C04-03/04 | 非法JSON、缺@context、非法term、直接/间接循环、404/连接或读取失败 | IllegalArgumentException可由ARD handler映射400，不能空匹配/静默忽略 |
+| UT-C04-04 | 自定义小字节预算，UTF-8边界N与N+1；inline+remote累计；重复URI不重复计费 | N成功，N+1失败；默认1048576是部署值不是协议oracle；连接/读取超时映射受控错误 |
+| IT-C05-01/04/09、IT-C06-02 | 实际POST含缺省、官方URI、inline、array/reset、重绑、term=null、整体null/123、无授权URI | 正确查询非空/重绑后空结果/非法输入ARD400分别断言，响应不泄漏context；清理创建资源 |
+| IT-C05-09（受控环境） | standalone显式允许本地fixture HTTP URI及传递URI；切换错误正文/302/超限/不可达 | 真正非空成功与ARD400错误均验证；外部fixture server独立启动和清理，不在IT类启动Nacos |
 
-### C05 Search 语义
+预算和 allowlist 属于 Nacos 部署策略，不能说成 ARD 禁止任意 HTTPS 或数组 null。
+
+<a id="search"></a>
+
+### Search 语义
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
@@ -212,7 +221,7 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 | UT-C05-06 | BC02/10；Search/Explore各类空text、federation缺省/blank/trim/大小写 | 保留Search必填与trim、Explore可省略；blank模式归auto、AUTO非法，合法三模式同本地结果 | BC02/10；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-07 | BC03；标准filter字符串/数组、数组1/true/object/nested/null、标量非字符串 | 标准合法保持；混合数组由强转/丢null改E400；legacy数组保留旧转换；错误不影响其他合法请求 | BC03；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-08 | BC04；filter+filters同/不同key、values优先/null条目、context重绑与别名碰撞 | 无context同原key合并OR；跨key AND；legacy fieldPath不被context重绑；重绑后不错误合并约束 | BC04；前后差异见兼容审计，正常场景对照保持 |
-| UT-C05-09 | BC05/06；无/合法/非法context，已知IRI、未知IRI/未知裸路径、畸形path | 已知别名匹配；语法合法未知非空条件无匹配，不一律400；真正解析/路径错误受控；P01未定部分阻塞 | BC05/06；前后差异见兼容审计，正常场景对照保持 |
+| UT-C05-09 | BC05/06；无/合法/非法context，已知IRI、未知IRI/未知裸路径、畸形path | 已知别名匹配；语法合法未知非空条件无匹配，不一律400；真正解析/路径错误受控；加载限制按目标规范§4.1验证 | BC05/06；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-10 | BC07；type/tags/source/trust条件[]、空字符串、值大小写/空白、大小写不同IRI/成员 | 冻结字段各自空数组语义；值比较保持；IRI身份/JSON成员不被lowercase；只支持已有可检索投影 | BC07；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-11 | BC08/09/20；Controller namespace绑定、原有mapper范围与错误映射 | query/body匹配规则保持；局部validator不影响全局；400/401/404/429/500映射与空结果分别断言 | BC08/09/20；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-12 | BC15/18；真实Core生成基础token，改变query但保留锚点/移除锚点，非法/空白token、前置无匹配 | 保留锚点可续页，失效E400；空白首屏；前置无匹配仍空200；证明不新增查询hash或自动重置 | BC15/18；前后差异见兼容审计，正常场景对照保持 |
@@ -226,12 +235,12 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 | IT-C05-06 | 同上经实际POST；正常唯一marker对照 | 正确非空、Explore全量、必填错误E400；不是只测DTO赋值 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-07 | 原始JSON发送上述数组；同资源分别数值1和字符串"1"、legacy filters | 升级前记录数值转换，升级后标准数组E400、字符串成功、legacy保持；不要由客户端SDK预先转字符串 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-08 | F-BOOL；两个入口组合、只传legacy、共同key冲突和等价alias | 精确资源集合；既有legacy请求保持；新增组合遵守分组规则，不静默抛弃任一条件 | 前后差异见兼容审计，正常场景对照保持 |
-| IT-C05-09 | 同上，Search与Explore非空对照 | 成功/空集合/400三类分开；新节点识别context，远程加载按P01，不以空集合掩盖加载失败 | 前后差异见兼容审计，正常场景对照保持 |
+| IT-C05-09 | 同上，Search与Explore非空对照 | 成功/空集合/400三类分开；新节点识别context，远程加载按目标规范§4.1，不以空集合掩盖加载失败 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-10 | F-BOOL/F-TYPE；同上可公开准备的值和字段 | 对照before集合、原case匹配；合法输入不因统一validator变400；深层不可写数据由UT承担 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-11 | 两namespace同名；body/query冲突；未知成员、duplicate key、数字text、坏凭据+坏body | namespace确定规则正负例；绑定宽容/优先级采before后冻结；不凭common mapper猜HTTP值；无凭据泄漏 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-12 | F-PAGE，基础模式；同/变化query、改pageSize、跨ns/生命周期、非法token加无匹配type | 静态同查询无重漏；变化查询按本次集合；404制品与token400分开；不宣称任意token改字节必拒绝 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-13 | 独立增强开启部署+受控provider；实际取token后换pageSize/query/config与等价context | 非空及空页续页均正确；仅能本地固定provider时明确环境条件，不用空库跳过增强；静态集合无重漏 | 前后差异见兼容审计，正常场景对照保持 |
-| IT-C05-14 | BC17；同版standalone的Search基础/增强及List；先取真实token成功续页，再按[C05恢复步骤](#recovery-case)固定原因使其失效；保留原请求无token重查 | 无效token返回E400-T且无静默首屏；清旧结果后按原query/ns/排序/身份重查并遍历当前预期全集；非token400移除token仍报错、不循环重试。无双版本环境依赖，不将此称作混跑覆盖 | BC17；前后差异见兼容审计，正常场景对照保持 |
+| IT-C05-14 | BC17；同版standalone的Search基础/增强及List；先取真实token成功续页，再按[Search恢复步骤](#recovery-case)固定原因使其失效；保留原请求无token重查 | 无效token返回E400-T且无静默首屏；清旧结果后按原query/ns/排序/身份重查并遍历当前预期全集；非token400移除token仍报错、不循环重试。无双版本环境依赖，不将此称作混跑覆盖 | BC17；前后差异见兼容审计，正常场景对照保持 |
 
 IT-C05-01/05还应把有/无context的真实Search响应同时交给旧、新Schema校验，
 比较旧字段集、类型和意义（displayName/type/url及score/source等），不能因新Schema
@@ -244,7 +253,7 @@ ArdSearchControllerTest、ArdAdaptorOpenApiITCase；各token分支与恢复步�
 
 <a id="token-cases"></a>
 
-#### C05 分页等价类与错误优先级
+#### Search 分页等价类与错误优先级
 
 本表是UT/IT-C05-12/13/14的参数化输入分类；对外契约以
 [目标规范§4.5](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md#token-contract)为准。
@@ -288,11 +297,11 @@ E400-T仅为测试标签，不是新的wire错误码。
 - 其他错误对照：合法可续token配非法标准filter（List用非法filter语法）仍为参数400；
   去掉token也不能修复，记录请求次数并停止，不把错误当成功或改查询条件。401保持独立验证。
 - 在同版有效token不失效、特定失效E400-T、重新查询成功三个步骤分别保留证据；
-  所有资源finally清理。旧/新真实版本演练仅在LX32，不为升级存活写固定ABI快照断言。
+  所有资源finally清理。旧/新真实版本演练可选，不为升级存活写固定 ABI 快照断言。
 
-<a id="c06"></a>
+<a id="explore"></a>
 
-### C06 Explore
+### Explore
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
@@ -306,9 +315,9 @@ E400-T仅为测试标签，不是新的wire错误码。
 依据 S05/S06 和 ExploreRequest/ExploreFacetRequest；空 facets 等既有收紧标为 Nacos。
 增加到原 Explore 服务测试和现有 IT。不要为协议没要求的“重复 facet 拒绝”编写新错误断言。
 
-<a id="c07"></a>
+<a id="query-examples"></a>
 
-### C07 查询示例
+### 查询示例
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
@@ -320,24 +329,24 @@ E400-T仅为测试标签，不是新的wire错误码。
 依据 S07。新 well-known 仅 Registry，不能在该入口假称验证了所有资源示例；
 资源完整 Entry 的细粒度新版验证使用 renderer/Schema UT，必要时独立评审 namespace 扩展。
 
-<a id="c08"></a>
+<a id="trust"></a>
 
-### C08 Trust 契约
+### Trust 契约
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
 | UT-C08-01 | 无 trust、带 identity 的开放 trust、缺 identity 的小写 trust | 前两者通过；后者语义校验不通过；框架额外字段不会因封闭 whitelist 被误判 | 旧封闭 schema -> 开放框架语义 |
 | UT-C08-02 | issuer/publisher 明确匹配、明确冲突、无法判定的框架 | 匹配/冲突/未知明确区分；冲突不能标为合规，未知不能标为已验证；不把未知 DID 当协议非法 | 无绑定证据 -> 可审计验证状态 |
 | IT-C08-01 | 现有可配置 trust identity 与未配置两种部署 | 已支持配置继续输出小写 trust 与 identity；未配置省略；URN 不被自动改写 | 原正确行为保持 |
-| IT-C08-02 | 明确 authority 冲突的部署 | 返回/启动策略依 P03 决策后补精确 HTTP/启动预期；未决前不得实施或宣称通过 | 待决策，不伪造协议状态码 |
+| IT-C08-02 | 明确 authority 冲突的部署 | 身份处理策略确定后再补精确 HTTP/启动预期；未决前不得实施或宣称通过 | 待决策，不伪造协议状态码 |
 
 依据 S08/S09。ARD 没有指定启动失败、仅支持 HTTPS/SPIFFE/did:web、
-或未知 identityType 必须拒绝；已从必做项删除。C08 的生产行为须先关闭 P03，
+或未知 identityType 必须拒绝；已从必做项删除。新的 trust 生产行为须先明确身份冲突及无法验证时的处理策略，
 单纯 schema/conformance 断言可以先完成。密码学验证不由字符串匹配替代。
 
-<a id="c09"></a>
+<a id="pagination"></a>
 
-### C09 分页、地址与类型
+### 分页、地址与类型
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
@@ -358,18 +367,18 @@ IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内�
 依据 S09/S10/S11。非正数默认化/101截断为既有 Nacos 策略；
 不是 ARD 明定。List items、Search results、source 和整数 score 同时断言。
 
-<a id="c10"></a>
+<a id="conformance"></a>
 
-### C10 / B01 完整验收
+### 完整验收与私有资源完整性
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
 | UT-C10-01 | runner wrapper：缺 jsonschema、缺本地 schema、校验失败 | 明确失败，不把 skipped schema 当通过；固定版本和错误退出码 | 工具盲区 -> 明确门禁 |
 | IT-C10-01 | 独立部署的新 well-known -> Registry Search -> artifact | 官方 manifest/registry 探针及 Nacos 非空链路均通过；publisher 模式用HTTPS域名/受控等价fixture单独记录 | 旧工具 -> 新基线完整证据 |
-| IT-C10-02 | F-AUTH，各种身份与生命周期变化 | 私有授权可见、无权不可见、bad credential E401；分页前可见性；下线/删除后的 artifact 失效 | B01旧Disabled -> 必须真实验证 |
+| IT-C10-02 | F-AUTH，各种身份与生命周期变化 | 私有授权可见、无权不可见、bad credential E401；分页前可见性；下线/删除后的 artifact 失效 | 私有资源旧 Disabled 用例 -> 必须真实验证 |
 | IT-C10-03 | ARD关闭、SearchCore开启；共享资源API | 主服务资源Search/RAD继续工作，适配器未暴露；不改变SDK生命周期 | 既有模块隔离保持 |
 
-依据 S11/S12 与 Nacos 领域规范。B01 先复现再判定需修复或仅恢复测试。
+依据 S11/S12 与 Nacos 领域规范。私有资源完整性问题需先复现，再判定修复产品或恢复测试。
 不得直接删除 Disabled 或把其他用例通过当作它通过。编译失败、环境失败、
 旧已知失败、新回归和目标新功能未实现必须分开记录。
 
@@ -379,17 +388,17 @@ IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内�
 
 所有相关组在实现前保存 baseline、实现后复跑。仅新增测试通过不满足回归门禁。
 
-| ID | 已有测试定位 | 不允许改变的预期 | 必跑提交 |
+| ID | 已有测试定位 | 不允许改变的预期 | 适用功能变化 |
 | --- | --- | --- | --- |
-| RG01 | ArdSearchServiceImplTest 的 catalogShouldExposeRegistryAndLocalEntries、hostCatalogShouldExposeOnlyRegistryEntry、catalogShouldNotTruncateAfterOneHundredEntries | 旧封装、host范围、跨页枚举 | C02/C03/C07/C10 |
-| RG02 | 同类 searchShouldApplyStructuredMetadataFilters、searchShouldApplyFieldPathFilters、searchShouldAcceptExtensionFieldPathSegments、listShouldRejectMalformedFilterInsteadOfSilentlyMisparsing | 旧query.filters、metadata/未知裸路径、GET filter | C04/C05/C06/C09 |
-| RG03 | ArdWebAuthenticationTest、ArdExceptionHandlerTest、ArdSearchControllerTest、AuthScopeGuardITCase | 身份传递、显式拒绝、错误体、外部helper不继承凭据 | C03/C05/C06/C08/C10 |
-| RG04 | 同类 searchShouldSelectDeterministicAgentRepresentationWithoutDuplicatingIdentifier、searchShouldPreferA2aForPureA2aAndFilterUnavailableRepresentation、catalogIdentifiersShouldBeSchemaValidAndCollisionSafe | Agent表示选择、稳定URN及无碰撞 | C03/C05/C08/C09 |
-| RG05 | ArdArtifactServiceTest、ArdWebContextIsolationTest、ArdAdaptorOpenApiITCase.testPublicAgentIndexAndUnifiedArtifacts | ZIP、精确版本/digest、Runtime排除、端口归属、offline404 | C03/C05/C09/C10 |
-| RG06 | ArdSearchServiceImplTest 的 searchShouldPageResultsWithPageToken、searchShouldRejectInvalidPageToken、listShouldFilterOrderAndPageEntries | 同版有效cursor/无效错误、排序与List默认；Search上限按D10变化；不加入跨版本ABI承诺 | C05/C06/C09 |
-| RG07 | 同类 searchShouldAcceptAllStandardFederationModesWithLocalFallback、searchShouldRejectUnknownFederation、searchShouldSkipEntryWhenVersionIsNotLatest | 三种模式、本地fallback、latest/currentness | C05/C06/C10 |
-| RG08 | 同类 vector/ranking测试；AiResourceSearchRelevanceTest、AiResourceRelevanceFilterTest；现有testSearchEnhancementStatusAndCursorBoundary | 召回/分数/保序、默认关闭、增强header及token | C05/C06/C07/C09/C10 |
-| RG09 | AiResourceSearchServiceTest、AiResourceSearchApplicationServiceTest、AgentSearchIndexProjectorTest、McpAiResourceSearchTypeHandlerTest；AiResourceSearchClientOpenApiITCase | 共享Core、canonical投影、可见性、其他资源Facade | 任何共享Core变更及C10 |
+| RG01 | ArdSearchServiceImplTest 的 catalogShouldExposeRegistryAndLocalEntries、hostCatalogShouldExposeOnlyRegistryEntry、catalogShouldNotTruncateAfterOneHundredEntries | 旧封装、host范围、跨页枚举 | Schema/发现入口/查询示例/完整验收 |
+| RG02 | 同类 searchShouldApplyStructuredMetadataFilters、searchShouldApplyFieldPathFilters、searchShouldAcceptExtensionFieldPathSegments、listShouldRejectMalformedFilterInsteadOfSilentlyMisparsing | 旧query.filters、metadata/未知裸路径、GET filter | Context 解析/Search/Explore/分页与地址 |
+| RG03 | ArdWebAuthenticationTest、ArdExceptionHandlerTest、ArdSearchControllerTest、AuthScopeGuardITCase | 身份传递、显式拒绝、错误体、外部helper不继承凭据 | 发现入口/Search/Explore/Trust/完整验收 |
+| RG04 | 同类 searchShouldSelectDeterministicAgentRepresentationWithoutDuplicatingIdentifier、searchShouldPreferA2aForPureA2aAndFilterUnavailableRepresentation、catalogIdentifiersShouldBeSchemaValidAndCollisionSafe | Agent表示选择、稳定URN及无碰撞 | 发现入口/Search/Trust/分页与地址 |
+| RG05 | ArdArtifactServiceTest、ArdWebContextIsolationTest、ArdAdaptorOpenApiITCase.testPublicAgentIndexAndUnifiedArtifacts | ZIP、精确版本/digest、Runtime排除、端口归属、offline404 | 发现入口/Search/分页与地址/完整验收 |
+| RG06 | ArdSearchServiceImplTest 的 searchShouldPageResultsWithPageToken、searchShouldRejectInvalidPageToken、listShouldFilterOrderAndPageEntries | 同版有效cursor/无效错误、排序与List默认；Search上限按D10变化；不加入跨版本ABI承诺 | Search/Explore/分页与地址 |
+| RG07 | 同类 searchShouldAcceptAllStandardFederationModesWithLocalFallback、searchShouldRejectUnknownFederation、searchShouldSkipEntryWhenVersionIsNotLatest | 三种模式、本地fallback、latest/currentness | Search/Explore/完整验收 |
+| RG08 | 同类 vector/ranking测试；AiResourceSearchRelevanceTest、AiResourceRelevanceFilterTest；现有testSearchEnhancementStatusAndCursorBoundary | 召回/分数/保序、默认关闭、增强header及token | Search/Explore/查询示例/分页与地址/完整验收 |
+| RG09 | AiResourceSearchServiceTest、AiResourceSearchApplicationServiceTest、AgentSearchIndexProjectorTest、McpAiResourceSearchTypeHandlerTest；AiResourceSearchClientOpenApiITCase | 共享Core、canonical投影、可见性、其他资源Facade | 任何共享Core变更及完整验收 |
 | RG10 | AgentDiscoveryServiceJavaSdkITCase、McpHttpClientJavaSdkITCase | 已有SDK可观察行为不变；不新增ARD SDK接口测试 | 共享Core/公共模型被触及时及最终代表回归 |
 
 RG08 在增强开启时只验证既有语义没有回归；不能谎称 Search-only 增强已与 Explore cutoff
@@ -403,10 +412,10 @@ namespace绑定继续复用ArdSearchControllerTest。这些是RG06/08/09的执�
 
 <a id="execution-record"></a>
 
-## 6. 执行与提交记录格式
+## 6. 验证记录要求
 
-每个 Cxx 的实现记录至少包含：
-source/delta ID、UT ID->真实类/方法、IT ID->真实类/方法、所选回归组、
+每项功能的验证记录至少包含：
+协议来源/差异 ID、UT ID->真实类/方法、IT ID->真实类/方法、所选回归组、
 baseline 命令/结果、after 命令/结果、已知限制、数据清理结果。
 所有必要 UT/IT 与生产代码同一变更提交，scenario/coverage 同步更新。
 本地交叉矩阵和临时工具必须不在 staged diff 中；不可替代正式测试。

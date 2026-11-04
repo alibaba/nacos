@@ -189,10 +189,15 @@ Nacos targets the ARD draft at upstream commit
 The commit, rather than the draft's mutable version label, is the compatibility
 baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 
-The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) records the staged
-upgrade. Dual-version offline schemas and the new host discovery route are
-implemented; query semantics and final acceptance remain pending, so the overall
+The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) defines the upgrade contract.
+Dual-version offline schemas, the host discovery route and the context resolver are implemented.
+Trust authority policy and final conformance acceptance remain pending; the overall
 compatibility baseline is not promoted.
+
+The JSON-LD 1.1 resolver uses an offline pinned base, request-local document
+caches and deployment-controlled URI loading; see
+[context loading policy](ard-v091-adaptation-spec.md#41-context-processing).
+SDK and shared Search Core contracts remain unchanged.
 
 `GET /.well-known/ard.json` on the adaptor port returns an `entries` manifest
 containing only this registry's complete entry with the official base `@context`.
@@ -277,7 +282,8 @@ application/vnd.nacos.ai-agent+json
 The former is available only when the exact common-latest Version contains a
 complete valid A2A Agent Card and returns only that native card. The latter
 returns a versioned, protocol-neutral Nacos Agent definition without Runtime
-Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared addresses carry effective healthy/enabled=true defaults without implying probes. An
+Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared
+addresses carry effective healthy/enabled=true defaults without implying probes. An
 artifact URL includes the exact Version, its `contentDigest`, and the
 representation key. An offline Version, digest mismatch, or unavailable
 representation returns ARD not found. The Nacos representation validates
@@ -430,9 +436,15 @@ exclude Runtime state.
 
 ## Endpoint Consolidation Acceptance
 
-Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors. Do not export runtime, health, or management observation fields.
+Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and
+update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual
+nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors.
+Do not export runtime, health, or management observation fields.
 
-The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test
+plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies,
+fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned
+scenarios from executed tests.
 
 ### Optional Search relevance filter
 

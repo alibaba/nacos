@@ -670,7 +670,6 @@ row denominator. See the SDK scenario and coverage records and
 the applicable API/SDK scenario tables for actual result scopes and baseline exclusions; gated
 migration cases in the ordinary suite are not treated as executed coverage.
 
-
 C11 final product `9f5ab4d9f`: the complete auth-enabled OpenAPI suite runs 470
 cases, with 459 passes, 11 conditional/baseline skips and no failures. The
 separately deployed Console AI suite passes all 31 cases. Nine direct HTTP
@@ -701,12 +700,18 @@ contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出�
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
-## ARD online relevance filtering
+C04 adds resolver/loader UT coverage only; C05/C06 context-aware HTTP scenarios
+remain pending under the [unified ARD test design](ARD_V091_TEST_DESIGN.md#c04).
+The API coverage counts are unchanged.
 
-The C07 example-projection IT also verifies that the legacy five-item response
+## ARD query-example publication
+
+The example-projection IT also verifies that the legacy five-item response
 limit does not truncate the search index or the exact artifact. New manifest
 recommendations do not add a visibility gate. This extends the existing adaptor
 rows without changing the Nacos API-surface totals; `DAUTH-F03` remains excluded.
+
+## ARD online relevance filtering
 
 | Scenario | Coverage |
 | --- | --- |

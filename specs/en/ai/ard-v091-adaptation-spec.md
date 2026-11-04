@@ -16,12 +16,13 @@
 
 # ARD v0.91 Adaptation Design
 
-Implementation status (2026-11-04): C02 dual-version offline schema validation and
-C03 host manifest discovery and C07 query-example projections are implemented;
-the remaining changes are pending. This does not promote the
-current conformance baseline.
+Implemented scope: dual-version offline schemas, host manifest discovery, query-example projections
+and JSON-LD context resolution.
+Trust authority policy and final conformance acceptance remain pending.
+The current conformance baseline is not promoted.
 
-This document defines the target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
+This document defines the target contract. The [AI Registry Adaptor
+Spec](ai-registry-adaptor-spec.md)
 continues to describe current behavior. Maintainer discussion of the design
 and spec changes precedes implementation; opening an issue is not design approval.
 
@@ -56,7 +57,8 @@ References are pinned. Inputs and assertions live in the
 [unified test design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md);
 current-code evidence and migration live in the
 [compatibility review](../../../test/openapi-test/ARD_V091_COMPATIBILITY_REVIEW.md).
-P01/P03 remain unresolved policies, not permission to implement assumptions.
+Context loading policy is defined in section 4.1; trust authority handling remains unresolved in
+section 5.2.
 
 | Difference | ARD source | Target summary | Strength/verification |
 | --- | --- | --- | --- |
@@ -67,7 +69,7 @@ P01/P03 remain unresolved policies, not permission to implement assumptions.
 | D05 / Query context and IRI matching | [5.3.1][s05], [QueryModel][query] | Use JSON-LD 1.1 processing and map resolved terms to existing domain predicates. | IRI/OR/AND; unsupported-path 400 is MAY; UT/IT-C05 |
 | D06 / Explore term paths | [5.3.3][s06] | Share query resolution; aggregate the full matched set and preserve requested facet key spelling. | Complete-set aggregation and path syntax; UT/IT-C06 |
 | D07 / Representative query constraints | [4.2][s03], [D.2][s07] | Missing examples never hide resources; distinguish new warnings from legacy schema limits. | 2..5 is a recommendation/warning; UT/IT-C07 |
-| D08 / Open trust envelope | [4.5.1–4.5.2][s08] | Require identity when present; check local authority declarations without conflating relevance and trust. | Binding MUST, framework-defined verification; UT/IT-C08 and P03 |
+| D08 / Open trust envelope | [4.5.1–4.5.2][s08] | Require identity when present; check local authority declarations without conflating relevance and trust. | Binding MUST, framework-defined verification; UT/IT-C08 and the policy in section 5.2 |
 | D09 / URLs, URNs and media types | [3.3][s09], [5.3][urls], [Appendix C][urn] | Preserve base URLs, artifact URLs and stable URNs; accept valid extension media types without inventing exporters. | Media types/URLs/URNs; UT-C09-02, IT-C09-03 |
 | D10 / Search page-size limit | [5.3.2][s10], [5.3.4][list] | Raise the existing 50 cap to the documented 100; treat this as a pre-existing mismatch. | Prose defaults/caps; nonpositive behavior is Nacos policy; UT-C09-01 |
 | D11 / Conformance tooling | [Appendix B][errors], [D.4][runner] | Combine dual fixtures, the official runner and Nacos semantic/live authorization tests. | Errors and tooling; UT/IT-C10 |
@@ -169,24 +171,41 @@ colon substitution. Base type maps to ns#mediaType, not JSON-LD @type.
 When a core spelling is redefined, use its effective IRI without falling back
 to the original literal field.
 
-An adaptor-internal ArdContextResolver wraps a JSON-LD 1.1 processor.
-Titanium JSON-LD is the candidate. Pin an exact dependency only after JDK 17,
-license, transitive dependency, offline execution and required expansion
-checks. Do not add an RDF database, signing stack or dependencies to Java 8
-client modules.
+An adaptor-internal ArdContextResolver wraps Titanium JSON-LD **1.7.0**
+(Apache-2.0, Java 11+, validated on JDK 17), with Parsson **1.1.7** as its
+JSON-P provider. Dependencies remain in the Java 17 adaptor. The transitive
+JCS/RDF utility APIs do not introduce an RDF database or signing service.
 
-P01: determine loader network policy, local mappings/cache, resource budgets and
-the exact dependency before implementation. ARD sections 4.1/5.3.1 allow
-URI/object/array contexts; they prescribe neither numeric limits nor rejection
-of every non-official URI. Bundle the pinned base context for offline resolution.
-Design both success for supported contexts and controlled deployment-limit
-failures. The earlier 64 KiB/16-document/depth-8 assumptions are not requirements.
+The following loader settings are Nacos deployment policy,
+not numeric limits or access restrictions required by ARD:
 
-A null or numeric query.@context does not satisfy the OpenAPI QueryModel type.
-A null/reset inside a context array needs separate JSON-LD and ARD base-context
-analysis; do not reject it indiscriminately. Actual parsing/cycle failures must
-be controlled without silently ignoring context. Production loader policy is
-gated on P01 and the corresponding UT-C04/HTTP test design.
+| Setting under `nacos.ai.ard.context.` | Default and behavior |
+| --- | --- |
+| `allowed-uris` | Empty comma-separated exact HTTP(S) URI allowlist. The official base URI is always mapped to the pinned bundled document without network access. Operators may allow additional trusted documents and each transitive reference; no wildcard, user-info, fragment, redirects or HTTP Link traversal. Nacos credentials are never forwarded. |
+| `max-bytes` | 1048576 UTF-8 bytes per resolution, shared by inline context and each distinct downloaded document. The bundled base and cached repeated documents are exempt. The positive value is configurable. |
+| `timeout-ms` | 3000 ms aggregate remote-fetch budget per resolution; the complete response future and request timeout use the remaining budget. The positive value is configurable. |
+
+The loader caches documents only within one resolution. Separate requests,
+changed configuration and process restarts do not reuse external documents.
+JSON-LD parsing/cycle errors and denied, unavailable, malformed, over-budget
+remote documents fail explicitly with the existing ARD 400 envelope at the HTTP
+boundary; they never fall back to a context-free query. The pinned processor
+also bounds remote-context traversal (256); it is an implementation constraint,
+not an ARD protocol maximum. Valid supported remote URI contexts must succeed.
+
+A missing query context uses the base; explicit whole null/number/boolean is
+invalid under QueryModel. For an array reset, process the null reset and then
+reapply the pinned base before later entries. Apply the same rule to a remote
+context's top-level reset. This reconciles JSON-LD reset with ARD section 4.1's
+requirement that the base is not removed: request aliases before the reset
+are removed, core terms are restored and later definitions may override them.
+Protected-term reset errors remain errors. An explicit term definition of null
+removes that term and must not fall back to its original spelling. Scoped term
+contexts and opaque JSON values are not rewritten.
+
+UT-C04-01..04 cover the resolver and loader policy. Search and Explore HTTP
+scenarios are defined in the [test
+design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md#context-processing).
 
 ### 4.2 Paths and filters
 
@@ -309,8 +328,9 @@ continue to work but have no cross-version guarantee. Old servers retain their
 actual historical error behavior; no released binary must be retrofitted.
 
 Cross-version token survival is not a delivery gate. Real old-to-new, new-to-old
-and mixed-node runs are optional migration exercises (LX32); unavailable old
-environments do not block C10. Current-version continuation, deterministic failure
+and mixed-node runs are optional migration exercises; unavailable old
+environments do not block current-version conformance acceptance. Current-version continuation,
+deterministic failure
 and restart tests remain mandatory. Enable context only after target nodes upgrade
 or with an explicitly upgraded pool. Before rollback, stop new semantics, discard
 pagination state and restart on the target version; never silently strip context
@@ -341,16 +361,17 @@ a legacy local identifier. Domain-anchored deployment claims require an
 explicit organization-controlled FQDN. Changing publisher changes URNs and
 requires an explicit identity migration notice, not automatic substitution.
 
-Omit trustManifest when identity is unconfigured. ARD section 4.5.1 requires authority binding while section 4.5.2 delegates
-verification to the declared framework. P03 must determine how an actual
-conflict and an unverifiable identity are handled, with a compatibility plan.
+Omit trustManifest when identity is unconfigured. ARD section 4.5.1 requires authority binding while
+section 4.5.2 delegates
+verification to the declared framework. The handling of an actual
+conflict or an unverifiable identity, including migration, still needs an agreed policy.
 ARD specifies neither an HTTPS/SPIFFE/did:web allowlist nor startup failure
-for an unknown DID. Remove those earlier commitments. A known conflict cannot
+for an unknown DID. A known conflict cannot
 be called conformant; unknown verification cannot be called verified.
 Concrete HTTP/startup/export policy needs a Nacos design and positive/negative
 tests, not an inference from the ARD error-code table. String-domain matching
 does not prove certificates, signatures, ownership or attestations.
-Schema/semantic tests may proceed; new production rejection rules wait for P03.
+Schema/semantic tests may proceed; new production rejection rules require that policy first.
 
 Keep lowercase trustManifest, require identity and allow framework-defined
 members, without automatically exporting internal configuration.
@@ -391,7 +412,8 @@ protocol and existing behavior: committed correctness UT/IT with success and
 expected errors, local-only cross tests, and existing before/after regression.
 See the [ARD v0.91 Test Design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md)
 for fixtures, assertions, case IDs and reusable classes. Do not invent failure
-expectations for unresolved P01/P03 policies. Track design, implementation and
+expectations for unresolved policies such as trust authority handling. Track design, implementation
+and
 execution separately.
 
 Each HTTP behavior commit updates standalone IT, scenario documentation and the
@@ -410,7 +432,7 @@ mock-controller assertions for live HTTP evidence.
 | A08 Cursor | Basic anchors/enhanced hashes; same-version continuation, deterministic 400 and original-query restart; equivalent mappings, page-size changes and empty pages. Cross-version survival is not a gate; mixed runs are optional. |
 | A09 Explore | Aliased keys, duplicate/unknown fields, empty buckets and complete-set/base Search agreement. |
 | A10 Examples | 0/1/2/5/6 examples, deduplication, old/new projection, eligibility and Registry examples. |
-| A11 Trust | Missing identity, authority match/conflict/unknown and framework openness; runtime errors depend on P03, without a scheme allowlist. |
+| A11 Trust | Missing identity, authority match/conflict/unknown and framework openness; runtime errors depend on the policy in section 5.2, without a scheme allowlist. |
 | A12 URLs/types | Base versus endpoint URLs, extensions, multisegment/Unicode URNs and stable identifiers. |
 | A13 Pagination | Search 10/50/51/100/101, zero/negative/type errors, List boundaries and namespace filters. |
 | A14 Artifacts | Four nonempty resource kinds, pure/multiprotocol/older-A2A Agent cases, ZIP, version/digest, offline and Runtime exclusion. |
@@ -459,7 +481,7 @@ work changes public write models, SDK methods or exception contracts.
 - [AI Resource Search Spec](ai-resource-search-spec.md)
 - [API Integration Test Spec](../testing/api-integration-test-spec.md)
 - [Compatibility Policy](../design/compatibility-deprecation-spec.md)
-- [Candidate Titanium JSON-LD processor](https://github.com/filip26/titanium-json-ld)
+- [Titanium JSON-LD processor](https://github.com/filip26/titanium-json-ld)
 
 [s01]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L546-L588
 [s02]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L206-L218

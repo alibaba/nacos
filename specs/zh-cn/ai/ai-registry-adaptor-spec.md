@@ -161,8 +161,13 @@ Nacos 以 ARD 上游 commit
 对应的草案为兼容基线。由于草案的版本标签仍可能变化，仓库内固定的 OpenAPI、JSON Schema
 和一致性测试 fixture 均以该 commit 为准，而不是只依赖版本标签。
 
-[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)记录分批升级契约。
-双版本离线Schema与新host发现入口已实现；查询语义及完整验收尚未完成，不提升整体兼容基线。
+[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)定义升级契约。
+双版本离线 Schema、新 host 发现入口和 context 解析器已实现。
+信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
+
+JSON-LD 1.1 解析器使用固定 base 离线加载、单请求文档缓存和部署控制的 URI 加载，
+具体见[context 加载策略](ard-v091-adaptation-spec.md#41-context-处理)。
+SDK 与共享 Search Core 契约不变。
 
 标准入口为适配器端口的 `GET /.well-known/ard.json`，返回仅含本Registry完整Entry的
 `entries` 容器，Entry带官方基础 `@context`，没有旧 `specVersion/host` 或搜索 `score/source`。

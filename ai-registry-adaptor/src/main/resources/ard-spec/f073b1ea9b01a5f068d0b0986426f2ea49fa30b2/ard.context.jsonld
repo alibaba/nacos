@@ -1,0 +1,21 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@vocab": "https://agenticresourcediscovery.org/ns#",
+    "ard": "https://agenticresourcediscovery.org/ns#",
+    "id": "@id",
+    "identifier": "ard:identifier",
+    "displayName": "ard:displayName",
+    "type": "ard:mediaType",
+    "url": { "@id": "ard:url", "@type": "@id" },
+    "data": { "@id": "ard:data", "@type": "@json" },
+    "representativeQueries": { "@id": "ard:representativeQueries", "@container": "@set" },
+    "capabilities": { "@id": "ard:capabilities", "@container": "@set" },
+    "tags": { "@id": "ard:tags", "@container": "@set" },
+    "description": "ard:description",
+    "version": "ard:version",
+    "updatedAt": { "@id": "ard:updatedAt", "@type": "http://www.w3.org/2001/XMLSchema#dateTime" },
+    "metadata": { "@id": "ard:metadata", "@type": "@json" },
+    "trustManifest": { "@id": "ard:trustManifest", "@type": "@json" }
+  }
+}
