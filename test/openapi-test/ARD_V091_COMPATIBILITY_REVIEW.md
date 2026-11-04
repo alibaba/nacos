@@ -34,6 +34,7 @@ HTTP 绑定结论来自真实请求基线；已实现测试和仍待完成的验
 - [适配器service](../../ai-registry-adaptor/src/main/java/com/alibaba/nacos/airegistry/service/ard/ArdSearchServiceImpl.java)：
   validateAndBuildContext/ExploreContext、normalizePageSize、
   normalizeListPageSize、normalizeFacets、parseOrderBy、matchesProtocolFilters。
+- [查询映射](../../ai-registry-adaptor/src/main/java/com/alibaba/nacos/airegistry/service/ard/ArdQueryMapper.java)：标准与 legacy 过滤值、分组及字段解析。
 - [Controller](../../ai-registry-adaptor/src/main/java/com/alibaba/nacos/airegistry/controller/ArdSearchController.java)：
   namespace query/body绑定、GET参数转换。
 - [共享Core](../../ai/src/main/java/com/alibaba/nacos/ai/service/search/AiResourceSearchService.java)：
@@ -53,7 +54,7 @@ HTTP 绑定结论来自真实请求基线；已实现测试和仍待完成的验
 
 分类：保持、新增、收紧、修复、待决。每项对应正式正常/错误或边界用例；
 BC03是旧协议已要求的输入收紧，BC13是既有上限偏差修复，不能标成v0.91新增限制。
-BC05须区分context缺省/显式null；BC09/14的HTTP绑定结果仍须在开工前采baseline。
+BC05须区分context缺省/显式null；BC09/14的HTTP基线已在查询语义升级前采集，详见[Search测试设计](ARD_V091_TEST_DESIGN.md#search)；GET非整数pageSize现为500，单列既有缺口。
 
 | ID / 功能 | 升级前事实与兼容风险 | ARD依据及是否要求变化 | 兼容方案与迁移 | 正式案例 |
 | --- | --- | --- | --- | --- |

@@ -128,6 +128,16 @@ public class ArdContextResolver {
         }
         
         /**
+         * Whether a complete spelling is explicitly defined, including dotted terms.
+         *
+         * @param term query spelling
+         * @return whether the effective context defines the spelling
+         */
+        public boolean isDefined(String term) {
+            return context.containsTerm(term);
+        }
+        
+        /**
          * Expands a term or IRI without changing case or interpreting JSON path members.
          *
          * @param term vocabulary term or IRI

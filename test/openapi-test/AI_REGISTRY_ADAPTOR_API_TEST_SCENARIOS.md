@@ -53,7 +53,7 @@ administrator or Client credential.
 
 | API surface / test class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Contract and component coverage remains active. The live standalone shared-index method is retained but disabled as `DAUTH-F03` because private canonical projections are incomplete after the out-of-scope product fix is rolled back. |
+| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Public-resource HTTP cases verify query results, legacy binding and pagination; context and facet scenarios are detailed below. Private authorized-resource completeness remains excluded as `DAUTH-F03`, so this row stays Partial. |
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
 | `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. Private authorized completeness remains blocked by `DAUTH-F03`. |
 | `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed once to Search, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
@@ -99,7 +99,15 @@ and Search Core tests exercise nonempty success and failure paths without extern
 Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
 nonempty Jev filtering coverage. No public Java SDK contract changes.
 
-## ARD context processing
+## ARD query contexts and pagination
+
+Search 正式 HTTP 场景由`testQueryContextAndIndependentFilterGroups`（非空IRI/别名、重绑/reset、OR/AND、legacy与双Schema）、
+`testQueryValidationKeepsLegacyHttpBinding`（原始JSON、context/标准值错误与绑定兼容）、
+`testQueryCursorContinuationAndExplicitRecovery`（有效续页、等价context、页大小变化、token错误及原条件重查）承担。
+增强token的配置/查询指纹由真实Core+确定性provider UT验证，并在本地独立增强部署复跑HTTP续页；
+受控远程context的成功与加载错误由本地HTTP矩阵验证。不新增API，DAUTH-F03仍单独Disabled。
+
+Query namespace isolation and query/body matching are covered by `ArdAdaptorOpenApiITCase.testQueryNamespaceBindingAndContextIsolation`, including same-name public resources in two namespaces and invalid credentials before body parsing.
 
 `ArdContextResolverTest` covers the offline base, IRI expansion, reset and
 controlled loader success/error cases; see the [context test design](ARD_V091_TEST_DESIGN.md#context-processing).

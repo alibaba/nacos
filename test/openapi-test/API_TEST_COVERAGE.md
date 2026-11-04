@@ -700,9 +700,16 @@ contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出�
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
-C04 adds resolver/loader UT coverage only; C05/C06 context-aware HTTP scenarios
-remain pending under the [unified ARD test design](ARD_V091_TEST_DESIGN.md#c04).
-The API coverage counts are unchanged.
+## ARD query contexts and pagination
+
+Existing adaptor rows cover Search context/IRI aliases, independent filter groups,
+standard-value validation with legacy binding preserved, namespace isolation,
+valid cursor continuation and explicit recovery.
+Resolver/loader and enhanced-provider boundaries also have UT coverage;
+controlled remote contexts and enabled-provider deployments require separate test environments.
+See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)
+for test methods and execution limits. API-surface counts and strict/effective coverage are unchanged;
+private canonical completeness remains excluded as `DAUTH-F03`.
 
 ## ARD query-example publication
 

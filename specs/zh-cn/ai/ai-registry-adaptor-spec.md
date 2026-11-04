@@ -163,6 +163,7 @@ Nacos 以 ARD 上游 commit
 
 [ARD v0.91 适配设计](ard-v091-adaptation-spec.md)定义升级契约。
 双版本离线 Schema、新 host 发现入口和 context 解析器已实现。
+Search 已接入 query context。
 信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
 
 JSON-LD 1.1 解析器使用固定 base 离线加载、单请求文档缓存和部署控制的 URI 加载，
@@ -282,6 +283,14 @@ filter 接受语法合法的点分字段路径，包括固定 OpenAPI 中的
 `trustManifest.attestations.type` 示例；路径对应的值不存在时不匹配任何条目。不支持的
 扩展字段路径分段可以使用任意非空、非空白且不含点号的属性名。不支持的操作符、错误的
 引号、非法字段路径语法和旧分隔符语法必须返回 ARD invalid-argument，不能只解析其中一部分。
+
+Search标准`query.filter`按固定base与请求`@context`展开字段IRI；metadata、trustManifest、
+data仅展开根，后缀保留JSON成员拼写。一个原始key内OR，不同key间AND；两个别名指向同一
+字段时仍是独立条件。标准值只接受string/string[]，混合数组及非法context返回400。
+合法但未支持的IRI保留空匹配策略。legacy `query.filters`不展开context，保留数组转换和
+values优先级；仅原始key与解析字段都相同的条件合并OR。响应投影不随context改变。
+分页token沿用基础锚点与增强指纹两种语义；失效返回ARD INVALID_ARGUMENT，不自动重置。
+调用方丢弃旧分页结果、移除token，按原查询条件重新遍历，详见[恢复契约](ard-v091-adaptation-spec.md#token-contract)。
 
 Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
 字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，

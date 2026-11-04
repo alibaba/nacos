@@ -132,7 +132,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | --- | --- |
 | 基线、Schema、发现与示例发布 | 已有离线契约、renderer、路由/鉴权 UT 和公开资源 HTTP IT。示例的精确数量组合由组件测试验证，公开 API 可能派生额外示例。 |
 | Context 解析 | `ArdContextResolverTest` 覆盖固定 base、IRI、reset 和受控 loader 成功/错误；loopback loader UT 不计为 API IT。 |
-| Search | 下文 HTTP 接入用例待实现与执行。 |
+| Search | `ArdQueryMapperTest`、服务 UT 及 `ArdAdaptorOpenApiITCase` 覆盖 context/过滤、绑定兼容、namespace 和分页恢复。增强模式另需确定性 provider 环境；普通部署不代表增强模式已执行。 |
 | Explore | 下文 query/facet context 接入用例待实现与执行。 |
 | 分页 | Search 100 上限及相应边界用例待实现与执行。 |
 | Trust 与最终一致性验收 | 待完成；身份冲突/无法验证的处理策略尚未确定。私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
@@ -211,6 +211,20 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 <a id="search"></a>
 
 ### Search 语义
+
+升级前 HTTP 基线（2026-11-04，旧服务器81fcef03f）：真实HTTP表明POST pageSize数字字符串、
+小数、null/0/负数可绑定，boolean/object/超int范围400；text数字/boolean转字符串，null/array/blank400；
+未知成员忽略，重复text以后值为准。federation null/blank/trim沿用auto，AUTO400。
+旧context被忽略，标准filter数组数字/boolean/object/null曾接受；这两类按BC03/05明确升级。
+Explore query缺省/空/blank均200；无效凭据先于坏JSON返回401。
+GET pageSize非整数/boolean/超范围当前500（不是400），空串使用缺省；这是既有错误映射缺口，
+本批保留并登记后续，不能将其纳入新校验顺便修正。namespace对照需有效身份，匿名跨namespace401
+不能误记为绑定失败。原始before证据仅本地保存，不提交凭据。
+
+Search使用原始key+解析字段标识合并组，同组OR，组间AND；单值type选择逐组求交，
+多值tags保留独立predicate。标准filter严格string/string[]，legacy沿用旧转换与values优先。
+Search 与 Explore 复用查询/Facet 解析。下表定义 Search 场景；
+基础/增强 token 必须分别经过真实 Core 和 HTTP 续页及恢复验证。
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |

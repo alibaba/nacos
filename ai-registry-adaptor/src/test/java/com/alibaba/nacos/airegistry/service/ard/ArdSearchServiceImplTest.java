@@ -24,6 +24,9 @@ import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceConfiguration;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceFilter;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceProvider;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
@@ -85,8 +88,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -919,6 +924,154 @@ class ArdSearchServiceImplTest {
             + "&resourceName=avatar-server&version=1.0.0&mcpName=avatar-server",
             catalog.getEntries().get(2).getUrl());
         assertCatalogSchemaValid(catalog);
+    }
+    
+    @Test
+    void searchShouldApplyOrWithinKeysAndAndAcrossAliases() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        var first = entry(101L, "ab");
+        first.setTags("[\"a\",\"b\"]");
+        var second = entry(102L, "a");
+        second.setTags("[\"a\"]");
+        var third = entry(103L, "b");
+        third.setTags("[\"b\"]");
+        when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+        when(repository.findEntriesByIds(anyCollection()))
+            .thenReturn(List.of(first, second, third));
+        ArdSearchRequest request = request("api", Map.of("tags", List.of("a", "b")));
+        assertEquals(List.of("ab", "a", "b"), resultNames(service.search(request)));
+        request.getQuery().setContext(JacksonUtils
+            .toObj("{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+        request.getQuery()
+            .setFilter(new LinkedHashMap<>(Map.of("tags", List.of("a"), "t", List.of("b"))));
+        assertEquals(List.of("ab"), resultNames(service.search(request)));
+    }
+    
+    @Test
+    void searchShouldResolveTypeAndMetadataAliasesWithoutChangingProjection() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(10001)))
+            .thenReturn(List.of(hit(100L, 1)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
+        ArdSearchRequest plain =
+            request("api", Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+                "metadata.resourceType", "skill"));
+        var before = service.search(plain);
+        ArdSearchRequest alias =
+            request("api", Map.of("a:mediaType", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+                "m.resourceType", "skill"));
+        alias.getQuery()
+            .setContext(JacksonUtils.toObj("{\"a\":\"https://agenticresourcediscovery.org/ns#\","
+                + "\"m\":\"a:metadata\"}", JsonNode.class));
+        assertEquals(JacksonUtils.toJson(before), JacksonUtils.toJson(service.search(alias)));
+        alias.getQuery().setFilter(Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+            "a:mediaType", ArdProtocolConstants.MEDIA_TYPE_MCP));
+        assertTrue(service.search(alias).getResults().isEmpty());
+    }
+    
+    @Test
+    void searchShouldPreserveBasicCursorAndRecoverAfterAnchorRemoval() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        var entries =
+            new ArrayList<>(List.of(entry(101L, "one"), entry(102L, "two"), entry(103L, "three")));
+        when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+        when(repository.findEntriesByIds(anyCollection())).thenAnswer(invocation -> entries);
+        ArdSearchRequest request = request("api", Map.of("tags", "api"));
+        request.setPageSize(1);
+        var first = service.search(request);
+        assertNotNull(first.getPageToken());
+        request.setPageToken(first.getPageToken());
+        request.setPageSize(2);
+        request.getQuery().setContext(JacksonUtils
+            .toObj("{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+        request.getQuery().setFilter(Map.of("t", "api"));
+        assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+        entries.remove(0);
+        assertThrows(NacosException.class, () -> service.search(request));
+        request.setPageToken(null);
+        assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+        request.setPageToken("invalid");
+        request.getQuery().setFilter(Map.of("type", "application/unknown+json"));
+        assertTrue(service.search(request).getResults().isEmpty());
+    }
+    
+    @Test
+    void searchShouldPreserveEnhancedCursorFingerprintAndRecoverWithoutToken() throws Exception {
+        Map<String, String> settings = Map.of(
+            "nacos.ai.ard.search.enhancement.enabled", "true",
+            "nacos.ai.resource.search.relevance.endpoint", "http://localhost:9000/v1/systemone",
+            "nacos.ai.resource.search.relevance.api-key", "test-key",
+            "nacos.ai.resource.search.relevance.model", "test-model");
+        Map<String, String> previous = new LinkedHashMap<>();
+        settings.forEach((key, value) -> previous.put(key, System.setProperty(key, value)));
+        var previousEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new org.springframework.core.env.StandardEnvironment());
+        AiResourceRelevanceFilter filter = null;
+        try {
+            AiResourceRelevanceProvider provider = mock(AiResourceRelevanceProvider.class);
+            when(provider.name()).thenReturn("jev");
+            when(provider.maxBatchSize()).thenReturn(60);
+            when(provider.maxInputBytes()).thenReturn(65536);
+            when(provider.contractVersion()).thenReturn("test-v1");
+            when(provider.evaluateBatch(any(), any(), any(), anyLong())).thenAnswer(invocation -> {
+                List<Map<String, String>> batch = invocation.getArgument(1);
+                Map<String, Double> scores = new LinkedHashMap<>();
+                batch.forEach(candidate -> scores.put(candidate.get("id"), 0.9));
+                return scores;
+            });
+            filter = new AiResourceRelevanceFilter(new AiResourceRelevanceConfiguration(),
+                List.of(provider));
+            AiResourceSearchService core = new AiResourceSearchService(
+                new AiResourceSearchTypeHandlerRegistry(List.of(new AlwaysCurrentHandler())),
+                repository, embeddingService, vectorIndex);
+            core.setRelevanceFilter(filter);
+            ArdSearchServiceImpl service = new ArdSearchServiceImpl(core);
+            when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+                .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+            when(repository.findEntriesByIds(anyCollection()))
+                .thenReturn(List.of(entry(101L, "one"), entry(102L, "two"), entry(103L, "three")));
+            ArdSearchRequest request = request("api", Map.of("tags", List.of("api", "absent")));
+            request.setPageSize(1);
+            String token = service.search(request).getPageToken();
+            assertNotNull(token);
+            request.setPageToken(token);
+            request.setPageSize(2);
+            request.getQuery().setContext(JacksonUtils.toObj(
+                "{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+            request.getQuery().setFilter(Map.of("t", List.of("api", "absent")));
+            assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+            request.getQuery().setFilter(Map.of("t", List.of("absent", "api")));
+            assertThrows(NacosException.class, () -> service.search(request));
+            request.getQuery().setFilter(Map.of("t", List.of("api", "absent")));
+            filter.close();
+            // Changing provider configuration invalidates the old fingerprint.
+            System.setProperty("nacos.ai.resource.search.relevance.model", "new-model");
+            filter = new AiResourceRelevanceFilter(new AiResourceRelevanceConfiguration(),
+                List.of(provider));
+            core.setRelevanceFilter(filter);
+            assertThrows(NacosException.class, () -> service.search(request));
+            request.setPageToken(null);
+            request.setPageSize(10);
+            assertEquals(List.of("one", "two", "three"), resultNames(service.search(request)));
+        } finally {
+            if (filter != null) {
+                filter.close();
+            }
+            EnvUtil.setEnvironment(previousEnvironment);
+            previous.forEach((key, value) -> {
+                if (value == null) {
+                    System.clearProperty(key);
+                } else {
+                    System.setProperty(key, value);
+                }
+            });
+        }
+    }
+    
+    private List<String> resultNames(ArdSearchResponse response) {
+        return response.getResults().stream().map(ArdSearchResult::getDisplayName).toList();
     }
     
     private ArdSearchServiceImpl service() {

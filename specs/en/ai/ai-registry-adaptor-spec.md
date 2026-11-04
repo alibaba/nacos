@@ -191,6 +191,7 @@ baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 
 The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) defines the upgrade contract.
 Dual-version offline schemas, the host discovery route and the context resolver are implemented.
+Search consumes query contexts.
 Trust authority policy and final conformance acceptance remain pending; the overall
 compatibility baseline is not promoted.
 
@@ -347,6 +348,20 @@ arbitrary non-whitespace property names but cannot be empty or contain a dot.
 Unsupported operators, malformed quoting, invalid field-path syntax, and
 legacy delimiter syntax fail with the ARD invalid-argument response instead
 of being partially interpreted.
+
+Search expands standard `query.filter` keys against the pinned base and request
+`@context`. Only the roots of metadata, trustManifest and data are expanded; JSON
+member suffixes retain their spelling. Values within one original key are ORed,
+while different keys, including aliases for the same field, remain ANDed. Standard
+values must be strings or string arrays; mixed arrays and invalid contexts return 400.
+Valid unsupported IRIs keep the empty-match policy. Legacy `query.filters` paths
+are not context-expanded; conversion and values precedence remain unchanged. OR
+merging requires both the same original key and the same resolved field. Response
+projections do not depend on context. Basic anchor tokens and enhanced fingerprint
+tokens retain their separate semantics. Invalid tokens return ARD INVALID_ARGUMENT,
+without an automatic reset. Clients discard accumulated results, remove the token
+and repeat the original query; see the [recovery
+contract](ard-v091-adaptation-spec.md#token-contract).
 
 Catalog identifiers use deterministic, injective, schema-safe encoding for
 every Nacos-derived URN segment. Namespaces and resource names containing

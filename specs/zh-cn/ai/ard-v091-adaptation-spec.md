@@ -16,7 +16,7 @@
 
 # ARD v0.91 适配设计
 
-已实现范围：双版本离线 Schema、新 host 发现入口、示例投影和 JSON-LD context 解析器。
+已实现范围：双版本离线 Schema、新 host 发现入口、示例投影和 JSON-LD context 解析器、Search 查询 context 匹配。
 信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
 本文件定义目标契约，不表示当前服务已经完整支持。
 当前行为仍以 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)为准。
