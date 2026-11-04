@@ -462,3 +462,12 @@ Status: Covered = important contract verified; Partial = representative scenario
 
 Legacy polling behavior and 0.3 Skill adaptation are unchanged and outside this increment.
 Old peers that discard unknown Skill fields do not gain support; end-to-end preservation requires upgraded typed paths.
+
+## Agent request builders
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| AgentRequestBuilder | Generic and A2A publish/register; Card defaults and interface replacement; tenant/protocolVersion and ordering round trip; exact/range bindings; invalid input; independent results | Covered | `AgentRequestBuilderJavaSdkITCase`: nine external-client cases across HTTP/gRPC/AUTO, included in both JSON adapter CI profiles. Pure aliasing and malformed inputs are covered by API unit tests; four pre-refactor storage digests pin legacy and current Card migration under URL/SERVICE. |
+
+Builder scenario coverage: 1 Covered / 1 surface; strict 100%, effective 100%.
+This local helper surface does not add a service interface to the registry denominator.

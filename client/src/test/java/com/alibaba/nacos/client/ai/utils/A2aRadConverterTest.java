@@ -158,6 +158,7 @@ class A2aRadConverterTest {
         address.setUrl("https://declared.example/rpc");
         address.setProtocolBinding("HTTP+JSON");
         address.setProtocolVersion("1.0");
+        address.setTenant("legacy-tenant");
         card.setSupportedInterfaces(Arrays.asList(address, address));
         card.setUrl(null);
         card.setProtocolVersion(null);
@@ -171,6 +172,8 @@ class A2aRadConverterTest {
             call.getEndpointSets().get(0).getEndpoints().get(0).getUri());
         assertNull(card.getUrl());
         assertNull(address.getTransport());
+        assertNull(call.getEndpointSets().get(0).getEndpoints().get(0).getMetadata());
+        assertEquals(0, call.getEndpointSets().get(0).getEndpoints().get(0).getPriority());
     }
     
     @Test

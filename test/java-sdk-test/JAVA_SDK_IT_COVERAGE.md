@@ -534,3 +534,21 @@ Card requirements, caller isolation, and controlled invalid-POJO errors. Unit te
 cover plain binding, Jackson 2/3, native descriptor preservation, descriptor-only RAD
 fingerprint changes, and identical-snapshot suppression. No legacy polling or 0.3 Skill
 behavior changes. Existing surface classifications and strict/effective totals remain unchanged.
+
+## Offline Agent request builders (#15975, optional adapter convenience)
+
+`AgentRequestBuilderJavaSdkITCase` covers the public `publishAgent()` and
+`registerEndpoints()` builder family through existing AgentService operations.
+The nine HTTP/gRPC/AUTO cases verify protocol-neutral and native A2A publication,
+Card defaults overridden by actual instance interfaces, per-interface tenant/version,
+priority, precise/range bindings, complete endpoint replacement, Watch changes,
+ordinary autoSubmit and basedOnVersion, and local failures without remote publication.
+Both default and Jackson 3 CI profiles run this class. API tests verify defensive copies,
+source order, malformed inputs and codec failures. Server regression tests retain four
+storage digests recorded before converter extraction, including 0.3/v1 Cards, duplicate
+addresses, metadata omission and URL/SERVICE ordering; client facade tests retain first-wins behavior.
+
+This is one Covered helper family (strict/effective scenario coverage both 1/1 = 100%);
+existing service-interface coverage totals stay unchanged. No HTTP endpoint, wire schema,
+old subscription or migration lifecycle is changed. Existing OpenAPI A2A publication and
+Maintainer/migration suites remain the HTTP and historical regression surfaces.
