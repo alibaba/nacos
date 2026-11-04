@@ -36,6 +36,7 @@ import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.auth.JRaftAuthUpgradeCoordinator;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.distributed.raft.storage.FileJRaftServiceFactory;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
@@ -46,6 +47,8 @@ import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.CliService;
+import com.alipay.sofa.jraft.JRaftServiceFactory;
+import com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.RaftServiceFactory;
@@ -124,6 +127,8 @@ public class JRaftServer {
     
     private NodeOptions nodeOptions;
     
+    private JRaftServiceFactory serviceFactory;
+    
     private Serializer serializer;
     
     private Collection<RequestProcessor4CP> processors =
@@ -153,6 +158,8 @@ public class JRaftServer {
     }
     
     void init(RaftConfig config) {
+        RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(config);
+        this.serviceFactory = selectServiceFactory(config, raftOptions);
         this.raftConfig = config;
         this.serializer = SerializeFactory.getDefault();
         Loggers.RAFT.info("Initializes the Raft protocol, raft-config info : {}", config);
@@ -181,7 +188,6 @@ public class JRaftServer {
         nodeOptions.setSharedSnapshotTimer(true);
         
         nodeOptions.setElectionTimeoutMs(electionTimeout);
-        RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
         nodeOptions.setRaftOptions(raftOptions);
         // open jraft node metrics record function
         nodeOptions.setEnableMetrics(true);
@@ -191,6 +197,26 @@ public class JRaftServer {
         this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
         this.cliClientService =
             (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
+    }
+    
+    private JRaftServiceFactory selectServiceFactory(RaftConfig config, RaftOptions options) {
+        String backend = config.getValOfDefault(RaftSysConstants.LOG_STORAGE_TYPE,
+            RaftSysConstants.DEFAULT_LOG_STORAGE_TYPE);
+        if (backend == null) {
+            backend = RaftSysConstants.DEFAULT_LOG_STORAGE_TYPE;
+        }
+        if ("rocksdb".equalsIgnoreCase(backend.trim())) {
+            return new DefaultJRaftServiceFactory();
+        }
+        if ("file".equalsIgnoreCase(backend.trim())) {
+            if (!options.isSync()) {
+                throw new IllegalArgumentException("File Raft log storage requires sync=true");
+            }
+            return new FileJRaftServiceFactory();
+        }
+        throw new IllegalArgumentException(
+            "Invalid nacos.core.protocol.raft.data.log_storage_type: "
+                + backend + "; expected rocksdb or file");
     }
     
     synchronized void start() {
@@ -245,6 +271,8 @@ public class JRaftServer {
             // Ensure that each Raft Group has its own configuration and NodeOptions
             Configuration configuration = conf.copy();
             NodeOptions copy = nodeOptions.copy();
+            // NodeOptions.copy() does not preserve the selected service factory.
+            copy.setServiceFactory(serviceFactory);
             JRaftUtils.initDirectory(parentPath, groupName, copy);
             
             // Here, the LogProcessor is passed into StateMachine, and when the StateMachine
