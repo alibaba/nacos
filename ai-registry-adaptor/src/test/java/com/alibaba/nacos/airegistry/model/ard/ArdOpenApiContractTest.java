@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.airegistry.model.ard;
 
+import com.alibaba.nacos.airegistry.contract.ArdContractSchemas;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -25,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -39,6 +44,120 @@ class ArdOpenApiContractTest {
         "/ard-spec/5fa2f5aef790b478319f6a3b43adf4661b0ed0e0/ard.openapi.yaml";
     
     private static Map<String, Object> document;
+    
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    
+    private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
+    
+    @Test
+    void shouldRejectMissingModifiedAndUnpinnedFixtures() {
+        assertThrows(IllegalStateException.class, () -> new ArdContractSchemas(path -> null));
+        assertThrows(IllegalStateException.class,
+            () -> new ArdContractSchemas(path -> new java.io.ByteArrayInputStream(
+                "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+        assertThrows(RuntimeException.class,
+            () -> CONTRACTS.schema(ArdContractSchemas.CURRENT, "missing.schema.json", ""));
+        assertEquals("ard:mediaType", loadCurrentContext().path("@context").path("type").asText());
+    }
+    
+    @Test
+    void shouldValidateCompleteEntriesAndEmptyManifests() {
+        ObjectNode entry = completeEntry();
+        assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        for (String field : List.of("identifier", "displayName", "type", "url")) {
+            ObjectNode invalid = entry.deepCopy();
+            invalid.remove(field);
+            assertFalse(CONTRACTS.validateEntry("ArdEntry", invalid).isEmpty(), field);
+        }
+        entry.set("data", MAPPER.createObjectNode());
+        assertFalse(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        entry.remove("url");
+        assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        ObjectNode manifest = MAPPER.createObjectNode();
+        manifest.putArray("entries");
+        assertTrue(CONTRACTS.validateEntry("ArdManifest", manifest).isEmpty());
+        manifest.remove("entries");
+        assertFalse(CONTRACTS.validateEntry("ArdManifest", manifest).isEmpty());
+    }
+    
+    @Test
+    void shouldValidatePartialResultsAndSharedResponseIntersection() {
+        ObjectNode item = completeEntry();
+        ObjectNode response = MAPPER.createObjectNode();
+        response.putArray("items").add(item);
+        assertValidBoth("ListResponse", response);
+        item.remove(List.of("displayName", "type", "url"));
+        assertTrue(CONTRACTS.validateResponse(ArdContractSchemas.CURRENT, "ListResponse", response)
+            .isEmpty());
+        assertFalse(CONTRACTS.validateResponse(ArdContractSchemas.LEGACY, "ListResponse", response)
+            .isEmpty());
+        item.remove("identifier");
+        assertFalse(CONTRACTS.validateResponse(ArdContractSchemas.CURRENT, "ListResponse", response)
+            .isEmpty());
+        
+        item = completeEntry().put("score", 80).put("source",
+            "https://registry.example.com/v3/ai/ard");
+        response = MAPPER.createObjectNode();
+        response.putArray("results").add(item);
+        assertValidBoth("SearchResponse", response);
+        item.remove(List.of("displayName", "type", "url"));
+        assertTrue(CONTRACTS
+            .validateResponse(ArdContractSchemas.CURRENT, "SearchResponse", response).isEmpty());
+        assertFalse(CONTRACTS
+            .validateResponse(ArdContractSchemas.LEGACY, "SearchResponse", response).isEmpty());
+        for (String field : List.of("identifier", "score", "source")) {
+            ObjectNode invalid = item.deepCopy();
+            invalid.remove(field);
+            assertFalse(CONTRACTS.schema(ArdContractSchemas.CURRENT, "ard.openapi.yaml",
+                "/components/schemas/SearchResultItem").validate(invalid).isEmpty(), field);
+        }
+        for (double score : new double[] {-1, 101, 1.5}) {
+            item.put("score", score);
+            assertFalse(
+                CONTRACTS.validateResponse(ArdContractSchemas.CURRENT, "SearchResponse", response)
+                    .isEmpty());
+        }
+        item.put("score", 80).put("source", "/relative");
+        assertFalse(CONTRACTS
+            .validateResponse(ArdContractSchemas.CURRENT, "SearchResponse", response).isEmpty());
+    }
+    
+    @Test
+    void shouldValidateExtensionsAndLowercaseTrustSeparately() {
+        ObjectNode entry = completeEntry();
+        entry.putObject("@context").put("custom", "https://example.com/custom#");
+        entry.put("custom:field", "value");
+        entry.putObject("trustManifest").put("customProof", "framework-owned");
+        assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty(),
+            "Unmodified upstream property is uppercase");
+        assertFalse(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
+        ((ObjectNode) entry.get("trustManifest")).put("identity", "https://example.com/workload");
+        assertTrue(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
+        entry.remove("trustManifest");
+        assertTrue(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
+    }
+    
+    private static ObjectNode completeEntry() {
+        return MAPPER.createObjectNode().put("identifier", "urn:air:example.com:skill:demo")
+            .put("displayName", "Demo").put("type", "application/agent-skills+zip")
+            .put("url", "https://example.com/skill.zip");
+    }
+    
+    private void assertValidBoth(String definition, ObjectNode response) {
+        for (String version : List.of(ArdContractSchemas.LEGACY, ArdContractSchemas.CURRENT)) {
+            var errors = CONTRACTS.validateResponse(version, definition, response);
+            assertTrue(errors.isEmpty(), errors.toString());
+        }
+    }
+    
+    private static com.fasterxml.jackson.databind.JsonNode loadCurrentContext() {
+        try (InputStream input = ArdOpenApiContractTest.class.getResourceAsStream(
+            "/ard-spec/" + ArdContractSchemas.CURRENT + "/ard.context.jsonld")) {
+            return MAPPER.readTree(input);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
     
     @BeforeAll
     static void loadOpenApi() {

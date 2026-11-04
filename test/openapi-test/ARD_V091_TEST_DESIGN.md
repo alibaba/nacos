@@ -127,7 +127,9 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 每行可展开为参数化案例；ID 是需求追踪标识，不表示已存在同名 Java 方法。
 设计状态Planned表示用例已列出，待决项为Blocked by design（注明P编号）；
 执行状态另记Not run/Pass/Fail/Blocked，不能把设计已写当测试通过。
-DOC-C01-01的文档核验随设计PR记录；其余产品测试当前均为Not run。
+DOC-C01-01的文档核验随设计PR记录。C02的UT-C02-01..04已实现于
+`ArdOpenApiContractTest`，复用离线`ArdContractSchemas`；2026-11-04执行通过，
+连同既有契约/服务基线共41项通过。C02无HTTP变化，其余新增产品测试仍为Not run。
 待决策略不能先写成强制失败预期。
 
 <a id="c01"></a>

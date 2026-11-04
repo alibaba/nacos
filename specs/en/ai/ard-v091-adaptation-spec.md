@@ -16,8 +16,11 @@
 
 # ARD v0.91 Adaptation Design
 
-Status: proposal dated 2026-11-04; not implemented. This document defines the
-target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
+Implementation status (2026-11-04): C02 dual-version offline schema validation is
+implemented; the remaining runtime changes are pending. This does not promote the
+current conformance baseline.
+
+This document defines the target contract. The [AI Registry Adaptor Spec](ai-registry-adaptor-spec.md)
 continues to describe current behavior. Maintainer discussion of the design
 and spec changes precedes implementation; opening an issue is not design approval.
 
