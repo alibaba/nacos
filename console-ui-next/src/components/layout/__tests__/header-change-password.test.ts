@@ -81,3 +81,10 @@ describe('Header sidebar and user menu wiring', () => {
     expect(userMenuBlock).toContain('<span className="truncate">{username}</span>');
   });
 });
+
+describe('Header navigation responsive layout', () => {
+  it('prevents center navigation from overflowing header actions', () => {
+    expect(HEADER_SOURCE).toContain('min-w-0');
+    expect(HEADER_SOURCE).toContain('hidden xl:flex');
+  });
+});
