@@ -285,6 +285,10 @@ nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}
 nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}
 nacos.ai.mcp.resource.reconciliation.interval-seconds=1
 nacos.ai.resource.search.index.reconcile.interval-seconds=1
+# JRaft takes the first snapshot of each group at a random time within 30 minutes after the start,
+# which a job reaches only sometimes. Take them every 30 seconds, so that the snapshot code (for
+# example the Hessian serialization of the persistent naming data) runs in every job.
+nacos.core.protocol.raft.data.snapshot_interval_secs=30
 EOF
 
     log "Executable"

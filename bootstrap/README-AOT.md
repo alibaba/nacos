@@ -280,6 +280,10 @@ second reconciliation intervals for the MCP cutover and the search index. The jo
 from AOT output does not apply `-Dlogging.config` and would otherwise log to
 `${user.home}/nacos/logs`.
 
+The Raft snapshot interval is 30 seconds instead of 30 minutes. JRaft takes the first snapshot of
+each group at a random time within the first interval, so a job of twenty minutes would reach the
+code that saves the persistent naming data, the naming metadata and the locks only by chance.
+
 Tests that fail for a reason that does not depend on the Native executable are listed in
 `test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job. At present these
 are the tests that call the ARD adaptor on port 9080, which the default build leaves off because
