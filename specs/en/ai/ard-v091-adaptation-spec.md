@@ -19,7 +19,7 @@
 Implemented scope: dual-version offline schemas, host manifest discovery, query-example projections
 and JSON-LD context resolution, Search query-context matching and Explore query/facet-context
 matching, and the 100-item Search page-size cap.
-Trust authority policy and final conformance acceptance remain pending.
+Trust declarations use the consistency policy in section 5.2. Full conformance acceptance remains pending.
 The current conformance baseline is not promoted.
 
 This document defines the target contract. The [AI Registry Adaptor
@@ -58,8 +58,7 @@ References are pinned. Inputs and assertions live in the
 [unified test design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md);
 current-code evidence and migration live in the
 [compatibility review](../../../test/openapi-test/ARD_V091_COMPATIBILITY_REVIEW.md).
-Context loading policy is defined in section 4.1; trust authority handling remains unresolved in
-section 5.2.
+Context loading and trust declaration policies are defined in sections 4.1 and 5.2.
 
 | Difference | ARD source | Target summary | Strength/verification |
 | --- | --- | --- | --- |
@@ -221,7 +220,8 @@ ArdQueryMapper converts resolved terms to existing Search Core inputs:
 - type/mediaType to resourceType and Agent artifactKinds, selecting before pagination;
 - version to resourceVersion and metadata.resourceType to resourceType;
 - tags, capabilities and displayName to existing domain predicates;
-- publisher, publisherId, source and trustManifest.* to adaptor-derived values;
+- source to the Registry endpoint; publisher, publisherId and trustManifest.* return
+  400 because resource identity data is not available (section 5.2);
 - supported metadata.* to existing domain facets, without an ARD IRI index.
 
 This work adds IRI semantics to searchable fields without arbitrary vocabulary
@@ -301,8 +301,7 @@ identifying an invalid cursor/token, without freezing its exact wording. Do not 
 TOKEN_EXPIRED, a recovery flag, TTL, version negotiation, persistent snapshots or
 legacy token converters. Errors contain neither successful results nor a new
 pageToken. The server must not silently restart or turn an invalid token into a
-successful empty response. Existing protocol prefilters may still return 200 with
-an empty result and no token before pagination validation. Preserve authentication
+successful empty response. Existing protocol prefilters may still return 200 with an empty result and no token before pagination validation. Preserve authentication
 and other request-error precedence rather than relabel them as token failures.
 
 Client upgrade guidance and the explicit recovery workflow in IT:
@@ -356,35 +355,78 @@ the registry, while other complete-entry projections are verified by component t
 
 ### 5.2 Publisher and trust
 
-Preserve URN encoding and catalog.host.identifier semantics. Never infer or
-rewrite identity from the request Host header. The default nacos value remains
-a legacy local identifier. Domain-anchored deployment claims require an
-explicit organization-controlled FQDN. Changing publisher changes URNs and
-requires an explicit identity migration notice, not automatic substitution.
+ARD binds identity per entry: the trust authority belongs to the publisher in
+that entry's identifier. A Registry is a resource of its own. Indexed resources
+do not inherit its publisher or trust declaration. Nacos does not yet provide a
+cross-resource publisher authorization, resource trust storage and indexing
+contract. Resource owner, version author, Agent provider, request Host and
+artifact URL are not publisher identity sources.
 
-Omit trustManifest when identity is unconfigured. ARD section 4.5.1 requires authority binding while
-section 4.5.2 delegates
-verification to the declared framework. The handling of an actual
-conflict or an unverifiable identity, including migration, still needs an agreed policy.
-ARD specifies neither an HTTPS/SPIFFE/did:web allowlist nor startup failure
-for an unknown DID. A known conflict cannot
-be called conformant; unknown verification cannot be called verified.
-Concrete HTTP/startup/export policy needs a Nacos design and positive/negative
-tests, not an inference from the ARD error-code table. String-domain matching
-does not prove certificates, signatures, ownership or attestations.
-Schema/semantic tests may proceed; new production rejection rules require that policy first.
+`nacos.ai.ard.registry.publisher` identifies only the Registry entry's publisher.
+An explicit value must be an ASCII FQDN (punycode is supported), normalized to
+lowercase without a final root dot. It is not an access URL, does not establish
+DNS existence or ownership, and does not change ordinary resource identifiers.
+When both publisher and trust are absent, the Registry retains its legacy
+identifier for compatibility; the default `nacos` does not claim FQDN conformance.
 
-Keep lowercase trustManifest, require identity and allow framework-defined
-members, without automatically exporting internal configuration.
-No trustSchema/attestation management API or cryptographic verification framework
-is added here. Future verification follows the declared trustSchema framework.
-Score remains semantic relevance only.
+Ordinary resources retain their existing identifier encoding, including the
+historic `nacos.ai.ard.catalog.host.identifier` prefix. These are compatibility
+identifiers, not established resource publisher records. Do not use this setting
+to declare resource ownership or change it during an upgrade: changing this
+legacy prefix changes old resource identifiers. Resource publisher registration,
+legacy URN migration and strict ARD export without a publisher remain unsupported;
+this adaptor does not claim complete publisher-authority conformance.
 
-The pinned upstream EntryFields schema spells its property TrustManifest while
-the prose and context use trustManifest. Vendor the original unchanged; add
-independent semantic assertions for the lowercase field. Do not silently patch
-the fixture to obtain a passing result. The official runner does not prove
-authority binding or signature verification.
+`nacos.ai.ard.catalog.trust.identity` and `identity-type` describe only the Registry.
+An absent or blank identity omits its trustManifest. A configured identity requires
+an explicit registry.publisher and never borrows the legacy resource prefix.
+Ordinary resource entries never copy trustManifest from these settings.
+
+| Identity form | Offline check on the Registry declaration |
+| --- | --- |
+| HTTPS URI | Host matches the Registry publisher; reject user-info or invalid host/port. |
+| SPIFFE ID | Lowercase trust-domain authority; reject user-info, port, query or fragment. |
+| did:web | ASCII DNS name (including punycode), not IP, in the first method-specific segment; optional port uses `%3A`, followed by optional path segments. |
+| Other schemes or DID methods | Retain as unverified declarations; unknown does not mean invalid or verified. |
+
+HTTPS/did:web comparison ignores case, one final DNS root dot and valid ports;
+SPIFFE trust-domain dots are preserved. No suffix/subdomain matching, DNS lookup,
+remote DID resolution, delegation inference or certificate/signature verification
+is performed. identity-type is only a hint and cannot bypass recognized identity
+checks. Equal authorities do not prove ownership.
+
+Invalid Registry publisher, identity without an explicit publisher, or a malformed
+or conflicting recognized identity makes the Manifest, host Catalog and namespace
+Catalog fail with HTTP500 / INTERNAL_ERROR. The namespace Catalog also publishes
+the Registry entry and cannot export that inconsistent document; no declaration
+is silently removed to return partial success. Startup remains possible and
+authentication401 retains precedence. Ordinary Search, List, Explore, raw Artifact
+and canonical resource management do not read these Registry declarations and
+remain usable under their normal request/authorization contracts, including empty
+results. This 500 denotes server configuration failure, not an ARD-mandated status.
+Correct configuration and restart to restore Registry documents; rollback does
+not constitute successful trust verification.
+
+Resource publisher/publisherId and trustManifest paths have no authoritative data
+source yet. Search/Explore filters, Explore facets and legacy List filters on
+these dimensions return HTTP400 / INVALID_ARGUMENT, including aliases, full IRIs
+and legacy query.filters. No global constant supplies fabricated matches or
+counts. source remains the Registry endpoint and supports filtering/aggregation.
+Missing optional resource trust does not change ordinary query eligibility.
+
+The new Registry Manifest preserves nonempty custom identity-type hints. Legacy
+Registry Catalog/host projections retain the four hints spiffe, did, https and
+other. The trust envelope remains open to framework extensions, but no resource
+trustSchema/attestation management API is added. Search score remains semantic
+relevance only. Resource declaration authorization/admission, version/digest
+binding, separate verification records and framework verification are future
+capabilities, not supplied by global configuration or arbitrary extension JSON.
+See [ARD section4.5.1–4.5.2][s08] and [Appendix C][urn].
+
+The pinned upstream EntryFields schema spells TrustManifest with a capital letter,
+while prose/context use lowercase. Preserve the fixture and independently check
+the lowercase member. Schema validity does not establish authority, ownership
+or valid signatures.
 
 ### 5.3 URLs, types and pagination
 
@@ -408,18 +450,11 @@ Short or empty pages may carry continuation tokens and are not an end signal.
 
 ## 6. Acceptance matrix
 
-Before changing production code for each feature, design three layers from
-protocol and existing behavior: committed correctness UT/IT with success and
-expected errors, local-only cross tests, and existing before/after regression.
-See the [ARD v0.91 Test Design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md)
-for fixtures, assertions, case IDs and reusable classes. Do not invent failure
-expectations for unresolved policies such as trust authority handling. Track design, implementation
-and
-execution separately.
-
-Each HTTP behavior commit updates standalone IT, scenario documentation and the
-coverage registry. Do not postpone all IT to the final commit or substitute
-mock-controller assertions for live HTTP evidence.
+Acceptance combines correctness UT, standalone HTTP IT, deployment variations and
+regression coverage. See the [ARD v0.91 Test Design](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md)
+for fixtures, assertions, case IDs and reusable classes. Failure expectations follow
+the documented runtime policies. Scenario and coverage records distinguish implemented,
+executed and still-pending cases; controller mocks do not substitute for HTTP evidence.
 
 | Scenario | Minimum acceptance |
 | --- | --- |
@@ -433,7 +468,7 @@ mock-controller assertions for live HTTP evidence.
 | A08 Cursor | Basic anchors/enhanced hashes; same-version continuation, deterministic 400 and original-query restart; equivalent mappings, page-size changes and empty pages. Cross-version survival is not a gate; mixed runs are optional. |
 | A09 Explore | Aliased keys, duplicate/unknown fields, empty buckets and complete-set/base Search agreement. |
 | A10 Examples | 0/1/2/5/6 examples, deduplication, old/new projection, eligibility and Registry examples. |
-| A11 Trust | Missing identity, authority match/conflict/unknown and framework openness; runtime errors depend on the policy in section 5.2, without a scheme allowlist. |
+| A11 Trust | Missing identity, authority match/conflict/unknown and framework openness; only Registry-bearing documents reject invalid Registry identity with 500; resource queries remain usable without inherited trust, unsupported identity dimensions return 400, and new/legacy hint projections remain compatible. |
 | A12 URLs/types | Base versus endpoint URLs, extensions, multisegment/Unicode URNs and stable identifiers. |
 | A13 Pagination | Search 10/50/51/100/101, zero/negative/type errors, List boundaries and namespace filters. |
 | A14 Artifacts | Four nonempty resource kinds, pure/multiprotocol/older-A2A Agent cases, ZIP, version/digest, offline and Runtime exclusion. |

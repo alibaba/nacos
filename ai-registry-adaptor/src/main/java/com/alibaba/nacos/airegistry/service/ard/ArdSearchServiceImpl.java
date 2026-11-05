@@ -104,13 +104,15 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private static final String KEY_CATALOG_HOST_DOCUMENTATION_URL =
         "nacos.ai.ard.catalog.host.documentation-url";
     
+    private static final String KEY_REGISTRY_PUBLISHER = "nacos.ai.ard.registry.publisher";
+    
     private static final String KEY_CATALOG_TRUST_IDENTITY =
         "nacos.ai.ard.catalog.trust.identity";
     
     private static final String KEY_CATALOG_TRUST_IDENTITY_TYPE =
         "nacos.ai.ard.catalog.trust.identity-type";
     
-    private static final Pattern CATALOG_PUBLISHER_IDENTIFIER = Pattern.compile("[A-Za-z0-9.-]+");
+    private static final Pattern LEGACY_IDENTIFIER_PREFIX = Pattern.compile("[A-Za-z0-9.-]+");
     
     private static final String LIST_FIELD_PATH_REGEX =
         "[A-Za-z_][A-Za-z0-9_-]*(?:\\.[A-Za-z_][A-Za-z0-9_-]*)*";
@@ -252,9 +254,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
                 key = "resourceVersion";
             } else if ("metadata.resourceType".equals(key)) {
                 key = "resourceType";
-            } else if (!"type".equals(key) && !"publisher".equals(key)
-                && !"publisherId".equals(key) && !"source".equals(key)
-                && !key.startsWith("trustManifest.")) {
+            } else if (!"type".equals(key) && !"source".equals(key)) {
                 key = filter.field();
             } else {
                 continue;
@@ -288,14 +288,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             if ("source".equals(field) && !matchesConstantFilter(filter.values(), sourceUri())) {
                 return false;
             }
-            if (("publisher".equals(field) || "publisherId".equals(field))
-                && !matchesConstantFilter(filter.values(), catalogPublisherIdentifier())) {
-                return false;
-            }
-            if (field.startsWith("trustManifest.") && !matchesFilterValues(filter.values(),
-                nestedValues(trustManifest(), field.substring("trustManifest.".length())))) {
-                return false;
-            }
         }
         return true;
     }
@@ -303,43 +295,6 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     private boolean matchesConstantFilter(List<String> expected, String actual) {
         return expected == null || expected.isEmpty()
             || equalsIgnoreCase(expected, actual);
-    }
-    
-    private List<String> nestedValues(Object value, String path) {
-        List<String> result = new ArrayList<>();
-        addNestedValues(value, path.split("\\."), 0, result);
-        return result;
-    }
-    
-    private void addNestedValues(Object value, String[] path, int index, List<String> result) {
-        if (value == null) {
-            return;
-        }
-        if (value instanceof Collection) {
-            for (Object item : (Collection<?>) value) {
-                addNestedValues(item, path, index, result);
-            }
-            return;
-        }
-        if (index == path.length) {
-            result.add(String.valueOf(value));
-            return;
-        }
-        if (value instanceof Map) {
-            addNestedValues(((Map<?, ?>) value).get(path[index]), path, index + 1, result);
-        }
-    }
-    
-    private boolean matchesFilterValues(List<String> expected, List<String> actual) {
-        if (expected == null || expected.isEmpty()) {
-            return true;
-        }
-        for (String value : actual) {
-            if (equalsIgnoreCase(expected, value)) {
-                return true;
-            }
-        }
-        return false;
     }
     
     private String property(String key, String defaultValue) {
@@ -379,6 +334,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
                 e, e.getMessage());
         }
+        validateSupportedFilters(filter);
         SearchContext context = new SearchContext();
         context.namespaceId = StringUtils.isBlank(request.getNamespaceId())
             ? com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID
@@ -408,6 +364,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         try {
             ArdTermPathResolver resolver = mapper.resolver(query);
             context.filter = mapper.map(query, resolver);
+            validateSupportedFilters(context.filter);
             context.facets = normalizeFacets(request.getResultType().getFacets(), resolver);
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
@@ -429,12 +386,29 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         Map<String, List<String>> normalized = normalizeListFilter(filter, context);
         validateFilterKeys(normalized.keySet());
         context.filter = ArdQueryMapper.legacy(normalized);
+        validateSupportedFilters(context.filter);
         context.kinds = resolveKinds(context.filter);
         context.resourceTypes = resourceTypes(context.kinds);
         context.pageSize = normalizeListPageSize(pageSize);
         context.pageToken = pageToken;
         parseOrderBy(orderBy, context);
         return context;
+    }
+    
+    private void validateSupportedFilters(List<ArdQueryMapper.Filter> filters)
+        throws NacosApiException {
+        for (ArdQueryMapper.Filter filter : filters) {
+            validateResourceField(filter.field());
+        }
+    }
+    
+    private void validateResourceField(String field) throws NacosApiException {
+        if ("publisher".equals(field) || "publisherId".equals(field)
+            || "trustManifest".equals(field) || field.startsWith("trustManifest.")) {
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Unsupported ARD resource identity field: " + field);
+        }
     }
     
     private String normalizeNamespaceId(String namespaceId) {
@@ -454,6 +428,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             String field = facet.getField().trim();
             ArdFacetRequest normalized = new ArdFacetRequest();
             normalized.setField(resolver.resolve(field));
+            validateResourceField(normalized.getField());
             normalized.setLimit(facetLimit(facet.getLimit()));
             normalized.setMinCount(facet.getMinCount() == null ? 1
                 : Math.max(1, facet.getMinCount()));
@@ -729,13 +704,13 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             metadata.put("createdAt", formatTimestamp(entry.getGmtCreate()));
         }
         result.setMetadata(metadata);
-        result.setTrustManifest(trustManifest());
     }
     
     private ArdHostInfo hostInfo() {
         ArdHostInfo host = new ArdHostInfo();
         host.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
-        String identifier = catalogHostIdentifier();
+        String identifier = StringUtils.isBlank(property(KEY_REGISTRY_PUBLISHER, ""))
+            ? catalogHostIdentifier() : registryPublisherIdentifier();
         if (StringUtils.isNotBlank(identifier)) {
             host.setIdentifier(identifier);
         }
@@ -743,13 +718,14 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if (StringUtils.isNotBlank(documentationUrl)) {
             host.setDocumentationUrl(documentationUrl);
         }
-        host.setTrustManifest(trustManifest());
+        host.setTrustManifest(registryTrustManifest());
         return host;
     }
     
     @Override
     public ArdManifest hostManifest() {
         ArdCatalogEntry entry = registryEntry();
+        entry.setTrustManifest(registryTrustManifest(false));
         entry.setRepresentativeQueries(List.of(
             "Find agents, skills, prompts and MCP servers for a task",
             "Find AI resources by capability, type and tags"));
@@ -765,7 +741,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     }
     
     private void populateRegistryEntry(ArdCatalogEntry result) {
-        result.setIdentifier("urn:air:" + catalogPublisherIdentifier() + ":registry:nacos");
+        result.setIdentifier("urn:air:" + registryPublisherIdentifier() + ":registry:nacos");
         result.setDisplayName(property(KEY_CATALOG_HOST_DISPLAY_NAME, "Nacos AI Registry"));
         result.setType(ArdProtocolConstants.MEDIA_TYPE_REGISTRY);
         result.setUrl(withBaseUrl(ArdProtocolConstants.CLIENT_PATH));
@@ -779,7 +755,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         metadata.put("artifactEndpoint", endpoints().get("artifacts"));
         metadata.put("resourceTypes", "agent,skill,prompt,mcp");
         result.setMetadata(metadata);
-        result.setTrustManifest(trustManifest());
+        result.setTrustManifest(registryTrustManifest());
     }
     
     private Map<String, String> endpoints() {
@@ -835,7 +811,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             || StringUtils.isBlank(entry.getResourceName())) {
             return null;
         }
-        return "urn:air:" + catalogPublisherIdentifier() + ":"
+        return "urn:air:" + legacyIdentifierPrefix() + ":"
             + encodeIdentifierSegment(entry.getNamespaceId()) + ":"
             + encodeIdentifierSegment(entry.getResourceType()) + ":"
             + encodeIdentifierSegment(entry.getResourceName());
@@ -866,15 +842,24 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         return url.toString();
     }
     
-    private Map<String, Object> trustManifest() {
+    private Map<String, Object> registryTrustManifest() {
+        return registryTrustManifest(true);
+    }
+    
+    private Map<String, Object> registryTrustManifest(boolean legacy) {
         String identity = property(KEY_CATALOG_TRUST_IDENTITY, "");
         if (StringUtils.isBlank(identity)) {
             return null;
         }
+        if (StringUtils.isBlank(property(KEY_REGISTRY_PUBLISHER, ""))) {
+            throw new IllegalStateException("ARD Registry trust requires an explicit publisher");
+        }
+        ArdTrustIdentityValidator.validate(registryPublisherIdentifier(), identity);
         Map<String, Object> trustManifest = new LinkedHashMap<>();
         trustManifest.put("identity", identity);
         String identityType = property(KEY_CATALOG_TRUST_IDENTITY_TYPE, "");
-        if (Arrays.asList("spiffe", "did", "https", "other").contains(identityType)) {
+        if (StringUtils.isNotBlank(identityType) && (!legacy
+            || Arrays.asList("spiffe", "did", "https", "other").contains(identityType))) {
             trustManifest.put("identityType", identityType);
         }
         return trustManifest;
@@ -976,9 +961,15 @@ public class ArdSearchServiceImpl implements ArdSearchService {
             ArdProtocolConstants.DEFAULT_CATALOG_HOST_IDENTIFIER);
     }
     
-    private String catalogPublisherIdentifier() {
+    private String registryPublisherIdentifier() {
+        String publisher = property(KEY_REGISTRY_PUBLISHER, "");
+        return StringUtils.isBlank(publisher) ? legacyIdentifierPrefix()
+            : ArdTrustIdentityValidator.normalizePublisher(publisher);
+    }
+    
+    private String legacyIdentifierPrefix() {
         String identifier = catalogHostIdentifier();
-        return CATALOG_PUBLISHER_IDENTIFIER.matcher(identifier).matches()
+        return LEGACY_IDENTIFIER_PREFIX.matcher(identifier).matches()
             ? identifier : encodePublisherIdentifier(identifier);
     }
     
@@ -1015,8 +1006,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
         if ("version".equals(field)) {
             return "resourceVersion";
         }
-        if ("publisher".equals(field) || "publisherId".equals(field)
-            || "source".equals(field) || field.startsWith("trustManifest.")) {
+        if ("source".equals(field)) {
             return null;
         }
         return field;
@@ -1148,17 +1138,7 @@ public class ArdSearchServiceImpl implements ArdSearchService {
     }
     
     private String protocolFacetValue(String field) {
-        if ("publisher".equals(field) || "publisherId".equals(field)) {
-            return catalogPublisherIdentifier();
-        }
-        if ("source".equals(field)) {
-            return sourceUri();
-        }
-        if (field.startsWith("trustManifest.")) {
-            Map<String, Object> trust = trustManifest();
-            return trust == null ? null : stringValue(trust.get(field.substring(14)));
-        }
-        return null;
+        return "source".equals(field) ? sourceUri() : null;
     }
     
     private String protocolFacetValue(String field, String value) {

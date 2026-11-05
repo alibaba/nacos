@@ -795,3 +795,21 @@ independence from Card requirements, absent/null/empty lists, and controlled HTT
 for malformed or flat Skill structures. See the A2A Skill scenario matrix in
 `ADMIN_API_TEST_SCENARIOS.md`. This extends an existing surface; row classifications,
 strict/effective coverage totals, API paths, and storage mechanisms are unchanged.
+
+## ARD trust declaration consistency
+
+The existing five adaptor surface rows additionally cover Registry-scoped identity
+through `ArdAdaptorOpenApiITCase.testConfiguredTrustDeclaration`. Default CI verifies
+omission and `testResourceIdentityDimensionsAreUnsupported` verifies 400 responses for
+unavailable resource identity filters/facets (aliases, full IRIs and legacy filters).
+Configured standalone deployments cover recognized matches, unknown/custom hints,
+missing or malformed Registry publisher, identity mismatch and malformed authority.
+Only manifest and catalogs containing the Registry reject bad Registry configuration
+with the ARD 500 envelope. Nonempty Search/List/type Explore and Artifact remain usable;
+ordinary resources never inherit Registry trust. Authentication and request-validation
+priority, schemas and resource IDs across Registry identity changes are checked.
+See the [deployment scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-trust-declaration-consistency).
+These extend existing rows, so strict 40% and effective 70% coverage remain unchanged;
+`DAUTH-F03` remains disabled and is not counted as passed. Resource publisher/trust
+registration, authorization, storage and indexing remain unsupported, not covered by
+substituting Registry configuration.
