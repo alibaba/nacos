@@ -26,6 +26,7 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
@@ -83,6 +84,13 @@ def check_launcher(root, work):
     assert subprocess.run(["bash", str(script)], capture_output=True, timeout=15).returncode != 0
 
 
+def check_bundled_metadata(root):
+    """The bundled reachability metadata must stay canonical and free of machine specific data."""
+    script = root / "test/scripts/native-metadata.py"
+    for command in ("selftest", "check"):
+        subprocess.run([sys.executable, "-I", str(script), command], cwd=root, check=True, timeout=60)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--maven", default="mvn")
@@ -95,6 +103,9 @@ def main():
     work = work.resolve()
     native = root / "bootstrap/target/native"
     results = []
+    check_bundled_metadata(root)
+    results.append({"case": "bundled-native-metadata", "passed": True})
+    print("bundled-native-metadata PASS", flush=True)
     command = [args.maven, "-B", *args.maven_arg, "-Dmaven.test.skip=true"]
 
     def run(name, options, failure=None):
