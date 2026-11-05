@@ -1,0 +1,98 @@
+# Builds the Nacos Server as a GraalVM Native Image (PostgreSQL, standalone, merged deployment) and
+# runs the repository's standalone-server integration suites against the executable.
+#
+# Native compilation needs about 10 GB of RAM, so this job runs on GitHub-hosted runners instead of
+# the self-hosted pull request checks. Every step only calls a stage of test/scripts/native-ci.sh,
+# which is also the way to reproduce the job elsewhere. See bootstrap/README-AOT.md.
+#
+# To run it on a fork without opening a pull request, push a branch named native-ci/<name>.
+
+name: Native Image
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ develop ]
+    paths:
+      - 'bootstrap/**'
+      - 'distribution/**'
+      - 'persistence/src/main/resources/META-INF/native-image/**'
+      - 'consistency/src/main/resources/META-INF/native-image/**'
+      - 'naming/src/main/resources/META-INF/native-image/**'
+      - 'test/scripts/native-*'
+      - '.github/workflows/native-image.yml'
+      - 'pom.xml'
+  push:
+    branches: [ 'native-ci/**' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-image:
+    name: Native Server (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        # 'exact' builds with --exact-reachability-metadata and reports every dynamic access that has
+        # no metadata, which is how gaps in the bundled metadata are found.
+        variant: [ default, exact ]
+    env:
+      NATIVE_CI_VARIANT: ${{ matrix.variant }}
+      NATIVE_CI_OUT: ${{ github.workspace }}/ci-out
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: nacos
+          POSTGRES_PASSWORD: nacos
+          POSTGRES_DB: nacos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nacos -d nacos"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM 25
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+
+      - name: Prepare database, credentials and build options
+        run: bash test/scripts/native-ci.sh prepare
+
+      - name: Build the Native distribution
+        run: bash test/scripts/native-ci.sh build
+
+      - name: Start the Native Server
+        run: bash test/scripts/native-ci.sh start
+
+      - name: Smoke test
+        run: bash test/scripts/native-ci.sh smoke
+
+      - name: Integration tests
+        run: bash test/scripts/native-ci.sh integration
+
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: bash test/scripts/native-ci.sh report
+
+      - name: Upload diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-diagnostics-${{ matrix.variant }}
+          path: ci-out
+          if-no-files-found: ignore
