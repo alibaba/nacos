@@ -155,8 +155,8 @@ switch that is replicated. The bundle covers the Hessian and Jackson payloads of
 well. They were serialized and read back through the serializers of the Server on a JVM under the
 tracing agent, and a Native executable that saw only the bundled metadata printed what the JVM
 printed. The Native CI job asks JRaft for snapshots every 30 seconds, so the code that saves them
-runs in every job. It does not restart the Server, so the code that loads them is covered by those
-round trips alone.
+runs in every job, and it restarts the Server once after the suites, so that the code that loads a
+snapshot and replays the log behind it runs with data of its own.
 
 It was traced on standalone, merged-deployment Servers with an external datasource, which is also
 the combination the [Native CI job](#the-native-ci-job) validates. It does **not** cover embedded
@@ -273,7 +273,8 @@ above.
 
 `.github/workflows/native-image.yml` builds the Native distribution on a GitHub-hosted runner,
 starts it with `bin/startup-native.sh`, runs the smoke test (`test/scripts/native-smoke.sh`) and
-the standalone OpenAPI, Java SDK and Maintainer SDK suites against the executable, and reports.
+the standalone OpenAPI, Java SDK and Maintainer SDK suites against the executable, restarts it once
+with data of its own, and reports.
 The datasource is a structural choice of the build, so every database is compiled on its own, in
 two variants: `default` is the build that users get, and `exact` is the diagnostic build above.
 
@@ -294,6 +295,13 @@ from AOT output does not apply `-Dlogging.config` and would otherwise log to
 The Raft snapshot interval is 30 seconds instead of 30 minutes. JRaft takes the first snapshot of
 each group at a random time within the first interval, so a job of twenty minutes would reach the
 code that saves the persistent naming data, the naming metadata and the locks only by chance.
+
+The integration stage ends with a restart check. `test/scripts/native-restart.sh` creates data that
+no suite creates: a persistent service with a label selector, a persistent instance in a cluster
+with the MYSQL health checker, a naming switch that the Raft group replicates and a configuration.
+The job waits for the snapshot timers, which fire every 30 to 60 seconds, stops the Server with
+SIGTERM, starts it again on the same home and database, and looks for the data. The report stage
+fails the job when a step failed, and it scans the logs of both runs for missing registrations.
 
 Tests that fail for a reason that does not depend on the Native executable are listed in
 `test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job. At present these
