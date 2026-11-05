@@ -49,6 +49,14 @@ DB_PASSWORD="${NATIVE_CI_DB_PASSWORD:-nacos}"
 MVN="${MVN:-mvn}"
 METADATA_TOOL="${ROOT}/test/scripts/native-metadata.py"
 
+# The values of .github/workflows/it-new.yml: the AI integration tests are written for them. The two
+# reconciliation intervals set in stage_start make the background MCP cutover finish within seconds.
+RAD_SERVER_PUBLICATION_CAPACITY=3
+RAD_SERVER_WATCH_CAPACITY=3
+RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY=3
+RAD_CLIENT_PUBLICATION_CAPACITY=3
+RAD_CLIENT_SUBSCRIPTION_CAPACITY=3
+
 cd "$ROOT"
 
 log() {
@@ -112,9 +120,10 @@ stage_prepare() {
     remember NACOS_TEST_AUTH_READONLY_PASSWORD "NacosIt-$(openssl rand -hex 16)-R1!" secret
     remember NACOS_TEST_AUTH_NO_PERMISSION_USERNAME nacos_it_client_no_permission
     remember NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD "NacosIt-$(openssl rand -hex 16)-N1!" secret
-    remember NATIVE_TOKEN_SECRET "$(openssl rand -base64 48 | tr -d '\n')" secret
-    remember NATIVE_SERVER_IDENTITY_KEY "nacos-it-$(openssl rand -hex 8)" secret
-    remember NATIVE_SERVER_IDENTITY_VALUE "$(openssl rand -hex 32)" secret
+    # The tests read these names too: one of them signs a token with the server's own secret.
+    remember NACOS_TEST_AUTH_TOKEN_SECRET "$(openssl rand -base64 48 | tr -d '\n')" secret
+    remember NACOS_TEST_AUTH_SERVER_IDENTITY_KEY "nacos-it-$(openssl rand -hex 8)" secret
+    remember NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE "$(openssl rand -hex 32)" secret
 
     log "Select the Native build variant: ${VARIANT}"
     printf 'spring.sql.init.platform=postgresql\n' > "$WORK/build.properties"
@@ -181,15 +190,24 @@ nacos.plugin.datasource.db.num=1
 nacos.plugin.datasource.db.url.0=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?currentSchema=public
 nacos.plugin.datasource.db.user=${DB_USER}
 nacos.plugin.datasource.db.password=${DB_PASSWORD}
-nacos.plugin.auth.nacos.token.secret.key=${NATIVE_TOKEN_SECRET}
-nacos.core.auth.server.identity.key=${NATIVE_SERVER_IDENTITY_KEY}
-nacos.core.auth.server.identity.value=${NATIVE_SERVER_IDENTITY_VALUE}
+nacos.plugin.auth.nacos.token.secret.key=${NACOS_TEST_AUTH_TOKEN_SECRET}
+nacos.core.auth.server.identity.key=${NACOS_TEST_AUTH_SERVER_IDENTITY_KEY}
+nacos.core.auth.server.identity.value=${NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE}
+nacos.plugin.auth.nacos.anonymous.ai.enabled=true
+nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}
+nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}
+nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}
+nacos.ai.mcp.resource.reconciliation.interval-seconds=1
+nacos.ai.resource.search.index.reconcile.interval-seconds=1
 EOF
 
     log "Executable"
     ls -la "${home}/target"
     ldd "${home}/target/nacos-server" || true
 
+    # Keep the Nacos log files below the Native home, where the checks below and the diagnostics
+    # look for them. Without this property they are written to ${user.home}/nacos/logs.
+    export NACOS_NATIVE_OPTS="${NACOS_NATIVE_OPTS} -Dnacos.logs.path=${home}/logs"
     log "Start the Native Server (NACOS_NATIVE_OPTS=${NACOS_NATIVE_OPTS})"
     bash "${home}/bin/startup-native.sh"
     local started
@@ -202,9 +220,14 @@ EOF
     fi
     echo "Native Server live after $(( ($(date +%s%N) - started) / 1000000 )) ms"
     # Like it-new.yml: MCP lifecycle APIs are unavailable until the background cutover is persisted.
-    if ! timeout 120s bash -c \
+    local marker_started
+    marker_started="$(date +%s)"
+    if timeout 120s bash -c \
         "until grep -R -q 'Persisted permanent MCP LIFECYCLE_MANAGED marker' '${home}/logs' 2>/dev/null; do sleep 1; done"; then
+        echo "MCP LIFECYCLE_MANAGED marker logged $(( $(date +%s) - marker_started )) s after the Server became live"
+    else
         echo "WARNING: the MCP LIFECYCLE_MANAGED marker was not logged within 120 s" >&2
+        ls -la "${home}/logs" >&2 || true
     fi
 }
 
@@ -232,9 +255,20 @@ run_suite() {
 stage_integration() {
     load_state
     local status=0
-    run_suite openapi -pl test/openapi-test verify -Pintegration-test || status=1
+    run_suite openapi -pl test/openapi-test verify -Pintegration-test \
+        -Dnacos.test.auth.anonymous-ai.enabled=true \
+        -Dnacos.test.auth.anonymous-ai.source=STATIC \
+        -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
+        -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
+        -Dnacos.agent.it.server.http.watch.waiter.capacity="$RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY" \
+        || status=1
     run_suite java-sdk -pl test/java-sdk-test verify -Pjava-sdk-integration-test \
         '-Dit.test=ConfigServiceJavaSdkITCase,NamingServiceJavaSdkITCase,LockServiceJavaSdkITCase,AuthEnabledJavaSdkITCase' \
+        -Dnacos.test.auth.anonymous-ai.enabled=true \
+        -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
+        -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
+        -Dnacos.agent.it.client.publication.capacity="$RAD_CLIENT_PUBLICATION_CAPACITY" \
+        -Dnacos.agent.it.client.subscription.capacity="$RAD_CLIENT_SUBSCRIPTION_CAPACITY" \
         || status=1
     run_suite maintainer-sdk -pl test/maintainer-sdk-test verify \
         -Pmaintainer-sdk-integration-test || status=1
