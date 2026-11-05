@@ -95,6 +95,13 @@ public class ConfigRemoteHandler implements ConfigHandler {
         throws NacosException {
         ConfigMaintainerService configMaintainerService = clientHolder.getConfigMaintainerService();
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
+            configForm.validateChangeMessage();
+            if (configForm.getChangeMessage() != null) {
+                return configMaintainerService.publishConfig(configForm.getDataId(),
+                    configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),
+                    configForm.getAppName(), configForm.getSrcUser(), configForm.getConfigTags(),
+                    configForm.getDesc(), configForm.getType(), configForm.getChangeMessage());
+            }
             return configMaintainerService.publishConfig(configForm.getDataId(),
                 configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getContent(), configForm.getAppName(),

@@ -146,6 +146,8 @@
     }
   },
   "config": {
+    "changeMessage": "Комментарий к публикации",
+    "changeMessagePlaceholder": "Необязательно, до 512 символов Unicode",
     "title": "Список конфигураций",
     "newConfig": "Создать конфигурацию",
     "editConfig": "Изменить конфигурацию",

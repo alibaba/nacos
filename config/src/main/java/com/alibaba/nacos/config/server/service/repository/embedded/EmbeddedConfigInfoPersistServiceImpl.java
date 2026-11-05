@@ -234,7 +234,10 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp,
                     srcUser, now, "I",
                     Constants.FORMAL, null,
-                    ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
+                    ConfigExtInfoUtil.withChangeMessage(
+                        ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo,
+                            srcUser),
+                        configInfo.getChangeMessage()));
             }
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
             boolean result = databaseOperate.blockUpdate(consumer);
@@ -634,7 +637,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(),
                     oldConfigAllInfo,
                     srcIp, srcUser, time, "U", Constants.FORMAL, null,
-                    ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
+                    ConfigExtInfoUtil.withChangeMessage(
+                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo),
+                        configInfo.getChangeMessage()));
             }
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             databaseOperate.blockUpdate();
@@ -688,7 +693,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(),
                     oldConfigAllInfo,
                     srcIp, srcUser, time, "U", Constants.FORMAL, null,
-                    ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
+                    ConfigExtInfoUtil.withChangeMessage(
+                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo),
+                        configInfo.getChangeMessage()));
             }
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             boolean success = databaseOperate.blockUpdate();

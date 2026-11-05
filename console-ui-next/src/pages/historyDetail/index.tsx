@@ -333,6 +333,15 @@ export default function HistoryDetailPage() {
         </Card>
       </Collapsible>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('config.changeMessage')}</CardTitle>
+        </CardHeader>
+        <CardContent className="whitespace-pre-wrap break-words">
+          {historyDetail.changeMessage || '-'}
+        </CardContent>
+      </Card>
+
       {/* Content Card */}
       <Card className="min-h-0 flex-1 gap-3 py-4">
         <CardHeader className="px-5">

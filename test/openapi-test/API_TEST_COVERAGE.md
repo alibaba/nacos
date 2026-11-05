@@ -742,6 +742,36 @@ This extends the existing Agent Discover row; API surface totals and strict/effe
 coverage denominators remain unchanged. The optional diagnostic header never changes
 authorization or discovery semantics.
 
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
+
+The `unicodeDetail` history-detail read parses the raw response bytes to avoid the
+known lossy Apache test-response carrier's secondary encoding when the response
+has no charset. The complete Unicode equality assertion remains unchanged. Shared
+public HTTP response handling is outside #10978 and is not fixed by this
+scenario-local read path.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history;
+Maintainer SDK unit tests cover controlled oversized-input exceptions.
+`ConfigRemoteHandlerTest` covers rejection before forwarding with the same
+parameter-validation error, blank-message normalization, and Beta bypass.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.
+
+`ConfigHistoryAdminApiOpenApiITCase#testGrayPublishDoesNotRecordOperationMessage`
+checks that out-of-scope gray publishes omit the message. The Admin case also
+verifies successful CAS messages and unchanged history after a stale-md5
+conflict. Execution results are reported separately from these scenario
+definitions.
+
 ## A2A Skill security requirements (#15975, item 2)
 
 `A2aAdminApiOpenApiITCase` now verifies standard Skill requirement registration/query,

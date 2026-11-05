@@ -215,3 +215,28 @@ independent Console deployment. Agent Runtime assertions require enabled/healthy
 and absence of the removed state field. These executions do not change the
 API-surface denominator; final outcomes and prior intermittent Prompt observations
 are recorded separately in the SDK scenario and coverage records.
+
+
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
+
+The `unicodeDetail` history-detail read parses the raw response bytes to avoid the
+known lossy Apache test-response carrier's secondary encoding when the response
+has no charset. The complete Unicode equality assertion remains unchanged. Shared
+public HTTP response handling is outside #10978 and is not fixed by this
+scenario-local read path.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history;
+Maintainer SDK unit tests cover controlled oversized-input exceptions.
+`ConfigRemoteHandlerTest` covers rejection before forwarding with the same
+parameter-validation error, blank-message normalization, and Beta bypass.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.

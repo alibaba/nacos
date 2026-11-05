@@ -117,6 +117,8 @@ public class ConfigOperationService {
             return Boolean.TRUE;
         }
         
+        configForm.validateChangeMessage();
+        configInfo.setChangeMessage(configForm.getChangeMessage());
         ConfigOperateResult configOperateResult;
         
         //formal publish

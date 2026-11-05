@@ -408,6 +408,20 @@ batch delete, are compatibility methods and are pending removal. New maintainer
 contracts should select configs by `namespaceId`, `groupName`, and `dataId`, or
 by explicit lists of that identity tuple.
 
+If `changeMessage` overloads are added, ordinary and CAS publish APIs handle
+inserts and updates identically. Preserve existing overload compatibility; do
+not extend Beta, gray, rollback, or deletion capabilities. The SDK must not
+guess create/update state by querying before publishing. Input validation and optional
+history-detail messages follow the
+[Config Persistence And History Spec](../config/config-persistence-history-spec.md).
+The 512-code-point limit maps local oversized-input validation to
+`NacosException.INVALID_PARAM`. Unsupported datasource message capability
+preserves the original publish result; real errors retain their exception mappings.
+The overload is needed for independent-console forwarding; existing publish
+signatures and the shared HTTP client's response handling remain unchanged.
+This is a target contract. Review new public signatures and update SDK ITs,
+scenarios, and coverage registry before completing a public API addition.
+
 ### 7.3 NamingMaintainerService
 
 `NamingMaintainerService` includes:
