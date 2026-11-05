@@ -148,14 +148,25 @@ suites: the bundled default plugins and their SPI providers, the bundled MySQL a
 JDBC drivers and the HikariCP pool, the gRPC payload and model classes that Jackson reaches
 reflectively, JRaft and Netty, and resources and resource bundles that are looked up by name.
 
+The suites reach the state of the Raft groups only in part. JRaft saves a snapshot of a group long
+after the start and loads it only when the Server starts again, and a suite never creates some kinds
+of data: a service with a label selector or with the MYSQL health checker, a held lock, a naming
+switch that is replicated. The bundle covers the Hessian and Jackson payloads of these cases as
+well. They were serialized and read back through the serializers of the Server on a JVM under the
+tracing agent, and a Native executable that saw only the bundled metadata printed what the JVM
+printed. The Native CI job asks JRaft for snapshots every 30 seconds, so the code that saves them
+runs in every job. It does not restart the Server, so the code that loads them is covered by those
+round trips alone.
+
 It was traced on standalone, merged-deployment Servers with an external datasource, which is also
 the combination the [Native CI job](#the-native-ci-job) validates. It does **not** cover embedded
 Derby (see [below](#native-scope-and-derby-compatibility)), Oracle, third-party plugins or
 drivers, the AI registry contexts (`nacos.ai.mcp.registry.enabled`,
 `nacos.ai.skill.registry.enabled`, `nacos.ai.ard.enabled`), the Istio, Kubernetes sync and DNS
-adaptors, or the cluster-only paths between nodes. Whoever enables one of these supplies the
-missing metadata through `nacos.native.metadata` or in the plugin's own `META-INF/native-image`,
-and validates the result.
+adaptors, the cluster-only paths between nodes, the probing of an instance by the Server with the
+MYSQL health checker, or a label selector with a CMDB behind it. Whoever enables one of these
+supplies the missing metadata through `nacos.native.metadata` or in the plugin's own
+`META-INF/native-image`, and validates the result.
 
 ### What it leaves out
 
