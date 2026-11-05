@@ -27,11 +27,11 @@ Adaptor specification. Coverage targets response compatibility, protocol error
 handling, and routing across the adaptor and main-server web contexts.
 
 The [ARD v0.91 test design](ARD_V091_TEST_DESIGN.md) is the single catalog of
-planned per-feature UT/IT, fixtures, assertions and regression groups, including
-C05-14 token recovery. The [compatibility review](ARD_V091_COMPATIBILITY_REVIEW.md)
-owns BC01..20 code evidence and before/after migration analysis. These documents
-do not represent implemented or executed tests and do not promote coverage here
-or in API_TEST_COVERAGE.md.
+per-feature UT/IT, fixtures, assertions and regression groups, including
+[token recovery](ARD_V091_TEST_DESIGN.md#recovery-case). The [compatibility review](ARD_V091_COMPATIBILITY_REVIEW.md)
+owns BC01..20 code evidence and before/after migration analysis.
+The test design distinguishes implemented coverage from pending acceptance.
+The scenario rows below describe current coverage; design-only cases do not increase it.
 
 Live requests to the independent adaptor port use a dedicated external-request
 helper. The helper rejects Nacos `Authorization` headers before sending a
@@ -53,15 +53,16 @@ administrator or Client credential.
 
 | API surface / test class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Contract and component coverage remains active. The live standalone shared-index method is retained but disabled as `DAUTH-F03` because private canonical projections are incomplete after the out-of-scope product fix is rolled back. |
+| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Public-resource HTTP cases verify query results, legacy binding and pagination; context and facet scenarios are detailed below. Private authorized-resource completeness remains excluded as `DAUTH-F03`, so this row stays Partial. |
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
 | `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. Private authorized completeness remains blocked by `DAUTH-F03`. |
 | `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed once to Search, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
-| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Artifact resolution, errors, and web-context isolation remain covered by component tests; the live absolute Version/digest cross-context assertion is part of the `DAUTH-F03` disabled method. |
+| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. Private authorized-resource completeness remains excluded as `DAUTH-F03`. |
 
 ### Agent 地址模型统一：实施与验收（2026-09-15）
 
-CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [测试矩阵](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md)，本轮实际执行见 [验证记录](../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_VALIDATION.md)。healthy 注册可写，服务端维护字段忽略；管理 Runtime 读取改为 `callInterface.endpointSets[].endpoints[]`，状态和绑定位于 Endpoint，观察时间位于 Set。旧 A2A wire 不变。以下原有覆盖状态不以编译通过或历史测试数量自动提升。
+CallInterface → EndpointSet → Endpoint 统一的公开契约见[Agent 资源规范](../../specs/zh-cn/ai/agent-management-spec.md)。
+ARD artifact 的非空 HTTP 覆盖见下文；编译通过和历史测试数量不自动提升覆盖等级。
 
 ### 统一地址模型新增场景（2026-09-15）
 
@@ -71,9 +72,9 @@ CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [�
 
 `testPublicAgentIndexAndUnifiedArtifacts` 验证 Artifact 声明地址的 0/1/true/true 生效值，允许未使用的维护字段为 null，仍禁止非空 Runtime bindings/state/观测值及旧嵌套 endpoint；contentDigest 与管理版本详情一致。采用 Artifact 0.3.0（管理 Schema 0.2.0）。
 
-## ARD online relevance filtering
+## ARD query-example publication
 
-C07 query-example publication is covered by `ArdEntryRendererTest`, the shared
+Query-example publication is covered by `ArdEntryRendererTest`, the shared
 schema tests and `ArdAdaptorOpenApiITCase.testRepresentativeQueriesPreserveSearchAndArtifactContent`.
 Missing/0/1/2/5/6 counts are structurally valid in the new schema and warned when
 outside its recommendation. Legacy responses select at most five without altering
@@ -81,6 +82,8 @@ the source. An Agent published through the existing API is found by its last
 example even when that example is omitted from Search/List; the downloaded
 artifact retains all six supplied examples. Exact projected 0/1 counts remain
 component cases because public resource projectors derive additional examples.
+
+## ARD online relevance filtering
 
 | Scenario | Coverage |
 | --- | --- |
@@ -95,3 +98,26 @@ The paid-provider success path is not a prerequisite for standalone IT. Determin
 and Search Core tests exercise nonempty success and failure paths without external credentials.
 Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
 nonempty Jev filtering coverage. No public Java SDK contract changes.
+
+## ARD query contexts and pagination
+
+Search 正式 HTTP 场景由`testQueryContextAndIndependentFilterGroups`（非空IRI/别名、重绑/reset、OR/AND、legacy与双Schema）、
+`testQueryValidationKeepsLegacyHttpBinding`（原始JSON、context/标准值错误与绑定兼容）、
+`testQueryCursorContinuationAndExplicitRecovery`（有效续页、等价context、页大小变化、token错误及原条件重查）承担。
+增强token的配置/查询指纹由真实Core+确定性provider UT验证，并在本地独立增强部署复跑HTTP续页；
+受控远程context的成功与加载错误由本地HTTP矩阵验证。不新增API，DAUTH-F03仍单独Disabled。
+
+`testExploreResolvesContextAndKeepsFacetOptionsIndependent` verifies query/facet aliases,
+independent limit/minCount options, nonempty full-set counts and agreement with Search.
+
+Query namespace isolation and query/body matching are covered by `ArdAdaptorOpenApiITCase.testQueryNamespaceBindingAndContextIsolation`, including same-name public resources in two namespaces and invalid credentials before body parsing.
+
+Pagination coverage extends `ArdAdaptorOpenApiITCase.testLegacyCatalogEnumeratesMoreThanOneHundredPublicResources`
+with 105-resource Search/List page-size boundaries, complete non-overlapping traversal with changed
+page sizes, stable List ordering/date filters, raw input coercion, and invalid List token recovery.
+Search cap increases from 50 to 100; List and existing artifact/identifier contracts are unchanged.
+GET non-integer pageSize still returns the previously observed 500 and is a separate error-mapping gap.
+
+`ArdContextResolverTest` covers the offline base, IRI expansion, reset and
+controlled loader success/error cases; see the [context test design](ARD_V091_TEST_DESIGN.md#context-processing).
+Loopback loader UT does not count as deployed API IT or raise the existing coverage classifications.

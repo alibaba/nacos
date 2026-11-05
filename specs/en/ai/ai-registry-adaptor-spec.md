@@ -189,10 +189,17 @@ Nacos targets the ARD draft at upstream commit
 The commit, rather than the draft's mutable version label, is the compatibility
 baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 
-The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) records the staged
-upgrade. Dual-version offline schemas and the new host discovery route are
-implemented; query semantics and final acceptance remain pending, so the overall
+The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) defines the upgrade contract.
+Dual-version offline schemas, the host discovery route and the context resolver are implemented.
+Search consumes query contexts. Explore also resolves query and facet contexts.
+Search accepts page sizes up to 100.
+Trust authority policy and final conformance acceptance remain pending; the overall
 compatibility baseline is not promoted.
+
+The JSON-LD 1.1 resolver uses an offline pinned base, request-local document
+caches and deployment-controlled URI loading; see
+[context loading policy](ard-v091-adaptation-spec.md#41-context-processing).
+SDK and shared Search Core contracts remain unchanged.
 
 `GET /.well-known/ard.json` on the adaptor port returns an `entries` manifest
 containing only this registry's complete entry with the official base `@context`.
@@ -277,7 +284,8 @@ application/vnd.nacos.ai-agent+json
 The former is available only when the exact common-latest Version contains a
 complete valid A2A Agent Card and returns only that native card. The latter
 returns a versioned, protocol-neutral Nacos Agent definition without Runtime
-Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared addresses carry effective healthy/enabled=true defaults without implying probes. An
+Endpoints, live health observations, Publishers, heartbeats, owner, scope, or review state. Declared
+addresses carry effective healthy/enabled=true defaults without implying probes. An
 artifact URL includes the exact Version, its `contentDigest`, and the
 representation key. An offline Version, digest mismatch, or unavailable
 representation returns ARD not found. The Nacos representation validates
@@ -342,6 +350,20 @@ Unsupported operators, malformed quoting, invalid field-path syntax, and
 legacy delimiter syntax fail with the ARD invalid-argument response instead
 of being partially interpreted.
 
+Search expands standard `query.filter` keys against the pinned base and request
+`@context`. Only the roots of metadata, trustManifest and data are expanded; JSON
+member suffixes retain their spelling. Values within one original key are ORed,
+while different keys, including aliases for the same field, remain ANDed. Standard
+values must be strings or string arrays; mixed arrays and invalid contexts return 400.
+Valid unsupported IRIs keep the empty-match policy. Legacy `query.filters` paths
+are not context-expanded; conversion and values precedence remain unchanged. OR
+merging requires both the same original key and the same resolved field. Response
+projections do not depend on context. Basic anchor tokens and enhanced fingerprint
+tokens retain their separate semantics. Invalid tokens return ARD INVALID_ARGUMENT,
+without an automatic reset. Clients discard accumulated results, remove the token
+and repeat the original query; see the [recovery
+contract](ard-v091-adaptation-spec.md#token-contract).
+
 Catalog identifiers use deterministic, injective, schema-safe encoding for
 every Nacos-derived URN segment. Namespaces and resource names containing
 spaces, slashes, Unicode, or punctuation must remain distinct and validate
@@ -350,6 +372,18 @@ against the pinned catalog schema.
 The namespace catalog contains the complete eligible resource set and pages
 through the canonical list service instead of silently stopping at 100
 entries. The host-level well-known catalog remains registry-only.
+
+Explore resolves facet paths with the same request context and filter mapper as Search.
+Response keys retain the original (trimmed) field spelling; aliases for the same field
+keep independent limit/minCount options. Repeated identical keys keep the last request.
+The existing default limit 20, cap 100 and minimum count 1 remain unchanged.
+
+Search defaults to 10 entries and now caps pageSize at 100 (previously 50). List
+keeps its default 20 and cap 100. Null/nonpositive values use the existing defaults;
+requests above the cap are clamped. HTTP coercion and GET filter/orderBy parsing
+remain unchanged. Clients follow pageToken rather than treating a short page as
+the end; a continuing request may use a different pageSize. Increasing the Search
+cap does not change tokens, resource identifiers or artifact URLs.
 
 Explore facets aggregate the complete eligible result set after visibility,
 current-version, and request filtering. They must not be computed from one
@@ -430,9 +464,15 @@ exclude Runtime state.
 
 ## Endpoint Consolidation Acceptance
 
-Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors. Do not export runtime, health, or management observation fields.
+Align the Nacos Agent Artifact declared-address JSON shape with the unified definition model and
+update its schema/tests together; preserve the native A2A AgentCard representation. Verify actual
+nonempty public Agent Artifact HTTP responses, exact version/digest selection, and offline errors.
+Do not export runtime, health, or management observation fields.
 
-The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+The shared models and schemas follow the agreed endpoint contract. See the [endpoint test
+plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies,
+fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned
+scenarios from executed tests.
 
 ### Optional Search relevance filter
 

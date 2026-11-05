@@ -16,7 +16,8 @@
 
 # ARD v0.91 适配设计
 
-状态：2026-11-04 分批实施。C02双版本离线Schema、C03新发现入口和C07示例投影已实现；其他目标尚未交付。
+已实现范围：双版本离线 Schema、新 host 发现入口、示例投影和 JSON-LD context 解析器、Search 查询 context 匹配、Explore 查询与 facet context 匹配、Search 最大 100 条分页。
+信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
 本文件定义目标契约，不表示当前服务已经完整支持。
 当前行为仍以 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)为准。
 实施前须完成维护者对设计及规范变化的讨论；创建 issue 本身不等于设计已获确认。
@@ -47,7 +48,7 @@ conformance。Web Ingestion 在新旧规范中均为 Required，不能把它描�
 以下是目标契约的摘要；具体语义在§3–§7维护。协议引用固定到目标SHA，
 测试输入/断言只在[统一测试设计](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md)维护；
 当前代码事实和迁移见[兼容审计](../../../test/openapi-test/ARD_V091_COMPATIBILITY_REVIEW.md)。
-P01/P03为待决策略，不得在无依据时实现。
+context 加载策略见§4.1；信任身份处理策略仍待约定，见§5.2。
 
 | 差异 | ARD依据 | 目标摘要 | 强度/验证入口 |
 | --- | --- | --- | --- |
@@ -58,7 +59,7 @@ P01/P03为待决策略，不得在无依据时实现。
 | D05 / query context 与 IRI 过滤 | [§5.3.1][s05]、[QueryModel][query] | 用标准 JSON-LD 1.1 处理器解析，转换为已有领域 predicate；不靠字符串替换实现。 | IRI/OR/AND；不支持字段400为MAY；UT/IT-C05 |
 | D06 / Explore 字段路径 | [§5.3.3][s06] | 与 Search 共用解析；聚合完整匹配集，响应保留调用方 facet 字段拼写。 | 全集聚合与同路径语法；UT/IT-C06 |
 | D07 / representativeQueries 约束放宽 | [§4.2][s03]、[D.2][s07] | 资源不会因查询示例缺失被隐藏；区分新版告警与旧版数量校验。 | 2..5为建议/告警；UT/IT-C07 |
-| D08 / trustManifest 开放模型 | [§4.5.1–4.5.2][s08] | 保持 identity 必填语义；检验本地声明的 authority 绑定，验证框架与查询分数分离。 | binding MUST，验证框架外置；UT/IT-C08及P03 |
+| D08 / trustManifest 开放模型 | [§4.5.1–4.5.2][s08] | 保持 identity 必填语义；检验本地声明的 authority 绑定，验证框架与查询分数分离。 | binding MUST，验证框架外置；UT/IT-C08及§5.2的信任身份处理策略 |
 | D09 / URI、URN、媒体类型澄清 | [§3.3][s09]、[§5.3][urls]、[Appendix C][urn] | 保持当前 registry base URL、artifact URL 和稳定 URN；接受合法扩展媒体类型，不创建未支持的资源类型。 | 类型/URL/URN；UT-C09-02、IT-C09-03 |
 | D10 / Search pageSize 上限 | [§5.3.2][s10]、[§5.3.4][list] | 将现有 50 提升至规范正文的 100，并补边界和分页测试；属于既有偏差修复。 | 正文默认/上限；非正数策略为Nacos兼容；UT-C09-01 |
 | D11 / 一致性测试更新 | [Appendix B][errors]、[D.4][runner] | 双版本 fixture、官方 runner 与 Nacos 语义断言共同验收，补非空及权限场景。 | 错误与工具；UT/IT-C10 |
@@ -145,21 +146,32 @@ URI 与命名空间按 JSON-LD 语义处理，不进行全文小写化或简单�
 基础 type 映射到 ns#mediaType，而不是 JSON-LD @type。
 上下文重定义核心字段时以有效 IRI 为准，不能回退匹配原字段字符串。
 
-采用适配器内部 ArdContextResolver 封装 JSON-LD 1.1 处理器。
-候选为 Titanium JSON-LD；确切依赖版本在实施前完成 JDK 17、许可证、
-传递依赖、离线运行和所需 expansion 用例验证后固定在 POM。
-不引入 RDF 数据库、JSON-LD 签名或客户端 Java 8 模块依赖。
+适配器内部 ArdContextResolver 封装固定版本 Titanium JSON-LD **1.7.0**
+（Apache-2.0，Java 11+，已验证JDK 17），采用 Parsson **1.1.7** 提供 JSON-P。
+依赖仅位于Java 17适配器；传递的JCS/RDF工具API不引入RDF数据库或签名服务。
 
-P01：loader 的网络策略、缓存/本地映射、资源限额与具体依赖尚需在实施前论证。
-ARD §4.1/§5.3.1 允许 URI/object/array，没有定义固定大小、引用数、深度，
-也没有规定非官方 URI 一律非法。内置固定基础 context 保证其解析可离线进行；
-其他合法 context 的成功路径和受部署限制时的错误路径必须一起设计。
-不得把原先假定的 64 KiB/16/8 或所有远程 context 拒绝作为协议升级要求。
+以下 context 加载设置属于 Nacos 部署策略，不是ARD要求的数值限制或访问限制：
 
-query.@context 整体 null/number 不符合 OpenAPI QueryModel 的允许类型；
-array 内 null/reset 则须按 JSON-LD 与 ARD base-context 语义核对，不能一概判非法。
-实际解析失败、循环引用等必须受控且不能静默退回无 context。
-P01 冻结前不得实施生产 loader 策略；先完成正式测试设计中的 UT-C04 与 HTTP 接入案例。
+| `nacos.ai.ard.context.` 下的配置 | 默认及行为 |
+| --- | --- |
+| `allowed-uris` | 默认空，逗号分隔的精确HTTP(S) URI允许清单。官方基础URI始终映射到固定内置文档，不联网。运维可允许其他可信文档及每个传递引用；不支持通配符、userinfo、fragment、重定向或HTTP Link跳转；不转发Nacos凭据。 |
+| `max-bytes` | 单次解析累计1048576 UTF-8字节，计入inline context及每个不同的下载文档；内置base和重复缓存文档不重复计费。可配置为其他正数。 |
+| `timeout-ms` | 单次解析远程获取累计3000 ms；完整响应future和请求超时使用剩余预算。可配置为其他正数。 |
+
+文档仅在单次解析内缓存，不跨请求、配置变化或进程重启复用外部文档。
+JSON-LD解析/循环错误，以及拒绝访问、不可达、非法或超限文档均显式失败；
+HTTP接入后使用既有ARD 400封装，不能回退为无context查询。固定处理器还限制
+远程context遍历（256），属于实现限制而非ARD协议最大值；受支持的合法远程URI必须成功。
+
+context缺省使用base；显式整体null/number/boolean不符合QueryModel。
+数组reset先处理null，再恢复固定base，之后应用后续条目；远程context顶层reset同样处理。
+这协调了JSON-LD reset与ARD §4.1“base不能被移除”的要求：reset前的请求别名清除，
+核心词恢复，后续定义仍可覆盖。protected term不允许reset的错误仍保留。
+显式将某个term定义为null则移除该term，不能回退原字段名。
+不改写term的scoped context或opaque JSON值。
+
+UT-C04-01..04覆盖解析器与加载策略；Search/Explore 的 HTTP 场景见
+[测试设计](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md#context-processing)。
 
 ### 4.2 字段解析和过滤
 
@@ -258,8 +270,8 @@ message示例来自当前实现；正式契约要求非空并说明cursor/token�
 同版无变化的正常token不能被“允许跨版失效”掩盖；升级前已发token可自然续用，
 但跨版存活不作承诺。旧服务器的历史错误行为由实际版本决定，本设计不要求回改旧发行包。
 
-跨版本token复用不作为交付门禁，真实旧->新/新->旧/交替节点仅做可选迁移演练（LX32），
-环境缺失不阻塞C10；必须验证本版正常续页、确定失效及重新查询流程。
+跨版本token复用不作为交付门禁，真实旧->新/新->旧/交替节点仅做可选迁移演练，
+环境缺失不阻塞本版一致性验收；必须验证本版正常续页、确定失效及重新查询流程。
 context请求须等目标节点全部升级或路由到升级池后启用；回滚前停止新语义请求，
 清空分页状态并在目标版本重新查询，不把带context的请求静默降级后发给旧节点。
 
@@ -285,13 +297,13 @@ Legacy catalog 为满足旧 Schema，稳定选择最多 5 条，不足 2 条省�
 
 没有配置 trust identity 时继续省略 trustManifest。
 ARD §4.5.1 要求 authority 绑定，§4.5.2 同时把验证方法交给声明的框架。
-P03：需在实施前约定明确绑定冲突、无法验证两种情况的实际处理方式及迁移策略。
+信任身份处理尚待约定：实施前需约定明确绑定冲突、无法验证两种情况的实际处理方式及迁移策略。
 协议没有规定只允许 HTTPS/SPIFFE/did:web，也没有规定未知 DID 必须启动失败；
-删除前版方案中的固定白名单和启动拒绝承诺。
+不引入固定 scheme 白名单或无依据的启动拒绝规则。
 可验证冲突不得被标为合规，无法验证不得标为已验证；具体 HTTP/启动/导出策略
 必须有 Nacos 设计依据和正式正负测试，不能从 ARD 错误表推导。
 字符串域名比较不能替代证书、签名、所有权或 attestation 验证。
-P03 冻结前可完成 Schema/语义测试，但不得实施新的生产配置拒绝规则。
+信任身份处理策略确定前可完成 Schema/语义测试，但不得实施新的生产配置拒绝规则。
 
 保留小写 trustManifest，identity 必填，允许框架定义的额外成员；
 不因新版 Schema 开放就自动暴露任意内部配置。
@@ -325,7 +337,7 @@ Search pageSize 默认 10、最大 100；List 默认 20、最大 100。
 随功能提交的必要 UT/IT（正确与预期错误请求）、仅本地的交叉矩阵、既有功能 before/after 回归。
 正式用例、数据、断言、现有测试类和编号见
 [ARD v0.91 测试设计](../../../test/openapi-test/ARD_V091_TEST_DESIGN.md)。
-P01/P03 等未决项不得先伪造错误预期；设计完成、测试实现、执行通过必须分别记录。
+信任身份处理等未决策略不得先伪造错误预期；设计完成、测试实现、执行通过必须分别记录。
 每个改变 HTTP 行为的提交同步增加/更新 standalone IT、场景文档及 coverage registry。
 不得将所有 IT 延迟到最后一个提交，也不得用 Controller mock 代替 live HTTP 验证。
 
@@ -341,7 +353,7 @@ P01/P03 等未决项不得先伪造错误预期；设计完成、测试实现、
 | A08 Cursor | 基础锚点/增强指纹、同版正常续页、确定失效400与原条件重查；等价映射、改页大小、空页；跨版复用不设门禁，混跑演练可选。 |
 | A09 Explore | 别名 facet 输出、重复/未知字段、空 buckets、完整集合统计和 Search 基础匹配集一致。 |
 | A10 Query examples | 0/1/2/5/6 条、去重、legacy/new 区别、缺失不隐藏资源、Registry 示例。 |
-| A11 Trust | 缺失 identity、authority 匹配/冲突/未知、框架开放性；实际错误策略依 P03，不新增 scheme 白名单。 |
+| A11 Trust | 缺失 identity、authority 匹配/冲突/未知、框架开放性；实际错误策略依§5.2的信任身份处理策略，不新增 scheme 白名单。 |
 | A12 URI/media | base URL 与 search endpoint、扩展媒体类型、多段/Unicode URN、稳定 identifier。 |
 | A13 分页 | Search 10/50/51/100/101、0/负数/错误类型，List 边界和 namespace 过滤。 |
 | A14 Artifact | 四类非空资源；纯 A2A/多协议/旧版本仅 A2A；ZIP、版本/digest、offline、Runtime 排除。 |
@@ -382,7 +394,7 @@ P01/P03 等未决项不得先伪造错误预期；设计完成、测试实现、
 - [AI 资源检索规范](ai-resource-search-spec.md)
 - [API IT 规范](../testing/api-integration-test-spec.md)
 - [兼容策略](../design/compatibility-deprecation-spec.md)
-- [Titanium JSON-LD 候选处理器](https://github.com/filip26/titanium-json-ld)
+- [Titanium JSON-LD处理器](https://github.com/filip26/titanium-json-ld)
 
 [s01]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L546-L588
 [s02]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L206-L218

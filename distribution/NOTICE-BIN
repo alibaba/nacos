@@ -51,3 +51,13 @@ Licensed under the Apache License, Version 2.0.
 Local changes: package relocation, provenance documentation, and replacement
 of optional JCIP annotations with comments. The separately licensed JCIP
 annotation source files are not included.
+
+------
+The ARD adaptor includes Titanium JSON-LD 1.7.0 and its Titanium JCS/RDF
+utilities, licensed under Apache License 2.0 (https://github.com/filip26/titanium-json-ld).
+It uses Eclipse Parsson 1.1.7 and Jakarta JSON Processing API under the Eclipse
+Public License 2.0. Their original license and notice files are included in the
+respective dependency jars.
+The bundled ARD context is from ards-project/ard-spec commit
+f073b1ea9b01a5f068d0b0986426f2ea49fa30b2 (Apache License 2.0), with its original
+LICENSE and source/hash provenance in the adaptor's ard-spec resource directory.

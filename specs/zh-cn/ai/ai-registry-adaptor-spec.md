@@ -161,8 +161,15 @@ Nacos 以 ARD 上游 commit
 对应的草案为兼容基线。由于草案的版本标签仍可能变化，仓库内固定的 OpenAPI、JSON Schema
 和一致性测试 fixture 均以该 commit 为准，而不是只依赖版本标签。
 
-[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)记录分批升级契约。
-双版本离线Schema与新host发现入口已实现；查询语义及完整验收尚未完成，不提升整体兼容基线。
+[ARD v0.91 适配设计](ard-v091-adaptation-spec.md)定义升级契约。
+双版本离线 Schema、新 host 发现入口和 context 解析器已实现。
+Search 已接入 query context。Explore 同样解析 query 与 facet context。
+Search 页大小上限为 100。
+信任身份处理策略和完整一致性验收仍待完成，不提升当前整体兼容基线。
+
+JSON-LD 1.1 解析器使用固定 base 离线加载、单请求文档缓存和部署控制的 URI 加载，
+具体见[context 加载策略](ard-v091-adaptation-spec.md#41-context-处理)。
+SDK 与共享 Search Core 契约不变。
 
 标准入口为适配器端口的 `GET /.well-known/ard.json`，返回仅含本Registry完整Entry的
 `entries` 容器，Entry带官方基础 `@context`，没有旧 `specVersion/host` 或搜索 `score/source`。
@@ -278,12 +285,29 @@ filter 接受语法合法的点分字段路径，包括固定 OpenAPI 中的
 扩展字段路径分段可以使用任意非空、非空白且不含点号的属性名。不支持的操作符、错误的
 引号、非法字段路径语法和旧分隔符语法必须返回 ARD invalid-argument，不能只解析其中一部分。
 
+Search标准`query.filter`按固定base与请求`@context`展开字段IRI；metadata、trustManifest、
+data仅展开根，后缀保留JSON成员拼写。一个原始key内OR，不同key间AND；两个别名指向同一
+字段时仍是独立条件。标准值只接受string/string[]，混合数组及非法context返回400。
+合法但未支持的IRI保留空匹配策略。legacy `query.filters`不展开context，保留数组转换和
+values优先级；仅原始key与解析字段都相同的条件合并OR。响应投影不随context改变。
+分页token沿用基础锚点与增强指纹两种语义；失效返回ARD INVALID_ARGUMENT，不自动重置。
+调用方丢弃旧分页结果、移除token，按原查询条件重新遍历，详见[恢复契约](ard-v091-adaptation-spec.md#token-contract)。
+
 Catalog identifier 对每个来自 Nacos 的 URN segment 使用确定性、无碰撞且符合 Schema
 字符集的编码。包含空格、斜杠、Unicode 或标点的 namespace 与资源名必须保持可区分，
 并通过固定版本 catalog Schema 校验。
 
 Namespace catalog 必须包含完整的合法资源集，通过标准 list service 连续分页，不能在
 100 条时静默停止。Host 级 well-known catalog 仍只包含 registry 条目。
+
+Explore facet与Search共用请求context/过滤解析，响应key保留原字段（沿用trim）；
+同字段不同别名各自应用limit/minCount，重复原key仍以后者覆盖。默认limit20、上限100、
+minCount最小1及非正数兼容处理保持。
+
+Search默认10条，上限从50修正为100；List默认20/上限100保持。
+null/非正数仍走默认，超限仍截断；HTTP类型转换及GET filter/orderBy语法保持。
+调用方根据pageToken判断是否继续，不能把短页当作结束，续页可调整pageSize。
+页上限变化不改变token编码、资源URN或制品URL。
 
 Explore facet 必须在可见性、当前版本和请求过滤后，对完整的有效结果集进行聚合，不能基于
 单页或固定长度的候选前缀计算。Publisher、source 和 trust identity 等协议常量由适配器

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -90,6 +92,263 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
 
     private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
+
+    @Test
+    public void testQueryContextAndIndependentFilterGroups() throws Exception {
+        String marker = randomAiName("ard-query-groups");
+        String ab = marker + "-ab";
+        String a = marker + "-a";
+        String b = marker + "-b";
+        publishTaggedAgent(ab, marker, List.of("a", "b", "1"));
+        publishTaggedAgent(a, marker, List.of("a"));
+        publishTaggedAgent(b, marker, List.of("b"));
+        awaitSearch(searchRequest(marker, TYPE_A2A), Set.of(ab, a, b));
+        assertQueryNames(marker, null, Map.of("tags", List.of("a", "b")), null, Set.of(ab, a, b));
+        String ns = "https://agenticresourcediscovery.org/ns#";
+        assertQueryNames(marker, Map.of("t", ns + "tags"),
+            Map.of("tags", List.of("a"), "t", List.of("b")), null, Set.of(ab));
+        for (Object context : List.of("https://agenticresourcediscovery.org/context/v1",
+            Map.of("a", ns), List.of(Map.of("a", ns), Map.of("b", ns)))) {
+            assertQueryNames(marker, context, Map.of(ns + "mediaType", TYPE_A2A), null, Set.of(ab, a, b));
+        }
+        assertQueryNames(marker, Map.of("t", ns + "mediaType"),
+            Map.of("type", TYPE_A2A, "t", TYPE_SKILL), null, Set.of());
+        assertQueryNames(marker, Arrays.asList(Map.of("tags", "https://other.example/tags"), null),
+            Map.of("tags", "a"), null, Set.of(ab, a));
+        assertQueryNames(marker, Collections.singletonMap("t", null),
+            Map.of("t", "a"), null, Set.of());
+        assertQueryNames(marker, Map.of("m", ns + "metadata"),
+            Map.of("m.resourceName", ab), null, Set.of(ab));
+        assertQueryNames(marker, Map.of("tags", "https://other.example/tags"),
+            Map.of("tags", "a"), null, Set.of());
+        assertQueryNames(marker, null, Map.of("tags", "a"),
+            List.of(Map.of("fieldPath", "tags", "values", List.of("b"))), Set.of(ab, a, b));
+        assertQueryNames(marker, Map.of("t", ns + "tags"), Map.of("t", "a"),
+            List.of(Map.of("fieldPath", "tags", "values", List.of("b"))), Set.of(ab));
+        assertQueryNames(marker, null, Map.of("tags", List.of()), null, Set.of(ab, a, b));
+        assertQueryNames(marker, null, Map.of("type", List.of()), null, Set.of());
+        assertQueryNames(marker, null, Map.of("tags", "A"), null, Set.of(ab, a));
+        assertQueryNames(marker, null, Map.of(ns + "Tags", "a"), null, Set.of());
+        assertQueryNames(marker, null, Map.of("unknown.path", "a"), null, Set.of());
+        assertQueryNames(marker, null, Map.of("tags", "1"), null, Set.of(ab));
+        assertQueryNames(marker, null, Map.of(),
+            List.of(Map.of("fieldPath", "tags", "values", List.of(1))), Set.of(ab));
+    }
+
+    @Test
+    public void testQueryValidationKeepsLegacyHttpBinding() throws Exception {
+        for (String value : List.of("1", "true", "{}", "null", "[1]", "[true]", "[{}]", "[null]", "[[]]")) {
+            assertArdInvalid(ardRawJson("{\"query\":{\"text\":\"validation\",\"filter\":{\"tags\":" + value + "}}}"));
+        }
+        for (String context : List.of("null", "123", "true", "[123]", "{\"a\":{\"@id\":123}}",
+            "\"https://denied.example/context\"")) {
+            assertArdInvalid(ardRawJson("{\"query\":{\"text\":\"validation\",\"@context\":" + context + "}}"));
+        }
+        for (String body : List.of("{}", "{", "{\"query\":{}}", "{\"query\":{\"text\":\" \"}}",
+            "{\"query\":{\"text\":\"validation\"},\"federation\":\"AUTO\"}")) {
+            assertArdInvalid(ardRawJson(body));
+        }
+        for (String text : List.of("123", "true", "\"validation\"")) {
+            assertEquals(200, ardRawJson("{\"query\":{\"text\":" + text + "}}").code());
+        }
+        assertEquals(200, ardRawJson("{\"unknown\":1,\"query\":{\"text\":\"\",\"text\":\"validation\",\"unknown\":2}}").code());
+        assertArdInvalid(ardRawJson("{\"query\":{\"text\":\"validation\",\"text\":\"\"}}"));
+    }
+
+    @Test
+    public void testQueryCursorContinuationAndExplicitRecovery() throws Exception {
+        String marker = randomAiName("ard-cursor");
+        Set<String> expected = new HashSet<>();
+        for (int i = 0; i < 3; i++) {
+            String name = marker + "-" + i;
+            publishPublicAgent(name, "1.0.0");
+            expected.add(name);
+        }
+        Map<String, Object> request = searchRequest(marker, TYPE_A2A);
+        for (String name : expected) {
+            awaitSearch(searchRequest(name, TYPE_A2A), Set.of(name));
+        }
+        request.put("pageSize", 1);
+        JsonNode first = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request);
+        String token = first.path("pageToken").asText();
+        assertFalse(token.isBlank(), first.toString());
+        request.put("pageToken", token);
+        request.put("pageSize", 2);
+        request.put("query", Map.of("text", marker,
+            "@context", Map.of("a", "https://agenticresourcediscovery.org/ns#"),
+            "filter", Map.of("a:mediaType", TYPE_A2A)));
+        Set<String> names = resourceNames(first.path("results"));
+        for (int page = 0; page < 4; page++) {
+            JsonNode next = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request);
+            Set<String> following = resourceNames(next.path("results"));
+            assertTrue(Collections.disjoint(names, following));
+            names.addAll(following);
+            assertResponseSchemas("SearchResponse", next);
+            if (!next.hasNonNull("pageToken")) {
+                break;
+            }
+            request.put("pageToken", next.path("pageToken").asText());
+        }
+        assertEquals(expected, names);
+
+        request.put("pageToken", "not-a-valid-page-token");
+        assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, request));
+        // Recovery is a new query with the original conditions and discarded prior results.
+        request.remove("pageToken");
+        request.put("pageSize", 10);
+        Set<String> recovered = new HashSet<>();
+        for (int page = 0; page < 4; page++) {
+            JsonNode response = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request);
+            Set<String> current = resourceNames(response.path("results"));
+            assertTrue(Collections.disjoint(recovered, current));
+            recovered.addAll(current);
+            if (!response.hasNonNull("pageToken")) {
+                break;
+            }
+            request.put("pageToken", response.path("pageToken").asText());
+        }
+        assertEquals(expected, recovered);
+        request.remove("pageToken");
+        request.put("query", Map.of("text", ""));
+        assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, request));
+        request.put("pageToken", token);
+        assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, request));
+    }
+
+    @Test
+    public void testQueryNamespaceBindingAndContextIsolation() throws Exception {
+        String name = randomAiName("ard-namespace");
+        String namespace = randomAiName("ard-ns");
+        String namespacePath = nacosPath("/v3/admin/core/namespace");
+        postFormOk(namespacePath, Query.newInstance().addParam("namespaceId", namespace)
+            .addParam("namespaceName", namespace));
+        addCleanup(() -> deleteQuietly(namespacePath, Query.newInstance().addParam("namespaceId", namespace)));
+        publishPublicAgent(name, "1.0.0");
+        Map<String, String> form = buildAgentCardForm(name, "2.0.0", "URL",
+            buildV1AgentCard(name, "2.0.0", "1.0"));
+        form.put("namespaceId", namespace);
+        addCleanup(() -> deleteAgentDefinitionQuietly(namespace, name));
+        postFormOk(ADMIN_A2A_PATH, form);
+        Set<String> identifiers = new HashSet<>();
+        for (String current : List.of(DEFAULT_NAMESPACE, namespace)) {
+            Map<String, Object> request = searchRequest(name, TYPE_A2A);
+            request.put("namespaceId", current);
+            JsonNode body = null;
+            for (int attempt = 0; attempt <= SEARCH_MAX_RETRIES; attempt++) {
+                HttpResponse response = ardRawJson(JacksonUtils.toJson(request), "?namespaceId=" + current);
+                assertEquals(200, response.code(), response.body());
+                body = JacksonUtils.toObj(response.body());
+                if (body.path("results").size() == 1) { break; }
+                Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+            }
+            assertEquals(Set.of(name), resourceNames(body.path("results")), body.toString());
+            JsonNode entry = body.path("results").get(0);
+            assertTrue(entry.path("url").asText().contains("namespaceId=" + current));
+            identifiers.add(entry.path("identifier").asText());
+        }
+        assertEquals(2, identifiers.size());
+        Map<String, Object> request = searchRequest(name, TYPE_A2A);
+        request.put("namespaceId", namespace);
+        assertArdInvalid(ardRawJson(JacksonUtils.toJson(request)));
+        assertArdInvalid(ardRawJson(JacksonUtils.toJson(request), "?namespaceId=public"));
+        if (AUTH_ENABLED) {
+            HttpPost invalid = new HttpPost(ARD_BASE_URL + ARD_PATH + "/search");
+            invalid.setEntity(new StringEntity("{", ContentType.APPLICATION_JSON));
+            assertArdUnauthenticated(executeArdRaw(invalid, AuthIdentity.INVALID));
+        }
+    }
+
+    @Test
+    public void testExploreResolvesContextAndKeepsFacetOptionsIndependent() throws Exception {
+        String marker = randomAiName("ard-explore");
+        Set<String> names = Set.of(marker + "-ab", marker + "-a", marker + "-b");
+        publishTaggedAgent(marker + "-ab", marker, List.of("a", "b"));
+        publishTaggedAgent(marker + "-a", marker, List.of("a"));
+        publishTaggedAgent(marker + "-b", marker, List.of("b"));
+        awaitSearch(searchRequest(marker, TYPE_A2A), names);
+        String ns = "https://agenticresourcediscovery.org/ns#";
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("query", Map.of("text", marker, "@context", Map.of("t", ns + "tags", "kind", ns + "mediaType"),
+            "filter", Map.of("kind", TYPE_A2A)));
+        request.put("resultType", Map.of("facets", List.of(Map.of("field", "type"), Map.of("field", "kind"),
+            Map.of("field", "tags", "limit", 1), Map.of("field", "t", "limit", 2))));
+        request.put("pageSize", 1);
+        JsonNode response = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request);
+        JsonNode facets = response.path("facets");
+        assertEquals(facets.path("type"), facets.path("kind"));
+        assertEquals(3, facets.path("kind").path("buckets").get(0).path("count").asInt());
+        assertEquals(1, facets.path("tags").path("buckets").size());
+        assertEquals(2, facets.path("tags").path("otherCount").asInt());
+        assertEquals(2, facets.path("t").path("buckets").size());
+        assertEquals(0, facets.path("t").path("otherCount").asInt());
+        assertResponseSchemas("ExploreResponse", response);
+        request.put("pageSize", 100);
+        assertEquals(response, ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        request.put("resultType", Map.of("facets", List.of(Map.of("field", "t", "limit", 1),
+            Map.of("field", "t", "limit", 2))));
+        assertEquals(2, ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request)
+            .path("facets").path("t").path("buckets").size());
+        for (Object query : List.of(Map.of("@context", 123), Map.of("filter", Map.of("tags", List.of(1))))) {
+            request.put("query", query);
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        }
+        for (Object query : List.of(Map.of(), Map.of("text", " "))) {
+            request.put("query", query);
+            request.put("resultType", Map.of("facets", List.of(Map.of("field", "type"))));
+            assertEquals(200, ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request).code());
+        }
+        request.remove("query");
+        assertEquals(200, ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request).code());
+        for (Object facetsRequest : List.of(List.of(), List.of(Map.of("field", " ")))) {
+            request.put("resultType", Map.of("facets", facetsRequest));
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+        }
+        request.remove("resultType");
+        assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request));
+    }
+
+    private void publishTaggedAgent(String name, String marker, List<String> tags) throws Exception {
+        publishPublicAgent(name, "1.0.0");
+        Map<String, Object> update = agentUpdateRequest(DEFAULT_NAMESPACE, name, marker);
+        update.put("tags", tags);
+        putFormOk(ADMIN_AGENT_PATH, agentForm(update));
+    }
+
+    private void assertQueryNames(String text, Object context, Map<String, Object> filters,
+        Object legacy, Set<String> expected) throws Exception {
+        Map<String, Object> request = searchRequest(text, null);
+        Map<String, Object> query = new LinkedHashMap<>();
+        query.put("text", text);
+        query.put("filter", filters);
+        if (context != null) { query.put("@context", context); }
+        if (legacy != null) { query.put("filters", legacy); }
+        request.put("query", query);
+        JsonNode response = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request);
+        assertEquals(expected, resourceNames(response.path("results")), response.toString());
+        assertResponseSchemas("SearchResponse", response);
+        for (JsonNode result : response.path("results")) {
+            assertFalse(result.has("@context"));
+            assertTrue(result.has("displayName") && result.has("type") && result.has("url"));
+        }
+    }
+
+    private HttpResponse ardRawJson(String body) throws Exception {
+        return ardRawJson(body, "");
+    }
+
+    private HttpResponse ardRawJson(String body, String query) throws Exception {
+        HttpPost request = new HttpPost(ARD_BASE_URL + ARD_PATH + "/search" + query);
+        request.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+        return executeArdRaw(request, AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS);
+    }
+
+    private void assertArdInvalid(HttpResponse response) {
+        assertEquals(400, response.code(), response.body());
+        JsonNode body = JacksonUtils.toObj(response.body());
+        assertEquals("INVALID_ARGUMENT", body.path("errorCode").asText());
+        assertFalse(body.path("message").asText().isBlank());
+        assertEquals(2, body.size());
+    }
 
     @Test
     public void testRepresentativeQueriesPreserveSearchAndArtifactContent() throws Exception {
@@ -211,6 +470,95 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertLegacyCatalog(empty);
         assertEquals(1, discoveryGet("/.well-known/ard.json", identity).path("entries").size());
         assertEquals(1, discoveryGet("/.well-known/ai-catalog.json", identity).path("entries").size());
+        assertSearchAndListPageBoundaries(prefix, names);
+    }
+
+    private void assertSearchAndListPageBoundaries(String prefix, Set<String> expected) throws Exception {
+        String filter = "type = '" + TYPE_A2A + "' AND displayName = '" + prefix
+            + "' AND createdAfter > '2020-01-01' AND updatedAfter > '2020-01-01T00:00:00Z'";
+        for (Integer size : Arrays.asList(null, -1, 0, 1, 50, 51, 100, 101, Integer.MAX_VALUE)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            JsonNode first = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search);
+            assertEquals(size == null || size <= 0 ? 10 : Math.min(size, 100), first.path("results").size());
+            assertResponseSchemas("SearchResponse", first);
+            Set<String> found = resourceNames(first.path("results"));
+            String token = first.path("pageToken").asText();
+            for (int page = 0; !token.isBlank() && page < 4; page++) {
+                search.put("pageToken", token);
+                search.put("pageSize", 51);
+                JsonNode next = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search);
+                Set<String> current = resourceNames(next.path("results"));
+                assertTrue(Collections.disjoint(found, current));
+                found.addAll(current);
+                token = next.path("pageToken").asText("");
+            }
+            assertTrue(token.isBlank());
+            assertEquals(expected, found);
+
+            Query list = Query.newInstance().addParam("filter", filter).addParam("orderBy", "displayName asc");
+            if (size != null) { list.addParam("pageSize", size.toString()); }
+            JsonNode listed = ardGetJsonOk(ARD_PATH + "/agents", list);
+            assertEquals(size == null || size <= 0 ? 20 : Math.min(size, 100), listed.path("items").size());
+            assertResponseSchemas("ListResponse", listed);
+            List<String> ordered = new ArrayList<>(resourceNames(listed.path("items")));
+            token = listed.path("pageToken").asText("");
+            for (int page = 0; !token.isBlank() && page < 4; page++) {
+                list.addParam("pageToken", token).addParam("pageSize", "51");
+                JsonNode next = ardGetJsonOk(ARD_PATH + "/agents", list);
+                Set<String> current = resourceNames(next.path("items"));
+                assertTrue(Collections.disjoint(ordered, current));
+                ordered.addAll(current);
+                token = next.path("pageToken").asText("");
+            }
+            List<String> sorted = new ArrayList<>(expected);
+            Collections.sort(sorted);
+            assertTrue(token.isBlank());
+            assertEquals(sorted, ordered);
+        }
+        for (Object size : List.of("51", 51.9)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            assertEquals(51, ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search).path("results").size());
+        }
+        for (Object size : List.of(true, Map.of(), 2147483648L)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, search));
+        }
+        for (String size : List.of("10.5", "true", "2147483648")) {
+            HttpResponse invalid = executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
+                Query.newInstance().addParam("pageSize", size))));
+            // Existing GET converter error mapping is recorded separately, not changed by the cap fix.
+            assertEquals(500, invalid.code(), invalid.body());
+            assertEquals("INTERNAL_ERROR", JacksonUtils.toObj(invalid.body()).path("errorCode").asText());
+        }
+        Query list = Query.newInstance().addParam("filter", filter).addParam("orderBy", "displayName asc")
+            .addParam("pageSize", "1");
+        JsonNode first = ardGetJsonOk(ARD_PATH + "/agents", list);
+        String token = first.path("pageToken").asText();
+        String anchor = first.path("items").get(0).path("metadata").path("resourceName").asText();
+        list.addParam("pageToken", "invalid");
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents", list))));
+        deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, anchor);
+        list.addParam("pageToken", token);
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents", list))));
+        Set<String> remaining = new LinkedHashSet<>(expected);
+        remaining.remove(anchor);
+        Query restarted = Query.newInstance().addParam("filter", filter).addParam("orderBy", "name sideways ignored")
+            .addParam("pageSize", "100");
+        Set<String> recovered = new LinkedHashSet<>();
+        for (int page = 0; page < 3; page++) {
+            JsonNode next = ardGetJsonOk(ARD_PATH + "/agents", restarted);
+            Set<String> current = resourceNames(next.path("items"));
+            assertTrue(Collections.disjoint(recovered, current));
+            recovered.addAll(current);
+            if (!next.hasNonNull("pageToken")) { break; }
+            restarted.addParam("pageToken", next.path("pageToken").asText());
+        }
+        assertEquals(remaining, recovered);
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
+            Query.newInstance().addParam("filter", "displayName > 'invalid'")))));
     }
 
     private JsonNode discoveryGet(String path, AuthIdentity identity) throws Exception {

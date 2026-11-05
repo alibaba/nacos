@@ -670,7 +670,6 @@ row denominator. See the SDK scenario and coverage records and
 the applicable API/SDK scenario tables for actual result scopes and baseline exclusions; gated
 migration cases in the ordinary suite are not treated as executed coverage.
 
-
 C11 final product `9f5ab4d9f`: the complete auth-enabled OpenAPI suite runs 470
 cases, with 459 passes, 11 conditional/baseline skips and no failures. The
 separately deployed Console AI suite passes all 31 cases. Nine direct HTTP
@@ -701,12 +700,29 @@ contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出�
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
 
-## ARD online relevance filtering
+## ARD query contexts and pagination
 
-The C07 example-projection IT also verifies that the legacy five-item response
+Existing adaptor rows cover Search context/IRI aliases, independent filter groups,
+standard-value validation with legacy binding preserved, namespace isolation,
+valid cursor continuation and explicit recovery.
+Explore adds query/facet aliases, independent facet options and full-set counts.
+Search/List HTTP cases use 105 resources to verify page-size boundaries,
+complete traversal, ordering and token recovery. Search now caps pages at 100;
+List retains its existing rules. GET non-integer pageSize still has a known 500 mapping gap.
+Resolver/loader and enhanced-provider boundaries also have UT coverage;
+controlled remote contexts and enabled-provider deployments require separate test environments.
+See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)
+for test methods and execution limits. API-surface counts and strict/effective coverage are unchanged;
+private canonical completeness remains excluded as `DAUTH-F03`.
+
+## ARD query-example publication
+
+The example-projection IT also verifies that the legacy five-item response
 limit does not truncate the search index or the exact artifact. New manifest
 recommendations do not add a visibility gate. This extends the existing adaptor
 rows without changing the Nacos API-surface totals; `DAUTH-F03` remains excluded.
+
+## ARD online relevance filtering
 
 | Scenario | Coverage |
 | --- | --- |
