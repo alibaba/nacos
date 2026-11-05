@@ -115,7 +115,12 @@ check "config publish" 200 0
 authorized "${API}/admin/cs/config?dataId=${DATA_ID}&groupName=DEFAULT_GROUP"
 check "config get" 200 0
 grep -q 'native=true' "${RESPONSE_FILE}" || { echo "FAIL  config content" >&2; FAILURES=$((FAILURES + 1)); }
-authorized "${API}/client/cs/config?dataId=${DATA_ID}&groupName=DEFAULT_GROUP"
+# The client API reads the dumped local copy, which lags the publish by a moment.
+for _ in $(seq 1 20); do
+    authorized "${API}/client/cs/config?dataId=${DATA_ID}&groupName=DEFAULT_GROUP"
+    [[ "$(result_code)" == "0" ]] && break
+    sleep 0.5
+done
 check "config get (client API)" 200 0
 authorized "${CONSOLE_BASE_URL}/v3/console/cs/config/list?pageNo=1&pageSize=10&namespaceId=public"
 check "console config list" 200 0
@@ -135,8 +140,9 @@ check "instance deregister" 200 0
 
 authorized "${CONSOLE_BASE_URL}/v3/console/core/namespace/list"
 check "namespace list" 200 0
+# The state endpoint returns a plain property map, not the Result wrapper.
 authorized "${CONSOLE_BASE_URL}/v3/console/server/state"
-check "server state" 200 0
+check "server state" 200
 request "${CONSOLE_BASE_URL}/next/"
 check "web console (next)" 200
 request "${CONSOLE_BASE_URL}/legacy/index.html"
