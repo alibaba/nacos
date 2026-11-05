@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceRelevanceProvider;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandler;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandlerRegistry;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
@@ -107,6 +108,8 @@ class ArdSearchServiceImplTest {
     
     private static final String CATALOG_BASE_URL_KEY = "nacos.ai.ard.catalog.base-url";
     
+    private static final String REGISTRY_PUBLISHER_KEY = "nacos.ai.ard.registry.publisher";
+    
     private static final String CATALOG_TRUST_IDENTITY_KEY =
         "nacos.ai.ard.catalog.trust.identity";
     
@@ -133,6 +136,7 @@ class ArdSearchServiceImplTest {
         System.clearProperty(RANKING_ENABLED_KEY);
         System.clearProperty(CATALOG_BASE_URL_KEY);
         System.clearProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER);
+        System.clearProperty(REGISTRY_PUBLISHER_KEY);
         System.clearProperty(CATALOG_TRUST_IDENTITY_KEY);
         System.clearProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY);
         EnvUtil.setContextPath(null);
@@ -515,15 +519,11 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void searchShouldAcceptPinnedOpenApiNestedFieldPathExample() throws Exception {
+    void searchShouldRejectUnavailableTrustDimension() throws Exception {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",
-            Map.of("type", (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_MCP),
-                "trustManifest.attestations.type", (Object) List.of("SOC2-Type2")));
-        
-        ArdSearchResponse response = service.search(request);
-        
-        assertTrue(response.getResults().isEmpty());
+            Map.of("trustManifest.attestations.type", (Object) List.of("SOC2-Type2")));
+        assertThrows(NacosException.class, () -> service.search(request));
         verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
     }
     
@@ -644,13 +644,13 @@ class ArdSearchServiceImplTest {
             .thenReturn(List.of(missingPrimary, unknownPrimary, skillOne, skillTwo, prompt));
         
         ArdExploreResponse response = service.explore(exploreRequest("public", Map.of(),
-            List.of(facet("type", 1, 1), facet("publisher", 10, 1))));
+            List.of(facet("type", 1, 1), facet("source", 10, 1))));
         
         assertEquals(1, response.getFacets().get("type").getBuckets().size());
         assertEquals(2, response.getFacets().get("type").getBuckets().get(0).getCount());
         assertEquals(3, response.getFacets().get("type").getOtherCount());
-        assertEquals(1, response.getFacets().get("publisher").getBuckets().size());
-        assertEquals(5, response.getFacets().get("publisher").getBuckets().get(0).getCount());
+        assertEquals(1, response.getFacets().get("source").getBuckets().size());
+        assertEquals(5, response.getFacets().get("source").getBuckets().get(0).getCount());
     }
     
     @Test
@@ -851,13 +851,177 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void catalogShouldIncludeConfiguredTrustIdentity() {
+    void inconsistentRegistryTrustShouldNotRejectEmptyResourceQueries() throws Exception {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "spiffe://other.example/workload");
+        System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "enterprise-custom");
+        ArdSearchServiceImpl service = service();
+        assertThrows(IllegalStateException.class, service::hostManifest);
+        assertThrows(IllegalStateException.class, service::hostCatalog);
+        assertThrows(IllegalStateException.class, () -> service.catalog("public"));
+        Map<String, Object> noMatch = Map.of("type", "application/unknown");
+        assertTrue(service.search(request("anything", noMatch)).getResults().isEmpty());
+        assertTrue(service.list("public", "type = 'application/unknown'", null, 10, null)
+            .getItems().isEmpty());
+        assertTrue(service.explore(exploreRequest("public", noMatch,
+            List.of(facet("type", 10, 1)))).getFacets().get("type").getBuckets().isEmpty());
+        verifyNoInteractions(repository, vectorIndex, embeddingService, resourceManager);
+    }
+    
+    @Test
+    void resourcesShouldNeverInheritRegistryIdentity() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://registry.example");
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "legacy-prefix");
+        AiResourceSearchService core = mock(AiResourceSearchService.class);
+        var page = new AiResourceSearchService.Page(List.of(resourceResult("first-resource"),
+            resourceResult("second-resource")), null);
+        when(core.search(any())).thenReturn(page);
+        when(core.list(any())).thenReturn(page);
+        when(core.aggregate(any(), anyList()))
+            .thenReturn(new AiResourceSearchService.AggregationResult(2, Map.of()));
+        ArdSearchServiceImpl service = new ArdSearchServiceImpl(core);
+        List<String> identifiers = null;
+        for (String publisher : List.of("example.com", "another.example")) {
+            System.setProperty(REGISTRY_PUBLISHER_KEY, publisher);
+            for (String identity : List.of("https://" + publisher + "/identity",
+                "https://conflicting.example/identity", "did:web")) {
+                System.setProperty(CATALOG_TRUST_IDENTITY_KEY, identity);
+                var results = service.search(request("resource", Map.of())).getResults();
+                var current = results.stream().map(ArdSearchResult::getIdentifier).toList();
+                if (identifiers == null) {
+                    identifiers = current;
+                } else {
+                    assertEquals(identifiers, current);
+                }
+                for (var result : results) {
+                    assertTrue(result.getIdentifier().startsWith("urn:air:legacy-prefix:"));
+                    assertNull(result.getTrustManifest());
+                    assertEquals("https://registry.example/v3/ai/ard", result.getSource());
+                }
+                for (var result : service.list("public", null, null, 10, null).getItems()) {
+                    assertNull(result.getTrustManifest());
+                }
+                assertEquals(2, service.explore(exploreRequest("public", Map.of(),
+                    List.of(facet("source", 10, 1)))).getFacets().get("source")
+                    .getBuckets().get(0).getCount());
+            }
+            System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://" + publisher + "/identity");
+            var catalog = service.catalog("public");
+            assertEquals("urn:air:" + publisher + ":registry:nacos",
+                catalog.getEntries().get(0).getIdentifier());
+            assertNotNull(catalog.getEntries().get(0).getTrustManifest());
+            assertNull(catalog.getEntries().get(1).getTrustManifest());
+            assertNull(catalog.getEntries().get(2).getTrustManifest());
+        }
+    }
+    
+    private AiResourceSearchResult resourceResult(String name) {
+        AiResourceSearchResult result = new AiResourceSearchResult();
+        result.setNamespaceId("public");
+        result.setResourceType("skill");
+        result.setResourceName(name);
+        result.setResourceVersion("1.0.0");
+        result.setDisplayName(name);
+        result.setScore(100);
+        return result;
+    }
+    
+    @Test
+    void unsupportedResourceIdentityDimensionsShouldFailBeforeShortCircuit() {
+        ArdSearchServiceImpl service = service();
+        for (String field : List.of("publisher", "publisherId", "trustManifest.identity",
+            "trustManifest.attestations.type")) {
+            Map<String, Object> filter = Map.of("type", "application/unknown", field, List.of());
+            assertThrows(NacosException.class, () -> service.search(request("resource", filter)));
+            assertThrows(NacosException.class, () -> service.explore(exploreRequest("public",
+                filter, List.of(facet("type", 10, 1)))));
+            assertThrows(NacosException.class, () -> service.explore(exploreRequest("public",
+                Map.of("type", "application/unknown"), List.of(facet(field, 10, 1)))));
+            assertThrows(NacosException.class, () -> service.list("public",
+                "type = 'application/unknown' AND " + field + " = 'example.com'", null, 10, null));
+            ArdSearchRequest legacy = request("resource", Map.of());
+            ArdSearchFilter oldFilter = new ArdSearchFilter();
+            oldFilter.setFieldPath(field);
+            oldFilter.setValue("example.com");
+            legacy.getQuery().setFilters(List.of(oldFilter));
+            assertThrows(NacosException.class, () -> service.search(legacy));
+        }
+        for (String field : List.of("p", "t.identity",
+            "https://agenticresourcediscovery.org/ns#publisher")) {
+            ArdSearchRequest request = request("resource", Map.of());
+            request.getQuery().setContext(Map.of("p",
+                "https://agenticresourcediscovery.org/ns#publisher", "t",
+                "https://agenticresourcediscovery.org/ns#trustManifest"));
+            request.getQuery().setFilter(Map.of(field, "example.com"));
+            assertThrows(NacosException.class, () -> service.search(request));
+        }
+        verifyNoInteractions(repository, vectorIndex, embeddingService, resourceManager);
+    }
+    
+    @Test
+    void registryTrustShouldRequireExplicitPublisherInsteadOfLegacyPrefix() {
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://example.com/identity");
+        assertThrows(IllegalStateException.class, () -> service().hostManifest());
+    }
+    
+    @Test
+    void registryPublisherShouldRequireFqdnSyntaxEvenWithoutTrust() {
+        for (String publisher : List.of("nacos", "localhost", "127.0.0.1", "https://example.com",
+            "example.com:443", "-example.com", "example-.com", "example..com", "example_1.com",
+            "example.123", "a".repeat(64) + ".com")) {
+            System.setProperty(REGISTRY_PUBLISHER_KEY, publisher);
+            assertThrows(IllegalStateException.class, () -> service().hostManifest(), publisher);
+        }
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "EXAMPLE.COM.");
+        assertEquals("urn:air:example.com:registry:nacos",
+            service().hostManifest().getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void unknownRegistryTrustShouldPreserveOnlyCurrentManifestHint() throws Exception {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "did:example:opaque-subject");
+        System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "enterprise-custom");
+        ArdSearchServiceImpl service = service();
+        var current = service.hostManifest().getEntries().get(0);
+        assertEquals("enterprise-custom", current.getTrustManifest().get("identityType"));
+        assertEquals("did:example:opaque-subject", current.getTrustManifest().get("identity"));
+        assertEquals("urn:air:example.com:registry:nacos", current.getIdentifier());
+        var legacy = service.hostCatalog();
+        assertNull(legacy.getHost().getTrustManifest().get("identityType"));
+        assertEquals("did:example:opaque-subject",
+            legacy.getHost().getTrustManifest().get("identity"));
+        assertCatalogSchemaValid(legacy);
+        assertEquals(current.getIdentifier(), legacy.getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void registryTrustShouldNotUseLegacyPrefixRequestHostOrBaseUrl() {
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "legacy-prefix");
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://example.com/identity");
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://proxy.example/registry");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/.well-known/ard.json");
+        request.setServerName("unrelated.example");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        ArdSearchServiceImpl service = service();
+        var first = service.hostManifest().getEntries().get(0);
+        assertEquals("urn:air:example.com:registry:nacos", first.getIdentifier());
+        assertEquals("https://proxy.example/registry/v3/ai/ard", first.getUrl());
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "new.example");
+        assertThrows(IllegalStateException.class, service::hostManifest);
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://new.example/identity");
+        assertEquals("urn:air:new.example:registry:nacos",
+            service.hostManifest().getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void catalogShouldIncludeRegistryTrustIdentity() {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
         System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "spiffe://example.com/nacos/ard");
         System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "spiffe");
-        ArdSearchServiceImpl service = service();
-        
-        ArdCatalog catalog = service.hostCatalog();
-        
+        ArdCatalog catalog = service().hostCatalog();
         assertEquals("spiffe://example.com/nacos/ard",
             catalog.getHost().getTrustManifest().get("identity"));
         assertEquals("spiffe", catalog.getHost().getTrustManifest().get("identityType"));

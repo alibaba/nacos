@@ -94,6 +94,135 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
 
     @Test
+    public void testConfiguredTrustDeclaration() throws Exception {
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        boolean rejectRegistry = Boolean.getBoolean("nacos.test.ard.trust.expect-rejection");
+        String name = randomAiName("ard-trust-isolation");
+        publishPublicAgent(name, "1.0.0");
+        awaitSearch(searchRequest(name, TYPE_A2A), Set.of(name), identity);
+        for (String path : List.of("/.well-known/ard.json", "/.well-known/ai-catalog.json",
+            ARD_PATH + "/ai-catalog.json")) {
+            HttpResponse response = executeArdRaw(new HttpGet(ARD_BASE_URL + path), identity);
+            if (rejectRegistry) {
+                assertTrustConfigurationFailure(response);
+            } else {
+                assertEquals(200, response.code(), response.body());
+                JsonNode document = JacksonUtils.toObj(response.body());
+                JsonNode registry = document.path("entries").get(0);
+                String publisher = System.getProperty("nacos.test.ard.trust.publisher", "nacos");
+                assertEquals("urn:air:" + publisher + ":registry:nacos", registry.path("identifier").asText());
+                boolean legacy = !path.endsWith("/ard.json");
+                assertConfiguredTrust(registry, legacy);
+                if (legacy) {
+                    assertLegacyCatalog(document);
+                    assertConfiguredTrust(document.path("host"), true);
+                    for (JsonNode entry : document.path("entries")) {
+                        if (!"application/ai-registry+json".equals(entry.path("type").asText())) {
+                            assertFalse(entry.has("trustManifest"), entry.toString());
+                        }
+                    }
+                } else {
+                    assertTrue(CONTRACTS.validateEntry("ArdManifest", document).isEmpty());
+                }
+            }
+            if (AUTH_ENABLED) {
+                assertArdUnauthenticated(executeArdRaw(new HttpGet(ARD_BASE_URL + path), AuthIdentity.INVALID));
+            }
+        }
+        JsonNode search = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, searchRequest(name, TYPE_A2A), identity);
+        assertEquals(Set.of(name), resourceNames(search.path("results")));
+        assertResponseSchemas("SearchResponse", search);
+        JsonNode result = search.path("results").get(0);
+        String prefix = System.getProperty("nacos.test.ard.legacy-prefix", "nacos");
+        assertTrue(result.path("identifier").asText().startsWith("urn:air:" + prefix + ':'), result.toString());
+        assertFalse(result.has("trustManifest"), result.toString());
+        JsonNode list = discoveryGet(ARD_PATH + "/agents?" + Query.newInstance()
+            .addParam("namespaceId", DEFAULT_NAMESPACE).addParam("filter", "displayName = '" + name + "'")
+            .toQueryUrl(), identity);
+        assertEquals(Set.of(name), resourceNames(list.path("items")));
+        assertFalse(list.path("items").get(0).has("trustManifest"), list.toString());
+        assertResponseSchemas("ListResponse", list);
+        JsonNode explore = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE,
+            Map.of("query", searchRequest(name, TYPE_A2A).get("query"),
+                "resultType", Map.of("facets", List.of(Map.of("field", "type")))), identity);
+        JsonNode buckets = explore.path("facets").path("type").path("buckets");
+        assertEquals(1, buckets.size(), explore.toString());
+        assertEquals(1, buckets.get(0).path("count").asInt());
+        HttpResponse artifact = executeArdRaw(new HttpGet(result.path("url").asText()), identity);
+        assertEquals(200, artifact.code(), artifact.body());
+        assertEquals(name, JacksonUtils.toObj(artifact.body()).path("name").asText());
+        assertTrue(ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE,
+            searchRequest(name, "application/unknown"), identity).path("results").isEmpty());
+        HttpPost malformed = new HttpPost(ARD_BASE_URL + ARD_PATH + "/search");
+        malformed.setEntity(new StringEntity("{}", ContentType.APPLICATION_JSON));
+        assertArdInvalid(executeArdRaw(malformed, identity));
+    }
+
+    @Test
+    public void testResourceIdentityDimensionsAreUnsupported() throws Exception {
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        Map<String, String> context = Map.of("p", "https://agenticresourcediscovery.org/ns#publisher",
+            "t", "https://agenticresourcediscovery.org/ns#trustManifest");
+        for (String field : List.of("publisher", "publisherId", "trustManifest.identity",
+            "trustManifest.attestations.type", "p", "t.identity",
+            "https://agenticresourcediscovery.org/ns#publisher")) {
+            Map<String, Object> query = Map.of("text", "unavailable-resource-identity", "@context", context,
+                "filter", Map.of("type", "application/unknown", field, List.of()));
+            for (String operation : List.of("search", "explore")) {
+                Map<String, Object> body = new LinkedHashMap<>(Map.of("query", query));
+                if ("explore".equals(operation)) {
+                    body.put("resultType", Map.of("facets", List.of(Map.of("field", "type"))));
+                }
+                assertUnavailableDimension(operation, body, identity);
+            }
+            assertUnavailableDimension("explore", Map.of("query", Map.of("@context", context),
+                "resultType", Map.of("facets", List.of(Map.of("field", field)))), identity);
+        }
+        for (String field : List.of("publisher", "publisherId", "trustManifest.identity")) {
+            assertArdInvalid(executeArdRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
+                Query.newInstance().addParam("filter", field + " = 'example.com'"))), identity));
+            assertUnavailableDimension("search", Map.of("query", Map.of("text", "resource",
+                "filters", List.of(Map.of("fieldPath", field, "value", "example.com")))), identity);
+        }
+    }
+
+    private void assertUnavailableDimension(String operation, Map<String, Object> body,
+        AuthIdentity identity) throws Exception {
+        HttpPost request = new HttpPost(ARD_BASE_URL + ARD_PATH + '/' + operation);
+        request.setEntity(new StringEntity(JacksonUtils.toJson(body), ContentType.APPLICATION_JSON));
+        assertArdInvalid(executeArdRaw(request, identity));
+        if (AUTH_ENABLED) {
+            assertArdUnauthenticated(executeArdRaw(request, AuthIdentity.INVALID));
+        }
+    }
+
+    private void assertConfiguredTrust(JsonNode entry, boolean legacy) {
+        String expected = System.getProperty("nacos.test.ard.trust.identity", "");
+        if (expected.isBlank()) {
+            assertFalse(entry.has("trustManifest"), entry.toString());
+            return;
+        }
+        JsonNode trust = entry.path("trustManifest");
+        assertEquals(expected, trust.path("identity").asText());
+        String hint = System.getProperty("nacos.test.ard.trust.identity-type", "");
+        if (hint.isBlank() || legacy && !List.of("spiffe", "did", "https", "other").contains(hint)) {
+            assertFalse(trust.has("identityType"), trust.toString());
+        } else {
+            assertEquals(hint, trust.path("identityType").asText());
+        }
+        assertTrue(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
+        assertFalse(trust.has("verified"));
+    }
+
+    private void assertTrustConfigurationFailure(HttpResponse response) throws Exception {
+        assertEquals(500, response.code(), response.body());
+        JsonNode body = JacksonUtils.toObj(response.body());
+        assertEquals(2, body.size());
+        assertEquals("INTERNAL_ERROR", body.path("errorCode").asText());
+        assertEquals("Internal server error", body.path("message").asText());
+    }
+
+    @Test
     public void testQueryContextAndIndependentFilterGroups() throws Exception {
         String marker = randomAiName("ard-query-groups");
         String ab = marker + "-ab";
@@ -869,9 +998,14 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     
     private JsonNode awaitSearch(Map<String, Object> request, Set<String> expectedNames)
             throws Exception {
+        return awaitSearch(request, expectedNames, AuthIdentity.ANONYMOUS);
+    }
+
+    private JsonNode awaitSearch(Map<String, Object> request, Set<String> expectedNames,
+            AuthIdentity identity) throws Exception {
         JsonNode last = null;
         for (int retry = 0; retry <= SEARCH_MAX_RETRIES; retry++) {
-            last = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request);
+            last = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request, identity);
             if (resourceNames(last.get("results")).containsAll(expectedNames)) {
                 return last;
             }
@@ -986,6 +1120,15 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         return JacksonUtils.toObj(response.body());
     }
     
+    private JsonNode ardPostJsonOk(String path, String namespaceId, Map<String, Object> request,
+            AuthIdentity identity) throws Exception {
+        HttpPost post = new HttpPost(ardUrl(path, Query.newInstance().addParam("namespaceId", namespaceId)));
+        post.setEntity(new StringEntity(JacksonUtils.toJson(request), ContentType.APPLICATION_JSON));
+        HttpResponse response = executeArdRaw(post, identity);
+        assertEquals(200, response.code(), response.body());
+        return JacksonUtils.toObj(response.body());
+    }
+
     private HttpResponse ardPostJsonRaw(String path, String namespaceId,
             Map<String, Object> request) throws Exception {
         Query query = Query.newInstance();

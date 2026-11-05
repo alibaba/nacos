@@ -193,8 +193,9 @@ The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) defines the upgra
 Dual-version offline schemas, the host discovery route and the context resolver are implemented.
 Search consumes query contexts. Explore also resolves query and facet contexts.
 Search accepts page sizes up to 100.
-Trust authority policy and final conformance acceptance remain pending; the overall
-compatibility baseline is not promoted.
+Registry trust declarations receive local authority/publisher consistency checks as described
+in the [trust policy](ard-v091-adaptation-spec.md#52-publisher-and-trust).
+Final conformance acceptance remains pending; the overall compatibility baseline is not promoted.
 
 The JSON-LD 1.1 resolver uses an offline pinned base, request-local document
 caches and deployment-controlled URI loading; see
@@ -251,8 +252,17 @@ They must follow the pinned upstream schemas:
   "message": "..." }` and must not be wrapped in Nacos `Result<T>`;
 - missing or rejected credentials use HTTP 401 with error code
   `UNAUTHENTICATED`;
-- a generated `trustManifest`, when present, includes the required `identity`;
-  the adaptor omits the manifest when no valid identity is configured;
+- configured `trustManifest` describes only the Registry and requires an explicit
+  `nacos.ai.ard.registry.publisher` in ASCII FQDN form. An absent identity omits it.
+  Invalid Registry publisher or recognized malformed/conflicting identity makes the
+  manifest and both catalogs containing that Registry fail with HTTP 500 /
+  `INTERNAL_ERROR`. Ordinary resource Search/List/Explore and Artifact access do not
+  validate Registry identity; resource entries never inherit its trust declaration.
+  Unknown frameworks remain unverified; matching does not establish ownership.
+  New manifests preserve custom `identityType` hints; legacy projections retain
+  only their original enum. Legacy resource identifiers remain unchanged; genuine
+  resource publisher/trust registration, storage, verification and migration are
+  not implemented and must not be replaced with deployment-wide identity values;
 - catalog, list, and search DTOs remain separate so search-only fields do not
   leak into catalog entries.
 
@@ -342,9 +352,12 @@ The `GET /agents` filter parser supports single-quoted equality expressions
 joined by `AND` and timestamp comparisons using either an ISO date or instant,
 such as `createdAfter > '2026-01-01'` or
 `createdAfter > '2026-01-01T00:00:00Z'`. Parsing is quote-aware. Search and
-explore filters accept syntactically valid dot-separated field paths, including
-the pinned OpenAPI example `trustManifest.attestations.type`; a path whose
-value is absent matches no entries. Extension field-path segments may contain
+explore filters parse syntactically valid dot-separated field paths. Resource
+`publisher`, `publisherId` and `trustManifest` paths (including the OpenAPI example
+`trustManifest.attestations.type`) are unsupported and return 400 / `INVALID_ARGUMENT`
+for filters and facets, after alias/IRI resolution and before empty-result shortcuts.
+The same restriction applies to legacy filters and List. Other supported paths whose
+values are absent match no entries. Extension field-path segments may contain
 arbitrary non-whitespace property names but cannot be empty or contain a dot.
 Unsupported operators, malformed quoting, invalid field-path syntax, and
 legacy delimiter syntax fail with the ARD invalid-argument response instead
@@ -387,9 +400,9 @@ cap does not change tokens, resource identifiers or artifact URLs.
 
 Explore facets aggregate the complete eligible result set after visibility,
 current-version, and request filtering. They must not be computed from one
-page or a fixed candidate prefix. Protocol constants such as publisher,
-source, and trust identity are added by the adaptor after canonical
-aggregation.
+page or a fixed candidate prefix. The serving Registry `source` is added after
+canonical aggregation. Resource publisher and trust facets are unsupported, rather
+than being populated from the Registry's identity.
 
 ### 6.4 Index Consistency
 

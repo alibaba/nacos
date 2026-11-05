@@ -121,3 +121,38 @@ GET non-integer pageSize still returns the previously observed 500 and is a sepa
 `ArdContextResolverTest` covers the offline base, IRI expansion, reset and
 controlled loader success/error cases; see the [context test design](ARD_V091_TEST_DESIGN.md#context-processing).
 Loopback loader UT does not count as deployed API IT or raise the existing coverage classifications.
+
+## ARD trust declaration consistency
+
+`ArdAdaptorOpenApiITCase.testConfiguredTrustDeclaration` runs against an external
+standalone deployment. It does not change server configuration inside the test.
+
+| Deployment / scenario | Expected HTTP contract |
+| --- | --- |
+| No identity / no explicit Registry publisher | No trustManifest; preserve legacy identifiers without claiming FQDN authority conformance |
+| Matching HTTPS, SPIFFE or did:web Registry authority | Registry entry has its own publisher/trust; ordinary resources have no inherited trust; nonempty Search/List/type Explore and Artifact work |
+| Unknown framework and custom identityType | Registry declaration remains unverified; new manifest keeps the hint, legacy projections keep only their original enum |
+| Invalid Registry FQDN, missing explicit publisher with trust, recognized mismatch or malformed identity | Only manifest and both catalogs containing the Registry return ARD 500 / INTERNAL_ERROR; resource queries and Artifact still work |
+| Resource publisher/publisherId/trust paths | Search/Explore filter, Explore facet and List filter return 400 / INVALID_ARGUMENT, including aliases, full IRI, legacy filters and empty/type short-circuits |
+| Invalid credentials / malformed request with bad Registry configuration | Authentication 401 and normal request validation 400 retain precedence |
+| Proxy Host, base URL or Registry publisher rotation | Resource IDs stay unchanged; only an explicit Registry publisher change changes its entry ID; the legacy resource prefix is held fixed |
+
+`testConfiguredTrustDeclaration` prepares a real resource through the native API and
+checks nonempty resource queries even when Registry documents are rejected.
+`testResourceIdentityDimensionsAreUnsupported` checks canonical fields, aliases/full
+IRIs, legacy input and invalid credentials. The production query parser remains
+open; these dimensions lack resource-level backing data.
+
+Test settings `nacos.test.ard.trust.publisher` (expected Registry publisher, default
+`nacos`), `nacos.test.ard.trust.identity` and `nacos.test.ard.trust.identity-type`
+(default empty) describe the expected Registry declaration. Server configuration uses
+`nacos.ai.ard.registry.publisher`; `nacos.test.ard.legacy-prefix` (default `nacos`)
+asserts unchanged ordinary resource IDs. `nacos.test.ard.trust.expect-rejection=true`
+expects rejection only from Registry-bearing documents. Default CI exercises absent
+trust and unsupported resource dimensions; configured cases need separate deployments.
+Parser tests cover FQDN syntax, malformed authorities, exact domain comparison and
+identity-type-independent checks. No test claims cryptographic verification, DID
+resolution, ownership or delegated authority. Multi-publisher resource registration,
+resource trust persistence/indexing and legacy-ID migration remain unavailable;
+these tests must not claim that capability. Existing coverage classifications and
+`DAUTH-F03` remain unchanged; the disabled case is not counted as passed.

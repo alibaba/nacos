@@ -18,34 +18,24 @@
 
 本文同时列出已实现测试和待完成的验收设计；各功能的覆盖范围见§4。
 覆盖等级由实际测试场景决定，不能由设计行数推导。
-本文件和对应正式 UT/IT 随功能提交；临时交叉矩阵、临时脚本及执行输出只保存在本地。
 目标规范见 [中文设计](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md)。
 所有上游引用固定到 f073b1ea9b01a5f068d0b0986426f2ea49fa30b2。
 本文件是全部正式用例、共用fixture/错误断言和RG回归组的唯一维护位置；
 用例按功能编排，保留已有测试 ID，便于关联代码、兼容审计和历史验证。
 修改前代码事实与兼容影响见[兼容审计](ARD_V091_COMPATIBILITY_REVIEW.md)（BC01–BC20）；
-运行时契约以双语目标规范为准。本地矩阵另管环境组合，不复制正式用例。
+运行时契约以双语目标规范为准。
 
 <a id="test-gates"></a>
 
-## 1. 每项功能的前置门禁
+## 1. 测试范围与环境
 
-每项功能开始改生产代码前，必须先完成：
-需求章节及规范强度核对 -> 当前代码/已有测试核对 -> 正式 UT/IT 设计 ->
-本地交叉矩阵选择 -> 既有回归基线 -> 实现。
-每个案例记录前置数据、输入、正/负断言、清理、功能归属和修改前后预期。
-不得按已写实现倒推预期，也不得把协议允许的输入自行列为错误。
+测试覆盖正常响应、空集合、边界与预期错误。用例描述前置数据、输入、断言、清理和兼容影响；
+错误预期来自协议和公开的 Nacos 部署策略，不把协议允许的输入自行列为错误。
+HTTP 契约由外部 standalone IT 验证；内部解析、索引和受控故障由 UT/组件测试覆盖。
+离线 Schema 校验与 HTTP 验证分别记录，不能互相替代。
 
-正式 UT/IT 以功能正确性为目标，覆盖正常、空集合、边界和预期错误。
-每项有 HTTP 行为变化时，UT 与真实 standalone IT 都必须具备；无法暴露的内部失败
-使用 UT/组件测试，并写明 IT 不适用原因，不添加生产故障注入 API。
-文档核验和离线 fixture 校验不替代 HTTP 验收。内部解析器由 UT 覆盖；
-Search/Explore 接入时同时覆盖 HTTP 输入绑定、成功结果与错误。
-
-现有类存在时扩展原测试类。UT 新方法使用 camelCase；共享 fixture/断言复用现有 helper。
-IT 使用外部独立服务器，不能在 IT 中启动 Spring/Nacos。鉴权遵循仓库现行默认开启基线
-及 it-new.yml，而不是旧 skill 中默认关闭鉴权的历史说明。适配器响应使用 ARD envelope，
-不能套用通用 Nacos Result<T> 断言。
+IT 使用独立服务器，不在测试类中启动 Spring/Nacos。鉴权配置以仓库 it-new.yml 为准。
+适配器响应使用 ARD envelope，不使用 Nacos Result<T> 断言。
 
 <a id="protocol-sources"></a>
 
@@ -135,7 +125,8 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | Search | `ArdQueryMapperTest`、服务 UT 及 `ArdAdaptorOpenApiITCase` 覆盖 context/过滤、绑定兼容、namespace 和分页恢复。增强模式另需确定性 provider 环境；普通部署不代表增强模式已执行。 |
 | Explore | 服务 UT 和 HTTP IT 覆盖 query/facet 别名、独立选项与完整集合统计。 |
 | 分页 | 服务 UT 与 105 条资源 HTTP IT 覆盖 Search 100 上限、List 既有规则、续页与原条件重查。 |
-| Trust 与最终一致性验收 | 待完成；身份冲突/无法验证的处理策略尚未确定。私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
+| Trust | `ArdTrustIdentityValidatorTest`、服务/契约 UT 与部署参数化 HTTP IT 覆盖 authority 一致性、开放结构、未知框架、配置错误及新旧投影。 |
+| 最终一致性验收 | 完整一致性验收仍待完成；私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
 
 HTTP 场景及覆盖限制统一见[场景索引](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md)。
 设计、实现和执行分开记录；具体运行结果以对应提交的测试报告为准。
@@ -218,8 +209,8 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 旧context被忽略，标准filter数组数字/boolean/object/null曾接受；这两类按BC03/05明确升级。
 Explore query缺省/空/blank均200；无效凭据先于坏JSON返回401。
 GET pageSize非整数/boolean/超范围当前500（不是400），空串使用缺省；这是既有错误映射缺口，
-本批保留并登记后续，不能将其纳入新校验顺便修正。namespace对照需有效身份，匿名跨namespace401
-不能误记为绑定失败。原始before证据仅本地保存，不提交凭据。
+该兼容行为保持不变。namespace对照需有效身份，匿名跨namespace401
+不能误记为绑定失败。测试记录不包含凭据。
 
 Search使用原始key+解析字段标识合并组，同组OR，组间AND；单值type选择逐组求交，
 多值tags保留独立predicate。标准filter严格string/string[]，legacy沿用旧转换与values优先。
@@ -356,14 +347,16 @@ resolved field，聚合id使用独立前缀+original key以隔离两个别名的
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
-| UT-C08-01 | 无 trust、带 identity 的开放 trust、缺 identity 的小写 trust | 前两者通过；后者语义校验不通过；框架额外字段不会因封闭 whitelist 被误判 | 旧封闭 schema -> 开放框架语义 |
-| UT-C08-02 | issuer/publisher 明确匹配、明确冲突、无法判定的框架 | 匹配/冲突/未知明确区分；冲突不能标为合规，未知不能标为已验证；不把未知 DID 当协议非法 | 无绑定证据 -> 可审计验证状态 |
-| IT-C08-01 | 现有可配置 trust identity 与未配置两种部署 | 已支持配置继续输出小写 trust 与 identity；未配置省略；URN 不被自动改写 | 原正确行为保持 |
-| IT-C08-02 | 明确 authority 冲突的部署 | 身份处理策略确定后再补精确 HTTP/启动预期；未决前不得实施或宣称通过 | 待决策，不伪造协议状态码 |
+| UT-C08-01 | 无 trust、开放成员、缺失/非字符串 identity、畸形 trust 类型 | identity 必填；自定义 identityType 和嵌套框架成员按新版原始 Schema 校验；小写字段独立检查 | 原封闭 Schema -> 新版开放结构 |
+| UT-C08-02 | Registry FQDN、显式publisher缺失、HTTPS/SPIFFE/did:web、未知框架/提示；两个普通资源及查询别名 | 只校验Registry声明；含Registry文档拒绝畸形/冲突，普通查询含空集合可用；资源不继承trust且ID不随Registry配置变化；资源身份filter/facet包括短路/别名/IRI返回400；source聚合保持 | 全局混用 -> Registry归属与资源缺口分离 |
+| IT-C08-01 | Registry trust缺省/匹配/未知；publisher/base URL/Host独立变化 | 三个Registry文档按配置声明；非空Search/List/type Explore与Artifact可用；普通资源无trust且ID稳定，新旧hint投影兼容 | 全局身份 -> 仅Registry身份 |
+| IT-C08-02 | Registry publisher缺失/畸形、authority冲突/畸形；资源身份维度查询；有效/坏凭据 | 服务可启动；仅含Registry的三个文档500；普通查询/Artifact可用；资源publisher/trust filter/facet400；坏凭据401和请求校验优先 | 全局拒绝 -> 声明文档拒绝且普通查询隔离 |
 
-依据 S08/S09。ARD 没有指定启动失败、仅支持 HTTPS/SPIFFE/did:web、
-或未知 identityType 必须拒绝；已从必做项删除。新的 trust 生产行为须先明确身份冲突及无法验证时的处理策略，
-单纯 schema/conformance 断言可以先完成。密码学验证不由字符串匹配替代。
+部署策略及迁移见目标规范§5.2；Registry声明错误来自服务端配置，返回500；
+请求未支持的资源身份维度返回400，两者不能混淆。资源publisher/trust注册、存储、授权、
+索引和旧标识迁移待实现，不能用Registry配置的测试替代资源级能力验收。
+比较器不访问网络、不验证签名/证书/委托，不把未知DID方法当非法；不修改上游fixture。
+HTTP测试通过外部部署参数指定预期配置，不在测试类中启动服务或修改服务器配置。
 
 <a id="pagination"></a>
 
@@ -439,17 +432,11 @@ namespace绑定继续复用ArdSearchControllerTest。这些是RG06/08/09的执�
 
 <a id="execution-record"></a>
 
-## 6. 验证记录要求
+## 6. 测试证据与覆盖边界
 
-每项功能的验证记录至少包含：
-协议来源/差异 ID、UT ID->真实类/方法、IT ID->真实类/方法、所选回归组、
-baseline 命令/结果、after 命令/结果、已知限制、数据清理结果。
-所有必要 UT/IT 与生产代码同一变更提交，scenario/coverage 同步更新。
-本地交叉矩阵和临时工具必须不在 staged diff 中；不可替代正式测试。
-
-提交前执行受影响模块 Spotless apply -> check -> compile/UT/IT，
-PR前运行仓库要求的检查。没有服务器时只能报告 test-compile，不能标记 IT 通过。
-每个功能的测试设计先于生产代码；通过设计审阅不等于测试执行通过。
+验证结果应关联协议章节、正式用例和真实测试类/方法，并说明部署条件、已知限制和数据清理结果。
+有 HTTP 行为的场景以独立服务器执行结果为准；只有编译或 Controller mock 不能计为 HTTP 通过。
+场景文档与覆盖登记按实际结果维护；设计中尚未实现的场景和 Disabled 用例不计入通过数量。
 
 [s01]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L546-L588
 [s02]: https://github.com/ards-project/ard-spec/blob/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/spec/ard.md#L206-L218

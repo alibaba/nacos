@@ -137,6 +137,27 @@ class ArdOpenApiContractTest {
         assertTrue(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
     }
     
+    @Test
+    void shouldAcceptFrameworkDefinedTrustWithoutClaimingVerification() throws Exception {
+        ObjectNode entry = completeEntry();
+        var trust = MAPPER.readTree("{\"identity\":\"did:custom:subject\","
+            + "\"identityType\":\"custom-pki\",\"customProof\":{\"nested\":[1,true]},"
+            + "\"trustSchema\":{\"customPolicy\":true},"
+            + "\"attestations\":[{\"type\":\"scan\",\"uri\":\"https://example.com/proof\","
+            + "\"customScope\":\"artifact\"}],"
+            + "\"provenance\":[{\"relation\":\"customRelation\",\"sourceId\":\"source\","
+            + "\"frameworkData\":{}}]}");
+        entry.set("trustManifest", trust);
+        assertTrue(CONTRACTS.validateLowercaseTrust(entry).isEmpty());
+        assertFalse(CONTRACTS.schema(ArdContractSchemas.LEGACY, "ai-catalog.schema.json",
+            "/$defs/trustManifest").validate(trust).isEmpty());
+        for (String invalid : List.of("null", "[]", "true", "\"identity\"", "{}",
+            "{\"identity\":null}", "{\"identity\":1}")) {
+            entry.set("trustManifest", MAPPER.readTree(invalid));
+            assertFalse(CONTRACTS.validateLowercaseTrust(entry).isEmpty(), invalid);
+        }
+    }
+    
     private static ObjectNode completeEntry() {
         return MAPPER.createObjectNode().put("identifier", "urn:air:example.com:skill:demo")
             .put("displayName", "Demo").put("type", "application/agent-skills+zip")
