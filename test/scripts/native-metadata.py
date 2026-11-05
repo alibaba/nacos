@@ -23,6 +23,11 @@ and writes the result in a stable, line-oriented order so that reviews and diffs
 ``check`` verifies a committed file without needing GraalVM or a database. CI runs it from
 ``native-build-it.py``.
 
+``collect-missing`` closes the loop from the other side: an executable built with
+``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
+prints every dynamic access that has no metadata. This command turns such logs into the same
+format as the agent output, so ``refresh`` can merge them.
+
 Typical refresh, after tracing the Server with the exact classpath of the Native build::
 
     python3 test/scripts/native-metadata.py refresh \\
@@ -389,6 +394,72 @@ def command_check(args):
     return 1 if issues else 0
 
 
+MISSING_ERROR = re.compile(
+    r"Missing(?P<kind>\w*)RegistrationError: (?P<what>[^\n]*?)(?:\. To allow this operation[^\n]*)?$",
+    re.MULTILINE)
+MISSING_PATTERNS = (
+    ("resource", re.compile(r"Cannot access resource at path '(?P<glob>[^']+)'$")),
+    ("bundle", re.compile(r"Cannot access resource bundle with name '(?P<bundle>[^']+)'$")),
+    ("method", re.compile(
+        r"Cannot reflectively access method '(?P<type>[^#']+)#(?P<name>[^(']+)\((?P<params>[^)]*)\)'$")),
+    ("field", re.compile(r"Cannot reflectively access field '(?P<type>[^#']+)#(?P<name>[^']+)'$")),
+    ("serializable", re.compile(
+        r"Cannot serialize or deserialize (?:type )?'(?P<type>[^']+)'(?: with target constructor.*)?$")),
+    ("type", re.compile(r"Cannot reflectively access (?:the class |the )?'(?P<type>[^'#]+)'$")),
+)
+
+
+def parse_missing(text):
+    """Turn missing registration reports into agent style metadata.
+
+    The member is taken from the report's headline, not from the JSON snippet that follows it,
+    because the snippet only names the type. Returns (document, unparsed headlines).
+    """
+    reflection, resources, unparsed = {}, [], set()
+    for report in MISSING_ERROR.finditer(text):
+        what = report.group("what")
+        for kind, pattern in MISSING_PATTERNS:
+            found = pattern.match(what)
+            if not found:
+                continue
+            if kind == "resource":
+                resources.append({"glob": found.group("glob")})
+            elif kind == "bundle":
+                resources.append({"bundle": found.group("bundle")})
+            else:
+                entry = reflection.setdefault(found.group("type"), {"type": found.group("type")})
+                if kind == "method":
+                    params = [p.strip() for p in found.group("params").split(",") if p.strip()]
+                    entry.setdefault("methods", []).append(
+                        {"name": found.group("name"), "parameterTypes": params})
+                elif kind == "field":
+                    entry.setdefault("fields", []).append({"name": found.group("name")})
+                elif kind == "serializable":
+                    entry["serializable"] = True
+            break
+        else:
+            unparsed.add(report.group("kind") + ": " + what)
+    return {"reflection": merge_reflection(list(reflection.values())),
+            "resources": resources}, sorted(unparsed)
+
+
+def command_collect_missing(args):
+    text = "\n".join(Path(log).read_text(errors="replace") for log in args.log)
+    document, unparsed = parse_missing(text)
+    document = {"reflection": [normalize(e) for e in document["reflection"]],
+                "resources": sorted({json.dumps(r, sort_keys=True): r
+                                     for r in document["resources"]}.values(), key=resource_sort_key)}
+    output = Path(args.output)
+    output.mkdir(parents=True, exist_ok=True)
+    (output / METADATA_NAME).write_text(json.dumps(document, indent=1, sort_keys=True) + "\n")
+    print("collected %d reflection entries and %d resources from %d report(s); %d unparsed" % (
+        len(document["reflection"]), len(document["resources"]),
+        len(MISSING_ERROR.findall(text)), len(unparsed)))
+    for headline in unparsed:
+        print("UNPARSED " + headline, file=sys.stderr)
+    return 0
+
+
 def command_selftest(args):
     """Exercise merge, policy, canonical rendering and validation on synthetic data."""
     import tempfile
@@ -440,6 +511,38 @@ def command_selftest(args):
             target.write_text(broken)
             with contextlib.redirect_stderr(io.StringIO()):
                 assert command_check(argparse.Namespace(file=str(target), classpath=None)) == 1
+    sample = (
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively access "
+        "method 'p.Plain#hello(java.lang.String, int)'. To allow this operation, add the following "
+        "to the 'reflection' section of 'reachability-metadata.json' and rebuild the native image:\n"
+        "\n  {\n    \"type\": \"p.Plain\"\n  }\n\n"
+        "Caused by: org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot "
+        "reflectively access method 'p.Plain#<init>()'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively access "
+        "field 'p.Plain#name'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively access "
+        "the class 'p.Other'. To allow this operation, add\n"
+        "com.oracle.svm.core.reflect.serialize.MissingSerializationRegistrationError: Cannot "
+        "serialize or deserialize type 'p.Data' with target constructor class 'java.lang.Object'. "
+        "To allow this operation, add\n"
+        "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError: Cannot access "
+        "resource at path 'a/b.txt'. To allow this operation, add\n"
+        "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError: Cannot access "
+        "resource at path 'a/b.txt'. To allow this operation, add\n"
+        "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError: Cannot access "
+        "resource bundle with name 'p.Bundle'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingJNIRegistrationError: Something unexpected. To allow "
+        "this operation, add\n")
+    collected, unparsed = parse_missing(sample)
+    by_type = {e["type"]: normalize(e) for e in collected["reflection"]}
+    assert by_type["p.Plain"]["methods"] == [
+        {"name": "<init>", "parameterTypes": []},
+        {"name": "hello", "parameterTypes": ["java.lang.String", "int"]}], by_type["p.Plain"]
+    assert by_type["p.Plain"]["fields"] == [{"name": "name"}]
+    assert by_type["p.Other"] == {"type": "p.Other"}
+    assert by_type["p.Data"] == {"type": "p.Data", "serializable": True}
+    assert len(collected["resources"]) == 3, collected["resources"]
+    assert unparsed == ["JNI: Something unexpected"], unparsed
     print("native-metadata selftest OK")
     return 0
 
@@ -459,6 +562,11 @@ def main():
     check.add_argument("file", nargs="?", default=DEFAULT_METADATA)
     check.add_argument("--classpath", help="also verify entries against this Native classpath")
     check.set_defaults(handler=command_check)
+    missing = commands.add_parser(
+        "collect-missing", help="turn missing registration reports of a Native run into metadata")
+    missing.add_argument("log", nargs="+", help="log files of a run with MissingRegistrationReportingMode=Warn")
+    missing.add_argument("--output", required=True, help="directory that receives reachability-metadata.json")
+    missing.set_defaults(handler=command_collect_missing)
     selftest = commands.add_parser("selftest", help="run built-in checks of this tool")
     selftest.set_defaults(handler=command_selftest)
     args = parser.parse_args()
