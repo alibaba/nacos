@@ -9,13 +9,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Integration tests that also fail against the ordinary JVM Server in the setup of
-# test/scripts/native-ci.sh (PostgreSQL, ARD adaptor and anonymous AI access not enabled).
-# They are not Native regressions and are reported but do not fail the job.
-# Format: <test class>.<test method>, shell-style wildcards allowed.
+# Integration tests that fail in the setup of test/scripts/native-ci.sh for reasons that do not
+# depend on the Native executable. They are reported but do not fail the job.
+# Format: <test class>.<test method>, shell-style wildcards allowed. Brackets are wildcards too, so
+# '?' stands for the brackets around the invocation index of a parameterized test.
+
+# These request the ARD adaptor on port 9080. It is a structural build switch
+# (nacos.ai.ard.enabled) that the default build leaves off, so nothing listens there.
 ArdAdaptorOpenApiITCase.*
-AiCapabilitiesClientOpenApiITCase.shouldRejectValidlySignedExpiredCredential
 AuthScopeGuardITCase.shouldKeepNacosCredentialsOutOfExternalRequests
-ResourceAuthorizationITCase.testAnonymousSkillRejectsExplicitInvalidCredentials
+# Invocations 5 to 11 are the ard(...) scenarios; 1 to 4 run against the Server and have to pass.
+ConditionalAnonymousAuthorizationITCase.testEveryConditionalAnonymousOperation(AnonymousScenario)?[5-9]?
+ConditionalAnonymousAuthorizationITCase.testEveryConditionalAnonymousOperation(AnonymousScenario)?1[01]?
+
+# These also fail against the ordinary JVM Server with PostgreSQL.
 ConfigListAdminApiOpenApiITCase.testListConfigsByFuzzyDataIdAdvancedFiltersAndPagination
 ConfigListConsoleApiOpenApiITCase.testListConfigsByFuzzyDataIdAdvancedFiltersAndContentSearch
