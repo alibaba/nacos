@@ -22,6 +22,11 @@
 #
 # Usage: native-ci.sh <prepare|build|start|smoke|integration|report|all>
 #
+# The integration stage ends with a restart check (restart_check): it creates data that no suite
+# creates, waits for the Raft snapshots of the naming service, restarts the Native Server on the same
+# home and database, and looks for the data again (test/scripts/native-restart.sh). The report stage
+# judges the result and scans the logs of both runs for missing registrations.
+#
 # Environment (all optional):
 #   NATIVE_CI_VARIANT       default | exact. 'exact' builds with --exact-reachability-metadata
 #                           and runs with -XX:MissingRegistrationReportingMode=Warn so that every
@@ -342,6 +347,87 @@ run_suite() {
         -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
 }
 
+snapshots_saved() {
+    cat "${NACOS_HOME}"/logs/*.log 2>/dev/null | grep -c 'SnapshotOperation.SAVE cost time' || true
+}
+
+# When the Server starts, the Raft groups of the naming service load their snapshot and replay the log
+# behind it. No suite triggers that, because the Server of the job is never restarted. This does it
+# once after the suites, with the data of native-restart.sh. It never fails the stage: the result goes
+# to ci-out/reports/restart-check.txt and the report stage judges it.
+restart_check() {
+    local report="$OUT/reports/restart-check.txt"
+    local home="${NACOS_HOME}"
+    mkdir -p "$OUT/reports"
+    : > "$report"
+
+    log "Restart check: create the data that has to survive the restart"
+    if bash "$ROOT/test/scripts/native-restart.sh" seed; then
+        echo "PASS  seed" >> "$report"
+    else
+        echo "FAIL  seed" >> "$report"
+        return 0
+    fi
+
+    # JRaft saves a snapshot of each group at an interval between 30 and 60 seconds here (see
+    # stage_start). Wait a little longer, so that the data is in a snapshot that the restart loads.
+    log "Wait for the Raft snapshots"
+    local saved_before
+    saved_before="$(snapshots_saved)"
+    sleep 70
+    echo "Snapshots saved while waiting: $(( $(snapshots_saved) - saved_before ))"
+
+    log "Stop the Native Server"
+    local pid
+    pid="$(pgrep -f 'target/nacos-server' | head -n 1 || true)"
+    if [ -z "$pid" ]; then
+        echo "FAIL  stop: no Native Server process" >> "$report"
+        return 0
+    fi
+    kill "$pid"
+    for _ in $(seq 1 120); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.5
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+        echo "The Native Server still runs 60 s after SIGTERM; killing it" >&2
+        kill -9 "$pid" || true
+        sleep 1
+        echo "FAIL  stop: the Server ignored SIGTERM for 60 s" >> "$report"
+    else
+        echo "PASS  stop" >> "$report"
+    fi
+    # The launcher truncates startup.log.
+    cp "${home}/logs/startup.log" "${home}/logs/startup-before-restart.log"
+
+    log "Start the Native Server again"
+    export NACOS_NATIVE_OPTS="${NACOS_NATIVE_OPTS} -Dnacos.logs.path=${home}/logs"
+    bash "${home}/bin/startup-native.sh"
+    local started
+    started="$(date +%s%N)"
+    if ! timeout 180s bash -c \
+        'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 0.2; done'; then
+        echo "FAIL  start after the restart: the Server did not become live" >> "$report"
+        tail -n 300 "${home}/logs/startup.log" || true
+        # A Raft group that cannot load its snapshot leaves nothing on stdout but the starting message.
+        for raft_log in alipay-jraft.log protocol-raft.log; do
+            echo "--- errors and warnings in ${raft_log} (last 20)"
+            { grep -E ' (ERROR|WARN) ' "${home}/logs/${raft_log}" | tail -n 20 | cut -c1-300; } || true
+        done
+        return 0
+    fi
+    echo "Native Server live after $(( ($(date +%s%N) - started) / 1000000 )) ms"
+    echo "PASS  start after the restart" >> "$report"
+
+    log "Restart check: look for the data on the restarted Server"
+    if bash "$ROOT/test/scripts/native-restart.sh" verify; then
+        echo "PASS  data after the restart" >> "$report"
+    else
+        echo "FAIL  data after the restart" >> "$report"
+    fi
+    return 0
+}
+
 stage_integration() {
     load_state
     local status=0
@@ -367,6 +453,7 @@ stage_integration() {
         || status=1
     run_suite maintainer-sdk -pl test/maintainer-sdk-test verify \
         -Pmaintainer-sdk-integration-test || status=1
+    restart_check
     return "$status"
 }
 
@@ -426,14 +513,33 @@ for test_class, items in sorted(by_class.items()):
 sys.exit(1 if executed == 0 or new else 0)
 PY
 
+    log "Restart check"
+    local restart_report="$OUT/reports/restart-check.txt"
+    if [ -f "$restart_report" ]; then
+        cat "$restart_report"
+        # The check is done when its last step passed; a report that stops earlier is a failure too.
+        if ! grep -q '^PASS  data after the restart' "$restart_report" \
+            || grep -q '^FAIL' "$restart_report"; then
+            status=1
+        fi
+    else
+        echo "The restart check did not run"
+    fi
+
     log "Missing registrations reported by the Native executable"
     local startup="${NACOS_HOME}/logs/startup.log"
     if [ ! -f "$startup" ]; then
         echo "No Native Server log; the server did not start" >&2
         return 1
     fi
+    # The restart truncated startup.log: scan the log of the first run as well.
+    local scanned="$startup"
+    if [ -f "${NACOS_HOME}/logs/startup-before-restart.log" ]; then
+        scanned="$OUT/logs/startup-both-runs.log"
+        cat "${NACOS_HOME}/logs/startup-before-restart.log" "$startup" > "$scanned"
+    fi
     mkdir -p "$OUT/missing-registrations"
-    python3 -I "$METADATA_TOOL" collect-missing "$startup" --output "$OUT/missing-registrations" \
+    python3 -I "$METADATA_TOOL" collect-missing "$scanned" --output "$OUT/missing-registrations" \
         2> "$OUT/missing-registrations/unparsed.txt" || true
     cat "$OUT/missing-registrations/unparsed.txt" >&2
     if [ "$VARIANT" = "exact" ]; then
