@@ -371,6 +371,7 @@
                         <exclude>**/jni-config.json</exclude>
                         <exclude>**/predefined-classes-config.json</exclude>
                         <exclude>**/serialization-config.json</exclude>
+                        <exclude>**/reachability-metadata.json</exclude>
                         <exclude>**/filter-config.json</exclude>
                         <!-- Strict JSON Schema cannot carry a source-code comment header. -->
                         <exclude>specs/schemas/**/*.schema.json</exclude>
