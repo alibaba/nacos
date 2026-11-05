@@ -17,14 +17,18 @@
 package com.alibaba.nacos.copilot.config;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.copilot.connection.ConnectionTable;
+import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
+import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
+import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
 import io.agentscope.core.ReActAgent;
+import io.agentscope.core.model.Model;
 import io.agentscope.core.studio.StudioManager;
-import io.agentscope.extensions.model.dashscope.DashScopeChatModel;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -41,18 +45,21 @@ public class CopilotAgentManager {
     
     private final CopilotConfigStorage configStorage;
     private final CopilotProperties defaultProperties;
-    private final Environment environment;
+    private final ProviderReaderAggregator providerReaders;
+    private final CopilotModelResolver modelResolver;
     
     private volatile CopilotProperties currentConfig;
+    private volatile ConnectionTable connectionTable = ConnectionTable.empty();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
-        CopilotProperties defaultProperties,
-        Environment environment) {
+        CopilotProperties defaultProperties, ProviderReaderAggregator providerReaders,
+        CopilotModelResolver modelResolver) {
         this.configStorage = configStorage;
         this.defaultProperties = defaultProperties;
-        this.environment = environment;
+        this.providerReaders = providerReaders;
+        this.modelResolver = modelResolver;
     }
     
     /**
@@ -116,8 +123,8 @@ public class CopilotAgentManager {
     public void refreshConfig() {
         lock.writeLock().lock();
         try {
-            CopilotProperties config = getEffectiveConfig();
-            currentConfig = config;
+            currentConfig = getEffectiveConfig();
+            connectionTable = providerReaders.readAll();
             LOGGER.info("Copilot configuration refreshed");
         } finally {
             lock.writeLock().unlock();
@@ -140,19 +147,26 @@ public class CopilotAgentManager {
             return null;
         }
         
-        String apiKey = getApiKey(config);
-        if (StringUtils.isBlank(apiKey)) {
-            LOGGER.warn("Copilot API Key is not configured");
+        CopilotModelConnection connection = connectionTable.getDefault();
+        if (connection == null) {
+            LOGGER.warn("No available Copilot model connection");
             return null;
         }
         
-        // Create model
-        DashScopeChatModel model = DashScopeChatModel.builder()
-            .apiKey(apiKey)
-            .modelName(config.getModel())
-            .stream(true)
-            .enableThinking(true)
-            .build();
+        if (StringUtils.isBlank(connection.getApiKey())) {
+            LOGGER.warn("Copilot API Key is not configured for connection {}",
+                connection.getName());
+            return null;
+        }
+        
+        Model model;
+        try {
+            model = modelResolver.resolve(connection);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to create Copilot model from connection {}",
+                connection.getName(), e);
+            return null;
+        }
         
         // Create agent
         ReActAgent.Builder agentBuilder = ReActAgent.builder()
@@ -177,8 +191,8 @@ public class CopilotAgentManager {
             return false;
         }
         
-        String apiKey = getApiKey(config);
-        return StringUtils.isNotBlank(apiKey);
+        CopilotModelConnection connection = connectionTable.getDefault();
+        return connection != null && StringUtils.isNotBlank(connection.getApiKey());
     }
     
     /**
@@ -202,23 +216,12 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Get API key from environment variable or config.
-     *
-     * @param config CopilotProperties
-     * @return API key
+     * Release the AgentScope Studio client on shutdown.
      */
-    private String getApiKey(CopilotProperties config) {
-        // First try environment variable
-        String apiKey = environment.getProperty("COPILOT_API_KEY");
-        if (StringUtils.isNotBlank(apiKey)) {
-            return apiKey;
+    @PreDestroy
+    public void destroy() {
+        if (StudioManager.isInitialized()) {
+            StudioManager.shutdown();
         }
-        
-        // Then try config property
-        if (config != null) {
-            return config.getApiKey();
-        }
-        
-        return null;
     }
 }
