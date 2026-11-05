@@ -168,6 +168,12 @@ enforces them in CI:
   the generator described above, so a static copy would be redundant and would go stale.
 - Agent and JVM internals: JVM diagnostic commands, JFR management, `jdk.internal.*`, Native Image
   builder classes and test frameworks.
+- Lambda classes, the `{"type": {"lambda": ...}}` entries. The GraalVM 25 documentation states that
+  metadata cannot be provided for lambda-proxy classes, and a probe with GraalVM CE 25.0.2 showed
+  that such an entry changes nothing that reflection on the class finds, with or without member
+  flags. A build with `--exact-reachability-metadata` reports these classes anyway. The Server's
+  four reports come from Spring checking infrastructure beans for advisors, and the default and the
+  exact build pass and fail the same tests. `collect-missing` counts and skips them.
 - Lookups of classes and resources that do not exist on the Native classpath, such as probes for
   optional libraries or locale variants like `LocalStrings_zh_CN.properties`. They describe the
   machine that was traced, and the default reachability mode does not need them. A build with
@@ -248,7 +254,8 @@ python3 test/scripts/native-metadata.py refresh --classpath bootstrap/target/nat
 `delta.json` lists what is missing and exists on the classpath. Pass it together with the original
 trace to a final `refresh` to merge it into the bundled file. Each report names the exact class,
 method or field. Repeat the cycle of exercising, collecting and merging until no relevant report
-remains. Reports that the tool cannot parse are printed as `UNPARSED`.
+remains. Reports that the tool cannot parse are printed as `UNPARSED`; reports about lambda-proxy
+classes are counted and skipped, as described above.
 
 ### The Native CI job
 

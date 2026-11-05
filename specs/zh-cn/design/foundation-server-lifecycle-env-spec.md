@@ -230,7 +230,8 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
 - 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。文件必须确定性：
   排序，每个条目一行。不得包含同一构建中由 Spring AOT 生成的类、agent 或 JVM 内部类、测试或工具类，
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
-  类和资源的探测不记录；该元数据面向默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
+  类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向
+  默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
 - 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
   重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
   用于整理和检查该文件，普通 CI 构建会检查它。
