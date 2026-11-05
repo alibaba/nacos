@@ -395,7 +395,8 @@ class NacosRoleServiceDirectImplTest {
         permissionInfo.setResource("test");
         permissionInfos.add(permissionInfo);
         NacosRoleServiceDirectImpl spy = spy(nacosRoleService);
-        when(spy.getPermissions("admin")).thenReturn(permissionInfos);
+        when(spy.getPermissions("admin", 1, Integer.MAX_VALUE))
+            .thenReturn(permissionPage(permissionInfos));
         spy.isDuplicatePermission("admin", "test", "r");
     }
     
@@ -404,9 +405,11 @@ class NacosRoleServiceDirectImplTest {
         PermissionInfo readWritePermission = permissionInfo("admin", "test", "rw");
         PermissionInfo readPermission = permissionInfo("admin", "data", "r");
         NacosRoleServiceDirectImpl spy = spy(nacosRoleService);
-        doReturn(Collections.emptyList()).when(spy).getPermissions("empty");
-        doReturn(java.util.Arrays.asList(readWritePermission, readPermission)).when(spy)
-            .getPermissions("admin");
+        doReturn(permissionPage(Collections.emptyList())).when(spy)
+            .getPermissions("empty", 1, Integer.MAX_VALUE);
+        doReturn(permissionPage(java.util.Arrays.asList(readWritePermission, readPermission)))
+            .when(spy)
+            .getPermissions("admin", 1, Integer.MAX_VALUE);
         
         assertFalse(spy.isDuplicatePermission("empty", "test", "r").getData());
         assertTrue(spy.isDuplicatePermission("admin", "test", "r").getData());
