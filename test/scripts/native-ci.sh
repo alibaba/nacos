@@ -88,6 +88,16 @@ CORE_OPENAPI_CLASSES+=",InstanceRegisterOpenApiITCase,InstanceAdminApiOpenApiITC
 CORE_OPENAPI_CLASSES+=",ServiceAdminApiOpenApiITCase,NamespaceAdminApiOpenApiITCase"
 CORE_OPENAPI_CLASSES+=",CoreStateAdminApiOpenApiITCase,UserLoginAuthApiITCase,DefaultAuthApiITCase"
 
+# The Java SDK classes that run against a single, current Server. Left out are the scenarios that
+# need an older Server (upgrade migration), a released SDK (binary compatibility) or the Jackson 3
+# profile.
+JAVA_SDK_CLASSES="ConfigServiceJavaSdkITCase,NamingServiceJavaSdkITCase,LockServiceJavaSdkITCase"
+JAVA_SDK_CLASSES+=",AuthEnabledJavaSdkITCase,AiServiceJavaSdkITCase"
+JAVA_SDK_CLASSES+=",AiTransportResourceMatrixJavaSdkITCase,McpHttpClientJavaSdkITCase"
+JAVA_SDK_CLASSES+=",AgentPublishJavaSdkITCase,AgentRequestBuilderJavaSdkITCase"
+JAVA_SDK_CLASSES+=",AgentModelValidationJavaSdkITCase,AgentDiscoveryServiceJavaSdkITCase"
+JAVA_SDK_CLASSES+=",A2aRadRoutingJavaSdkITCase"
+
 # The values of .github/workflows/it-new.yml: the AI integration tests are written for them. The two
 # reconciliation intervals set in stage_start make the background MCP cutover finish within seconds.
 RAD_SERVER_PUBLICATION_CAPACITY=3
@@ -351,7 +361,7 @@ stage_integration() {
         -Dnacos.agent.it.server.http.watch.waiter.capacity="$RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY" \
         || status=1
     run_suite java-sdk -pl test/java-sdk-test verify -Pjava-sdk-integration-test \
-        '-Dit.test=ConfigServiceJavaSdkITCase,NamingServiceJavaSdkITCase,LockServiceJavaSdkITCase,AuthEnabledJavaSdkITCase,AiServiceJavaSdkITCase,AgentPublishJavaSdkITCase,AgentRequestBuilderJavaSdkITCase,AgentModelValidationJavaSdkITCase' \
+        "-Dit.test=${JAVA_SDK_CLASSES}" \
         -Dnacos.test.auth.anonymous-ai.enabled=true \
         -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
         -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
