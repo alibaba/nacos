@@ -134,7 +134,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | Context 解析 | `ArdContextResolverTest` 覆盖固定 base、IRI、reset 和受控 loader 成功/错误；loopback loader UT 不计为 API IT。 |
 | Search | `ArdQueryMapperTest`、服务 UT 及 `ArdAdaptorOpenApiITCase` 覆盖 context/过滤、绑定兼容、namespace 和分页恢复。增强模式另需确定性 provider 环境；普通部署不代表增强模式已执行。 |
 | Explore | 服务 UT 和 HTTP IT 覆盖 query/facet 别名、独立选项与完整集合统计。 |
-| 分页 | Search 100 上限及相应边界用例待实现与执行。 |
+| 分页 | 服务 UT 与 105 条资源 HTTP IT 覆盖 Search 100 上限、List 既有规则、续页与原条件重查。 |
 | Trust 与最终一致性验收 | 待完成；身份冲突/无法验证的处理策略尚未确定。私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
 
 HTTP 场景及覆盖限制统一见[场景索引](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md)。
@@ -368,6 +368,12 @@ resolved field，聚合id使用独立前缀+original key以隔离两个别名的
 <a id="pagination"></a>
 
 ### 分页、地址与类型
+
+验证范围：仅Search上限50→100。`searchAndListShouldNormalizePageSizes`以105条真实Core
+候选参数化验证；修改前51/100/101/MAX四组失败（实际50），修改后全部满足目标。
+正式HTTP扩展`testLegacyCatalogEnumeratesMoreThanOneHundredPublicResources`的既有105条资源：
+9组页大小、调整续页大小、Search/List全集与排序、数值字符串/浮点/非法类型、List失效与重查。
+GET非整数500保持并明确标为既有错误映射缺口；URL/URN/artifact由原有回归覆盖。
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |

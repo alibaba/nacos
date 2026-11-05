@@ -112,6 +112,12 @@ independent limit/minCount options, nonempty full-set counts and agreement with 
 
 Query namespace isolation and query/body matching are covered by `ArdAdaptorOpenApiITCase.testQueryNamespaceBindingAndContextIsolation`, including same-name public resources in two namespaces and invalid credentials before body parsing.
 
+Pagination coverage extends `ArdAdaptorOpenApiITCase.testLegacyCatalogEnumeratesMoreThanOneHundredPublicResources`
+with 105-resource Search/List page-size boundaries, complete non-overlapping traversal with changed
+page sizes, stable List ordering/date filters, raw input coercion, and invalid List token recovery.
+Search cap increases from 50 to 100; List and existing artifact/identifier contracts are unchanged.
+GET non-integer pageSize still returns the previously observed 500 and is a separate error-mapping gap.
+
 `ArdContextResolverTest` covers the offline base, IRI expansion, reset and
 controlled loader success/error cases; see the [context test design](ARD_V091_TEST_DESIGN.md#context-processing).
 Loopback loader UT does not count as deployed API IT or raise the existing coverage classifications.

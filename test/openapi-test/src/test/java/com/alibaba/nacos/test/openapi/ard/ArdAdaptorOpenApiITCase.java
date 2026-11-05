@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -469,6 +470,95 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertLegacyCatalog(empty);
         assertEquals(1, discoveryGet("/.well-known/ard.json", identity).path("entries").size());
         assertEquals(1, discoveryGet("/.well-known/ai-catalog.json", identity).path("entries").size());
+        assertSearchAndListPageBoundaries(prefix, names);
+    }
+
+    private void assertSearchAndListPageBoundaries(String prefix, Set<String> expected) throws Exception {
+        String filter = "type = '" + TYPE_A2A + "' AND displayName = '" + prefix
+            + "' AND createdAfter > '2020-01-01' AND updatedAfter > '2020-01-01T00:00:00Z'";
+        for (Integer size : Arrays.asList(null, -1, 0, 1, 50, 51, 100, 101, Integer.MAX_VALUE)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            JsonNode first = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search);
+            assertEquals(size == null || size <= 0 ? 10 : Math.min(size, 100), first.path("results").size());
+            assertResponseSchemas("SearchResponse", first);
+            Set<String> found = resourceNames(first.path("results"));
+            String token = first.path("pageToken").asText();
+            for (int page = 0; !token.isBlank() && page < 4; page++) {
+                search.put("pageToken", token);
+                search.put("pageSize", 51);
+                JsonNode next = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search);
+                Set<String> current = resourceNames(next.path("results"));
+                assertTrue(Collections.disjoint(found, current));
+                found.addAll(current);
+                token = next.path("pageToken").asText("");
+            }
+            assertTrue(token.isBlank());
+            assertEquals(expected, found);
+
+            Query list = Query.newInstance().addParam("filter", filter).addParam("orderBy", "displayName asc");
+            if (size != null) { list.addParam("pageSize", size.toString()); }
+            JsonNode listed = ardGetJsonOk(ARD_PATH + "/agents", list);
+            assertEquals(size == null || size <= 0 ? 20 : Math.min(size, 100), listed.path("items").size());
+            assertResponseSchemas("ListResponse", listed);
+            List<String> ordered = new ArrayList<>(resourceNames(listed.path("items")));
+            token = listed.path("pageToken").asText("");
+            for (int page = 0; !token.isBlank() && page < 4; page++) {
+                list.addParam("pageToken", token).addParam("pageSize", "51");
+                JsonNode next = ardGetJsonOk(ARD_PATH + "/agents", list);
+                Set<String> current = resourceNames(next.path("items"));
+                assertTrue(Collections.disjoint(ordered, current));
+                ordered.addAll(current);
+                token = next.path("pageToken").asText("");
+            }
+            List<String> sorted = new ArrayList<>(expected);
+            Collections.sort(sorted);
+            assertTrue(token.isBlank());
+            assertEquals(sorted, ordered);
+        }
+        for (Object size : List.of("51", 51.9)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            assertEquals(51, ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, search).path("results").size());
+        }
+        for (Object size : List.of(true, Map.of(), 2147483648L)) {
+            Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
+            search.put("pageSize", size);
+            assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, search));
+        }
+        for (String size : List.of("10.5", "true", "2147483648")) {
+            HttpResponse invalid = executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
+                Query.newInstance().addParam("pageSize", size))));
+            // Existing GET converter error mapping is recorded separately, not changed by the cap fix.
+            assertEquals(500, invalid.code(), invalid.body());
+            assertEquals("INTERNAL_ERROR", JacksonUtils.toObj(invalid.body()).path("errorCode").asText());
+        }
+        Query list = Query.newInstance().addParam("filter", filter).addParam("orderBy", "displayName asc")
+            .addParam("pageSize", "1");
+        JsonNode first = ardGetJsonOk(ARD_PATH + "/agents", list);
+        String token = first.path("pageToken").asText();
+        String anchor = first.path("items").get(0).path("metadata").path("resourceName").asText();
+        list.addParam("pageToken", "invalid");
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents", list))));
+        deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, anchor);
+        list.addParam("pageToken", token);
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents", list))));
+        Set<String> remaining = new LinkedHashSet<>(expected);
+        remaining.remove(anchor);
+        Query restarted = Query.newInstance().addParam("filter", filter).addParam("orderBy", "name sideways ignored")
+            .addParam("pageSize", "100");
+        Set<String> recovered = new LinkedHashSet<>();
+        for (int page = 0; page < 3; page++) {
+            JsonNode next = ardGetJsonOk(ARD_PATH + "/agents", restarted);
+            Set<String> current = resourceNames(next.path("items"));
+            assertTrue(Collections.disjoint(recovered, current));
+            recovered.addAll(current);
+            if (!next.hasNonNull("pageToken")) { break; }
+            restarted.addParam("pageToken", next.path("pageToken").asText());
+        }
+        assertEquals(remaining, recovered);
+        assertArdInvalid(executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
+            Query.newInstance().addParam("filter", "displayName > 'invalid'")))));
     }
 
     private JsonNode discoveryGet(String path, AuthIdentity identity) throws Exception {

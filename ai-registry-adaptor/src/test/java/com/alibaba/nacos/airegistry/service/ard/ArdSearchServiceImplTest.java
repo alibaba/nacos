@@ -1129,6 +1129,38 @@ class ArdSearchServiceImplTest {
         }
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(
+        ints = {-1, 0, 1, 50, 51, 100, 101, Integer.MAX_VALUE})
+    void searchAndListShouldNormalizePageSizes(Integer size) throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        List<AiResourceSearchHit> hits = new ArrayList<>();
+        for (long i = 1; i <= 105; i++) {
+            documents.add(entry(i, "item-" + i));
+            hits.add(hit(i, 1D));
+        }
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(10001)))
+            .thenReturn(hits);
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(documents);
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents);
+        ArdSearchRequest request =
+            request("api", Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE));
+        request.setPageSize(size);
+        int expectedSearch = size == null || size <= 0 ? 10 : Math.min(size, 100);
+        int expectedList = size == null || size <= 0 ? 20 : Math.min(size, 100);
+        var response = service.search(request);
+        assertEquals(expectedSearch, response.getResults().size());
+        assertNotNull(response.getPageToken());
+        var listed =
+            service.list("public", "type = '" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE + "'",
+                "displayName asc", size, null);
+        assertEquals(expectedList, listed.getItems().size());
+        assertNotNull(listed.getPageToken());
+    }
+    
     private List<String> resultNames(ArdSearchResponse response) {
         return response.getResults().stream().map(ArdSearchResult::getDisplayName).toList();
     }

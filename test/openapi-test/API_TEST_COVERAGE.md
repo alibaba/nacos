@@ -706,6 +706,9 @@ Existing adaptor rows cover Search context/IRI aliases, independent filter group
 standard-value validation with legacy binding preserved, namespace isolation,
 valid cursor continuation and explicit recovery.
 Explore adds query/facet aliases, independent facet options and full-set counts.
+Search/List HTTP cases use 105 resources to verify page-size boundaries,
+complete traversal, ordering and token recovery. Search now caps pages at 100;
+List retains its existing rules. GET non-integer pageSize still has a known 500 mapping gap.
 Resolver/loader and enhanced-provider boundaries also have UT coverage;
 controlled remote contexts and enabled-provider deployments require separate test environments.
 See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)

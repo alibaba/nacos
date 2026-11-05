@@ -192,6 +192,7 @@ baseline for the vendored OpenAPI, JSON Schema, and conformance fixtures.
 The [ARD v0.91 Adaptation Design](ard-v091-adaptation-spec.md) defines the upgrade contract.
 Dual-version offline schemas, the host discovery route and the context resolver are implemented.
 Search consumes query contexts. Explore also resolves query and facet contexts.
+Search accepts page sizes up to 100.
 Trust authority policy and final conformance acceptance remain pending; the overall
 compatibility baseline is not promoted.
 
@@ -376,6 +377,13 @@ Explore resolves facet paths with the same request context and filter mapper as 
 Response keys retain the original (trimmed) field spelling; aliases for the same field
 keep independent limit/minCount options. Repeated identical keys keep the last request.
 The existing default limit 20, cap 100 and minimum count 1 remain unchanged.
+
+Search defaults to 10 entries and now caps pageSize at 100 (previously 50). List
+keeps its default 20 and cap 100. Null/nonpositive values use the existing defaults;
+requests above the cap are clamped. HTTP coercion and GET filter/orderBy parsing
+remain unchanged. Clients follow pageToken rather than treating a short page as
+the end; a continuing request may use a different pageSize. Increasing the Search
+cap does not change tokens, resource identifiers or artifact URLs.
 
 Explore facets aggregate the complete eligible result set after visibility,
 current-version, and request filtering. They must not be computed from one
