@@ -245,6 +245,10 @@ loading behavior, without requiring AOT artifacts or validating their manifest.
   processing must not refresh business services or mark the server ready.
 - Generate separate initialization code per phase and select it through a
   versioned phase index. Missing or outdated indexes must fail explicitly.
+- The generated initializers are selected by class name, so their reflection hints must be
+  registered without a condition. Spring's own hints for them only apply once the application
+  class is initialized, and the multi-context startup creates contexts from class literals and
+  never initializes those classes.
 - Derby and disabled protocol adaptors must not be permanent AOT restrictions.
   Datasource selection retains the precedence of `nacos.plugin.datasource-dialect.type`
   over the legacy `spring.sql.init.platform`. External dialects, Mappers and JDBC
