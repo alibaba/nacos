@@ -22,6 +22,9 @@ import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.lock.common.LockConstants;
+import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
@@ -29,6 +32,7 @@ import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.auth.mock.MockResourceParser;
 import com.alibaba.nacos.auth.mock.MockSuccessResourceParser;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -65,6 +69,8 @@ class GrpcProtocolAuthServiceTest {
     
     private AbstractAgentRequest agentRequest;
     
+    private LockOperationRequest lockRequest;
+    
     private GrpcProtocolAuthService protocolAuthService;
     
     @BeforeEach
@@ -75,6 +81,7 @@ class GrpcProtocolAuthServiceTest {
         mockNamingRequest();
         mockMcpRequest();
         mockAgentRequest();
+        mockLockRequest();
     }
     
     private void mockConfigRequest() {
@@ -104,6 +111,12 @@ class GrpcProtocolAuthServiceTest {
         };
         agentRequest.setNamespaceId("testNNs");
         agentRequest.setAgentName("testS");
+    }
+    
+    private void mockLockRequest() {
+        lockRequest = new LockOperationRequest();
+        lockRequest.setLockInstance(
+            new LockInstance("testKey", 30000L, LockConstants.REENTRANT_LOCK_TYPE));
     }
     
     @Test
@@ -191,6 +204,18 @@ class GrpcProtocolAuthServiceTest {
         assertEquals(agentRequest.getAgentName(), actual.getName());
         assertEquals(agentRequest.getNamespaceId(), actual.getNamespaceId());
         assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertNotNull(actual.getProperties());
+    }
+    
+    @Test
+    @Secured(signType = SignType.LOCK)
+    void testParseResourceWithLockType() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithLockType");
+        Resource actual = protocolAuthService.parseResource(lockRequest, secured);
+        assertEquals(SignType.LOCK, actual.getType());
+        assertEquals("testKey", actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertNotNull(actual.getProperties());
     }
     
