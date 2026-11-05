@@ -81,6 +81,9 @@ OPTIONS=(
     "-Dnacos.home=${NACOS_HOME}"
     "-Dspring.config.additional-location=file:${NACOS_HOME}/conf/"
     "-Dlogging.config=${NACOS_HOME}/conf/nacos-logback.xml"
+    # The AOT application logs with the packaged default configuration and does not read the
+    # logging.config above, so the log files would go to ${user.home}/nacos/logs without this.
+    "-Dnacos.logs.path=${NACOS_HOME}/logs"
 )
 FUNCTION_MODE="$(manifest_value functionMode)"
 case "$FUNCTION_MODE" in
