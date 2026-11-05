@@ -236,9 +236,12 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
   用于整理和检查该文件，普通 CI 构建会检查它。
 - 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收。在相同环境下普通 JVM Server 同样
-  失败的用例记录在基线中，不属于 Native 回归。可使用 `--exact-reachability-metadata` 构建并以
-  `-XX:MissingRegistrationReportingMode=Warn` 运行，以列出缺少元数据的动态访问。验证报告必须写明
-  GraalVM 版本、数据源以及实际运行的测试集。
+  失败的用例记录在基线中，不属于 Native 回归。套件不会重启 Server，因此验收还必须创建套件不会
+  创建的数据，等待命名服务的 Raft 快照落盘，在同一份数据上重启 Native Server 并再次读取这些数据；
+  只有这样 Raft 组才会加载快照并回放其后的日志（`test/scripts/native-restart.sh`）。可使用
+  `--exact-reachability-metadata` 构建并以 `-XX:MissingRegistrationReportingMode=Warn` 运行，
+  以列出缺少元数据的动态访问。验证报告必须写明 GraalVM 版本、数据源、实际运行的测试集以及
+  重启检查是否执行。
 
 ## 11. 待处理问题
 
