@@ -189,6 +189,9 @@ AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须�
 - 每个阶段生成独立初始化代码，通过带版本的阶段索引选取。缺失或过期的索引必须明确失败。
 - 生成的初始化类按类名选取，因此它们的反射提示必须无条件注册。Spring 自带的提示只有在应用类被
   初始化之后才生效，而多 Context 启动用类字面量创建 Context，从不初始化这些应用类。
+- AOT 运行直接生成字节码的类（CGLIB 子类、基于类的 AOP 代理及其 FastClass 辅助类）必须以构造器、
+  方法、字段和 unsafe 分配的完整成员类别注册反射。Spring 自带的提示只覆盖其运行时对这些类所用
+  的一部分：回调字段、回调 setter 以及不经构造器的代理实例化。
 - 不得将 Derby 或关闭扩展协议硬编码为 AOT 的永久限制。数据源选择遵循
   `nacos.plugin.datasource-dialect.type` 优先、`spring.sql.init.platform` 兼容的既有语义。
   外部方言、Mapper 和 JDBC 驱动必须进入构建 classpath；扩展协议的 context 必须一起生成。

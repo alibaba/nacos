@@ -249,6 +249,10 @@ loading behavior, without requiring AOT artifacts or validating their manifest.
   registered without a condition. Spring's own hints for them only apply once the application
   class is initialized, and the multi-context startup creates contexts from class literals and
   never initializes those classes.
+- Classes that the AOT run generates directly as bytecode (CGLIB subclasses, class-based AOP
+  proxies and their FastClass helpers) must be registered for reflection with their constructors,
+  methods, fields and unsafe allocation. Spring's own hints cover only part of what its runtime
+  uses on them: callback fields, callback setters and constructor-less proxy instantiation.
 - Derby and disabled protocol adaptors must not be permanent AOT restrictions.
   Datasource selection retains the precedence of `nacos.plugin.datasource-dialect.type`
   over the legacy `spring.sql.init.platform`. External dialects, Mappers and JDBC
