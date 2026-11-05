@@ -27,7 +27,8 @@
 #   native-dir  bootstrap/target/native of the finished build (default: that path in this repo)
 #
 # JAVA_HOME must point to a GraalVM installation. NACOS_TRACE_OPTS replaces the default JVM
-# options (-Xmx1536m).
+# options (-Xmx1536m -Duser.language=en -Duser.country=US). Keep a fixed locale: the agent also
+# records lookups of locale specific resources, which would tie the metadata to one machine.
 
 set -euo pipefail
 
@@ -88,7 +89,7 @@ case "$FUNCTION_MODE" in
 esac
 
 mkdir -p "$TRACE_DIR" "${NACOS_HOME}/logs"
-read -r -a JVM_OPTIONS <<< "${NACOS_TRACE_OPTS:--Xmx1536m}"
+read -r -a JVM_OPTIONS <<< "${NACOS_TRACE_OPTS:--Xmx1536m -Duser.language=en -Duser.country=US}"
 cd "$NACOS_HOME"
 exec "${JAVA_HOME}/bin/java" \
     "-agentlib:native-image-agent=config-${MODE}-dir=${TRACE_DIR},config-write-period-secs=120" \

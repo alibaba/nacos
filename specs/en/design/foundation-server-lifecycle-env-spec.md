@@ -275,6 +275,45 @@ processing, including inherited and optional property accessors. Registration mu
 on fields observed by tracing requests, instantiate Controllers, or change ordinary JVM request
 binding. Independent Console requests to Native Servers follow the same binding contract.
 
+The build accepts an optional operator-supplied Native Image argument file that is appended after
+the toolchain options. It affects only Native Image compilation. It must not change AOT
+generation, the structural manifest or ordinary JVM behavior.
+
+### 10.1 Bundled Reachability Metadata
+
+Bootstrap ships GraalVM reachability metadata for the default Server combination, so a Native
+build does not require the operator to trace the Server first.
+
+- Location and format. The metadata is one `reachability-metadata.json` in the GraalVM unified
+  format under `META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/` in Bootstrap's
+  resources. The `native` profile reads it as part of Bootstrap's classes. An ordinary JVM must
+  not read it, and the JVM artifact contract must not depend on it.
+- Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
+  bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
+  classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
+  Java SDK and Maintainer SDK integration suites. Other plugins and drivers, embedded Derby, the
+  AI registry contexts, protocol adaptors and cluster-only paths are outside the bundled scope.
+  Their metadata comes from the extension itself or from `nacos.native.metadata`, and their
+  support must be validated and reported separately.
+- Content rules. Entries derive from tracing representative runs on the exact classpath of the
+  Native build. The file must be deterministic: sorted, one entry per line. It must not contain
+  classes that Spring AOT generates in the same build, agent or JVM-internal classes, test or
+  tooling classes, or machine- or run-specific data such as absolute paths, host names, addresses
+  or credentials. Lookups of classes and resources that do not exist on the Native classpath are
+  not recorded; the metadata targets the default reachability mode and does not promise
+  compatibility with `--exact-reachability-metadata`.
+- Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
+  model classes or reflective code paths requires refreshing the metadata and validating the
+  Native executable again. A refresh is a reviewed source change. The repository provides
+  `test/scripts/native-metadata.py` to curate and check the file, and the ordinary CI build
+  checks it.
+- Acceptance. The metadata is accepted by running the standalone integration suites against the
+  Native executable. Tests that also fail against the ordinary JVM Server in the same setup are
+  kept in a baseline and are not Native regressions. Dynamic accesses without metadata can be
+  listed by building with `--exact-reachability-metadata` and running with
+  `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the GraalVM
+  version, the datasource and the suites that ran.
+
 ## 11. Pending Issues
 
 - Deployment type name `serverWithMcp` exists in code but is not wired as an

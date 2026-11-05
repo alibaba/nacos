@@ -207,6 +207,33 @@ AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须�
   Native 编译成功、进程启动成功和接口成功是三个独立检查点，不得相互替代。嵌入式存储还必须
   保留数据重启，验证检查点/日志恢复及持久化认证，不得仅以空数据库首次启动作为验收依据。
 
+构建允许操作者提供一个可选的 Native Image 参数文件，追加在工具链参数之后。它只影响 Native Image
+编译，不得改变 AOT 生成、结构性索引或普通 JVM 行为。
+
+### 10.1 内置可达性元数据
+
+Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构建无需操作者先对 Server 做追踪。
+
+- 位置与格式。元数据是 Bootstrap 资源中 `META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/`
+  下的单个 GraalVM 统一格式 `reachability-metadata.json`。`native` profile 将其作为 Bootstrap
+  类的一部分读取。普通 JVM 不得读取它，JVM 产物契约也不得依赖它。
+- 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
+  PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
+  OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径。其他插件与驱动、内嵌 Derby、
+  AI registry context、协议适配器以及仅集群场景的路径不在内置范围内；它们的元数据来自扩展自身或
+  `nacos.native.metadata`，其支持情况必须单独验证和报告。
+- 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。文件必须确定性：
+  排序，每个条目一行。不得包含同一构建中由 Spring AOT 生成的类、agent 或 JVM 内部类、测试或工具类，
+  也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
+  类和资源的探测不记录；该元数据面向默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
+- 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
+  重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
+  用于整理和检查该文件，普通 CI 构建会检查它。
+- 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收。在相同环境下普通 JVM Server 同样
+  失败的用例记录在基线中，不属于 Native 回归。可使用 `--exact-reachability-metadata` 构建并以
+  `-XX:MissingRegistrationReportingMode=Warn` 运行，以列出缺少元数据的动态访问。验证报告必须写明
+  GraalVM 版本、数据源以及实际运行的测试集。
+
 ## 11. 待处理问题
 
 - 代码中存在部署类型名 `serverWithMcp`，但 `NacosBootstrap` 尚未将其作为可接受分支接入。正式
