@@ -228,16 +228,22 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
    requests so that reads of persisted records are traced as well.
 5. The datasource is a structural choice, so repeat steps 1 to 4 with `merge` into the same trace
    directory for every JDBC driver the metadata should cover.
-6. Curate the trace:
+6. Curate the trace together with the committed file:
 
    ```sh
+   BUNDLE=bootstrap/src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json
    python3 test/scripts/native-metadata.py refresh \
-     --classpath bootstrap/target/native/classpath.args \
-     /absolute/path/trace
+     --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
    ```
 
    The command merges all inputs, drops what the rules above exclude, and rewrites the bundled
-   file. Pass `--output` to write elsewhere.
+   file. Pass `--output` to write elsewhere. The committed file is an input as well, because some
+   of its entries are in no trace: the reports of an exact-mode build (see below), and the
+   accessors that protobuf looks up on a generated message and on its `Builder`, which the agent
+   does not record because it records only the methods that are invoked. The ones of JRaft's
+   `SnapshotMeta` matter: JRaft turns the message into text when it loads a snapshot. A refresh
+   from the trace alone drops these entries, and a restarted Native Server stops coming up; the
+   restart check of the [Native CI job](#the-native-ci-job) fails when that happens.
 7. Validate the result against the Native executable, as described next.
 
 ### Find gaps with an exact-mode build
