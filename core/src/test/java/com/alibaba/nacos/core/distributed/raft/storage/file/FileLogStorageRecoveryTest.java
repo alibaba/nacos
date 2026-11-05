@@ -32,6 +32,7 @@ import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.util.Platform;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -60,15 +62,23 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doAnswer;
 
 class FileLogStorageRecoveryTest {
     
     @TempDir
-    Path directory;
+    Path temporaryDirectory;
+    
+    private Path directory;
+    
+    private Path realDirectory;
     
     private final List<FileLogStorage> stores = new ArrayList<>();
+    
+    @BeforeEach
+    void configureTemporaryDirectory() throws IOException {
+        configureDirectory(temporaryDirectory);
+    }
     
     @AfterEach
     void closeStores() {
@@ -383,6 +393,18 @@ class FileLogStorageRecoveryTest {
     @ValueSource(booleans = {false, true})
     void validatesPublishedAndOrphanSegmentsBeforeRecoveryBarrier(boolean failBarrier)
         throws Exception {
+        verifyRecoveryBarrier(failBarrier);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void matchesRecoveryBarrierThroughLinkedTemporaryDirectory(boolean failBarrier)
+        throws Exception {
+        useLinkedTemporaryDirectory();
+        verifyRecoveryBarrier(failBarrier);
+    }
+    
+    private void verifyRecoveryBarrier(boolean failBarrier) throws Exception {
         Manifest published = writeFixture(100, 2, 1);
         Path segmentPath = root().resolve("segments").resolve(FileLogFormat.segmentName(1));
         Path orphan = createOrphan(published);
@@ -393,57 +415,70 @@ class FileLogStorageRecoveryTest {
         byte[] indexBytes = new byte[] {9, 8, 7};
         Files.write(indexPath, indexBytes);
         AtomicInteger scannedEntries = new AtomicInteger();
+        AtomicInteger rebuiltIndexes = new AtomicInteger();
+        AtomicInteger orphanOpens = new AtomicInteger();
         AtomicInteger rootForces = new AtomicInteger();
         AtomicBoolean orphanValidated = new AtomicBoolean();
         AtomicBoolean barrierReached = new AtomicBoolean();
         FileLogStorage reopened = store();
         try (MockedStatic<FileLogStorage> directoryForces =
-            mockStatic(FileLogStorage.class, CALLS_REAL_METHODS);
-            MockedStatic<Index> indexes = mockStatic(Index.class, CALLS_REAL_METHODS);
-            MockedStatic<Segment> segments =
-                mockStatic(Segment.class, CALLS_REAL_METHODS)) {
-            directoryForces.when(() -> FileLogStorage.forceDirectory(any(Path.class)))
-                .thenAnswer(invocation -> {
-                    Path path = invocation.getArgument(0);
-                    if (path.equals(root()) && rootForces.incrementAndGet() == 2) {
-                        assertEquals(2, scannedEntries.get());
-                        assertTrue(orphanValidated.get());
-                        assertArrayEquals(segmentBytes, Files.readAllBytes(segmentPath));
-                        assertArrayEquals(orphanBytes, Files.readAllBytes(orphan));
-                        assertEquals(2L * FileLogFormat.INDEX_ENTRY_SIZE, Files.size(indexPath));
-                        barrierReached.set(true);
-                        if (failBarrier) {
-                            throw new IOException("recovery directory force failed");
-                        }
+            mockStatic(FileLogStorage.class, invocation -> {
+                if ("forceDirectory".equals(invocation.getMethod().getName())
+                    && root().equals(invocation.getArgument(0))
+                    && rootForces.incrementAndGet() == 2) {
+                    assertEquals(1, rebuiltIndexes.get());
+                    assertEquals(2, scannedEntries.get());
+                    assertEquals(1, orphanOpens.get());
+                    assertTrue(orphanValidated.get());
+                    assertArrayEquals(segmentBytes, Files.readAllBytes(segmentPath));
+                    assertArrayEquals(orphanBytes, Files.readAllBytes(orphan));
+                    assertEquals(2L * FileLogFormat.INDEX_ENTRY_SIZE, Files.size(indexPath));
+                    barrierReached.set(true);
+                    if (failBarrier) {
+                        throw new IOException("recovery directory force failed");
                     }
-                    return invocation.callRealMethod();
-                });
-            indexes.when(() -> Index.create(any(Path.class), anyLong()))
-                .thenAnswer(invocation -> {
+                }
+                return invocation.callRealMethod();
+            }); MockedStatic<Index> indexes = mockStatic(Index.class, invocation -> {
+                Object result = invocation.callRealMethod();
+                if ("create".equals(invocation.getMethod().getName())) {
                     assertEquals(indexPath, invocation.getArgument(0));
-                    Index index = spy((Index) invocation.callRealMethod());
+                    assertEquals(published.getFirstLogIndex(),
+                        (long) invocation.getArgument(1));
+                    rebuiltIndexes.incrementAndGet();
+                    Index index = spy((Index) result);
                     doAnswer(append -> {
-                        Object result = append.callRealMethod();
+                        Object appended = append.callRealMethod();
                         scannedEntries.incrementAndGet();
-                        return result;
+                        return appended;
                     }).when(index).append(anyLong(), anyLong(), anyInt());
                     return index;
-                });
-            segments.when(() -> Segment.open(any(Path.class), anyLong()))
-                .thenAnswer(invocation -> {
-                    Segment segment = spy((Segment) invocation.callRealMethod());
-                    if (orphan.equals(invocation.getArgument(0))) {
-                        doAnswer(header -> {
-                            Object result = header.callRealMethod();
-                            orphanValidated.set(true);
-                            return result;
-                        }).when(segment).getHeader();
-                    }
+                }
+                return result;
+            }); MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+                Object result = invocation.callRealMethod();
+                if ("open".equals(invocation.getMethod().getName())
+                    && orphan.equals(invocation.getArgument(0))) {
+                    assertEquals(FileLogFormat.SEGMENT_HEADER_SIZE,
+                        (long) invocation.getArgument(1));
+                    orphanOpens.incrementAndGet();
+                    Segment segment = spy((Segment) result);
+                    doAnswer(header -> {
+                        Object value = header.callRealMethod();
+                        orphanValidated.set(true);
+                        return value;
+                    }).when(segment).getHeader();
                     return segment;
-                });
+                }
+                return result;
+            })) {
             assertEquals(!failBarrier, reopened.init(context("group")));
         }
         assertTrue(barrierReached.get());
+        assertEquals(2, rootForces.get(), "Initialization and recovery must each force the root");
+        assertEquals(1, rebuiltIndexes.get());
+        assertEquals(2, scannedEntries.get());
+        assertEquals(1, orphanOpens.get());
         assertArrayEquals(manifestBytes, Files.readAllBytes(root().resolve("manifest")));
         if (failBarrier) {
             assertArrayEquals(segmentBytes, Files.readAllBytes(segmentPath));
@@ -500,22 +535,41 @@ class FileLogStorageRecoveryTest {
         byte[] oldIndex = new byte[] {9, 8, 7};
         Files.write(indexPath, oldIndex);
         FileLogStorage reopened = store();
-        try (MockedStatic<Segment> segments =
-            mockStatic(Segment.class, CALLS_REAL_METHODS)) {
-            segments.when(() -> Segment.open(any(Path.class), anyLong()))
-                .thenAnswer(invocation -> {
-                    Segment segment = spy((Segment) invocation.callRealMethod());
-                    if (segmentPath.equals(invocation.getArgument(0))) {
-                        if ("truncate".equals(operation)) {
-                            doThrow(new IOException("tail truncate failed")).when(segment)
-                                .truncateToLogicalEnd();
-                        } else {
-                            doThrow(new IOException("tail force failed")).when(segment).force();
-                        }
+        AtomicInteger rootForces = new AtomicInteger();
+        AtomicInteger failures = new AtomicInteger();
+        try (MockedStatic<FileLogStorage> directoryForces =
+            mockStatic(FileLogStorage.class, invocation -> {
+                if ("forceDirectory".equals(invocation.getMethod().getName())
+                    && root().equals(invocation.getArgument(0))) {
+                    rootForces.incrementAndGet();
+                }
+                return invocation.callRealMethod();
+            }); MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+                Object result = invocation.callRealMethod();
+                if ("open".equals(invocation.getMethod().getName())
+                    && segmentPath.equals(invocation.getArgument(0))) {
+                    Segment segment = spy((Segment) result);
+                    if ("truncate".equals(operation)) {
+                        doAnswer(truncate -> {
+                            assertEquals(2, rootForces.get(), "Recovery must pass its barrier");
+                            failures.incrementAndGet();
+                            throw new IOException("tail truncate failed");
+                        }).when(segment).truncateToLogicalEnd();
+                    } else {
+                        doAnswer(force -> {
+                            assertEquals(2, rootForces.get(), "Recovery must pass its barrier");
+                            assertEquals(published.getSegments().get(0).getPublishedEndOffset(),
+                                Files.size(segmentPath));
+                            failures.incrementAndGet();
+                            throw new IOException("tail force failed");
+                        }).when(segment).force();
                     }
                     return segment;
-                });
+                }
+                return result;
+            })) {
             assertFalse(reopened.init(context("group")));
+            assertEquals(1, failures.get(), "The selected tail I/O must fail exactly once");
         }
         byte[] after = Files.readAllBytes(segmentPath);
         int publishedEnd = (int) published.getSegments().get(0).getPublishedEndOffset();
@@ -573,14 +627,19 @@ class FileLogStorageRecoveryTest {
         }
         byte[] orphanBytes = Files.readAllBytes(orphan);
         FileLogStorage reopened = store();
+        AtomicInteger cleanupAttempts = new AtomicInteger();
         try (MockedStatic<Files> files = mockStatic(Files.class, invocation -> {
-            if (failCleanup && "deleteIfExists".equals(invocation.getMethod().getName())
+            if ("deleteIfExists".equals(invocation.getMethod().getName())
                 && orphan.equals(invocation.getArgument(0))) {
-                throw new IOException("orphan cleanup failed");
+                cleanupAttempts.incrementAndGet();
+                if (failCleanup) {
+                    throw new IOException("orphan cleanup failed");
+                }
             }
             return invocation.callRealMethod();
         })) {
             assertTrue(reopened.init(context("group")));
+            assertEquals(1, cleanupAttempts.get(), "Recovery must attempt the orphan deletion");
             assertEquals(failCleanup, Files.exists(orphan));
             if (failCleanup) {
                 assertArrayEquals(orphanBytes, Files.readAllBytes(orphan));
@@ -714,10 +773,19 @@ class FileLogStorageRecoveryTest {
         Path orphan = createOrphan(published);
         byte[] manifestBytes = Files.readAllBytes(root().resolve("manifest"));
         byte[] orphanBytes = Files.readAllBytes(orphan);
-        try (MockedStatic<Segment> segments = mockStatic(Segment.class, CALLS_REAL_METHODS)) {
-            segments.when(() -> Segment.open(orphan, FileLogFormat.SEGMENT_HEADER_SIZE))
-                .thenThrow(new IOException("Injected OS read failure"));
+        AtomicInteger failures = new AtomicInteger();
+        try (MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+            if ("open".equals(invocation.getMethod().getName())
+                && orphan.equals(invocation.getArgument(0))) {
+                assertEquals(FileLogFormat.SEGMENT_HEADER_SIZE,
+                    (long) invocation.getArgument(1));
+                failures.incrementAndGet();
+                throw new IOException("Injected OS read failure");
+            }
+            return invocation.callRealMethod();
+        })) {
             assertFalse(store().init(context("group")));
+            assertEquals(1, failures.get(), "Recovery must encounter the orphan I/O failure");
         }
         assertArrayEquals(manifestBytes, Files.readAllBytes(root().resolve("manifest")));
         assertArrayEquals(orphanBytes, Files.readAllBytes(orphan));
@@ -1042,8 +1110,21 @@ class FileLogStorageRecoveryTest {
         }
     }
     
+    private void configureDirectory(Path configuredDirectory) throws IOException {
+        directory = configuredDirectory;
+        realDirectory = configuredDirectory.toRealPath();
+    }
+    
+    private void useLinkedTemporaryDirectory() throws IOException {
+        Path target = Files.createDirectory(temporaryDirectory.resolve("real-directory"));
+        Path link = directoryLink(temporaryDirectory.resolve("temp-entry"), target);
+        configureDirectory(Files.createDirectory(link.resolve("storage")));
+        assertNotEquals(directory.toAbsolutePath(), realDirectory);
+        assertTrue(Files.isSameFile(directory, realDirectory));
+    }
+    
     private Path root() {
-        return directory.resolve("file-log");
+        return realDirectory.resolve("file-log");
     }
     
     private static LogStorageOptions context(String group) {

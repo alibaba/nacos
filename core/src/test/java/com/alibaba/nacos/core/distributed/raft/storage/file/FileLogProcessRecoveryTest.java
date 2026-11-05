@@ -515,11 +515,11 @@ public class FileLogProcessRecoveryTest {
         }
     }
     
-    private static Path root(Path directory) {
-        return directory.toAbsolutePath().normalize().resolve("file-log");
+    private static Path root(Path directory) throws IOException {
+        return directory.toRealPath().resolve("file-log");
     }
     
-    private static Path segmentPath(Path directory, long id) {
+    private static Path segmentPath(Path directory, long id) throws IOException {
         return root(directory).resolve("segments").resolve(FileLogFormat.segmentName(id));
     }
     

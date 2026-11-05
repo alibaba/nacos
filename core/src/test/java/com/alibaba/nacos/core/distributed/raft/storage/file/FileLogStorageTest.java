@@ -29,6 +29,7 @@ import com.alipay.sofa.jraft.option.LogStorageOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.util.Platform;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,6 +46,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -63,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -76,14 +79,24 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 
 class FileLogStorageTest {
     
     @TempDir
-    Path directory;
+    Path temporaryDirectory;
+    
+    private Path directory;
+    
+    private Path realDirectory;
     
     private final List<FileLogStorage> stores = new ArrayList<>();
+    
+    @BeforeEach
+    void configureTemporaryDirectory() throws IOException {
+        configureDirectory(temporaryDirectory);
+    }
     
     @AfterEach
     void closeStores() {
@@ -162,35 +175,62 @@ class FileLogStorageTest {
     @CsvSource({"true, segment", "false, segment", "true, manifest", "false, manifest"})
     void fileForceFailureDisablesWritesOnEveryPlatform(boolean windows, String file)
         throws Exception {
+        verifyFileForceFailure(windows, file);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void injectsManifestForceFailureThroughLinkedTemporaryDirectory(boolean windows)
+        throws Exception {
+        useLinkedTemporaryDirectory();
+        verifyFileForceFailure(windows, "manifest");
+    }
+    
+    private void verifyFileForceFailure(boolean windows, String file) throws Exception {
         FileLogStorage store = new FileLogStorage(directory, new RaftOptions(),
             "segment".equals(file) ? 160 : 4096);
         stores.add(store);
         assertTrue(store.init(context(new ConfigurationManager())));
         assertEquals(3, store.appendEntries(List.of(entry(1), entry(2), entry(3))));
         byte[] published = Files.readAllBytes(root().resolve("manifest"));
+        Path manifestTemporary = root().resolve("manifest.tmp");
+        AtomicInteger failures = new AtomicInteger();
         try (MockedStatic<Platform> platform = mockStatic(Platform.class);
-            MockedStatic<Segment> segments = mockStatic(Segment.class, CALLS_REAL_METHODS);
-            MockedStatic<FileChannel> channels =
-                mockStatic(FileChannel.class, CALLS_REAL_METHODS)) {
+            MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+                Object result = invocation.callRealMethod();
+                if ("segment".equals(file) && "create".equals(invocation.getMethod().getName())) {
+                    assertEquals(root().resolve("segments"), invocation.getArgument(0));
+                    assertEquals(store.getManifest().getStoreId(), invocation.getArgument(1));
+                    Segment segment = spy((Segment) result);
+                    doAnswer(force -> {
+                        failures.incrementAndGet();
+                        throw new IOException("Segment force failed");
+                    }).when(segment).force();
+                    return segment;
+                }
+                return result;
+            }); MockedStatic<FileChannel> channels = mockStatic(FileChannel.class, invocation -> {
+                Object result = invocation.callRealMethod();
+                if ("manifest".equals(file) && "open".equals(invocation.getMethod().getName())
+                    && invocation.getMethod().getParameterTypes()[1] == OpenOption[].class
+                    && manifestTemporary.equals(invocation.getArgument(0))) {
+                    FileChannel channel = spy((FileChannel) result);
+                    doAnswer(force -> {
+                        failures.incrementAndGet();
+                        throw new IOException("Manifest force failed");
+                    }).when(channel).force(true);
+                    return channel;
+                }
+                return result;
+            })) {
             platform.when(Platform::isWindows).thenReturn(windows);
-            if ("segment".equals(file)) {
-                segments.when(() -> Segment.create(any(Path.class), any(UUID.class), anyLong()))
-                    .thenAnswer(invocation -> {
-                        Segment segment = spy((Segment) invocation.callRealMethod());
-                        doThrow(new IOException("Segment force failed")).when(segment).force();
-                        return segment;
-                    });
-            } else {
-                channels.when(() -> FileChannel.open(root().resolve("manifest.tmp"),
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.READ, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS))
-                    .thenAnswer(invocation -> {
-                        FileChannel channel = spy((FileChannel) invocation.callRealMethod());
-                        doThrow(new IOException("Manifest force failed")).when(channel).force(true);
-                        return channel;
-                    });
-            }
             assertFalse(store.appendEntry(entry(4)));
+            assertEquals(1, failures.get(), "The selected file force must fail exactly once");
+            if ("manifest".equals(file)) {
+                channels.verify(() -> FileChannel.open(manifestTemporary,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.READ, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS));
+            }
         }
         assertArrayEquals(published, Files.readAllBytes(root().resolve("manifest")));
         assertRange(store, 1, 3);
@@ -813,10 +853,19 @@ class FileLogStorageTest {
                 break;
             case "cleanup":
                 Path oldSegment = root().resolve("segments").resolve(FileLogFormat.segmentName(1));
-                try (MockedStatic<Files> files = mockStatic(Files.class, CALLS_REAL_METHODS)) {
-                    files.when(() -> Files.deleteIfExists(oldSegment))
-                        .thenThrow(new IOException("old segment cleanup failed"));
+                byte[] oldBytes = Files.readAllBytes(oldSegment);
+                AtomicInteger cleanupFailures = new AtomicInteger();
+                try (MockedStatic<Files> files = mockStatic(Files.class, invocation -> {
+                    if ("deleteIfExists".equals(invocation.getMethod().getName())
+                        && oldSegment.equals(invocation.getArgument(0))) {
+                        cleanupFailures.incrementAndGet();
+                        throw new IOException("old segment cleanup failed");
+                    }
+                    return invocation.callRealMethod();
+                })) {
                     assertTrue(store.reset(10));
+                    assertEquals(1, cleanupFailures.get());
+                    assertArrayEquals(oldBytes, Files.readAllBytes(oldSegment));
                 }
                 break;
             case "write":
@@ -1019,16 +1068,18 @@ class FileLogStorageTest {
         FileLogStorage store = open();
         assertEquals(3, store.appendEntries(List.of(entry(1), entry(2), entry(3))));
         Manifest previous = store.getManifest();
+        AtomicInteger failures = new AtomicInteger();
         try (MockedStatic<FileLogStorage> directoryForces =
-            mockStatic(FileLogStorage.class, CALLS_REAL_METHODS)) {
-            directoryForces.when(() -> FileLogStorage.forceDirectory(any(Path.class)))
-                .thenAnswer(invocation -> {
-                    if (root().equals(invocation.getArgument(0))) {
-                        throw new IOException("manifest directory force failed after replacement");
-                    }
-                    return invocation.callRealMethod();
-                });
+            mockStatic(FileLogStorage.class, invocation -> {
+                if ("forceDirectory".equals(invocation.getMethod().getName())
+                    && root().equals(invocation.getArgument(0))) {
+                    failures.incrementAndGet();
+                    throw new IOException("manifest directory force failed after replacement");
+                }
+                return invocation.callRealMethod();
+            })) {
             assertFalse(store.appendEntry(entry(4)));
+            assertEquals(1, failures.get(), "The published Manifest directory must be forced");
             assertSame(previous, store.getManifest());
             assertRange(store, 1, 3);
             assertEquals(entry(3), store.getEntry(3));
@@ -1181,8 +1232,21 @@ class FileLogStorageTest {
         }
     }
     
+    private void configureDirectory(Path configuredDirectory) throws IOException {
+        directory = configuredDirectory;
+        realDirectory = configuredDirectory.toRealPath();
+    }
+    
+    private void useLinkedTemporaryDirectory() throws IOException {
+        Path target = Files.createDirectory(temporaryDirectory.resolve("real-directory"));
+        Path link = directoryLink(temporaryDirectory.resolve("temp-entry"), target);
+        configureDirectory(Files.createDirectory(link.resolve("storage")));
+        assertNotEquals(directory.toAbsolutePath(), realDirectory);
+        assertTrue(Files.isSameFile(directory, realDirectory));
+    }
+    
     private Path root() {
-        return directory.resolve("file-log");
+        return realDirectory.resolve("file-log");
     }
     
     private static LogEntry entry(long index) {
