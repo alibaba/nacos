@@ -17,8 +17,8 @@
 # Stages of the Native Image CI job (.github/workflows/native-image.yml). The workflow only calls
 # this script, so what is built, tested and reported can change without editing the workflow.
 # The stages also reproduce the job on any Linux host that has a GraalVM 25 JAVA_HOME with
-# native-image, Maven, psql, curl, openssl and an EMPTY PostgreSQL database that the script
-# initializes.
+# native-image, Maven, curl, openssl and either psql and an EMPTY PostgreSQL database that the
+# script initializes, or Docker for the MySQL database that the script starts itself.
 #
 # Usage: native-ci.sh <prepare|build|start|smoke|integration|report|all>
 #
@@ -26,28 +26,67 @@
 #   NATIVE_CI_VARIANT       default | exact. 'exact' builds with --exact-reachability-metadata
 #                           and runs with -XX:MissingRegistrationReportingMode=Warn so that every
 #                           dynamic access without metadata is reported instead of failing.
+#   NATIVE_CI_DATABASE      postgresql | mysql, default postgresql. The datasource is a structural
+#                           choice of the build. PostgreSQL has to listen on NATIVE_CI_DB_PORT
+#                           already. For MySQL the prepare stage starts a disposable mysql:8.4
+#                           container named nacos-ci-mysql, which stays until 'docker rm -f' removes it.
+#   NATIVE_CI_SUITE         full | core, default full. 'core' narrows the OpenAPI suite to the
+#                           Config, Naming, Core and Auth classes, which is enough to exercise a
+#                           datasource driver; the SDK suites always run.
 #   NATIVE_CI_HEAP          Native builder heap, default 10g
 #   NATIVE_CI_PARALLELISM   Native builder threads, default 4
 #   NATIVE_CI_DB_HOST, NATIVE_CI_DB_PORT, NATIVE_CI_DB_NAME, NATIVE_CI_DB_USER,
-#   NATIVE_CI_DB_PASSWORD   PostgreSQL connection, default 127.0.0.1:5432 nacos/nacos/nacos
+#   NATIVE_CI_DB_PASSWORD   database connection, default 127.0.0.1, 5432 (PostgreSQL) or 3306
+#                           (MySQL), and nacos/nacos/nacos
 #   NATIVE_CI_WORK          scratch directory, default ${RUNNER_TEMP:-/tmp}/native-ci
 #   NATIVE_CI_OUT           receives logs and reports, default <repository>/ci-out
 #   MVN                     Maven command, default mvn
 
 set -euo pipefail
 
+# TEMPORARY, removed once the workflow matrix selects the database: a branch whose name contains
+# 'mysql' (native-ci/<name>-mysql) runs the MySQL job without a workflow change.
+if [ -z "${NATIVE_CI_DATABASE:-}" ] && [[ "${GITHUB_REF_NAME:-}" == *mysql* ]]; then
+    NATIVE_CI_DATABASE=mysql
+    NATIVE_CI_SUITE="${NATIVE_CI_SUITE:-core}"
+fi
+
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="${NATIVE_CI_WORK:-${RUNNER_TEMP:-/tmp}/native-ci}"
 OUT="${NATIVE_CI_OUT:-${ROOT}/ci-out}"
 STATE="${WORK}/state.env"
 VARIANT="${NATIVE_CI_VARIANT:-default}"
+DATABASE="${NATIVE_CI_DATABASE:-postgresql}"
+SUITE="${NATIVE_CI_SUITE:-full}"
+case "$DATABASE" in
+    postgresql) DEFAULT_DB_PORT=5432 ;;
+    mysql) DEFAULT_DB_PORT=3306 ;;
+    *)
+        echo "Unknown database: ${DATABASE}" >&2
+        exit 2
+        ;;
+esac
+case "$SUITE" in
+    full | core) ;;
+    *)
+        echo "Unknown suite: ${SUITE}" >&2
+        exit 2
+        ;;
+esac
 DB_HOST="${NATIVE_CI_DB_HOST:-127.0.0.1}"
-DB_PORT="${NATIVE_CI_DB_PORT:-5432}"
+DB_PORT="${NATIVE_CI_DB_PORT:-$DEFAULT_DB_PORT}"
 DB_NAME="${NATIVE_CI_DB_NAME:-nacos}"
 DB_USER="${NATIVE_CI_DB_USER:-nacos}"
 DB_PASSWORD="${NATIVE_CI_DB_PASSWORD:-nacos}"
 MVN="${MVN:-mvn}"
 METADATA_TOOL="${ROOT}/test/scripts/native-metadata.py"
+
+# The OpenAPI classes of the 'core' suite.
+CORE_OPENAPI_CLASSES="ConfigAdminApiOpenApiITCase,ConfigConsoleApiOpenApiITCase,ConfigOpenApiITCase"
+CORE_OPENAPI_CLASSES+=",ConfigHistoryAdminApiOpenApiITCase,ConfigListenerAdminApiOpenApiITCase"
+CORE_OPENAPI_CLASSES+=",InstanceRegisterOpenApiITCase,InstanceAdminApiOpenApiITCase"
+CORE_OPENAPI_CLASSES+=",ServiceAdminApiOpenApiITCase,NamespaceAdminApiOpenApiITCase"
+CORE_OPENAPI_CLASSES+=",CoreStateAdminApiOpenApiITCase,UserLoginAuthApiITCase,DefaultAuthApiITCase"
 
 # The values of .github/workflows/it-new.yml: the AI integration tests are written for them. The two
 # reconciliation intervals set in stage_start make the background MCP cutover finish within seconds.
@@ -82,17 +121,21 @@ load_state() {
     set +a
 }
 
-stage_prepare() {
-    mkdir -p "$WORK" "$OUT"
-    : > "$STATE"
-    chmod 600 "$STATE"
+# JDBC URL of the Server, in the form of the sample application.properties.
+datasource_url() {
+    case "$DATABASE" in
+        postgresql)
+            echo "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?currentSchema=public"
+            ;;
+        mysql)
+            echo "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?characterEncoding=utf8&connectTimeout=3000&socketTimeout=6000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+            ;;
+    esac
+}
 
-    log "Check the bundled Native metadata"
-    python3 -I "$METADATA_TOOL" selftest
-    python3 -I "$METADATA_TOOL" check
-
-    log "Initialize the database"
-    # Use the tracked source: distribution/conf/*.sql are copies made by a Maven build.
+# Both schemas come from the tracked sources: distribution/conf/*.sql are copies made by a Maven
+# build and do not exist in a fresh checkout.
+init_postgresql() {
     local schema="${ROOT}/plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
     if [ ! -f "$schema" ]; then
         echo "Missing ${schema}" >&2
@@ -110,6 +153,46 @@ stage_prepare() {
     done
     psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
         -f "$schema"
+}
+
+init_mysql() {
+    local schema="${ROOT}/plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
+    if [ ! -f "$schema" ]; then
+        echo "Missing ${schema}" >&2
+        exit 1
+    fi
+    # The server keeps little memory, because the Native compiler needs most of the host.
+    docker rm -f nacos-ci-mysql >/dev/null 2>&1 || true
+    docker run -d --name nacos-ci-mysql \
+        -e MYSQL_ROOT_PASSWORD="$DB_PASSWORD" -e MYSQL_DATABASE="$DB_NAME" \
+        -e MYSQL_USER="$DB_USER" -e MYSQL_PASSWORD="$DB_PASSWORD" \
+        -p "127.0.0.1:${DB_PORT}:3306" \
+        mysql:8.4 --performance-schema=OFF --innodb-buffer-pool-size=64M >/dev/null
+    # Over TCP only: the temporary server of the first start listens on its socket alone.
+    for _ in $(seq 1 90); do
+        if docker exec nacos-ci-mysql mysql --protocol=TCP -h 127.0.0.1 -u"$DB_USER" \
+            -p"$DB_PASSWORD" -e 'select 1' "$DB_NAME" >/dev/null 2>&1; then
+            break
+        fi
+        sleep 2
+    done
+    docker exec -i nacos-ci-mysql mysql --protocol=TCP -h 127.0.0.1 -u"$DB_USER" \
+        -p"$DB_PASSWORD" "$DB_NAME" < "$schema"
+}
+
+stage_prepare() {
+    mkdir -p "$WORK" "$OUT"
+    : > "$STATE"
+    chmod 600 "$STATE"
+
+    log "Native CI: database=${DATABASE} variant=${VARIANT} suite=${SUITE}"
+
+    log "Check the bundled Native metadata"
+    python3 -I "$METADATA_TOOL" selftest
+    python3 -I "$METADATA_TOOL" check
+
+    log "Initialize the ${DATABASE} database"
+    "init_${DATABASE}"
 
     log "Generate disposable credentials"
     remember NACOS_TEST_AUTH_ADMIN_USERNAME nacos
@@ -126,7 +209,7 @@ stage_prepare() {
     remember NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE "$(openssl rand -hex 32)" secret
 
     log "Select the Native build variant: ${VARIANT}"
-    printf 'spring.sql.init.platform=postgresql\n' > "$WORK/build.properties"
+    printf 'spring.sql.init.platform=%s\n' "$DATABASE" > "$WORK/build.properties"
     case "$VARIANT" in
         default)
             remember NATIVE_BUILD_OPTIONS ""
@@ -185,9 +268,9 @@ stage_start() {
     local home="${WORK}/home/nacos"
     cat >> "${home}/conf/application.properties" <<EOF
 
-spring.sql.init.platform=postgresql
+spring.sql.init.platform=${DATABASE}
 nacos.plugin.datasource.db.num=1
-nacos.plugin.datasource.db.url.0=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?currentSchema=public
+nacos.plugin.datasource.db.url.0=$(datasource_url)
 nacos.plugin.datasource.db.user=${DB_USER}
 nacos.plugin.datasource.db.password=${DB_PASSWORD}
 nacos.plugin.auth.nacos.token.secret.key=${NACOS_TEST_AUTH_TOKEN_SECRET}
@@ -255,7 +338,12 @@ run_suite() {
 stage_integration() {
     load_state
     local status=0
+    local openapi_selection=()
+    if [ "$SUITE" = "core" ]; then
+        openapi_selection=("-Dit.test=${CORE_OPENAPI_CLASSES}")
+    fi
     run_suite openapi -pl test/openapi-test verify -Pintegration-test \
+        "${openapi_selection[@]}" \
         -Dnacos.test.auth.anonymous-ai.enabled=true \
         -Dnacos.test.auth.anonymous-ai.source=STATIC \
         -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
@@ -263,7 +351,7 @@ stage_integration() {
         -Dnacos.agent.it.server.http.watch.waiter.capacity="$RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY" \
         || status=1
     run_suite java-sdk -pl test/java-sdk-test verify -Pjava-sdk-integration-test \
-        '-Dit.test=ConfigServiceJavaSdkITCase,NamingServiceJavaSdkITCase,LockServiceJavaSdkITCase,AuthEnabledJavaSdkITCase' \
+        '-Dit.test=ConfigServiceJavaSdkITCase,NamingServiceJavaSdkITCase,LockServiceJavaSdkITCase,AuthEnabledJavaSdkITCase,AiServiceJavaSdkITCase,AgentPublishJavaSdkITCase,AgentRequestBuilderJavaSdkITCase,AgentModelValidationJavaSdkITCase' \
         -Dnacos.test.auth.anonymous-ai.enabled=true \
         -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
         -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
@@ -281,6 +369,9 @@ stage_report() {
     mkdir -p "$OUT/logs" "$OUT/reports"
     if [ -n "$NACOS_HOME" ]; then
         cp "${NACOS_HOME}"/logs/*.log "$OUT/logs/" 2>/dev/null || true
+    fi
+    if [ "$DATABASE" = "mysql" ]; then
+        docker logs nacos-ci-mysql > "$OUT/logs/mysql-container.log" 2>&1 || true
     fi
     cp "$ROOT"/test/*/target/failsafe-reports/TEST-*.xml "$OUT/reports/" 2>/dev/null || true
 
