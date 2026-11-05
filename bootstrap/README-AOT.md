@@ -254,8 +254,9 @@ python3 test/scripts/native-metadata.py refresh --classpath bootstrap/target/nat
 `delta.json` lists what is missing and exists on the classpath. Pass it together with the original
 trace to a final `refresh` to merge it into the bundled file. Each report names the exact class,
 method or field. Repeat the cycle of exercising, collecting and merging until no relevant report
-remains. Reports that the tool cannot parse are printed as `UNPARSED`; reports about lambda-proxy
-classes are counted and skipped, as described above.
+remains. Reports that the tool cannot parse are printed as `UNPARSED` and fail the `exact` variant
+of the Native CI job; reports about lambda-proxy classes are counted and skipped, as described
+above.
 
 ### The Native CI job
 

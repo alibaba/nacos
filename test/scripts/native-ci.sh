@@ -428,9 +428,16 @@ PY
         echo "No Native Server log; the server did not start" >&2
         return 1
     fi
+    mkdir -p "$OUT/missing-registrations"
     python3 -I "$METADATA_TOOL" collect-missing "$startup" --output "$OUT/missing-registrations" \
-        || true
+        2> "$OUT/missing-registrations/unparsed.txt" || true
+    cat "$OUT/missing-registrations/unparsed.txt" >&2
     if [ "$VARIANT" = "exact" ]; then
+        # A report that the tool cannot turn into metadata is a gap that nobody can name yet.
+        if grep -q '^UNPARSED ' "$OUT/missing-registrations/unparsed.txt"; then
+            echo "Reports above could not be turned into metadata; extend native-metadata.py" >&2
+            status=1
+        fi
         python3 -I "$METADATA_TOOL" refresh \
             --classpath "$ROOT/bootstrap/target/native/classpath.args" \
             --output "$OUT/missing-registrations/curated-delta.json" \
