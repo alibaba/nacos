@@ -27,7 +27,9 @@ The default Maven build and ordinary JVM startup do not require generated AOT ar
   Preserve the existing deployment modes and parent relationships.
 - Select each generated initializer explicitly when Spring uses AOT artifacts.
   JVM AOT requires the JVM system property `-Dspring.aot.enabled=true`;
-  Native Image is detected automatically by Spring.
+  Native Image is detected automatically by Spring. The initializers are looked up by name, so
+  the generator registers them for reflection without a condition (Spring's own hints for them
+  require the application classes to be initialized, which this startup never does).
 - Check a structural manifest after Nacos environment plugins and before context refresh.
   It includes deployment, storage mode, datasource, profiles, function mode, protocol switches,
   resource search and selected SPI provider sets. It excludes ports, credentials and database URLs.

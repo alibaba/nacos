@@ -55,6 +55,11 @@ import java.util.List;
  */
 public final class NacosApplicationAotProcessor {
     
+    /**
+     * The phases that have a generated initializer, as keyed in the phase index.
+     */
+    private static final List<String> PHASES = List.of("core", "web", "console", "ai-registry");
+    
     public static void main(String[] args) throws Exception {
         Path output = Path.of(args[0]);
         System.setProperty(AbstractAotProcessor.AOT_PROCESSING, "true");
@@ -117,6 +122,7 @@ public final class NacosApplicationAotProcessor {
             }
             RuntimeHints hints = new RuntimeHints();
             hints.resources().registerPattern(NacosAotInitializer.INDEX);
+            registerInitializers(hints, initializers);
             for (String service : NacosAotManifest.SERVICES) {
                 hints.resources().registerPattern("META-INF/services/" + service);
                 for (String provider : initializers.getProperty("spi." + service).split(",")) {
@@ -140,6 +146,25 @@ public final class NacosApplicationAotProcessor {
             NotifyCenter.shutdown();
             ThreadPoolManager.shutdown();
             System.clearProperty(AbstractAotProcessor.AOT_PROCESSING);
+        }
+    }
+    
+    /**
+     * Register the generated phase initializers for reflection without a condition. Spring's own
+     * hints for them only apply once the application class has been initialized. The contexts here
+     * are built from class literals, which never initialize those classes, and the initializer is
+     * selected by name through the phase index, so in a Native Image the lookup would fail.
+     *
+     * @param hints the hints written next to the generated artifacts
+     * @param index the phase index holding the generated initializer class name of each phase
+     */
+    static void registerInitializers(RuntimeHints hints, Properties index) {
+        for (String phase : PHASES) {
+            String initializer = index.getProperty(phase);
+            if (initializer != null && !initializer.isEmpty()) {
+                hints.reflection().registerType(TypeReference.of(initializer),
+                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+            }
         }
     }
     
