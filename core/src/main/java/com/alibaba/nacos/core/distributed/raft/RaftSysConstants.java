@@ -24,6 +24,16 @@ package com.alibaba.nacos.core.distributed.raft;
 @SuppressWarnings("all")
 public final class RaftSysConstants {
     
+    /**
+     * Log backend configured by nacos.core.protocol.raft.data.log_storage_type.
+     */
+    public static final String LOG_STORAGE_TYPE = "log_storage_type";
+    
+    /**
+     * Default Raft log backend.
+     */
+    public static final String DEFAULT_LOG_STORAGE_TYPE = "rocksdb";
+    
     // ========= default setting value ========= //
     
     /**

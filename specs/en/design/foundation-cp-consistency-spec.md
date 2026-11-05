@@ -120,6 +120,30 @@ Implementation timeouts are operational defaults, not public API guarantees.
 Domain specs must not expose JRaft timeout values as user-visible correctness
 contracts unless a domain API explicitly defines them.
 
+### Raft Log Storage Backends
+
+The built-in JRaft runtime supports two log storage backends: RocksDB and file.
+`nacos.core.protocol.raft.data.log_storage_type` selects the backend. The default,
+`rocksdb`, uses JRaft's default RocksDB log storage; `file` uses the Nacos file
+log storage implementation. Selection occurs during initialization, and every
+group must use the selected factory. Runtime hot switching is unsupported.
+
+The file backend integrates through `FileJRaftServiceFactory` and replaces only
+`LogStorage`. Metadata storage, snapshot storage, and the LogEntry codec continue
+to use the default factory. Each group has a separate file log directory, where
+segments hold logs, the Manifest publishes the locally retained range, and
+indexes provide rebuildable record locations. Local publication is distinct from
+Raft majority commit; the protocol above storage still owns committed indexes
+and state-machine apply.
+
+The file backend requires `nacos.core.protocol.raft.data.sync=true` regardless
+of `sync_meta`, as well as exclusive file locking, regular-file synchronization,
+and atomic same-directory Manifest replacement. Backend configuration does not
+convert existing logs, metadata, or snapshots and is not a data migration
+procedure for existing nodes. Configuration validation, file formats, publication
+and recovery ordering, failure states, and platform durability boundaries are
+defined by the [Raft File Log Storage Spec](foundation-raft-file-log-storage-spec.md).
+
 ### JRaft Transport Authentication
 
 JRaft native gRPC is an inner server-to-server transport. New JRaft clients
@@ -256,6 +280,7 @@ built on the CP foundation and the
 
 - [Foundation Capabilities Spec](foundation-capabilities-spec.md)
 - [AP Consistency Spec](foundation-ap-consistency-spec.md)
+- [Raft File Log Storage Spec](foundation-raft-file-log-storage-spec.md)
 - [Persistence And Dump Spec](foundation-persistence-dump-spec.md)
 - [Event Dispatch And NotifyCenter Spec](foundation-event-dispatch-spec.md)
 - [Cluster Membership Spec](foundation-cluster-membership-spec.md)
