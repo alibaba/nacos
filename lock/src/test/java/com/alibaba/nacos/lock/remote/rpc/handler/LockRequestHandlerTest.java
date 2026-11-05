@@ -23,14 +23,20 @@ import com.alibaba.nacos.api.lock.model.LockResult;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
 import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.service.LockOperationService;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -350,5 +356,24 @@ public class LockRequestHandlerTest {
         assertFalse(response.isSuccess(), "NacosLockException 时应返回失败");
         assertEquals("lock service unavailable", response.getMessage(),
             "错误信息应来自 NacosLockException");
+    }
+    
+    @Test
+    public void testHandleMethodDeclaresLockWriteSecuredContract()
+        throws NoSuchMethodException {
+        // handle 方法必须声明 @Secured(WRITE, SignType.LOCK)，由 RemoteRequestAuthFilter 执行鉴权
+        Method declaredMethod = LockRequestHandler.class.getDeclaredMethod("handle",
+            LockOperationRequest.class, RequestMeta.class);
+        Secured secured = declaredMethod.getAnnotation(Secured.class);
+        assertNotNull(secured, "handle 方法必须声明 @Secured");
+        assertEquals(ActionTypes.WRITE, secured.action(), "锁操作应为写动作");
+        assertEquals(SignType.LOCK, secured.signType(), "锁操作应使用 SignType.LOCK");
+        
+        // RemoteRequestAuthFilter 通过 getMethod("handle", Request.class, RequestMeta.class)
+        // 定位桥接方法，桥接方法必须同样携带 @Secured
+        Method filterLocatedMethod = LockRequestHandler.class.getMethod("handle",
+            Request.class, RequestMeta.class);
+        assertTrue(filterLocatedMethod.isAnnotationPresent(Secured.class),
+            "鉴权 filter 定位的 handle 方法必须携带 @Secured");
     }
 }
