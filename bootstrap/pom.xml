@@ -115,6 +115,8 @@
                 <nacos.native.standalone>false</nacos.native.standalone>
                 <nacos.native.embedded-storage>false</nacos.native.embedded-storage>
                 <nacos.native.derby.experimental>false</nacos.native.derby.experimental>
+                <!-- Optional Native Image argument file appended after the toolchain options. -->
+                <nacos.native.options></nacos.native.options>
                 <nacos.native.build.heap>8g</nacos.native.build.heap>
                 <nacos.native.build.parallelism>2</nacos.native.build.parallelism>
             </properties>
@@ -180,6 +182,7 @@
                                             <sysproperty key="nacos.standalone" value="${nacos.native.standalone}"/>
                                             <sysproperty key="embeddedStorage" value="${nacos.native.embedded-storage}"/>
                                             <sysproperty key="nacos.native.derby.experimental" value="${nacos.native.derby.experimental}"/>
+                                            <sysproperty key="nacos.native.options" value="${nacos.native.options}"/>
                                             <arg value="${project.build.directory}/native"/>
                                             <arg value="${project.build.outputDirectory}"/>
                                             <arg value="${project.basedir}/src/test/resources/aot/derby-experimental.args"/>

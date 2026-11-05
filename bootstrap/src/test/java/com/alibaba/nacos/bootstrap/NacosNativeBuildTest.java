@@ -222,6 +222,33 @@ class NacosNativeBuildTest {
     }
     
     @Test
+    void shouldAppendAdditionalOptionsAfterToolchainOptions() throws Exception {
+        Path additional = temporary.resolve("additional options.args");
+        Files.writeString(additional, "--exact-reachability-metadata\n-Os");
+        assertEquals("# toolchain\n# Additional options from nacos.native.options\n"
+            + "--exact-reachability-metadata\n-Os\n",
+            NacosNativeBuild.options("# toolchain\n", additional.toString()));
+        assertEquals("-H:+A\n# Additional options from nacos.native.options\n"
+            + "--exact-reachability-metadata\n-Os\n",
+            NacosNativeBuild.options("-H:+A", additional.toString()));
+    }
+    
+    @Test
+    void shouldKeepToolchainOptionsWithoutAdditionalFile() throws Exception {
+        assertEquals("# toolchain\n", NacosNativeBuild.options("# toolchain\n", null));
+        assertEquals("# toolchain\n", NacosNativeBuild.options("# toolchain\n", ""));
+        assertEquals("# toolchain\n", NacosNativeBuild.options("# toolchain\n", "  "));
+    }
+    
+    @Test
+    void shouldRejectMissingAdditionalOptionsFile() {
+        String missing = temporary.resolve("missing.args").toString();
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> NacosNativeBuild.options("# toolchain\n", missing));
+        assertTrue(error.getMessage().contains("missing.args"));
+    }
+    
+    @Test
     void shouldRejectInvalidBuildArguments() {
         assertThrows(IllegalArgumentException.class, () -> NacosNativeBuild.main(new String[0]));
     }
