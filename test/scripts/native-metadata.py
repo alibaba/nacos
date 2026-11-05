@@ -26,7 +26,11 @@ and writes the result in a stable, line-oriented order so that reviews and diffs
 ``collect-missing`` closes the loop from the other side: an executable built with
 ``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
 prints every dynamic access that has no metadata. This command turns such logs into the same
-format as the agent output, so ``refresh`` can merge them.
+format as the agent output, so ``refresh`` can merge them. It reads the reports about classes,
+methods and constructors that were looked up or invoked, fields, unsafe allocation,
+serialization, resources and resource bundles. Reports about lambda-proxy classes are counted
+and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
+variant of the Native CI job fails on it instead of ignoring a gap that it cannot name.
 
 Typical refresh, after tracing the Server with the exact classpath of the Native build::
 
@@ -403,6 +407,12 @@ def command_check(args):
 MISSING_ERROR = re.compile(
     r"Missing(?P<kind>\w*)RegistrationError: (?P<what>[^\n]*?)(?:\. To allow this operation[^\n]*)?$",
     re.MULTILINE)
+# The reports about an invoked method or constructor and about an accessed field print the member
+# the way ``Executable.toString()`` and ``Field.toString()`` do: modifiers and the result or field
+# type come first, then the qualified member, for example
+# ``public void p.Plain.setCount(int,java.lang.String) throws java.io.IOException``.
+MEMBER_PREFIX = r"(?:[^\s']+ )*"
+EXECUTABLE_SUFFIX = r"\((?P<params>[^)]*)\)(?: throws [^']*)?'$"
 MISSING_PATTERNS = (
     ("resource", re.compile(r"Cannot access resource at path '(?P<glob>[^']+)'$")),
     ("bundle", re.compile(r"Cannot access resource bundle with name '(?P<bundle>[^']+)'$")),
@@ -411,7 +421,17 @@ MISSING_PATTERNS = (
         r"inheriting \[[^\]]*\]$")),
     ("method", re.compile(
         r"Cannot reflectively access method '(?P<type>[^#']+)#(?P<name>[^(']+)\((?P<params>[^)]*)\)'$")),
+    ("method", re.compile(
+        r"Cannot reflectively invoke method '" + MEMBER_PREFIX
+        + r"(?P<type>[^\s'(]+)\.(?P<name>[^\s.'(]+)" + EXECUTABLE_SUFFIX)),
+    ("constructor", re.compile(
+        r"Cannot reflectively invoke constructor '" + MEMBER_PREFIX
+        + r"(?P<type>[^\s'(]+)" + EXECUTABLE_SUFFIX)),
     ("field", re.compile(r"Cannot reflectively access field '(?P<type>[^#']+)#(?P<name>[^']+)'$")),
+    ("field", re.compile(
+        r"Cannot reflectively read or write field '" + MEMBER_PREFIX
+        + r"(?P<type>[^\s'(]+)\.(?P<name>[^\s.'(]+)'$")),
+    ("unsafe", re.compile(r"Cannot reflectively unsafe instantiate '(?P<type>[^']+)'$")),
     ("serializable", re.compile(
         r"Cannot serialize or deserialize (?:type )?'(?P<type>[^']+)'(?: with target constructor.*)?$")),
     ("type", re.compile(r"Cannot reflectively access (?:the class |the )?'(?P<type>[^'#]+)'$")),
@@ -422,9 +442,9 @@ def parse_missing(text):
     """Turn missing registration reports into agent style metadata.
 
     The member is taken from the report's headline, not from the JSON snippet that follows it,
-    because the snippet only names the type. Reports about lambda-proxy classes are counted and
-    skipped, because GraalVM cannot take metadata for them. Returns (document, unparsed headlines,
-    number of lambda reports skipped).
+    because the snippet of a lookup only names the type. Reports about lambda-proxy classes are
+    counted and skipped, because GraalVM cannot take metadata for them. Returns (document,
+    unparsed headlines, number of lambda reports skipped).
     """
     reflection, resources, unparsed, lambdas = {}, [], set(), 0
     for report in MISSING_ERROR.finditer(text):
@@ -441,14 +461,17 @@ def parse_missing(text):
                 resources.append({"bundle": found.group("bundle")})
             else:
                 entry = reflection.setdefault(found.group("type"), {"type": found.group("type")})
-                if kind == "method":
+                if kind in ("method", "constructor"):
                     params = [p.strip() for p in found.group("params").split(",") if p.strip()]
                     entry.setdefault("methods", []).append(
-                        {"name": found.group("name"), "parameterTypes": params})
+                        {"name": found.groupdict().get("name") or "<init>",
+                         "parameterTypes": params})
                 elif kind == "field":
                     entry.setdefault("fields", []).append({"name": found.group("name")})
                 elif kind == "serializable":
                     entry["serializable"] = True
+                elif kind == "unsafe":
+                    entry["unsafeAllocated"] = True
             break
         else:
             unparsed.add(report.group("kind") + ": " + what)
@@ -571,6 +594,35 @@ def command_selftest(args):
     assert by_type["p.Data"] == {"type": "p.Data", "serializable": True}
     assert len(collected["resources"]) == 3, collected["resources"]
     assert unparsed == ["JNI: Something unexpected"], unparsed
+    # The reports about invoked members, accessed fields and unsafe allocation name the member the
+    # way Executable.toString() does, and a repeated report must not repeat the entry.
+    invoked = (
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively invoke "
+        "method 'public void p.Bean.setCount(int,java.lang.String)'. To allow this operation, add\n"
+        "Exception in thread \"worker-1\" org.graalvm.nativeimage.MissingReflectionRegistrationError: "
+        "Cannot reflectively invoke method 'public java.lang.String p.Bean$Part.getName() throws "
+        "java.io.IOException'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively invoke "
+        "method 'public void p.Bean.setCount(int,java.lang.String)'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively invoke "
+        "constructor 'public p.Bean(java.lang.String[],int)'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively read or "
+        "write field 'private final java.util.List p.Bean.items'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively unsafe "
+        "instantiate 'p.Bean'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively invoke "
+        "method 'public void p.Holder$$Lambda/0x1a2b.run()'. To allow this operation, add\n"
+        "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively unknown "
+        "'p.Bean'. To allow this operation, add\n")
+    collected, unparsed, lambdas = parse_missing(invoked)
+    by_type = {e["type"]: normalize(e) for e in collected["reflection"]}
+    assert sorted(by_type) == ["p.Bean", "p.Bean$Part"] and lambdas == 1, (by_type, lambdas)
+    assert by_type["p.Bean"] == {
+        "type": "p.Bean", "unsafeAllocated": True, "fields": [{"name": "items"}],
+        "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String[]", "int"]},
+                    {"name": "setCount", "parameterTypes": ["int", "java.lang.String"]}]}, by_type
+    assert by_type["p.Bean$Part"]["methods"] == [{"name": "getName", "parameterTypes": []}]
+    assert unparsed == ["Reflection: Cannot reflectively unknown 'p.Bean'"], unparsed
     print("native-metadata selftest OK")
     return 0
 
