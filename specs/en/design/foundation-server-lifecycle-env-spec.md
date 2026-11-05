@@ -307,9 +307,10 @@ build does not require the operator to trace the Server first.
   Native build. The file must be deterministic: sorted, one entry per line. It must not contain
   classes that Spring AOT generates in the same build, agent or JVM-internal classes, test or
   tooling classes, or machine- or run-specific data such as absolute paths, host names, addresses
-  or credentials. Lookups of classes and resources that do not exist on the Native classpath are
-  not recorded; the metadata targets the default reachability mode and does not promise
-  compatibility with `--exact-reachability-metadata`.
+  or credentials. Lookups of classes and resources that do not exist on the Native classpath, and
+  entries for lambda-proxy classes, to which GraalVM 25 cannot apply metadata, are not recorded;
+  the metadata targets the default reachability mode and does not promise compatibility with
+  `--exact-reachability-metadata`.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
   Native executable again. A refresh is a reviewed source change. The repository provides
