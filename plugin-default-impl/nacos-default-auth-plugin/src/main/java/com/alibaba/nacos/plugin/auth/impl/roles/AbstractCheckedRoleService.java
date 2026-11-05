@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -41,6 +42,8 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
  */
 public abstract class AbstractCheckedRoleService extends AbstractCachedRoleService
     implements NacosRoleService {
+    
+    private static final int GLOBAL_ADMIN_LOOKUP_PAGE_SIZE = 100;
     
     private volatile boolean hasGlobalAdminRole;
     
@@ -124,11 +127,51 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         if (hasGlobalAdminRole) {
             return true;
         }
-        List<RoleInfo> roles = getAllRoles();
-        boolean hasGlobalAdminRole = CollectionUtils.isNotEmpty(roles) && roles.stream()
-            .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
+        boolean hasGlobalAdminRole = findGlobalAdminRole();
         this.hasGlobalAdminRole = hasGlobalAdminRole;
         return hasGlobalAdminRole;
+    }
+    
+    /**
+     * Look up whether any global administrator role binding exists with bounded page sizes.
+     *
+     * <p>The storage filter on {@code role} may be case-insensitive (for example under a
+     * case-insensitive database collation), so every returned row is still compared with
+     * {@link AuthConstants#GLOBAL_ADMIN_ROLE} exactly. The first lookup only asks for one row;
+     * further pages are only read when the storage reports more matching rows.
+     *
+     * @return {@code true} if a role binding exactly named {@code ROLE_ADMIN} exists
+     */
+    private boolean findGlobalAdminRole() {
+        Page<RoleInfo> firstPage = getRoles(StringUtils.EMPTY, AuthConstants.GLOBAL_ADMIN_ROLE,
+            DEFAULT_PAGE_NO, 1);
+        if (containsGlobalAdminRole(firstPage)) {
+            return true;
+        }
+        if (firstPage == null || firstPage.getTotalCount() <= 1) {
+            return false;
+        }
+        int pageNo = DEFAULT_PAGE_NO;
+        int checkedCount = 0;
+        while (checkedCount < firstPage.getTotalCount()) {
+            Page<RoleInfo> page = getRoles(StringUtils.EMPTY, AuthConstants.GLOBAL_ADMIN_ROLE,
+                pageNo, GLOBAL_ADMIN_LOOKUP_PAGE_SIZE);
+            if (containsGlobalAdminRole(page)) {
+                return true;
+            }
+            if (page == null || CollectionUtils.isEmpty(page.getPageItems())) {
+                return false;
+            }
+            checkedCount += page.getPageItems().size();
+            pageNo++;
+        }
+        return false;
+    }
+    
+    private boolean containsGlobalAdminRole(Page<RoleInfo> page) {
+        return page != null && CollectionUtils.isNotEmpty(page.getPageItems()) && page
+            .getPageItems().stream()
+            .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
     /**
