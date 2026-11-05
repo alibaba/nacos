@@ -29,7 +29,10 @@ The default Maven build and ordinary JVM startup do not require generated AOT ar
   JVM AOT requires the JVM system property `-Dspring.aot.enabled=true`;
   Native Image is detected automatically by Spring. The initializers are looked up by name, so
   the generator registers them for reflection without a condition (Spring's own hints for them
-  require the application classes to be initialized, which this startup never does).
+  require the application classes to be initialized, which this startup never does). It also
+  registers every class generated directly as bytecode (CGLIB subclasses, class-based AOP proxies
+  and FastClass helpers) with all member categories and unsafe allocation, because Spring's hints
+  cover only part of what the runtime does with them.
 - Check a structural manifest after Nacos environment plugins and before context refresh.
   It includes deployment, storage mode, datasource, profiles, function mode, protocol switches,
   resource search and selected SPI provider sets. It excludes ports, credentials and database URLs.
@@ -160,8 +163,9 @@ and validates the result.
 enforces them in CI:
 
 - Classes that Spring AOT generates during the build (`$$SpringCGLIB$$` subclasses and
-  `__BeanDefinitions`, `__ApplicationContextInitializer` and similar). The same build writes their
-  hints, so a static copy would be redundant and would go stale.
+  `__BeanDefinitions`, `__ApplicationContextInitializer` and similar). The build derives their
+  names from the generated output, either through Spring's hints or through the registrations of
+  the generator described above, so a static copy would be redundant and would go stale.
 - Agent and JVM internals: JVM diagnostic commands, JFR management, `jdk.internal.*`, Native Image
   builder classes and test frameworks.
 - Lookups of classes and resources that do not exist on the Native classpath, such as probes for

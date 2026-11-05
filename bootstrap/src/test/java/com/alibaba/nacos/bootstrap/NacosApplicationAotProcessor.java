@@ -42,6 +42,8 @@ import org.springframework.context.aot.ContextAotProcessor;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.javapoet.ClassName;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +51,7 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Build-time multi-context AOT experiment. Run in a dedicated JVM with matching plugins/configuration.
@@ -123,6 +126,7 @@ public final class NacosApplicationAotProcessor {
             RuntimeHints hints = new RuntimeHints();
             hints.resources().registerPattern(NacosAotInitializer.INDEX);
             registerInitializers(hints, initializers);
+            registerGeneratedClasses(hints, output);
             for (String service : NacosAotManifest.SERVICES) {
                 hints.resources().registerPattern("META-INF/services/" + service);
                 for (String provider : initializers.getProperty("spi." + service).split(",")) {
@@ -164,6 +168,45 @@ public final class NacosApplicationAotProcessor {
             if (initializer != null && !initializer.isEmpty()) {
                 hints.reflection().registerType(TypeReference.of(initializer),
                     MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+            }
+        }
+    }
+    
+    /**
+     * Register every class that the AOT run generated directly as bytecode, which are the CGLIB
+     * subclasses of configuration classes, the class-based AOP proxies and their FastClass helpers.
+     * Spring's own hints cover only the constructors of some of them, while the runtime also reads
+     * their static callback fields, invokes their callback setters and instantiates AOP proxies
+     * without calling a constructor.
+     *
+     * @param hints     the hints written next to the generated artifacts
+     * @param generated the AOT output directory that holds one directory per phase
+     * @throws IOException when the generated classes cannot be listed
+     */
+    static void registerGeneratedClasses(RuntimeHints hints, Path generated) throws IOException {
+        if (!Files.isDirectory(generated)) {
+            return;
+        }
+        List<Path> phases;
+        try (Stream<Path> children = Files.list(generated)) {
+            phases = children.filter(Files::isDirectory).sorted().toList();
+        }
+        for (Path phase : phases) {
+            Path classes = phase.resolve("classes");
+            if (!Files.isDirectory(classes)) {
+                continue;
+            }
+            List<Path> files;
+            try (Stream<Path> walk = Files.walk(classes)) {
+                files = walk.filter(file -> file.toString().endsWith(".class")).sorted().toList();
+            }
+            for (Path file : files) {
+                String name = classes.relativize(file).toString().replace(File.separatorChar, '.');
+                hints.reflection().registerType(
+                    TypeReference.of(name.substring(0, name.length() - ".class".length())),
+                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                    MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.ACCESS_DECLARED_FIELDS,
+                    MemberCategory.UNSAFE_ALLOCATED);
             }
         }
     }

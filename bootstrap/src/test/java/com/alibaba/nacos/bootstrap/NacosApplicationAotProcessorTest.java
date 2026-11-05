@@ -89,6 +89,49 @@ class NacosApplicationAotProcessorTest {
         assertFalse(json.contains("typeReached"));
     }
     
+    @Test
+    void shouldRegisterEveryGeneratedClassWithAllMemberCategories() throws Exception {
+        Path generated = temporary.resolve("aot");
+        String proxy = "example/service/Dump$$SpringCGLIB$$0";
+        String fastClass = "example/service/Dump$$SpringCGLIB$$FastClass$$1";
+        for (String name : List.of("core/classes/" + proxy, "web/classes/" + fastClass)) {
+            Path file = generated.resolve(name + ".class");
+            Files.createDirectories(file.getParent());
+            Files.write(file, new byte[] {1});
+        }
+        Files.createDirectories(generated.resolve("resources/META-INF"));
+        Files.writeString(generated.resolve("core/classes/readme.txt"), "not a class");
+        Files.writeString(generated.resolve("core/sources.list"), "ignored");
+        RuntimeHints hints = new RuntimeHints();
+        NacosApplicationAotProcessor.registerGeneratedClasses(hints, generated);
+        assertEquals(2, hints.reflection().typeHints().count());
+        for (String name : List.of(proxy, fastClass)) {
+            TypeHint hint = hints.reflection().getTypeHint(
+                TypeReference.of(name.replace('/', '.')));
+            assertNotNull(hint, name);
+            assertNull(hint.getReachableType());
+            assertTrue(hint.getMemberCategories().containsAll(List.of(
+                MemberCategory.INVOKE_DECLARED_CONSTRUCTORS, MemberCategory.INVOKE_DECLARED_METHODS,
+                MemberCategory.ACCESS_DECLARED_FIELDS, MemberCategory.UNSAFE_ALLOCATED)), name);
+        }
+        new FileNativeConfigurationWriter(temporary.resolve("written"), "com.alibaba.nacos", "aot")
+            .write(hints);
+        String json = Files.readString(temporary.resolve("written/META-INF/native-image/"
+            + "com.alibaba.nacos/aot/reachability-metadata.json"));
+        assertTrue(json.contains("\"example.service.Dump$$SpringCGLIB$$0\""), json);
+        assertTrue(json.contains("\"unsafeAllocated\": true"), json);
+        assertTrue(json.contains("\"allDeclaredFields\": true"), json);
+    }
+    
+    @Test
+    void shouldIgnoreMissingGeneratedClassDirectories() throws Exception {
+        RuntimeHints hints = new RuntimeHints();
+        NacosApplicationAotProcessor.registerGeneratedClasses(hints, temporary.resolve("absent"));
+        Files.createDirectories(temporary.resolve("empty/core"));
+        NacosApplicationAotProcessor.registerGeneratedClasses(hints, temporary.resolve("empty"));
+        assertEquals(0, hints.reflection().typeHints().count());
+    }
+    
     private Properties index() {
         Properties index = new Properties();
         index.setProperty("core", INITIALIZERS.get(0));
