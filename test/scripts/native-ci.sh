@@ -84,6 +84,12 @@ stage_prepare() {
     python3 -I "$METADATA_TOOL" check
 
     log "Initialize the database"
+    # Use the tracked source: distribution/conf/*.sql are copies made by a Maven build.
+    local schema="${ROOT}/plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
+    if [ ! -f "$schema" ]; then
+        echo "Missing ${schema}" >&2
+        exit 1
+    fi
     command -v psql >/dev/null \
         || sudo apt-get install -y --no-install-recommends postgresql-client
     export PGPASSWORD="$DB_PASSWORD"
@@ -95,7 +101,7 @@ stage_prepare() {
         sleep 2
     done
     psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
-        -f "$ROOT/distribution/conf/pg-schema.sql"
+        -f "$schema"
 
     log "Generate disposable credentials"
     remember NACOS_TEST_AUTH_ADMIN_USERNAME nacos
