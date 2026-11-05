@@ -35,6 +35,8 @@ public class DataSourcePoolProperties {
     
     public static final long DEFAULT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(3L);
     
+    public static final long DEFAULT_EMBEDDED_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(10L);
+    
     public static final long DEFAULT_VALIDATION_TIMEOUT = TimeUnit.SECONDS.toMillis(10L);
 
     public static final long DEFAULT_IDLE_TIMEOUT = TimeUnit.MINUTES.toMillis(10L);
@@ -45,10 +47,10 @@ public class DataSourcePoolProperties {
     
     private final HikariDataSource dataSource;
     
-    private DataSourcePoolProperties() {
+    private DataSourcePoolProperties(long defaultConnectionTimeout) {
         dataSource = new HikariDataSource();
         dataSource.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
-        dataSource.setConnectionTimeout(DEFAULT_CONNECTION_TIMEOUT);
+        dataSource.setConnectionTimeout(defaultConnectionTimeout);
         dataSource.setValidationTimeout(DEFAULT_VALIDATION_TIMEOUT);
         dataSource.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
         dataSource.setMinimumIdle(DEFAULT_MINIMUM_IDLE);
@@ -60,7 +62,18 @@ public class DataSourcePoolProperties {
      * @return new hikari config
      */
     public static DataSourcePoolProperties build(Environment environment) {
-        DataSourcePoolProperties result = new DataSourcePoolProperties();
+        return build(environment, DEFAULT_CONNECTION_TIMEOUT);
+    }
+    
+    /**
+     * Build new Hikari config with the specified default connection timeout.
+     *
+     * @param environment              environment
+     * @param defaultConnectionTimeout default connection timeout in milliseconds
+     * @return new hikari config
+     */
+    public static DataSourcePoolProperties build(Environment environment, long defaultConnectionTimeout) {
+        DataSourcePoolProperties result = new DataSourcePoolProperties(defaultConnectionTimeout);
         Binder.get(environment).bind("db.pool.config", Bindable.ofInstance(result.getDataSource()));
         return result;
     }
