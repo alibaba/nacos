@@ -1,8 +1,9 @@
-# Builds the Nacos Server as a GraalVM Native Image (PostgreSQL, standalone, merged deployment) and
-# runs the repository's standalone-server integration suites against the executable.
+# Builds the Nacos Server as a GraalVM Native Image (standalone, merged deployment) against
+# PostgreSQL and against MySQL and runs the repository's standalone-server integration suites
+# against the executable.
 #
-# Native compilation needs about 10 GB of RAM, so this job runs on GitHub-hosted runners instead of
-# the self-hosted pull request checks. Every step only calls a stage of test/scripts/native-ci.sh,
+# Native compilation peaks at about 12 GB of RAM, so this job runs on GitHub-hosted runners instead
+# of the self-hosted pull request checks. Every step only calls a stage of test/scripts/native-ci.sh,
 # which is also the way to reproduce the job elsewhere. See bootstrap/README-AOT.md.
 #
 # To run it on a fork without opening a pull request, push a branch named native-ci/<name>.
@@ -15,13 +16,12 @@ on:
     branches: [ develop ]
     paths:
       - 'bootstrap/**'
-      - 'distribution/**'
-      - 'persistence/src/main/resources/META-INF/native-image/**'
-      - 'consistency/src/main/resources/META-INF/native-image/**'
-      - 'naming/src/main/resources/META-INF/native-image/**'
+      - 'distribution/bin/startup-native.sh'
+      - 'distribution/release-native.xml'
+      - 'distribution/pom.xml'
+      - '**/META-INF/native-image/**'
       - 'test/scripts/native-*'
       - '.github/workflows/native-image.yml'
-      - 'pom.xml'
   push:
     branches: [ 'native-ci/**' ]
 
@@ -34,19 +34,28 @@ concurrency:
 
 jobs:
   native-image:
-    name: Native Server (${{ matrix.variant }})
+    name: Native Server (${{ matrix.database }}, ${{ matrix.variant }})
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
+        # The datasource is a structural choice of the build, so every database is built on its own.
         # 'exact' builds with --exact-reachability-metadata and reports every dynamic access that has
-        # no metadata, which is how gaps in the bundled metadata are found.
-        variant: [ default, exact ]
+        # no metadata, which is how gaps in the bundled metadata are found. MySQL runs the core
+        # OpenAPI classes, which is enough to exercise its driver.
+        include:
+          - { database: postgresql, variant: default, suite: full }
+          - { database: postgresql, variant: exact, suite: full }
+          - { database: mysql, variant: default, suite: core }
+          - { database: mysql, variant: exact, suite: core }
     env:
+      NATIVE_CI_DATABASE: ${{ matrix.database }}
       NATIVE_CI_VARIANT: ${{ matrix.variant }}
+      NATIVE_CI_SUITE: ${{ matrix.suite }}
       NATIVE_CI_OUT: ${{ github.workspace }}/ci-out
     services:
+      # The postgresql jobs use this one. The mysql jobs start a container of their own.
       postgres:
         image: postgres:17-alpine
         env:
@@ -93,6 +102,6 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: native-diagnostics-${{ matrix.variant }}
+          name: native-diagnostics-${{ matrix.database }}-${{ matrix.variant }}
           path: ci-out
           if-no-files-found: ignore

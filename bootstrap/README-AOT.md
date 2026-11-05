@@ -259,15 +259,43 @@ classes are counted and skipped, as described above.
 
 ### The Native CI job
 
-`.github/workflows/native-image.yml` builds the Native distribution on a GitHub-hosted runner
-against a PostgreSQL service, starts it with `bin/startup-native.sh`, runs the smoke test
-(`test/scripts/native-smoke.sh`) and the standalone OpenAPI, Java SDK and Maintainer SDK suites
-against the executable, and reports. Two variants run: `default` is the build that users get, and
-`exact` is the diagnostic build above. The workflow only calls the stages of
-`test/scripts/native-ci.sh` (`prepare`, `build`, `start`, `smoke`, `integration`, `report`), so the
-same stages reproduce the job on any Linux host that has GraalVM 25, Maven, `psql` and an empty
-PostgreSQL database. Tests that also fail against the ordinary JVM Server in this setup are listed
-in `test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job.
+`.github/workflows/native-image.yml` builds the Native distribution on a GitHub-hosted runner,
+starts it with `bin/startup-native.sh`, runs the smoke test (`test/scripts/native-smoke.sh`) and
+the standalone OpenAPI, Java SDK and Maintainer SDK suites against the executable, and reports.
+The datasource is a structural choice of the build, so every database is compiled on its own, in
+two variants: `default` is the build that users get, and `exact` is the diagnostic build above.
+
+- PostgreSQL runs every OpenAPI class.
+- MySQL runs the Config, Naming, Core and Auth OpenAPI classes, which is enough to exercise its
+  driver.
+- The Java SDK suite runs the classes that need only a single, current Server. The upgrade
+  migration, released-SDK compatibility and Jackson 3 scenarios need other setups and are not part
+  of it. The Maintainer SDK suite runs as its profile defines it.
+
+The Server is configured like the one in `.github/workflows/it-new.yml`, because the AI suites are
+written for it: anonymous access to the AI APIs, small Remote Agent Discovery capacities and one
+second reconciliation intervals for the MCP cutover and the search index. The job also passes
+`-Dnacos.logs.path`, which keeps the log files below the Nacos home: an application that starts
+from AOT output does not apply `-Dlogging.config` and would otherwise log to
+`${user.home}/nacos/logs`.
+
+Tests that fail for a reason that does not depend on the Native executable are listed in
+`test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job. At present these
+are the tests that call the ARD adaptor on port 9080, which the default build leaves off because
+`nacos.ai.ard.enabled` is a structural switch, and two Config list tests that also fail against
+the ordinary JVM Server with PostgreSQL.
+
+The workflow only calls the stages of `test/scripts/native-ci.sh` (`prepare`, `build`, `start`,
+`smoke`, `integration`, `report`), so the same stages reproduce a job on any Linux host that has
+GraalVM 25, Maven, Python 3, `curl` and `openssl`, and either `psql` with an empty PostgreSQL
+database (`NATIVE_CI_DATABASE=postgresql`) or Docker for MySQL (`NATIVE_CI_DATABASE=mysql`, which
+starts a disposable `mysql:8.4` container). The header of the script lists the variables.
+
+On a GitHub-hosted runner with 4 vCPUs and GraalVM CE 25.0.2, the compilation takes between four
+and six minutes and peaks at about 12 GB of resident memory with a 10 GB builder heap, so the job
+uses GitHub-hosted runners instead of the self-hosted ones of the other Java checks. The executable
+is 287 MB. The Server answers its liveness check about 1.5 seconds after it starts, or 2 seconds
+with the reporting of the `exact` variant, and holds 470 to 530 MB after the suites.
 
 The job runs for pull requests that touch the Native build and on demand. To run it on a fork
 without opening a pull request, push a branch named `native-ci/<name>`.

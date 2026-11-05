@@ -17,8 +17,8 @@
 # Stages of the Native Image CI job (.github/workflows/native-image.yml). The workflow only calls
 # this script, so what is built, tested and reported can change without editing the workflow.
 # The stages also reproduce the job on any Linux host that has a GraalVM 25 JAVA_HOME with
-# native-image, Maven, curl, openssl and either psql and an EMPTY PostgreSQL database that the
-# script initializes, or Docker for the MySQL database that the script starts itself.
+# native-image, Maven, Python 3, curl, openssl and either psql and an EMPTY PostgreSQL database
+# that the script initializes, or Docker for the MySQL database that the script starts itself.
 #
 # Usage: native-ci.sh <prepare|build|start|smoke|integration|report|all>
 #
@@ -43,13 +43,6 @@
 #   MVN                     Maven command, default mvn
 
 set -euo pipefail
-
-# TEMPORARY, removed once the workflow matrix selects the database: a branch whose name contains
-# 'mysql' (native-ci/<name>-mysql) runs the MySQL job without a workflow change.
-if [ -z "${NATIVE_CI_DATABASE:-}" ] && [[ "${GITHUB_REF_NAME:-}" == *mysql* ]]; then
-    NATIVE_CI_DATABASE=mysql
-    NATIVE_CI_SUITE="${NATIVE_CI_SUITE:-core}"
-fi
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="${NATIVE_CI_WORK:-${RUNNER_TEMP:-/tmp}/native-ci}"
