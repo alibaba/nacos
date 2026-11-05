@@ -318,10 +318,14 @@ build does not require the operator to trace the Server first.
   checks it.
 - Acceptance. The metadata is accepted by running the standalone integration suites against the
   Native executable. Tests that also fail against the ordinary JVM Server in the same setup are
-  kept in a baseline and are not Native regressions. Dynamic accesses without metadata can be
-  listed by building with `--exact-reachability-metadata` and running with
-  `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the GraalVM
-  version, the datasource and the suites that ran.
+  kept in a baseline and are not Native regressions. The suites never restart the Server, so the
+  run must also create data that no suite creates, wait for the Raft snapshots of the naming
+  service, restart the Native Server on the same data and read that data again; only then do the
+  Raft groups load a snapshot and replay the log behind it (`test/scripts/native-restart.sh`).
+  Dynamic accesses without metadata can be listed by building with
+  `--exact-reachability-metadata` and running with `-XX:MissingRegistrationReportingMode=Warn`.
+  A validation report must name the GraalVM version, the datasource, the suites that ran and
+  whether the restart check ran.
 
 ## 11. Pending Issues
 
