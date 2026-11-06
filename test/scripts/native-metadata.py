@@ -26,9 +26,15 @@ for the classes of the JDK, and ``com.alibaba.nacos/nacos-bootstrap`` for everyt
 builds itself. The owner of an entry is the artifact whose jar on the Native classpath contains the
 class or the resource, so ``refresh`` needs that classpath and nobody sorts entries by hand.
 
+The bundle holds only what the Native build does not get from another source: the metadata files in
+the jars of the classpath and the files of the AOT generator (see Provided). ``refresh`` takes what
+they provide out of the entries, so it needs the output of the Native build as well
+(``mvn -Pnative ... -DnativeDryRun=true`` produces it). The GraalVM reachability metadata repository
+that the build adds is no source: the bundle works with and without it.
+
 ``check`` verifies the committed files without needing GraalVM or a database. CI runs it from
 ``native-build-it.py``. With ``--classpath`` it also verifies that every entry sits in the file of
-its owner.
+its owner and that no entry repeats what another source of the build provides.
 
 Every entry carries a ``typeReached`` condition, and the condition depends on the owner of the entry
 (see CONDITION_GROUPS): the Server entry point for what Nacos builds and for the JDK, and for a
@@ -292,6 +298,7 @@ class Classpath:
     """Class and resource names available to the Native image builder, and who owns them."""
 
     def __init__(self, entries):
+        self.entries = [Path(entry) for entry in entries]
         self.classes = set()
         self.classes_as_paths = set()
         self.resources = set()
@@ -567,6 +574,227 @@ def drop_reason(entry, classpath):
     return None
 
 
+# The Native build reads reachability metadata from more places than the bundled files: from the
+# jars of the classpath (except what native-image.args excludes) and from the files that the AOT
+# generator writes for the application contexts. What one of them provides is not repeated in the
+# bundle: a copy costs review, ages with the library, and hides the day on which the other source
+# stops providing it. ``refresh`` keeps only the rest and ``check`` reports a repetition.
+#
+# An entry that a condition guards provides nothing. It is available only once its type is reached,
+# and the access that the bundled entry serves may come before.
+#
+# The GraalVM reachability metadata repository, which the build adds by default, is no source. It
+# guards nearly all of its entries: it guards the methods of
+# com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql with HealthCheckerFactory, which a
+# restarted Server does not reach when it loads the persistent services of a Raft snapshot, and
+# Jackson then failed to call Mysql.getCmd() after a bundle left the entry out. What it provides
+# without a condition, two resource bundles of the JDBC drivers, is not worth a bundle that works
+# only with the repository: the build can leave it out, and a release of it can change.
+EXCLUDE_CONFIG_FILE = "bootstrap/src/test/resources/aot/native-image.args"
+PROVIDED_DIRECTORIES = ("bootstrap/target/native/aot",)
+PROVIDED_FILES = ("reachability-metadata.json", "reflect-config.json", "resource-config.json",
+                  "proxy-config.json", "serialization-config.json")
+# A flag of the old format asks less than the flag of the unified format of the same kind.
+QUERY_FLAGS = {"queryAllDeclaredConstructors": "allDeclaredConstructors",
+               "queryAllPublicConstructors": "allPublicConstructors",
+               "queryAllDeclaredMethods": "allDeclaredMethods",
+               "queryAllPublicMethods": "allPublicMethods"}
+OLD_FLAGS = {"allowUnsafeAllocation": "unsafeAllocated"}
+
+
+def excluded_configs(file=EXCLUDE_CONFIG_FILE):
+    """The (jar, resource) patterns of the ``--exclude-config`` options of the Native build."""
+    path = Path(file)
+    if not path.is_file():
+        return []
+    tokens = [token for line in path.read_text().splitlines()
+              if not line.lstrip().startswith("#") for token in line.split()]
+    return [(re.compile(tokens[i + 1]), re.compile(tokens[i + 2]))
+            for i, token in enumerate(tokens[:-2]) if token == "--exclude-config"]
+
+
+def method_id(method):
+    return method["name"], tuple(method.get("parameterTypes") or ())
+
+
+def java_regex(pattern):
+    """A Java regular expression as a Python one: ``\\Q...\\E`` quotes text in Java only."""
+    quoted = re.compile(r"\\Q(.*?)(?:\\E|$)", re.DOTALL)
+    return re.compile(quoted.sub(lambda found: re.escape(found.group(1)), pattern))
+
+
+class Provided:
+    """What the other inputs of the Native build provide, normalized for comparison.
+
+    Only the entries without a condition count (see above).
+    """
+
+    def __init__(self):
+        self.types = {}      # type key -> (flags, methods, fields)
+        self.globs = set()
+        self.patterns = []   # regular expressions of the resource-config.json files
+        self.bundles = set()
+        self.files = 0
+
+    def _type(self, key):
+        return self.types.setdefault(key, (set(), set(), set()))
+
+    def add_reflection(self, entry):
+        if entry.get("condition"):
+            return
+        flags, methods, fields = self._type(type_key(entry))
+        flags.update(flag for flag in BOOLEAN_FLAGS if entry.get(flag))
+        flags.update(new for old, new in OLD_FLAGS.items() if entry.get(old))
+        methods.update(method_id(method) for method in entry.get("methods") or ())
+        fields.update(field["name"] if isinstance(field, dict) else field
+                      for field in entry.get("fields") or ())
+
+    def add_document(self, name, document):
+        """Add the content of a metadata file; the name tells the format."""
+        self.files += 1
+        if name == "reachability-metadata.json" and isinstance(document, dict):
+            for entry in document.get("reflection", []):
+                self.add_reflection(entry)
+            for entry in document.get("resources", []):
+                if entry.get("condition") or "module" in entry:
+                    continue
+                if "glob" in entry:
+                    self.globs.add(entry["glob"])
+                if "bundle" in entry:
+                    self.bundles.add(entry["bundle"])
+        elif name == "reflect-config.json" and isinstance(document, list):
+            for entry in document:
+                found = entry.get("name") or entry.get("type") if isinstance(entry, dict) else None
+                if found:
+                    self.add_reflection(dict(entry, type=found))
+        elif name == "resource-config.json" and isinstance(document, dict):
+            resources = document.get("resources")
+            for item in resources.get("includes", []) if isinstance(resources, dict) else ():
+                if item.get("pattern") is not None and not item.get("condition"):
+                    try:
+                        self.patterns.append(java_regex(item["pattern"]))
+                    except re.error:
+                        continue
+            self.bundles.update(item["name"] for item in document.get("bundles", [])
+                                if item.get("name") and not item.get("condition"))
+        elif name == "proxy-config.json" and isinstance(document, list):
+            for entry in document:
+                guarded = isinstance(entry, dict) and entry.get("condition")
+                interfaces = entry.get("interfaces") if isinstance(entry, dict) else entry
+                if interfaces and not guarded:
+                    self._type(type_key({"type": {"proxy": list(interfaces)}}))
+        elif name == "serialization-config.json":
+            for entry in document if isinstance(document, list) else document.get("types", []):
+                found = entry.get("name") or entry.get("type") if isinstance(entry, dict) else None
+                if found and not entry.get("condition"):
+                    self._type(found)[0].add("serializable")
+
+    def add_text(self, name, text):
+        """Add a metadata file by its content, ignoring any other kind of file."""
+        base = name.rsplit("/", 1)[-1]
+        if base in PROVIDED_FILES:
+            try:
+                self.add_document(base, json.loads(text))
+            except ValueError:
+                pass
+
+    def add_directory(self, directory):
+        """The metadata files below a directory."""
+        for file in sorted(Path(directory).rglob("*.json")):
+            if file.is_file():
+                self.add_text(file.name, file.read_text())
+
+    def add_jars(self, classpath, excluded):
+        """The metadata files inside the jars of the classpath that the build does not exclude."""
+        for entry in classpath.entries:
+            if entry.suffix != ".jar" or not entry.is_file():
+                continue
+            with zipfile.ZipFile(entry) as archive:
+                for member in archive.namelist():
+                    if not member.startswith("META-INF/native-image/") or member.endswith("/"):
+                        continue
+                    if any(jar.fullmatch(str(entry)) and resource.fullmatch(member)
+                           for jar, resource in excluded):
+                        continue
+                    self.add_text(member, archive.read(member).decode("utf-8", "replace"))
+
+    @classmethod
+    def of_build(cls, classpath, directories):
+        """The sources of a build: the jars of the classpath and the given directories."""
+        provided = cls()
+        provided.add_jars(classpath, excluded_configs())
+        for directory in directories:
+            provided.add_directory(directory)
+        return provided
+
+    @staticmethod
+    def provides_method(have, method):
+        flags, methods, _ = have
+        if method_id(method) in methods:
+            return True
+        return "allDeclaredConstructors" in flags if method["name"] == "<init>" \
+            else "allDeclaredMethods" in flags
+
+    def residual(self, entry):
+        """What of a reflection entry nothing provides: the entry, a smaller entry, or None."""
+        have = self.types.get(type_key(entry))
+        if have is None:
+            return entry
+        rest = {key: value for key, value in entry.items()
+                if key not in BOOLEAN_FLAGS and key not in ("methods", "fields")}
+        flags = [flag for flag in BOOLEAN_FLAGS if entry.get(flag)]
+        kept = [flag for flag in flags
+                if flag not in have[0] and QUERY_FLAGS.get(flag) not in have[0]]
+        methods = [method for method in entry.get("methods") or ()
+                   if not self.provides_method(have, method)]
+        fields = [field for field in entry.get("fields") or ()
+                  if field["name"] not in have[2] and "allDeclaredFields" not in have[0]]
+        if not (kept or methods or fields):
+            return None
+        if len(kept) == len(flags) and len(methods) == len(entry.get("methods") or ()) \
+                and len(fields) == len(entry.get("fields") or ()):
+            return entry
+        rest.update((flag, True) for flag in kept)
+        if methods:
+            rest["methods"] = methods
+        if fields:
+            rest["fields"] = fields
+        return rest
+
+    def provides_resource(self, entry):
+        if "module" in entry:
+            return False
+        if "bundle" in entry:
+            return entry["bundle"] in self.bundles
+        glob = entry["glob"]
+        if "*" in glob or "?" in glob:
+            return glob in self.globs
+        return glob in self.globs or any(pattern.fullmatch(glob) for pattern in self.patterns) \
+            or any(("*" in other or "?" in other) and glob_regex(other).fullmatch(glob)
+                   for other in self.globs)
+
+
+def glob_regex(glob):
+    return re.compile(re.escape(glob).replace(r"\*\*", ".*").replace(r"\*", "[^/]*")
+                      .replace(r"\?", "[^/]"))
+
+
+def without_provided(document, provided):
+    """The document without what is provided elsewhere, and the number of entries that changed."""
+    reflection, resources, trimmed = [], [], 0
+    for entry in document.get("reflection", []):
+        rest = provided.residual(entry)
+        if rest is not None:
+            reflection.append(rest)
+        trimmed += rest is not entry
+    for entry in document.get("resources", []):
+        if provided.provides_resource(entry):
+            trimmed += 1
+        else:
+            resources.append(entry)
+    return {"reflection": reflection, "resources": resources}, trimmed
+
+
 def load_trace(location):
     """The documents of an input: a file, the output directory of the agent, or the whole bundle.
 
@@ -761,13 +989,27 @@ def problems(document, classpath=None):
     return found
 
 
+def provided_by(classpath, args, required):
+    """The other sources of the build; ``required``: fail without the AOT generator's output."""
+    directories = args.provided_dir or [d for d in PROVIDED_DIRECTORIES if Path(d).is_dir()]
+    if required and not args.provided_dir and not Path(PROVIDED_DIRECTORIES[0]).is_dir():
+        raise SystemExit("No output of the AOT generator in %s; run the Native build first (see "
+                         "README-AOT.md), or name the directories of the other metadata with "
+                         "--provided-dir" % PROVIDED_DIRECTORIES[0])
+    return Provided.of_build(classpath, directories)
+
+
 def command_refresh(args):
     classpath = Classpath.from_file(args.classpath)
     traces = [document for location in args.trace for document in load_trace(location)]
     document, dropped = curate(traces, classpath)
     if not args.output:
-        # A list for a reader (--output) must not fail because an owner has no row yet; the
-        # bundle must not be written without one.
+        # A list for a reader (--output) must not fail because an owner has no row yet or because
+        # another source seems to provide an entry: the executable reported it as missing. The
+        # bundle must not be written with either.
+        document, repeated = without_provided(document, provided_by(classpath, args, True))
+        print("%d entries were removed or reduced, because another source of the build provides "
+              "them" % repeated)
         document = apply_owner_conditions(document, classpath)
     issues = problems(document, classpath)
     for section, name, reason in sorted(dropped):
@@ -801,6 +1043,8 @@ def command_check(args):
         return 1
     issues, reflection_owner, resource_owner, repeated = [], {}, {}, []
     totals = [0, 0]
+    # What the other sources provide is not repeated; only a check with the classpath knows them.
+    provided = provided_by(classpath, args, False) if classpath is not None else None
     for owner, file in files.items():
         prefix = "" if owner is None else owner + ": "
         text = file.read_text()
@@ -842,6 +1086,16 @@ def command_check(args):
                         entry.get("type", entry.get("glob", entry.get("bundle"))),
                         seen[key(entry)], owner))
                 seen.setdefault(key(entry), owner)
+        if provided is not None:
+            copies = [type_key(entry) for entry in reflection
+                      if provided.residual(entry) is not entry]
+            copies += [entry.get("glob", entry.get("bundle")) for entry in resources
+                       if provided.provides_resource(entry)]
+            if copies:
+                issues.append("%s%s, for example %s; run 'refresh' to remove it" % (
+                    prefix, entries_that(len(copies), "repeats what another source of the build "
+                                         "provides", "repeat what another source of the build "
+                                         "provides"), ", ".join(sorted(copies)[:3])))
         if classpath is not None:
             misplaced = [type_key(entry) for entry in reflection
                          if owner_of_reflection(entry, classpath) not in (None, owner)]
@@ -1131,6 +1385,7 @@ def command_selftest(args):
                            ("c.C", ("org.example/lib-c",)))):
         selftest_owners()
     selftest_condition_table()
+    selftest_provided()
     print("native-metadata selftest OK")
     return 0
 
@@ -1160,6 +1415,140 @@ def selftest_condition_table():
     assert owner_condition("org.springframework.boot/spring-boot-new") == SPRING_BOOT
     assert owner_condition("org.postgresql/postgresql") == "com.zaxxer.hikari.HikariConfig"
     assert owner_condition("org.example/unknown") is None
+
+
+def selftest_provided():
+    """What other sources of the build provide, and what is left of an entry."""
+    import tempfile
+
+    provided = Provided()
+    provided.add_document("reachability-metadata.json", {
+        "reflection": [
+            {"type": "p.A", "allDeclaredConstructors": True},
+            {"type": "p.B", "methods": [{"name": "m", "parameterTypes": ["int"]}]},
+            {"type": "p.H"},
+            {"type": {"proxy": ["p.I", "java.io.Serializable"]}}],
+        "resources": [{"glob": "x/y.txt"}, {"glob": "w/*.txt"}, {"bundle": "p.messages"}]})
+    provided.add_document("reachability-metadata.json", {
+        "reflection": [{"type": "p.G", "allDeclaredMethods": True,
+                        "condition": {"typeReached": "q.Late"}}],
+        "resources": [{"glob": "late.txt", "condition": {"typeReached": "q.Late"}}]})
+    provided.add_document("reflect-config.json", [
+        {"name": "p.C", "allDeclaredMethods": True, "fields": [{"name": "f", "allowWrite": True}]},
+        {"name": "p.J", "queryAllDeclaredMethods": True, "allowUnsafeAllocation": True}])
+    provided.add_document("resource-config.json", {
+        "resources": {"includes": [{"pattern": "\\Qq/z.txt\\E"}]},
+        "bundles": [{"name": "p.bundle"}]})
+    provided.add_document("serialization-config.json", [{"name": "p.D"}])
+    provided.add_document("proxy-config.json", [{"interfaces": ["p.K"]}])
+
+    def left(entry):
+        return provided.residual(entry)
+
+    ctor = {"name": "<init>", "parameterTypes": ["int"]}
+    # A type that nothing provides stays as it is; a class that is provided needs nothing more.
+    unknown = {"type": "p.Unknown", "methods": [ctor]}
+    assert left(unknown) is unknown
+    assert left({"type": "p.H"}) is None
+    # The type is known but nothing of the entry is provided: the entry itself, not a copy.
+    nothing = {"type": "p.A", "methods": [{"name": "run", "parameterTypes": []}],
+               "unsafeAllocated": True}
+    assert left(nothing) is nothing
+    # A flag, or the members that it names.
+    assert left({"type": "p.A", "allDeclaredConstructors": True}) is None
+    assert left({"type": "p.A", "methods": [ctor]}) is None
+    assert left({"type": "p.A", "allPublicConstructors": True}) == {
+        "type": "p.A", "allPublicConstructors": True}
+    assert left({"type": "p.A", "methods": [{"name": "run", "parameterTypes": []}]}) == {
+        "type": "p.A", "methods": [{"name": "run", "parameterTypes": []}]}
+    # Members of one entry: only those that are not provided stay.
+    other = {"name": "n", "parameterTypes": []}
+    assert left({"type": "p.B", "methods": [{"name": "m", "parameterTypes": ["int"]}, other]}) \
+        == {"type": "p.B", "methods": [other]}
+    assert left({"type": "p.B", "methods": [{"name": "m", "parameterTypes": ["long"]}]}) is not None
+    assert left({"type": "p.C", "methods": [other], "fields": [{"name": "f"}]}) is None
+    assert left({"type": "p.C", "methods": [ctor]}) == {"type": "p.C", "methods": [ctor]}
+    only_g = {"type": "p.C", "fields": [{"name": "g"}]}
+    assert left(only_g) == only_g
+    # Every flag counts: an old query flag provides less than the flag of the unified format, an old
+    # unsafe allocation flag provides the new one, and serialization is provided by its own file.
+    all_methods = {"type": "p.J", "allDeclaredMethods": True}
+    assert left(all_methods) == all_methods
+    assert left({"type": "p.J", "queryAllDeclaredMethods": True, "unsafeAllocated": True}) is None
+    assert left({"type": "p.D", "serializable": True}) is None
+    assert left({"type": "p.H", "serializable": True}) == {"type": "p.H", "serializable": True}
+    assert left({"type": "p.H", "jniAccessible": True}) == {"type": "p.H", "jniAccessible": True}
+    assert left({"type": {"proxy": ["p.K"]}}) is None
+    assert left({"type": {"proxy": ["p.I", "java.io.Serializable"]}}) is None
+    assert left({"type": {"proxy": ["p.K", "p.I"]}}) is not None
+    # The condition and the other keys of an entry go along with what is left.
+    guard = {"typeReached": "z.Z"}
+    assert left({"type": "p.B", "condition": guard, "methods": [other]}) \
+        == {"type": "p.B", "condition": guard, "methods": [other]}
+    # An entry that a condition guards provides nothing, not even to the owner that it comes from.
+    entry = {"type": "p.G", "methods": [other]}
+    assert left(entry) is entry
+    # Resources: a literal by a glob or an expression, a wildcard only by itself, a bundle by name.
+    for glob, expected in (("x/y.txt", True), ("w/a.txt", True), ("w/a/b.txt", False),
+                           ("q/z.txt", True), ("q/zz.txt", False), ("w/*.txt", True),
+                           ("x/*.txt", False), ("late.txt", False)):
+        assert provided.provides_resource({"glob": glob}) is expected, glob
+    assert provided.provides_resource({"bundle": "p.messages"})
+    assert provided.provides_resource({"bundle": "p.bundle"})
+    assert not provided.provides_resource({"bundle": "p.other"})
+    assert not provided.provides_resource({"bundle": "p.messages", "module": "java.base"})
+    document, trimmed = without_provided(
+        {"reflection": [{"type": "p.H"}, {"type": "p.Unknown"},
+                        {"type": "p.B", "methods": [ctor, other]}],
+         "resources": [{"glob": "x/y.txt"}, {"glob": "v/other.txt"}]}, provided)
+    assert [e["type"] for e in document["reflection"]] == ["p.Unknown", "p.B"]
+    assert [e["glob"] for e in document["resources"]] == ["v/other.txt"]
+    assert trimmed == 2, trimmed  # p.H and x/y.txt; p.B keeps both members
+
+    # The jars of the classpath, except what native-image.args excludes, and the owner of each.
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+
+        def jar(name, members):
+            file = root / "repository/org/example" / name / "1.0" / (name + "-1.0.jar")
+            file.parent.mkdir(parents=True)
+            with zipfile.ZipFile(file, "w") as archive:
+                for member, content in members.items():
+                    archive.writestr(member, content)
+            return str(file)
+
+        config = json.dumps([{"name": "t.Shipped", "allDeclaredMethods": True}])
+        jars = [jar("kept", {"META-INF/native-image/org.example/kept/reflect-config.json": config}),
+                jar("skipped", {"META-INF/native-image/org.example/skipped/reflect-config.json":
+                                json.dumps([{"name": "t.Skipped"}])}),
+                jar("late", {"META-INF/native-image/org.example/late/reflect-config.json":
+                             json.dumps([{"name": "t.Late",
+                                          "condition": {"typeReachable": "t.Gate"}}])})]
+        arguments = root / "native-image.args"
+        arguments.write_text("# comment\n-Ob\n--exclude-config\n.*skipped.*\n"
+                             "META-INF/native-image/org.example/skipped/.*\n")
+        excluded = excluded_configs(arguments)
+        assert [(a.pattern, b.pattern) for a, b in excluded] == [
+            (".*skipped.*", "META-INF/native-image/org.example/skipped/.*")], excluded
+        assert excluded_configs(root / "missing.args") == []
+        shipped = Provided()
+        shipped.add_jars(Classpath(jars), excluded)
+        assert shipped.residual({"type": "t.Shipped", "methods": [other]}) is None
+        assert shipped.residual({"type": "t.Skipped"}) == {"type": "t.Skipped"}
+        late = {"type": "t.Late"}
+        assert shipped.residual(late) is late  # typeReachable is a condition as well
+        # A directory of metadata files, as the AOT generator writes it.
+        copy = root / "copy/META-INF/native-image/org.example/lib/1.0"
+        copy.mkdir(parents=True)
+        (copy / METADATA_NAME).write_text(json.dumps({"reflection": [
+            {"type": "t.Copied", "allPublicMethods": True, "condition": {"typeReached": "t.Gate"}},
+            {"type": "t.Plain", "allPublicMethods": True}]}))
+        (copy / "reachability-metadata.properties").write_text("override=true")
+        directory_sources = Provided.of_build(Classpath([]), [str(root / "copy")])
+        copied = {"type": "t.Copied", "allPublicMethods": True}
+        assert directory_sources.residual(copied) is copied
+        assert directory_sources.residual({"type": "t.Plain", "allPublicMethods": True}) is None
+        assert directory_sources.files == 1
 
 
 def selftest_owners():
@@ -1273,10 +1662,15 @@ def selftest_owners():
         classpath_file = root / "classpath.txt"
         classpath_file.write_text("\n".join(str(entry) for entry in entries))
 
+        provided_dir = root / "provided"
+        provided_dir.mkdir()
+
         def check(location, classpath_argument=None):
             captured = io.StringIO()
             with contextlib.redirect_stderr(captured), contextlib.redirect_stdout(io.StringIO()):
-                code = command_check(argparse.Namespace(file=str(location), classpath=classpath_argument))
+                code = command_check(argparse.Namespace(
+                    file=str(location), classpath=classpath_argument,
+                    provided_dir=[str(provided_dir)]))
             return code, captured.getvalue()
 
         assert check(bundle) == (0, "")
@@ -1293,7 +1687,7 @@ def selftest_owners():
         with contextlib.redirect_stdout(io.StringIO()):
             assert command_refresh(argparse.Namespace(
                 trace=[str(bundle)], classpath=str(classpath_file), output=None,
-                output_dir=str(root / "again"))) == 0
+                output_dir=str(root / "again"), provided_dir=[str(provided_dir)])) == 0
         assert sorted(bundle_files(root / "again")) == sorted(parts)
         assert all((root / "again" / owner / METADATA_NAME).read_text()
                    == (bundle / owner / METADATA_NAME).read_text() for owner in parts)
@@ -1335,6 +1729,9 @@ def main():
                          help="agent output directories, files and the committed bundle to merge")
     refresh.add_argument("--classpath", required=True,
                          help="Native classpath: bootstrap/target/native/classpath.args or a path list")
+    refresh.add_argument("--provided-dir", action="append", default=[], metavar="DIR",
+                         help="directory of metadata files that the build gets besides those in "
+                              "the jars; default: the output of the AOT generator")
     target = refresh.add_mutually_exclusive_group()
     target.add_argument("--output-dir", default=DEFAULT_BUNDLE,
                         help="write one file per owner below this directory (default: the bundle)")
@@ -1343,7 +1740,10 @@ def main():
     check = commands.add_parser("check", help="verify the committed metadata files")
     check.add_argument("file", nargs="?", default=DEFAULT_BUNDLE,
                        help="the bundle directory (default) or a single metadata file")
-    check.add_argument("--classpath", help="also verify entries against this Native classpath")
+    check.add_argument("--classpath", help="also verify entries against this Native classpath, and "
+                                           "that they repeat nothing that the build provides")
+    check.add_argument("--provided-dir", action="append", default=[], metavar="DIR",
+                       help="as for refresh")
     check.set_defaults(handler=command_check)
     missing = commands.add_parser(
         "collect-missing", help="turn missing registration reports of a Native run into metadata")
