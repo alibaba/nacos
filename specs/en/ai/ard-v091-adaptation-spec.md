@@ -24,19 +24,17 @@ The current conformance baseline is not promoted.
 
 This document defines the target contract. The [AI Registry Adaptor
 Spec](ai-registry-adaptor-spec.md)
-continues to describe current behavior. Maintainer discussion of the design
-and spec changes precedes implementation; opening an issue is not design approval.
+continues to describe current behavior.
 
 ## 1. Baseline and delivery scope
 
-- Local investigation: develop at a55137012.
 - Current upstream baseline: 5fa2f5aef790b478319f6a3b43adf4661b0ed0e0, v0.9 Draft.
 - Target upstream baseline: f073b1ea9b01a5f068d0b0986426f2ea49fa30b2, v0.91 Proposal.
 - The document is dated 2026-08-26; the target commit is dated 2026-10-25.
   GitHub Releases was empty when checked on 2026-11-04. OpenAPI info.version
   remains 0.5.0. Legacy catalog specVersion=1.0 is not the ARD protocol version.
-- Recheck upstream at implementation start and final acceptance. Review any
-  new delta before explicitly changing the pin; builds must not follow main.
+- Schemas and context are pinned to the target commit and loaded from the
+  original offline fixtures in this repository.
 
 Upgrade the existing publication, Search, Explore, List and Artifact surfaces
 for Agent, Skill, Prompt and MCP. Canonical resources, namespaces, authorization,
@@ -62,7 +60,7 @@ Context loading and trust declaration policies are defined in sections 4.1 and 5
 
 | Difference | ARD source | Target summary | Strength/verification |
 | --- | --- | --- | --- |
-| D01 / Baseline and version labels | [Appendix D.1–D.4][s01] | Pin original schemas, context and runner; distinguish protocol, OpenAPI and legacy catalog versions. | Contract sources; UT-C02-01 |
+| D01 / Baseline and version labels | [Appendix D.1–D.4][s01] | Pin original schemas and context; distinguish protocol, OpenAPI and legacy catalog versions. | Contract sources; UT-C02-01 |
 | D02 / Well-known discovery | [5.1][s02] | Add /.well-known/ard.json, retain the predecessor; documentation uses rel=ard. | Consumer MUST; legacy retention is a Nacos choice; IT-C03-01..03 |
 | D03 / Independent Entry and Manifest | [4.2–4.3][s03], [OpenAPI results][results] | Require entries at the manifest root; validate complete entries separately from result projections. | Complete versus partial constraints; UT-C02-02..04 |
 | D04 / Entry JSON-LD context | [4.1][s04], [base context][context] | Emit the base context on new manifest entries; preserve legacy envelopes and resource URNs. | Required base, optional wire context; UT-C04-01..04 |
@@ -72,7 +70,7 @@ Context loading and trust declaration policies are defined in sections 4.1 and 5
 | D08 / Open trust envelope | [4.5.1–4.5.2][s08] | Require identity when present; check local authority declarations without conflating relevance and trust. | Binding MUST, framework-defined verification; UT/IT-C08 and the policy in section 5.2 |
 | D09 / URLs, URNs and media types | [3.3][s09], [5.3][urls], [Appendix C][urn] | Preserve base URLs, artifact URLs and stable URNs; accept valid extension media types without inventing exporters. | Media types/URLs/URNs; UT-C09-02, IT-C09-03 |
 | D10 / Search page-size limit | [5.3.2][s10], [5.3.4][list] | Raise the existing 50 cap to the documented 100; treat this as a pre-existing mismatch. | Prose defaults/caps; nonpositive behavior is Nacos policy; UT-C09-01 |
-| D11 / Conformance tooling | [Appendix B][errors], [D.4][runner] | Combine dual fixtures, the official runner and Nacos semantic/live authorization tests. | Errors and tooling; UT/IT-C10 |
+| D11 / Conformance tooling | [Appendix B][errors], [D.4][runner] | Use dual fixtures, Java contract tests and live HTTP IT for structure, nonempty discovery and authorization; upstream tooling is a local independent cross-check. | Errors and tooling; UT/IT-C10 |
 | D12 / Ingestion, federation and other gaps | [5.2][ingest], [5.4–5.5][federation] | Record delivery boundaries and follow-up gates explicitly. | Required ingestion, informative tracing; IT-C10 and scope statement |
 
 <a id="compatibility-policy"></a>
@@ -473,25 +471,28 @@ executed and still-pending cases; controller mocks do not substitute for HTTP ev
 | A13 Pagination | Search 10/50/51/100/101, zero/negative/type errors, List boundaries and namespace filters. |
 | A14 Artifacts | Four nonempty resource kinds, pure/multiprotocol/older-A2A Agent cases, ZIP, version/digest, offline and Runtime exclusion. |
 | A15 Regression | Legacy requests/catalog schema, federation values, error envelope and RAD with ARD disabled. |
-| A16 Tooling | Pinned manifest/publisher/registry runner modes and their blind spots; strict JSON Schema cannot silently skip. |
+| A16 Contract validation | Existing Java UT and HTTP IT share pinned schemas; missing or modified fixtures, unknown references and invalid URI/date-time values fail explicitly. Tool results do not prove complete capability. |
 
-Publisher mode requires an accessible HTTPS domain or a controlled equivalent
-resolver fixture. Running only manifest/registry against localhost:9080 is not
-publisher-mode evidence. External request helpers never inherit main-server
-administrator credentials. Authentication IT uses an explicit adaptor target
-and dedicated identities. If the existing helper rejects all Authorization
-headers, add a target-bound opt-in helper while retaining rejection tests for
-the general external helper; do not relax its global protection.
+Java contract tests validate structure, formats and protocol semantics. Live HTTP IT
+follows the well-known Registry URL to a nonempty public Agent result and retrieves
+the returned Artifact URL, comparing name, version and digest with the main resource API.
+External request helpers never inherit main-server administrator credentials;
+authentication IT uses target-bound adaptor requests and dedicated identities.
 
-No public Java SDK contract changes are planned. Reassess Java SDK IT if later
-work changes public write models, SDK methods or exception contracts.
+Upstream tooling is a local independent cross-check using a complete checkout at the
+pinned revision, without replacing its validation or HTTP behavior. Manifest, registry
+and publisher results are reported separately; checks skipped for missing dependencies
+or schemas are not passes. Publisher mode needs an HTTPS domain; a controlled resolver
+fixture only proves that test environment, and localhost probes do not validate a public publisher.
 
-## 7. Delivery gates and later capabilities
+ARD exposes HTTP discovery endpoints; resource writes continue through the
+existing main-server APIs and SDKs.
 
-- DAUTH-F03 currently disables private cross-type shared-index IT. Reproduce
-  on the implementation baseline, independently repair canonical background
-  projection versus foreground visibility, and remove Disabled only after live
-  verification. Without closure, report partial delivery, not full acceptance.
+## 7. Support limitations and later capabilities
+
+- Complete private MCP recall in the shared index and canonical-name/UUID mapping
+  in MCP Artifacts remain unresolved. DAUTH-F03 stays disabled. Public Agent
+  verification does not cover these gaps or prove complete resource conformance.
 - Both upstream versions require the same relevance cutoff for Search and
   Explore. Optional Search-only Jev filtering is an existing deviation.
   Strict base-mode conformance runs with its default disabled setting.
