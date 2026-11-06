@@ -227,7 +227,9 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径。其他插件与驱动、内嵌 Derby、
   AI registry context、协议适配器以及仅集群场景的路径不在内置范围内；它们的元数据来自扩展自身或
   `nacos.native.metadata`，其支持情况必须单独验证和报告。
-- 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。文件必须确定性：
+- 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。追踪记录不到的条目来自
+  exact 模式构建的缺失报告；对 tracing agent 不记录的查找（例如 protobuf 对生成消息及其 Builder 的
+  访问器查找），则按产生这些查找的代码推导，并必须由 exact 模式构建和重启检查确认。文件必须确定性：
   排序，每个条目一行。不得包含同一构建中由 Spring AOT 生成的类、agent 或 JVM 内部类、测试或工具类，
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
   类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向

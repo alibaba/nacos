@@ -304,13 +304,16 @@ build does not require the operator to trace the Server first.
   Their metadata comes from the extension itself or from `nacos.native.metadata`, and their
   support must be validated and reported separately.
 - Content rules. Entries derive from tracing representative runs on the exact classpath of the
-  Native build. The file must be deterministic: sorted, one entry per line. It must not contain
-  classes that Spring AOT generates in the same build, agent or JVM-internal classes, test or
-  tooling classes, or machine- or run-specific data such as absolute paths, host names, addresses
-  or credentials. Lookups of classes and resources that do not exist on the Native classpath, and
-  entries for lambda-proxy classes, to which GraalVM 25 cannot apply metadata, are not recorded;
-  the metadata targets the default reachability mode and does not promise compatibility with
-  `--exact-reachability-metadata`.
+  Native build. What no trace contains comes from the reports of an exact-mode build or, for
+  lookups that the tracing agent does not record (for example the accessors that protobuf looks up
+  on a generated message and on its Builder), from the code that makes them; an exact-mode build
+  and the restart check must confirm such entries. The file must be deterministic: sorted, one
+  entry per line. It must not contain classes that Spring AOT generates in the same build, agent
+  or JVM-internal classes, test or tooling classes, or machine- or run-specific data such as
+  absolute paths, host names, addresses or credentials. Lookups of classes and resources that do
+  not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
+  cannot apply metadata, are not recorded; the metadata targets the default reachability mode and
+  does not promise compatibility with `--exact-reachability-metadata`.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
   Native executable again. A refresh is a reviewed source change. The repository provides
