@@ -81,6 +81,29 @@ class ArdOpenApiContractTest {
     }
     
     @Test
+    void shouldRejectInvalidEntryUriFormats() {
+        ObjectNode entry = completeEntry();
+        assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty());
+        for (String url : List.of("/relative", "https://example.com/space here")) {
+            entry.put("url", url);
+            assertFalse(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty(), url);
+        }
+    }
+    
+    @Test
+    void shouldRejectInvalidEntryDateTimeFormats() {
+        ObjectNode entry = completeEntry();
+        for (String timestamp : List.of("2026-11-06T03:00:00Z", "2026-11-06T11:00:00+08:00")) {
+            entry.put("updatedAt", timestamp);
+            assertTrue(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty(), timestamp);
+        }
+        for (String timestamp : List.of("2026-11-06", "2026-13-06T03:00:00Z", "not-a-date")) {
+            entry.put("updatedAt", timestamp);
+            assertFalse(CONTRACTS.validateEntry("ArdEntry", entry).isEmpty(), timestamp);
+        }
+    }
+    
+    @Test
     void shouldValidatePartialResultsAndSharedResponseIntersection() {
         ObjectNode item = completeEntry();
         ObjectNode response = MAPPER.createObjectNode();

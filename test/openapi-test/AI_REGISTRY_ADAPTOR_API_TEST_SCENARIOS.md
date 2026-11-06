@@ -56,8 +56,8 @@ administrator or Client credential.
 | `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Public-resource HTTP cases verify query results, legacy binding and pagination; context and facet scenarios are detailed below. Private authorized-resource completeness remains excluded as `DAUTH-F03`, so this row stays Partial. |
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
 | `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. Private authorized completeness remains blocked by `DAUTH-F03`. |
-| `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed once to Search, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
-| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. Private authorized-resource completeness remains excluded as `DAUTH-F03`. |
+| `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed to nonempty public Agent Search and exact Version/digest Artifact, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
+| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. Private authorized-resource completeness remains excluded as `DAUTH-F03`. MCP canonical-name/UUID Artifact mapping remains unresolved and is not covered by public Agent assertions. |
 
 ### Agent 地址模型统一：实施与验收（2026-09-15）
 
@@ -156,3 +156,16 @@ resolution, ownership or delegated authority. Multi-publisher resource registrat
 resource trust persistence/indexing and legacy-ID migration remain unavailable;
 these tests must not claim that capability. Existing coverage classifications and
 `DAUTH-F03` remain unchanged; the disabled case is not counted as passed.
+
+## Nonempty discovery-to-artifact coverage
+
+`ArdAdaptorOpenApiITCase.testDiscoveredRegistryReturnsPublicAgentArtifact` follows
+the advertised Registry URL, requires an exact public Agent result, and downloads
+the returned Artifact URL. It compares name, version and content digest with the
+main resource API and rejects explicitly invalid credentials. Requests remain
+bound to the adaptor origin and fixtures use the existing cleanup helpers.
+
+`ArdOpenApiContractTest` and the HTTP cases share the existing offline schema
+validator. Java format checks and any local upstream-tool results are separate
+from API coverage totals. Private MCP recall and MCP Artifact identity mapping
+remain TODO; the existing coverage classifications are unchanged.

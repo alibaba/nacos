@@ -393,14 +393,18 @@ IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内�
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
-| UT-C10-01 | runner wrapper：缺 jsonschema、缺本地 schema、校验失败 | 明确失败，不把 skipped schema 当通过；固定版本和错误退出码 | 工具盲区 -> 明确门禁 |
-| IT-C10-01 | 独立部署的新 well-known -> Registry Search -> artifact | 官方 manifest/registry 探针及 Nacos 非空链路均通过；publisher 模式用HTTPS域名/受控等价fixture单独记录 | 旧工具 -> 新基线完整证据 |
+| UT-C10-01 | 复用 ArdOpenApiContractTest/ArdContractSchemas：缺失/篡改 fixture、未知引用、合法与非法 URI/date-time | 离线校验明确失败；完整 Entry 与部分响应使用各自 Schema | 已有契约测试补齐格式反例 |
+| IT-C10-01 | 独立部署的新 well-known -> Registry Search -> 公共 Agent artifact | 精确非空集合，读取返回的 URL，名称/版本/digest 与主资源 API 一致；显式坏凭据 E401 | 空结果路由验证 -> 可用资源完整链路 |
 | IT-C10-02 | F-AUTH，各种身份与生命周期变化 | 私有授权可见、无权不可见、bad credential E401；分页前可见性；下线/删除后的 artifact 失效 | 私有资源旧 Disabled 用例 -> 必须真实验证 |
 | IT-C10-03 | ARD关闭、SearchCore开启；共享资源API | 主服务资源Search/RAD继续工作，适配器未暴露；不改变SDK生命周期 | 既有模块隔离保持 |
 
-依据 S11/S12 与 Nacos 领域规范。私有资源完整性问题需先复现，再判定修复产品或恢复测试。
-不得直接删除 Disabled 或把其他用例通过当作它通过。编译失败、环境失败、
-旧已知失败、新回归和目标新功能未实现必须分开记录。
+契约验证复用现有 Java UT；真实服务场景由现有 standalone HTTP IT 执行。
+上游固定版本工具只作本地独立对照，保留原目录结构和执行逻辑，
+manifest/registry/publisher 分别记录结果；依赖或 Schema 跳过不计为通过。
+
+TODO：PRIVATE MCP 的完整召回及 MCP Artifact canonical 名称/UUID 映射仍未解决。
+DAUTH-F03 保持 Disabled，不计通过；公共 Agent 链路不覆盖这些缺口。
+编译失败、环境失败、既有缺陷、新回归和未实现能力分别记录。
 
 <a id="regressions"></a>
 
