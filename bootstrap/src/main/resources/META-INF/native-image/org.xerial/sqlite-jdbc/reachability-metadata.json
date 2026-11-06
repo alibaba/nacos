@@ -1,8 +1,0 @@
-{
-  "reflection": [
-    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.sqlite.JDBC"}
-  ],
-  "resources": [
-    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "glob": "META-INF/services/java.sql.Driver"}
-  ]
-}

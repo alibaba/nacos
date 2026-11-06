@@ -1,7 +1,6 @@
 {
   "reflection": [
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.crypto.password.AbstractValidatingPasswordEncoder"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.crypto.password.PasswordEncoder"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.crypto.password.AbstractValidatingPasswordEncoder"}
   ]
 }

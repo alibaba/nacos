@@ -1,6 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.postgresql.Driver"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.postgresql.core.QueryExecutorCloseAction"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.postgresql.jdbc.PgStatement"}
   ],

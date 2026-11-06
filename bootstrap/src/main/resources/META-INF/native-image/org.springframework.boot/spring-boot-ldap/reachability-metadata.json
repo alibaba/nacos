@@ -1,10 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapConnectionDetails"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapProperties"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.PropertiesLdapConnectionDetails"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.health.LdapHealthContributorAutoConfiguration"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.health.LdapHealthIndicator"}
   ]
 }

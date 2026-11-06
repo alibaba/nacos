@@ -1,5 +1,0 @@
-{
-  "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.reactivestreams.Publisher"}
-  ]
-}

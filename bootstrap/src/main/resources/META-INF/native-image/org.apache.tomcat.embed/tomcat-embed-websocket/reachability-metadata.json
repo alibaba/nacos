@@ -1,11 +1,6 @@
 {
-  "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.apache.tomcat.websocket.server.WsFilter"}
-  ],
   "resources": [
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/LocalStrings.properties"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/server/LocalStrings.properties"},
-    {"bundle": "org.apache.tomcat.websocket.LocalStrings", "condition": {"typeReached": "org.springframework.boot.SpringApplication"}},
-    {"bundle": "org.apache.tomcat.websocket.server.LocalStrings", "condition": {"typeReached": "org.springframework.boot.SpringApplication"}}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/server/LocalStrings.properties"}
   ]
 }

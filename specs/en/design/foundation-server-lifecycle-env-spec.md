@@ -318,6 +318,23 @@ build does not require the operator to trace the Server first.
   not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
   cannot apply metadata, are not recorded; the metadata targets the default reachability mode and
   does not promise compatibility with `--exact-reachability-metadata`.
+- Other sources. The files hold only what the Native build does not get elsewhere, so that no
+  registration is kept twice and none outlives its source. The build also reads the
+  `META-INF/native-image` files in the jars of the Native classpath, except those that
+  `native-image.args` excludes, and the files that the AOT generator writes in the same build. An
+  entry that these sources provide in full is not kept, and of an entry that they provide in part
+  only the rest is kept. Only an entry without a condition counts as provided: an entry with a
+  `typeReached` condition is available once its type is reached, and the access that the bundled
+  entry serves may come before. The tooling removes what the build provides when it refreshes the
+  files and rejects a file that repeats it.
+- Reachability metadata repository. The `native` profile adds the GraalVM reachability metadata
+  repository, in the release that `graalvm-reachability-metadata.version` of the root POM names, to
+  the Native classpath. The `native-maven-plugin` adds it only to a classpath that it builds
+  itself, so the profile runs its `add-reachability-metadata` goal and puts the output on the
+  Native classpath. `nacos.native.repository.enabled=false` leaves it out. The files do not rely on
+  it and the tooling does not count it as a source, because it guards nearly all of its entries
+  with a condition: a build with and a build without the repository both work, and a new release
+  of it needs no refresh.
 - Conditions. Every entry carries a `typeReached` condition that depends on its owner. The entries
   of Nacos and of the JDK carry `com.alibaba.nacos.bootstrap.NacosBootstrap`, the Server entry
   point, which is initialized before any other Server code runs. The entries of a third-party

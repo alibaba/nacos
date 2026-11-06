@@ -95,6 +95,7 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.plugins` | `bootstrap/target/native-plugins` | Additional plugin/driver JAR directory |
 | `nacos.native.metadata` | `bootstrap/target/native-metadata` | Additional exercised Native metadata directory |
 | `nacos.native.derby.experimental` | `false` | Explicit opt-in to the experimental Derby arguments below |
+| `nacos.native.repository.enabled` | `true` | Adds the [GraalVM reachability metadata repository](#the-graalvm-reachability-metadata-repository) to the Native classpath; `false` leaves it out and the executable about 35 MB smaller |
 | `nacos.native.options` | empty | Path of a Native Image argument file appended after the toolchain options, for example `--exact-reachability-metadata` for [diagnostic builds](#find-gaps-with-an-exact-mode-build) or `-march=compatibility` for an executable that must run on older CPUs |
 | `nacos.native.build.heap` | `8g` | Maximum Native builder heap |
 | `nacos.native.build.parallelism` | `2` | Native compiler parallelism |
@@ -139,7 +140,8 @@ Bootstrap carries GraalVM reachability metadata in the unified format below
 [Layout](#layout)). The `native` profile copies Bootstrap's classes into the Native classpath, and
 Native Image reads every `reachability-metadata.json` below `META-INF/native-image`, so it needs no
 further configuration. An ordinary JVM never reads the files, and the JVM artifact contract does
-not depend on them.
+not depend on them. They hold only what the build does not get from another source (see
+[below](#what-the-build-gets-elsewhere)).
 
 ### Layout
 
@@ -191,6 +193,53 @@ adaptors, the cluster-only paths between nodes, the probing of an instance by th
 MYSQL health checker, or a label selector with a CMDB behind it. Whoever enables one of these
 supplies the missing metadata through `nacos.native.metadata` or in the plugin's own
 `META-INF/native-image`, and validates the result.
+
+### What the build gets elsewhere
+
+The Native build reads reachability metadata from more places than these files:
+
+- The jars of the classpath, as far as they ship `META-INF/native-image` files and
+  `bootstrap/src/test/resources/aot/native-image.args` does not exclude them. It excludes the old
+  trace in the jar of `nacos-console`.
+- The files that the AOT generator writes for the application contexts, in
+  `bootstrap/target/native/aot`.
+
+The files repeat none of what these sources provide. `refresh` takes it out of the entries, and an
+entry that they provide in full altogether; `check --classpath` reports what repeats them. Only an
+entry without a condition counts as provided. An entry with a `typeReached` condition is available
+once its type is reached, and the access that the bundled entry serves may come before.
+
+### The GraalVM reachability metadata repository
+
+The `native` profile adds the [GraalVM reachability metadata repository][metadata-repository] to the
+Native classpath, in the release that `graalvm-reachability-metadata.version` of the root `pom.xml`
+names. It helps with the libraries of the Server: when a dependency is added or changes, the
+community metadata for it applies without a refresh, as far as the repository has it. The
+`native-maven-plugin` adds the repository only to a classpath that it builds itself, and this build
+passes the exact one in `classpath.args`. So the profile runs the plugin's
+`add-reachability-metadata` goal, which copies the configuration of the artifacts of the module to
+`bootstrap/target/native-reachability`, and the Ant step that writes `classpath.args` puts that
+directory on it. The directory is not `target/classes`, because a file of the repository and a
+bundled file of the same artifact have the same name.
+
+The files do not rely on the repository, and `refresh` takes nothing out for it, so a build with
+the repository and a build without it both work, and a new release of it needs no refresh. It
+guards nearly all of its entries with a `typeReached` condition, and a guard may be reached later
+than the access that the Server needs it for. The repository guards the methods of
+`com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql` with `HealthCheckerFactory`, which a
+Server that loads its persistent services from a Raft snapshot does not reach: a bundle without the
+entry of `Mysql` failed the restart check of the [Native CI job](#the-native-ci-job) with a missing
+registration, and a bundle that relied on the repository would fail the same way.
+
+The repository costs about 35 MB: the executable of the Native CI job is 288 MB with it and 253 MB
+without it (GraalVM CE 25.2.4). To leave it out, build with
+`-Dnacos.native.repository.enabled=false`. The plugin downloads the release from GitHub into
+`bootstrap/target/graalvm-reachability-metadata` and reuses it until `clean`. A build without access
+to GitHub leaves the repository out, or sets `<url>` or `<localPath>` in the `metadataRepository` of
+the `add-reachability-metadata` execution in `bootstrap/pom.xml` to a copy of
+`graalvm-reachability-metadata-<version>.zip`.
+
+[metadata-repository]: https://github.com/oracle/graalvm-reachability-metadata
 
 ### What it leaves out
 
@@ -326,15 +375,19 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
      --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
    ```
 
-   The command merges all inputs, drops what the rules above exclude, sets the condition of every
-   entry from its owner (see [Conditions](#conditions)), sorts the entries into the files of their
-   owners (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an
-   owner that has no entries left, and it stops at a new owner that has no condition type yet. Pass
-   `--output-dir` to write below another directory, or `--output` for one merged file. The
-   committed files are an input as well, because some
-   of their entries are in no trace: the reports of an exact-mode build (see below), and the
-   accessors that protobuf looks up on a generated message and on its `Builder`, which the agent
-   does not record because it records only the methods that are invoked. The ones of JRaft's
+   The command merges all inputs, drops what the rules above exclude, takes out what the build
+   gets elsewhere (see [above](#what-the-build-gets-elsewhere)), sets the condition of every entry
+   from its owner (see [Conditions](#conditions)), sorts the entries into the files of their owners
+   (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an owner
+   that has no entries left, and it stops at a new owner that has no condition type yet. Taking out
+   what the build gets elsewhere needs the output of the build in step 1, `classpath.args` and the
+   AOT files; `--provided-dir` names other directories of metadata files instead. Pass
+   `--output-dir` to write below another directory, or `--output` for one merged file, which lists
+   what an exact-mode build reports and does not take anything out. The committed files are an
+   input as well, because some of their entries are in no trace: the reports of an exact-mode build
+   (see below), and the accessors that protobuf looks up on a generated message and on its
+   `Builder`, which the agent does not record because it records only the methods that are
+   invoked. The ones of JRaft's
    `SnapshotMeta` matter: JRaft turns the message into text when it loads a snapshot. A refresh
    from the trace alone drops these entries, and a restarted Native Server stops coming up; the
    restart check of the [Native CI job](#the-native-ci-job) fails when that happens.
@@ -346,7 +399,10 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
 
 A trace only contains what was exercised. To find what is still missing, build the executable with
 `--exact-reachability-metadata` and run it with `-XX:MissingRegistrationReportingMode=Warn`: every
-dynamic access without metadata is then reported instead of silently returning nothing.
+dynamic access without metadata is then reported instead of silently returning nothing. GraalVM
+Community 25.0.2 stops an exact-mode build at some entries of the reachability metadata repository
+("Bulk queries can only be set with 'name' ... run-time conditions"); 25.1.3 and later build it.
+The Native CI job uses 25.0.4.
 
 ```sh
 printf -- '--exact-reachability-metadata\n' > /absolute/path/exact.args
@@ -417,11 +473,15 @@ GraalVM 25, Maven, Python 3, `curl` and `openssl`, and either `psql` with an emp
 database (`NATIVE_CI_DATABASE=postgresql`) or Docker for MySQL (`NATIVE_CI_DATABASE=mysql`, which
 starts a disposable `mysql:8.4` container). The header of the script lists the variables.
 
-On a GitHub-hosted runner with 4 vCPUs and GraalVM CE 25.0.2, the compilation takes between four
-and six minutes and peaks at about 12 GB of resident memory with a 10 GB builder heap, so the job
+The job installs GraalVM Community 25.0.4 (graal 25.2.4) with `version: '25.2'` of
+`graalvm/setup-graalvm`. GraalVM Community ships as numbered innovation releases now, and a
+`java-version` of `'25'` alone resolves to 25.0.2, the last `jdk-25.*` release.
+
+On a GitHub-hosted runner with 4 vCPUs and GraalVM CE 25.2.4, the compilation takes between four
+and six minutes and peaks at about 11.5 GB of resident memory with a 10 GB builder heap, so the job
 uses GitHub-hosted runners instead of the self-hosted ones of the other Java checks. The executable
-is 287 MB. The Server answers its liveness check about 1.5 seconds after it starts, or 2 seconds
-with the reporting of the `exact` variant, and holds 470 to 530 MB after the suites.
+is 288 MB, or 253 MB without the reachability metadata repository. The Server answers its liveness
+check about 1.5 to 2 seconds after it starts and holds about 470 MB after the suites.
 
 The job runs for pull requests that touch the Native build and on demand. To run it on a fork
 without opening a pull request, push a branch named `native-ci/<name>`.

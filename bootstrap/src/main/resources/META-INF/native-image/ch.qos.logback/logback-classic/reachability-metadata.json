@@ -1,11 +1,6 @@
 {
   "reflection": [
     {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.classic.BasicConfigurator"},
-    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "type": "ch.qos.logback.classic.LoggerContext"},
-    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.classic.encoder.PatternLayoutEncoder"},
-    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "serializable": true, "type": "ch.qos.logback.classic.model.ConfigurationModel"},
-    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "serializable": true, "type": "ch.qos.logback.classic.model.LoggerModel"},
-    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "serializable": true, "type": "ch.qos.logback.classic.model.RootLoggerModel"},
     {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "type": "ch.qos.logback.classic.spi.LogbackServiceProvider"},
     {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.classic.util.DefaultJoranConfigurator"}
   ],

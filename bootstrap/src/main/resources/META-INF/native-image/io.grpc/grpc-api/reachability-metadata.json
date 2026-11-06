@@ -1,6 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.grpc.BindableService"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.grpc.ForwardingServerCall$SimpleForwardingServerCall"}
   ]
 }

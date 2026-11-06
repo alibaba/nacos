@@ -2,30 +2,10 @@
   "reflection": [
     {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.ConsoleAppender"},
     {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setAppend", "parameterTypes": ["boolean"]}], "type": "ch.qos.logback.core.FileAppender"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setEncoder", "parameterTypes": ["ch.qos.logback.core.encoder.Encoder"]}], "type": "ch.qos.logback.core.OutputStreamAppender"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "type": "ch.qos.logback.core.encoder.Encoder"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setCharset", "parameterTypes": ["java.nio.charset.Charset"]}, {"name": "setParent", "parameterTypes": ["ch.qos.logback.core.spi.ContextAware"]}], "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.AppenderModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.AppenderRefModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.ComponentModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.ConversionRuleModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.ImplicitModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.IncludeModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.Model"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.NamedComponentModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.NamedModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.PropertyModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.ResourceModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "serializable": true, "type": "ch.qos.logback.core.model.StatusListenerModel"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setPattern", "parameterTypes": ["java.lang.String"]}], "type": "ch.qos.logback.core.pattern.PatternLayoutEncoderBase"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}, {"name": "setFile", "parameterTypes": ["java.lang.String"]}, {"name": "setRollingPolicy", "parameterTypes": ["ch.qos.logback.core.rolling.RollingPolicy"]}], "type": "ch.qos.logback.core.rolling.RollingFileAppender"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "type": "ch.qos.logback.core.rolling.RollingPolicy"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setFileNamePattern", "parameterTypes": ["java.lang.String"]}, {"name": "setParent", "parameterTypes": ["ch.qos.logback.core.FileAppender"]}], "type": "ch.qos.logback.core.rolling.RollingPolicyBase"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setCharset", "parameterTypes": ["java.nio.charset.Charset"]}], "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder"},
     {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}, {"name": "setMaxFileSize", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"},
     {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setCleanHistoryOnStart", "parameterTypes": ["boolean"]}, {"name": "setMaxHistory", "parameterTypes": ["int"]}, {"name": "setTotalSizeCap", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.TimeBasedRollingPolicy"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "type": "ch.qos.logback.core.spi.ContextAware"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.status.NopStatusListener"},
-    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "valueOf", "parameterTypes": ["java.lang.String"]}], "type": "ch.qos.logback.core.util.FileSize"}
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.status.NopStatusListener"}
   ],
   "resources": [
     {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "glob": "ch/qos/logback/core/logback-core-version.properties"}
