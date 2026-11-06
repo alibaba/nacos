@@ -134,15 +134,39 @@ is never activated implicitly by the JDK vendor or `JAVA_HOME`.
 
 ## Bundled reachability metadata
 
-Bootstrap carries
-`src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json`
-in the GraalVM unified format. The `native` profile copies Bootstrap's classes into the Native
-classpath, so Native Image reads the file without further configuration. An ordinary JVM never
-reads it, and the JVM artifact contract does not depend on it.
+Bootstrap carries GraalVM reachability metadata in the unified format below
+`src/main/resources/META-INF/native-image/`, in one `reachability-metadata.json` per owner (see
+[Layout](#layout)). The `native` profile copies Bootstrap's classes into the Native classpath, and
+Native Image reads every `reachability-metadata.json` below `META-INF/native-image`, so it needs no
+further configuration. An ordinary JVM never reads the files, and the JVM artifact contract does
+not depend on them.
+
+### Layout
+
+Each file belongs to one owner, as a library ships the metadata of its own classes, in
+`META-INF/native-image/<groupId>/<artifactId>/`:
+
+- `com.alibaba.nacos/nacos-bootstrap`: the classes and resources of Nacos itself, from every module.
+- `<groupId>/<artifactId>`: the classes and resources of one third-party artifact, for example
+  `org.postgresql/postgresql`, `org.apache.tomcat.embed/tomcat-embed-core` or
+  `org.springframework.boot/spring-boot`.
+- `jdk/runtime`: the classes of the JDK that Nacos or a library reaches by reflection.
+
+The owner of an entry is the artifact whose jar on the Native classpath contains the class or the
+resource; of several jars with the same class, the first on the classpath owns it. A proxy belongs
+to Nacos if one of its interfaces does, otherwise to the owner of its first interface that is not a
+JDK type. A resource that several jars hold, such as a `META-INF/services` file, is written once:
+to Nacos if Nacos has it, otherwise to the first jar that does. `refresh` places the entries and
+removes the file of an owner that has none left, so nobody moves entries by hand, and
+`check --classpath` verifies the placement.
+
+The folders carry no version. The versions of the dependencies come from one managed set and change
+with it, so a versioned folder would have to move with every bump, and GraalVM does not look at the
+names of folders.
 
 ### What it covers
 
-The file records the dynamic access that neither static analysis nor Spring AOT can see in the
+The files record the dynamic access that neither static analysis nor Spring AOT can see in the
 default Server, as exercised by the standalone OpenAPI, Java SDK and Maintainer SDK integration
 suites: the bundled default plugins and their SPI providers, the bundled MySQL and PostgreSQL
 JDBC drivers and the HikariCP pool, the gRPC payload and model classes that Jackson reaches
@@ -170,7 +194,7 @@ supplies the missing metadata through `nacos.native.metadata` or in the plugin's
 
 ### What it leaves out
 
-`test/scripts/native-metadata.py` applies these rules each time the file is refreshed, and `check`
+`test/scripts/native-metadata.py` applies these rules each time the files are refreshed, and `check`
 enforces them in CI:
 
 - Classes that Spring AOT generates during the build (`$$SpringCGLIB$$` subclasses and
@@ -193,10 +217,11 @@ enforces them in CI:
   addresses. `check` rejects them.
 
 Entries are sorted and written one per line, so a refresh produces a reviewable diff. Run
-`python3 test/scripts/native-metadata.py check` to verify the committed file. Adding
+`python3 test/scripts/native-metadata.py check` to verify the committed files. Adding
 `--classpath bootstrap/target/native/classpath.args` also reports entries whose class, resource or
-condition type disappeared, for example after a rename. The ordinary CI step
-`native-build-it.py` runs the tool's self test and the classpath-free check.
+condition type disappeared, for example after a rename, and entries that sit in the file of another
+owner. The ordinary CI step `native-build-it.py` runs the tool's self test and the classpath-free
+check.
 
 ### Conditions
 
@@ -209,25 +234,25 @@ reached, which is right before its class initialization starts. Until then every
 that the entry serves behaves as if the entry did not exist.
 
 The main class is initialized before any other Server code runs, so every entry is available to
-every thread from the start. The guard keeps the file out of an image that does not contain the
+every thread from the start. The guard keeps the metadata out of an image that does not contain the
 Server. It does not make the Server's own executable smaller, because the Server needs every
-entry; the file records what the Server needs, not which part of it needs what, and so the guard
-is the same for all entries.
+entry; the files record what the Server needs, not which part of it needs what, and so the guard
+is the same for all entries, also in the files of the third-party artifacts.
 
 Narrow a condition only to a type that is certain to be initialized before the first access that
 the entry serves. A type that is only named by a class literal is never initialized, and a type
 that is initialized later leaves the accesses before it without metadata, which only a test that
 exercises that path reveals. `refresh` adds the guard to every input entry that has no condition,
-so a trace, the report of an exact-mode build and the committed file can be mixed freely; it
+so a trace, the report of an exact-mode build and the committed files can be mixed freely; it
 keeps a condition that is present, and one type under two conditions stays two entries. `check`
-rejects an entry without a condition or with a malformed one, and it rejects the file when the
-source of the main class is gone, because renaming `NacosBootstrap` would otherwise leave every
-entry guarded by a type that does not exist. After such a rename, update `SERVER_ENTRY_POINT` in
-`native-metadata.py` and the conditions in the bundled file.
+rejects an entry without a condition or with a malformed one, and it fails when the source of the
+main class is gone, because renaming `NacosBootstrap` would otherwise leave every entry guarded by
+a type that does not exist. After such a rename, update `SERVER_ENTRY_POINT` in
+`native-metadata.py` and the conditions in the bundled files.
 
 ### Refresh the bundled metadata
 
-Refresh the file when the Server's dependencies, plugin SPI providers, reflectively serialized
+Refresh the metadata when the Server's dependencies, plugin SPI providers, reflectively serialized
 model classes or reflective code paths change, and review the result like source code. Use
 GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases and homes.
 
@@ -255,18 +280,20 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
    requests so that reads of persisted records are traced as well.
 5. The datasource is a structural choice, so repeat steps 1 to 4 with `merge` into the same trace
    directory for every JDBC driver the metadata should cover.
-6. Curate the trace together with the committed file:
+6. Curate the trace together with the committed files:
 
    ```sh
-   BUNDLE=bootstrap/src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json
+   BUNDLE=bootstrap/src/main/resources/META-INF/native-image
    python3 test/scripts/native-metadata.py refresh \
      --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
    ```
 
    The command merges all inputs, drops what the rules above exclude, guards every entry that has
-   no condition (see [Conditions](#conditions)), and rewrites the bundled file. Pass `--output` to
-   write elsewhere. The committed file is an input as well, because some
-   of its entries are in no trace: the reports of an exact-mode build (see below), and the
+   no condition (see [Conditions](#conditions)), sorts the entries into the files of their owners
+   (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an owner
+   that has no entries left. Pass `--output-dir` to write below another directory, or `--output` for
+   one merged file. The committed files are an input as well, because some
+   of their entries are in no trace: the reports of an exact-mode build (see below), and the
    accessors that protobuf looks up on a generated message and on its `Builder`, which the agent
    does not record because it records only the methods that are invoked. The ones of JRaft's
    `SnapshotMeta` matter: JRaft turns the message into text when it loads a snapshot. A refresh
@@ -297,7 +324,7 @@ python3 test/scripts/native-metadata.py refresh --classpath bootstrap/target/nat
 ```
 
 `delta.json` lists what is missing and exists on the classpath. Pass it together with the original
-trace to a final `refresh` to merge it into the bundled file. Each report names the exact class,
+trace to a final `refresh` to merge it into the bundled files. Each report names the exact class,
 method or field. Repeat the cycle of exercising, collecting and merging until no relevant report
 remains. Reports that the tool cannot parse are printed as `UNPARSED` and fail the `exact` variant
 of the Native CI job; reports about lambda-proxy classes are counted and skipped, as described

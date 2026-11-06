@@ -292,10 +292,14 @@ generation, the structural manifest or ordinary JVM behavior.
 Bootstrap ships GraalVM reachability metadata for the default Server combination, so a Native
 build does not require the operator to trace the Server first.
 
-- Location and format. The metadata is one `reachability-metadata.json` in the GraalVM unified
-  format under `META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/` in Bootstrap's
-  resources. The `native` profile reads it as part of Bootstrap's classes. An ordinary JVM must
-  not read it, and the JVM artifact contract must not depend on it.
+- Location and format. The metadata is a set of `reachability-metadata.json` files in the GraalVM
+  unified format below `META-INF/native-image/` in Bootstrap's resources, one file per owner, each
+  in `<groupId>/<artifactId>/`: `com.alibaba.nacos/nacos-bootstrap` holds what Nacos builds
+  itself, the folder of the artifact holds each third-party artifact, and `jdk/runtime` holds
+  classes of the JDK. The owner of an entry is the artifact whose jar on the Native classpath
+  holds the class or the resource. Folders carry no version. The `native` profile reads the files
+  as part of Bootstrap's classes. An ordinary JVM must not read them, and the JVM artifact
+  contract must not depend on them.
 - Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
   bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
   classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
@@ -307,8 +311,8 @@ build does not require the operator to trace the Server first.
   Native build. What no trace contains comes from the reports of an exact-mode build or, for
   lookups that the tracing agent does not record (for example the accessors that protobuf looks up
   on a generated message and on its Builder), from the code that makes them; an exact-mode build
-  and the restart check must confirm such entries. The file must be deterministic: sorted, one
-  entry per line. It must not contain classes that Spring AOT generates in the same build, agent
+  and the restart check must confirm such entries. Each file must be deterministic: sorted, one
+  entry per line. No file may contain classes that Spring AOT generates in the same build, agent
   or JVM-internal classes, test or tooling classes, or machine- or run-specific data such as
   absolute paths, host names, addresses or credentials. Lookups of classes and resources that do
   not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
@@ -324,8 +328,8 @@ build does not require the operator to trace the Server first.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
   Native executable again. A refresh is a reviewed source change. The repository provides
-  `test/scripts/native-metadata.py` to curate and check the file, and the ordinary CI build
-  checks it.
+  `test/scripts/native-metadata.py` to curate and check the files, and to put each entry into the
+  file of its owner; the ordinary CI build checks them.
 - Acceptance. The metadata is accepted by running the standalone integration suites against the
   Native executable. Tests that also fail against the ordinary JVM Server in the same setup are
   kept in a baseline and are not Native regressions. The suites never restart the Server, so the

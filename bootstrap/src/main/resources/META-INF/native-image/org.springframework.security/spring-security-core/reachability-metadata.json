@@ -1,0 +1,23 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.AnonymousAuthenticationProvider"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.AuthenticationEventPublisher"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.AuthenticationManager"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.AuthenticationProvider"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.DefaultAuthenticationEventPublisher"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.ProviderManager"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.dao.DaoAuthenticationProvider"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureCredentialsExpiredEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureDisabledEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureExpiredEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureLockedEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureProviderNotFoundEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureProxyUntrustedEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authentication.event.AuthenticationFailureServiceExceptionEvent"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.authorization.AuthorizationManager"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.context.DelegatingApplicationListener"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.security.core.userdetails.UserDetailsService"}
+  ]
+}

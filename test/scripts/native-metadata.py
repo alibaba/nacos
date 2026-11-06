@@ -16,12 +16,19 @@
 """Curate and verify the GraalVM reachability metadata bundled with the Nacos Server.
 
 ``refresh`` turns the raw output of the Native Image tracing agent into the committed
-``reachability-metadata.json``. It merges several agent runs, drops entries that must not be
+``reachability-metadata.json`` files. It merges several agent runs, drops entries that must not be
 shipped (see POLICY below), prunes classes and resources that are not on the Native classpath,
 and writes the result in a stable, line-oriented order so that reviews and diffs stay small.
 
-``check`` verifies a committed file without needing GraalVM or a database. CI runs it from
-``native-build-it.py``.
+The committed metadata is not one file but one file per owner below ``META-INF/native-image``:
+``<groupId>/<artifactId>/reachability-metadata.json`` for each third-party artifact, ``jdk/runtime``
+for the classes of the JDK, and ``com.alibaba.nacos/nacos-bootstrap`` for everything that Nacos
+builds itself. The owner of an entry is the artifact whose jar on the Native classpath contains the
+class or the resource, so ``refresh`` needs that classpath and nobody sorts entries by hand.
+
+``check`` verifies the committed files without needing GraalVM or a database. CI runs it from
+``native-build-it.py``. With ``--classpath`` it also verifies that every entry sits in the file of
+its owner.
 
 Every entry carries a ``typeReached`` condition (see SERVER_ENTRY_POINT). ``refresh`` adds the
 default condition to each input entry that has none and keeps a condition that is present;
@@ -36,12 +43,16 @@ serialization, resources and resource bundles. Reports about lambda-proxy classe
 and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
 variant of the Native CI job fails on it instead of ignoring a gap that it cannot name.
 
-Typical refresh, after tracing the Server with the exact classpath of the Native build::
+Typical refresh, after tracing the Server with the exact classpath of the Native build. The
+committed metadata is an input as well, because some of its entries are in no trace::
 
     python3 test/scripts/native-metadata.py refresh \\
         --classpath bootstrap/target/native/classpath.args \\
-        --output bootstrap/src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json \\
-        /path/to/trace-run-1 /path/to/trace-run-2
+        bootstrap/src/main/resources/META-INF/native-image /path/to/trace-run-1 /path/to/trace-run-2
+
+The files are written below ``bootstrap/src/main/resources/META-INF/native-image``, or below the
+directory of ``--output-dir``. ``--output FILE`` writes one merged file instead; the Native CI job
+uses it to list the registrations that an exact-mode build reports as missing.
 """
 import argparse
 import contextlib
@@ -53,10 +64,17 @@ import re
 import sys
 import zipfile
 
-DEFAULT_METADATA = ("bootstrap/src/main/resources/META-INF/native-image/"
-                    "com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json")
+DEFAULT_BUNDLE = "bootstrap/src/main/resources/META-INF/native-image"
 METADATA_NAME = "reachability-metadata.json"
 SECTIONS = ("reflection", "resources")
+
+# The owners that are not a third-party artifact. Everything that Nacos builds, whatever module it
+# comes from, belongs to the first; the classes of the JDK, which are on no classpath, to the second.
+# Both are also the names of the folders that hold their files. Folders are not versioned: the
+# dependencies come from a managed set of versions, a file would have to move with every bump, and
+# GraalVM does not look at the name of a folder.
+NACOS_OWNER = "com.alibaba.nacos/nacos-bootstrap"
+JDK_OWNER = "jdk/runtime"
 
 # GraalVM recommends that every entry be conditional. An entry with a typeReached condition is
 # included in the image if the type is reachable at build time, and it is available at run time
@@ -118,36 +136,83 @@ BOOLEAN_FLAGS = ("allDeclaredConstructors", "allPublicConstructors", "allDeclare
                  "queryAllPublicConstructors", "queryAllDeclaredMethods", "queryAllPublicMethods")
 
 
+def jar_owner(path, names):
+    """The ``groupId/artifactId`` that owns a jar, or ``unknown/<file name>``.
+
+    The Maven descriptors inside the jar tell it (``META-INF/maven/<groupId>/<artifactId>/
+    pom.properties``). A shaded jar carries those of the libraries it bundles as well, so the one
+    whose artifact id starts the name of the file wins. Without descriptors the layout of a Maven
+    repository decides (``<groupId as a path>/<artifactId>/<version>/<file>``). Whatever Nacos
+    builds belongs to NACOS_OWNER, from whichever module it comes.
+    """
+    best = None
+    for name in names:
+        found = re.fullmatch(r"META-INF/maven/([^/]+)/([^/]+)/pom\.properties", name)
+        if found and path.name.startswith(found.group(2) + "-") \
+                and (best is None or len(found.group(2)) > len(best[1])):
+            best = found.groups()
+    parts = path.parts
+    if best is None and len(parts) > 4 and "repository" in parts[:-3] \
+            and parts[-1].startswith(parts[-3] + "-"):
+        root = len(parts) - 1 - parts[::-1].index("repository")
+        best = (".".join(parts[root + 1:-3]), parts[-3])
+    if best is None:
+        return "unknown/" + path.stem
+    return NACOS_OWNER if best[0] == "com.alibaba.nacos" else "%s/%s" % best
+
+
+def add_owner(owners, owner):
+    if owner not in owners:
+        owners.append(owner)
+
+
+def entries_that(count, one, many):
+    """``1 entry <one>`` or ``<count> entries <many>``, for the lines that report many entries."""
+    return "1 entry " + one if count == 1 else "%d entries %s" % (count, many)
+
+
 class Classpath:
-    """Class and resource names available to the Native image builder."""
+    """Class and resource names available to the Native image builder, and who owns them."""
 
     def __init__(self, entries):
         self.classes = set()
         self.classes_as_paths = set()
         self.resources = set()
         self.directories = set()
+        # The first entry of the classpath that has a class owns it, as for a class loader. A
+        # resource and a directory are owned by every entry that has them, in the order of the
+        # classpath.
+        self.class_owner = {}
+        self.resource_owners = {}
+        self.directory_owners = {}
         for entry in entries:
             path = Path(entry)
             if path.is_dir():
                 for root, _, files in os.walk(path):
                     for name in files:
-                        self._add(os.path.relpath(os.path.join(root, name), path).replace(os.sep, "/"))
+                        self._add(os.path.relpath(os.path.join(root, name), path).replace(os.sep, "/"),
+                                  NACOS_OWNER)
             elif path.is_file() and path.suffix in (".jar", ".zip"):
                 with zipfile.ZipFile(path) as archive:
-                    for name in archive.namelist():
-                        if not name.endswith("/"):
-                            self._add(name)
+                    names = [name for name in archive.namelist() if not name.endswith("/")]
+                owner = jar_owner(path, names)
+                for name in names:
+                    self._add(name, owner)
 
-    def _add(self, name):
+    def _add(self, name, owner):
         if name.endswith(".class"):
-            self.classes.add(name[:-len(".class")].replace("/", "."))
-            self.classes_as_paths.add(name[:-len(".class")])
+            name = name[:-len(".class")]
+            self.classes.add(name.replace("/", "."))
+            self.classes_as_paths.add(name)
+            self.class_owner.setdefault(name.replace("/", "."), owner)
             return
         self.resources.add(name)
+        add_owner(self.resource_owners.setdefault(name, []), owner)
         parent = name
         while "/" in parent:
             parent = parent.rsplit("/", 1)[0]
             self.directories.add(parent)
+            add_owner(self.directory_owners.setdefault(parent, []), owner)
 
     @classmethod
     def from_file(cls, file):
@@ -177,6 +242,40 @@ class Classpath:
             pattern = re.compile(re.escape(glob).replace(r"\*\*", ".*").replace(r"\*", "[^/]*") + "$")
             return any(pattern.match(name) for name in self.resources)
         return glob in self.resources or glob in self.directories
+
+    def owner_of_type(self, name):
+        """The owner of a class: its jar, JDK_OWNER for a JDK class or a primitive, else None."""
+        name = base_type(name)
+        if name in self.class_owner:
+            return self.class_owner[name]
+        if name in PRIMITIVES or name.startswith(JDK_PREFIXES):
+            return JDK_OWNER
+        return None
+
+    def owners_of_resource(self, entry):
+        """The owners of a resource or bundle entry, in the order of the classpath."""
+        owners = []
+        if "bundle" in entry:
+            bundle = entry["bundle"]
+            base = bundle.replace(".", "/")
+            for name, found in self.resource_owners.items():
+                if name == base or name.startswith(base + "_") or name.startswith(base + "."):
+                    for owner in found:
+                        add_owner(owners, owner)
+            if not owners:
+                for name, owner in self.class_owner.items():
+                    if name == bundle or name.startswith(bundle + "_"):
+                        add_owner(owners, owner)
+            return owners
+        glob = entry["glob"]
+        if "*" in glob:
+            pattern = re.compile(re.escape(glob).replace(r"\*\*", ".*").replace(r"\*", "[^/]*") + "$")
+            for name, found in self.resource_owners.items():
+                if pattern.match(name):
+                    for owner in found:
+                        add_owner(owners, owner)
+            return owners
+        return list(self.resource_owners.get(glob) or self.directory_owners.get(glob, []))
 
 
 PRIMITIVES = ("boolean", "byte", "char", "short", "int", "long", "float", "double", "void")
@@ -326,12 +425,20 @@ def drop_reason(entry, classpath):
 
 
 def load_trace(location):
+    """The documents of an input: a file, the output directory of the agent, or the whole bundle.
+
+    A directory with a metadata file in it is an agent output. Otherwise all metadata files below
+    it count, which is how the committed bundle, one file per owner, is read.
+    """
     path = Path(location)
     if path.is_dir():
-        path = path / METADATA_NAME
-    if not path.is_file():
+        files = [path / METADATA_NAME] if (path / METADATA_NAME).is_file() \
+            else sorted(path.rglob(METADATA_NAME))
+    else:
+        files = [path] if path.is_file() else []
+    if not files:
         raise SystemExit("No %s in %s" % (METADATA_NAME, location))
-    return json.loads(path.read_text())
+    return [json.loads(file.read_text()) for file in files]
 
 
 def curate(traces, classpath):
@@ -371,17 +478,93 @@ def curate(traces, classpath):
 
 
 def render(document):
-    """One entry per line, keys sorted: stable, reviewable and diff friendly."""
+    """One entry per line, keys sorted: stable, reviewable and diff friendly.
+
+    A section without entries is left out: most owners have no resources.
+    """
+    sections = [section for section in SECTIONS if document.get(section)]
     lines = ["{"]
-    for index, section in enumerate(SECTIONS):
-        entries = document.get(section, [])
+    for index, section in enumerate(sections):
+        entries = document[section]
         lines.append('  "%s": [' % section)
         for position, entry in enumerate(entries):
             comma = "," if position < len(entries) - 1 else ""
             lines.append("    " + json.dumps(entry, sort_keys=True, separators=(", ", ": ")) + comma)
-        lines.append("  ]" + ("," if index < len(SECTIONS) - 1 else ""))
+        lines.append("  ]" + ("," if index < len(sections) - 1 else ""))
     lines.append("}")
     return "\n".join(lines) + "\n"
+
+
+def owner_of_reflection(entry, classpath):
+    """The owner of a reflection entry, or None if its class is on no classpath.
+
+    A proxy has several interfaces, often of different owners. It belongs to Nacos if one of them
+    does, since the proxy is then one of a Nacos bean; else to the owner of its first interface
+    that is not a JDK type; else to the JDK.
+    """
+    kind = entry["type"]
+    if isinstance(kind, str):
+        return classpath.owner_of_type(kind)
+    owners = [classpath.owner_of_type(name) for name in kind.get("proxy", [])]
+    if None in owners:
+        return None
+    if NACOS_OWNER in owners:
+        return NACOS_OWNER
+    return next((owner for owner in owners if owner != JDK_OWNER), JDK_OWNER)
+
+
+def owner_of_resource(entry, classpath):
+    """The owner of a resource entry: Nacos if it has the resource, else the first that has it.
+
+    Several jars can hold the same resource, for example a ``META-INF/services`` file; the entry is
+    then written once, and ``check`` accepts it in the file of any of them. A bundle of a module
+    is not looked up on the classpath and belongs to the JDK.
+    """
+    owners = classpath.owners_of_resource(entry)
+    if not owners:
+        return JDK_OWNER if entry.get("module") else None
+    return NACOS_OWNER if NACOS_OWNER in owners else owners[0]
+
+
+def partition(document, classpath):
+    """Split a curated document by owner: ``{owner: document}``. Raises if an owner is unknown."""
+    parts, unowned = {}, []
+    for section, owner_of in (("reflection", owner_of_reflection),
+                              ("resources", owner_of_resource)):
+        for entry in document.get(section, []):
+            owner = owner_of(entry, classpath)
+            if owner is None or owner.startswith("unknown/"):
+                unowned.append("%s (%s)" % (entry.get("type", entry.get("glob", entry.get("bundle"))),
+                                            owner or "on no classpath entry"))
+                continue
+            parts.setdefault(owner, {name: [] for name in SECTIONS})[section].append(entry)
+    if unowned:
+        raise SystemExit("No Maven artifact owns %d entries; a jar without Maven descriptors that is "
+                         "not in a Maven repository layout cannot be told apart, for example: %s"
+                         % (len(unowned), ", ".join(unowned[:3])))
+    return parts
+
+
+def bundle_files(root):
+    """``{owner: file}`` of the metadata files below root; the owner is the folder of the file."""
+    return {file.parent.relative_to(root).as_posix(): file
+            for file in sorted(Path(root).rglob(METADATA_NAME))}
+
+
+def write_bundle(root, parts):
+    """Write one file per owner below root and remove the files of owners that have none left."""
+    root = Path(root)
+    stale = bundle_files(root) if root.is_dir() else {}
+    for owner, document in sorted(parts.items()):
+        file = root / owner / METADATA_NAME
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(render(document))
+    for owner, file in stale.items():
+        if owner not in parts:
+            file.unlink()
+    for folder in sorted((path for path in root.rglob("*") if path.is_dir()), reverse=True):
+        if not any(folder.iterdir()):
+            folder.rmdir()
 
 
 def problems(document, classpath=None):
@@ -425,8 +608,8 @@ def problems(document, classpath=None):
         if issue:
             conditions.setdefault(issue, []).append(text or json.dumps(entry, sort_keys=True))
     for issue, names in sorted(conditions.items()):
-        count = "1 entry has" if len(names) == 1 else "%d entries have" % len(names)
-        found.append("%s %s, for example %s" % (count, issue, ", ".join(sorted(names)[:3])))
+        found.append("%s, for example %s" % (
+            entries_that(len(names), "has " + issue, "have " + issue), ", ".join(sorted(names)[:3])))
     text = json.dumps(document)
     for pattern, reason in FORBIDDEN_TEXT:
         match = pattern.search(text)
@@ -437,7 +620,8 @@ def problems(document, classpath=None):
 
 def command_refresh(args):
     classpath = Classpath.from_file(args.classpath)
-    document, dropped = curate([load_trace(trace) for trace in args.trace], classpath)
+    traces = [document for location in args.trace for document in load_trace(location)]
+    document, dropped = curate(traces, classpath)
     issues = problems(document, classpath)
     for section, name, reason in sorted(dropped):
         print("dropped %-10s %s (%s)" % (section, name, reason), file=sys.stderr)
@@ -445,28 +629,81 @@ def command_refresh(args):
         for issue in issues:
             print("PROBLEM: " + issue, file=sys.stderr)
         return 1
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render(document))
-    print("wrote %s: %d reflection entries, %d resources, %d dropped" % (
-        output, len(document["reflection"]), len(document["resources"]), len(dropped)))
+    if args.output:
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(render(document))
+        print("wrote %s: %d reflection entries, %d resources, %d dropped" % (
+            output, len(document["reflection"]), len(document["resources"]), len(dropped)))
+        return 0
+    parts = partition(document, classpath)
+    write_bundle(args.output_dir, parts)
+    print("wrote %d files below %s: %d reflection entries, %d resources, %d dropped" % (
+        len(parts), args.output_dir, len(document["reflection"]), len(document["resources"]),
+        len(dropped)))
     return 0
 
 
 def command_check(args):
+    """Check one file, or all files below a directory: the bundle with one file per owner."""
     path = Path(args.file)
-    text = path.read_text()
-    document = json.loads(text)
-    issues = problems(document, Classpath.from_file(args.classpath) if args.classpath else None)
+    classpath = Classpath.from_file(args.classpath) if args.classpath else None
+    files = bundle_files(path) if path.is_dir() else {None: path} if path.is_file() else {}
+    if not files:
+        print("PROBLEM: no %s below %s" % (METADATA_NAME, path), file=sys.stderr)
+        return 1
+    issues, reflection_owner, resource_owner, repeated = [], {}, {}, []
+    totals = [0, 0]
+    for owner, file in files.items():
+        prefix = "" if owner is None else owner + ": "
+        text = file.read_text()
+        try:
+            document = json.loads(text)
+        except ValueError as error:
+            issues.append("%sis not valid JSON: %s" % (prefix, error))
+            continue
+        issues.extend(prefix + issue for issue in problems(document, classpath))
+        if render(document) != text:
+            issues.append(prefix + "file is not in canonical form; regenerate it with 'refresh' "
+                                   "or reformat")
+        reflection, resources = document.get("reflection", []), document.get("resources", [])
+        totals[0] += len(reflection)
+        totals[1] += len(resources)
+        if owner is None:
+            continue
+        if not re.fullmatch(r"[^/]+/[^/]+", owner):
+            issues.append("%sbelongs at <groupId>/<artifactId>/%s" % (prefix, METADATA_NAME))
+        for key, entries, seen in (
+                (lambda e: (type_key(e), condition_key(e)), reflection, reflection_owner),
+                (lambda e: json.dumps(e, sort_keys=True), resources, resource_owner)):
+            for entry in entries:
+                if key(entry) in seen:
+                    repeated.append("%s (in %s and %s)" % (
+                        entry.get("type", entry.get("glob", entry.get("bundle"))),
+                        seen[key(entry)], owner))
+                seen.setdefault(key(entry), owner)
+        if classpath is not None:
+            misplaced = [type_key(entry) for entry in reflection
+                         if owner_of_reflection(entry, classpath) not in (None, owner)]
+            misplaced += [entry.get("glob", entry.get("bundle")) for entry in resources
+                          if classpath.owners_of_resource(entry)
+                          and owner not in classpath.owners_of_resource(entry)]
+            if misplaced:
+                issues.append("%s%s, for example %s" % (
+                    prefix, entries_that(len(misplaced), "belongs to the file of another owner",
+                                         "belong to the file of another owner"),
+                    ", ".join(sorted(misplaced)[:3])))
+    if repeated:
+        issues.append("%s, for example %s" % (
+            entries_that(len(repeated), "is in more than one file", "are in more than one file"),
+            ", ".join(sorted(repeated)[:3])))
     if entry_point_problem():
         issues.append(entry_point_problem())
-    if render(document) != text:
-        issues.append("file is not in canonical form; regenerate it with 'refresh' or reformat")
     for issue in issues:
         print("PROBLEM: " + issue, file=sys.stderr)
     if not issues:
-        print("%s OK: %d reflection entries, %d resources" % (
-            path, len(document.get("reflection", [])), len(document.get("resources", []))))
+        counted = "%d files, " % len(files) if path.is_dir() else ""
+        print("%s OK: %s%d reflection entries, %d resources" % (path, counted, *totals))
     return 1 if issues else 0
 
 
@@ -730,23 +967,166 @@ def command_selftest(args):
                     {"name": "setCount", "parameterTypes": ["int", "java.lang.String"]}]}, by_type
     assert by_type["p.Bean$Part"]["methods"] == [{"name": "getName", "parameterTypes": []}]
     assert unparsed == ["Reflection: Cannot reflectively unknown 'p.Bean'"], unparsed
+    selftest_owners()
     print("native-metadata selftest OK")
     return 0
+
+
+def selftest_owners():
+    """Ownership, the layout with one file per owner and the checks that guard it."""
+    import tempfile
+
+    def jar(file, members):
+        file.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(file, "w") as archive:
+            for member in members:
+                archive.writestr(member, "")
+        return str(file)
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        own_classes = root / "own-classes"
+        for name in ("own/Own.class", SERVER_ENTRY_POINT.replace(".", "/") + ".class"):
+            (own_classes / name).parent.mkdir(parents=True, exist_ok=True)
+            (own_classes / name).write_text("")
+        entries = [
+            own_classes,
+            # The descriptors of the jar name its owner.
+            jar(root / "libs/lib-a-1.0.jar", [
+                "META-INF/maven/org.example/lib-a/pom.properties", "a/A.class", "a/messages.properties",
+                "a/data/one.json", "META-INF/services/x.Spi"]),
+            # Without descriptors, the layout of a Maven repository names the owner.
+            jar(root / "repository/org/example/lib-b/2.0/lib-b-2.0.jar", [
+                "b/B.class", "b/Bundle.class", "META-INF/services/x.Spi"]),
+            # A shaded jar carries the descriptors of what it bundles; its own wins.
+            jar(root / "libs/lib-c-3.0.jar", [
+                "META-INF/maven/org.example/lib-c/pom.properties",
+                "META-INF/maven/org.inner/other/pom.properties", "c/C.class"]),
+            # Every module of Nacos belongs to the same owner.
+            jar(root / "libs/nacos-api-3.3.0.jar", [
+                "META-INF/maven/com.alibaba.nacos/nacos-api/pom.properties",
+                "com/alibaba/nacos/api/N.class", "META-INF/services/y.Spi"]),
+            # Another jar with the same class: the first on the classpath owns it.
+            jar(root / "libs/lib-d-4.0.jar", [
+                "META-INF/maven/org.example/lib-d/pom.properties", "a/A.class", "META-INF/services/y.Spi"]),
+            jar(root / "libs/stray.jar", ["z/Z.class"]),
+        ]
+        classpath = Classpath([str(entry) for entry in entries])
+        assert classpath.owner_of_type("own.Own") == NACOS_OWNER
+        assert classpath.owner_of_type("a.A") == "org.example/lib-a"
+        assert classpath.owner_of_type("b.B[]") == "org.example/lib-b"
+        assert classpath.owner_of_type("c.C") == "org.example/lib-c"
+        assert classpath.owner_of_type("com.alibaba.nacos.api.N") == NACOS_OWNER
+        assert classpath.owner_of_type("java.lang.String") == classpath.owner_of_type("int") == JDK_OWNER
+        assert classpath.owner_of_type("z.Z") == "unknown/stray" and classpath.owner_of_type("q.Q") is None
+        assert classpath.owners_of_resource({"glob": "META-INF/services/x.Spi"}) == [
+            "org.example/lib-a", "org.example/lib-b"]
+        assert classpath.owners_of_resource({"glob": "a/data"}) == ["org.example/lib-a"]
+        assert classpath.owners_of_resource({"glob": "a/**/*.json"}) == ["org.example/lib-a"]
+        assert classpath.owners_of_resource({"bundle": "a.messages"}) == ["org.example/lib-a"]
+        assert classpath.owners_of_resource({"bundle": "b.Bundle"}) == ["org.example/lib-b"]
+        assert classpath.owners_of_resource({"glob": "nothing"}) == []
+
+        def proxy(*names):
+            return {"type": {"proxy": list(names)}}
+
+        assert owner_of_reflection({"type": "a.A"}, classpath) == "org.example/lib-a"
+        assert owner_of_reflection(proxy("java.io.Serializable", "c.C", "a.A"), classpath) \
+            == "org.example/lib-c"
+        assert owner_of_reflection(proxy("b.B", "own.Own"), classpath) == NACOS_OWNER
+        assert owner_of_reflection(proxy("java.io.Serializable"), classpath) == JDK_OWNER
+        assert owner_of_reflection(proxy("b.B", "q.Q"), classpath) is None
+        assert owner_of_resource({"glob": "META-INF/services/y.Spi"}, classpath) == NACOS_OWNER
+        assert owner_of_resource({"glob": "META-INF/services/x.Spi"}, classpath) == "org.example/lib-a"
+
+        trace = {"reflection": [{"type": "a.A"}, {"type": "b.B"}, {"type": "own.Own"},
+                                {"type": "java.lang.String"}, proxy("c.C", "java.io.Serializable")],
+                 "resources": [{"glob": "META-INF/services/x.Spi"}, {"bundle": "b.Bundle"},
+                               {"glob": "META-INF/services/y.Spi"}]}
+        document, dropped = curate([trace], classpath)
+        assert not dropped, dropped
+        parts = partition(document, classpath)
+        assert sorted(parts) == sorted([JDK_OWNER, NACOS_OWNER, "org.example/lib-a",
+                                        "org.example/lib-b", "org.example/lib-c"]), sorted(parts)
+        assert [e["type"] for e in parts["org.example/lib-b"]["reflection"]] == ["b.B"]
+        assert [e["bundle"] for e in parts["org.example/lib-b"]["resources"]] == ["b.Bundle"]
+        assert [e["glob"] for e in parts[NACOS_OWNER]["resources"]] == ["META-INF/services/y.Spi"]
+        try:
+            partition(curate([{"reflection": [{"type": "z.Z"}]}], classpath)[0], classpath)
+            raise AssertionError("an entry of a jar without coordinates must be refused")
+        except SystemExit as refused:
+            assert "No Maven artifact owns 1 entries" in str(refused), refused
+
+        # One file per owner: an owner without a section writes none, a vanished owner loses its file
+        # and the folders that stay empty.
+        bundle = root / "bundle"
+        write_bundle(bundle, parts)
+        assert sorted(bundle_files(bundle)) == sorted(parts)
+        assert '"resources"' not in (bundle / "org.example/lib-c" / METADATA_NAME).read_text()
+        classpath_file = root / "classpath.txt"
+        classpath_file.write_text("\n".join(str(entry) for entry in entries))
+
+        def check(location, classpath_argument=None):
+            captured = io.StringIO()
+            with contextlib.redirect_stderr(captured), contextlib.redirect_stdout(io.StringIO()):
+                code = command_check(argparse.Namespace(file=str(location), classpath=classpath_argument))
+            return code, captured.getvalue()
+
+        assert check(bundle) == (0, "")
+        assert check(bundle, str(classpath_file)) == (0, "")
+        assert len(load_trace(bundle)) == len(parts)
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert command_refresh(argparse.Namespace(
+                trace=[str(bundle)], classpath=str(classpath_file), output=None,
+                output_dir=str(root / "again"))) == 0
+        assert sorted(bundle_files(root / "again")) == sorted(parts)
+        assert all((root / "again" / owner / METADATA_NAME).read_text()
+                   == (bundle / owner / METADATA_NAME).read_text() for owner in parts)
+        # An entry in the file of another owner, an entry in two files, a file at the wrong depth.
+        lib_a = bundle / "org.example/lib-a" / METADATA_NAME
+        lib_b = bundle / "org.example/lib-b" / METADATA_NAME
+        moved = json.loads(lib_a.read_text())
+        moved["reflection"].append(json.loads(lib_b.read_text())["reflection"][0])
+        moved["reflection"].sort(key=reflection_sort_key)
+        lib_a.write_text(render(moved))
+        code, errors = check(bundle)
+        assert code == 1 and "1 entry is in more than one file" in errors, errors
+        code, errors = check(bundle, str(classpath_file))
+        assert code == 1 and "1 entry belongs to the file of another owner" in errors, errors
+        lib_b.unlink()
+        code, errors = check(bundle, str(classpath_file))
+        assert code == 1 and "org.example/lib-a: 1 entry belongs to the file of another owner" in errors
+        (bundle / METADATA_NAME).write_text(render({"reflection": [], "resources": []}))
+        assert "belongs at <groupId>/<artifactId>" in check(bundle)[1]
+        (bundle / METADATA_NAME).unlink()
+        broken = bundle / "org.example/lib-c" / METADATA_NAME
+        broken.write_text("{")
+        assert "is not valid JSON" in check(bundle)[1]
+        assert check(root / "nothing-here")[0] == 1
+        # A refresh without an owner's entries removes its file and the folders left empty.
+        only_own = {"reflection": [{"type": "own.Own"}], "resources": []}
+        write_bundle(bundle, partition(curate([only_own], classpath)[0], classpath))
+        assert sorted(bundle_files(bundle)) == [NACOS_OWNER]
+        assert not (bundle / "org.example").exists() and not (bundle / "jdk").exists()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
-    refresh = commands.add_parser("refresh", help="curate agent output into the bundled file")
+    refresh = commands.add_parser("refresh", help="curate agent output into the bundled files")
     refresh.add_argument("trace", nargs="+",
-                         help="agent output directories (or files) to merge")
+                         help="agent output directories, files and the committed bundle to merge")
     refresh.add_argument("--classpath", required=True,
                          help="Native classpath: bootstrap/target/native/classpath.args or a path list")
-    refresh.add_argument("--output", default=DEFAULT_METADATA)
+    target = refresh.add_mutually_exclusive_group()
+    target.add_argument("--output-dir", default=DEFAULT_BUNDLE,
+                        help="write one file per owner below this directory (default: the bundle)")
+    target.add_argument("--output", help="write one merged file instead")
     refresh.set_defaults(handler=command_refresh)
-    check = commands.add_parser("check", help="verify a committed metadata file")
-    check.add_argument("file", nargs="?", default=DEFAULT_METADATA)
+    check = commands.add_parser("check", help="verify the committed metadata files")
+    check.add_argument("file", nargs="?", default=DEFAULT_BUNDLE,
+                       help="the bundle directory (default) or a single metadata file")
     check.add_argument("--classpath", help="also verify entries against this Native classpath")
     check.set_defaults(handler=command_check)
     missing = commands.add_parser(

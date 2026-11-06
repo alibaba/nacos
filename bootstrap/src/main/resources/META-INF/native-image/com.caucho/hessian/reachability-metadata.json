@@ -1,0 +1,17 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.caucho.burlap.io.BurlapRemoteObject"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.BigDecimalDeserializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.FileDeserializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "type"}, {"name": "url"}], "type": "com.caucho.hessian.io.HessianRemote"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.caucho.hessian.io.HessianRemoteObject"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.LocaleSerializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.ObjectNameDeserializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.RemoteSerializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.caucho.hessian.io.StringValueSerializer"}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "META-INF/hessian/deserializers"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "META-INF/hessian/serializers"}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.observation.ObservationFilter"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.observation.ObservationHandler"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.observation.ObservationPredicate"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.observation.ObservationRegistry"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.observation.SimpleObservationRegistry"}
+  ]
+}

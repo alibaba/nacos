@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.google.common.util.concurrent.AbstractFutureState"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.google.common.util.concurrent.AbstractFutureState$Waiter"}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.prometheus.metrics.model.registry.PrometheusRegistry"}
+  ]
+}

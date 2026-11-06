@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.core.JsonGenerator"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.core.JsonProcessingException"}
+  ]
+}

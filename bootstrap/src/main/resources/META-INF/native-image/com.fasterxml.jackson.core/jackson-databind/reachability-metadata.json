@@ -1,0 +1,13 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.ObjectMapper"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.deser.BeanDeserializerModifier[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.deser.Deserializers[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.deser.KeyDeserializers[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.deser.ValueInstantiators[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.fasterxml.jackson.databind.ext.Java7SupportImpl"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.ser.BeanSerializerModifier[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.databind.ser.Serializers[]"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.fasterxml.jackson.databind.ser.std.StdJdkSerializers$AtomicLongSerializer"}
+  ]
+}

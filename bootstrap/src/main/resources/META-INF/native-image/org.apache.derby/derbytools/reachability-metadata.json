@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.jdbc.EmbeddedDriver"}
+  ]
+}

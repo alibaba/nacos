@@ -1,0 +1,7 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueColdProducerFields"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueConsumerFields"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueProducerFields"}
+  ]
+}
