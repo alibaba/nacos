@@ -107,8 +107,9 @@ SPRING_BOOT = "org.springframework.boot.SpringApplication"
 CONDITION_GROUPS = (
     # (condition type, owners)
     # Spring Boot looks up the classes of these artifacts while it builds the application context:
-    # the types of beans, of their configuration and of the annotations it reads, and optional
-    # libraries that it checks for. Nacos creates the SpringApplication before it uses any of them.
+    # the types of beans, of their configuration and of the annotations it reads, the types in the
+    # signatures of a bean (the Kubernetes client, for K8sSyncServer), and optional libraries that it
+    # checks for. Nacos creates the SpringApplication before it uses any of them.
     # Every artifact of the Spring family is covered by owner_condition().
     (SPRING_BOOT, (
         "com.fasterxml.jackson.core/jackson-core",
@@ -119,6 +120,8 @@ CONDITION_GROUPS = (
         "com.zaxxer/HikariCP",
         "io.agentscope/agentscope-extensions-studio",
         "io.grpc/grpc-api",
+        "io.kubernetes/client-java",
+        "io.kubernetes/client-java-api",
         "io.micrometer/micrometer-commons",
         "io.micrometer/micrometer-core",
         "io.micrometer/micrometer-observation",
@@ -165,16 +168,27 @@ CONDITION_GROUPS = (
         "com.google.protobuf/protobuf-java",)),
     ("com.lmax.disruptor.dsl.ProducerType", (
         "com.lmax/disruptor",)),
-    # gRPC finds its name resolvers, load balancers and transports through registries.
-    ("io.grpc.NameResolverRegistry", (
+    # gRPC finds its load balancers and transports through registries, and the classes of its core
+    # that use field updaters are created for the calls of a server and for the executors of a
+    # channel. A cluster node creates its RPC clients (ClusterRpcClientProxy) while the core context
+    # is built, before any gRPC server starts, and a server may answer a peer before the node has a
+    # channel of its own. So a type of the server side (NettyServerBuilder) or of the client side
+    # (NameResolverRegistry) is not early enough. GrpcUtil is initialized by every builder, and
+    # Utils of the Netty transport is initialized by the builders of the servers and the channels;
+    # the first client transport reads EpollChannelOption.TCP_USER_TIMEOUT through it.
+    ("io.grpc.internal.GrpcUtil", (
         "io.grpc/grpc-core",)),
     ("io.grpc.LoadBalancerRegistry", (
         "io.grpc/grpc-util",)),
-    ("io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder", (
+    ("io.grpc.netty.shaded.io.grpc.netty.Utils", (
         "io.grpc/grpc-netty-shaded",)),
     # The JDK reads the service file of dnsjava when it first resolves a name, early in the start.
     ("java.net.InetAddress", (
         "dnsjava/dnsjava",)),
+    # The only code that uses BouncyCastle is the Kubernetes client: ClientBuilder sets up the client
+    # key with the BouncyCastle provider, which looks up the classes of its algorithms by name.
+    ("io.kubernetes.client.util.ClientBuilder", (
+        "org.bouncycastle/bcprov-jdk18on",)),
     # See REASONED_CONDITIONS.
     ("com.google.common.util.concurrent.AbstractFuture", (
         "com.google.guava/guava",)),

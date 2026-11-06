@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"allDeclaredConstructors": true, "allDeclaredFields": true, "condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "fields": [{"name": "object"}, {"name": "type"}], "methods": [{"name": "<init>", "parameterTypes": []}], "type": "io.kubernetes.client.util.Watch$Response"}
+  ]
+}
