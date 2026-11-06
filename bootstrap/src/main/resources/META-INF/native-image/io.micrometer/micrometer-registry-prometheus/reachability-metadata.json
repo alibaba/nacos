@@ -1,6 +1,6 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.prometheusmetrics.PrometheusConfig"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.prometheusmetrics.PrometheusMeterRegistry"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.prometheusmetrics.PrometheusConfig"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.prometheusmetrics.PrometheusMeterRegistry"}
   ]
 }

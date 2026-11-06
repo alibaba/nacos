@@ -1,19 +1,19 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.ConfigurableTomcatWebServerFactory"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.TomcatConnectorCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.TomcatWebServerFactory"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatBackgroundPreinitializer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "getAccesslog", "parameterTypes": []}, {"name": "setBasedir", "parameterTypes": ["java.io.File"]}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setEnabled", "parameterTypes": ["boolean"]}, {"name": "setMaxDays", "parameterTypes": ["int"]}, {"name": "setPattern", "parameterTypes": ["java.lang.String"]}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties$Accesslog"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerFactoryCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.WebSocketTomcatWebServerFactoryCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerFactoryCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.metrics.TomcatMetricsBinder"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.ConfigurableTomcatWebServerFactory"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.TomcatConnectorCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.TomcatWebServerFactory"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatBackgroundPreinitializer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "getAccesslog", "parameterTypes": []}, {"name": "setBasedir", "parameterTypes": ["java.io.File"]}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "setEnabled", "parameterTypes": ["boolean"]}, {"name": "setMaxDays", "parameterTypes": ["int"]}, {"name": "setPattern", "parameterTypes": ["java.lang.String"]}], "type": "org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties$Accesslog"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerFactoryCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.WebSocketTomcatWebServerFactoryCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerFactoryCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.metrics.TomcatMetricsBinder"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory"}
   ]
 }

@@ -1,15 +1,15 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aspectj.lang.annotation.AfterThrowing"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aspectj.lang.annotation.Around"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aspectj.lang.annotation.Aspect"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aspectj.lang.annotation.Pointcut"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.reflect.Java15AnnotationFinder"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": ["org.aspectj.weaver.World"]}], "type": "org.aspectj.weaver.reflect.Java15GenericSignatureInformationProvider"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.reflect.Java15ReflectionBasedReferenceTypeDelegate"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "myClass"}], "type": "org.aspectj.weaver.reflect.ReflectionBasedReferenceTypeDelegate"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "varType"}], "type": "org.aspectj.weaver.reflect.ReflectionVar"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "residualTest"}], "type": "org.aspectj.weaver.reflect.ShadowMatchImpl"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.tools.Jdk14TraceFactory"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aspectj.lang.annotation.AfterThrowing"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aspectj.lang.annotation.Around"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aspectj.lang.annotation.Aspect"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aspectj.lang.annotation.Pointcut"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.reflect.Java15AnnotationFinder"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": ["org.aspectj.weaver.World"]}], "type": "org.aspectj.weaver.reflect.Java15GenericSignatureInformationProvider"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.reflect.Java15ReflectionBasedReferenceTypeDelegate"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "fields": [{"name": "myClass"}], "type": "org.aspectj.weaver.reflect.ReflectionBasedReferenceTypeDelegate"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "fields": [{"name": "varType"}], "type": "org.aspectj.weaver.reflect.ReflectionVar"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "fields": [{"name": "residualTest"}], "type": "org.aspectj.weaver.reflect.ShadowMatchImpl"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.aspectj.weaver.tools.Jdk14TraceFactory"}
   ]
 }

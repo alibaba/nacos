@@ -1,20 +1,20 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aot.hint.annotation.Reflective"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.DecoratingProxy"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.Ordered"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.annotation.AliasFor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.annotation.Order"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.convert.ConversionService"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.convert.converter.ConverterRegistry"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.convert.support.ConfigurableConversionService"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.convert.support.GenericConversionService"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.core.env.EnvironmentCapable"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.util.AntPathMatcher"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.util.ConcurrentReferenceHashMap$Segment[]"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.util.PathMatcher"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": {"proxy": ["java.lang.reflect.ParameterizedType", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": {"proxy": ["java.lang.reflect.TypeVariable", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": {"proxy": ["java.lang.reflect.WildcardType", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aot.hint.annotation.Reflective"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.DecoratingProxy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.Ordered"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.annotation.AliasFor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.annotation.Order"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.convert.ConversionService"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.convert.converter.ConverterRegistry"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.convert.support.ConfigurableConversionService"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.convert.support.GenericConversionService"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.core.env.EnvironmentCapable"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.util.AntPathMatcher"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.util.ConcurrentReferenceHashMap$Segment[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.util.PathMatcher"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["java.lang.reflect.ParameterizedType", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["java.lang.reflect.TypeVariable", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["java.lang.reflect.WildcardType", "org.springframework.core.SerializableTypeWrapper$SerializableTypeProxy", "java.io.Serializable"]}}
   ]
 }

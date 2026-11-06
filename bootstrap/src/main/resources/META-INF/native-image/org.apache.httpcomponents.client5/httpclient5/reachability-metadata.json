@@ -1,6 +1,6 @@
 {
   "resources": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "org/apache/hc/client5/version.properties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "org/publicsuffix/list/effective_tld_names.dat"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/hc/client5/version.properties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/publicsuffix/list/effective_tld_names.dat"}
   ]
 }

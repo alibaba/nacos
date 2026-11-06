@@ -318,13 +318,19 @@ build does not require the operator to trace the Server first.
   not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
   cannot apply metadata, are not recorded; the metadata targets the default reachability mode and
   does not promise compatibility with `--exact-reachability-metadata`.
-- Conditions. Every entry carries `"condition": {"typeReached":
-  "com.alibaba.nacos.bootstrap.NacosBootstrap"}`, the Server entry point, which is initialized
-  before any other Server code runs. An entry is available at run time only once the
-  initialization of its condition type has started. A different condition is acceptable only if
-  its type is certain to be initialized before the first dynamic access that the entry serves; a
-  type that is only named by a class literal never is. The tooling adds the condition to entries
-  that have none and rejects an entry without a well-formed one.
+- Conditions. Every entry carries a `typeReached` condition that depends on its owner. The entries
+  of Nacos and of the JDK carry `com.alibaba.nacos.bootstrap.NacosBootstrap`, the Server entry
+  point, which is initialized before any other Server code runs. The entries of a third-party
+  artifact carry the type that makes the Server use the artifact, for example
+  `org.springframework.boot.SpringApplication` for the Spring family and for the libraries whose
+  classes Spring Boot looks up, and `com.zaxxer.hikari.HikariConfig` for the JDBC drivers. An entry
+  is available at run time only once the initialization of its condition type has started, so a
+  condition type must be initialized before the first dynamic access that the entry serves, which
+  is often earlier than the first use of a class of the artifact itself; a type that is only named
+  by a class literal never is. A condition type is accepted after a comparison with the order in
+  which a run of the Server loads and initializes classes
+  (`test/scripts/native-condition-order.py`). The tooling sets the condition of every entry from
+  its owner and rejects an entry that another condition guards.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
   Native executable again. A refresh is a reviewed source change. The repository provides

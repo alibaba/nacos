@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.google.gson.Gson"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.google.gson.Gson"}
   ]
 }

@@ -1,5 +1,5 @@
 {
   "resources": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"}
+    {"condition": {"typeReached": "java.net.InetAddress"}, "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"}
   ]
 }

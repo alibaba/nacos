@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.jspecify.annotations.NullMarked"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.jspecify.annotations.NullMarked"}
   ]
 }

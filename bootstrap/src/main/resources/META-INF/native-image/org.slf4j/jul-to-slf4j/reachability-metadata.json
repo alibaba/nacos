@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.slf4j.bridge.SLF4JBridgeHandler"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.slf4j.bridge.SLF4JBridgeHandler"}
   ]
 }

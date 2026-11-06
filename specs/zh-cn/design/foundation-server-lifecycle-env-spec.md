@@ -238,11 +238,14 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
   类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向
   默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
-- 条件。每个条目都带有 `"condition": {"typeReached":
-  "com.alibaba.nacos.bootstrap.NacosBootstrap"}`，即 Server 入口类，它先于其他 Server 代码完成初始化。
-  条目在运行时只有在其条件类开始初始化之后才可用。只有当另一个条件类一定先于该条目所服务的第一次
-  动态访问完成初始化时，才允许使用它；仅以类字面量出现的类永远不会被初始化。工具会为没有条件的条目
-  补上该条件，并拒绝没有合规条件的条目。
+- 条件。每个条目都带有取决于其归属方的 `typeReached` 条件。Nacos 自身与 JDK 的条目使用
+  `com.alibaba.nacos.bootstrap.NacosBootstrap`，即 Server 入口类，它先于其他 Server 代码完成初始化。
+  第三方构件的条目使用“让 Server 用到该构件”的类型，例如 Spring 家族以及由 Spring Boot 查找其类的库
+  使用 `org.springframework.boot.SpringApplication`，JDBC 驱动使用 `com.zaxxer.hikari.HikariConfig`。
+  条目在运行时只有在其条件类开始初始化之后才可用，因此条件类必须先于该条目所服务的第一次动态访问
+  完成初始化，这常常早于该构件自身类的首次使用；仅以类字面量出现的类永远不会被初始化。条件类须经与
+  Server 一次运行的类加载与初始化顺序比对后才能采用（`test/scripts/native-condition-order.py`）。
+  工具按归属方为每个条目设定条件，并拒绝被其他条件保护的条目。
 - 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
   重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
   用于整理和检查这些文件，并把每个条目放进其归属方的文件；普通 CI 构建会检查它们。

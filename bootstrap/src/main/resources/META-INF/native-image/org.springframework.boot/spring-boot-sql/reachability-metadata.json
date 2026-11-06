@@ -1,8 +1,8 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.sql.autoconfigure.init.ApplicationScriptDatabaseInitializer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.sql.autoconfigure.init.ConditionalOnSqlInitialization"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setPlatform", "parameterTypes": ["java.lang.String"]}], "type": "org.springframework.boot.sql.autoconfigure.init.SqlInitializationProperties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.sql.autoconfigure.init.ApplicationScriptDatabaseInitializer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.sql.autoconfigure.init.ConditionalOnSqlInitialization"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "setPlatform", "parameterTypes": ["java.lang.String"]}], "type": "org.springframework.boot.sql.autoconfigure.init.SqlInitializationProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer"}
   ]
 }

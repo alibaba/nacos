@@ -1,17 +1,17 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.JacksonComponentModule"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.JacksonMixinModule"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.JacksonMixinModuleEntries"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$AbstractMapperBuilderCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration$StandardJsonMapperBuilderCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonMixinConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration$ProblemDetailJsonMapperBuilderCustomizer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.jackson.autoconfigure.JacksonBackgroundPreinitializer"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonProperties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.JacksonComponentModule"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.JacksonMixinModule"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.JacksonMixinModuleEntries"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$AbstractMapperBuilderCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration$StandardJsonMapperBuilderCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonMixinConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration$ProblemDetailJsonMapperBuilderCustomizer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.jackson.autoconfigure.JacksonBackgroundPreinitializer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JacksonProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer"}
   ]
 }

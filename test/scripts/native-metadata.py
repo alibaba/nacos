@@ -30,9 +30,10 @@ class or the resource, so ``refresh`` needs that classpath and nobody sorts entr
 ``native-build-it.py``. With ``--classpath`` it also verifies that every entry sits in the file of
 its owner.
 
-Every entry carries a ``typeReached`` condition (see SERVER_ENTRY_POINT). ``refresh`` adds the
-default condition to each input entry that has none and keeps a condition that is present;
-``check`` rejects an entry without a well-formed condition.
+Every entry carries a ``typeReached`` condition, and the condition depends on the owner of the entry
+(see CONDITION_GROUPS): the Server entry point for what Nacos builds and for the JDK, and for a
+third-party artifact the type that makes the Server use it. ``refresh`` sets the condition of every
+entry, whatever the inputs carry; ``check`` rejects an entry that another condition guards.
 
 ``collect-missing`` closes the loop from the other side: an executable built with
 ``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
@@ -52,7 +53,9 @@ committed metadata is an input as well, because some of its entries are in no tr
 
 The files are written below ``bootstrap/src/main/resources/META-INF/native-image``, or below the
 directory of ``--output-dir``. ``--output FILE`` writes one merged file instead; the Native CI job
-uses it to list the registrations that an exact-mode build reports as missing.
+uses it to list the registrations that an exact-mode build reports as missing. That file is a list
+for a reader: its entries carry the Server entry point as a provisional condition, and a refresh
+into the bundle sets the condition of each entry from its owner.
 """
 import argparse
 import contextlib
@@ -78,14 +81,128 @@ JDK_OWNER = "jdk/runtime"
 
 # GraalVM recommends that every entry be conditional. An entry with a typeReached condition is
 # included in the image if the type is reachable at build time, and it is available at run time
-# once the type is reached, that is, right before the initialization of its class starts; until
-# then every dynamic access that the entry serves behaves as if the entry did not exist. The entry
-# point of the Server is initialized before any other Server code runs, so guarding every entry
-# with it keeps all of them available to every thread and keeps the file out of an image that does
-# not contain the Server. Narrow a condition only to a type that is certain to be initialized
-# before the first access that the entry serves: a class that is only named by a class literal is
-# never initialized.
+# once the type is reached, that is, right before the initialization of its class starts (or that of
+# a subtype); until then every dynamic access that the entry serves behaves as if the entry did not
+# exist. So the condition type of an entry must be initialized before the first access that the
+# entry serves, and a class that is only named by a class literal is never initialized.
+#
+# What Nacos builds and the JDK classes that its libraries reach: the Server entry point, which is
+# initialized before any other Server code runs.
 SERVER_ENTRY_POINT = "com.alibaba.nacos.bootstrap.NacosBootstrap"
+
+# A third-party artifact: the type that makes the Server use it. It is often not a type of the
+# artifact itself, because something else usually looks up the classes of an artifact before any
+# of them is initialized. test/scripts/native-condition-order.py compares each type below with the
+# order in which a run of the Server (JVM, the classpath of the Native build) loaded and initialized
+# its classes: the type is initialized before the first class of the entries of its owners is
+# loaded, apart from the owners of REASONED_CONDITIONS. An owner without a row stops a refresh; add
+# it after such a comparison, and let the 'exact' variant of the Native CI job confirm it.
+SPRING_BOOT = "org.springframework.boot.SpringApplication"
+CONDITION_GROUPS = (
+    # (condition type, owners)
+    # Spring Boot looks up the classes of these artifacts while it builds the application context:
+    # the types of beans, of their configuration and of the annotations it reads, and optional
+    # libraries that it checks for. Nacos creates the SpringApplication before it uses any of them.
+    # Every artifact of the Spring family is covered by owner_condition().
+    (SPRING_BOOT, (
+        "com.fasterxml.jackson.core/jackson-core",
+        "com.fasterxml.jackson.core/jackson-databind",
+        "com.fasterxml.jackson.dataformat/jackson-dataformat-yaml",
+        "com.fasterxml.jackson.datatype/jackson-datatype-jsr310",
+        "com.google.code.gson/gson",
+        "com.zaxxer/HikariCP",
+        "io.agentscope/agentscope-extensions-studio",
+        "io.grpc/grpc-api",
+        "io.micrometer/micrometer-commons",
+        "io.micrometer/micrometer-core",
+        "io.micrometer/micrometer-observation",
+        "io.micrometer/micrometer-registry-prometheus",
+        "io.projectreactor/reactor-core",
+        "io.prometheus/prometheus-metrics-exposition-formats",
+        "io.prometheus/prometheus-metrics-model",
+        "jakarta.annotation/jakarta.annotation-api",
+        "org.apache.httpcomponents.client5/httpclient5",
+        "org.apache.tomcat.embed/tomcat-embed-core",
+        "org.apache.tomcat.embed/tomcat-embed-websocket",
+        "org.aspectj/aspectjweaver",
+        "org.jetbrains.kotlin/kotlin-stdlib",
+        "org.jspecify/jspecify",
+        "org.reactivestreams/reactive-streams",
+        "org.rocksdb/rocksdbjni",
+        "org.slf4j/jul-to-slf4j",
+        "tools.jackson.core/jackson-core",
+        "tools.jackson.core/jackson-databind")),
+    # SLF4J finds the logback provider through the service loader when it initializes; logback then
+    # creates the appenders, encoders and models of its configuration for the LoggerContext.
+    ("org.slf4j.LoggerFactory", (
+        "ch.qos.logback/logback-classic",
+        "org.slf4j/slf4j-api")),
+    ("ch.qos.logback.classic.LoggerContext", (
+        "ch.qos.logback/logback-core",)),
+    # HikariConfig loads the configured driver class by name, and the first driver that registers
+    # makes DriverManager load the others through the service loader.
+    ("com.zaxxer.hikari.HikariConfig", (
+        "com.mysql/mysql-connector-j",
+        "org.apache.derby/derby",
+        "org.apache.derby/derbyshared",
+        "org.apache.derby/derbytools",
+        "org.postgresql/postgresql",
+        "org.xerial/sqlite-jdbc")),
+    # JRaft creates its service factory and the gRPC implementation of its RPC factory through its
+    # own service loader.
+    ("com.alipay.sofa.jraft.util.JRaftServiceLoader", (
+        "com.alipay.sofa/jraft-core",
+        "com.alipay.sofa/rpc-grpc-impl")),
+    ("com.caucho.hessian.io.SerializerFactory", (
+        "com.caucho/hessian",)),
+    ("com.google.protobuf.ExtensionRegistryLite", (
+        "com.google.protobuf/protobuf-java",)),
+    ("com.lmax.disruptor.dsl.ProducerType", (
+        "com.lmax/disruptor",)),
+    # gRPC finds its name resolvers, load balancers and transports through registries.
+    ("io.grpc.NameResolverRegistry", (
+        "io.grpc/grpc-core",)),
+    ("io.grpc.LoadBalancerRegistry", (
+        "io.grpc/grpc-util",)),
+    ("io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder", (
+        "io.grpc/grpc-netty-shaded",)),
+    # The JDK reads the service file of dnsjava when it first resolves a name, early in the start.
+    ("java.net.InetAddress", (
+        "dnsjava/dnsjava",)),
+    # See REASONED_CONDITIONS.
+    ("com.google.common.util.concurrent.AbstractFuture", (
+        "com.google.guava/guava",)),
+    ("org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueue", (
+        "org.jctools/jctools-core",)),
+)
+SPRING_FAMILY = "org.springframework"
+
+# Owners whose condition type test/scripts/native-condition-order.py cannot confirm, and why the
+# type is early enough anyway. The script compares the load of a class with the initialization of
+# the type, and not what a static initializer does. The classes that these entries name are
+# package-private superclasses of the type, which look up their fields in static initializers; those
+# only run as part of the initialization of the type, and GraalVM reaches a type right before that
+# starts (the 'SuperType' example in its documentation of conditions).
+REASONED_CONDITIONS = {
+    "com.google.guava/guava":
+        "AbstractFutureState, the class of the entries, is a package-private superclass of "
+        "AbstractFuture, and no other class extends it",
+    "org.jctools/jctools-core":
+        "the Fields classes of the entries are package-private superclasses of "
+        "BaseMpscLinkedAtomicArrayQueue",
+}
+
+
+def owner_condition(owner):
+    """The type that guards the entries of an owner, or None if the owner has no row."""
+    if owner in (NACOS_OWNER, JDK_OWNER):
+        return SERVER_ENTRY_POINT
+    if owner.startswith(SPRING_FAMILY):
+        return SPRING_BOOT
+    for condition, owners in CONDITION_GROUPS:
+        if owner in owners:
+            return condition
+    return None
 
 # Types that belong to the JDK and therefore never appear on the application classpath.
 JDK_PREFIXES = ("java.", "javax.", "jdk.", "sun.", "com.sun.", "org.w3c.", "org.xml.", "org.ietf.")
@@ -303,24 +420,50 @@ def condition_key(entry):
     return json.dumps(entry.get("condition"), sort_keys=True)
 
 
-def guarded(entry):
-    """The entry itself if it has a condition, else a copy that the Server entry point guards."""
-    if "condition" in entry:
-        return entry
-    return dict(entry, condition={"typeReached": SERVER_ENTRY_POINT})
+def guarded(entry, condition_type=SERVER_ENTRY_POINT):
+    """A copy of the entry that the type guards, whatever condition the entry carries."""
+    return dict(entry, condition={"typeReached": condition_type})
+
+
+def apply_owner_conditions(document, classpath):
+    """The document with the condition of the owner on every entry; raises for an owner without one.
+
+    The condition is a function of the owner and nothing else, so that the inputs of a refresh (a
+    trace, the report of an exact-mode build, the committed files) can be mixed freely.
+    """
+    lacking, result = set(), {}
+    for section, owner_of in (("reflection", owner_of_reflection),
+                              ("resources", owner_of_resource)):
+        entries = []
+        for entry in document.get(section, []):
+            owner = owner_of(entry, classpath)
+            condition = owner_condition(owner) if owner else SERVER_ENTRY_POINT
+            if condition is None:
+                lacking.add(owner)
+                condition = SERVER_ENTRY_POINT
+            entries.append(guarded(entry, condition))
+        result[section] = entries
+    if lacking:
+        pronoun = "it" if len(lacking) == 1 else "them"
+        raise SystemExit("No condition type for %s; add %s to CONDITION_GROUPS in %s after "
+                         "comparing the type with the class log of a Server run (see "
+                         "README-AOT.md, 'Conditions')" % (
+                             ", ".join(sorted(lacking)), pronoun, Path(__file__).name))
+    return result
 
 
 def entry_point_problem(entry_point=SERVER_ENTRY_POINT):
     """Return why the Server entry point cannot guard the entries, or None.
 
-    Renaming the class would leave every entry guarded by a type that does not exist, and the
-    metadata would silently stop taking effect. The tool runs from the root of the repository.
+    Renaming the class would leave the entries of Nacos and of the JDK guarded by a type that does
+    not exist, and the metadata would silently stop taking effect. The tool runs from the root of
+    the repository.
     """
     source = Path("bootstrap/src/main/java") / (entry_point.replace(".", "/") + ".java")
     if source.is_file():
         return None
     return ("%s guards the entries but has no source file %s; after a rename, update "
-            "SERVER_ENTRY_POINT and the conditions of the bundled file" % (entry_point, source))
+            "SERVER_ENTRY_POINT and the conditions of the bundled files" % (entry_point, source))
 
 
 def condition_problem(entry, classpath):
@@ -622,6 +765,10 @@ def command_refresh(args):
     classpath = Classpath.from_file(args.classpath)
     traces = [document for location in args.trace for document in load_trace(location)]
     document, dropped = curate(traces, classpath)
+    if not args.output:
+        # A list for a reader (--output) must not fail because an owner has no row yet; the
+        # bundle must not be written without one.
+        document = apply_owner_conditions(document, classpath)
     issues = problems(document, classpath)
     for section, name, reason in sorted(dropped):
         print("dropped %-10s %s (%s)" % (section, name, reason), file=sys.stderr)
@@ -673,6 +820,19 @@ def command_check(args):
             continue
         if not re.fullmatch(r"[^/]+/[^/]+", owner):
             issues.append("%sbelongs at <groupId>/<artifactId>/%s" % (prefix, METADATA_NAME))
+        expected = owner_condition(owner)
+        if expected is None:
+            issues.append("%shas no condition type; add the owner to CONDITION_GROUPS" % prefix)
+        else:
+            unguarded = [type_key(entry) for entry in reflection
+                         if entry.get("condition") != {"typeReached": expected}]
+            unguarded += [entry.get("glob", entry.get("bundle")) for entry in resources
+                          if entry.get("condition") != {"typeReached": expected}]
+            if unguarded:
+                issues.append("%s%s, for example %s" % (
+                    prefix, entries_that(len(unguarded), "is not guarded by " + expected,
+                                         "are not guarded by " + expected),
+                    ", ".join(sorted(unguarded)[:3])))
         for key, entries, seen in (
                 (lambda e: (type_key(e), condition_key(e)), reflection, reflection_owner),
                 (lambda e: json.dumps(e, sort_keys=True), resources, resource_owner)):
@@ -851,17 +1011,16 @@ def command_selftest(args):
         # Every entry leaves 'curate' guarded by the Server entry point.
         guard = {"typeReached": SERVER_ENTRY_POINT}
         assert all(e["condition"] == guard for e in document["reflection"] + document["resources"])
-        # A condition that is present is kept, and one type under two conditions stays two entries.
-        explicit = {"reflection": [{"type": "sample.Model", "fields": [{"name": "c"}],
-                                    "condition": {"typeReached": "sample.Local"}}],
-                    "resources": [{"glob": "sample/data.json",
-                                   "condition": {"typeReached": "sample.Local"}}]}
-        mixed, _ = curate([first, second, explicit], classpath)
-        assert [(e["type"], e["condition"]["typeReached"]) for e in mixed["reflection"]
-                if e["type"] == "sample.Model"] == [("sample.Model", SERVER_ENTRY_POINT),
-                                                    ("sample.Model", "sample.Local")]
-        assert [e["condition"]["typeReached"] for e in mixed["resources"]
-                if e.get("glob") == "sample/data.json"] == [SERVER_ENTRY_POINT, "sample.Local"]
+        # A condition that an input carries does not count: the owner decides, so that the inputs
+        # of a refresh can be mixed, and one type never stays under two conditions.
+        foreign = {"reflection": [{"type": "sample.Model", "fields": [{"name": "c"}],
+                                   "condition": {"typeReached": "sample.Local"}}],
+                   "resources": [{"glob": "sample/data.json",
+                                  "condition": {"typeReached": "sample.Local"}}]}
+        mixed, _ = curate([first, second, foreign], classpath)
+        assert [e["condition"] for e in mixed["reflection"]] == [guard] * len(mixed["reflection"])
+        assert [e["condition"] for e in mixed["resources"]] == [guard] * len(mixed["resources"])
+        assert len([e for e in mixed["reflection"] if e["type"] == "sample.Model"]) == 1
         assert problems(mixed, classpath) == [], problems(mixed, classpath)
         # The class that guards the entries exists in the repository; a vanished one is reported.
         assert entry_point_problem() is None, entry_point_problem()
@@ -967,9 +1126,40 @@ def command_selftest(args):
                     {"name": "setCount", "parameterTypes": ["int", "java.lang.String"]}]}, by_type
     assert by_type["p.Bean$Part"]["methods"] == [{"name": "getName", "parameterTypes": []}]
     assert unparsed == ["Reflection: Cannot reflectively unknown 'p.Bean'"], unparsed
-    selftest_owners()
+    # The owners of the sample jars get a condition type that exists on the sample classpath.
+    with condition_groups((("a.A", ("org.example/lib-a",)), ("b.B", ("org.example/lib-b",)),
+                           ("c.C", ("org.example/lib-c",)))):
+        selftest_owners()
+    selftest_condition_table()
     print("native-metadata selftest OK")
     return 0
+
+
+@contextlib.contextmanager
+def condition_groups(extra):
+    """Add rows to CONDITION_GROUPS for the duration of a test."""
+    global CONDITION_GROUPS
+    saved = CONDITION_GROUPS
+    CONDITION_GROUPS = tuple(extra) + saved
+    try:
+        yield
+    finally:
+        CONDITION_GROUPS = saved
+
+
+def selftest_condition_table():
+    """The table of condition types: well formed, one row per owner, none for Nacos or the JDK."""
+    owners = [owner for _, group in CONDITION_GROUPS for owner in group]
+    assert len(owners) == len(set(owners)), "an owner has two rows"
+    assert all(re.fullmatch(r"[^/]+/[^/]+", owner) for owner in owners), owners
+    assert not {NACOS_OWNER, JDK_OWNER} & set(owners)
+    assert not [owner for owner in owners if owner.startswith(SPRING_FAMILY)], \
+        "the Spring family has a rule of its own"
+    assert all(JAVA_NAME.match(condition) for condition, _ in CONDITION_GROUPS)
+    assert owner_condition(NACOS_OWNER) == owner_condition(JDK_OWNER) == SERVER_ENTRY_POINT
+    assert owner_condition("org.springframework.boot/spring-boot-new") == SPRING_BOOT
+    assert owner_condition("org.postgresql/postgresql") == "com.zaxxer.hikari.HikariConfig"
+    assert owner_condition("org.example/unknown") is None
 
 
 def selftest_owners():
@@ -1008,7 +1198,8 @@ def selftest_owners():
                 "com/alibaba/nacos/api/N.class", "META-INF/services/y.Spi"]),
             # Another jar with the same class: the first on the classpath owns it.
             jar(root / "libs/lib-d-4.0.jar", [
-                "META-INF/maven/org.example/lib-d/pom.properties", "a/A.class", "META-INF/services/y.Spi"]),
+                "META-INF/maven/org.example/lib-d/pom.properties", "a/A.class", "d/D.class",
+                "META-INF/services/y.Spi"]),
             jar(root / "libs/stray.jar", ["z/Z.class"]),
         ]
         classpath = Classpath([str(entry) for entry in entries])
@@ -1045,7 +1236,23 @@ def selftest_owners():
                                {"glob": "META-INF/services/y.Spi"}]}
         document, dropped = curate([trace], classpath)
         assert not dropped, dropped
+        # The condition of an entry is the one of its owner; an owner without a row stops a refresh.
+        document = apply_owner_conditions(document, classpath)
         parts = partition(document, classpath)
+
+        def conditions(owner):
+            return {e["condition"]["typeReached"] for e in parts[owner]["reflection"]}
+
+        assert conditions("org.example/lib-a") == {"a.A"}
+        assert conditions("org.example/lib-b") == {"b.B"}
+        assert conditions("org.example/lib-c") == {"c.C"}
+        assert conditions(NACOS_OWNER) == conditions(JDK_OWNER) == {SERVER_ENTRY_POINT}
+        try:
+            unowned, _ = curate([{"reflection": [{"type": "d.D"}]}], classpath)
+            apply_owner_conditions(unowned, classpath)
+            raise AssertionError("an owner without a condition type must stop the refresh")
+        except SystemExit as refused:
+            assert "No condition type for org.example/lib-d" in str(refused), refused
         assert sorted(parts) == sorted([JDK_OWNER, NACOS_OWNER, "org.example/lib-a",
                                         "org.example/lib-b", "org.example/lib-c"]), sorted(parts)
         assert [e["type"] for e in parts["org.example/lib-b"]["reflection"]] == ["b.B"]
@@ -1075,6 +1282,14 @@ def selftest_owners():
         assert check(bundle) == (0, "")
         assert check(bundle, str(classpath_file)) == (0, "")
         assert len(load_trace(bundle)) == len(parts)
+        # A condition other than the one of the owner is reported, also the one of the Server.
+        lib_c = bundle / "org.example/lib-c" / METADATA_NAME
+        original = lib_c.read_text()
+        lib_c.write_text(original.replace('"c.C"', '"%s"' % SERVER_ENTRY_POINT))
+        code, errors = check(bundle)
+        assert code == 1 and "org.example/lib-c: 1 entry is not guarded by c.C" in errors, errors
+        lib_c.write_text(original)
+        assert check(bundle) == (0, "")
         with contextlib.redirect_stdout(io.StringIO()):
             assert command_refresh(argparse.Namespace(
                 trace=[str(bundle)], classpath=str(classpath_file), output=None,
@@ -1105,7 +1320,8 @@ def selftest_owners():
         assert check(root / "nothing-here")[0] == 1
         # A refresh without an owner's entries removes its file and the folders left empty.
         only_own = {"reflection": [{"type": "own.Own"}], "resources": []}
-        write_bundle(bundle, partition(curate([only_own], classpath)[0], classpath))
+        write_bundle(bundle, partition(
+            apply_owner_conditions(curate([only_own], classpath)[0], classpath), classpath))
         assert sorted(bundle_files(bundle)) == [NACOS_OWNER]
         assert not (bundle / "org.example").exists() and not (bundle / "jdk").exists()
 

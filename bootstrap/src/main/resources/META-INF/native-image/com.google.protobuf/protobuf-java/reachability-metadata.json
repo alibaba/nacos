@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "getEmptyRegistry", "parameterTypes": []}], "type": "com.google.protobuf.ExtensionRegistry"}
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "methods": [{"name": "getEmptyRegistry", "parameterTypes": []}], "type": "com.google.protobuf.ExtensionRegistry"}
   ]
 }

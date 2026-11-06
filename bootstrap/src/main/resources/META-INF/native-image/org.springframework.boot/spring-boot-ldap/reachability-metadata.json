@@ -1,10 +1,10 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapAutoConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapConnectionDetails"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapProperties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.autoconfigure.PropertiesLdapConnectionDetails"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.autoconfigure.health.LdapHealthContributorAutoConfiguration"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.ldap.health.LdapHealthIndicator"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapAutoConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapConnectionDetails"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.LdapProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.PropertiesLdapConnectionDetails"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.autoconfigure.health.LdapHealthContributorAutoConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ldap.health.LdapHealthIndicator"}
   ]
 }

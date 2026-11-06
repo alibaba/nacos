@@ -1,18 +1,18 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aopalliance.aop.Advice"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aopalliance.intercept.Interceptor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.aopalliance.intercept.MethodInterceptor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.Advisor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.PointcutAdvisor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.SpringProxy"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.framework.Advised"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.framework.AopInfrastructureBean"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setProxyTargetClass", "parameterTypes": ["boolean"]}], "type": "org.springframework.aop.framework.ProxyConfig"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setOrder", "parameterTypes": ["int"]}], "type": "org.springframework.aop.framework.ProxyProcessorSupport"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.scope.ScopedObject"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.aop.support.AbstractPointcutAdvisor"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aopalliance.aop.Advice"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aopalliance.intercept.Interceptor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.aopalliance.intercept.MethodInterceptor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.Advisor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.PointcutAdvisor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.SpringProxy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.framework.Advised"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.framework.AopInfrastructureBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "setProxyTargetClass", "parameterTypes": ["boolean"]}], "type": "org.springframework.aop.framework.ProxyConfig"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "setOrder", "parameterTypes": ["int"]}], "type": "org.springframework.aop.framework.ProxyProcessorSupport"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.scope.ScopedObject"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.aop.support.AbstractPointcutAdvisor"}
   ]
 }
