@@ -71,9 +71,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up GraalVM 25
+      - name: Set up GraalVM Community 25.0.4
         uses: graalvm/setup-graalvm@v1
         with:
+          # GraalVM Community 25 Innovation 2 (graal 25.2.4, JDK 25.0.4). A java-version of '25'
+          # alone resolves to the last jdk-25.* release, 25.0.2.
+          version: '25.2'
           java-version: '25'
           distribution: 'graalvm-community'
           github-token: ${{ secrets.GITHUB_TOKEN }}
