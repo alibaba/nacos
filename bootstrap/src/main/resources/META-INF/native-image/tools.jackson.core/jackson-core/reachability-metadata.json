@@ -1,7 +1,7 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "tools.jackson.core.JacksonException"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "tools.jackson.core.TreeCodec"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "tools.jackson.core.Versioned"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.core.JacksonException"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.core.TreeCodec"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.core.Versioned"}
   ]
 }

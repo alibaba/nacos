@@ -19,16 +19,20 @@
 # Exercise the Server (see bootstrap/README-AOT.md), stop it gracefully with SIGTERM so that the
 # agent writes its output, then curate the result with test/scripts/native-metadata.py.
 #
-# Usage: native-trace-server.sh <output|merge> <trace-dir> <nacos-home> [native-dir]
+# Usage: native-trace-server.sh <output|merge|classlog> <trace-dir> <nacos-home> [native-dir]
 #   output      start a fresh trace; trace-dir must not contain an earlier trace
 #   merge       add to the trace already stored in trace-dir (for example after a restart)
+#   classlog    no agent: write the order in which the classes are loaded and initialized to the
+#               file given as trace-dir, which test/scripts/native-condition-order.py compares with
+#               the condition types of the metadata (see 'Conditions' in bootstrap/README-AOT.md)
 #   trace-dir   absolute path outside the source tree
 #   nacos-home  runtime home with conf/application.properties for a disposable database
 #   native-dir  bootstrap/target/native of the finished build (default: that path in this repo)
 #
-# JAVA_HOME must point to a GraalVM installation. NACOS_TRACE_OPTS replaces the default JVM
-# options (-Xmx1536m -Duser.language=en -Duser.country=US). Keep a fixed locale: the agent also
-# records lookups of locale specific resources, which would tie the metadata to one machine.
+# JAVA_HOME must point to a GraalVM installation (any JDK 17+ for classlog). NACOS_TRACE_OPTS
+# replaces the default JVM options (-Xmx1536m -Duser.language=en -Duser.country=US). Keep a fixed
+# locale: the agent also records lookups of locale specific resources, which would tie the metadata
+# to one machine.
 
 set -euo pipefail
 
@@ -40,8 +44,8 @@ NATIVE_DIR="${4:-${ROOT}/bootstrap/target/native}"
 MANIFEST="${NATIVE_DIR}/aot-manifest.properties"
 
 case "$MODE" in
-    output|merge) ;;
-    *) echo "Usage: $0 <output|merge> <trace-dir> <nacos-home> [native-dir]" >&2; exit 2 ;;
+    output|merge|classlog) ;;
+    *) echo "Usage: $0 <output|merge|classlog> <trace-dir> <nacos-home> [native-dir]" >&2; exit 2 ;;
 esac
 case "$TRACE_DIR" in
     /*) ;;
@@ -52,7 +56,12 @@ if [ -z "$NACOS_HOME" ] || [ ! -f "${NACOS_HOME}/conf/application.properties" ];
     echo "nacos-home must contain conf/application.properties" >&2
     exit 2
 fi
-if [ -z "${JAVA_HOME:-}" ] || [ ! -x "${JAVA_HOME}/bin/native-image" ]; then
+if [ "$MODE" = "classlog" ]; then
+    if [ -z "${JAVA_HOME:-}" ] || [ ! -x "${JAVA_HOME}/bin/java" ]; then
+        echo "JAVA_HOME must point to a JDK" >&2
+        exit 2
+    fi
+elif [ -z "${JAVA_HOME:-}" ] || [ ! -x "${JAVA_HOME}/bin/native-image" ]; then
     echo "JAVA_HOME must point to a GraalVM installation that contains native-image" >&2
     exit 2
 fi
@@ -91,10 +100,18 @@ case "$FUNCTION_MODE" in
     *) OPTIONS+=("-Dnacos.functionMode=${FUNCTION_MODE}") ;;
 esac
 
-mkdir -p "$TRACE_DIR" "${NACOS_HOME}/logs"
+mkdir -p "${NACOS_HOME}/logs"
+if [ "$MODE" = "classlog" ]; then
+    # One log for the whole run: the JVM would otherwise rotate it at 20 MB.
+    mkdir -p "$(dirname "$TRACE_DIR")"
+    OBSERVER="-Xlog:class+load=info,class+init=info:file=${TRACE_DIR}:uptime:filecount=0"
+else
+    mkdir -p "$TRACE_DIR"
+    OBSERVER="-agentlib:native-image-agent=config-${MODE}-dir=${TRACE_DIR}"
+    OBSERVER="${OBSERVER},config-write-period-secs=120"
+fi
 read -r -a JVM_OPTIONS <<< "${NACOS_TRACE_OPTS:--Xmx1536m -Duser.language=en -Duser.country=US}"
 cd "$NACOS_HOME"
-exec "${JAVA_HOME}/bin/java" \
-    "-agentlib:native-image-agent=config-${MODE}-dir=${TRACE_DIR},config-write-period-secs=120" \
+exec "${JAVA_HOME}/bin/java" "$OBSERVER" \
     "${JVM_OPTIONS[@]}" "${OPTIONS[@]}" \
     -cp "$CLASSPATH_VALUE" com.alibaba.nacos.bootstrap.NacosBootstrap

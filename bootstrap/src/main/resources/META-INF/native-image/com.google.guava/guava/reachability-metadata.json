@@ -1,6 +1,6 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.google.common.util.concurrent.AbstractFutureState"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.google.common.util.concurrent.AbstractFutureState$Waiter"}
+    {"condition": {"typeReached": "com.google.common.util.concurrent.AbstractFuture"}, "type": "com.google.common.util.concurrent.AbstractFutureState"},
+    {"condition": {"typeReached": "com.google.common.util.concurrent.AbstractFuture"}, "type": "com.google.common.util.concurrent.AbstractFutureState$Waiter"}
   ]
 }

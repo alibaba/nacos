@@ -1,7 +1,7 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "jakarta.annotation.PostConstruct"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "jakarta.annotation.PreDestroy"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "jakarta.annotation.Resource"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.PostConstruct"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.PreDestroy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.Resource"}
   ]
 }

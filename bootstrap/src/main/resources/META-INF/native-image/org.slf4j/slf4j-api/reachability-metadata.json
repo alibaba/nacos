@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.slf4j.Logger"}
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "type": "org.slf4j.Logger"}
   ]
 }

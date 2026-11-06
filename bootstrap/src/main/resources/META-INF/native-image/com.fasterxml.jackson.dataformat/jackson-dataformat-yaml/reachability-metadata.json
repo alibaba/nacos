@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.fasterxml.jackson.dataformat.yaml.YAMLFactory"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.dataformat.yaml.YAMLFactory"}
   ]
 }

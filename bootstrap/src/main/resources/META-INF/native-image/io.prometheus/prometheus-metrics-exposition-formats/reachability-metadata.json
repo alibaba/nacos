@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "io.prometheus.metrics.expositionformats.internal.PrometheusProtobufWriterImpl"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "io.prometheus.metrics.expositionformats.internal.PrometheusProtobufWriterImpl"}
   ]
 }

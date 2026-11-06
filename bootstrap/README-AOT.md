@@ -225,30 +225,68 @@ check.
 
 ### Conditions
 
-Every entry is guarded by
-`"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}`, the main class of
-the Native executable. GraalVM recommends conditional entries, so that metadata only enters an
-image that contains the code that needs it. The builder includes a conditional entry if its type
-is reachable at build time, and the executable makes the entry available once that type is
-reached, which is right before its class initialization starts. Until then every dynamic access
-that the entry serves behaves as if the entry did not exist.
+Every entry is guarded by a `typeReached` condition, as GraalVM recommends, so that metadata only
+enters an image that contains the code that needs it. The builder includes a conditional entry if
+its type is reachable at build time, and the executable makes the entry available once that type
+is reached: right before the initialization of its class starts, or of a subtype. Until then every
+dynamic access that the entry serves behaves as if the entry did not exist, so a condition type has
+to be initialized before the first access that the entry serves. A type that is only named by a
+class literal is never initialized.
 
-The main class is initialized before any other Server code runs, so every entry is available to
-every thread from the start. The guard keeps the metadata out of an image that does not contain the
-Server. It does not make the Server's own executable smaller, because the Server needs every
-entry; the files record what the Server needs, not which part of it needs what, and so the guard
-is the same for all entries, also in the files of the third-party artifacts.
+The condition depends on the owner of the entry:
 
-Narrow a condition only to a type that is certain to be initialized before the first access that
-the entry serves. A type that is only named by a class literal is never initialized, and a type
-that is initialized later leaves the accesses before it without metadata, which only a test that
-exercises that path reveals. `refresh` adds the guard to every input entry that has no condition,
-so a trace, the report of an exact-mode build and the committed files can be mixed freely; it
-keeps a condition that is present, and one type under two conditions stays two entries. `check`
-rejects an entry without a condition or with a malformed one, and it fails when the source of the
-main class is gone, because renaming `NacosBootstrap` would otherwise leave every entry guarded by
-a type that does not exist. After such a rename, update `SERVER_ENTRY_POINT` in
-`native-metadata.py` and the conditions in the bundled files.
+- Nacos and the JDK (`com.alibaba.nacos/nacos-bootstrap`, `jdk/runtime`):
+  `com.alibaba.nacos.bootstrap.NacosBootstrap`, the main class of the Native executable, which is
+  initialized before any other Server code runs. The JDK classes are in the metadata because the
+  libraries of the Server reach them, not because one part of the Server does.
+- A third-party artifact: the type that makes the Server use it. That is often not a type of the
+  artifact itself, because something else looks up the classes of an artifact before any of them is
+  initialized. On a start of the Server, `HikariConfig` loads the PostgreSQL driver by name before
+  `org.postgresql.Driver` is initialized, and Spring Boot looks up the classes of Tomcat, Jackson
+  and Micrometer while it builds the application context. `CONDITION_GROUPS` in
+  `native-metadata.py` holds the table, with the reason for each row. In short:
+  - `org.springframework.boot.SpringApplication`: every artifact of the Spring family, and the
+    libraries whose classes Spring Boot looks up (Tomcat, Jackson, Micrometer, Reactor, HikariCP,
+    gRPC API, AspectJ, Kotlin and others);
+  - `com.zaxxer.hikari.HikariConfig`: the JDBC drivers;
+  - `org.slf4j.LoggerFactory` for SLF4J and logback-classic, `ch.qos.logback.classic.LoggerContext`
+    for logback-core;
+  - the type that loads or initializes the library, for JRaft, Hessian, protobuf, the Disruptor,
+    gRPC (`NameResolverRegistry`, `LoadBalancerRegistry`, `NettyServerBuilder`), Guava, JCTools and
+    dnsjava.
+
+The guard keeps the metadata out of an image that does not contain what needs it. It does not make
+the Server's own executable smaller, because the Server needs all of it.
+
+A row of the table is checked against a run of the Server. `native-trace-server.sh classlog`
+starts the Server on a JVM with the classpath of the Native build and writes the order in which
+classes are loaded and initialized to a log; `test/scripts/native-condition-order.py` checks, for
+each owner, that the condition type is initialized before the first class of its entries is used.
+Run the smoke test and the restart check, as the Native CI job does, and give the script the log of
+the start and the log of the restart. For the metadata in this repository 73 of the 79 third-party
+owners were confirmed that way. The other six:
+
+- For two, Guava and JCTools, a comparison of load times shows nothing: their entries are
+  package-private superclasses of the condition type, which look up their fields in static
+  initializers that only run as part of the initialization of that type. GraalVM reaches a type
+  right before that starts, as the `SuperType` example in its documentation of conditions shows, so
+  those two are accepted for that reason.
+- Three, dnsjava, HttpClient and RocksDB, have only resource entries, and a class log does not show
+  when a resource is read. The agentscope extension was not used by the run. The types of these
+  four are early ones.
+
+The comparison covers the classes of the reflection entries on the paths of the run. The `exact`
+variant of the Native CI job reports every access without available metadata, a resource and an
+entry whose condition is not reached yet included, so it covers what the suites and the restart
+check exercise; a path that none of them exercises is as uncovered as before.
+
+`refresh` sets the condition of every entry from its owner, whatever the inputs carry, so that a
+trace, the report of an exact-mode build and the committed files can be mixed freely. It stops at
+an owner without a row: add the owner to `CONDITION_GROUPS` after the comparison above. `check`
+rejects an entry that another condition guards and an owner without a row, and it fails when the
+source of the main class is gone, because renaming `NacosBootstrap` would otherwise leave the
+entries of Nacos and of the JDK guarded by a type that does not exist. After such a rename, update
+`SERVER_ENTRY_POINT` in `native-metadata.py` and the conditions in the bundled files.
 
 ### Refresh the bundled metadata
 
@@ -288,18 +326,21 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
      --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
    ```
 
-   The command merges all inputs, drops what the rules above exclude, guards every entry that has
-   no condition (see [Conditions](#conditions)), sorts the entries into the files of their owners
-   (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an owner
-   that has no entries left. Pass `--output-dir` to write below another directory, or `--output` for
-   one merged file. The committed files are an input as well, because some
+   The command merges all inputs, drops what the rules above exclude, sets the condition of every
+   entry from its owner (see [Conditions](#conditions)), sorts the entries into the files of their
+   owners (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an
+   owner that has no entries left, and it stops at a new owner that has no condition type yet. Pass
+   `--output-dir` to write below another directory, or `--output` for one merged file. The
+   committed files are an input as well, because some
    of their entries are in no trace: the reports of an exact-mode build (see below), and the
    accessors that protobuf looks up on a generated message and on its `Builder`, which the agent
    does not record because it records only the methods that are invoked. The ones of JRaft's
    `SnapshotMeta` matter: JRaft turns the message into text when it loads a snapshot. A refresh
    from the trace alone drops these entries, and a restarted Native Server stops coming up; the
    restart check of the [Native CI job](#the-native-ci-job) fails when that happens.
-7. Validate the result against the Native executable, as described next.
+7. If the dependencies changed, check the condition types against a run of the Server, as
+   described under [Conditions](#conditions), and validate the result against the Native
+   executable, as described next.
 
 ### Find gaps with an exact-mode build
 

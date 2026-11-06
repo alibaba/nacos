@@ -1,8 +1,8 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.sqlite.JDBC"}
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.sqlite.JDBC"}
   ],
   "resources": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "META-INF/services/java.sql.Driver"}
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "glob": "META-INF/services/java.sql.Driver"}
   ]
 }

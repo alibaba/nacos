@@ -1,5 +1,5 @@
 {
   "resources": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "librocksdbjni-linux64.so"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "librocksdbjni-linux64.so"}
   ]
 }

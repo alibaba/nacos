@@ -1,11 +1,11 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.apache.tomcat.websocket.server.WsFilter"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.apache.tomcat.websocket.server.WsFilter"}
   ],
   "resources": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "org/apache/tomcat/websocket/LocalStrings.properties"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "org/apache/tomcat/websocket/server/LocalStrings.properties"},
-    {"bundle": "org.apache.tomcat.websocket.LocalStrings", "condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}},
-    {"bundle": "org.apache.tomcat.websocket.server.LocalStrings", "condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/LocalStrings.properties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/server/LocalStrings.properties"},
+    {"bundle": "org.apache.tomcat.websocket.LocalStrings", "condition": {"typeReached": "org.springframework.boot.SpringApplication"}},
+    {"bundle": "org.apache.tomcat.websocket.server.LocalStrings", "condition": {"typeReached": "org.springframework.boot.SpringApplication"}}
   ]
 }

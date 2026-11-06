@@ -1,5 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.apache.derby.shared.common.stream.InfoStreams"}
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.apache.derby.shared.common.stream.InfoStreams"}
   ]
 }
