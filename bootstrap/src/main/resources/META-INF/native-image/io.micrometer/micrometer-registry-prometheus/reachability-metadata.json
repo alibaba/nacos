@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.prometheusmetrics.PrometheusConfig"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.micrometer.prometheusmetrics.PrometheusMeterRegistry"}
+  ]
+}

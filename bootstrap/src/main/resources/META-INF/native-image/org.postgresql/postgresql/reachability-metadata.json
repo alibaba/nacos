@@ -1,0 +1,10 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.postgresql.Driver"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.postgresql.core.QueryExecutorCloseAction"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.postgresql.jdbc.PgStatement"}
+  ],
+  "resources": [
+    {"bundle": "org.postgresql.translation.messages", "condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}}
+  ]
+}

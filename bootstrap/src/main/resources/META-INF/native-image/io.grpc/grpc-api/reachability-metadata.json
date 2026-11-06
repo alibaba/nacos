@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.grpc.BindableService"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "io.grpc.ForwardingServerCall$SimpleForwardingServerCall"}
+  ]
+}

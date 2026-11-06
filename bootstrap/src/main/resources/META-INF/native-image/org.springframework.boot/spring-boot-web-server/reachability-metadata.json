@@ -1,0 +1,20 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.AbstractConfigurableWebServerFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.ConfigurableWebServerFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.WebServerFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.WebServerFactoryCustomizer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "getServlet", "parameterTypes": []}, {"name": "setPort", "parameterTypes": ["java.lang.Integer"]}], "type": "org.springframework.boot.web.server.autoconfigure.ServerProperties"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.autoconfigure.ServerProperties$Encoding"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "getEncoding", "parameterTypes": []}, {"name": "setContextPath", "parameterTypes": ["java.lang.String"]}], "type": "org.springframework.boot.web.server.autoconfigure.ServerProperties$Servlet"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerConfiguration"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerFactoryCustomizer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.web.server.context.ServerPortInfoApplicationContextInitializer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.context.WebServerApplicationContext"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.web.server.reactive.context.ReactiveWebServerApplicationContextFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.servlet.ServletWebServerFactory"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "org.springframework.boot.web.server.servlet.WebListenerRegistry"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContextFactory"}
+  ]
+}

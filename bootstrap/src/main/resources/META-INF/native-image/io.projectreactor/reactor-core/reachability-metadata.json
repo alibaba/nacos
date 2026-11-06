@@ -1,0 +1,22 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.Flux"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.FluxConcatMapNoPrefetch$FluxConcatMapNoPrefetchSubscriber"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.FluxPublish$PubSubInner"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.FluxPublish$PublishSubscriber"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.FluxRetryWhen$RetryWhenMainSubscriber"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.Mono"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.MonoCallable$MonoCallableSubscription"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.MonoDelay$MonoDelayRunnable"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.MonoFlatMap$FlatMapMain"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.MonoIgnoreThen$ThenIgnoreMain"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.Operators$DeferredSubscription"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.Operators$MultiSubscriptionSubscriber"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.SinkManyEmitterProcessor"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.publisher.SinksSpecs$AbstractSerializedSink"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.scheduler.ParallelScheduler"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.core.scheduler.SchedulerTask"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.util.concurrent.SpscArrayQueueConsumer"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "reactor.util.concurrent.SpscArrayQueueProducer"}
+  ]
+}

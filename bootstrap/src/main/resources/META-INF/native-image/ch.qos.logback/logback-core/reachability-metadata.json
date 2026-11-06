@@ -1,0 +1,33 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.ConsoleAppender"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setAppend", "parameterTypes": ["boolean"]}], "type": "ch.qos.logback.core.FileAppender"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setEncoder", "parameterTypes": ["ch.qos.logback.core.encoder.Encoder"]}], "type": "ch.qos.logback.core.OutputStreamAppender"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "ch.qos.logback.core.encoder.Encoder"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setCharset", "parameterTypes": ["java.nio.charset.Charset"]}, {"name": "setParent", "parameterTypes": ["ch.qos.logback.core.spi.ContextAware"]}], "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.AppenderModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.AppenderRefModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.ComponentModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.ConversionRuleModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.ImplicitModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.IncludeModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.Model"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.NamedComponentModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.NamedModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.PropertyModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.ResourceModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "serializable": true, "type": "ch.qos.logback.core.model.StatusListenerModel"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setPattern", "parameterTypes": ["java.lang.String"]}], "type": "ch.qos.logback.core.pattern.PatternLayoutEncoderBase"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}, {"name": "setFile", "parameterTypes": ["java.lang.String"]}, {"name": "setRollingPolicy", "parameterTypes": ["ch.qos.logback.core.rolling.RollingPolicy"]}], "type": "ch.qos.logback.core.rolling.RollingFileAppender"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "ch.qos.logback.core.rolling.RollingPolicy"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setFileNamePattern", "parameterTypes": ["java.lang.String"]}, {"name": "setParent", "parameterTypes": ["ch.qos.logback.core.FileAppender"]}], "type": "ch.qos.logback.core.rolling.RollingPolicyBase"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}, {"name": "setMaxFileSize", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "setCleanHistoryOnStart", "parameterTypes": ["boolean"]}, {"name": "setMaxHistory", "parameterTypes": ["int"]}, {"name": "setTotalSizeCap", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.TimeBasedRollingPolicy"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "ch.qos.logback.core.spi.ContextAware"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.status.NopStatusListener"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "valueOf", "parameterTypes": ["java.lang.String"]}], "type": "ch.qos.logback.core.util.FileSize"}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "glob": "ch/qos/logback/core/logback-core-version.properties"}
+  ]
+}

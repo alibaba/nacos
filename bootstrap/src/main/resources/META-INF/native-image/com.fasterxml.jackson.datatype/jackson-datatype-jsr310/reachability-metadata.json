@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule"}
+  ]
+}

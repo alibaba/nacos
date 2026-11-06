@@ -1,0 +1,9 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.zaxxer.hikari.HikariConfig"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.zaxxer.hikari.HikariConfigMXBean"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "pool"}], "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.zaxxer.hikari.HikariDataSource"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.zaxxer.hikari.pool.PoolEntry"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.zaxxer.hikari.util.ConcurrentBag$IConcurrentBagEntry[]"}
+  ]
+}
