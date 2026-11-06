@@ -1,6 +1,8 @@
-# Builds the Nacos Server as a GraalVM Native Image (standalone, merged deployment) against
-# PostgreSQL and against MySQL and runs the repository's standalone-server integration suites
-# against the executable.
+# Builds the Nacos Server as a GraalVM Native Image and tests the executable: the repository's
+# standalone-server integration suites against PostgreSQL and MySQL, and the tests of the module
+# test/native-test, which start their databases and infrastructure with Testcontainers, for what the
+# suites cannot reach (the AI registries, DNS, the Kubernetes sync, a third-party plugin, a cluster).
+# What a build contains is fixed when it is built, so every scenario is a build of its own.
 #
 # Native compilation peaks at about 12 GB of RAM, so this job runs on GitHub-hosted runners instead
 # of the self-hosted pull request checks. Every step only calls a stage of test/scripts/native-ci.sh,
@@ -21,6 +23,8 @@ on:
       - 'distribution/pom.xml'
       - '**/META-INF/native-image/**'
       - 'test/scripts/native-*'
+      - 'test/native-test/**'
+      - 'test/native-test-plugin/**'
       - '.github/workflows/native-image.yml'
   push:
     branches: [ 'native-ci/**' ]
@@ -34,39 +38,33 @@ concurrency:
 
 jobs:
   native-image:
-    name: Native Server (${{ matrix.database }}, ${{ matrix.variant }})
+    name: Native Server (${{ matrix.scenario }}, ${{ matrix.database }}, ${{ matrix.variant }})
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        # The datasource is a structural choice of the build, so every database is built on its own.
-        # 'exact' builds with --exact-reachability-metadata and reports every dynamic access that has
-        # no metadata, which is how gaps in the bundled metadata are found. MySQL runs the core
-        # OpenAPI classes, which is enough to exercise its driver.
+        # The datasource, the AI registries, the Kubernetes sync, the plugins and the mode of the
+        # cluster are structural choices of the build, so every scenario and every database is built
+        # on its own (see the header of test/scripts/native-ci.sh). 'exact' builds with
+        # --exact-reachability-metadata and reports every dynamic access that has no metadata, which
+        # is how gaps in the bundled metadata are found. MySQL runs the core OpenAPI classes, which is
+        # enough to exercise its driver. The cluster scenario runs no suites.
         include:
-          - { database: postgresql, variant: default, suite: full }
-          - { database: postgresql, variant: exact, suite: full }
-          - { database: mysql, variant: default, suite: core }
-          - { database: mysql, variant: exact, suite: core }
+          - { scenario: standard, database: postgresql, variant: default, suite: full }
+          - { scenario: standard, database: postgresql, variant: exact, suite: full }
+          - { scenario: standard, database: mysql, variant: default, suite: core }
+          - { scenario: standard, database: mysql, variant: exact, suite: core }
+          - { scenario: features, database: postgresql, variant: default, suite: full }
+          - { scenario: features, database: postgresql, variant: exact, suite: full }
+          - { scenario: cluster, database: postgresql, variant: default, suite: core }
+          - { scenario: cluster, database: postgresql, variant: exact, suite: core }
     env:
+      NATIVE_CI_SCENARIO: ${{ matrix.scenario }}
       NATIVE_CI_DATABASE: ${{ matrix.database }}
       NATIVE_CI_VARIANT: ${{ matrix.variant }}
       NATIVE_CI_SUITE: ${{ matrix.suite }}
       NATIVE_CI_OUT: ${{ github.workspace }}/ci-out
-    services:
-      # The postgresql jobs use this one. The mysql jobs start a container of their own.
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: nacos
-          POSTGRES_PASSWORD: nacos
-          POSTGRES_DB: nacos
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U nacos -d nacos"
-          --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -82,20 +80,26 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: 'maven'
 
-      - name: Prepare database, credentials and build options
+      - name: Select the scenario and the build options
         run: bash test/scripts/native-ci.sh prepare
 
       - name: Build the Native distribution
+        id: build
         run: bash test/scripts/native-ci.sh build
 
-      - name: Start the Native Server
-        run: bash test/scripts/native-ci.sh start
-
+      # Testcontainers starts the databases and the Servers of the tests that follow. The tests do
+      # not depend on each other, so each of them runs once the build has succeeded.
       - name: Smoke test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash test/scripts/native-ci.sh smoke
 
       - name: Integration tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash test/scripts/native-ci.sh integration
+
+      - name: Scenario tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh scenario
 
       - name: Report
         if: ${{ !cancelled() }}
@@ -105,6 +109,6 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: native-diagnostics-${{ matrix.database }}-${{ matrix.variant }}
+          name: native-diagnostics-${{ matrix.scenario }}-${{ matrix.database }}-${{ matrix.variant }}
           path: ci-out
           if-no-files-found: ignore
