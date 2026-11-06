@@ -1,0 +1,8 @@
+{
+  "reflection": [
+    {"type": "com.alibaba.nacos.test.nativeimage.plugin.RejectingConfigChangePlugin", "allDeclaredConstructors": true}
+  ],
+  "resources": [
+    {"glob": "META-INF/services/com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService"}
+  ]
+}
