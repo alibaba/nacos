@@ -1,6 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "kotlin.Metadata"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "kotlin.coroutines.Continuation"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "kotlin.jvm.JvmInline"}
   ]

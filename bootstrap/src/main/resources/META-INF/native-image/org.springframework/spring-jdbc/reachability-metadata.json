@@ -1,12 +1,6 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.JdbcOperations"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.JdbcTemplate"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.simple.DefaultJdbcClient"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.simple.JdbcClient"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.datasource.DataSourceTransactionManager"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.datasource.DelegatingDataSource"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.support.JdbcAccessor"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.support.JdbcTransactionManager"},

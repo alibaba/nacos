@@ -238,6 +238,18 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
   类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向
   默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
+- 其他来源。这些文件只保存 Native 构建不会从别处得到的内容，避免同一登记保留两份，也避免来源
+  变化后遗留过期条目。构建还会读取 Native classpath 上各 jar 内的 `META-INF/native-image`
+  文件（`native-image.args` 排除的除外），以及同一构建中 AOT 生成器写出的文件。这些来源已完整提供的
+  条目不保留，只提供一部分的条目只保留其余部分。只有不带条件的条目才算已提供：带 `typeReached` 条件的
+  条目要等其条件类型被触达后才可用，而内置条目所服务的访问可能发生得更早。刷新文件时，工具会去掉
+  构建已提供的内容，并拒绝仍然重复这些内容的文件。
+- 可达性元数据仓库。`native` profile 会把根 POM 的 `graalvm-reachability-metadata.version`
+  所指定版本的 GraalVM 可达性元数据仓库加入 Native classpath。`native-maven-plugin` 只会把仓库加入
+  它自己构建的 classpath，因此 profile 运行其 `add-reachability-metadata` 目标，并把输出放到
+  Native classpath 上。`nacos.native.repository.enabled=false` 可将其排除。这些文件不依赖它，工具也
+  不把它当作来源，因为它给几乎所有条目都加了条件：带仓库和不带仓库的构建都能工作，仓库发布新版本
+  也无需刷新。
 - 条件。每个条目都带有取决于其归属方的 `typeReached` 条件。Nacos 自身与 JDK 的条目使用
   `com.alibaba.nacos.bootstrap.NacosBootstrap`，即 Server 入口类，它先于其他 Server 代码完成初始化。
   第三方构件的条目使用“让 Server 用到该构件”的类型，例如 Spring 家族以及由 Spring Boot 查找其类的库

@@ -1,10 +1,6 @@
 {
   "reflection": [
     {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.OutlierDetectionLoadBalancerProvider"},
-    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.RandomSubsettingLoadBalancerProvider"},
-    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.SecretRoundRobinLoadBalancerProvider$Provider"}
-  ],
-  "resources": [
-    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "glob": "META-INF/services/io.grpc.LoadBalancerProvider"}
+    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.RandomSubsettingLoadBalancerProvider"}
   ]
 }

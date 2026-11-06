@@ -251,6 +251,9 @@ stage_build() {
         -Dnacos.native.build.parallelism="${NATIVE_CI_PARALLELISM:-4}" \
         -Dnacos.native.options="${NATIVE_BUILD_OPTIONS}"
 
+    log "Check that the bundled Native metadata repeats nothing that the build provides"
+    python3 -I "$METADATA_TOOL" check --classpath "$ROOT/bootstrap/target/native/classpath.args"
+
     ls -la "$ROOT"/distribution/target/nacos-server-*-native-*.tar.gz \
         "$ROOT/bootstrap/target/native/nacos-server"
     mkdir -p "$OUT/build"

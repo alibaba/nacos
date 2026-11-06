@@ -2,10 +2,8 @@
   "reflection": [
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.DefaultSecurityFilterChain"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.FilterChainProxy"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.SecurityFilterChain"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.ExceptionTranslationFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.RequestMatcherDelegatingWebInvocationPrivilegeEvaluator"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.WebInvocationPrivilegeEvaluator"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.intercept.AuthorizationFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.intercept.RequestMatcherDelegatingAuthorizationManager"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.logout.LogoutFilter"},
@@ -20,7 +18,6 @@
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.savedrequest.RequestCacheAwareFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servlet.support.csrf.CsrfRequestDataValueProcessor"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher$Builder"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter"}
   ]
 }

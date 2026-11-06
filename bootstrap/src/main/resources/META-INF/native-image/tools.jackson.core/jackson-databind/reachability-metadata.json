@@ -6,8 +6,6 @@
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.deser.Deserializers[]"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.deser.KeyDeserializers[]"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.deser.ValueInstantiators[]"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.json.JsonMapper"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.json.JsonMapper$Builder"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.module.SimpleModule"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "tools.jackson.databind.ser.Serializers[]"}
   ]

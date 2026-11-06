@@ -1,9 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.accept.ApiVersionStrategy"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.accept.ContentNegotiationManager"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.accept.ContentNegotiationStrategy"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.accept.MediaTypeFileExtensionResolver"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.bind.annotation.ControllerAdvice"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.bind.annotation.DeleteMapping"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.bind.annotation.ExceptionHandler"},
@@ -21,28 +17,16 @@
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.bind.annotation.ResponseStatus"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.bind.annotation.RestController"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.client.RestClientException"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.context.ConfigurableWebApplicationContext"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.context.ServletContextAware"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.context.support.ServletContextResource"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.context.support.WebApplicationObjectSupport"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.CharacterEncodingFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.CorsFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.DelegatingFilterProxy"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.FormContentFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.GenericFilterBean"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.OncePerRequestFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.RequestContextFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.filter.ServerHttpObservationFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.web.filter.ServletRequestPathFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.method.annotation.ExceptionHandlerMethodResolver"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.method.support.CompositeUriComponentsContributor"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.method.support.UriComponentsContributor"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.multipart.MultipartFile"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.multipart.MultipartResolver"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.multipart.support.StandardMultipartHttpServletRequest$StandardMultipartFile"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.multipart.support.StandardServletMultipartResolver"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.util.UrlPathHelper"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.util.pattern.PathPatternParser"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.ControllerAdvice"]}},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.ExceptionHandler"]}},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.PathVariable"]}},
@@ -50,8 +34,5 @@
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.RequestMapping"]}},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.RequestParam"]}},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.web.bind.annotation.ResponseStatus"]}}
-  ],
-  "resources": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/springframework/web/util/HtmlCharacterEntityReferences.properties"}
   ]
 }

@@ -5,7 +5,6 @@
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.exceptions.CJException"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.exceptions.UnableToConnectException"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "com.mysql.cj.jdbc.AbandonedConnectionCleanupThread"},
-    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.mysql.cj.jdbc.Driver"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.log.StandardLogger"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.mysql.cj.protocol.StandardSocketFactory"}
   ],

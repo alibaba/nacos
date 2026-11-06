@@ -1,24 +1,10 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.PropertiesEndpointAccessResolver"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.expose.IncludeExcludeEndpointFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.web.MappingWebEndpointPathMapper"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.info.ConditionalOnEnabledInfoContributor"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.info.InfoContributorProperties"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.ConditionalOnManagementPort"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.EnableManagementContext"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration$EnableSameManagementContextConfiguration"}
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.autoconfigure.web.server.EnableManagementContext"}
   ]
 }

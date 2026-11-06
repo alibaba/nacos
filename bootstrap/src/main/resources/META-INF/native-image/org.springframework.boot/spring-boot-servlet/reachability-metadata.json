@@ -1,15 +1,6 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "setMaxFileSize", "parameterTypes": ["org.springframework.util.unit.DataSize"]}, {"name": "setMaxRequestSize", "parameterTypes": ["org.springframework.util.unit.DataSize"]}], "type": "org.springframework.boot.servlet.autoconfigure.MultipartProperties"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.ServletEncodingProperties"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.actuate.web.ManagementServletContext"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletEndpointManagementContextConfiguration"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedCharacterEncodingFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedFormContentFilter"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedRequestContextFilter"}
   ]
 }

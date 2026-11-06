@@ -1,9 +1,5 @@
 {
   "reflection": [
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.observation.ObservationFilter"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.observation.ObservationHandler"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.observation.ObservationPredicate"},
-    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.observation.ObservationRegistry"},
     {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.observation.SimpleObservationRegistry"}
   ]
 }
