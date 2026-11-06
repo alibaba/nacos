@@ -110,13 +110,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 min-w-0">
       {/* Left - Sidebar toggle and namespace selector */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink min-w-0">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground"
+              className="h-8 w-8 text-muted-foreground shrink-0"
               onClick={toggleSidebar}
               aria-label={sidebarToggleLabel}
             >
@@ -128,7 +128,7 @@ export function Header() {
         <Layers size={16} className="text-primary shrink-0" />
         <span className="text-xs font-medium text-foreground/70 shrink-0 hidden lg:inline">{t('common.selectNamespace')}</span>
         <Select value={currentNamespace} onValueChange={handleNamespaceChange}>
-          <SelectTrigger className="h-8 w-[180px] text-xs">
+          <SelectTrigger className="h-8 w-[130px] sm:w-[150px] lg:w-[180px] text-xs shrink min-w-[100px]">
             <SelectValue placeholder={t('common.selectNamespace')} />
           </SelectTrigger>
           <SelectContent>
@@ -145,7 +145,7 @@ export function Header() {
       </div>
 
       {/* Center - Navigation links */}
-      <nav className="hidden xl:flex items-center gap-0.5 min-w-0">
+      <nav className="hidden xl:flex items-center gap-0.5 min-w-0 overflow-hidden shrink">
         {NAV_LINKS.map((link) => {
           const href = typeof link.href === 'function' ? link.href(baseUrl) : link.href;
           return (
@@ -155,8 +155,8 @@ export function Header() {
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                'items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent',
-                link.hot ? 'hidden 2xl:inline-flex' : 'inline-flex'
+                'items-center gap-1 px-2.5 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent whitespace-nowrap',
+                link.hot ? 'hidden 3xl:inline-flex' : ['blog', 'community'].includes(link.key) ? 'hidden 2xl:inline-flex' : 'inline-flex'
               )}
             >
               {t(`header.${link.key}`)}
@@ -175,10 +175,10 @@ export function Header() {
         {/* Switch to legacy console */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" asChild>
+            <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs shrink-0" asChild>
               <a href="../legacy/">
                 <ArrowLeftRight size={14} />
-                <span className="hidden sm:inline">{t('common.legacyConsole')}</span>
+                <span className="hidden lg:inline">{t('common.legacyConsole')}</span>
               </a>
             </Button>
           </TooltipTrigger>
@@ -194,7 +194,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-8 gap-1 px-2 text-xs text-muted-foreground"
+                  className="h-8 gap-1 px-2 text-xs text-muted-foreground shrink-0"
                   aria-label={t('header.language')}
                 >
                   {LANGUAGE_SELECTOR_LABEL} {currentLanguage.shortLabel}
@@ -217,7 +217,7 @@ export function Header() {
         {/* Theme toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={toggleTheme}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0" onClick={toggleTheme}>
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </Button>
           </TooltipTrigger>
@@ -231,7 +231,7 @@ export function Header() {
         {authEnabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground">
+            <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground shrink-0">
               <Avatar className="h-6 w-6">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[10px]">
                   {(username || 'U')[0].toUpperCase()}
