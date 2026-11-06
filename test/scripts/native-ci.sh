@@ -17,32 +17,53 @@
 # Stages of the Native Image CI job (.github/workflows/native-image.yml). The workflow only calls
 # this script, so what is built, tested and reported can change without editing the workflow.
 # The stages also reproduce the job on any Linux host that has a GraalVM 25 JAVA_HOME with
-# native-image, Maven, Python 3, curl, openssl and either psql and an EMPTY PostgreSQL database
-# that the script initializes, or Docker for the MySQL database that the script starts itself.
+# native-image, Maven, Python 3 and Docker.
 #
-# Usage: native-ci.sh <prepare|build|start|smoke|integration|report|all>
+# The script starts no database and no Server. Testcontainers does, in the Java module
+# test/native-test (see bootstrap/README-AOT.md): its tests start their own database container and
+# Native Server, and the environment that this script keeps for the integration suites is the main
+# class NativeEnvironmentMain of that module, which a developer starts the same way.
 #
-# The integration stage ends with a restart check (restart_check): it creates data that no suite
-# creates, waits for the Raft snapshots of the naming service, restarts the Native Server on the same
-# home and database, and looks for the data again (test/scripts/native-restart.sh). The report stage
-# judges the result and scans the logs of both runs for missing registrations.
+# Usage: native-ci.sh <prepare|build|smoke|integration|scenario|report|all>
+#
+#   prepare      check the bundled metadata, select the scenario and the build variant
+#   build        build the Native distribution and the test modules
+#   smoke        the smoke test of native-test, on a database and a Server of its own
+#   integration  if the scenario has suites: start the environment, run the OpenAPI, Java SDK and
+#                Maintainer SDK suites against it, then end it. Ending it restarts the Server, which
+#                holds the data of the suites by now, and checks that the data of NativeRestartCheck
+#                survives.
+#   scenario     the tests of native-test that belong to the scenario, each on an environment of its
+#                own: what the suites cannot reach
+#   report       judge the result and scan the logs of every Server for missing registrations
 #
 # Environment (all optional):
+#   NATIVE_CI_SCENARIO      standard | features | cluster, default standard. What a scenario covers
+#                           is a structural choice of the build, so every scenario is a build of its
+#                           own:
+#                             standard  the Server as the sample application.properties configures
+#                                       it, and the three suites
+#                             features  the three AI registries, the Kubernetes sync and a
+#                                       third-party plugin are built in; the three suites, and the
+#                                       tests of each of these features and of DNS
+#                             cluster   a build for cluster mode: three nodes on one host that share
+#                                       the database
 #   NATIVE_CI_VARIANT       default | exact. 'exact' builds with --exact-reachability-metadata
 #                           and runs with -XX:MissingRegistrationReportingMode=Warn so that every
 #                           dynamic access without metadata is reported instead of failing.
 #   NATIVE_CI_DATABASE      postgresql | mysql, default postgresql. The datasource is a structural
-#                           choice of the build. PostgreSQL has to listen on NATIVE_CI_DB_PORT
-#                           already. For MySQL the prepare stage starts a disposable mysql:8.4
-#                           container named nacos-ci-mysql, which stays until 'docker rm -f' removes it.
+#                           choice of the build.
 #   NATIVE_CI_SUITE         full | core, default full. 'core' narrows the OpenAPI suite to the
 #                           Config, Naming, Core and Auth classes, which is enough to exercise a
 #                           datasource driver; the SDK suites always run.
+#   NATIVE_CI_ARCHIVE       the distribution archive that the tests start, default the Native one in
+#                           distribution/target
+#   NATIVE_CI_TEST_OPTIONS  more options for the tests of native-test and for the environment of the
+#                           suites. With -Dnacos.native.test.mode=jvm and NATIVE_CI_ARCHIVE set to the
+#                           archive of the ordinary Server, the stages smoke, integration and scenario
+#                           can be tried without a Native build.
 #   NATIVE_CI_HEAP          Native builder heap, default 10g
 #   NATIVE_CI_PARALLELISM   Native builder threads, default 4
-#   NATIVE_CI_DB_HOST, NATIVE_CI_DB_PORT, NATIVE_CI_DB_NAME, NATIVE_CI_DB_USER,
-#   NATIVE_CI_DB_PASSWORD   database connection, default 127.0.0.1, 5432 (PostgreSQL) or 3306
-#                           (MySQL), and nacos/nacos/nacos
 #   NATIVE_CI_WORK          scratch directory, default ${RUNNER_TEMP:-/tmp}/native-ci
 #   NATIVE_CI_OUT           receives logs and reports, default <repository>/ci-out
 #   MVN                     Maven command, default mvn
@@ -54,11 +75,18 @@ WORK="${NATIVE_CI_WORK:-${RUNNER_TEMP:-/tmp}/native-ci}"
 OUT="${NATIVE_CI_OUT:-${ROOT}/ci-out}"
 STATE="${WORK}/state.env"
 VARIANT="${NATIVE_CI_VARIANT:-default}"
+SCENARIO="${NATIVE_CI_SCENARIO:-standard}"
 DATABASE="${NATIVE_CI_DATABASE:-postgresql}"
 SUITE="${NATIVE_CI_SUITE:-full}"
+case "$SCENARIO" in
+    standard | features | cluster) ;;
+    *)
+        echo "Unknown scenario: ${SCENARIO}" >&2
+        exit 2
+        ;;
+esac
 case "$DATABASE" in
-    postgresql) DEFAULT_DB_PORT=5432 ;;
-    mysql) DEFAULT_DB_PORT=3306 ;;
+    postgresql | mysql) ;;
     *)
         echo "Unknown database: ${DATABASE}" >&2
         exit 2
@@ -71,12 +99,10 @@ case "$SUITE" in
         exit 2
         ;;
 esac
-DB_HOST="${NATIVE_CI_DB_HOST:-127.0.0.1}"
-DB_PORT="${NATIVE_CI_DB_PORT:-$DEFAULT_DB_PORT}"
-DB_NAME="${NATIVE_CI_DB_NAME:-nacos}"
-DB_USER="${NATIVE_CI_DB_USER:-nacos}"
-DB_PASSWORD="${NATIVE_CI_DB_PASSWORD:-nacos}"
 MVN="${MVN:-mvn}"
+ENVIRONMENT_DIR="${WORK}/environment"
+# Where NativeEnvironmentMain puts the home of its Server and the database log.
+NACOS_HOME="${ENVIRONMENT_DIR}/environment/nacos"
 METADATA_TOOL="${ROOT}/test/scripts/native-metadata.py"
 
 # The OpenAPI classes of the 'core' suite.
@@ -95,14 +121,6 @@ JAVA_SDK_CLASSES+=",AiTransportResourceMatrixJavaSdkITCase,McpHttpClientJavaSdkI
 JAVA_SDK_CLASSES+=",AgentPublishJavaSdkITCase,AgentRequestBuilderJavaSdkITCase"
 JAVA_SDK_CLASSES+=",AgentModelValidationJavaSdkITCase,AgentDiscoveryServiceJavaSdkITCase"
 JAVA_SDK_CLASSES+=",A2aRadRoutingJavaSdkITCase"
-
-# The values of .github/workflows/it-new.yml: the AI integration tests are written for them. The two
-# reconciliation intervals set in stage_start make the background MCP cutover finish within seconds.
-RAD_SERVER_PUBLICATION_CAPACITY=3
-RAD_SERVER_WATCH_CAPACITY=3
-RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY=3
-RAD_CLIENT_PUBLICATION_CAPACITY=3
-RAD_CLIENT_SUBSCRIPTION_CAPACITY=3
 
 cd "$ROOT"
 
@@ -129,63 +147,20 @@ load_state() {
     set +a
 }
 
-# JDBC URL of the Server, in the form of the sample application.properties.
-datasource_url() {
-    case "$DATABASE" in
-        postgresql)
-            echo "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?currentSchema=public"
-            ;;
-        mysql)
-            echo "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?characterEncoding=utf8&connectTimeout=3000&socketTimeout=6000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-            ;;
-    esac
-}
-
-# Both schemas come from the tracked sources: distribution/conf/*.sql are copies made by a Maven
-# build and do not exist in a fresh checkout.
-init_postgresql() {
-    local schema="${ROOT}/plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
-    if [ ! -f "$schema" ]; then
-        echo "Missing ${schema}" >&2
+# The archive of the Native distribution that the build stage made.
+find_archive() {
+    local archive="${NATIVE_CI_ARCHIVE:-}"
+    if [ -n "$archive" ]; then
+        echo "$archive"
+        return
+    fi
+    archive="$(find "$ROOT/distribution/target" -maxdepth 1 -name 'nacos-server-*-native-*.tar.gz' \
+        | head -n 1)"
+    if [ -z "$archive" ]; then
+        echo "No Native distribution archive in distribution/target; run the build stage" >&2
         exit 1
     fi
-    command -v psql >/dev/null \
-        || sudo apt-get install -y --no-install-recommends postgresql-client
-    export PGPASSWORD="$DB_PASSWORD"
-    for _ in $(seq 1 60); do
-        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -qc 'select 1' \
-            >/dev/null 2>&1; then
-            break
-        fi
-        sleep 2
-    done
-    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
-        -f "$schema"
-}
-
-init_mysql() {
-    local schema="${ROOT}/plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
-    if [ ! -f "$schema" ]; then
-        echo "Missing ${schema}" >&2
-        exit 1
-    fi
-    # The server keeps little memory, because the Native compiler needs most of the host.
-    docker rm -f nacos-ci-mysql >/dev/null 2>&1 || true
-    docker run -d --name nacos-ci-mysql \
-        -e MYSQL_ROOT_PASSWORD="$DB_PASSWORD" -e MYSQL_DATABASE="$DB_NAME" \
-        -e MYSQL_USER="$DB_USER" -e MYSQL_PASSWORD="$DB_PASSWORD" \
-        -p "127.0.0.1:${DB_PORT}:3306" \
-        mysql:8.4 --performance-schema=OFF --innodb-buffer-pool-size=64M >/dev/null
-    # Over TCP only: the temporary server of the first start listens on its socket alone.
-    for _ in $(seq 1 90); do
-        if docker exec nacos-ci-mysql mysql --protocol=TCP -h 127.0.0.1 -u"$DB_USER" \
-            -p"$DB_PASSWORD" -e 'select 1' "$DB_NAME" >/dev/null 2>&1; then
-            break
-        fi
-        sleep 2
-    done
-    docker exec -i nacos-ci-mysql mysql --protocol=TCP -h 127.0.0.1 -u"$DB_USER" \
-        -p"$DB_PASSWORD" "$DB_NAME" < "$schema"
+    echo "$archive"
 }
 
 stage_prepare() {
@@ -193,31 +168,51 @@ stage_prepare() {
     : > "$STATE"
     chmod 600 "$STATE"
 
-    log "Native CI: database=${DATABASE} variant=${VARIANT} suite=${SUITE}"
+    log "Native CI: scenario=${SCENARIO} database=${DATABASE} variant=${VARIANT} suite=${SUITE}"
 
     log "Check the bundled Native metadata"
     python3 -I "$METADATA_TOOL" selftest
     python3 -I "$METADATA_TOOL" check
 
-    log "Initialize the ${DATABASE} database"
-    "init_${DATABASE}"
-
-    log "Generate disposable credentials"
-    remember NACOS_TEST_AUTH_ADMIN_USERNAME nacos
-    remember NACOS_TEST_AUTH_ADMIN_PASSWORD "NacosIt-$(openssl rand -hex 16)-A1!" secret
-    remember NACOS_TEST_AUTH_CLIENT_USERNAME nacos_it_client_rw
-    remember NACOS_TEST_AUTH_CLIENT_PASSWORD "NacosIt-$(openssl rand -hex 16)-C1!" secret
-    remember NACOS_TEST_AUTH_READONLY_USERNAME nacos_it_client_readonly
-    remember NACOS_TEST_AUTH_READONLY_PASSWORD "NacosIt-$(openssl rand -hex 16)-R1!" secret
-    remember NACOS_TEST_AUTH_NO_PERMISSION_USERNAME nacos_it_client_no_permission
-    remember NACOS_TEST_AUTH_NO_PERMISSION_PASSWORD "NacosIt-$(openssl rand -hex 16)-N1!" secret
-    # The tests read these names too: one of them signs a token with the server's own secret.
-    remember NACOS_TEST_AUTH_TOKEN_SECRET "$(openssl rand -base64 48 | tr -d '\n')" secret
-    remember NACOS_TEST_AUTH_SERVER_IDENTITY_KEY "nacos-it-$(openssl rand -hex 8)" secret
-    remember NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE "$(openssl rand -hex 32)" secret
+    # The scenario decides the structure of the build and the tests that run on it. The AI registries
+    # are checked when a Server starts, so every Server of the run repeats their switches. The
+    # Kubernetes sync is a switch of the build only; its test turns it on.
+    log "Select the scenario: ${SCENARIO}"
+    local build_properties=("spring.sql.init.platform=${DATABASE}")
+    local standalone=true suites=true smoke_tests="NativeServerSmokeITCase" scenario_tests=""
+    local server_properties=""
+    case "$SCENARIO" in
+        standard) ;;
+        features)
+            server_properties="nacos.ai.mcp.registry.enabled=true"
+            server_properties+=" nacos.ai.skill.registry.enabled=true nacos.ai.ard.enabled=true"
+            # The ARD tests of the OpenAPI suite expect the catalog on the port of the adaptor, as
+            # .github/workflows/it-new.yml configures it.
+            server_properties+=" nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080"
+            build_properties+=(
+                "nacos.ai.mcp.registry.enabled=true"
+                "nacos.ai.skill.registry.enabled=true"
+                "nacos.ai.ard.enabled=true"
+                "nacos.k8s.sync.enabled=true"
+            )
+            scenario_tests="NativeAiRegistryITCase,NativeDnsITCase"
+            scenario_tests+=",NativeKubernetesSyncITCase,NativeThirdPartyPluginITCase"
+            ;;
+        cluster)
+            standalone=false
+            suites=false
+            smoke_tests=""
+            scenario_tests="NativeClusterITCase"
+            ;;
+    esac
+    printf '%s\n' "${build_properties[@]}" > "$WORK/build.properties"
+    remember NATIVE_STANDALONE "$standalone"
+    remember RUN_SUITES "$suites"
+    remember SMOKE_TESTS "$smoke_tests"
+    remember SCENARIO_TESTS "$scenario_tests"
+    remember SERVER_PROPERTIES "$server_properties"
 
     log "Select the Native build variant: ${VARIANT}"
-    printf 'spring.sql.init.platform=%s\n' "$DATABASE" > "$WORK/build.properties"
     case "$VARIANT" in
         default)
             remember NATIVE_BUILD_OPTIONS ""
@@ -237,19 +232,34 @@ stage_prepare() {
 stage_build() {
     load_state
 
-    log "Install the JVM artifacts that the integration test modules resolve"
+    log "Install the JVM artifacts that the test modules resolve"
     # The Java SDK suite needs the shaded client, which only release-nacos produces.
     "$MVN" -B -T 2 -Prelease-nacos install -Dmaven.test.skip=true -Drat.skip=true \
-        -pl test/openapi-test,test/java-sdk-test,test/maintainer-sdk-test -am
+        -pl test/native-test,test/native-test-plugin,test/openapi-test,test/java-sdk-test,test/maintainer-sdk-test \
+        -am
+
+    # Jars that do not belong to the Server and go into the build, as the plugins of a deployment do.
+    # Their metadata is part of the jar. The directory is outside target, which the build cleans.
+    local plugin_dir="${WORK}/native-plugins" plugin_options=()
+    rm -rf "$plugin_dir"
+    case "$SCENARIO" in
+        features)
+            log "A third-party plugin for the build: the sample plugin of native-test-plugin"
+            mkdir -p "$plugin_dir"
+            cp "$ROOT"/test/native-test-plugin/target/native-test-plugin-*[0-9].jar "$plugin_dir/"
+            plugin_options=("-Dnacos.native.plugins=${plugin_dir}")
+            ;;
+    esac
 
     log "Build the Native distribution"
     "$MVN" -B '-Pnative,release-native,!dev' -pl distribution -am clean package \
         -Dmaven.test.skip=true -Drat.skip=true \
         -Dnacos.native.config="${WORK}/build.properties" \
-        -Dnacos.native.standalone=true \
+        -Dnacos.native.standalone="${NATIVE_STANDALONE}" \
         -Dnacos.native.build.heap="${NATIVE_CI_HEAP:-10g}" \
         -Dnacos.native.build.parallelism="${NATIVE_CI_PARALLELISM:-4}" \
-        -Dnacos.native.options="${NATIVE_BUILD_OPTIONS}"
+        -Dnacos.native.options="${NATIVE_BUILD_OPTIONS}" \
+        "${plugin_options[@]}"
 
     log "Check that the bundled Native metadata repeats nothing that the build provides"
     python3 -I "$METADATA_TOOL" check --classpath "$ROOT/bootstrap/target/native/classpath.args"
@@ -259,83 +269,63 @@ stage_build() {
     mkdir -p "$OUT/build"
     cp "$ROOT"/bootstrap/target/native/{options.args,classpath.args,aot-manifest.properties,build.properties} \
         "$OUT/build/"
+
+    log "Resolve the classpath of the test environment"
+    "$MVN" -B -q -pl test/native-test dependency:build-classpath \
+        -Dmdep.outputFile="${WORK}/native-test.classpath"
 }
 
-stage_start() {
-    load_state
+# The system properties that make a Server repeat the structural choices of the build, which it
+# checks when it starts. One option per line.
+server_property_options() {
+    local item
+    for item in ${SERVER_PROPERTIES}; do
+        printf '%s\n' "-Dnacos.native.test.property.${item}"
+    done
+}
 
-    log "Unpack and configure the Native distribution"
-    local archive
-    archive="$(find "$ROOT/distribution/target" -maxdepth 1 -name 'nacos-server-*-native-*.tar.gz' \
-        | head -n 1)"
-    if [ -z "$archive" ]; then
-        echo "No Native distribution archive in distribution/target; run the build stage" >&2
-        exit 1
-    fi
-    rm -rf "${WORK:?}/home"
-    mkdir -p "${WORK}/home"
-    tar -xzf "$archive" -C "${WORK}/home"
-    remember NACOS_HOME "${WORK}/home/nacos"
-    local home="${WORK}/home/nacos"
-    cat >> "${home}/conf/application.properties" <<EOF
-
-spring.sql.init.platform=${DATABASE}
-nacos.plugin.datasource.db.num=1
-nacos.plugin.datasource.db.url.0=$(datasource_url)
-nacos.plugin.datasource.db.user=${DB_USER}
-nacos.plugin.datasource.db.password=${DB_PASSWORD}
-nacos.plugin.auth.nacos.token.secret.key=${NACOS_TEST_AUTH_TOKEN_SECRET}
-nacos.core.auth.server.identity.key=${NACOS_TEST_AUTH_SERVER_IDENTITY_KEY}
-nacos.core.auth.server.identity.value=${NACOS_TEST_AUTH_SERVER_IDENTITY_VALUE}
-nacos.plugin.auth.nacos.anonymous.ai.enabled=true
-nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}
-nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}
-nacos.ai.rad.capacity.watch.http.max-active-requests-per-node=${RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY}
-nacos.ai.mcp.resource.reconciliation.interval-seconds=1
-nacos.ai.resource.search.index.reconcile.interval-seconds=1
-# JRaft takes the first snapshot of each group at a random time within 30 minutes after the start,
-# which a job reaches only sometimes. Take them every 30 seconds, so that the snapshot code (for
-# example the Hessian serialization of the persistent naming data) runs in every job.
-nacos.core.protocol.raft.data.snapshot_interval_secs=30
-EOF
-
-    log "Executable"
-    ls -la "${home}/target"
-    ldd "${home}/target/nacos-server" || true
-
-    # Keep the Nacos log files below the Native home, where the checks below and the diagnostics
-    # look for them. Without this property they are written to ${user.home}/nacos/logs.
-    export NACOS_NATIVE_OPTS="${NACOS_NATIVE_OPTS} -Dnacos.logs.path=${home}/logs"
-    log "Start the Native Server (NACOS_NATIVE_OPTS=${NACOS_NATIVE_OPTS})"
-    bash "${home}/bin/startup-native.sh"
-    local started
-    started="$(date +%s%N)"
-    if ! timeout 180s bash -c \
-        'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 0.2; done'; then
-        echo "The Native Server did not become live" >&2
-        tail -n 300 "${home}/logs/startup.log" || true
-        exit 1
-    fi
-    echo "Native Server live after $(( ($(date +%s%N) - started) / 1000000 )) ms"
-    # Like it-new.yml: MCP lifecycle APIs are unavailable until the background cutover is persisted.
-    local marker_started
-    marker_started="$(date +%s)"
-    if timeout 120s bash -c \
-        "until grep -R -q 'Persisted permanent MCP LIFECYCLE_MANAGED marker' '${home}/logs' 2>/dev/null; do sleep 1; done"; then
-        echo "MCP LIFECYCLE_MANAGED marker logged $(( $(date +%s) - marker_started )) s after the Server became live"
-    else
-        echo "WARNING: the MCP LIFECYCLE_MANAGED marker was not logged within 120 s" >&2
-        ls -la "${home}/logs" >&2 || true
-    fi
+# Runs tests of native-test. Each of them starts the database and the Servers that it needs, from the
+# archive that the build made.
+run_native_tests() {
+    local tests="$1" archive
+    local -a property_options extra_options
+    archive="$(find_archive)"
+    mapfile -t property_options < <(server_property_options)
+    read -r -a extra_options <<< "${NATIVE_CI_TEST_OPTIONS:-}"
+    "$MVN" -B -pl test/native-test verify -Pnative-integration-test -DskipTests=false \
+        -Drat.skip=true "-Dit.test=${tests}" \
+        -Dnacos.native.test.database="$DATABASE" \
+        -Dnacos.native.test.distribution="$archive" \
+        "-Dnacos.native.test.opts=${NACOS_NATIVE_OPTS}" \
+        "-Dnacos.native.test.work=${WORK}/native-test" \
+        "${property_options[@]}" "${extra_options[@]}"
 }
 
 stage_smoke() {
     load_state
-    log "Bootstrap the administrator and the test identities"
-    bash "$ROOT/test/scripts/auth-it-identity.sh" bootstrap
-    bash "$ROOT/test/scripts/auth-it-identity.sh" prepare
-    log "Smoke test"
-    bash "$ROOT/test/scripts/native-smoke.sh"
+    if [ -z "$SMOKE_TESTS" ]; then
+        log "The ${SCENARIO} scenario has no smoke test"
+        return 0
+    fi
+    log "Smoke test: a ${DATABASE} database and a Native Server of its own, started by Testcontainers"
+    run_native_tests "$SMOKE_TESTS"
+}
+
+stage_scenario() {
+    load_state
+    if [ -z "$SCENARIO_TESTS" ]; then
+        log "The ${SCENARIO} scenario has no tests of its own"
+        return 0
+    fi
+    log "Tests of the ${SCENARIO} scenario: ${SCENARIO_TESTS}"
+    run_native_tests "$SCENARIO_TESTS"
+}
+
+# Keeps a secret out of the log of a GitHub Actions job.
+mask() {
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        echo "::add-mask::$1"
+    fi
 }
 
 run_suite() {
@@ -343,153 +333,132 @@ run_suite() {
     shift
     log "Integration suite: ${name}"
     "$MVN" -B "$@" -DskipTests=false -Dmaven.test.failure.ignore=true -Drat.skip=true \
-        -Dnacos.test.auth.enabled=true \
-        -Dnacos.test.auth.admin.username="$NACOS_TEST_AUTH_ADMIN_USERNAME" \
-        -Dnacos.test.auth.client.username="$NACOS_TEST_AUTH_CLIENT_USERNAME" \
-        -Dnacos.test.auth.readonly.username="$NACOS_TEST_AUTH_READONLY_USERNAME" \
-        -Dnacos.test.auth.no-permission.username="$NACOS_TEST_AUTH_NO_PERMISSION_USERNAME"
-}
-
-snapshots_saved() {
-    cat "${NACOS_HOME}"/logs/*.log 2>/dev/null | grep -c 'SnapshotOperation.SAVE cost time' || true
-}
-
-# When the Server starts, the Raft groups of the naming service load their snapshot and replay the log
-# behind it. No suite triggers that, because the Server of the job is never restarted. This does it
-# once after the suites, with the data of native-restart.sh. It never fails the stage: the result goes
-# to ci-out/reports/restart-check.txt and the report stage judges it.
-restart_check() {
-    local report="$OUT/reports/restart-check.txt"
-    local home="${NACOS_HOME}"
-    mkdir -p "$OUT/reports"
-    : > "$report"
-
-    log "Restart check: create the data that has to survive the restart"
-    if bash "$ROOT/test/scripts/native-restart.sh" seed; then
-        echo "PASS  seed" >> "$report"
-    else
-        echo "FAIL  seed" >> "$report"
-        return 0
-    fi
-
-    # JRaft saves a snapshot of each group at an interval between 30 and 60 seconds here (see
-    # stage_start). Wait a little longer, so that the data is in a snapshot that the restart loads.
-    log "Wait for the Raft snapshots"
-    local saved_before
-    saved_before="$(snapshots_saved)"
-    sleep 70
-    echo "Snapshots saved while waiting: $(( $(snapshots_saved) - saved_before ))"
-
-    log "Stop the Native Server"
-    local pid
-    pid="$(pgrep -f 'target/nacos-server' | head -n 1 || true)"
-    if [ -z "$pid" ]; then
-        echo "FAIL  stop: no Native Server process" >> "$report"
-        return 0
-    fi
-    kill "$pid"
-    for _ in $(seq 1 120); do
-        kill -0 "$pid" 2>/dev/null || break
-        sleep 0.5
-    done
-    if kill -0 "$pid" 2>/dev/null; then
-        echo "The Native Server still runs 60 s after SIGTERM; killing it" >&2
-        kill -9 "$pid" || true
-        sleep 1
-        echo "FAIL  stop: the Server ignored SIGTERM for 60 s" >> "$report"
-    else
-        echo "PASS  stop" >> "$report"
-    fi
-    # The launcher truncates startup.log.
-    cp "${home}/logs/startup.log" "${home}/logs/startup-before-restart.log"
-
-    log "Start the Native Server again"
-    export NACOS_NATIVE_OPTS="${NACOS_NATIVE_OPTS} -Dnacos.logs.path=${home}/logs"
-    bash "${home}/bin/startup-native.sh"
-    local started
-    started="$(date +%s%N)"
-    if ! timeout 180s bash -c \
-        'until curl --silent --fail http://127.0.0.1:8080/v3/console/health/liveness >/dev/null; do sleep 0.2; done'; then
-        echo "FAIL  start after the restart: the Server did not become live" >> "$report"
-        tail -n 300 "${home}/logs/startup.log" || true
-        # A Raft group that cannot load its snapshot leaves nothing on stdout but the starting message.
-        for raft_log in alipay-jraft.log protocol-raft.log; do
-            echo "--- errors and warnings in ${raft_log} (last 20)"
-            { grep -E ' (ERROR|WARN) ' "${home}/logs/${raft_log}" | tail -n 20 | cut -c1-300; } || true
-        done
-        return 0
-    fi
-    echo "Native Server live after $(( ($(date +%s%N) - started) / 1000000 )) ms"
-    echo "PASS  start after the restart" >> "$report"
-
-    log "Restart check: look for the data on the restarted Server"
-    if bash "$ROOT/test/scripts/native-restart.sh" verify; then
-        echo "PASS  data after the restart" >> "$report"
-    else
-        echo "FAIL  data after the restart" >> "$report"
-    fi
-    return 0
+        -Dnacos.test.auth.enabled=true
 }
 
 stage_integration() {
     load_state
-    local status=0
+    if [ "$RUN_SUITES" != "true" ]; then
+        log "The ${SCENARIO} scenario runs no suites"
+        return 0
+    fi
+    local archive status=0
+    local -a property_options extra_options
+    archive="$(find_archive)"
+    mapfile -t property_options < <(server_property_options)
+    read -r -a extra_options <<< "${NATIVE_CI_TEST_OPTIONS:-}"
+    mkdir -p "$OUT/logs" "$OUT/reports"
+    rm -rf "$ENVIRONMENT_DIR"
+    mkdir -p "$ENVIRONMENT_DIR"
+
+    log "Start the test environment: a ${DATABASE} database and the Native Server"
+    local classpath
+    classpath="$ROOT/test/native-test/target/classes:$(cat "${WORK}/native-test.classpath")"
+    java -cp "$classpath" \
+        "-Dnacos.native.test.distribution=${archive}" \
+        "-Dnacos.native.test.opts=${NACOS_NATIVE_OPTS}" \
+        "${property_options[@]}" "${extra_options[@]}" \
+        com.alibaba.nacos.test.nativeimage.NativeEnvironmentMain "$DATABASE" "$ENVIRONMENT_DIR" \
+        > "$OUT/logs/environment.log" 2>&1 &
+    local launcher=$!
+    # shellcheck disable=SC2064
+    trap "kill ${launcher} 2>/dev/null || true" EXIT
+    local waited=0
+    until [ -f "$ENVIRONMENT_DIR/environment.properties" ]; do
+        if ! kill -0 "$launcher" 2>/dev/null; then
+            echo "The test environment ended while it started" >&2
+            tail -n 100 "$OUT/logs/environment.log" >&2 || true
+            return 1
+        fi
+        if [ "$waited" -ge 900 ]; then
+            echo "The test environment is not ready after 15 minutes" >&2
+            tail -n 100 "$OUT/logs/environment.log" >&2 || true
+            return 1
+        fi
+        sleep 2
+        waited=$((waited + 2))
+    done
+    echo "The test environment is ready after ${waited} s"
+
+    # The environment hands the credentials to the suites as system properties. The suites read
+    # these before they look at the environment variables, but a few read only the variables.
+    local suite_properties=() key value name
+    while IFS='=' read -r key value; do
+        [ -n "$key" ] || continue
+        suite_properties+=("-D${key}=${value}")
+        name="$(printf '%s' "$key" | tr '[:lower:].-' '[:upper:]__')"
+        export "${name}=${value}"
+        case "$key" in
+            *password* | *secret*) mask "$value" ;;
+        esac
+    done < "$ENVIRONMENT_DIR/environment.properties"
+
     local openapi_selection=()
     if [ "$SUITE" = "core" ]; then
         openapi_selection=("-Dit.test=${CORE_OPENAPI_CLASSES}")
     fi
     run_suite openapi -pl test/openapi-test verify -Pintegration-test \
-        "${openapi_selection[@]}" \
-        -Dnacos.test.auth.anonymous-ai.enabled=true \
-        -Dnacos.test.auth.anonymous-ai.source=STATIC \
-        -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
-        -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
-        -Dnacos.agent.it.server.http.watch.waiter.capacity="$RAD_SERVER_HTTP_WATCH_WAITER_CAPACITY" \
-        || status=1
+        "${openapi_selection[@]}" "${suite_properties[@]}" || status=1
     run_suite java-sdk -pl test/java-sdk-test verify -Pjava-sdk-integration-test \
-        "-Dit.test=${JAVA_SDK_CLASSES}" \
-        -Dnacos.test.auth.anonymous-ai.enabled=true \
-        -Dnacos.agent.it.server.publication.capacity="$RAD_SERVER_PUBLICATION_CAPACITY" \
-        -Dnacos.agent.it.server.watch.capacity="$RAD_SERVER_WATCH_CAPACITY" \
-        -Dnacos.agent.it.client.publication.capacity="$RAD_CLIENT_PUBLICATION_CAPACITY" \
-        -Dnacos.agent.it.client.subscription.capacity="$RAD_CLIENT_SUBSCRIPTION_CAPACITY" \
-        || status=1
+        "-Dit.test=${JAVA_SDK_CLASSES}" "${suite_properties[@]}" || status=1
     run_suite maintainer-sdk -pl test/maintainer-sdk-test verify \
-        -Pmaintainer-sdk-integration-test || status=1
-    restart_check
+        -Pmaintainer-sdk-integration-test "${suite_properties[@]}" || status=1
+
+    log "Resource usage of the Native Server"
+    local pid
+    pid="$(pgrep -f -- "-Dnacos.home=${NACOS_HOME}" | head -n 1 || true)"
+    if [ -n "$pid" ]; then
+        {
+            ps -o pid=,rss=,etime=,args= -p "$pid" | cut -c1-160
+            echo "RSS: $(( $(awk '/VmRSS/ {print $2}' "/proc/${pid}/status") / 1024 )) MB"
+        } | tee "$OUT/reports/resource-usage.txt" || true
+    fi
+
+    # Ending the environment restarts the Server, which holds the data of the suites by now, and
+    # checks that the data of NativeRestartCheck survives. It never fails this stage: the report
+    # stage judges ci-out/reports/restart-check.txt.
+    log "End the test environment: the restart check"
+    touch "$ENVIRONMENT_DIR/finish"
+    wait "$launcher" || true
+    trap - EXIT
+    cp "$ENVIRONMENT_DIR/restart-check.txt" "$OUT/reports/restart-check.txt" 2>/dev/null || true
     return "$status"
 }
 
 stage_report() {
     load_state
-    NACOS_HOME="${NACOS_HOME:-}"
     mkdir -p "$OUT/logs" "$OUT/reports"
-    if [ -n "$NACOS_HOME" ]; then
-        cp "${NACOS_HOME}"/logs/*.log "$OUT/logs/" 2>/dev/null || true
-    fi
-    if [ "$DATABASE" = "mysql" ]; then
-        docker logs nacos-ci-mysql > "$OUT/logs/mysql-container.log" 2>&1 || true
-    fi
+    # The logs of every Server that the run started, one directory each, and of its database.
+    local logs_dir database_log name
+    while IFS= read -r logs_dir; do
+        name="${logs_dir#"${WORK}"/}"
+        name="${name%/nacos/logs}"
+        mkdir -p "$OUT/logs/${name//\//_}"
+        cp "$logs_dir"/*.log "$OUT/logs/${name//\//_}/" 2>/dev/null || true
+    done < <(find "$WORK" -type d -path '*/nacos/logs' 2>/dev/null | sort)
+    while IFS= read -r database_log; do
+        name="${database_log#"${WORK}"/}"
+        cp "$database_log" "$OUT/logs/${name//\//_}" 2>/dev/null || true
+    done < <(find "$WORK" -name database.log 2>/dev/null | sort)
     cp "$ROOT"/test/*/target/failsafe-reports/TEST-*.xml "$OUT/reports/" 2>/dev/null || true
 
     log "Resource usage of the Native Server"
-    local pid
-    pid="$(pgrep -f 'target/nacos-server' | head -n 1 || true)"
-    if [ -n "$pid" ]; then
-        ps -o pid=,rss=,etime=,args= -p "$pid" | cut -c1-160 || true
-        echo "RSS: $(( $(awk '/VmRSS/ {print $2}' "/proc/${pid}/status") / 1024 )) MB"
-    fi
+    cat "$OUT/reports/resource-usage.txt" 2>/dev/null || echo "No measurement"
 
     log "Integration test results"
     local status=0
-    python3 -I - "$ROOT" "$ROOT/test/scripts/native-ci-baseline.txt" <<'PY' || status=1
+    local baselines=("$ROOT/test/scripts/native-ci-baseline.txt")
+    if [ "$SCENARIO" != "features" ]; then
+        baselines+=("$ROOT/test/scripts/native-ci-baseline-ard-off.txt")
+    fi
+    python3 -I - "$ROOT" "${baselines[@]}" <<'PY' || status=1
 import fnmatch
 import glob
 import sys
 import xml.etree.ElementTree as ET
 
-root, baseline_file = sys.argv[1], sys.argv[2]
-baseline = [line.strip() for line in open(baseline_file)
+root, baseline_files = sys.argv[1], sys.argv[2:]
+baseline = [line.strip() for baseline_file in baseline_files for line in open(baseline_file)
             if line.strip() and not line.startswith("#")]
 executed, failed = 0, []
 for report in sorted(glob.glob(root + "/test/*/target/failsafe-reports/TEST-*.xml")):
@@ -525,21 +494,27 @@ PY
             || grep -q '^FAIL' "$restart_report"; then
             status=1
         fi
+    elif [ "$RUN_SUITES" = "true" ]; then
+        # The environment writes the report before it ends, so a missing one means that it ended
+        # in the middle of the check.
+        echo "The restart check did not run" >&2
+        status=1
     else
-        echo "The restart check did not run"
+        echo "The ${SCENARIO} scenario runs no suites, so it has no restart check"
     fi
 
     log "Missing registrations reported by the Native executable"
-    local startup="${NACOS_HOME}/logs/startup.log"
-    if [ ! -f "$startup" ]; then
-        echo "No Native Server log; the server did not start" >&2
+    # Every Server of the run, and the first run of the Servers that were restarted: a restart
+    # truncates startup.log.
+    local scanned="$OUT/logs/startup-all-runs.log" candidate
+    : > "$scanned"
+    while IFS= read -r candidate; do
+        cat "$candidate" >> "$scanned"
+    done < <(find "$WORK" \( -name startup.log -o -name startup-before-restart.log \) \
+        -path '*/nacos/logs/*' 2>/dev/null | sort)
+    if [ ! -s "$scanned" ]; then
+        echo "No Native Server log; the servers did not start" >&2
         return 1
-    fi
-    # The restart truncated startup.log: scan the log of the first run as well.
-    local scanned="$startup"
-    if [ -f "${NACOS_HOME}/logs/startup-before-restart.log" ]; then
-        scanned="$OUT/logs/startup-both-runs.log"
-        cat "${NACOS_HOME}/logs/startup-before-restart.log" "$startup" > "$scanned"
     fi
     mkdir -p "$OUT/missing-registrations"
     python3 -I "$METADATA_TOOL" collect-missing "$scanned" --output "$OUT/missing-registrations" \
@@ -564,28 +539,28 @@ PY
         fi
     fi
 
-    log "Tail of the Native Server log"
-    tail -n 200 "$startup" || true
+    log "Tail of the Native Server logs"
+    tail -n 200 "$scanned" || true
     return "$status"
 }
 
 case "${1:-}" in
     prepare) stage_prepare ;;
     build) stage_build ;;
-    start) stage_start ;;
     smoke) stage_smoke ;;
     integration) stage_integration ;;
+    scenario) stage_scenario ;;
     report) stage_report ;;
     all)
         stage_prepare
         stage_build
-        stage_start
         stage_smoke
         stage_integration || true
+        stage_scenario || true
         stage_report
         ;;
     *)
-        echo "Usage: $0 <prepare|build|start|smoke|integration|report|all>" >&2
+        echo "Usage: $0 <prepare|build|smoke|integration|scenario|report|all>" >&2
         exit 2
         ;;
 esac

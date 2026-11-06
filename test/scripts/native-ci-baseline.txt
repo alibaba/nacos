@@ -14,14 +14,6 @@
 # Format: <test class>.<test method>, shell-style wildcards allowed. Brackets are wildcards too, so
 # '?' stands for the brackets around the invocation index of a parameterized test.
 
-# These request the ARD adaptor on port 9080. It is a structural build switch
-# (nacos.ai.ard.enabled) that the default build leaves off, so nothing listens there.
-ArdAdaptorOpenApiITCase.*
-AuthScopeGuardITCase.shouldKeepNacosCredentialsOutOfExternalRequests
-# Invocations 5 to 11 are the ard(...) scenarios; 1 to 4 run against the Server and have to pass.
-ConditionalAnonymousAuthorizationITCase.testEveryConditionalAnonymousOperation(AnonymousScenario)?[5-9]?
-ConditionalAnonymousAuthorizationITCase.testEveryConditionalAnonymousOperation(AnonymousScenario)?1[01]?
-
 # These also fail against the ordinary JVM Server with PostgreSQL.
 ConfigListAdminApiOpenApiITCase.testListConfigsByFuzzyDataIdAdvancedFiltersAndPagination
 ConfigListConsoleApiOpenApiITCase.testListConfigsByFuzzyDataIdAdvancedFiltersAndContentSearch
