@@ -234,6 +234,11 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
   类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向
   默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
+- 条件。每个条目都带有 `"condition": {"typeReached":
+  "com.alibaba.nacos.bootstrap.NacosBootstrap"}`，即 Server 入口类，它先于其他 Server 代码完成初始化。
+  条目在运行时只有在其条件类开始初始化之后才可用。只有当另一个条件类一定先于该条目所服务的第一次
+  动态访问完成初始化时，才允许使用它；仅以类字面量出现的类永远不会被初始化。工具会为没有条件的条目
+  补上该条件，并拒绝没有合规条件的条目。
 - 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
   重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
   用于整理和检查该文件，普通 CI 构建会检查它。

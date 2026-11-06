@@ -194,9 +194,36 @@ enforces them in CI:
 
 Entries are sorted and written one per line, so a refresh produces a reviewable diff. Run
 `python3 test/scripts/native-metadata.py check` to verify the committed file. Adding
-`--classpath bootstrap/target/native/classpath.args` also reports entries whose class or resource
-disappeared, for example after a rename. The ordinary CI step `native-build-it.py` runs the tool's
-self test and the classpath-free check.
+`--classpath bootstrap/target/native/classpath.args` also reports entries whose class, resource or
+condition type disappeared, for example after a rename. The ordinary CI step
+`native-build-it.py` runs the tool's self test and the classpath-free check.
+
+### Conditions
+
+Every entry is guarded by
+`"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}`, the main class of
+the Native executable. GraalVM recommends conditional entries, so that metadata only enters an
+image that contains the code that needs it. The builder includes a conditional entry if its type
+is reachable at build time, and the executable makes the entry available once that type is
+reached, which is right before its class initialization starts. Until then every dynamic access
+that the entry serves behaves as if the entry did not exist.
+
+The main class is initialized before any other Server code runs, so every entry is available to
+every thread from the start. The guard keeps the file out of an image that does not contain the
+Server. It does not make the Server's own executable smaller, because the Server needs every
+entry; the file records what the Server needs, not which part of it needs what, and so the guard
+is the same for all entries.
+
+Narrow a condition only to a type that is certain to be initialized before the first access that
+the entry serves. A type that is only named by a class literal is never initialized, and a type
+that is initialized later leaves the accesses before it without metadata, which only a test that
+exercises that path reveals. `refresh` adds the guard to every input entry that has no condition,
+so a trace, the report of an exact-mode build and the committed file can be mixed freely; it
+keeps a condition that is present, and one type under two conditions stays two entries. `check`
+rejects an entry without a condition or with a malformed one, and it rejects the file when the
+source of the main class is gone, because renaming `NacosBootstrap` would otherwise leave every
+entry guarded by a type that does not exist. After such a rename, update `SERVER_ENTRY_POINT` in
+`native-metadata.py` and the conditions in the bundled file.
 
 ### Refresh the bundled metadata
 
@@ -236,8 +263,9 @@ GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases a
      --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
    ```
 
-   The command merges all inputs, drops what the rules above exclude, and rewrites the bundled
-   file. Pass `--output` to write elsewhere. The committed file is an input as well, because some
+   The command merges all inputs, drops what the rules above exclude, guards every entry that has
+   no condition (see [Conditions](#conditions)), and rewrites the bundled file. Pass `--output` to
+   write elsewhere. The committed file is an input as well, because some
    of its entries are in no trace: the reports of an exact-mode build (see below), and the
    accessors that protobuf looks up on a generated message and on its `Builder`, which the agent
    does not record because it records only the methods that are invoked. The ones of JRaft's

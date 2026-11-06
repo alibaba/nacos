@@ -23,6 +23,10 @@ and writes the result in a stable, line-oriented order so that reviews and diffs
 ``check`` verifies a committed file without needing GraalVM or a database. CI runs it from
 ``native-build-it.py``.
 
+Every entry carries a ``typeReached`` condition (see SERVER_ENTRY_POINT). ``refresh`` adds the
+default condition to each input entry that has none and keeps a condition that is present;
+``check`` rejects an entry without a well-formed condition.
+
 ``collect-missing`` closes the loop from the other side: an executable built with
 ``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
 prints every dynamic access that has no metadata. This command turns such logs into the same
@@ -53,6 +57,17 @@ DEFAULT_METADATA = ("bootstrap/src/main/resources/META-INF/native-image/"
                     "com.alibaba.nacos/nacos-bootstrap/reachability-metadata.json")
 METADATA_NAME = "reachability-metadata.json"
 SECTIONS = ("reflection", "resources")
+
+# GraalVM recommends that every entry be conditional. An entry with a typeReached condition is
+# included in the image if the type is reachable at build time, and it is available at run time
+# once the type is reached, that is, right before the initialization of its class starts; until
+# then every dynamic access that the entry serves behaves as if the entry did not exist. The entry
+# point of the Server is initialized before any other Server code runs, so guarding every entry
+# with it keeps all of them available to every thread and keeps the file out of an image that does
+# not contain the Server. Narrow a condition only to a type that is certain to be initialized
+# before the first access that the entry serves: a class that is only named by a class literal is
+# never initialized.
+SERVER_ENTRY_POINT = "com.alibaba.nacos.bootstrap.NacosBootstrap"
 
 # Types that belong to the JDK and therefore never appear on the application classpath.
 JDK_PREFIXES = ("java.", "javax.", "jdk.", "sun.", "com.sun.", "org.w3c.", "org.xml.", "org.ietf.")
@@ -189,6 +204,44 @@ def condition_key(entry):
     return json.dumps(entry.get("condition"), sort_keys=True)
 
 
+def guarded(entry):
+    """The entry itself if it has a condition, else a copy that the Server entry point guards."""
+    if "condition" in entry:
+        return entry
+    return dict(entry, condition={"typeReached": SERVER_ENTRY_POINT})
+
+
+def entry_point_problem(entry_point=SERVER_ENTRY_POINT):
+    """Return why the Server entry point cannot guard the entries, or None.
+
+    Renaming the class would leave every entry guarded by a type that does not exist, and the
+    metadata would silently stop taking effect. The tool runs from the root of the repository.
+    """
+    source = Path("bootstrap/src/main/java") / (entry_point.replace(".", "/") + ".java")
+    if source.is_file():
+        return None
+    return ("%s guards the entries but has no source file %s; after a rename, update "
+            "SERVER_ENTRY_POINT and the conditions of the bundled file" % (entry_point, source))
+
+
+def condition_problem(entry, classpath):
+    """Return what is wrong with the condition of a reflection or resource entry, or None.
+
+    The text continues the sentence "N entries have ...", so that the problem of many entries is
+    reported once instead of once per entry.
+    """
+    condition = entry.get("condition")
+    if condition is None:
+        return "no condition"
+    guard = condition.get("typeReached") if isinstance(condition, dict) else None
+    if not isinstance(guard, str) or set(condition) != {"typeReached"} \
+            or not JAVA_NAME.match(guard):
+        return "the invalid condition " + json.dumps(condition, sort_keys=True)
+    if classpath is not None and not classpath.has_type(guard):
+        return "the condition type %s, which is not on the Native classpath" % guard
+    return None
+
+
 def merge_reflection(entries):
     merged = {}
     for entry in entries:
@@ -235,7 +288,8 @@ def reflection_sort_key(entry):
 
 
 def resource_sort_key(entry):
-    return ("bundle" in entry, entry.get("module", ""), entry.get("glob", entry.get("bundle", "")))
+    return ("bundle" in entry, entry.get("module", ""), entry.get("glob", entry.get("bundle", "")),
+            condition_key(entry))
 
 
 def policy_reason(name):
@@ -287,8 +341,8 @@ def curate(traces, classpath):
         unknown = set(trace) - set(SECTIONS)
         if unknown:
             raise SystemExit("Unsupported metadata sections in trace: %s" % sorted(unknown))
-        reflection.extend(trace.get("reflection", []))
-        resources.extend(trace.get("resources", []))
+        reflection.extend(guarded(entry) for entry in trace.get("reflection", []))
+        resources.extend(guarded(entry) for entry in trace.get("resources", []))
     kept = []
     for entry in merge_reflection(reflection):
         reason = drop_reason(entry, classpath)
@@ -347,6 +401,7 @@ def problems(document, classpath=None):
         found.append("resources are not sorted")
     if len({json.dumps(entry, sort_keys=True) for entry in resources}) != len(resources):
         found.append("duplicate resource entries")
+    conditions = {}
     for entry in reflection:
         kind = entry.get("type")
         if isinstance(kind, str):
@@ -357,12 +412,21 @@ def problems(document, classpath=None):
         reason = drop_reason(entry, classpath)
         if reason:
             found.append("%s must not be shipped: %s" % (type_key(entry), reason))
+        issue = condition_problem(entry, classpath)
+        if issue:
+            conditions.setdefault(issue, []).append(type_key(entry))
     for entry in resources:
         text = entry.get("glob", entry.get("bundle", ""))
         if not text or text.endswith("/") or "//" in text:
             found.append("invalid resource: %s" % json.dumps(entry))
         if classpath is not None and "glob" in entry and not classpath.has_resource(entry["glob"]):
             found.append("resource not on the Native classpath: %s" % entry["glob"])
+        issue = condition_problem(entry, classpath)
+        if issue:
+            conditions.setdefault(issue, []).append(text or json.dumps(entry, sort_keys=True))
+    for issue, names in sorted(conditions.items()):
+        count = "1 entry has" if len(names) == 1 else "%d entries have" % len(names)
+        found.append("%s %s, for example %s" % (count, issue, ", ".join(sorted(names)[:3])))
     text = json.dumps(document)
     for pattern, reason in FORBIDDEN_TEXT:
         match = pattern.search(text)
@@ -394,6 +458,8 @@ def command_check(args):
     text = path.read_text()
     document = json.loads(text)
     issues = problems(document, Classpath.from_file(args.classpath) if args.classpath else None)
+    if entry_point_problem():
+        issues.append(entry_point_problem())
     if render(document) != text:
         issues.append("file is not in canonical form; regenerate it with 'refresh' or reformat")
     for issue in issues:
@@ -504,7 +570,8 @@ def command_selftest(args):
         root = Path(directory)
         for name in ("sample/Model.class", "sample/Generated__BeanDefinitions.class",
                      "sample/Local.class", "sample/Local$Inner.class", "sample/Dep.class",
-                     "sample/messages_de.properties", "sample/data.json", "META-INF/services/x.Spi"):
+                     "sample/messages_de.properties", "sample/data.json", "META-INF/services/x.Spi",
+                     SERVER_ENTRY_POINT.replace(".", "/") + ".class"):
             target = root / "classes" / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text("")
@@ -544,16 +611,56 @@ def command_selftest(args):
         assert [r.get("glob", r.get("bundle")) for r in document["resources"]] == [
             "META-INF/services/x.Spi", "sample/data.json", "sample.messages"]
         assert problems(document, classpath) == []
+        # Every entry leaves 'curate' guarded by the Server entry point.
+        guard = {"typeReached": SERVER_ENTRY_POINT}
+        assert all(e["condition"] == guard for e in document["reflection"] + document["resources"])
+        # A condition that is present is kept, and one type under two conditions stays two entries.
+        explicit = {"reflection": [{"type": "sample.Model", "fields": [{"name": "c"}],
+                                    "condition": {"typeReached": "sample.Local"}}],
+                    "resources": [{"glob": "sample/data.json",
+                                   "condition": {"typeReached": "sample.Local"}}]}
+        mixed, _ = curate([first, second, explicit], classpath)
+        assert [(e["type"], e["condition"]["typeReached"]) for e in mixed["reflection"]
+                if e["type"] == "sample.Model"] == [("sample.Model", SERVER_ENTRY_POINT),
+                                                    ("sample.Model", "sample.Local")]
+        assert [e["condition"]["typeReached"] for e in mixed["resources"]
+                if e.get("glob") == "sample/data.json"] == [SERVER_ENTRY_POINT, "sample.Local"]
+        assert problems(mixed, classpath) == [], problems(mixed, classpath)
+        # The class that guards the entries exists in the repository; a vanished one is reported.
+        assert entry_point_problem() is None, entry_point_problem()
+        assert "has no source file" in entry_point_problem("sample.Gone")
+        # An entry without a condition, with a malformed one or with a dangling one is reported.
+        bare = {"reflection": [{"type": "sample.Model"}, {"type": "sample.Dep"}],
+                "resources": [{"glob": "sample/data.json"}]}
+        assert any("3 entries have no condition" in issue for issue in problems(bare, classpath))
+        one = problems({"reflection": [{"type": "sample.Model"}], "resources": []}, classpath)
+        assert any("1 entry has no condition" in issue for issue in one), one
+        for condition, expected in (({"typeReached": 3}, "invalid condition"),
+                                    ({"typeReached": "sample.Model[]"}, "invalid condition"),
+                                    ({"typeReached": "sample.Model", "other": 1}, "invalid condition"),
+                                    ("sample.Model", "invalid condition"),
+                                    ({"typeReached": "sample.Absent"}, "not on the Native classpath")):
+            broken = {"reflection": [{"type": "sample.Model", "condition": condition}],
+                      "resources": []}
+            assert any(expected in issue for issue in problems(broken, classpath)), condition
         text = render(document)
         assert json.loads(text) == document and render(json.loads(text)) == text
         target = root / METADATA_NAME
         target.write_text(text)
         assert command_check(argparse.Namespace(file=str(target), classpath=None)) == 0
-        for broken in (text.replace("sample.Model", "/home/someone/Model"),
-                       text.replace('{"type": "java.lang.String[]"}', '{"type": "zzz.Last"}', 1)):
+        without_conditions = render({
+            section: [{name: value for name, value in entry.items() if name != "condition"}
+                      for entry in document[section]] for section in SECTIONS})
+        for broken, expected in (
+                (text.replace("sample.Model", "/home/someone/Model"), "absolute file system path"),
+                (text.replace('"type": "java.lang.String[]"}', '"type": "zzz.Last"}', 1),
+                 "not sorted"),
+                (without_conditions, "have no condition")):
             target.write_text(broken)
-            with contextlib.redirect_stderr(io.StringIO()):
+            captured = io.StringIO()
+            with contextlib.redirect_stderr(captured):
                 assert command_check(argparse.Namespace(file=str(target), classpath=None)) == 1
+            assert expected in captured.getvalue(), (expected, captured.getvalue())
     sample = (
         "org.graalvm.nativeimage.MissingReflectionRegistrationError: Cannot reflectively access "
         "method 'p.Plain#hello(java.lang.String, int)'. To allow this operation, add the following "
