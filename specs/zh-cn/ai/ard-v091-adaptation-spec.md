@@ -397,11 +397,20 @@ Controller mock 不替代 HTTP 证据。
 本轮不改公共 Java SDK。若后续新增资源写模型、SDK 方法或异常契约，
 必须重新执行 Java SDK IT 影响分析，不能沿用“无需 SDK IT”的结论。
 
+[严格校验包装工具](../../../test/scripts/ard-conformance.md)运行固定上游版本的
+manifest、publisher、Registry 探针，强制使用离线 Schema 和 URI/date-time 格式检查。
+缺少依赖、fixture 缺失或被改写、响应不合法及验证器异常均不能返回成功退出码。
+Registry 响应按部分 Entry 校验，不能套用完整 Manifest 约束。
+独立 HTTP 用例还沿 Manifest 声明的 Registry base URL 搜索非空 PUBLIC Agent，
+下载并核对 exact Version/digest Artifact。这些可独立验证的检查不证明私有资源完整性，
+不提升整体兼容基线。
+
 ## 7. 交付门禁与后续能力
 
-- DAUTH-F03 当前使私有跨类型共享索引 IT Disabled。先在目标分支复现，
-  再独立修复后台 canonical 投影读取与前台可见性边界；未经真实复测不得直接删除 Disabled。
-  未关闭时可以报告局部适配通过，但不能宣布本设计完整验收。
+- 私有跨类型共享索引 IT 仍以 DAUTH-F03 标记 Disabled。已授权私有 MCP 的召回，
+  以及 MCP Artifact 从 canonical 名称到兼容 ID 的映射，需要单独诊断和设计。
+  不把 Disabled 算作通过，也不从 PUBLIC Agent 的验证结果推断 MCP Artifact 已支持。
+  缺口关闭前可以报告局部适配通过，不能宣布本设计完整验收。
 - 旧、新上游均要求 Search 与 Explore 使用一致 relevance cutoff。
   当前可选 Jev 增强只作用 Search，属于已有偏离；严格基础一致性测试使用默认关闭状态。
   要把增强模式纳入同一兼容声明，须单独设计完整集合过滤及成本预算，不能拿 Search 单页算 facets。

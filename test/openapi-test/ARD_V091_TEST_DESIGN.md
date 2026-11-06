@@ -126,7 +126,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | Explore | 服务 UT 和 HTTP IT 覆盖 query/facet 别名、独立选项与完整集合统计。 |
 | 分页 | 服务 UT 与 105 条资源 HTTP IT 覆盖 Search 100 上限、List 既有规则、续页与原条件重查。 |
 | Trust | `ArdTrustIdentityValidatorTest`、服务/契约 UT 与部署参数化 HTTP IT 覆盖 authority 一致性、开放结构、未知框架、配置错误及新旧投影。 |
-| 最终一致性验收 | 完整一致性验收仍待完成；私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
+| 最终一致性验收 | 固定上游 runner 的严格包装工具覆盖依赖/fixture/格式/异常失败和完整/部分结构；HTTP 用例覆盖 Manifest → 非空 PUBLIC Agent Search → exact Artifact。私有 MCP 召回与 MCP Artifact 身份映射仍待单独解决，`DAUTH-F03` 保持 Disabled；整体基线不提升。 |
 
 HTTP 场景及覆盖限制统一见[场景索引](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md)。
 设计、实现和执行分开记录；具体运行结果以对应提交的测试报告为准。

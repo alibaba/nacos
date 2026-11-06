@@ -486,12 +486,23 @@ the general external helper; do not relax its global protection.
 No public Java SDK contract changes are planned. Reassess Java SDK IT if later
 work changes public write models, SDK methods or exception contracts.
 
+The [strict probe wrapper](../../../test/scripts/ard-conformance.md) runs the pinned
+upstream manifest, publisher and Registry probes with mandatory offline schemas
+and URI/date-time format checks. Missing dependencies, missing or altered fixtures,
+invalid responses and validator errors cannot produce a successful exit. Registry
+responses use partial-entry schemas; they are not validated as full manifests.
+The standalone HTTP suite also follows the advertised Registry base URL to a
+nonempty public Agent result and retrieves its exact Version/digest artifact.
+These independently testable checks do not establish private-resource completeness
+or promote the overall compatibility baseline.
+
 ## 7. Delivery gates and later capabilities
 
-- DAUTH-F03 currently disables private cross-type shared-index IT. Reproduce
-  on the implementation baseline, independently repair canonical background
-  projection versus foreground visibility, and remove Disabled only after live
-  verification. Without closure, report partial delivery, not full acceptance.
+- Private cross-type shared-index IT remains disabled as DAUTH-F03. Authorized
+  private MCP recall and the MCP Artifact mapping from canonical name to compatible
+  ID require separate diagnosis and design. Do not count the disabled case as a
+  pass or infer MCP Artifact support from public Agent results. Without closure,
+  report partial delivery, not full acceptance.
 - Both upstream versions require the same relevance cutoff for Search and
   Explore. Optional Search-only Jev filtering is an existing deviation.
   Strict base-mode conformance runs with its default disabled setting.

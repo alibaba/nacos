@@ -23,6 +23,7 @@ it does not identify the protocol revision.
 | spec/schemas/ard-entry.schema.json | 3032dad432607ddae0ec088db5759fa456f36308e0e9f340165aaed504d535f4 |
 | spec/schemas/ard.openapi.yaml | 13767927d9985fb4503fffd228c371ac08297b2ac80a7e6c8a1125cd3cf1f025 |
 | spec/schemas/ard.context.jsonld | bd80a73de23c4279409a429f43edcf944e07c09511678511bc9467924067c093 |
+| conformance/bin/conformance-test | 428b6cc17e8bb76c796c79b30953a02d70e92a6a9da8d0ef43027f7e968c1c7c |
 | LICENSE | dfe0e2a538e0e9004d43d1f57598177793109f5662706ccd1b1cb93c7fa34ce5 |
 
 ArdContractSchemas verifies hashes, enables URI format assertions and resolves

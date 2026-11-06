@@ -79,6 +79,21 @@ jobs:
           echo "$RUNNER_TEMP/mvnd-cache/${MVND_DIR}/bin" >> "$GITHUB_PATH"
       - name: "Print Maven Daemon version"
         run: mvnd -version
+      - name: "Set up Python for ARD probes"
+        id: ard-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: "Test ARD conformance tooling"
+        run: |
+          ARD_PYTHON="${{ steps.ard-python.outputs.python-path }}"
+          ARD_PYTHON_LIB="$(dirname "$(dirname "$ARD_PYTHON")")/lib"
+          # Keep the toolcache Python library path local to this step.
+          export LD_LIBRARY_PATH="$ARD_PYTHON_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          "$ARD_PYTHON" -m venv "$RUNNER_TEMP/ard-conformance-venv"
+          "$RUNNER_TEMP/ard-conformance-venv/bin/python" -m pip install -r test/scripts/requirements-ard-conformance.txt
+          "$RUNNER_TEMP/ard-conformance-venv/bin/python" test/scripts/test_ard_conformance.py
       - name: "Check with Maven Daemon"
         run: mvnd -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build and Test with Maven Daemon"

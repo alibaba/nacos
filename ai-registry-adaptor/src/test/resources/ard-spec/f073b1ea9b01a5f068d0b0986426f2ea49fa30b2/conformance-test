@@ -1,0 +1,679 @@
+#!/usr/bin/env python3
+"""
+Agentic Resource Discovery (ARD) Conformance Testing Tool
+Validates ARD manifests, publisher well-known resolution, and Registry REST API
+implementations against the ARD specification (v0.91).
+"""
+
+import os
+import sys
+import re
+import json
+import urllib.request
+import urllib.error
+
+# Ensure UTF-8 output on Windows (cp1252 default cannot encode ✓/✗/⚠)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+# Strict URN Regex matching urn:air:<publisher>:<namespace>:<agent-name>
+URN_REGEX = re.compile(r"^urn:air:([a-zA-Z0-9.-]+)(?::([a-zA-Z0-9._:-]+))?:([a-zA-Z0-9._-]+)$")
+
+# RFC 6838 restricted-name for type/subtype plus RFC 9110 parameters.
+RESTRICTED_NAME = r"[0-9A-Za-z][0-9A-Za-z!#$&^_.+\-]{0,126}"
+TOKEN = r"[!#$%&'*+\-.^_`|~0-9A-Za-z]+"
+QUOTED_STRING = r'"(?:[\t !#-\[\]-~]|\\[\t !-~])*"'
+MEDIA_TYPE_REGEX = re.compile(
+    rf"(?P<type>{RESTRICTED_NAME})/(?P<subtype>{RESTRICTED_NAME})"
+    rf"(?P<parameters>(?:[ \t]*;[ \t]*{TOKEN}[ \t]*=[ \t]*(?:{TOKEN}|{QUOTED_STRING}))*)"
+)
+MEDIA_TYPE_PARAMETER_REGEX = re.compile(
+    rf"[ \t]*;[ \t]*(?P<name>{TOKEN})[ \t]*=[ \t]*"
+    rf"(?P<value>{TOKEN}|{QUOTED_STRING})"
+)
+
+def parse_media_type(media_type):
+    match = MEDIA_TYPE_REGEX.fullmatch(media_type)
+    if match is None:
+        return None
+
+    base_media_type = (
+        f"{match.group('type').lower()}/{match.group('subtype').lower()}"
+    )
+    parameters = tuple(
+        sorted(
+            (
+                parameter.group("name").lower(),
+                parameter.group("value"),
+            )
+            for parameter in MEDIA_TYPE_PARAMETER_REGEX.finditer(
+                match.group("parameters")
+            )
+        )
+    )
+    parameter_names = [name for name, _ in parameters]
+    if len(parameter_names) != len(set(parameter_names)):
+        return None
+    return base_media_type, parameters
+
+STANDARD_MEDIA_TYPES = (
+    "application/ai-catalog+json",
+    "application/agent-card+json",
+    "application/a2a-agent-card+json",
+    "application/mcp-server-card+json",
+    "application/agent-skills+json",
+    "application/agent-skills+md",
+    "application/agent-skills+zip",
+    "application/agent-skills+gzip",
+    'text/markdown; profile="urn:air:agent-skills"',
+    "application/agent-plugins+zip",
+    "application/agent-plugins+gzip",
+    "application/ai-registry",
+    "application/ai-registry+json",
+)
+STANDARD_MEDIA_TYPE_KEYS = frozenset(
+    parse_media_type(media_type) for media_type in STANDARD_MEDIA_TYPES
+)
+STANDARD_BASE_MEDIA_TYPES = frozenset(
+    base_media_type for base_media_type, _ in STANDARD_MEDIA_TYPE_KEYS
+)
+STANDARD_PARAMETERS_BY_BASE = {
+    base_media_type: dict(parameters)
+    for base_media_type, parameters in STANDARD_MEDIA_TYPE_KEYS
+}
+DEPRECATED_MEDIA_TYPES = {
+    "application/mcp-server+json": "application/mcp-server-card+json",
+}
+
+# Colors for beautiful CLI output
+COLOR_RESET = "\033[0m"
+COLOR_BOLD = "\033[1m"
+COLOR_RED = "\033[31m"
+COLOR_GREEN = "\033[32m"
+COLOR_YELLOW = "\033[33m"
+COLOR_CYAN = "\033[36m"
+
+def print_header(title):
+    print(f"\n{COLOR_BOLD}{COLOR_CYAN}=== {title} ==={COLOR_RESET}")
+
+def print_success(msg):
+    print(f"  {COLOR_GREEN}✓{COLOR_RESET} {msg}")
+
+def print_failure(msg):
+    print(f"  {COLOR_RED}✗{COLOR_RESET} {msg}")
+
+def print_warning(msg):
+    print(f"  {COLOR_YELLOW}⚠{COLOR_RESET} {msg}")
+
+def print_info(msg):
+    print(f"  {COLOR_CYAN}ℹ{COLOR_RESET} {msg}")
+
+def print_bullet(msg):
+    print(f"  • {msg}")
+
+def classify_media_type(media_type):
+    if not isinstance(media_type, str):
+        return (
+            "warning",
+            f"Media type must be a string; got {type(media_type).__name__}.",
+        )
+
+    parsed_media_type = parse_media_type(media_type)
+    if parsed_media_type is None:
+        return (
+            "warning",
+            f"Media type '{media_type}' is not a valid IANA media type. "
+            "Expected 'type/subtype' with optional parameters.",
+        )
+
+    base_media_type, parameters = parsed_media_type
+    if parsed_media_type in STANDARD_MEDIA_TYPE_KEYS:
+        return None
+
+    replacement = DEPRECATED_MEDIA_TYPES.get(base_media_type)
+    if replacement is not None:
+        return (
+            "warning",
+            f"Media type '{media_type}' was renamed by ADR-0008. "
+            f"Use '{replacement}'.",
+        )
+
+    if base_media_type in STANDARD_BASE_MEDIA_TYPES:
+        expected_parameters = STANDARD_PARAMETERS_BY_BASE[base_media_type]
+        actual_parameters = dict(parameters)
+        missing_parameters = [
+            f"{name}={value}"
+            for name, value in expected_parameters.items()
+            if actual_parameters.get(name) != value
+        ]
+        unrecognized_parameters = [
+            name
+            for name, value in parameters
+            if expected_parameters.get(name) != value
+        ]
+        differences = []
+        if missing_parameters:
+            differences.append(
+                "missing required parameters: " + ", ".join(missing_parameters)
+            )
+        if unrecognized_parameters:
+            differences.append(
+                "unrecognized parameters: "
+                + ", ".join(unrecognized_parameters)
+            )
+        return (
+            "warning",
+            f"Media type '{media_type}' is based on standard discovery type "
+            f"'{base_media_type}' but has "
+            f"{'; '.join(differences)}.",
+        )
+
+    if base_media_type.startswith("application/"):
+        return (
+            "info",
+            f"Media type '{media_type}' is a valid application extension media type. "
+            "ARD permits extension types without core registration.",
+        )
+
+    return (
+        "warning",
+        f"Media type '{media_type}' is not one of standard discovery types: "
+        f"{list(STANDARD_MEDIA_TYPES)}.",
+    )
+
+def parse_request_headers(header_args):
+    headers = {}
+    for raw_header in header_args:
+        if ":" not in raw_header:
+            raise ValueError(f"Invalid header '{raw_header}'. Expected 'Name: value' format.")
+
+        name, value = raw_header.split(":", 1)
+        name = name.strip()
+        value = value.strip()
+
+        if not name:
+            raise ValueError(f"Invalid header '{raw_header}'. Header name cannot be empty.")
+        if "\r" in name or "\n" in name or "\r" in value or "\n" in value:
+            raise ValueError(f"Invalid header '{raw_header}'. Header values cannot contain line breaks.")
+
+        headers[name] = value
+
+    return headers
+
+class ConformanceTester:
+    def __init__(self):
+        self.errors = []
+        self.warnings = []
+        self.infos = []
+        self.jsonschema_available = False
+        try:
+            import jsonschema
+            self.jsonschema_available = True
+        except ImportError:
+            pass
+
+    def add_error(self, msg):
+        self.errors.append(msg)
+        print_failure(msg)
+
+    def add_warning(self, msg):
+        self.warnings.append(msg)
+        print_warning(msg)
+
+    def add_info(self, msg):
+        self.infos.append(msg)
+        print_info(msg)
+
+    def _load_entry_schema(self):
+        """The ARD entry schema is authoritative for entry structure (spec Appendix D.1)."""
+        schema_path = os.path.join(os.path.dirname(__file__), "../../spec/schemas/ard-entry.schema.json")
+        if not os.path.exists(schema_path):
+            self.add_warning(f"Schema file not found at {schema_path}. Skipping JSON Schema validation.")
+            return None
+        with open(schema_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    def run_json_schema_validation(self, manifest_data):
+        """Validate the manifest as an ArdManifest, then every entry as an ArdEntry."""
+        if not self.jsonschema_available:
+            print_warning("Python 'jsonschema' package not installed. Skipping strict JSON Schema check.")
+            print_bullet("Tip: Run 'pip install jsonschema' to enable strict schema-level checking.")
+            return True
+
+        import jsonschema
+        try:
+            schema_data = self._load_entry_schema()
+        except Exception as e:
+            self.add_warning(f"Failed to read ARD entry schema: {e}")
+            return True
+        if schema_data is None:
+            return True
+
+        def as_def(name):
+            variant = dict(schema_data)
+            variant["$ref"] = f"#/$defs/{name}"
+            return variant
+
+        ok = True
+        try:
+            jsonschema.validate(instance=manifest_data, schema=as_def("ArdManifest"))
+            print_success("Manifest validates against ArdManifest.")
+        except jsonschema.exceptions.ValidationError as e:
+            self.add_error(f"ArdManifest validation failed: {e.message} at path '{'.'.join(map(str, e.absolute_path))}'")
+            ok = False
+        except Exception as e:
+            self.add_warning(f"Failed to run JSON Schema validator: {e}")
+            return True
+
+        entries = manifest_data.get("entries")
+        if isinstance(entries, list):
+            entry_schema = as_def("ArdEntry")
+            bad = 0
+            for idx, entry in enumerate(entries):
+                label = (entry.get("displayName") or entry.get("identifier") or f"Entry #{idx}") if isinstance(entry, dict) else f"Entry #{idx}"
+                try:
+                    jsonschema.validate(instance=entry, schema=entry_schema)
+                except jsonschema.exceptions.ValidationError as e:
+                    self.add_error(f"[{label}] ArdEntry validation failed: {e.message} at path '{'.'.join(map(str, e.absolute_path))}'")
+                    bad += 1
+                    ok = False
+            if not bad:
+                print_success(f"All {len(entries)} entries validate against ArdEntry.")
+        return ok
+
+    def validate_manifest(self, raw_content, source_label):
+        print_header(f"Validating Manifest: {source_label}")
+        
+        # 1. Basic JSON Parsing
+        try:
+            data = json.loads(raw_content)
+            print_success("Manifest parsed successfully as valid JSON.")
+        except json.JSONDecodeError as e:
+            self.add_error(f"Malformed JSON in manifest: {e}")
+            return False
+
+        # 2. Strict JSON Schema Validation
+        schema_passed = self.run_json_schema_validation(data)
+
+        # 3. Custom Semantic and Protocol-Specific Validation
+        print_bullet("Running custom semantic checks...")
+        
+        # ARD requires only 'entries' at the top level (§5.1). Other members are
+        # transport-defined and ignored, so their presence is noted, never an error.
+        extra_roots = [k for k in data.keys() if k != "entries"]
+        if extra_roots:
+            print_bullet(f"Top-level members ignored by ARD (transport-defined): {', '.join(sorted(extra_roots))}.")
+
+        entries = data.get("entries")
+        if entries is None:
+            self.add_error("Missing required 'entries' array.")
+            return False
+        elif not isinstance(entries, list):
+            self.add_error("'entries' must be a JSON array.")
+            return False
+
+        print_bullet(f"Found {len(entries)} entries to validate.")
+        for idx, entry in enumerate(entries):
+            label = entry.get("displayName") or entry.get("identifier") or f"Entry #{idx}"
+            print(f"\n  {COLOR_BOLD}Entry: {label}{COLOR_RESET}")
+
+            # Required properties
+            ident = entry.get("identifier")
+            if not ident:
+                self.add_error(f"[{label}] Missing required 'identifier'.")
+            else:
+                # URN pattern checks
+                match = URN_REGEX.match(ident)
+                if not match:
+                    self.add_error(f"[{label}] Identifier '{ident}' does not match RFC 8141 URN pattern 'urn:air:<publisher>:<namespace>:<agent-name>'.")
+                else:
+                    publisher, namespace, name = match.groups()
+                    print_success(f"[{label}] Valid URN format. Publisher: '{publisher}', Name: '{name}'.")
+
+            disp_name = entry.get("displayName")
+            if not disp_name:
+                self.add_error(f"[{label}] Missing required 'displayName'.")
+
+            media_type = entry.get("type")
+            if not media_type:
+                self.add_error(f"[{label}] Missing required 'type' (mediaType).")
+            else:
+                diagnostic = classify_media_type(media_type)
+                if diagnostic is not None:
+                    severity, message = diagnostic
+                    if severity == "info":
+                        self.add_info(f"[{label}] {message}")
+                    else:
+                        self.add_warning(f"[{label}] {message}")
+
+            # Strict Value-or-Reference checks
+            has_url = "url" in entry
+            has_data = "data" in entry
+            if has_url and has_data:
+                self.add_error(f"[{label}] Constraint violation: both 'url' and 'data' are provided. MUST provide exactly one.")
+            elif not has_url and not has_data:
+                self.add_error(f"[{label}] Constraint violation: neither 'url' nor 'data' is provided. MUST provide exactly one.")
+            else:
+                print_success(f"[{label}] Correct Value-or-Reference delivery format (using {'url' if has_url else 'data'}).")
+
+            # Custom constraints for representativeQueries (§4.2, §D.2)
+            queries = entry.get("representativeQueries")
+            if queries is None:
+                self.add_warning(f"[{label}] No 'representativeQueries'. The semantic index is built from this term, so the entry will not be found by search — it is a valid catalog entry but not a discoverable ARD entry.")
+            else:
+                if not isinstance(queries, list):
+                    self.add_error(f"[{label}] 'representativeQueries' must be an array of strings.")
+                else:
+                    if len(queries) < 2 or len(queries) > 5:
+                        self.add_warning(f"[{label}] 'representativeQueries' array has size {len(queries)}. 2 to 5 queries are recommended for vector index embedding.")
+                    for q in queries:
+                        if not isinstance(q, str):
+                            self.add_error(f"[{label}] Query '{q}' is not a string.")
+
+            # Progressive trust checks
+            trust = entry.get("trustManifest")
+            if trust is not None:
+                if not isinstance(trust, dict):
+                    self.add_error(f"[{label}] 'trustManifest' must be a JSON object.")
+                else:
+                    trust_id = trust.get("identity")
+                    if not trust_id:
+                        self.add_error(f"[{label}] 'trustManifest' is missing required 'identity' field.")
+
+        # Top-level deprecated property check
+        if "collections" in data:
+            self.add_warning("Found 'collections' at root. Top-level collections were removed; ARD ignores unrecognized top-level members, so this does not invalidate the manifest, but hierarchies should be modeled inside 'entries'.")
+
+        return len(self.errors) == 0
+
+    def resolve_publisher(self, target):
+        """Resolve a publisher's entries the way a conformant consumer does (§5.1).
+
+        A consumer MUST fetch /.well-known/ard.json. Consulting the predecessor
+        /.well-known/ai-catalog.json is permitted (MAY) but not required, so a
+        publisher reachable only there is flagged: it may not be discovered.
+        """
+        origin = target.rstrip('/')
+        if not origin.startswith(("http://", "https://")):
+            origin = "https://" + origin
+
+        print_header(f"Resolving publisher: {origin}")
+
+        def fetch(path):
+            url = f"{origin}/.well-known/{path}"
+            try:
+                with urllib.request.urlopen(url, timeout=10) as response:
+                    return response.read().decode('utf-8'), url, None
+            except urllib.error.HTTPError as e:
+                return None, url, f"{e.code} {e.reason}"
+            except Exception as e:
+                return None, url, str(e)
+
+        content, ard_url, ard_err = fetch("ard.json")
+        if content is not None:
+            print_success(f"Found {ard_url} — the path consumers are required to fetch.")
+            return content, ard_url
+
+        print_warning(f"No manifest at {ard_url} ({ard_err}).")
+        legacy, legacy_url, legacy_err = fetch("ai-catalog.json")
+        if legacy is not None:
+            self.add_warning(
+                f"Reachable only at {legacy_url}. This is the predecessor path; consulting it is optional "
+                f"for consumers (§5.1), so this publisher may not be discovered. Serve the manifest at "
+                f"/.well-known/ard.json — a copy, symlink, or 301 is sufficient.")
+            return legacy, legacy_url
+
+        self.add_error(
+            f"No manifest found at /.well-known/ard.json ({ard_err}) or /.well-known/ai-catalog.json ({legacy_err}).")
+        return None, None
+
+    def validate_registry(self, registry_base_url, request_headers=None):
+        print_header(f"Validating Agent Registry: {registry_base_url}")
+        base_url = registry_base_url.rstrip('/')
+        request_headers = request_headers or {}
+        
+        # 1. Test GET /agents (Optional deterministic listing)
+        agents_url = f"{base_url}/agents"
+        print(f"\n  {COLOR_BOLD}Probing GET /agents...{COLOR_RESET}")
+        try:
+            req = urllib.request.Request(agents_url, headers=request_headers, method="GET")
+            with urllib.request.urlopen(req, timeout=5) as response:
+                body = response.read().decode('utf-8')
+                data = json.loads(body)
+                if response.status == 200:
+                    print_success(f"GET /agents responded successfully with 200 OK.")
+                    # Check schema conformance
+                    if not isinstance(data, dict) or "items" not in data:
+                        self.add_error("GET /agents response is not a valid paginated object. Missing 'items' array.")
+                    else:
+                        print_success(f"GET /agents response contains valid 'items' list ({len(data.get('items', []))} items).")
+                else:
+                    self.add_warning(f"GET /agents returned unexpected status: {response.status}")
+        except urllib.error.HTTPError as e:
+            if e.code in [404, 501]:
+                print_warning(f"GET /agents responded with {e.code} (Not Implemented/Not Found). This endpoint is optional and this is compliant behavior.")
+            else:
+                self.add_error(f"GET /agents returned server error: {e.code} {e.reason}")
+        except Exception as e:
+            self.add_error(f"Failed to contact GET /agents: {e}")
+        # 2. Test POST /search (Mandatory Discovery Endpoint)
+        search_url = f"{base_url}/search"
+        print(f"\n  {COLOR_BOLD}Probing POST /search (Mandated Discovery endpoint)...{COLOR_RESET}")
+        
+        mock_search_query = {
+            "query": {
+                "text": "weather forecast tools",
+                "filter": {
+                    "type": ["application/mcp-server-card+json"]
+                }
+            },
+            "federation": "none",
+            "pageSize": 2
+        }
+        
+        try:
+            req_data = json.dumps(mock_search_query).encode('utf-8')
+            headers = dict(request_headers)
+            headers["Content-Type"] = "application/json"
+            req = urllib.request.Request(
+                search_url,
+                data=req_data,
+                headers=headers,
+                method="POST"
+            )
+            
+            with urllib.request.urlopen(req, timeout=5) as response:
+                body = response.read().decode('utf-8')
+                data = json.loads(body)
+                
+                if response.status == 200:
+                    print_success("POST /search responded successfully with 200 OK.")
+                    
+                    results = data.get("results")
+                    if results is None:
+                        self.add_error("POST /search response is missing required 'results' array.")
+                    elif not isinstance(results, list):
+                        self.add_error("POST /search response 'results' is not a JSON array.")
+                    else:
+                        print_success(f"POST /search returned valid results list ({len(results)} items).")
+                        
+                        for idx, item in enumerate(results):
+                            label = f"Result #{idx}"
+                            
+                            score = item.get("score")
+                            if score is None:
+                                self.add_error(f"[{label}] Missing required SearchResultItem field 'score'.")
+                            elif not isinstance(score, int) or score < 0 or score > 100:
+                                self.add_error(f"[{label}] 'score' must be an integer between 0 and 100. Got {score}.")
+                                
+                            source = item.get("source")
+                            if not source:
+                                self.add_error(f"[{label}] Missing required SearchResultItem field 'source'.")
+                                
+                            # In a response, only 'identifier' is required (§5.3.2).
+                            # A registry MAY omit any other term; 'identifier' names
+                            # the authoritative entry.
+                            ident = item.get("identifier")
+                            if not ident:
+                                self.add_error(f"[{label}] Result is missing required 'identifier'.")
+
+                            for optional_term in ("displayName", "type"):
+                                if not item.get(optional_term):
+                                    print_bullet(f"[{label}] Omits '{optional_term}' (permitted; results carry only what selection needs).")
+                else:
+                    self.add_error(f"POST /search returned unexpected HTTP status: {response.status}")
+        except urllib.error.HTTPError as e:
+            self.add_error(f"POST /search request failed: {e.code} {e.reason}")
+        except Exception as e:
+            self.add_error(f"Failed to execute search probe: {e}")
+
+        # 3. Test POST /explore (Optional Introspection Endpoint)
+        explore_url = f"{base_url}/explore"
+        print(f"\n  {COLOR_BOLD}Probing POST /explore (Optional Introspection endpoint)...{COLOR_RESET}")
+        
+        mock_explore_query = {
+            "query": {
+                "text": "weather"
+            },
+            "resultType": {
+                "facets": [
+                    { "field": "type" }
+                ]
+            }
+        }
+        
+        try:
+            req_data = json.dumps(mock_explore_query).encode('utf-8')
+            headers = dict(request_headers)
+            headers["Content-Type"] = "application/json"
+            req = urllib.request.Request(
+                explore_url,
+                data=req_data,
+                headers=headers,
+                method="POST"
+            )
+            
+            with urllib.request.urlopen(req, timeout=5) as response:
+                body = response.read().decode('utf-8')
+                data = json.loads(body)
+                
+                if response.status == 200:
+                    print_success("POST /explore responded successfully with 200 OK.")
+                    
+                    rtype = data.get("resultType")
+                    if rtype != "facets":
+                        self.add_error(f"POST /explore response 'resultType' expected 'facets', got '{rtype}'.")
+                        
+                    facets = data.get("facets")
+                    if facets is None:
+                        self.add_error("POST /explore response is missing required 'facets' block.")
+                    elif not isinstance(facets, dict):
+                        self.add_error("POST /explore response 'facets' is not a JSON object.")
+                    else:
+                        print_success("POST /explore returned valid facets object.")
+                        
+                else:
+                    self.add_error(f"POST /explore returned unexpected HTTP status: {response.status}")
+        except urllib.error.HTTPError as e:
+            if e.code in [404, 501]:
+                print_warning(f"POST /explore responded with {e.code} (Not Implemented/Not Found). This endpoint is optional and this is compliant behavior.")
+            else:
+                self.add_error(f"POST /explore returned server error: {e.code} {e.reason}")
+        except Exception as e:
+            self.add_error(f"Failed to execute explore probe: {e}")
+
+        return len(self.errors) == 0
+
+def main():
+    if len(sys.argv) < 3:
+        print(f"{COLOR_BOLD}Agentic Resource Discovery Conformance CLI v0.9.1{COLOR_RESET}")
+        print("Usage:")
+        print("  conformance-test manifest  <local_file_path_or_url>")
+        print("  conformance-test publisher <domain>   # resolves /.well-known/ard.json per §5.1")
+        print("  conformance-test registry  <registry_base_url> [--header 'Name: value']...")
+        sys.exit(1)
+
+    command = sys.argv[1].lower()
+    target = sys.argv[2]
+    args = sys.argv[3:]
+    tester = ConformanceTester()
+
+    if command == "manifest":
+        if args:
+            print_failure(f"Unexpected arguments for manifest command: {' '.join(args)}")
+            sys.exit(1)
+        # Handle remote url vs local path
+        if target.startswith("http://") or target.startswith("https://"):
+            try:
+                print_bullet(f"Fetching remote manifest from {target}...")
+                with urllib.request.urlopen(target, timeout=5) as response:
+                    content = response.read().decode('utf-8')
+                success = tester.validate_manifest(content, target)
+            except Exception as e:
+                print_failure(f"Failed to fetch remote manifest: {e}")
+                sys.exit(1)
+        else:
+            if not os.path.exists(target):
+                print_failure(f"Local file does not exist: {target}")
+                sys.exit(1)
+            try:
+                with open(target, 'r') as f:
+                    content = f.read()
+                success = tester.validate_manifest(content, target)
+            except Exception as e:
+                print_failure(f"Failed to read local file: {e}")
+                sys.exit(1)
+    elif command == "publisher":
+        if args:
+            print_failure(f"Unexpected arguments for publisher command: {' '.join(args)}")
+            sys.exit(1)
+        content, source = tester.resolve_publisher(target)
+        if content is None:
+            success = False
+        else:
+            success = tester.validate_manifest(content, source)
+    elif command == "registry":
+        header_args = []
+        idx = 0
+        while idx < len(args):
+            arg = args[idx]
+            if arg != "--header":
+                print_failure(f"Unknown registry option '{arg}'. Supported option: --header 'Name: value'")
+                sys.exit(1)
+            if idx + 1 >= len(args):
+                print_failure("--header requires a value in 'Name: value' format.")
+                sys.exit(1)
+            header_args.append(args[idx + 1])
+            idx += 2
+
+        try:
+            request_headers = parse_request_headers(header_args)
+        except ValueError as e:
+            print_failure(str(e))
+            sys.exit(1)
+
+        success = tester.validate_registry(target, request_headers=request_headers)
+    else:
+        print_failure(f"Unknown test suite command '{command}'. Must be 'manifest', 'publisher', or 'registry'.")
+        sys.exit(1)
+
+    # Summary reporting
+    print_header("Conformance Validation Summary")
+    if success:
+        print(f"{COLOR_BOLD}{COLOR_GREEN}CONFORMANCE STATUS: PASS{COLOR_RESET}")
+        summary = (
+            f"Validated with 0 critical specification errors and "
+            f"{len(tester.warnings)} warnings"
+        )
+        if tester.infos:
+            summary += f" and {len(tester.infos)} informational messages"
+        print(f"{summary}.")
+        sys.exit(0)
+    else:
+        print(f"{COLOR_BOLD}{COLOR_RED}CONFORMANCE STATUS: FAIL{COLOR_RESET}")
+        print(f"Found {len(tester.errors)} critical specification errors. Implementation is NOT conformant.")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

@@ -555,6 +555,35 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
+    public void testDiscoveredRegistryReturnsPublicAgentArtifact() throws Exception {
+        String name = randomAiName("ard-discovered");
+        publishPublicAgent(name, "1.0.0");
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        awaitSearch(searchRequest(name, TYPE_NACOS_AGENT), Set.of(name), identity);
+        JsonNode manifest = discoveryGet("/.well-known/ard.json", identity);
+        var errors = CONTRACTS.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        String base = manifest.path("entries").get(0).path("url").asText();
+        HttpPost search = new HttpPost(base + "/search?namespaceId=" + DEFAULT_NAMESPACE);
+        search.setEntity(new StringEntity(JacksonUtils.toJson(searchRequest(name, TYPE_NACOS_AGENT)),
+                ContentType.APPLICATION_JSON));
+        HttpResponse response = executeArdRaw(search, identity);
+        assertEquals(200, response.code(), response.body());
+        JsonNode result = JacksonUtils.toObj(response.body());
+        assertResponseSchemas("SearchResponse", result);
+        assertEquals(Set.of(name), resourceNames(result.path("results")));
+        JsonNode entry = findResource(result.path("results"), name);
+        HttpResponse downloaded = executeArdRaw(new HttpGet(entry.path("url").asText()), identity);
+        assertEquals(200, downloaded.code(), downloaded.body());
+        JsonNode artifact = JacksonUtils.toObj(downloaded.body());
+        JsonNode detail = getJsonOk(ADMIN_AGENT_PATH + "/version",
+                agentVersionIdentityQuery(DEFAULT_NAMESPACE, name, "1.0.0")).get("data");
+        assertEquals(name, artifact.path("agentName").asText());
+        assertEquals("1.0.0", artifact.path("version").asText());
+        assertEquals(detail.get("contentDigest"), artifact.get("contentDigest"));
+    }
+
+    @Test
     public void testDiscoveryAuthenticationMatchesLegacyRoutes() throws Exception {
         for (String path : List.of("/.well-known/ard.json", "/.well-known/ai-catalog.json",
             ARD_PATH + "/ai-catalog.json")) {
