@@ -227,12 +227,16 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
 - 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
   PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
-  OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径。其他插件与驱动、内嵌 Derby、
-  AI registry context、协议适配器以及仅集群场景的路径不在内置范围内；它们的元数据来自扩展自身或
-  `nacos.native.metadata`，其支持情况必须单独验证和报告。
+  OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及 `test/native-test` 各场景所实际
+  执行的路径：三个 AI registry context、Kubernetes 同步、DNS 适配器和由三个节点组成的集群（Distro、
+  Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby、Oracle 以及 Istio 适配器不在内置范围内；
+  它们的元数据来自扩展自身或 `nacos.native.metadata`，其支持情况必须单独验证和报告。
 - 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。追踪记录不到的条目来自
   exact 模式构建的缺失报告；对 tracing agent 不记录的查找（例如 protobuf 对生成消息及其 Builder 的
-  访问器查找），则按产生这些查找的代码推导，并必须由 exact 模式构建和重启检查确认。每个文件必须
+  访问器查找），则按产生这些查找的代码推导，并必须由 exact 模式构建和重启检查确认。只在集群中才会被
+  序列化的类（节点之间的请求、Distro 携带的数据、`plugin_state` 组的命令）连同其属性的类一并完整
+  登记：Jackson 对看不到的属性会不声不响地丢弃，而未登记的 getter 或 setter 在第一次调用时失败，
+  exact 模式构建只能一次发现一个。每个文件必须
   确定性：排序，每个条目一行。任何文件都不得包含同一构建中由 Spring AOT 生成的类、agent 或 JVM
   内部类、测试或工具类，
   也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
@@ -255,19 +259,24 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   第三方构件的条目使用“让 Server 用到该构件”的类型，例如 Spring 家族以及由 Spring Boot 查找其类的库
   使用 `org.springframework.boot.SpringApplication`，JDBC 驱动使用 `com.zaxxer.hikari.HikariConfig`。
   条目在运行时只有在其条件类开始初始化之后才可用，因此条件类必须先于该条目所服务的第一次动态访问
-  完成初始化，这常常早于该构件自身类的首次使用；仅以类字面量出现的类永远不会被初始化。条件类须经与
-  Server 一次运行的类加载与初始化顺序比对后才能采用（`test/scripts/native-condition-order.py`）。
+  完成初始化，这常常早于该构件自身类的首次使用；仅以类字面量出现的类永远不会被初始化。对于客户端和服务端都会使用的
+  构件，条件类必须是两者都会初始化的类型：集群中的节点在构建核心 context 时就创建 RPC 客户端，早于任何
+  gRPC 服务端启动。条件类须经与 Server 一次运行的类加载与初始化顺序比对后才能采用
+  （`test/scripts/native-condition-order.py`）。
   工具按归属方为每个条目设定条件，并拒绝被其他条件保护的条目。
 - 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
   重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
   用于整理和检查这些文件，并把每个条目放进其归属方的文件；普通 CI 构建会检查它们。
-- 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收。在相同环境下普通 JVM Server 同样
+- 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收；套件无法覆盖的部分，由模块
+  `test/native-test` 的测试验收，这些测试用 Testcontainers 启动数据库和基础设施。可执行程序包含什么
+  在构建时就已固定（数据源、AI 注册表开关、适配器、插件 jar、单机或集群模式），因此每个被验收的
+  配置都是 Native CI 作业的一个场景，在独立的构建上运行。在相同环境下普通 JVM Server 同样
   失败的用例记录在基线中，不属于 Native 回归。套件不会重启 Server，因此验收还必须创建套件不会
   创建的数据，等待命名服务的 Raft 快照落盘，在同一份数据上重启 Native Server 并再次读取这些数据；
-  只有这样 Raft 组才会加载快照并回放其后的日志（`test/scripts/native-restart.sh`）。可使用
+  只有这样 Raft 组才会加载快照并回放其后的日志（`test/native-test` 中的 `NativeRestartCheck`）。可使用
   `--exact-reachability-metadata` 构建并以 `-XX:MissingRegistrationReportingMode=Warn` 运行，
-  以列出缺少元数据的动态访问。验证报告必须写明 GraalVM 版本、数据源、实际运行的测试集以及
-  重启检查是否执行。
+  以列出缺少元数据的动态访问。验证报告必须写明 GraalVM 版本、场景、数据源、实际运行的套件和测试
+  以及重启检查是否执行。
 
 ## 11. 待处理问题
 

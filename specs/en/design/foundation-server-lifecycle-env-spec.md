@@ -303,15 +303,21 @@ build does not require the operator to trace the Server first.
 - Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
   bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
   classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
-  Java SDK and Maintainer SDK integration suites. Other plugins and drivers, embedded Derby, the
-  AI registry contexts, protocol adaptors and cluster-only paths are outside the bundled scope.
-  Their metadata comes from the extension itself or from `nacos.native.metadata`, and their
-  support must be validated and reported separately.
+  Java SDK and Maintainer SDK integration suites, and, as exercised by the scenarios of
+  `test/native-test`, the three AI registry contexts, the Kubernetes sync, the DNS adaptor and a
+  cluster of three nodes (Distro, Raft and the requests between the nodes). Other plugins and
+  drivers, embedded Derby, Oracle and the Istio adaptor are outside the bundled scope. Their
+  metadata comes from the extension itself or from `nacos.native.metadata`, and their support must
+  be validated and reported separately.
 - Content rules. Entries derive from tracing representative runs on the exact classpath of the
   Native build. What no trace contains comes from the reports of an exact-mode build or, for
   lookups that the tracing agent does not record (for example the accessors that protobuf looks up
   on a generated message and on its Builder), from the code that makes them; an exact-mode build
-  and the restart check must confirm such entries. Each file must be deterministic: sorted, one
+  and the restart check must confirm such entries. The classes that only a cluster serializes
+  (the requests between the nodes, what Distro carries, the commands of the `plugin_state` group)
+  are registered in full, together with the classes of their properties: Jackson drops a property
+  that it cannot see without a word, and a getter or a setter that is not registered fails at
+  its first call, so the exact-mode build would find them one at a time. Each file must be deterministic: sorted, one
   entry per line. No file may contain classes that Spring AOT generates in the same build, agent
   or JVM-internal classes, test or tooling classes, or machine- or run-specific data such as
   absolute paths, host names, addresses or credentials. Lookups of classes and resources that do
@@ -344,8 +350,10 @@ build does not require the operator to trace the Server first.
   is available at run time only once the initialization of its condition type has started, so a
   condition type must be initialized before the first dynamic access that the entry serves, which
   is often earlier than the first use of a class of the artifact itself; a type that is only named
-  by a class literal never is. A condition type is accepted after a comparison with the order in
-  which a run of the Server loads and initializes classes
+  by a class literal never is. For an artifact that a client and a server both use, the type must
+  be one that both initialize: a node of a cluster creates its RPC clients while the core context
+  is built, before any gRPC server starts. A condition type is accepted after a comparison with the
+  order in which a run of the Server loads and initializes classes
   (`test/scripts/native-condition-order.py`). The tooling sets the condition of every entry from
   its owner and rejects an entry that another condition guards.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
@@ -354,15 +362,20 @@ build does not require the operator to trace the Server first.
   `test/scripts/native-metadata.py` to curate and check the files, and to put each entry into the
   file of its owner; the ordinary CI build checks them.
 - Acceptance. The metadata is accepted by running the standalone integration suites against the
-  Native executable. Tests that also fail against the ordinary JVM Server in the same setup are
-  kept in a baseline and are not Native regressions. The suites never restart the Server, so the
-  run must also create data that no suite creates, wait for the Raft snapshots of the naming
-  service, restart the Native Server on the same data and read that data again; only then do the
-  Raft groups load a snapshot and replay the log behind it (`test/scripts/native-restart.sh`).
-  Dynamic accesses without metadata can be listed by building with
-  `--exact-reachability-metadata` and running with `-XX:MissingRegistrationReportingMode=Warn`.
-  A validation report must name the GraalVM version, the datasource, the suites that ran and
-  whether the restart check ran.
+  Native executable and, for what the suites cannot reach, the tests of the module
+  `test/native-test`, which start their databases and infrastructure with Testcontainers. What an
+  executable contains is fixed when it is built (the datasource, the switches of the AI
+  registries, the adaptors, the plugin jars, standalone or cluster mode), so each configuration
+  that is accepted is a scenario of the Native CI job and runs on a build of its own. Tests that
+  also fail against the ordinary JVM Server in the same setup are kept in a baseline and are not
+  Native regressions. The suites never restart the Server, so the run must also create data that
+  no suite creates, wait for the Raft snapshots of the naming service, restart the Native Server
+  on the same data and read that data again; only then do the Raft groups load a snapshot and
+  replay the log behind it (`NativeRestartCheck` in `test/native-test`). Dynamic accesses without
+  metadata can be listed by building with `--exact-reachability-metadata` and running with
+  `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the GraalVM
+  version, the scenario, the datasource, the suites and tests that ran and whether the restart
+  check ran.
 
 ## 11. Pending Issues
 
