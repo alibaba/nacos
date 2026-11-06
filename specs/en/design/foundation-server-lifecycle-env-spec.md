@@ -314,6 +314,13 @@ build does not require the operator to trace the Server first.
   not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
   cannot apply metadata, are not recorded; the metadata targets the default reachability mode and
   does not promise compatibility with `--exact-reachability-metadata`.
+- Conditions. Every entry carries `"condition": {"typeReached":
+  "com.alibaba.nacos.bootstrap.NacosBootstrap"}`, the Server entry point, which is initialized
+  before any other Server code runs. An entry is available at run time only once the
+  initialization of its condition type has started. A different condition is acceptable only if
+  its type is certain to be initialized before the first dynamic access that the entry serves; a
+  type that is only named by a class literal never is. The tooling adds the condition to entries
+  that have none and rejects an entry without a well-formed one.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
   Native executable again. A refresh is a reviewed source change. The repository provides
