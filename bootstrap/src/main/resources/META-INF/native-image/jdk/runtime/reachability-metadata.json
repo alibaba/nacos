@@ -119,6 +119,7 @@
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.HashSetHessianSerializer"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.ImmutableCollections$AbstractImmutableCollection"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.ImmutableCollections$AbstractImmutableList"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.ImmutableCollections$List12"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.ImmutableCollections$ListN"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "java.util.LinkedHashMap"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "java.util.LinkedHashMapHessianDeserializer"},
