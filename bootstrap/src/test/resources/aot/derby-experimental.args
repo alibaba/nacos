@@ -15,7 +15,8 @@
 -H:+UnlockExperimentalVMOptions
 -H:+RuntimeClassLoading
 -H:Preserve=package=org.apache.derby.iapi.*,package=org.apache.derby.impl.sql.*
--H:-PreserveIncludesJNI
+# No -H:-PreserveIncludesJNI: Oracle GraalVM 25.0.4 (the Native CI toolchain) does not know it
+# (Error: Unrecognized option); the CI Derby jobs retry without it to see how far 25.0.4 gets.
 --initialize-at-run-time=org.apache.derby
 # Nacos excludes Bolt from its dependencies and selects NacosGrpcRaftRpcFactory.
 # GraalVM 25.4 otherwise tries to compile the unavailable optional Bolt provider.
