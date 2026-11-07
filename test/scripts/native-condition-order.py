@@ -15,29 +15,20 @@
 
 """Check the condition types of the bundled Native metadata against a run of the Server.
 
-An entry of the bundled metadata is available at run time once the type of its condition is reached,
-that is, once the initialization of that class (or of a subtype) starts. A reflective lookup of a
-class needs the class to be loaded. So the condition type of an owner is early enough for what a
-run did with the owner if it is initialized before the first class of the owner's entries is used,
-that is, loaded or initialized.
+An entry is available at run time once the type of its condition starts initializing. So the
+condition type of an owner is early enough if it is initialized before the first class of the
+owner's entries is loaded or initialized in a run. This script compares exactly that, in the
+class logs of one or more runs::
 
-This script compares exactly that, in the class logs of one or more runs. A log comes from
-``test/scripts/native-trace-server.sh classlog <log> <nacos-home>``: the Server on a JVM with the
-classpath of the Native build, which writes the order of class loading and initialization. Exercise
-the Server as the Native CI job does (smoke test, restart check), stop it, and pass the logs::
-
+    python3 test/scripts/native-trace-server.sh classlog <log> <nacos-home>
     python3 test/scripts/native-condition-order.py /path/to/start.log /path/to/restart.log
 
-Three things are not compared. JDK types (the interfaces of a proxy) are left out. A load that
-happens while the JVM verifies another class, which loads its supertypes, is not a lookup, but the
-initialization of that class later is a use. And a class log does not show when a resource is read,
-so only the classes of the reflection entries are compared; the ``exact`` variant of the Native CI
-job reports a resource that is read before its condition is reached.
-
-An owner with only resource entries is listed as such, and so is an owner whose entry classes no run
-used: nothing was compared for it. An owner in REASONED_CONDITIONS of native-metadata.py is listed
-with its reason. The exit code is 1 if a condition type is initialized too late, never initialized
-although its entries were used, or missing for an owner.
+Exercise the Server as the Native CI job does (smoke test, restart check) before taking the
+logs. Loads during class verification do not count as lookups, and resources are not compared:
+a class log does not show when a resource is read (the ``exact`` CI variant reports those).
+An owner in REASONED_CONDITIONS of native-metadata.py is listed with its reason. The exit code
+is 1 if a condition type is initialized too late, never initialized although its entries were
+used, or missing for an owner.
 """
 import argparse
 import importlib.util

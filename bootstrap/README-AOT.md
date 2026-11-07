@@ -421,14 +421,10 @@ above.
 ### Test with Testcontainers
 
 `test/native-test` starts from Java what a test of the Native Server needs: the database, the
-infrastructure next to it and the Server itself. A developer runs and debugs a test from an IDE
-the way the CI job runs it, and no step of the job starts a container by hand. It needs Docker, JDK
-17 and the distribution archive of the Server under test.
-
-The Server runs as a process of the host and not in a container. The executable is built on the
-host, and its C library may differ from that of an image, and `bin/startup-native.sh`, which starts
-it, is part of what is tested. The main sources of the module are the harness, which a test module
-can use, and the tests are the integration tests of the module:
+infrastructure next to it and the Server itself, which runs as a process of the host and not in a
+container. A developer runs and debugs a test from an IDE the way the CI job runs it. It needs
+Docker, JDK 17 and the distribution archive of the Server under test. The main sources of the
+module are the harness, and the tests are the integration tests of the module:
 
 | Class | What it does |
 | --- | --- |
@@ -511,18 +507,14 @@ variants: `default` is the build that users get, and `exact` is the diagnostic b
 | `features` | the three AI registries and the Kubernetes sync switched on, and `test/native-test-plugin` in the plugin directory | the three suites with the registries on, and the tests of the registries, DNS, the Kubernetes sync and the third-party plugin |
 | `cluster` | cluster mode | a cluster of three nodes that share the database |
 
-- The Java SDK suite runs the classes that need only a single, current Server. The upgrade
-  migration, released-SDK compatibility and Jackson 3 scenarios need other setups and are not part
-  of it. The Maintainer SDK suite runs as its profile defines it.
-- The cluster scenario runs no suites: they are written for a single Server.
+- The Java SDK suite runs the classes that need only a single, current Server; the Maintainer
+  SDK suite runs as its profile defines it. The cluster scenario runs no suites: they are written
+  for a single Server.
 
-The Server is configured like the one in `.github/workflows/it-new.yml`, because the AI suites are
-written for it: anonymous access to the AI APIs, small Remote Agent Discovery capacities and one
-second reconciliation intervals for the MCP cutover and the search index. The features scenario
-sets the catalog base URL of the ARD adaptor as that workflow does. The job also passes
-`-Dnacos.logs.path`, which keeps the log files below the Nacos home: an application that starts
-from AOT output does not apply `-Dlogging.config` and would otherwise log to
-`${user.home}/nacos/logs`.
+The Server is configured like the one in `.github/workflows/it-new.yml` (anonymous access to the
+AI APIs, small RAD capacities, one second reconciliation intervals), and the features scenario
+sets the ARD catalog base URL the same way. The job passes `-Dnacos.logs.path`, because an
+application that starts from AOT output does not apply `-Dlogging.config`.
 
 The Raft snapshot interval is 30 seconds instead of 30 minutes. JRaft takes the first snapshot of
 each group at a random time within the first interval, so a job of twenty minutes would reach the
@@ -537,28 +529,22 @@ report stage fails the job when a step failed or the check did not run, and it s
 every Server of the run for missing registrations.
 
 Tests that fail for a reason that does not depend on the Native executable are listed in
-`test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job. At present these
-are two Config list tests that also fail against the ordinary JVM Server with PostgreSQL. The tests
-that call the ARD adaptor on port 9080 are in `test/scripts/native-ci-baseline-ard-off.txt`, which
-every scenario reads except `features`: the other builds leave the adaptor off, because
-`nacos.ai.ard.enabled` is a structural switch.
+`test/scripts/native-ci-baseline.txt`; they are reported but do not fail the job. The tests that
+call the ARD adaptor on port 9080 are in `test/scripts/native-ci-baseline-ard-off.txt`, which
+every scenario reads except `features`.
 
-The workflow only calls the stages of `test/scripts/native-ci.sh` (`prepare`, `build`, `smoke`,
-`integration`, `scenario`, `report`), so the same stages reproduce a job on any Linux host that has
-GraalVM 25, Maven, Python 3 and Docker. The header of the script lists the variables. With
-`NATIVE_CI_ARCHIVE` set to the archive of the ordinary Server and
-`NATIVE_CI_TEST_OPTIONS=-Dnacos.native.test.mode=jvm`, the stages `smoke`, `integration` and
-`scenario` run without a Native build.
+The workflow only calls the stages of `test/scripts/native-ci.sh`, so the same stages reproduce a
+job on any Linux host that has GraalVM 25, Maven, Python 3 and Docker (see the script header for
+the variables). With `NATIVE_CI_ARCHIVE` set to the archive of the ordinary Server and
+`NATIVE_CI_TEST_OPTIONS=-Dnacos.native.test.mode=jvm`, the test stages run without a Native build.
 
-The job installs GraalVM Community 25.0.4 (graal 25.2.4) with `version: '25.2'` of
-`graalvm/setup-graalvm`. GraalVM Community ships as numbered innovation releases now, and a
-`java-version` of `'25'` alone resolves to 25.0.2, the last `jdk-25.*` release.
+The job installs GraalVM Community 25.0.4 with `version: '25.2'` of `graalvm/setup-graalvm` (a
+`java-version` of `'25'` alone resolves to 25.0.2).
 
-On a GitHub-hosted runner with 4 vCPUs and GraalVM CE 25.2.4, the compilation takes between four
-and six minutes and peaks at about 11.5 GB of resident memory with a 10 GB builder heap, so the job
-uses GitHub-hosted runners instead of the self-hosted ones of the other Java checks. The executable
-is 288 MB, or 253 MB without the reachability metadata repository. The Server answers its liveness
-check about 1.5 to 2 seconds after it starts and holds about 470 MB after the suites.
+On a GitHub-hosted runner the compilation takes between four and six minutes and peaks at about
+11.5 GB of resident memory, so the job uses GitHub-hosted runners instead of the self-hosted ones
+of the other Java checks. The executable is 288 MB, or 253 MB without the reachability metadata
+repository.
 
 The job runs for pull requests that touch the Native build or the tests of `test/native-test` and
 on demand. To run it on a fork without opening a pull request, push a branch named

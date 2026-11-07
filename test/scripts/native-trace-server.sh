@@ -14,25 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Run the AOT-prepared Nacos Server on a GraalVM JVM under the Native Image tracing agent, using
-# exactly the classpath and structural configuration of a finished '-Pnative' Maven build.
-# Exercise the Server (see bootstrap/README-AOT.md), stop it gracefully with SIGTERM so that the
-# agent writes its output, then curate the result with test/scripts/native-metadata.py.
+# Run the AOT-prepared Nacos Server on a GraalVM JVM under the Native Image tracing agent, with
+# exactly the classpath and structural configuration of a finished '-Pnative' Maven build, then
+# curate the result with test/scripts/native-metadata.py (see bootstrap/README-AOT.md).
 #
 # Usage: native-trace-server.sh <output|merge|classlog> <trace-dir> <nacos-home> [native-dir]
 #   output      start a fresh trace; trace-dir must not contain an earlier trace
 #   merge       add to the trace already stored in trace-dir (for example after a restart)
 #   classlog    no agent: write the order in which the classes are loaded and initialized to the
-#               file given as trace-dir, which test/scripts/native-condition-order.py compares with
-#               the condition types of the metadata (see 'Conditions' in bootstrap/README-AOT.md)
+#               file given as trace-dir, for test/scripts/native-condition-order.py
 #   trace-dir   absolute path outside the source tree
 #   nacos-home  runtime home with conf/application.properties for a disposable database
 #   native-dir  bootstrap/target/native of the finished build (default: that path in this repo)
 #
-# JAVA_HOME must point to a GraalVM installation (any JDK 17+ for classlog). NACOS_TRACE_OPTS
-# replaces the default JVM options (-Xmx1536m -Duser.language=en -Duser.country=US). Keep a fixed
-# locale: the agent also records lookups of locale specific resources, which would tie the metadata
-# to one machine.
+# JAVA_HOME must point to a GraalVM installation (any JDK 17+ for classlog). The locale is fixed
+# to English so that the trace does not depend on the machine. NACOS_TRACE_OPTS replaces the
+# default JVM options (-Xmx1536m -Duser.language=en -Duser.country=US).
 
 set -euo pipefail
 
