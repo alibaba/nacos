@@ -59,9 +59,6 @@ jobs:
           - { scenario: features, database: postgresql, variant: exact, suite: full }
           - { scenario: cluster, database: postgresql, variant: default, suite: core }
           - { scenario: cluster, database: postgresql, variant: exact, suite: core }
-          # SCRATCH ONLY: embedded Derby via experimental runtime class loading.
-          - { scenario: standard, database: derby, variant: default, suite: full }
-          - { scenario: standard, database: derby, variant: exact, suite: full }
     env:
       NATIVE_CI_SCENARIO: ${{ matrix.scenario }}
       NATIVE_CI_DATABASE: ${{ matrix.database }}

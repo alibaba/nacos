@@ -56,8 +56,6 @@ public abstract class NativeDatabase implements AutoCloseable {
                 return new Mysql();
             case "postgresql":
                 return new Postgresql();
-            case "derby":
-                return new Derby();
             default:
                 throw new IllegalArgumentException("Unknown database: " + platform);
         }
@@ -208,7 +206,6 @@ public abstract class NativeDatabase implements AutoCloseable {
     }
 
     private static final class Postgresql extends NativeDatabase {
-
         @Override
         public String platform() {
             return "postgresql";
@@ -241,54 +238,6 @@ public abstract class NativeDatabase implements AutoCloseable {
         @Override
         String jdbcUrl(String host, int port) {
             return "jdbc:postgresql://" + host + ':' + port + '/' + NAME + "?currentSchema=public";
-        }
-    }
-
-    /**
-     * Embedded Derby: no container. The Server creates its schema itself on the first start.
-     * Only the experimental Native route ({@code nacos.native.derby.experimental=true}) can run
-     * it; without runtime class loading the image compiles but SQL execution fails.
-     */
-    private static final class Derby extends NativeDatabase {
-
-        @Override
-        public String platform() {
-            return "derby";
-        }
-
-        @Override
-        public void start() {
-        }
-
-        @Override
-        public Map<String, String> serverProperties() {
-            return Map.of("spring.sql.init.platform", platform());
-        }
-
-        @Override
-        JdbcDatabaseContainer<?> createContainer() {
-            throw new UnsupportedOperationException("embedded Derby has no container");
-        }
-
-        @Override
-        String schemaFile() {
-            return "plugin-default-impl/nacos-default-datasource-plugin/nacos-datasource-plugin-derby"
-                    + "/src/main/resources/META-INF/derby-schema.sql";
-        }
-
-        @Override
-        ExecResult applySchema(JdbcDatabaseContainer<?> started) {
-            throw new UnsupportedOperationException("embedded Derby has no container");
-        }
-
-        @Override
-        int port() {
-            return 0;
-        }
-
-        @Override
-        String jdbcUrl(String host, int port) {
-            throw new UnsupportedOperationException("embedded Derby has no JDBC URL");
         }
     }
 }
