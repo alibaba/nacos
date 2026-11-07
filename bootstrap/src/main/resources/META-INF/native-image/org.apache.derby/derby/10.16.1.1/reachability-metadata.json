@@ -1,5 +1,6 @@
 {
   "reflection": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.catalog.types.DefaultInfoImpl"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.catalog.types.IndexDescriptorImpl"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.catalog.types.RoutineAliasInfo"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.catalog.types.TypeDescriptorImpl"},
