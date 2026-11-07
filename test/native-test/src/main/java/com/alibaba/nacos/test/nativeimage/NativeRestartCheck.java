@@ -138,24 +138,32 @@ public final class NativeRestartCheck {
                         "metadata", "{\"owner\":\"team-x\"}", "selector",
                         "{\"type\":\"label\",\"expression\":\"CONSUMER.label.zone = "
                                 + "PROVIDER.label.zone\"}")));
+        // When the datasource is MySQL, probe the datasource itself so the success path of
+        // MysqlHealthCheckProcessor runs; otherwise keep the unroutable address for the failure path.
+        boolean mysqlDatasource = "mysql".equals(environment.database().platform());
+        String probeIp = mysqlDatasource ? environment.database().host() : "127.0.0.1";
+        String probePort = mysqlDatasource ? String.valueOf(environment.database().mappedPort())
+                : INSTANCE_PORT;
+        String probeUser = mysqlDatasource ? "nacos" : "probe";
+        String probePwd = mysqlDatasource ? "nacos" : "secret";
         require(failures, "persistent instance", form("POST", "/admin/ns/instance", token,
                 Map.of("serviceName", SERVICE, "groupName", GROUP, "namespaceId", "public", "ip",
-                        "127.0.0.1", "port", INSTANCE_PORT, "clusterName", CLUSTER, "weight", "2.5",
+                        probeIp, "port", probePort, "clusterName", CLUSTER, "weight", "2.5",
                         "ephemeral", "false", "metadata", "{\"zone\":\"z1\"}")));
         // The cluster exists once the instance is visible.
         for (int attempt = 0; attempt < 40; attempt++) {
             if (get("/admin/ns/instance/list?" + SERVICE_QUERY + "&clusterName=" + CLUSTER, token)
-                    .body().contains(INSTANCE_PORT)) {
+                    .body().contains(probePort)) {
                 break;
             }
             sleep(500);
         }
         require(failures, "cluster with the MYSQL health checker", form("PUT", "/admin/ns/cluster",
                 token, Map.of("serviceName", SERVICE, "groupName", GROUP, "namespaceId", "public",
-                        "clusterName", CLUSTER, "checkPort", INSTANCE_PORT,
+                        "clusterName", CLUSTER, "checkPort", probePort,
                         "useInstancePort4Check", "true", "healthChecker",
-                        "{\"type\":\"MYSQL\",\"user\":\"probe\",\"pwd\":\"secret\","
-                                + "\"cmd\":\"select 1\"}", "metadata", "{\"owner\":\"team-x\"}")));
+                        "{\"type\":\"MYSQL\",\"user\":\"" + probeUser + "\",\"pwd\":\"" + probePwd
+                                + "\"," + "\"cmd\":\"select 1\"}", "metadata", "{\"owner\":\"team-x\"}")));
         // debug=false replicates the switch through the Raft group instead of keeping it in memory.
         require(failures, "naming switch through the Raft group", form("PUT",
                 "/admin/ns/ops/switches", token,
@@ -179,10 +187,13 @@ public final class NativeRestartCheck {
         expect(failures, "label selector after the restart", detail, LABEL_SELECTOR);
         expect(failures, "MYSQL health checker after the restart", detail, MYSQL_CHECKER);
 
+        boolean mysqlDatasource = "mysql".equals(environment.database().platform());
+        String probePort = mysqlDatasource ? String.valueOf(environment.database().mappedPort())
+                : INSTANCE_PORT;
         NativeHttp.Response instances = get("/admin/ns/instance/list?" + SERVICE_QUERY
                 + "&clusterName=" + CLUSTER, token);
         require(failures, "instance list after the restart", instances);
-        expect(failures, "persistent instance after the restart", instances, INSTANCE_PORT);
+        expect(failures, "persistent instance after the restart", instances, probePort);
         expect(failures, "instance metadata after the restart", instances,
                 "\"zone\"\\s*:\\s*\"z1\"");
 

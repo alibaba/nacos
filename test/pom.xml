@@ -38,20 +38,4 @@
         <module>java-sdk-test</module>
         <module>maintainer-sdk-test</module>
     </modules>
-
-    <properties>
-        <testcontainers.version>2.0.5</testcontainers.version>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 </project>

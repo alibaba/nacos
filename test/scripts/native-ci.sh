@@ -14,54 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Stages of the Native Image CI job (.github/workflows/native-image.yml). The workflow only calls
-# this script, so what is built, tested and reported can change without editing the workflow.
-# The stages also reproduce the job on any Linux host that has a GraalVM 25 JAVA_HOME with
-# native-image, Maven, Python 3 and Docker.
-#
-# The script starts no database and no Server. Testcontainers does, in the Java module
-# test/native-test (see bootstrap/README-AOT.md): its tests start their own database container and
-# Native Server, and the environment that this script keeps for the integration suites is the main
-# class NativeEnvironmentMain of that module, which a developer starts the same way.
-#
+# Stages of the Native Image CI job, see bootstrap/README-AOT.md for scenarios.
 # Usage: native-ci.sh <prepare|build|smoke|integration|scenario|report|all>
 #
-#   prepare      check the bundled metadata, select the scenario and the build variant
-#   build        build the Native distribution and the test modules
-#   smoke        the smoke test of native-test, on a database and a Server of its own
-#   integration  if the scenario has suites: start the environment, run the OpenAPI, Java SDK and
-#                Maintainer SDK suites against it, then end it. Ending it restarts the Server, which
-#                holds the data of the suites by now, and checks that the data of NativeRestartCheck
-#                survives.
-#   scenario     the tests of native-test that belong to the scenario, each on an environment of its
-#                own: what the suites cannot reach
-#   report       judge the result and scan the logs of every Server for missing registrations
-#
 # Environment (all optional):
-#   NATIVE_CI_SCENARIO      standard | features | cluster, default standard. What a scenario covers
-#                           is a structural choice of the build, so every scenario is a build of its
-#                           own:
-#                             standard  the Server as the sample application.properties configures
-#                                       it, and the three suites
-#                             features  the three AI registries, the Kubernetes sync and a
-#                                       third-party plugin are built in; the three suites, and the
-#                                       tests of each of these features and of DNS
-#                             cluster   a build for cluster mode: three nodes on one host that share
-#                                       the database
-#   NATIVE_CI_VARIANT       default | exact. 'exact' builds with --exact-reachability-metadata
-#                           and runs with -XX:MissingRegistrationReportingMode=Warn so that every
-#                           dynamic access without metadata is reported instead of failing.
-#   NATIVE_CI_DATABASE      postgresql | mysql, default postgresql. The datasource is a structural
-#                           choice of the build.
-#   NATIVE_CI_SUITE         full | core, default full. 'core' narrows the OpenAPI suite to the
-#                           Config, Naming, Core and Auth classes, which is enough to exercise a
-#                           datasource driver; the SDK suites always run.
-#   NATIVE_CI_ARCHIVE       the distribution archive that the tests start, default the Native one in
-#                           distribution/target
-#   NATIVE_CI_TEST_OPTIONS  more options for the tests of native-test and for the environment of the
-#                           suites. With -Dnacos.native.test.mode=jvm and NATIVE_CI_ARCHIVE set to the
-#                           archive of the ordinary Server, the stages smoke, integration and scenario
-#                           can be tried without a Native build.
+#   NATIVE_CI_SCENARIO      standard | features | cluster, default standard
+#   NATIVE_CI_VARIANT       default | exact, default default
+#   NATIVE_CI_DATABASE      postgresql | mysql, default postgresql
+#   NATIVE_CI_SUITE         full | core, default full
+#   NATIVE_CI_ARCHIVE       distribution archive, default the Native one in distribution/target
+#   NATIVE_CI_TEST_OPTIONS  extra options; with -Dnacos.native.test.mode=jvm the stages
+#                           smoke, integration and scenario run without a Native build
 #   NATIVE_CI_HEAP          Native builder heap, default 10g
 #   NATIVE_CI_PARALLELISM   Native builder threads, default 4
 #   NATIVE_CI_WORK          scratch directory, default ${RUNNER_TEMP:-/tmp}/native-ci
