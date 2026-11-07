@@ -220,11 +220,12 @@ AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须�
 Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构建无需操作者先对 Server 做追踪。
 
 - 位置与格式。元数据是 Bootstrap 资源中 `META-INF/native-image/` 下一组 GraalVM 统一格式的
-  `reachability-metadata.json`，每个归属方一个文件，位于 `<groupId>/<artifactId>/`：
+  `reachability-metadata.json`，每个归属方一个文件：
   `com.alibaba.nacos/nacos-bootstrap` 存放 Nacos 自身构建的内容，每个第三方构件使用它自己的
-  `<groupId>/<artifactId>` 目录，`jdk/runtime` 存放 JDK 的类。条目的归属方是 Native classpath 上
-  包含该类或资源的 jar 所属的构件。目录不带版本号。`native` profile 将这些文件作为 Bootstrap
-  类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
+  `<groupId>/<artifactId>/<version>/` 目录，`jdk/runtime` 存放 JDK 的类。条目的归属方是 Native
+  classpath 上包含该类或资源的 jar 所属的构件。目录上的版本号即该 jar 的版本；对 classpath
+  的检查在两者不一致时失败，因此版本升级不可能静默复用另一个版本的条目。`native` profile
+  将这些文件作为 Bootstrap 类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
 - 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
   PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
   OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及 `test/native-test` 各场景所实际

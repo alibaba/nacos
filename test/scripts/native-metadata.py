@@ -21,10 +21,12 @@ shipped (see POLICY below), prunes classes and resources that are not on the Nat
 and writes the result in a stable, line-oriented order so that reviews and diffs stay small.
 
 The committed metadata is not one file but one file per owner below ``META-INF/native-image``:
-``<groupId>/<artifactId>/reachability-metadata.json`` for each third-party artifact, ``jdk/runtime``
-for the classes of the JDK, and ``com.alibaba.nacos/nacos-bootstrap`` for everything that Nacos
-builds itself. The owner of an entry is the artifact whose jar on the Native classpath contains the
-class or the resource, so ``refresh`` needs that classpath and nobody sorts entries by hand.
+``<groupId>/<artifactId>/<version>/reachability-metadata.json`` for each third-party artifact,
+``jdk/runtime`` for the classes of the JDK, and ``com.alibaba.nacos/nacos-bootstrap`` for
+everything that Nacos builds itself. The owner of an entry is the artifact whose jar on the Native
+classpath contains the class or the resource, so ``refresh`` needs that classpath and nobody sorts
+entries by hand. The version on the folder is the version of that jar; ``check --classpath``
+fails when they differ, so a version bump cannot silently reuse the entries of another version.
 
 The bundle holds only what the Native build does not get from another source: the metadata files in
 the jars of the classpath and the files of the AOT generator (see Provided). ``refresh`` takes what
@@ -912,7 +914,12 @@ def owner_of_resource(entry, classpath):
 
 
 def partition(document, classpath):
-    """Split a curated document by owner: ``{owner: document}``. Raises if an owner is unknown."""
+    """Split a curated document by owner: ``{groupId/artifactId: document}``.
+
+    The owner names the artifact, not the folder: the version goes onto the folder when the
+    bundle is written, so that ``CONDITION_GROUPS`` and the other tables stay version free.
+    Raises if an owner is unknown.
+    """
     parts, unowned = {}, []
     for section, owner_of in (("reflection", owner_of_reflection),
                               ("resources", owner_of_resource)):
@@ -930,22 +937,83 @@ def partition(document, classpath):
     return parts
 
 
+def split_owner(folder):
+    """Split a bundle folder into (groupId/artifactId, version).
+
+    Third-party artifacts live below ``<groupId>/<artifactId>/<version>/``; the version is None
+    for a folder without one and for Nacos and the JDK, which keep unversioned folders. Returns
+    (None, None) for a folder of neither shape.
+    """
+    if folder in (NACOS_OWNER, JDK_OWNER):
+        return folder, None
+    parts = folder.split("/")
+    if len(parts) in (2, 3) and all(parts):
+        return parts[0] + "/" + parts[1], parts[2] if len(parts) == 3 else None
+    return None, None
+
+
+def versions_of_classpath(classpath):
+    """``{groupId/artifactId: version}`` for the jars of the classpath.
+
+    A jar in Maven repository layout contributes the version of its directory; any other jar
+    contributes the version of its file name when it starts with ``<artifactId>-`` followed by
+    a digit. Whatever Nacos builds and the JDK have no version.
+    """
+    found = {}
+    for entry in classpath.entries:
+        path = Path(entry)
+        if path.suffix != ".jar" or not path.is_file():
+            continue
+        parts = path.parts
+        if "repository" in parts and len(parts) > 4 and parts[-1].startswith(parts[-3] + "-"):
+            root = len(parts) - 1 - parts[::-1].index("repository")
+            found.setdefault("%s/%s" % (".".join(parts[root + 1:-3]), parts[-3]), parts[-2])
+            continue
+        with zipfile.ZipFile(path) as archive:
+            names = [name for name in archive.namelist() if not name.endswith("/")]
+        owner = jar_owner(path, names)
+        if owner in (NACOS_OWNER, JDK_OWNER) or owner.startswith("unknown/"):
+            continue
+        stem = path.name[:-len(".jar")]
+        artifact = owner.rsplit("/", 1)[1]
+        if stem.startswith(artifact + "-"):
+            version = stem[len(artifact) + 1:]
+            if version and version[0].isdigit():
+                found.setdefault(owner, version)
+    return found
+
+
 def bundle_files(root):
-    """``{owner: file}`` of the metadata files below root; the owner is the folder of the file."""
+    """``{folder: file}`` of the metadata files below root; the folder holds the owner."""
     return {file.parent.relative_to(root).as_posix(): file
             for file in sorted(Path(root).rglob(METADATA_NAME))}
 
 
-def write_bundle(root, parts):
-    """Write one file per owner below root and remove the files of owners that have none left."""
+def write_bundle(root, parts, versions):
+    """Write one file per owner below root and remove the files of owners that have none left.
+
+    Third-party artifacts go below ``<groupId>/<artifactId>/<version>/``, with the version taken
+    from *versions*; Nacos and the JDK keep their unversioned folders. A folder whose version no
+    longer matches is removed, so a version bump cannot leave stale entries behind.
+    """
     root = Path(root)
     stale = bundle_files(root) if root.is_dir() else {}
+    wanted = {}
     for owner, document in sorted(parts.items()):
-        file = root / owner / METADATA_NAME
+        if owner in (NACOS_OWNER, JDK_OWNER):
+            wanted[owner] = document
+            continue
+        version = versions.get(owner)
+        if not version:
+            raise SystemExit("No version for %s on the classpath; only jars in Maven repository "
+                             "layout or with a versioned file name tell it" % owner)
+        wanted[owner + "/" + version] = document
+    for folder, document in wanted.items():
+        file = root / folder / METADATA_NAME
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text(render(document))
-    for owner, file in stale.items():
-        if owner not in parts:
+    for folder, file in stale.items():
+        if folder not in wanted:
             file.unlink()
     for folder in sorted((path for path in root.rglob("*") if path.is_dir()), reverse=True):
         if not any(folder.iterdir()):
@@ -1040,7 +1108,7 @@ def command_refresh(args):
             output, len(document["reflection"]), len(document["resources"]), len(dropped)))
         return 0
     parts = partition(document, classpath)
-    write_bundle(args.output_dir, parts)
+    write_bundle(args.output_dir, parts, versions_of_classpath(classpath))
     print("wrote %d files below %s: %d reflection entries, %d resources, %d dropped" % (
         len(parts), args.output_dir, len(document["reflection"]), len(document["resources"]),
         len(dropped)))
@@ -1059,8 +1127,9 @@ def command_check(args):
     totals = [0, 0]
     # What the other sources provide is not repeated; only a check with the classpath knows them.
     provided = provided_by(classpath, args, False) if classpath is not None else None
-    for owner, file in files.items():
-        prefix = "" if owner is None else owner + ": "
+    versions = versions_of_classpath(classpath) if classpath is not None else {}
+    for folder, file in files.items():
+        prefix = "" if folder is None else folder + ": "
         text = file.read_text()
         try:
             document = json.loads(text)
@@ -1074,10 +1143,13 @@ def command_check(args):
         reflection, resources = document.get("reflection", []), document.get("resources", [])
         totals[0] += len(reflection)
         totals[1] += len(resources)
-        if owner is None:
+        if folder is None:
             continue
-        if not re.fullmatch(r"[^/]+/[^/]+", owner):
-            issues.append("%sbelongs at <groupId>/<artifactId>/%s" % (prefix, METADATA_NAME))
+        owner, version = split_owner(folder)
+        if owner is None:
+            issues.append("%sbelongs below <groupId>/<artifactId>/<version>/%s"
+                          % (prefix, METADATA_NAME))
+            continue
         expected = owner_condition(owner)
         if expected is None:
             issues.append("%shas no condition type; add the owner to CONDITION_GROUPS" % prefix)
@@ -1121,6 +1193,14 @@ def command_check(args):
                     prefix, entries_that(len(misplaced), "belongs to the file of another owner",
                                          "belong to the file of another owner"),
                     ", ".join(sorted(misplaced)[:3])))
+            if owner not in (NACOS_OWNER, JDK_OWNER):
+                want = versions.get(owner)
+                if version is None:
+                    issues.append("%shas no version; move it below %s/<version>/%s" % (
+                        prefix, owner, METADATA_NAME))
+                elif want is not None and version != want:
+                    issues.append("%sis for version %s but the classpath has %s; run 'refresh' "
+                                  "after a version bump" % (prefix, version, want))
     if repeated:
         issues.append("%s, for example %s" % (
             entries_that(len(repeated), "is in more than one file", "are in more than one file"),
@@ -1667,12 +1747,21 @@ def selftest_owners():
         except SystemExit as refused:
             assert "No Maven artifact owns 1 entries" in str(refused), refused
 
-        # One file per owner: an owner without a section writes none, a vanished owner loses its file
-        # and the folders that stay empty.
+        # One file per owner below <groupId>/<artifactId>/<version>/; an owner without a section
+        # writes none, a vanished owner loses its file and the folders that stay empty.
         bundle = root / "bundle"
-        write_bundle(bundle, parts)
-        assert sorted(bundle_files(bundle)) == sorted(parts)
-        assert '"resources"' not in (bundle / "org.example/lib-c" / METADATA_NAME).read_text()
+        versions = versions_of_classpath(classpath)
+        assert versions == {"org.example/lib-a": "1.0", "org.example/lib-b": "2.0",
+                            "org.example/lib-c": "3.0", "org.example/lib-d": "4.0"}, versions
+        assert split_owner("org.example/lib-a/1.0") == ("org.example/lib-a", "1.0")
+        assert split_owner("org.example/lib-a") == ("org.example/lib-a", None)
+        assert split_owner(NACOS_OWNER) == (NACOS_OWNER, None)
+        assert split_owner("too/deep/nesting/here") == (None, None)
+        assert split_owner("reachability-metadata.json") == (None, None)
+        write_bundle(bundle, parts, versions)
+        assert sorted(split_owner(folder)[0] for folder in bundle_files(bundle)) == sorted(parts)
+        assert '"resources"' not in (
+            bundle / "org.example/lib-c/3.0" / METADATA_NAME).read_text()
         classpath_file = root / "classpath.txt"
         classpath_file.write_text("\n".join(str(entry) for entry in entries))
 
@@ -1691,23 +1780,43 @@ def selftest_owners():
         assert check(bundle, str(classpath_file)) == (0, "")
         assert len(load_trace(bundle)) == len(parts)
         # A condition other than the one of the owner is reported, also the one of the Server.
-        lib_c = bundle / "org.example/lib-c" / METADATA_NAME
+        lib_c = bundle / "org.example/lib-c/3.0" / METADATA_NAME
         original = lib_c.read_text()
         lib_c.write_text(original.replace('"c.C"', '"%s"' % SERVER_ENTRY_POINT))
         code, errors = check(bundle)
-        assert code == 1 and "org.example/lib-c: 1 entry is not guarded by c.C" in errors, errors
+        assert code == 1 and "org.example/lib-c/3.0: 1 entry is not guarded by c.C" \
+            in errors, errors
         lib_c.write_text(original)
         assert check(bundle) == (0, "")
         with contextlib.redirect_stdout(io.StringIO()):
             assert command_refresh(argparse.Namespace(
                 trace=[str(bundle)], classpath=str(classpath_file), output=None,
                 output_dir=str(root / "again"), provided_dir=[str(provided_dir)])) == 0
-        assert sorted(bundle_files(root / "again")) == sorted(parts)
-        assert all((root / "again" / owner / METADATA_NAME).read_text()
-                   == (bundle / owner / METADATA_NAME).read_text() for owner in parts)
+        assert sorted(split_owner(folder)[0] for folder in bundle_files(root / "again")) \
+            == sorted(parts)
+        folders = {"org.example/lib-a": "1.0", "org.example/lib-b": "2.0",
+                   "org.example/lib-c": "3.0", NACOS_OWNER: None, JDK_OWNER: None}
+        assert all((root / "again" / (owner if version is None else owner + "/" + version)
+                    / METADATA_NAME).read_text()
+                   == (bundle / (owner if version is None else owner + "/" + version)
+                       / METADATA_NAME).read_text() for owner, version in folders.items()
+                   if owner in parts)
+        # A version that no longer matches the classpath is reported, as is a missing one.
+        stale = bundle / "org.example/lib-a/9.9" / METADATA_NAME
+        stale.parent.mkdir(parents=True)
+        stale.write_text((bundle / "org.example/lib-a/1.0" / METADATA_NAME).read_text())
+        code, errors = check(bundle, str(classpath_file))
+        assert code == 1 and "is for version 9.9 but the classpath has 1.0" in errors, errors
+        stale.unlink()
+        unversioned = bundle / "org.example/lib-a" / METADATA_NAME
+        unversioned.write_text((bundle / "org.example/lib-a/1.0" / METADATA_NAME).read_text())
+        code, errors = check(bundle, str(classpath_file))
+        assert code == 1 and "has no version" in errors, errors
+        unversioned.unlink()
+        assert check(bundle, str(classpath_file)) == (0, "")
         # An entry in the file of another owner, an entry in two files, a file at the wrong depth.
-        lib_a = bundle / "org.example/lib-a" / METADATA_NAME
-        lib_b = bundle / "org.example/lib-b" / METADATA_NAME
+        lib_a = bundle / "org.example/lib-a/1.0" / METADATA_NAME
+        lib_b = bundle / "org.example/lib-b/2.0" / METADATA_NAME
         moved = json.loads(lib_a.read_text())
         moved["reflection"].append(json.loads(lib_b.read_text())["reflection"][0])
         moved["reflection"].sort(key=reflection_sort_key)
@@ -1718,18 +1827,20 @@ def selftest_owners():
         assert code == 1 and "1 entry belongs to the file of another owner" in errors, errors
         lib_b.unlink()
         code, errors = check(bundle, str(classpath_file))
-        assert code == 1 and "org.example/lib-a: 1 entry belongs to the file of another owner" in errors
+        assert code == 1 and "org.example/lib-a/1.0: 1 entry belongs to the file " \
+            "of another owner" in errors
         (bundle / METADATA_NAME).write_text(render({"reflection": [], "resources": []}))
-        assert "belongs at <groupId>/<artifactId>" in check(bundle)[1]
+        assert "belongs below <groupId>/<artifactId>/<version>/" in check(bundle)[1]
         (bundle / METADATA_NAME).unlink()
-        broken = bundle / "org.example/lib-c" / METADATA_NAME
+        broken = bundle / "org.example/lib-c/3.0" / METADATA_NAME
         broken.write_text("{")
         assert "is not valid JSON" in check(bundle)[1]
         assert check(root / "nothing-here")[0] == 1
         # A refresh without an owner's entries removes its file and the folders left empty.
         only_own = {"reflection": [{"type": "own.Own"}], "resources": []}
         write_bundle(bundle, partition(
-            apply_owner_conditions(curate([only_own], classpath)[0], classpath), classpath))
+            apply_owner_conditions(curate([only_own], classpath)[0], classpath), classpath),
+            versions)
         assert sorted(bundle_files(bundle)) == [NACOS_OWNER]
         assert not (bundle / "org.example").exists() and not (bundle / "jdk").exists()
 

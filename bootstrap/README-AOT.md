@@ -146,12 +146,11 @@ not depend on them. They hold only what the build does not get from another sour
 ### Layout
 
 Each file belongs to one owner, as a library ships the metadata of its own classes, in
-`META-INF/native-image/<groupId>/<artifactId>/`:
+`META-INF/native-image/<groupId>/<artifactId>/<version>/` for a third-party artifact, for example
+`org.postgresql/postgresql/42.7.12`:
 
 - `com.alibaba.nacos/nacos-bootstrap`: the classes and resources of Nacos itself, from every module.
-- `<groupId>/<artifactId>`: the classes and resources of one third-party artifact, for example
-  `org.postgresql/postgresql`, `org.apache.tomcat.embed/tomcat-embed-core` or
-  `org.springframework.boot/spring-boot`.
+- `<groupId>/<artifactId>/<version>`: the classes and resources of one third-party artifact.
 - `jdk/runtime`: the classes of the JDK that Nacos or a library reaches by reflection.
 
 The owner of an entry is the artifact whose jar on the Native classpath contains the class or the
@@ -162,9 +161,10 @@ to Nacos if Nacos has it, otherwise to the first jar that does. `refresh` places
 removes the file of an owner that has none left, so nobody moves entries by hand, and
 `check --classpath` verifies the placement.
 
-The folders carry no version. The versions of the dependencies come from one managed set and change
-with it, so a versioned folder would have to move with every bump, and GraalVM does not look at the
-names of folders.
+The version on the folder is the version of that jar on the Native classpath. `check --classpath`
+fails when they differ, so a version bump cannot silently reuse the entries of another version:
+refresh after a bump, which moves the file. Nacos and the JDK keep unversioned folders; GraalVM
+does not look at the names of folders.
 
 ### What it covers
 
@@ -204,9 +204,10 @@ cannot reach is validated by the scenarios of `test/native-test` (see
 Kubernetes sync, the DNS adaptor, a plugin that is not part of this repository and a cluster of
 three nodes. It does **not** cover embedded Derby (see
 [below](#native-scope-and-derby-compatibility)), Oracle and the Istio adaptor (they fail on the
-ordinary JVM Server as well, see [below](#test-with-testcontainers)), other third-party plugins or
-drivers, the probing of an instance by the Server with the MYSQL health checker, or a label
-selector with a CMDB behind it. Whoever enables one of these supplies the missing metadata through
+ordinary JVM Server as well, see [below](#test-with-testcontainers)), or other third-party plugins
+or drivers. The restart check covers the MYSQL health checker against a real MySQL on a MySQL
+datasource and a label selector with a CMDB behind it through the test plugin. Whoever enables
+anything else supplies the missing metadata through
 `nacos.native.metadata` or in the plugin's own `META-INF/native-image`, and validates the result.
 
 ### What the build gets elsewhere

@@ -293,11 +293,13 @@ Bootstrap ships GraalVM reachability metadata for the default Server combination
 build does not require the operator to trace the Server first.
 
 - Location and format. The metadata is a set of `reachability-metadata.json` files in the GraalVM
-  unified format below `META-INF/native-image/` in Bootstrap's resources, one file per owner, each
-  in `<groupId>/<artifactId>/`: `com.alibaba.nacos/nacos-bootstrap` holds what Nacos builds
-  itself, the folder of the artifact holds each third-party artifact, and `jdk/runtime` holds
-  classes of the JDK. The owner of an entry is the artifact whose jar on the Native classpath
-  holds the class or the resource. Folders carry no version. The `native` profile reads the files
+  unified format below `META-INF/native-image/` in Bootstrap's resources, one file per owner:
+  `com.alibaba.nacos/nacos-bootstrap` holds what Nacos builds itself, each third-party
+  artifact holds its own folder below `<groupId>/<artifactId>/<version>/`, and `jdk/runtime`
+  holds classes of the JDK. The owner of an entry is the artifact whose jar on the Native
+  classpath holds the class or the resource. The version on the folder is the version of that
+  jar; a check against the classpath fails when they differ, so a version bump cannot silently
+  reuse the entries of another version. The `native` profile reads the files
   as part of Bootstrap's classes. An ordinary JVM must not read them, and the JVM artifact
   contract must not depend on them.
 - Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
