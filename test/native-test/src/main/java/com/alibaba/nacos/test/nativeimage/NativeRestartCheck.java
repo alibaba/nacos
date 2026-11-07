@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.nativeimage;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +49,6 @@ public final class NativeRestartCheck {
 
     private static final String CLUSTER = "DB";
 
-    private static final String INSTANCE_PORT = "19306";
-
     private static final String DATA_ID = "native-restart-config";
 
     private static final String SWITCH_ENTRY = "defaultCacheMillis";
@@ -73,9 +72,26 @@ public final class NativeRestartCheck {
 
     private final String api;
 
+    private final String probeIp;
+
+    private final String probePort;
+
+    private final String probeUser;
+
+    private final String probePwd;
+
     private NativeRestartCheck(NativeEnvironment environment) {
         this.environment = environment;
         this.api = environment.server().apiUrl() + "/nacos/v3";
+        // When the datasource is MySQL, probe the datasource itself, so the success path of the
+        // health checker runs. Otherwise nothing listens on the probed port, which is picked at
+        // runtime, and only the failure path runs.
+        boolean mysqlDatasource = "mysql".equals(environment.database().platform());
+        this.probeIp = mysqlDatasource ? environment.database().host() : "127.0.0.1";
+        this.probePort = mysqlDatasource ? String.valueOf(environment.database().mappedPort())
+                : String.valueOf(NativeServer.freePort());
+        this.probeUser = mysqlDatasource ? "nacos" : "probe";
+        this.probePwd = mysqlDatasource ? "nacos" : "secret";
     }
 
     /**
@@ -101,11 +117,14 @@ public final class NativeRestartCheck {
         }
         record(true, "seed");
 
-        // JRaft saves a snapshot of each group at an interval between 30 and 60 seconds here. Wait a
-        // little longer, so that the data is in a snapshot that the restart loads.
+        // JRaft saves a snapshot of each group at an interval between 30 and 60 seconds here. Wait
+        // for the first one instead of a fixed time, so that the data is in a snapshot that the
+        // restart loads.
         long savedBefore = server.snapshotsSaved();
-        sleep(70_000);
-        System.out.println("Snapshots saved while waiting: " + (server.snapshotsSaved() - savedBefore));
+        if (!awaitSnapshot(server, savedBefore)) {
+            record(false, "no Raft snapshot was saved in time");
+            return;
+        }
 
         if (server.stop()) {
             record(true, "stop");
@@ -138,14 +157,6 @@ public final class NativeRestartCheck {
                         "metadata", "{\"owner\":\"team-x\"}", "selector",
                         "{\"type\":\"label\",\"expression\":\"CONSUMER.label.zone = "
                                 + "PROVIDER.label.zone\"}")));
-        // When the datasource is MySQL, probe the datasource itself so the success path of
-        // MysqlHealthCheckProcessor runs; otherwise keep the unroutable address for the failure path.
-        boolean mysqlDatasource = "mysql".equals(environment.database().platform());
-        String probeIp = mysqlDatasource ? environment.database().host() : "127.0.0.1";
-        String probePort = mysqlDatasource ? String.valueOf(environment.database().mappedPort())
-                : INSTANCE_PORT;
-        String probeUser = mysqlDatasource ? "nacos" : "probe";
-        String probePwd = mysqlDatasource ? "nacos" : "secret";
         require(failures, "persistent instance", form("POST", "/admin/ns/instance", token,
                 Map.of("serviceName", SERVICE, "groupName", GROUP, "namespaceId", "public", "ip",
                         probeIp, "port", probePort, "clusterName", CLUSTER, "weight", "2.5",
@@ -187,9 +198,6 @@ public final class NativeRestartCheck {
         expect(failures, "label selector after the restart", detail, LABEL_SELECTOR);
         expect(failures, "MYSQL health checker after the restart", detail, MYSQL_CHECKER);
 
-        boolean mysqlDatasource = "mysql".equals(environment.database().platform());
-        String probePort = mysqlDatasource ? String.valueOf(environment.database().mappedPort())
-                : INSTANCE_PORT;
         NativeHttp.Response instances = get("/admin/ns/instance/list?" + SERVICE_QUERY
                 + "&clusterName=" + CLUSTER, token);
         require(failures, "instance list after the restart", instances);
@@ -213,7 +221,7 @@ public final class NativeRestartCheck {
      * Best effort: it removes what an earlier run left and what this run created.
      */
     private void cleanup(String token) {
-        form("DELETE", "/admin/ns/instance?" + SERVICE_QUERY + "&ip=127.0.0.1&port=" + INSTANCE_PORT
+        form("DELETE", "/admin/ns/instance?" + SERVICE_QUERY + "&ip=" + probeIp + "&port=" + probePort
                 + "&clusterName=" + CLUSTER + "&ephemeral=false", token, Map.of());
         form("DELETE", "/admin/ns/service?" + SERVICE_QUERY, token, Map.of());
         form("DELETE", "/admin/cs/config?dataId=" + DATA_ID + "&groupName=" + GROUP, token,
@@ -248,6 +256,27 @@ public final class NativeRestartCheck {
         if (!response.matches(regex)) {
             failures.add(name + ": the response does not match " + regex);
         }
+    }
+
+    /**
+     * Waits until the Server saves a Raft snapshot after the seed, so the restart loads one.
+     *
+     * @param server the Server of the environment
+     * @param savedBefore the snapshots saved before the seed
+     * @return true if a new snapshot was saved
+     */
+    private static boolean awaitSnapshot(NativeServer server, long savedBefore) {
+        long deadline = System.nanoTime()
+                + NativeTestSettings.scaled(Duration.ofMinutes(3)).toNanos();
+        while (System.nanoTime() < deadline) {
+            long saved = server.snapshotsSaved();
+            if (saved > savedBefore) {
+                System.out.println("Snapshots saved while waiting: " + (saved - savedBefore));
+                return true;
+            }
+            sleep(2000);
+        }
+        return false;
     }
 
     private static void sleep(long millis) {

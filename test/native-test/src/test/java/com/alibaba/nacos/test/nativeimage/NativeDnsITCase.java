@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class NativeDnsITCase {
 
-    private static final int DNS_PORT = 15353;
+    private static final int DNS_PORT = NativeServer.freePort();
 
     private static final String SERVICE = "dns-svc";
 

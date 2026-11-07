@@ -25,10 +25,10 @@ import java.util.concurrent.CompletionException;
 
 /**
  * A cluster of Servers on one host that share a database: node {@code i} listens on API port
- * {@code 8848 + 10 * i} and console port {@code 8080 + 10 * i}, so the gRPC ports ({@code +1000}
- * and {@code +1001}) and the Raft port ({@code -1000}) of the nodes do not meet. The members are
- * listed in {@code conf/cluster.conf}. Embedded storage cannot be used by a Native cluster, so the
- * database is an external one.
+ * {@code base + 10 * i} and console port {@code consoleBase + 10 * i}, where both bases are free
+ * ports picked at runtime, so the gRPC ports ({@code +1000} and {@code +1001}) and the Raft port
+ * ({@code -1000}) of the nodes do not meet. The members are listed in {@code conf/cluster.conf}.
+ * Embedded storage cannot be used by a Native cluster, so the database is an external one.
  *
  * @author Nacos
  */
@@ -45,6 +45,10 @@ public final class NativeCluster implements AutoCloseable {
     private final int size;
 
     private final Map<String, String> extraProperties;
+
+    private final int baseApiPort = NativeServer.freePort();
+
+    private final int baseConsolePort = NativeServer.freePort(baseApiPort);
 
     private final List<NativeServer> servers = new ArrayList<>();
 
@@ -157,11 +161,11 @@ public final class NativeCluster implements AutoCloseable {
         database.close();
     }
 
-    private static int apiPort(int index) {
-        return NativeServer.API_PORT + PORT_STEP * index;
+    private int apiPort(int index) {
+        return baseApiPort + PORT_STEP * index;
     }
 
-    private static int consolePort(int index) {
-        return NativeServer.CONSOLE_PORT + PORT_STEP * index;
+    private int consolePort(int index) {
+        return baseConsolePort + PORT_STEP * index;
     }
 }

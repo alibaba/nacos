@@ -177,8 +177,10 @@ public final class NativeEnvironment implements AutoCloseable {
     public NativeEnvironment start() {
         try {
             database.start();
+            int apiPort = NativeServer.freePort();
             NativeServer.Builder description = NativeServer.builder(name)
-                    .properties(serverProperties());
+                    .properties(serverProperties())
+                    .ports(apiPort, NativeServer.freePort(apiPort));
             plugins.forEach(description::plugin);
             server = description.prepare();
             server.start();
