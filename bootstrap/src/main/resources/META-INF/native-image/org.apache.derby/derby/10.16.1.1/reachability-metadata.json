@@ -49,6 +49,7 @@
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.apache.derby.iapi.types.UserType"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.impl.db.BasicDatabase"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.apache.derby.impl.db.SlaveDatabase"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.impl.io.DirStorageFactory"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.impl.io.VFMemoryStorageFactory"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.impl.jdbc.ResourceAdapterImpl"},
     {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.impl.jdbc.SQLExceptionFactory"},
