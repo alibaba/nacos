@@ -140,7 +140,8 @@ class NativeServerSmokeITCase {
     @Test
     void grpcPortAcceptsConnections() throws IOException {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("127.0.0.1", NativeServer.API_PORT + 1000), 3000);
+            socket.connect(new InetSocketAddress("127.0.0.1",
+                    environment.server().apiPort() + 1000), 3000);
         }
     }
 
