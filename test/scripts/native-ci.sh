@@ -20,8 +20,7 @@
 # Environment (all optional):
 #   NATIVE_CI_SCENARIO      standard | features | cluster, default standard
 #   NATIVE_CI_VARIANT       default | exact, default default
-#   NATIVE_CI_DATABASE      postgresql | mysql | derby, default postgresql. derby is the
-#                           experimental embedded route (needs runtime class loading).
+#   NATIVE_CI_DATABASE      postgresql | mysql, default postgresql
 #   NATIVE_CI_SUITE         full | core, default full
 #   NATIVE_CI_ARCHIVE       distribution archive, default the Native one in distribution/target
 #   NATIVE_CI_TEST_OPTIONS  extra options; with -Dnacos.native.test.mode=jvm the stages
@@ -50,7 +49,7 @@ case "$SCENARIO" in
         ;;
 esac
 case "$DATABASE" in
-    postgresql | mysql | derby) ;;
+    postgresql | mysql) ;;
     *)
         echo "Unknown database: ${DATABASE}" >&2
         exit 2
@@ -175,16 +174,6 @@ stage_prepare() {
     remember SMOKE_TESTS "$smoke_tests"
     remember SCENARIO_TESTS "$scenario_tests"
     remember SERVER_PROPERTIES "$server_properties"
-    # Embedded Derby only runs standalone; the experimental image needs runtime class loading.
-    if [ "$DATABASE" = "derby" ]; then
-        if [ "$SCENARIO" != "standard" ]; then
-            echo "Derby is only supported with the standard scenario" >&2
-            exit 2
-        fi
-        remember NATIVE_DERBY_EXPERIMENTAL "true"
-    else
-        remember NATIVE_DERBY_EXPERIMENTAL "false"
-    fi
 
     log "Select the Native build variant: ${VARIANT}"
     case "$VARIANT" in
@@ -230,7 +219,6 @@ stage_build() {
         -Dmaven.test.skip=true -Drat.skip=true \
         -Dnacos.native.config="${WORK}/build.properties" \
         -Dnacos.native.standalone="${NATIVE_STANDALONE}" \
-        -Dnacos.native.derby.experimental="${NATIVE_DERBY_EXPERIMENTAL:-false}" \
         -Dnacos.native.build.heap="${NATIVE_CI_HEAP:-10g}" \
         -Dnacos.native.build.parallelism="${NATIVE_CI_PARALLELISM:-4}" \
         -Dnacos.native.options="${NATIVE_BUILD_OPTIONS}" \
