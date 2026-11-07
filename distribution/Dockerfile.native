@@ -1,0 +1,59 @@
+# Copyright 1999-2026 Alibaba Group Holding Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Image of the Nacos Server as a GraalVM Native Image. It repacks the Native
+# distribution archive, so build that first (see bootstrap/README-AOT.md):
+#
+#   mvn -B '-Pnative,release-native,!dev' -pl distribution -am clean package \
+#     -Dnacos.native.config=/absolute/path/build/application.properties \
+#     -Dnacos.native.standalone=true
+#   docker build -f distribution/Dockerfile.native -t nacos-server-native \
+#     distribution/target
+#   docker run -d --name nacos-native -p 8848:8848 -p 8080:8080 \
+#     -v /absolute/path/conf:/opt/nacos/conf nacos-server-native
+#
+# The build context must be distribution/target holding one
+# nacos-server-*-native-*.tar.gz. The image is specific to the platform it was
+# built on (amd64 from the Native CI job); it is not a cross-platform binary.
+# The Server runs as a non-root user with its home at /opt/nacos. Mount a
+# conf directory with the matching structural choices (ports, datasource) and
+# runtime settings, or pass Native VM flags with -e NACOS_NATIVE_OPTS='-Xmx1g'.
+
+ARG BASE_IMAGE=ubuntu:24.04
+FROM ${BASE_IMAGE}
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bash ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1001 nacos
+
+COPY nacos-server-*-native-*.tar.gz /tmp/
+# The assembly already marks these executable; keep it explicit so a hand-made
+# archive with plain file modes still runs.
+RUN tar -xzf /tmp/nacos-server-*-native-*.tar.gz -C /opt \
+    && rm /tmp/nacos-server-*-native-*.tar.gz \
+    && chmod +x /opt/nacos/bin/*.sh /opt/nacos/target/nacos-server \
+    && mkdir -p /opt/nacos/logs \
+    && chown -R nacos:nacos /opt/nacos
+
+USER nacos
+WORKDIR /opt/nacos
+
+ENV NACOS_NATIVE_OPTS="-Xmx1g" \
+    NACOS_NATIVE_FOREGROUND=1
+
+EXPOSE 7848 8080 8848 9848 9849
+
+ENTRYPOINT ["bin/startup-native.sh"]
