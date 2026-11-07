@@ -1,8 +1,10 @@
 {
   "reflection": [
-    {"type": "com.alibaba.nacos.test.nativeimage.plugin.RejectingConfigChangePlugin", "allDeclaredConstructors": true}
+    {"type": "com.alibaba.nacos.test.nativeimage.plugin.RejectingConfigChangePlugin", "allDeclaredConstructors": true},
+    {"type": "com.alibaba.nacos.test.nativeimage.plugin.TestCmdbService", "allDeclaredConstructors": true}
   ],
   "resources": [
-    {"glob": "META-INF/services/com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService"}
+    {"glob": "META-INF/services/com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService"},
+    {"glob": "META-INF/services/com.alibaba.nacos.api.cmdb.spi.CmdbService"}
   ]
 }

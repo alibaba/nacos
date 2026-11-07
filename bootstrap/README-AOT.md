@@ -289,68 +289,13 @@ check.
 
 ### Conditions
 
-Every entry is guarded by a `typeReached` condition, as GraalVM recommends, so that metadata only
-enters an image that contains the code that needs it. The builder includes a conditional entry if
-its type is reachable at build time, and the executable makes the entry available once that type
-is reached: right before the initialization of its class starts, or of a subtype. Until then every
-dynamic access that the entry serves behaves as if the entry did not exist, so a condition type has
-to be initialized before the first access that the entry serves. A type that is only named by a
-class literal is never initialized.
+Every entry carries a `typeReached` condition (see GraalVM docs). The condition is a function of the owner, see `CONDITION_GROUPS` in `native-metadata.py`:
 
-The condition depends on the owner of the entry:
+- Nacos and the JDK: `com.alibaba.nacos.bootstrap.NacosBootstrap`.
+- Spring family and libraries Spring Boot looks up: `org.springframework.boot.SpringApplication`.
+- JDBC drivers: `com.zaxxer.hikari.HikariConfig`; logback: `LoggerFactory`/`LoggerContext`; others: the type that loads the library (see the script for the full table).
 
-- Nacos and the JDK (`com.alibaba.nacos/nacos-bootstrap`, `jdk/runtime`):
-  `com.alibaba.nacos.bootstrap.NacosBootstrap`, the main class of the Native executable, which is
-  initialized before any other Server code runs. The JDK classes are in the metadata because the
-  libraries of the Server reach them, not because one part of the Server does.
-- A third-party artifact: the type that makes the Server use it. That is often not a type of the
-  artifact itself, because something else looks up the classes of an artifact before any of them is
-  initialized. On a start of the Server, `HikariConfig` loads the PostgreSQL driver by name before
-  `org.postgresql.Driver` is initialized, and Spring Boot looks up the classes of Tomcat, Jackson
-  and Micrometer while it builds the application context. `CONDITION_GROUPS` in
-  `native-metadata.py` holds the table, with the reason for each row. In short:
-  - `org.springframework.boot.SpringApplication`: every artifact of the Spring family, and the
-    libraries whose classes Spring Boot looks up (Tomcat, Jackson, Micrometer, Reactor, HikariCP,
-    gRPC API, AspectJ, Kotlin, the client of Kubernetes and others). Spring loads the types in the
-    signatures of a bean while it introspects the bean, so the models of the Kubernetes API are
-    loaded before `K8sSyncServer` is initialized;
-  - `com.zaxxer.hikari.HikariConfig`: the JDBC drivers;
-  - `org.slf4j.LoggerFactory` for SLF4J and logback-classic, `ch.qos.logback.classic.LoggerContext`
-    for logback-core;
-  - the type that loads or initializes the library, for JRaft, Hessian, protobuf, the Disruptor,
-    gRPC (`GrpcUtil`, `LoadBalancerRegistry`, `Utils` of the Netty transport), BouncyCastle
-    (`ClientBuilder`, the only code that uses it), Guava, JCTools and dnsjava.
-
-The guard keeps the metadata out of an image that does not contain what needs it. It does not make
-the Server's own executable smaller, because the Server needs all of it.
-
-A row of the table is checked against a run of the Server. `native-trace-server.sh classlog`
-starts the Server on a JVM with the classpath of the Native build and writes the order in which
-classes are loaded and initialized to a log; `test/scripts/native-condition-order.py` checks, for
-each owner, that the condition type is initialized before the first class of its entries is used.
-Run the smoke test and the restart check, as the Native CI job does, and give the script the log of
-the start and the log of the restart. For the first bundle 73 of the 79 third-party owners were
-confirmed that way. The Kubernetes client, BouncyCastle and the owners of gRPC, whose conditions
-changed for the cluster, were confirmed with the class logs of the ordinary Server in the tests of
-`native-test`. That is weaker evidence, because the AOT application creates its beans in an order of
-its own: a node of a cluster creates its RPC clients while the core context is built, before any gRPC
-server starts, which the ordinary Server does the other way round. An access that has an entry with
-an unreached condition shows in the `exact` variant of the Native CI job as a report for an entry
-that the bundle holds. Of the first 79 owners, six were not confirmed:
-
-- For two, Guava and JCTools, a comparison of load times shows nothing: their entries are
-  package-private superclasses of the condition type, which look up their fields in static
-  initializers that only run as part of the initialization of that type. GraalVM reaches a type
-  right before that starts, as the `SuperType` example in its documentation of conditions shows, so
-  those two are accepted for that reason.
-- Three, dnsjava, HttpClient and RocksDB, have only resource entries, and a class log does not show
-  when a resource is read. The agentscope extension was not used by the run. The types of these
-  four are early ones.
-
-The comparison covers the classes of the reflection entries on the paths of the run. The `exact`
-variant of the Native CI job reports every access without available metadata, a resource and an
-entry whose condition is not reached yet included, so it covers what the suites and the restart
-check exercise; a path that none of them exercises is as uncovered as before.
+Validate with `native-trace-server.sh classlog` + `native-condition-order.py`; the `exact` CI variant reports accesses whose condition is not reached yet.
 
 `refresh` sets the condition of every entry from its owner, whatever the inputs carry, so that a
 trace, the report of an exact-mode build and the committed files can be mixed freely. It stops at

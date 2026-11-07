@@ -218,6 +218,10 @@ public final class NativeEnvironment implements AutoCloseable {
         return credentials;
     }
 
+    public NativeDatabase database() {
+        return database;
+    }
+
     /**
      * The helper that logs in as the users of the credentials.
      *

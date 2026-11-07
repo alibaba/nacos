@@ -118,6 +118,14 @@ public abstract class NativeDatabase implements AutoCloseable {
         return container == null ? "" : container.getLogs();
     }
 
+    public String host() {
+        return container == null ? "127.0.0.1" : container.getHost();
+    }
+
+    public int mappedPort() {
+        return container == null ? port() : container.getMappedPort(port());
+    }
+
     @Override
     public void close() {
         if (container != null) {

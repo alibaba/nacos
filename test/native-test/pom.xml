@@ -35,9 +35,6 @@
     </description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- The distribution archive of the Native Server; empty finds nacos-server-*-native-*.tar.gz
              in distribution/target. -->
         <nacos.native.test.distribution></nacos.native.test.distribution>
@@ -47,18 +44,6 @@
         <nacos.native.test.database>postgresql</nacos.native.test.database>
         <nacos.native.test.work>${project.build.directory}/native-test</nacos.native.test.work>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- commons-compress of Testcontainers calls a method that commons-io 2.14.0, the version
-                 of the root pom, does not have yet. -->
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.20.0</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -77,11 +62,10 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-k3s</artifactId>
         </dependency>
-        <!-- The client of the DNS test. The version is the one of the dns module. -->
+        <!-- The client of the DNS test. The version is managed in the root pom. -->
         <dependency>
             <groupId>dnsjava</groupId>
             <artifactId>dnsjava</artifactId>
-            <version>3.6.0</version>
         </dependency>
         <!-- The wait strategy of the database containers connects through JDBC, in the JVM of the
              test. -->

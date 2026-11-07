@@ -233,6 +233,18 @@
                             <classpath><entry>${project.build.directory}/native/classes</entry></classpath>
                             <!-- Native Image does not expand nested argument files. -->
                             <useArgFile>false</useArgFile>
+                            <!-- Tracing agent for Shardingsphere-style collection:
+                                 mvn -Pnative -Dagent=true package collects to
+                                 target/native/agent-output, then curate with
+                                 test/scripts/native-metadata.py refresh. Disabled by
+                                 default so normal builds do not attach the agent. -->
+                            <agent>
+                                <enabled>false</enabled>
+                                <metadataCopy>
+                                    <merge>true</merge>
+                                    <outputDirectory>${project.build.directory}/native/agent-output</outputDirectory>
+                                </metadataCopy>
+                            </agent>
                             <buildArgs>
                                 <buildArg>@${project.basedir}/src/test/resources/aot/native-image.args</buildArg>
                                 <buildArg>@${project.build.directory}/native/options.args</buildArg>

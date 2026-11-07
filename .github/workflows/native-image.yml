@@ -1,14 +1,5 @@
-# Builds the Nacos Server as a GraalVM Native Image and tests the executable: the repository's
-# standalone-server integration suites against PostgreSQL and MySQL, and the tests of the module
-# test/native-test, which start their databases and infrastructure with Testcontainers, for what the
-# suites cannot reach (the AI registries, DNS, the Kubernetes sync, a third-party plugin, a cluster).
-# What a build contains is fixed when it is built, so every scenario is a build of its own.
-#
-# Native compilation peaks at about 12 GB of RAM, so this job runs on GitHub-hosted runners instead
-# of the self-hosted pull request checks. Every step only calls a stage of test/scripts/native-ci.sh,
-# which is also the way to reproduce the job elsewhere. See bootstrap/README-AOT.md.
-#
-# To run it on a fork without opening a pull request, push a branch named native-ci/<name>.
+# Builds and tests the Nacos Server Native Image, see bootstrap/README-AOT.md.
+# Every step calls test/scripts/native-ci.sh; to run on a fork, push a native-ci/** branch.
 
 name: Native Image
 
@@ -44,12 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The datasource, the AI registries, the Kubernetes sync, the plugins and the mode of the
-        # cluster are structural choices of the build, so every scenario and every database is built
-        # on its own (see the header of test/scripts/native-ci.sh). 'exact' builds with
-        # --exact-reachability-metadata and reports every dynamic access that has no metadata, which
-        # is how gaps in the bundled metadata are found. MySQL runs the core OpenAPI classes, which is
-        # enough to exercise its driver. The cluster scenario runs no suites.
+        # See test/scripts/native-ci.sh and bootstrap/README-AOT.md for scenarios.
         include:
           - { scenario: standard, database: postgresql, variant: default, suite: full }
           - { scenario: standard, database: postgresql, variant: exact, suite: full }
