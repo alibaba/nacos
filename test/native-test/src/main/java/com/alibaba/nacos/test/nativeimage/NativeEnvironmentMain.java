@@ -71,6 +71,10 @@ public final class NativeEnvironmentMain {
         try (NativeEnvironment environment = NativeEnvironment.create("environment", platform,
                 Map.of()).start()) {
             environment.exportSystemProperties();
+            // The suites address the Server through these properties instead of the defaults.
+            System.setProperty("nacos.port", String.valueOf(environment.server().apiPort()));
+            System.setProperty("nacos.console.port",
+                    String.valueOf(environment.server().consolePort()));
             writeProperties(directory.resolve("environment.properties"));
             System.out.println("The native test environment is ready: "
                     + directory.resolve("environment.properties"));
@@ -92,7 +96,8 @@ public final class NativeEnvironmentMain {
         Map<String, String> sorted = new TreeMap<>();
         Properties all = System.getProperties();
         for (String name : all.stringPropertyNames()) {
-            if (name.startsWith("nacos.test.auth.") || name.startsWith("nacos.agent.it.")) {
+            if (name.startsWith("nacos.test.auth.") || name.startsWith("nacos.agent.it.")
+                    || name.equals("nacos.port") || name.equals("nacos.console.port")) {
                 sorted.put(name, all.getProperty(name));
             }
         }

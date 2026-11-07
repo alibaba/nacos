@@ -30,6 +30,9 @@
     <url>https://nacos.io</url>
 
     <properties>
+        <nacos.host>127.0.0.1</nacos.host>
+        <nacos.port>8848</nacos.port>
+        <nacos.console.port>8080</nacos.console.port>
         <nacos.agent.it.server.publication.capacity>100</nacos.agent.it.server.publication.capacity>
         <nacos.agent.it.server.watch.capacity>300</nacos.agent.it.server.watch.capacity>
         <nacos.agent.it.server.http.watch.waiter.capacity>0</nacos.agent.it.server.http.watch.waiter.capacity>
@@ -176,9 +179,9 @@
                         </executions>
                         <configuration>
                             <systemPropertyVariables>
-                                <nacos.host>127.0.0.1</nacos.host>
-                                <nacos.port>8848</nacos.port>
-                                <nacos.console.port>8080</nacos.console.port>
+                                <nacos.host>${nacos.host}</nacos.host>
+                                <nacos.port>${nacos.port}</nacos.port>
+                                <nacos.console.port>${nacos.console.port}</nacos.console.port>
                                 <nacos.ai.registry.port>9080</nacos.ai.registry.port>
                                 <nacos.test.auth.enabled>${nacos.test.auth.enabled}</nacos.test.auth.enabled>
                                 <nacos.test.auth.admin.username>${nacos.test.auth.admin.username}</nacos.test.auth.admin.username>

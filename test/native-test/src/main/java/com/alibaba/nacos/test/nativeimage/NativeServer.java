@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.nativeimage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -263,6 +264,50 @@ public final class NativeServer implements AutoCloseable {
     }
 
     /**
+     * The port of the API.
+     *
+     * @return the API port the Server was prepared with
+     */
+    public int apiPort() {
+        return apiPort;
+    }
+
+    /**
+     * The port of the console.
+     *
+     * @return the console port the Server was prepared with
+     */
+    public int consolePort() {
+        return consolePort;
+    }
+
+    /**
+     * A port that nothing listens on right now, for a Server or a test to bind.
+     *
+     * @param excluded ports to avoid, for example the API port when a console port is needed
+     * @return a free port
+     */
+    static int freePort(int... excluded) {
+        for (;;) {
+            try (ServerSocket socket = new ServerSocket(0)) {
+                int port = socket.getLocalPort();
+                boolean taken = false;
+                for (int each : excluded) {
+                    if (each == port) {
+                        taken = true;
+                        break;
+                    }
+                }
+                if (!taken) {
+                    return port;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    /**
      * Starts the process and waits until the console answers its liveness check.
      */
     public void start() {
@@ -450,7 +495,9 @@ public final class NativeServer implements AutoCloseable {
     }
 
     private void assertPortsFree() {
-        for (int port : new int[] {apiPort, consolePort}) {
+        // The ports of gRPC and Raft follow the API port by fixed offsets.
+        for (int port : new int[] {apiPort, consolePort, apiPort + 1000, apiPort + 1001,
+                apiPort - 1000}) {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress("127.0.0.1", port), 200);
                 throw new IllegalStateException("Port " + port + " is in use already, probably by "
