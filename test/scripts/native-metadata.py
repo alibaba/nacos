@@ -31,8 +31,7 @@ fails when they differ, so a version bump cannot silently reuse the entries of a
 The bundle holds only what the Native build does not get from another source: the metadata files in
 the jars of the classpath and the files of the AOT generator (see Provided). ``refresh`` takes what
 they provide out of the entries, so it needs the output of the Native build as well
-(``mvn -Pnative ... -DnativeDryRun=true`` produces it). The GraalVM reachability metadata repository
-that the build adds is no source: the bundle works with and without it.
+(``mvn -Pnative ... -DnativeDryRun=true`` produces it).
 
 ``check`` verifies the committed files without needing GraalVM or a database. CI runs it from
 ``native-build-it.py``. With ``--classpath`` it also verifies that every entry sits in the file of
@@ -46,10 +45,8 @@ entry, whatever the inputs carry; ``check`` rejects an entry that another condit
 ``collect-missing`` closes the loop from the other side: an executable built with
 ``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
 prints every dynamic access that has no metadata. This command turns such logs into the same
-format as the agent output, so ``refresh`` can merge them. It reads the reports about classes,
-methods and constructors that were looked up or invoked, fields, unsafe allocation,
-serialization, resources and resource bundles. Reports about lambda-proxy classes are counted
-and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
+format as the agent output, so ``refresh`` can merge them. Reports about lambda-proxy classes are
+counted and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
 variant of the Native CI job fails on it instead of ignoring a gap that it cannot name.
 
 Typical refresh, after tracing the Server with the exact classpath of the Native build. The
