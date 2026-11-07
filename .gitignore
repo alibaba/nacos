@@ -26,6 +26,3 @@ dependency-reduced-pom.xml
 .qoder/
 openspec/
 .codegraph
-
-# Output of test/scripts/native-ci.sh
-ci-out/

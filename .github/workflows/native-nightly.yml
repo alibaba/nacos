@@ -42,7 +42,7 @@ jobs:
       NATIVE_CI_DATABASE: postgresql
       NATIVE_CI_VARIANT: default
       NATIVE_CI_SUITE: full
-      NATIVE_CI_OUT: ${{ github.workspace }}/ci-out
+      NATIVE_CI_OUT: ${{ github.workspace }}/target/ci-out
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,5 +101,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-nightly-diagnostics
-          path: ci-out
+          path: target/ci-out
           if-no-files-found: ignore

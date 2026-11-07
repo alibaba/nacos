@@ -29,14 +29,14 @@
 #   NATIVE_CI_HEAP          Native builder heap, default 10g
 #   NATIVE_CI_PARALLELISM   Native builder threads, default 4
 #   NATIVE_CI_WORK          scratch directory, default ${RUNNER_TEMP:-/tmp}/native-ci
-#   NATIVE_CI_OUT           receives logs and reports, default <repository>/ci-out
+#   NATIVE_CI_OUT           receives logs and reports, default <repository>/target/ci-out
 #   MVN                     Maven command, default mvn
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="${NATIVE_CI_WORK:-${RUNNER_TEMP:-/tmp}/native-ci}"
-OUT="${NATIVE_CI_OUT:-${ROOT}/ci-out}"
+OUT="${NATIVE_CI_OUT:-${ROOT}/target/ci-out}"
 STATE="${WORK}/state.env"
 VARIANT="${NATIVE_CI_VARIANT:-default}"
 SCENARIO="${NATIVE_CI_SCENARIO:-standard}"
@@ -391,7 +391,7 @@ stage_integration() {
 
     # Ending the environment restarts the Server, which holds the data of the suites by now, and
     # checks that the data of NativeRestartCheck survives. It never fails this stage: the report
-    # stage judges ci-out/reports/restart-check.txt.
+    # stage judges target/ci-out/reports/restart-check.txt.
     log "End the test environment: the restart check"
     touch "$ENVIRONMENT_DIR/finish"
     wait "$launcher" || true

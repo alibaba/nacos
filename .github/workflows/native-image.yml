@@ -67,7 +67,7 @@ jobs:
       NATIVE_CI_DATABASE: ${{ matrix.database }}
       NATIVE_CI_VARIANT: ${{ matrix.variant }}
       NATIVE_CI_SUITE: ${{ matrix.suite }}
-      NATIVE_CI_OUT: ${{ github.workspace }}/ci-out
+      NATIVE_CI_OUT: ${{ github.workspace }}/target/ci-out
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -113,5 +113,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-diagnostics-${{ matrix.scenario }}-${{ matrix.database }}-${{ matrix.variant }}
-          path: ci-out
+          path: target/ci-out
           if-no-files-found: ignore
