@@ -393,7 +393,7 @@
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "refreshes"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.BoundedLocalCache"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "key"}, {"name": "value"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.PS"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "writeTime"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.PSW"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.alibaba.nacos.shaded.caffeine.cache.PSWMS"},
+    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.alibaba.nacos.shaded.caffeine.cache.PSWMS", "unsafeAllocated": true},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "maximum"}, {"name": "weightedSize"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.SSMS"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "FACTORY"}, {"name": "expiresAfterWriteNanos"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.SSMSW"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "fields": [{"name": "tableBusy"}], "type": "com.alibaba.nacos.shaded.caffeine.cache.StripedBuffer"},
