@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.apache.derby.jdbc.EmbeddedDriver"}
+  ]
+}

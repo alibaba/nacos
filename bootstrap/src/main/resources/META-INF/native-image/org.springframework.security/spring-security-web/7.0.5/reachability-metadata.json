@@ -1,0 +1,23 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.DefaultSecurityFilterChain"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.FilterChainProxy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.ExceptionTranslationFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.RequestMatcherDelegatingWebInvocationPrivilegeEvaluator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.intercept.AuthorizationFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.access.intercept.RequestMatcherDelegatingAuthorizationManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.logout.LogoutFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.logout.LogoutHandler"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.logout.LogoutSuccessEventPublishingLogoutHandler"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.session.AbstractSessionFixationProtectionStrategy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.authentication.session.SessionAuthenticationStrategy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.context.SecurityContextHolderFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.header.HeaderWriterFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.savedrequest.RequestCacheAwareFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servlet.support.csrf.CsrfRequestDataValueProcessor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter"}
+  ]
+}

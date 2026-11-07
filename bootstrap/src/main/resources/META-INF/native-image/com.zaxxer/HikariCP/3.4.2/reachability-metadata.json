@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.zaxxer.hikari.pool.PoolEntry"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.zaxxer.hikari.util.ConcurrentBag$IConcurrentBagEntry[]"}
+  ]
+}

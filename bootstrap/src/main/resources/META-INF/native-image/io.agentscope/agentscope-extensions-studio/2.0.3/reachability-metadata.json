@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "getId", "parameterTypes": []}, {"name": "getName", "parameterTypes": []}, {"name": "getPid", "parameterTypes": []}, {"name": "getProject", "parameterTypes": []}, {"name": "getRunDir", "parameterTypes": []}, {"name": "getStatus", "parameterTypes": []}, {"name": "getTimestamp", "parameterTypes": []}], "type": "io.agentscope.core.studio.pojo.RegisterRunRequest"}
+  ]
+}

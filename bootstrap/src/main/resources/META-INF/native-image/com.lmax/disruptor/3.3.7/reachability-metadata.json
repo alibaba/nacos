@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.lmax.disruptor.dsl.ProducerType"}, "type": "com.lmax.disruptor.AbstractSequencer"},
+    {"condition": {"typeReached": "com.lmax.disruptor.dsl.ProducerType"}, "fields": [{"name": "value"}], "type": "com.lmax.disruptor.Value"}
+  ]
+}

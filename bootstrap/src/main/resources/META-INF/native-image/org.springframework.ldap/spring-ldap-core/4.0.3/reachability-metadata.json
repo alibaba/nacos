@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.ldap.odm.core.impl.DefaultObjectDirectoryMapper"}
+  ]
+}

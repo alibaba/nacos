@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.sql.autoconfigure.init.ConditionalOnSqlInitialization"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer"}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.ConsoleAppender"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setAppend", "parameterTypes": ["boolean"]}], "type": "ch.qos.logback.core.FileAppender"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setCharset", "parameterTypes": ["java.nio.charset.Charset"]}], "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}, {"name": "setMaxFileSize", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "setCleanHistoryOnStart", "parameterTypes": ["boolean"]}, {"name": "setMaxHistory", "parameterTypes": ["int"]}, {"name": "setTotalSizeCap", "parameterTypes": ["ch.qos.logback.core.util.FileSize"]}], "type": "ch.qos.logback.core.rolling.TimeBasedRollingPolicy"},
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.core.status.NopStatusListener"}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "ch.qos.logback.classic.LoggerContext"}, "glob": "ch/qos/logback/core/logback-core-version.properties"}
+  ]
+}

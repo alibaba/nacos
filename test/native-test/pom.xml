@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2026 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.alibaba.nacos</groupId>
+        <artifactId>nacos-test</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>native-test</artifactId>
+    <name>nacos-native-test ${project.version}</name>
+    <url>https://nacos.io</url>
+    <description>
+        Tests of the Nacos Server as a GraalVM Native Image. Testcontainers starts the databases and
+        the other infrastructure, and the Native Server runs as a process of the host. The main
+        sources are the harness, which other test modules reuse; see bootstrap/README-AOT.md.
+    </description>
+
+    <properties>
+        <!-- The distribution archive of the Native Server; empty finds nacos-server-*-native-*.tar.gz
+             in distribution/target. -->
+        <nacos.native.test.distribution></nacos.native.test.distribution>
+        <!-- native runs the Native executable, jvm the ordinary Server, which is the baseline. -->
+        <nacos.native.test.mode>native</nacos.native.test.mode>
+        <nacos.native.test.opts>-Xmx1g</nacos.native.test.opts>
+        <nacos.native.test.database>postgresql</nacos.native.test.database>
+        <nacos.native.test.work>${project.build.directory}/native-test</nacos.native.test.work>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-k3s</artifactId>
+        </dependency>
+        <!-- The client of the DNS test. The version is managed in the root pom. -->
+        <dependency>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
+        </dependency>
+        <!-- The wait strategy of the database containers connects through JDBC, in the JVM of the
+             test. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>native-integration-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <nacos.native.test.distribution>${nacos.native.test.distribution}</nacos.native.test.distribution>
+                                <nacos.native.test.mode>${nacos.native.test.mode}</nacos.native.test.mode>
+                                <nacos.native.test.opts>${nacos.native.test.opts}</nacos.native.test.opts>
+                                <nacos.native.test.database>${nacos.native.test.database}</nacos.native.test.database>
+                                <nacos.native.test.work>${nacos.native.test.work}</nacos.native.test.work>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

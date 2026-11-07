@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alipay.sofa.jraft.util.JRaftServiceLoader"}, "type": "com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory"}
+  ]
+}

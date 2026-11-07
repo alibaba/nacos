@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.core.JsonGenerator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.core.JsonProcessingException"}
+  ]
+}

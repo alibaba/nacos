@@ -1,0 +1,32 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.FrameworkServlet"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.HttpServletBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.SmartView"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport$NoOpValidator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.AbstractDetectingUrlHandlerMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.AbstractHandlerMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.AbstractHandlerMethodMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.AbstractHandlerMethodMapping$EmptyHandler"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.AbstractUrlHandlerMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.HandlerExceptionResolverComposite"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.handler.SimpleUrlHandlerMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.i18n.AbstractLocaleResolver"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.mvc.method.RequestMappingInfo"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "handle", "parameterTypes": []}], "type": "org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping$HttpOptionsHandler"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.support.AbstractFlashMapManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.support.SessionFlashMapManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.support.WebContentGenerator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.AbstractCachingViewResolver"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.AbstractUrlBasedView"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.AbstractView"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.InternalResourceView"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.RedirectView"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.UrlBasedViewResolver"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.web.servlet.view.ViewResolverComposite"}
+  ]
+}

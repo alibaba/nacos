@@ -20,3 +20,8 @@
 --exclude-config
 .*nacos-console.*
 META-INF/native-image/com.alibaba.nacos/nacos-console/.*
+# Nacos excludes Bolt from its dependencies and selects NacosGrpcRaftRpcFactory. GraalVM 25.0.2
+# does not mind, but 25.2.4 otherwise compiles the optional Bolt provider that META-INF/services
+# of JRaft lists, although its classes are not on the classpath, and fails with "reachable during
+# compilation, but was not seen during Bytecode parsing".
+-H:ServiceLoaderFeatureExcludeServiceProviders=com.alipay.sofa.jraft.rpc.impl.BoltRaftRpcFactory

@@ -61,8 +61,9 @@ public final class NacosNativeBuild {
         boolean derby = Boolean.getBoolean("nacos.native.derby.experimental");
         validateCapabilities(manifest, derby);
         Files.writeString(output.resolve("options.args"),
-            derby ? Files.readString(Path.of(args[2]))
-                : "# No experimental runtime class loading.\n");
+            options(derby ? Files.readString(Path.of(args[2]))
+                : "# No experimental runtime class loading.\n",
+                System.getProperty("nacos.native.options")));
         writeClasspath(output.resolve("classpath.args"),
             System.getProperty("nacos.native.classpath"));
         Path classes = output.resolve("classes");
@@ -80,6 +81,32 @@ public final class NacosNativeBuild {
         try (OutputStream stream = Files.newOutputStream(output.resolve("build.properties"))) {
             build.store(stream, "Native build platform");
         }
+    }
+    
+    /**
+     * Compose the Native Image option file: the toolchain options come first, followed by the
+     * operator's own option file, so that the operator can add diagnostics such as
+     * {@code --exact-reachability-metadata} or portability flags such as
+     * {@code -march=compatibility} without editing the repository.
+     *
+     * @param toolchain  options required by the selected toolchain
+     * @param additional path of an optional Native Image argument file, blank when not used
+     * @return content of the generated {@code options.args}
+     * @throws IOException when the additional file cannot be read
+     */
+    static String options(String toolchain, String additional) throws IOException {
+        if (additional == null || additional.isBlank()) {
+            return toolchain;
+        }
+        Path file = Path.of(additional);
+        if (!Files.isRegularFile(file)) {
+            throw new IllegalArgumentException(
+                "nacos.native.options must name an existing Native Image argument file: " + file);
+        }
+        String additions = Files.readString(file);
+        return toolchain + (toolchain.endsWith("\n") ? "" : "\n")
+            + "# Additional options from nacos.native.options\n"
+            + additions + (additions.endsWith("\n") ? "" : "\n");
     }
     
     static void writeClasspath(Path file, String classpath) throws IOException {

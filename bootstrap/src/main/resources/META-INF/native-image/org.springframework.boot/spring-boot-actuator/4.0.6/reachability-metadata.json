@@ -1,0 +1,19 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.ExposableEndpoint"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.Operation"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.OperationResponseBody"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.annotation.Endpoint"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.annotation.EndpointConverter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.annotation.EndpointDiscoverer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.annotation.EndpointExtension"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.annotation.ReadOperation"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.invoke.convert.ConversionServiceParameterValueMapper"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.web.ExposableServletEndpoint"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.web.WebOperation"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.web.annotation.EndpointWebExtension"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.actuate.endpoint.web.annotation.ExposableControllerEndpoint"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.boot.actuate.endpoint.annotation.EndpointExtension"]}}
+  ]
+}

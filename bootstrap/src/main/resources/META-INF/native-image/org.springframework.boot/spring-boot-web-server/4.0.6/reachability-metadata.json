@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.server.AbstractConfigurableWebServerFactory"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.server.context.WebServerApplicationContext"}
+  ]
+}

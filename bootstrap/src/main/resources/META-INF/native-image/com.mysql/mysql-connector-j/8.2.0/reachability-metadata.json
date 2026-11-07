@@ -1,0 +1,15 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["com.mysql.cj.conf.ConnectionUrlParser", "java.util.Properties"]}], "type": "com.mysql.cj.conf.url.SingleConnectionUrl"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.exceptions.CJCommunicationsException"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.exceptions.CJException"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.exceptions.UnableToConnectException"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "com.mysql.cj.jdbc.AbandonedConnectionCleanupThread"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": ["java.lang.String"]}], "type": "com.mysql.cj.log.StandardLogger"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.mysql.cj.protocol.StandardSocketFactory"}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "glob": "com/mysql/cj/LocalizedErrorMessages.properties"},
+    {"bundle": "com.mysql.cj.LocalizedErrorMessages", "condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}}
+  ]
+}

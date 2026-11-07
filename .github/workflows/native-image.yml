@@ -1,0 +1,114 @@
+# Copyright 1999-2026 Alibaba Group Holding Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Builds and tests the Nacos Server Native Image, see bootstrap/README-AOT.md.
+# Every step calls test/scripts/native-ci.sh; to run on a fork, push a native-ci/** branch.
+
+name: Native Image
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ develop ]
+    paths:
+      - 'bootstrap/**'
+      - 'distribution/bin/startup-native.sh'
+      - 'distribution/release-native.xml'
+      - 'distribution/pom.xml'
+      - '**/META-INF/native-image/**'
+      - 'test/scripts/native-*'
+      - 'test/native-test/**'
+      - 'test/native-test-plugin/**'
+      - '.github/workflows/native-image.yml'
+  push:
+    branches: [ 'native-ci/**' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-image:
+    name: Native Server (${{ matrix.scenario }}, ${{ matrix.database }}, ${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        # See test/scripts/native-ci.sh and bootstrap/README-AOT.md for scenarios.
+        include:
+          - { scenario: standard, database: postgresql, variant: default, suite: full }
+          - { scenario: standard, database: postgresql, variant: exact, suite: full }
+          - { scenario: standard, database: mysql, variant: default, suite: core }
+          - { scenario: standard, database: mysql, variant: exact, suite: core }
+          - { scenario: features, database: postgresql, variant: default, suite: full }
+          - { scenario: features, database: postgresql, variant: exact, suite: full }
+          - { scenario: cluster, database: postgresql, variant: default, suite: core }
+          - { scenario: cluster, database: postgresql, variant: exact, suite: core }
+    env:
+      NATIVE_CI_SCENARIO: ${{ matrix.scenario }}
+      NATIVE_CI_DATABASE: ${{ matrix.database }}
+      NATIVE_CI_VARIANT: ${{ matrix.variant }}
+      NATIVE_CI_SUITE: ${{ matrix.suite }}
+      NATIVE_CI_OUT: ${{ github.workspace }}/target/ci-out
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM Community 25.0.4
+        uses: graalvm/setup-graalvm@v1
+        with:
+          # GraalVM Community 25 Innovation 2 (graal 25.2.4, JDK 25.0.4). A java-version of '25'
+          # alone resolves to the last jdk-25.* release, 25.0.2.
+          version: '25.2'
+          java-version: '25'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+
+      - name: Select the scenario and the build options
+        run: bash test/scripts/native-ci.sh prepare
+
+      - name: Build the Native distribution
+        id: build
+        run: bash test/scripts/native-ci.sh build
+
+      # Testcontainers starts the databases and the Servers of the tests that follow. The tests do
+      # not depend on each other, so each of them runs once the build has succeeded.
+      - name: Smoke test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh smoke
+
+      - name: Integration tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh integration
+
+      - name: Scenario tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh scenario
+
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: bash test/scripts/native-ci.sh report
+
+      - name: Upload diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-diagnostics-${{ matrix.scenario }}-${{ matrix.database }}-${{ matrix.variant }}
+          path: target/ci-out
+          if-no-files-found: ignore

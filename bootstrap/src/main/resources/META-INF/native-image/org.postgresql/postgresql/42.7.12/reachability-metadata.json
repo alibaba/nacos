@@ -1,0 +1,9 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.postgresql.core.QueryExecutorCloseAction"},
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.postgresql.jdbc.PgStatement"}
+  ],
+  "resources": [
+    {"bundle": "org.postgresql.translation.messages", "condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}}
+  ]
+}

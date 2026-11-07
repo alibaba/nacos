@@ -1,0 +1,5 @@
+{
+  "resources": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "librocksdbjni-linux64.so"}
+  ]
+}

@@ -1,0 +1,105 @@
+# Copyright 1999-2026 Alibaba Group Holding Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Nightly Native Server image: builds the Native distribution, tests it with the
+# standalone suites, and pushes the Docker image to GHCR. amd64 only: a Native
+# executable is specific to the platform it was compiled on, and the arm64 CI
+# coverage does not exist yet. Runs on the default branch after merge; enable
+# the schedule and the package settings there.
+
+name: Native Nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nightly-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      NATIVE_CI_SCENARIO: standard
+      NATIVE_CI_DATABASE: postgresql
+      NATIVE_CI_VARIANT: default
+      NATIVE_CI_SUITE: full
+      NATIVE_CI_OUT: ${{ github.workspace }}/target/ci-out
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM Community 25.0.4
+        uses: graalvm/setup-graalvm@v1
+        with:
+          # GraalVM Community 25 Innovation 2 (graal 25.2.4, JDK 25.0.4). A java-version of '25'
+          # alone resolves to the last jdk-25.* release, 25.0.2.
+          version: '25.2'
+          java-version: '25'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+
+      - name: Select the scenario and the build options
+        run: bash test/scripts/native-ci.sh prepare
+
+      - name: Build the Native distribution
+        id: build
+        run: bash test/scripts/native-ci.sh build
+
+      - name: Smoke test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh smoke
+
+      - name: Integration tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash test/scripts/native-ci.sh integration
+
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: bash test/scripts/native-ci.sh report
+
+      - name: Log in to GHCR
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the image
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          DATE=$(date -u +%Y%m%d)
+          REPO=ghcr.io/${{ github.repository }}
+          docker build -f distribution/Dockerfile.native \
+            -t "$REPO:native-nightly" -t "$REPO:native-nightly-$DATE" \
+            distribution/target
+          docker push "$REPO:native-nightly"
+          docker push "$REPO:native-nightly-$DATE"
+
+      - name: Upload diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-nightly-diagnostics
+          path: target/ci-out
+          if-no-files-found: ignore

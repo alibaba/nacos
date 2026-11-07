@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.OutlierDetectionLoadBalancerProvider"},
+    {"condition": {"typeReached": "io.grpc.LoadBalancerRegistry"}, "type": "io.grpc.util.RandomSubsettingLoadBalancerProvider"}
+  ]
+}
