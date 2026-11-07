@@ -133,6 +133,28 @@ Ordinary JVM packaging still uses `mvn '-Prelease-nacos,!dev' clean install` and
 Its default classpath-based plugin loading and startup behavior are unchanged. The Native profile
 is never activated implicitly by the JDK vendor or `JAVA_HOME`.
 
+## Run as a Docker image
+
+`distribution/Dockerfile.native` repacks the Native distribution archive into an image, so build
+that first and then build the image from the repository root:
+
+```sh
+mvn -B '-Pnative,release-native,!dev' -pl distribution -am clean package \
+  -Dnacos.native.config=/absolute/path/build/application.properties \
+  -Dnacos.native.standalone=true
+docker build -f distribution/Dockerfile.native -t nacos-server-native distribution/target
+docker run -d --name nacos-native -p 8848:8848 -p 8080:8080 \
+  -v /absolute/path/conf:/opt/nacos/conf nacos-server-native
+```
+
+The image holds the executable of one build: its datasource, switches and mode are fixed, and the
+archive is specific to the platform it was compiled on (amd64 from the Native CI job). The Server
+runs as a non-root user with its home at `/opt/nacos` and stays in the foreground. Mount a `conf`
+directory with matching structural choices and runtime settings, or pass Native VM flags with
+`-e NACOS_NATIVE_OPTS='-Xmx1g'`. Readiness is the same liveness check the tests use. A nightly
+image is published to GHCR by `.github/workflows/native-nightly.yml`
+(`ghcr.io/alibaba/nacos:native-nightly`) once this change is merged.
+
 ## Bundled reachability metadata
 
 Bootstrap carries GraalVM reachability metadata in the unified format below
