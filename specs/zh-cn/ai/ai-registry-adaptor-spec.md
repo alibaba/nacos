@@ -102,7 +102,11 @@ Nacos 鉴权信息。
 metadata、version、packages、icons、website、repository、tools 和 endpoints 映射到
 registry 响应形态。当 frontend endpoint 和 backend endpoint 同时存在时，优先使用
 frontend endpoint。Endpoint 数据会根据 MCP front protocol 转换为 registry `remotes`，
-例如 streamable HTTP 或 SSE。
+例如 streamable HTTP 或 SSE。未携带 `protocol` 或 `path` 的 endpoint（例如只提供
+address 与 port 的 `DIRECT` endpoint 规格）会将 URL 协议默认为 `http`、路径默认为空，
+从而保证每个 remote URL 都是合法的绝对 URL。`_meta` 中的 `official` 对象通过
+`status` 字段反映 Nacos MCP server 的生命周期状态（`active`、`deprecated` 或
+`deleted`）。
 
 `namespaceId` 是 Nacos 扩展字段。未传入时，适配器可以按确定性的 namespace 顺序跨
 namespace 搜索。这使 Nacos 可以作为内部 MCP subregistry 使用，同时标准 MCP 资源模型仍由

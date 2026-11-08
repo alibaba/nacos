@@ -169,3 +169,10 @@ bound to the adaptor origin and fixtures use the existing cleanup helpers.
 validator. Java format checks and any local upstream-tool results are separate
 from API coverage totals. Private MCP recall and MCP Artifact identity mapping
 remain TODO; the existing coverage classifications are unchanged.
+
+## MCP Registry `/v0` response conversion
+
+| API surface / test class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `NacosMcpRegistryServiceTest` (module UT), `McpRegistryControllerTest` | `GET /v0/servers`, `GET /v0/servers/{serverName}/versions/{version}` response assembly | Partial | Module unit tests verify remotes URL construction for `DIRECT` endpoints (null protocol/path defaults to `http` and empty path; explicit protocol/path and default-port omission preserved) and `_meta.official.status` population from the MCP server lifecycle status. Controller contract tests verify routing and envelope shape with a mocked service. No standalone IT exists for the `/v0` MCP Registry endpoints because registering a published MCP server through the console/admin flow is not yet exercised end-to-end in `ArdAdaptorOpenApiITCase`; the conversion contract is therefore covered at the service level. |
+>>>>>>> 9c7c426 (For #16004, Fix null protocol/path URL and missing official status in MCP registry /v0 responses)

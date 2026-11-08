@@ -123,7 +123,12 @@ response objects. Nacos maps MCP metadata, version information, packages,
 icons, website, repository, tools, and endpoints into the registry response
 shape. Frontend endpoints are preferred over backend endpoints when both are
 available. Endpoint data is converted into registry `remotes` according to the
-MCP front protocol, such as streamable HTTP or SSE.
+MCP front protocol, such as streamable HTTP or SSE. Endpoints that do not carry
+`protocol` or `path` — for example `DIRECT` endpoint specifications that only
+provide address and port — default the URL protocol to `http` and the path to
+empty, so every remote URL is a valid absolute URL. The `_meta` `official`
+object reflects the Nacos MCP server lifecycle status (`active`, `deprecated`,
+or `deleted`) in its `status` field.
 
 `namespaceId` is a Nacos extension. If it is omitted, the adaptor may search
 across namespaces in deterministic namespace order. This makes Nacos usable as
