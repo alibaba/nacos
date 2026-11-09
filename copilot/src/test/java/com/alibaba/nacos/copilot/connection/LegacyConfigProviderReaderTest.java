@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.copilot.connection;
 
-import com.alibaba.nacos.copilot.config.CopilotConfigStorage;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,19 +40,13 @@ import static org.mockito.Mockito.when;
 class LegacyConfigProviderReaderTest {
     
     @Mock
-    private CopilotConfigStorage configStorage;
-    
-    @Mock
-    private CopilotProperties defaultProperties;
-    
-    @Mock
     private Environment environment;
     
     private LegacyConfigProviderReader reader;
     
     @BeforeEach
     void setUp() {
-        reader = new LegacyConfigProviderReader(configStorage, defaultProperties, environment);
+        reader = new LegacyConfigProviderReader(environment);
     }
     
     @Test
@@ -62,13 +55,13 @@ class LegacyConfigProviderReaderTest {
     }
     
     @Test
-    void testReadUsesDefaultProperties() {
-        when(configStorage.isAvailable()).thenReturn(false);
-        when(defaultProperties.getModel()).thenReturn("qwen-turbo");
-        when(defaultProperties.getApiKey()).thenReturn("config-key");
+    void testReadUsesConfigurationFromContext() {
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey("config-key");
         when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn(null);
         
-        List<CopilotModelConnection> connections = reader.read();
+        List<CopilotModelConnection> connections = reader.read(new ProviderReadContext(config));
         
         assertEquals(1, connections.size());
         CopilotModelConnection connection = connections.get(0);
@@ -83,41 +76,13 @@ class LegacyConfigProviderReaderTest {
     
     @Test
     void testReadPrefersEnvironmentApiKey() {
-        when(configStorage.isAvailable()).thenReturn(false);
-        when(defaultProperties.getModel()).thenReturn("qwen-turbo");
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey("config-key");
         when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
         
-        CopilotModelConnection connection = reader.read().get(0);
+        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
         
         assertEquals("env-key", connection.getApiKey());
-    }
-    
-    @Test
-    void testReadUsesStoredConfig() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setModel("qwen-max");
-        stored.setApiKey("stored-key");
-        when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn(null);
-        
-        CopilotModelConnection connection = reader.read().get(0);
-        
-        assertEquals("dashscope:qwen-max", connection.getModelId());
-        assertEquals("stored-key", connection.getApiKey());
-    }
-    
-    @Test
-    void testReadFallsBackWhenStoredConfigMissing() {
-        when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(null);
-        when(defaultProperties.getModel()).thenReturn("qwen-plus");
-        when(defaultProperties.getApiKey()).thenReturn("config-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn(null);
-        
-        CopilotModelConnection connection = reader.read().get(0);
-        
-        assertEquals("dashscope:qwen-plus", connection.getModelId());
-        assertEquals("config-key", connection.getApiKey());
     }
 }

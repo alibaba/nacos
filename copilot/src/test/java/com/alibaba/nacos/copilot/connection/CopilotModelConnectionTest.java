@@ -20,9 +20,12 @@ import io.agentscope.core.model.ModelCreationContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -34,22 +37,24 @@ class CopilotModelConnectionTest {
     
     @Test
     void testGetModelId() {
-        CopilotModelConnection connection = new CopilotModelConnection();
-        connection.setProviderId("dashscope");
-        connection.setModel("qwen-plus");
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .providerId("dashscope")
+            .model("qwen-plus")
+            .build();
         
         assertEquals("dashscope:qwen-plus", connection.getModelId());
     }
     
     @Test
     void testToCreationContextPassesThroughFields() {
-        CopilotModelConnection connection = new CopilotModelConnection();
-        connection.setApiKey("key");
-        connection.setBaseUrl("https://example.com");
-        connection.setEndpointPath("/v1");
-        connection.setStream(Boolean.TRUE);
-        connection.setEnableThinking(Boolean.FALSE);
-        connection.setOptions(Collections.singletonMap("enableSearch", Boolean.TRUE));
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .apiKey("key")
+            .baseUrl("https://example.com")
+            .endpointPath("/v1")
+            .stream(Boolean.TRUE)
+            .enableThinking(Boolean.FALSE)
+            .options(Collections.singletonMap("enableSearch", Boolean.TRUE))
+            .build();
         
         ModelCreationContext context = connection.toCreationContext();
         
@@ -63,11 +68,31 @@ class CopilotModelConnectionTest {
     
     @Test
     void testToCreationContextWithoutOptions() {
-        CopilotModelConnection connection = new CopilotModelConnection();
+        CopilotModelConnection connection = CopilotModelConnection.builder().build();
         
         ModelCreationContext context = connection.toCreationContext();
         
         assertNull(context.getApiKey());
         assertTrue(context.getOptions().isEmpty());
+    }
+    
+    @Test
+    void testOptionsAreDefensivelyCopied() {
+        Map<String, Object> options = new HashMap<>();
+        options.put("enableSearch", Boolean.TRUE);
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .options(options)
+            .build();
+        
+        options.put("enableSearch", Boolean.FALSE);
+        
+        assertEquals(Boolean.TRUE, connection.getOptions().get("enableSearch"));
+        assertThrows(UnsupportedOperationException.class,
+            () -> connection.getOptions().put("another", Boolean.TRUE));
+    }
+    
+    @Test
+    void testEnabledByDefault() {
+        assertTrue(CopilotModelConnection.builder().build().isEnabled());
     }
 }

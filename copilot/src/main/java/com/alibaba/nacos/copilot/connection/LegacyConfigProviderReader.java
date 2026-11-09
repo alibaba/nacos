@@ -17,7 +17,6 @@
 package com.alibaba.nacos.copilot.connection;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.copilot.config.CopilotConfigStorage;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -47,24 +46,15 @@ public class LegacyConfigProviderReader implements ProviderReader {
     
     private static final String ENV_API_KEY = "COPILOT_API_KEY";
     
-    private final CopilotConfigStorage configStorage;
-    
-    private final CopilotProperties defaultProperties;
-    
     private final Environment environment;
     
     /**
      * Create the legacy reader.
      *
-     * @param configStorage stored Copilot configuration
-     * @param defaultProperties configuration from {@code application.properties}
      * @param environment Spring environment used to read {@code COPILOT_API_KEY}
      */
     @Autowired
-    public LegacyConfigProviderReader(CopilotConfigStorage configStorage,
-        CopilotProperties defaultProperties, Environment environment) {
-        this.configStorage = configStorage;
-        this.defaultProperties = defaultProperties;
+    public LegacyConfigProviderReader(Environment environment) {
         this.environment = environment;
     }
     
@@ -74,28 +64,19 @@ public class LegacyConfigProviderReader implements ProviderReader {
     }
     
     @Override
-    public List<CopilotModelConnection> read() {
-        CopilotProperties config = getEffectiveConfig();
-        CopilotModelConnection connection = new CopilotModelConnection();
-        connection.setName(CONNECTION_NAME);
-        connection.setProviderId(PROVIDER_ID);
-        connection.setDisplayName("Legacy DashScope");
-        connection.setEnabled(true);
-        connection.setModel(config.getModel());
-        connection.setApiKey(resolveApiKey(config));
-        connection.setStream(Boolean.TRUE);
-        connection.setEnableThinking(Boolean.TRUE);
+    public List<CopilotModelConnection> read(ProviderReadContext context) {
+        CopilotProperties config = context.getLegacyConfig();
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .name(CONNECTION_NAME)
+            .providerId(PROVIDER_ID)
+            .displayName("Legacy DashScope")
+            .enabled(true)
+            .model(config.getModel())
+            .apiKey(resolveApiKey(config))
+            .stream(Boolean.TRUE)
+            .enableThinking(Boolean.TRUE)
+            .build();
         return Collections.singletonList(connection);
-    }
-    
-    private CopilotProperties getEffectiveConfig() {
-        if (configStorage != null && configStorage.isAvailable()) {
-            CopilotProperties config = configStorage.getConfig();
-            if (config != null) {
-                return config;
-            }
-        }
-        return defaultProperties;
     }
     
     private String resolveApiKey(CopilotProperties config) {

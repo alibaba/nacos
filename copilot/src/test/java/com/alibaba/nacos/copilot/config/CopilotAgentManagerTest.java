@@ -32,12 +32,15 @@ import org.springframework.core.env.Environment;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +76,7 @@ class CopilotAgentManagerTest {
     void testIsEnabledWhenDisabled() {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(ConnectionTable.empty());
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         when(defaultProperties.isEnabled()).thenReturn(false);
         copilotAgentManager.refreshConfig();
         
@@ -89,7 +92,7 @@ class CopilotAgentManagerTest {
         // Given
         CopilotModelConnection connection = buildConnection(null);
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(tableOf(connection));
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.isEnabled()).thenReturn(true);
         copilotAgentManager.refreshConfig();
         
@@ -105,7 +108,7 @@ class CopilotAgentManagerTest {
         // Given
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(tableOf(connection));
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.isEnabled()).thenReturn(true);
         copilotAgentManager.refreshConfig();
         
@@ -120,7 +123,7 @@ class CopilotAgentManagerTest {
     void testCreateAgentWhenDisabled() {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(ConnectionTable.empty());
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         when(defaultProperties.isEnabled()).thenReturn(false);
         copilotAgentManager.refreshConfig();
         
@@ -135,7 +138,7 @@ class CopilotAgentManagerTest {
     void testCreateAgentWhenNoConnection() {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(ConnectionTable.empty());
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         when(defaultProperties.isEnabled()).thenReturn(true);
         copilotAgentManager.refreshConfig();
         
@@ -150,7 +153,7 @@ class CopilotAgentManagerTest {
     void testCreateAgentWhenNoApiKey() {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(tableOf(buildConnection(null)));
+        when(providerReaders.readAll(any())).thenReturn(tableOf(buildConnection(null)));
         when(defaultProperties.isEnabled()).thenReturn(true);
         copilotAgentManager.refreshConfig();
         
@@ -166,7 +169,7 @@ class CopilotAgentManagerTest {
         // Given
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(tableOf(connection));
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.isEnabled()).thenReturn(true);
         when(modelResolver.resolve(connection)).thenReturn(mockModel());
         copilotAgentManager.refreshConfig();
@@ -184,7 +187,7 @@ class CopilotAgentManagerTest {
         // Given
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(tableOf(connection));
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.isEnabled()).thenReturn(true);
         when(modelResolver.resolve(connection))
             .thenThrow(new IllegalArgumentException("no provider"));
@@ -201,7 +204,7 @@ class CopilotAgentManagerTest {
     void testGetConfig() {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
-        when(providerReaders.readAll()).thenReturn(ConnectionTable.empty());
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         copilotAgentManager.refreshConfig();
         
         // When
@@ -220,8 +223,7 @@ class CopilotAgentManagerTest {
         when(defaultProperties.isEnabled()).thenReturn(true);
         when(defaultProperties.getModel()).thenReturn("qwen-plus");
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
-            Collections.singletonList(
-                new LegacyConfigProviderReader(configStorage, defaultProperties, environment)));
+            Collections.singletonList(new LegacyConfigProviderReader(environment)));
         CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
             realReaders, new CopilotModelResolver());
         realManager.refreshConfig();
@@ -233,15 +235,36 @@ class CopilotAgentManagerTest {
         assertNotNull(agent);
     }
     
+    @Test
+    void testRefreshReadsStoredConfigurationOnce() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setEnabled(true);
+        stored.setModel("qwen-max");
+        stored.setApiKey("stored-key");
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored, (CopilotProperties) null);
+        Environment environment = mock(Environment.class);
+        ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
+            Collections.singletonList(new LegacyConfigProviderReader(environment)));
+        CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
+            realReaders, modelResolver);
+        
+        realManager.refreshConfig();
+        
+        verify(configStorage, times(1)).getConfig();
+        assertEquals("qwen-max", realManager.getConfig().getModel());
+        assertTrue(realManager.isEnabled());
+    }
+    
     private CopilotModelConnection buildConnection(String apiKey) {
-        CopilotModelConnection connection = new CopilotModelConnection();
-        connection.setName("legacy");
-        connection.setProviderId("dashscope");
-        connection.setModel("qwen-plus");
-        connection.setApiKey(apiKey);
-        connection.setStream(Boolean.TRUE);
-        connection.setEnableThinking(Boolean.TRUE);
-        return connection;
+        return CopilotModelConnection.builder()
+            .name("legacy")
+            .providerId("dashscope")
+            .model("qwen-plus")
+            .apiKey(apiKey)
+            .stream(Boolean.TRUE)
+            .enableThinking(Boolean.TRUE)
+            .build();
     }
     
     private ConnectionTable tableOf(CopilotModelConnection connection) {

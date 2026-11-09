@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.copilot.connection;
 
+import com.alibaba.nacos.copilot.config.CopilotProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -32,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class ProviderReaderAggregatorTest {
     
+    private static final ProviderReadContext CONTEXT =
+        new ProviderReadContext(new CopilotProperties());
+    
     @Test
     void testHigherPriorityReaderWinsOnSameName() {
         CopilotModelConnection legacy = buildConnection(" prod-qwen ", "qwen-turbo", true);
@@ -40,10 +44,23 @@ class ProviderReaderAggregatorTest {
             Arrays.asList(reader(100, Collections.singletonList(legacy)),
                 reader(10, Collections.singletonList(deployment))));
         
-        ConnectionTable table = aggregator.readAll();
+        ConnectionTable table = aggregator.readAll(CONTEXT);
         
         assertEquals(1, table.size());
         assertEquals("qwen-max", table.get("PROD-QWEN").getModel());
+    }
+    
+    @Test
+    void testFirstConnectionWinsInsideOneReader() {
+        ProviderReaderAggregator aggregator = new ProviderReaderAggregator(
+            Collections.singletonList(reader(10, Arrays.asList(
+                buildConnection(" Legacy ", "qwen-plus", true),
+                buildConnection("LEGACY", "qwen-max", true)))));
+        
+        ConnectionTable table = aggregator.readAll(CONTEXT);
+        
+        assertEquals(1, table.size());
+        assertEquals("qwen-plus", table.get("legacy").getModel());
     }
     
     @Test
@@ -53,7 +70,7 @@ class ProviderReaderAggregatorTest {
                 buildConnection("prod-qwen", "qwen-max", true),
                 buildConnection("local-ollama", "qwen2.5", true)))));
         
-        ConnectionTable table = aggregator.readAll();
+        ConnectionTable table = aggregator.readAll(CONTEXT);
         
         assertEquals(2, table.size());
         assertEquals("qwen2.5", table.get("local-ollama").getModel());
@@ -66,7 +83,7 @@ class ProviderReaderAggregatorTest {
                 buildConnection("disabled", "qwen-turbo", false),
                 buildConnection("enabled", "qwen-max", true)))));
         
-        ConnectionTable table = aggregator.readAll();
+        ConnectionTable table = aggregator.readAll(CONTEXT);
         
         assertEquals("enabled", table.getDefault().getName());
     }
@@ -81,7 +98,7 @@ class ProviderReaderAggregatorTest {
             }
             
             @Override
-            public List<CopilotModelConnection> read() {
+            public List<CopilotModelConnection> read(ProviderReadContext context) {
                 throw new IllegalStateException("broken source");
             }
         };
@@ -90,7 +107,7 @@ class ProviderReaderAggregatorTest {
                 reader(100, Collections.singletonList(
                     buildConnection("legacy", "qwen-turbo", true)))));
         
-        ConnectionTable table = aggregator.readAll();
+        ConnectionTable table = aggregator.readAll(CONTEXT);
         
         assertEquals(1, table.size());
         assertEquals("legacy", table.getDefault().getName());
@@ -101,7 +118,7 @@ class ProviderReaderAggregatorTest {
         ProviderReaderAggregator aggregator = new ProviderReaderAggregator(
             Collections.singletonList(reader(10, Collections.emptyList())));
         
-        ConnectionTable table = aggregator.readAll();
+        ConnectionTable table = aggregator.readAll(CONTEXT);
         
         assertEquals(0, table.size());
         assertNull(table.getDefault());
@@ -116,18 +133,18 @@ class ProviderReaderAggregatorTest {
             }
             
             @Override
-            public List<CopilotModelConnection> read() {
+            public List<CopilotModelConnection> read(ProviderReadContext context) {
                 return connections;
             }
         };
     }
     
     private CopilotModelConnection buildConnection(String name, String model, boolean enabled) {
-        CopilotModelConnection connection = new CopilotModelConnection();
-        connection.setName(name);
-        connection.setProviderId("dashscope");
-        connection.setModel(model);
-        connection.setEnabled(enabled);
-        return connection;
+        return CopilotModelConnection.builder()
+            .name(name)
+            .providerId("dashscope")
+            .model(model)
+            .enabled(enabled)
+            .build();
     }
 }

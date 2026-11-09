@@ -22,7 +22,8 @@ import java.util.List;
  * Reads model connections from one configuration source.
  *
  * <p>Implementations are discovered as Spring beans. A smaller {@link #order()} wins when
- * two sources define a connection with the same name.
+ * two sources define a connection with the same name. Inside one source the first
+ * connection with a given name wins.
  *
  * @author nacos
  */
@@ -38,7 +39,8 @@ public interface ProviderReader {
     /**
      * Read the current connections from this source.
      *
+     * @param context configuration snapshot shared by all readers in this refresh
      * @return connections; an empty list when the source has nothing to offer
      */
-    List<CopilotModelConnection> read();
+    List<CopilotModelConnection> read(ProviderReadContext context);
 }

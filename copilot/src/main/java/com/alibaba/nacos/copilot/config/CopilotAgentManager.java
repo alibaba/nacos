@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.connection.ConnectionTable;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
+import com.alibaba.nacos.copilot.connection.ProviderReadContext;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.Model;
@@ -48,8 +49,7 @@ public class CopilotAgentManager {
     private final ProviderReaderAggregator providerReaders;
     private final CopilotModelResolver modelResolver;
     
-    private volatile CopilotProperties currentConfig;
-    private volatile ConnectionTable connectionTable = ConnectionTable.empty();
+    private volatile RuntimeSnapshot snapshot = RuntimeSnapshot.empty();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     @Autowired
@@ -67,7 +67,7 @@ public class CopilotAgentManager {
      * This method should be called without holding any locks.
      */
     private void initStudio() {
-        CopilotProperties config = currentConfig;
+        CopilotProperties config = snapshot.getConfig();
         if (config == null) {
             return;
         }
@@ -109,12 +109,7 @@ public class CopilotAgentManager {
      * @return current CopilotProperties
      */
     public CopilotProperties getConfig() {
-        lock.readLock().lock();
-        try {
-            return currentConfig;
-        } finally {
-            lock.readLock().unlock();
-        }
+        return snapshot.getConfig();
     }
     
     /**
@@ -123,8 +118,10 @@ public class CopilotAgentManager {
     public void refreshConfig() {
         lock.writeLock().lock();
         try {
-            currentConfig = getEffectiveConfig();
-            connectionTable = providerReaders.readAll();
+            CopilotProperties config = getEffectiveConfig();
+            ConnectionTable connectionTable =
+                providerReaders.readAll(new ProviderReadContext(config));
+            snapshot = new RuntimeSnapshot(config, connectionTable);
             LOGGER.info("Copilot configuration refreshed");
         } finally {
             lock.writeLock().unlock();
@@ -140,14 +137,15 @@ public class CopilotAgentManager {
      * @return ReActAgent instance, or null if not configured
      */
     public ReActAgent createAgent(String systemPrompt) {
-        CopilotProperties config = getConfig();
+        RuntimeSnapshot current = snapshot;
+        CopilotProperties config = current.getConfig();
         
         if (config == null || !config.isEnabled()) {
             LOGGER.warn("Copilot is disabled or not configured");
             return null;
         }
         
-        CopilotModelConnection connection = connectionTable.getDefault();
+        CopilotModelConnection connection = current.getConnectionTable().getDefault();
         if (connection == null) {
             LOGGER.warn("No available Copilot model connection");
             return null;
@@ -186,12 +184,13 @@ public class CopilotAgentManager {
      * @return true if enabled and configured
      */
     public boolean isEnabled() {
-        CopilotProperties config = getConfig();
+        RuntimeSnapshot current = snapshot;
+        CopilotProperties config = current.getConfig();
         if (config == null || !config.isEnabled()) {
             return false;
         }
         
-        CopilotModelConnection connection = connectionTable.getDefault();
+        CopilotModelConnection connection = current.getConnectionTable().getDefault();
         return connection != null && StringUtils.isNotBlank(connection.getApiKey());
     }
     
@@ -222,6 +221,37 @@ public class CopilotAgentManager {
     public void destroy() {
         if (StudioManager.isInitialized()) {
             StudioManager.shutdown();
+        }
+    }
+    
+    /**
+     * Configuration and connection table published together, so a request never mixes two
+     * configuration generations.
+     */
+    private static final class RuntimeSnapshot {
+        
+        private static final RuntimeSnapshot EMPTY =
+            new RuntimeSnapshot(null, ConnectionTable.empty());
+        
+        private final CopilotProperties config;
+        
+        private final ConnectionTable connectionTable;
+        
+        private RuntimeSnapshot(CopilotProperties config, ConnectionTable connectionTable) {
+            this.config = config;
+            this.connectionTable = connectionTable;
+        }
+        
+        private static RuntimeSnapshot empty() {
+            return EMPTY;
+        }
+        
+        private CopilotProperties getConfig() {
+            return config;
+        }
+        
+        private ConnectionTable getConnectionTable() {
+            return connectionTable;
         }
     }
 }
