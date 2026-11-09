@@ -34,10 +34,10 @@ public class NacosResourceManager {
     @Autowired
     NacosServiceInfoResourceWatcher serviceInfoResourceWatcher;
     
-    @Autowired
-    private IstioConfig istioConfig;
+    private final IstioConfig istioConfig;
     
-    public NacosResourceManager() {
+    public NacosResourceManager(IstioConfig istioConfig) {
+        this.istioConfig = istioConfig;
         resourceSnapshot = new ResourceSnapshot(istioConfig);
     }
     
