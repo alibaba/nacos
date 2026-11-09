@@ -159,6 +159,7 @@ jobs:
           sed 's|^nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^nacos.ai.ard.enabled=.*|nacos.ai.ard.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|^#nacos.ai.mcp.registry.enabled=.*|nacos.ai.mcp.registry.enabled=true|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed 's|^#nacos.ai.ard.catalog.base-url=.*|nacos.ai.ard.catalog.base-url=http://127.0.0.1:9080|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.publication.max-publications-per-client=.*|nacos.ai.rad.capacity.publication.max-publications-per-client=${RAD_SERVER_PUBLICATION_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
           sed -E "s|^#?nacos.ai.rad.capacity.watch.max-per-client=.*|nacos.ai.rad.capacity.watch.max-per-client=${RAD_SERVER_WATCH_CAPACITY}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"

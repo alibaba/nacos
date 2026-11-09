@@ -36,6 +36,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -156,6 +157,20 @@ class NacosMcpRegistryServiceTest {
         assertEquals("2026-11-01T00:00:00Z", meta.getOfficial().getPublishedAt());
         assertEquals("2026-11-05T00:00:00Z", meta.getOfficial().getUpdatedAt());
         assertEquals(Boolean.FALSE, meta.getOfficial().getIsLatest());
+    }
+    
+    @Test
+    void testGetServerNullFrontProtocolOmitsRemotesWithoutFailing() throws NacosException {
+        McpServerDetailInfo detail = buildDetailWithEndpoint(buildDirectEndpoint());
+        detail.setFrontProtocol(null);
+        when(mcpServerOperationService.getMcpServerDetail(NAMESPACE_ID, null, SERVER_NAME, null))
+            .thenReturn(detail);
+        
+        ServerResponse response =
+            nacosMcpRegistryService.getServer(SERVER_NAME, NAMESPACE_ID, null);
+        
+        assertNotNull(response);
+        assertNull(response.getServer().getRemotes());
     }
     
     private McpEndpointInfo buildDirectEndpoint() {
