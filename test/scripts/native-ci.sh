@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Stages of the Native Image CI job, see bootstrap/README-AOT.md for scenarios.
+# Stages of the Native Image validation, see bootstrap/README-AOT.md for scenarios.
 # Usage: native-ci.sh <prepare|build|smoke|integration|scenario|report|all>
 #
 # Environment (all optional):
@@ -131,7 +131,7 @@ stage_prepare() {
     : > "$STATE"
     chmod 600 "$STATE"
 
-    log "Native CI: scenario=${SCENARIO} database=${DATABASE} variant=${VARIANT} suite=${SUITE}"
+    log "Native validation: scenario=${SCENARIO} database=${DATABASE} variant=${VARIANT} suite=${SUITE}"
 
     log "Check the bundled Native metadata"
     python3 -I "$METADATA_TOOL" selftest

@@ -23,9 +23,9 @@ class logs of one or more runs::
     python3 test/scripts/native-trace-server.sh classlog <log> <nacos-home>
     python3 test/scripts/native-condition-order.py /path/to/start.log /path/to/restart.log
 
-Exercise the Server as the Native CI job does (smoke test, restart check) before taking the
+Exercise the Server as the Native validation does (smoke test, restart check) before taking the
 logs. Loads during class verification do not count as lookups, and resources are not compared:
-a class log does not show when a resource is read (the ``exact`` CI variant reports those).
+a class log does not show when a resource is read (the ``exact`` validation variant reports those).
 An owner in REASONED_CONDITIONS of native-metadata.py is listed with its reason. The exit code
 is 1 if a condition type is initialized too late, never initialized although its entries were
 used, or missing for an owner.

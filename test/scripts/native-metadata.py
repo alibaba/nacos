@@ -47,7 +47,7 @@ entry, whatever the inputs carry; ``check`` rejects an entry that another condit
 prints every dynamic access that has no metadata. This command turns such logs into the same
 format as the agent output, so ``refresh`` can merge them. Reports about lambda-proxy classes are
 counted and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
-variant of the Native CI job fails on it instead of ignoring a gap that it cannot name.
+variant of the Native validation fails on it instead of ignoring a gap that it cannot name.
 
 Typical refresh, after tracing the Server with the exact classpath of the Native build. The
 committed metadata is an input as well, because some of its entries are in no trace::
@@ -57,7 +57,7 @@ committed metadata is an input as well, because some of its entries are in no tr
         bootstrap/src/main/resources/META-INF/native-image /path/to/trace-run-1 /path/to/trace-run-2
 
 The files are written below ``bootstrap/src/main/resources/META-INF/native-image``, or below the
-directory of ``--output-dir``. ``--output FILE`` writes one merged file instead; the Native CI job
+directory of ``--output-dir``. ``--output FILE`` writes one merged file instead; the Native validation
 uses it to list the registrations that an exact-mode build reports as missing. That file is a list
 for a reader: its entries carry the Server entry point as a provisional condition, and a refresh
 into the bundle sets the condition of each entry from its owner.
@@ -101,7 +101,7 @@ SERVER_ENTRY_POINT = "com.alibaba.nacos.bootstrap.NacosBootstrap"
 # order in which a run of the Server (JVM, the classpath of the Native build) loaded and initialized
 # its classes: the type is initialized before the first class of the entries of its owners is
 # loaded, apart from the owners of REASONED_CONDITIONS. An owner without a row stops a refresh; add
-# it after such a comparison, and let the 'exact' variant of the Native CI job confirm it.
+# it after such a comparison, and let the 'exact' variant of the Native validation confirm it.
 SPRING_BOOT = "org.springframework.boot.SpringApplication"
 CONDITION_GROUPS = (
     # (condition type, owners)

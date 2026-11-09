@@ -66,11 +66,5 @@ case "$FUNCTION_MODE" in
     config|naming|microservice|ai) COMMAND+=("-Dnacos.functionMode=${FUNCTION_MODE}") ;;
     *) echo "Invalid function mode: $FUNCTION_MODE" >&2; exit 1 ;;
 esac
-if [ -n "${NACOS_NATIVE_FOREGROUND:-}" ]; then
-    # A container runs the Server as its main process: keep it in the foreground so that the
-    # container lives as long as the Server does and receives its signals. The Dockerfile sets it.
-    echo "Native Nacos is starting with ${MODE}/${DEPLOYMENT} in the foreground"
-    exec "${COMMAND[@]}" nacos.nacos
-fi
 nohup "${COMMAND[@]}" nacos.nacos > "$LOGFILE" 2>&1 &
 echo "Native Nacos is starting with ${MODE}/${DEPLOYMENT}; check ${LOGFILE}"

@@ -271,7 +271,7 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
 - 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收；套件无法覆盖的部分，由模块
   `test/native-test` 的测试验收，这些测试用 Testcontainers 启动数据库和基础设施。可执行程序包含什么
   在构建时就已固定（数据源、AI 注册表开关、适配器、插件 jar、单机或集群模式），因此每个被验收的
-  配置都是 Native CI 作业的一个场景，在独立的构建上运行。在相同环境下普通 JVM Server 同样
+  配置都是一个验证场景，在独立的构建上运行。在相同环境下普通 JVM Server 同样
   失败的用例记录在基线中，不属于 Native 回归。套件不会重启 Server，因此验收还必须创建套件不会
   创建的数据，等待命名服务的 Raft 快照落盘，在同一份数据上重启 Native Server 并再次读取这些数据；
   只有这样 Raft 组才会加载快照并回放其后的日志（`test/native-test` 中的 `NativeRestartCheck`）。可使用

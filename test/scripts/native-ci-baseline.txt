@@ -10,7 +10,7 @@
 # limitations under the License.
 
 # Integration tests that fail in the setup of test/scripts/native-ci.sh for reasons that do not
-# depend on the Native executable. They are reported but do not fail the job.
+# depend on the Native executable. They are reported but do not fail the run.
 # Format: <test class>.<test method>, shell-style wildcards allowed. Brackets are wildcards too, so
 # '?' stands for the brackets around the invocation index of a parameterized test.
 

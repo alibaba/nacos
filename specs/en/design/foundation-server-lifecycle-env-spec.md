@@ -368,7 +368,7 @@ build does not require the operator to trace the Server first.
   `test/native-test`, which start their databases and infrastructure with Testcontainers. What an
   executable contains is fixed when it is built (the datasource, the switches of the AI
   registries, the adaptors, the plugin jars, standalone or cluster mode), so each configuration
-  that is accepted is a scenario of the Native CI job and runs on a build of its own. Tests that
+  that is accepted is a validation scenario and runs on a build of its own. Tests that
   also fail against the ordinary JVM Server in the same setup are kept in a baseline and are not
   Native regressions. The suites never restart the Server, so the run must also create data that
   no suite creates, wait for the Raft snapshots of the naming service, restart the Native Server
