@@ -33,7 +33,7 @@ class DataSourcePoolPropertiesTest {
     
     private static final String USERNAME = "nacos_devtest";
     
-    private static final Long CONNECTION_TIMEOUT = 10000L;
+    private static final Long CONNECTION_TIMEOUT = 20000L;
     
     private static final Integer MAX_POOL_SIZE = 50;
     
@@ -65,5 +65,27 @@ class DataSourcePoolPropertiesTest {
         assertEquals(DataSourcePoolProperties.DEFAULT_IDLE_TIMEOUT, actual.getIdleTimeout());
         assertEquals(MAX_POOL_SIZE.intValue(), actual.getMaximumPoolSize());
         assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE, actual.getMinimumIdle());
+    }
+    
+    @Test
+    void testBuildWithExternalDefault() {
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(new MockEnvironment());
+        assertEquals(DataSourcePoolProperties.DEFAULT_CONNECTION_TIMEOUT,
+                poolProperties.getDataSource().getConnectionTimeout());
+    }
+    
+    @Test
+    void testBuildWithEmbeddedDefault() {
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(new MockEnvironment(),
+                DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT);
+        assertEquals(DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT,
+                poolProperties.getDataSource().getConnectionTimeout());
+    }
+    
+    @Test
+    void testBuildWithEmbeddedDefaultAndConfigOverride() {
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment,
+                DataSourcePoolProperties.DEFAULT_EMBEDDED_CONNECTION_TIMEOUT);
+        assertEquals(CONNECTION_TIMEOUT.longValue(), poolProperties.getDataSource().getConnectionTimeout());
     }
 }
