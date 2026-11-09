@@ -18,12 +18,12 @@
 
 本文同时列出已实现测试和待完成的验收设计；各功能的覆盖范围见§4。
 覆盖等级由实际测试场景决定，不能由设计行数推导。
-目标规范见 [中文设计](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md)。
+运行时规范见 [中文规范](../../specs/zh-cn/ai/ard-protocol-spec.md)。
 所有上游引用固定到 f073b1ea9b01a5f068d0b0986426f2ea49fa30b2。
 本文件是全部正式用例、共用fixture/错误断言和RG回归组的唯一维护位置；
 用例按功能编排，保留已有测试 ID，便于关联代码、兼容审计和历史验证。
 修改前代码事实与兼容影响见[兼容审计](ARD_V091_COMPATIBILITY_REVIEW.md)（BC01–BC20）；
-运行时契约以双语目标规范为准。
+运行时契约以双语 ARD 规范为准。
 
 <a id="test-gates"></a>
 
@@ -87,7 +87,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
   失败输出预期集合与实际集合，不使用固定 sleep 掩盖问题。
 - E400：HTTP 400，errorCode=INVALID_ARGUMENT，message 非空，无 Result code/data。
   E400-T为token失效场景别名，wire错误码仍是INVALID_ARGUMENT；无成功结果或新token。
-  具体契约见[目标规范§4.5](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md#token-contract)，
+  具体契约见[ARD 规范§4](../../specs/zh-cn/ai/ard-protocol-spec.md#token-contract)，
   参数化输入及可控恢复步骤见[Search分页组](#token-cases)，不把任意400当token错误。
   E401：HTTP 401，errorCode=UNAUTHENTICATED；E404：404/NOT_FOUND。
   不匹配合法过滤条件是 200 空集合，不能作为 E400。错误消息不锁死随机资源名或堆栈。
@@ -182,9 +182,9 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 | UT-C04-01 | 缺省 context、官方 URI、inline prefix、等价 context array | type 与 a:mediaType/full IRI 解析成同一 ARD IRI，核心词未丢失 | 未解析 -> 标准上下文解析 |
 | UT-C04-02 | a 和 b 同指 ARD ns；type 被重定义为另一 namespace | 前缀拼写不影响 IRI；重定义不得仍命中原 type；IRI 大小写/URI 点号不被误改 | 字面字段 -> IRI 身份 |
 | UT-C04-03 | query.@context=123、整体 null、JSON 语法错误、非法 term definition | 前两者不符合 QueryModel 类型；非法 context 明确解析错误，不回退无 context；HTTP 错误由 IT-C05-04 验证 | 可能忽略未知输入 -> 可验证的语义错误 |
-| UT-C04-04 | 本地受控 context loader，解析成功/引用环/找不到文档 | 成功解析；环和实际解析失败受控，不能吞错；资源限额和网络策略按目标规范§4.1验证边界 | 无 loader -> 有可测试加载边界 |
+| UT-C04-04 | 本地受控 context loader，解析成功/引用环/找不到文档 | 成功解析；环和实际解析失败受控，不能吞错；资源限额和网络策略按 ARD 规范§3验证边界 | 无 loader -> 有可测试加载边界 |
 
-依据 S04/S05 和上游 JSON-LD 语义；加载策略见双语目标规范§4.1。
+依据 S04/S05 和上游 JSON-LD 语义；加载策略见双语 ARD 规范§3。
 以下用例覆盖解析器以及 Search/Explore 的 HTTP 集成边界。
 
 | 所属ID | 补充输入/清理 | 精确预期 |
@@ -226,7 +226,7 @@ Search 与 Explore 复用查询/Facet 解析。下表定义 Search 场景；
 | UT-C05-06 | BC02/10；Search/Explore各类空text、federation缺省/blank/trim/大小写 | 保留Search必填与trim、Explore可省略；blank模式归auto、AUTO非法，合法三模式同本地结果 | BC02/10；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-07 | BC03；标准filter字符串/数组、数组1/true/object/nested/null、标量非字符串 | 标准合法保持；混合数组由强转/丢null改E400；legacy数组保留旧转换；错误不影响其他合法请求 | BC03；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-08 | BC04；filter+filters同/不同key、values优先/null条目、context重绑与别名碰撞 | 无context同原key合并OR；跨key AND；legacy fieldPath不被context重绑；重绑后不错误合并约束 | BC04；前后差异见兼容审计，正常场景对照保持 |
-| UT-C05-09 | BC05/06；无/合法/非法context，已知IRI、未知IRI/未知裸路径、畸形path | 已知别名匹配；语法合法未知非空条件无匹配，不一律400；真正解析/路径错误受控；加载限制按目标规范§4.1验证 | BC05/06；前后差异见兼容审计，正常场景对照保持 |
+| UT-C05-09 | BC05/06；无/合法/非法context，已知IRI、未知IRI/未知裸路径、畸形path | 已知别名匹配；语法合法未知非空条件无匹配，不一律400；真正解析/路径错误受控；加载限制按 ARD 规范§3验证 | BC05/06；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-10 | BC07；type/tags/source/trust条件[]、空字符串、值大小写/空白、大小写不同IRI/成员 | 冻结字段各自空数组语义；值比较保持；IRI身份/JSON成员不被lowercase；只支持已有可检索投影 | BC07；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-11 | BC08/09/20；Controller namespace绑定、原有mapper范围与错误映射 | query/body匹配规则保持；局部validator不影响全局；400/401/404/429/500映射与空结果分别断言 | BC08/09/20；前后差异见兼容审计，正常场景对照保持 |
 | UT-C05-12 | BC15/18；真实Core生成基础token，改变query但保留锚点/移除锚点，非法/空白token、前置无匹配 | 保留锚点可续页，失效E400；空白首屏；前置无匹配仍空200；证明不新增查询hash或自动重置 | BC15/18；前后差异见兼容审计，正常场景对照保持 |
@@ -240,7 +240,7 @@ Search 与 Explore 复用查询/Facet 解析。下表定义 Search 场景；
 | IT-C05-06 | 同上经实际POST；正常唯一marker对照 | 正确非空、Explore全量、必填错误E400；不是只测DTO赋值 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-07 | 原始JSON发送上述数组；同资源分别数值1和字符串"1"、legacy filters | 升级前记录数值转换，升级后标准数组E400、字符串成功、legacy保持；不要由客户端SDK预先转字符串 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-08 | F-BOOL；两个入口组合、只传legacy、共同key冲突和等价alias | 精确资源集合；既有legacy请求保持；新增组合遵守分组规则，不静默抛弃任一条件 | 前后差异见兼容审计，正常场景对照保持 |
-| IT-C05-09 | 同上，Search与Explore非空对照 | 成功/空集合/400三类分开；新节点识别context，远程加载按目标规范§4.1，不以空集合掩盖加载失败 | 前后差异见兼容审计，正常场景对照保持 |
+| IT-C05-09 | 同上，Search与Explore非空对照 | 成功/空集合/400三类分开；新节点识别context，远程加载按 ARD 规范§3，不以空集合掩盖加载失败 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-10 | F-BOOL/F-TYPE；同上可公开准备的值和字段 | 对照before集合、原case匹配；合法输入不因统一validator变400；深层不可写数据由UT承担 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-11 | 两namespace同名；body/query冲突；未知成员、duplicate key、数字text、坏凭据+坏body | namespace确定规则正负例；绑定宽容/优先级采before后冻结；不凭common mapper猜HTTP值；无凭据泄漏 | 前后差异见兼容审计，正常场景对照保持 |
 | IT-C05-12 | F-PAGE，基础模式；同/变化query、改pageSize、跨ns/生命周期、非法token加无匹配type | 静态同查询无重漏；变化查询按本次集合；404制品与token400分开；不宣称任意token改字节必拒绝 | 前后差异见兼容审计，正常场景对照保持 |
@@ -254,14 +254,14 @@ IT-C05-01/05还应把有/无context的真实Search响应同时交给旧、新Sch
 依据 S05/S10/S11。值类型与输入错误测试必须真正经过 HTTP JSON 绑定；
 UT 仅证明 service 异常不足以替代 IT。优先扩展 ArdSearchServiceImplTest、
 ArdSearchControllerTest、ArdAdaptorOpenApiITCase；各token分支与恢复步骤统一见下表。
-兼容边界以目标规范§4.5和BC15–BC18为准。
+兼容边界以 ARD 规范§4和BC15–BC18为准。
 
 <a id="token-cases"></a>
 
 #### Search 分页等价类与错误优先级
 
 本表是UT/IT-C05-12/13/14的参数化输入分类；对外契约以
-[目标规范§4.5](../../specs/zh-cn/ai/ard-v091-adaptation-spec.md#token-contract)为准。
+[ARD 规范§4](../../specs/zh-cn/ai/ard-protocol-spec.md#token-contract)为准。
 E400-T仅为测试标签，不是新的wire错误码。
 
 以下错误结论以请求已通过鉴权/绑定/语法校验、且到达Core分页分支为前提：
@@ -352,7 +352,7 @@ resolved field，聚合id使用独立前缀+original key以隔离两个别名的
 | IT-C08-01 | Registry trust缺省/匹配/未知；publisher/base URL/Host独立变化 | 三个Registry文档按配置声明；非空Search/List/type Explore与Artifact可用；普通资源无trust且ID稳定，新旧hint投影兼容 | 全局身份 -> 仅Registry身份 |
 | IT-C08-02 | Registry publisher缺失/畸形、authority冲突/畸形；资源身份维度查询；有效/坏凭据 | 服务可启动；仅含Registry的三个文档500；普通查询/Artifact可用；资源publisher/trust filter/facet400；坏凭据401和请求校验优先 | 全局拒绝 -> 声明文档拒绝且普通查询隔离 |
 
-部署策略及迁移见目标规范§5.2；Registry声明错误来自服务端配置，返回500；
+部署策略及迁移见 ARD 规范§5；Registry声明错误来自服务端配置，返回500；
 请求未支持的资源身份维度返回400，两者不能混淆。资源publisher/trust注册、存储、授权、
 索引和旧标识迁移待实现，不能用Registry配置的测试替代资源级能力验收。
 比较器不访问网络、不验证签名/证书/委托，不把未知DID方法当非法；不修改上游fixture。
