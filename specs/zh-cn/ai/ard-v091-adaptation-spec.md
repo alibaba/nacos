@@ -20,18 +20,15 @@
 信任声明按§5.2进行一致性检查；完整一致性验收仍待完成，不提升当前整体兼容基线。
 本文件定义目标契约，不表示当前服务已经完整支持。
 当前行为仍以 [AI Registry 适配器规范](ai-registry-adaptor-spec.md)为准。
-实施前须完成维护者对设计及规范变化的讨论；创建 issue 本身不等于设计已获确认。
 
 ## 1. 基线与交付范围
 
-- 本地分析基线：develop，commit a55137012。
 - 当前兼容基线：上游 5fa2f5aef790b478319f6a3b43adf4661b0ed0e0，对应 v0.9 Draft。
 - 目标基线：上游 f073b1ea9b01a5f068d0b0986426f2ea49fa30b2，对应 v0.91 Proposal。
 - v0.91 文档日期为 2026-08-26，目标 commit 日期为 2026-10-25；2026-11-04
   核对时 GitHub Releases 为空。OpenAPI info.version 仍为 0.5.0，
   旧 catalog specVersion=1.0 不是 ARD 规范版本。
-- 实施开始和最终验收时重新检查上游 HEAD。出现更新时先记录差异，再显式更新目标；
-  构建与测试不得在线跟随 main。
+- Schema 和 context 固定到上述目标 commit，构建与测试使用仓库中的原始离线文件。
 
 本轮升级 Nacos 已有的资源发布、Search、Explore、List 与 Artifact 兼容面，
 资源范围仍为 Agent、Skill、Prompt、MCP。沿用 Nacos canonical 资源、
@@ -52,7 +49,7 @@ context 加载和信任声明策略分别见§4.1、§5.2。
 
 | 差异 | ARD依据 | 目标摘要 | 强度/验证入口 |
 | --- | --- | --- | --- |
-| D01 / 最新规范与版本标识 | [Appendix D.1–D.4][s01] | 固定目标 commit、原始 Schema、context 和 runner；分开记录协议版本、OpenAPI 版本、legacy catalog 版本。 | 契约来源；UT-C02-01 |
+| D01 / 最新规范与版本标识 | [Appendix D.1–D.4][s01] | 固定目标 commit、原始 Schema 和 context；分开记录协议版本、OpenAPI 版本、legacy catalog 版本。 | 契约来源；UT-C02-01 |
 | D02 / 新 well-known 路径 | [§5.1][s02] | 新增 /.well-known/ard.json，保留旧路径；文档使用 rel=ard。 | consumer MUST；旧路径兼容是 Nacos 选择；IT-C03-01..03 |
 | D03 / 独立 Entry/Manifest 模型 | [§4.2–4.3][s03]、[OpenAPI results][results] | 新 Manifest 只要求 entries；完整 Entry 与 Search/List 投影分开验证。 | 完整/部分约束不同；UT-C02-02..04 |
 | D04 / Entry JSON-LD 上下文 | [§4.1][s04]、[基础 context][context] | 新 Manifest Entry 显式输出基础 context；旧封装不新增必需字段，不改变资源 URN。 | base 必须，wire context 可选；UT-C04-01..04 |
@@ -62,7 +59,7 @@ context 加载和信任声明策略分别见§4.1、§5.2。
 | D08 / trustManifest 开放模型 | [§4.5.1–4.5.2][s08] | 保持 identity 必填语义；检验本地声明的 authority 绑定，验证框架与查询分数分离。 | binding MUST，验证框架外置；UT/IT-C08及§5.2的信任身份处理策略 |
 | D09 / URI、URN、媒体类型澄清 | [§3.3][s09]、[§5.3][urls]、[Appendix C][urn] | 保持当前 registry base URL、artifact URL 和稳定 URN；接受合法扩展媒体类型，不创建未支持的资源类型。 | 类型/URL/URN；UT-C09-02、IT-C09-03 |
 | D10 / Search pageSize 上限 | [§5.3.2][s10]、[§5.3.4][list] | 将现有 50 提升至规范正文的 100，并补边界和分页测试；属于既有偏差修复。 | 正文默认/上限；非正数策略为Nacos兼容；UT-C09-01 |
-| D11 / 一致性测试更新 | [Appendix B][errors]、[D.4][runner] | 双版本 fixture、官方 runner 与 Nacos 语义断言共同验收，补非空及权限场景。 | 错误与工具；UT/IT-C10 |
+| D11 / 一致性测试更新 | [Appendix B][errors]、[D.4][runner] | 双版本 fixture、Java 契约测试与真实 HTTP IT 验证结构、非空发现和权限；上游工具仅作本地独立对照。 | 错误与工具；UT/IT-C10 |
 | D12 / 抓取、联邦、tracing 与历史缺口 | [§5.2][ingest]、[§5.4–5.5][federation] | 显式登记范围和后续门禁，不用基础 runner 通过代替完整能力证明。 | 抓取Required，tracing Informative；IT-C10及范围声明 |
 
 <a id="compatibility-policy"></a>
@@ -371,7 +368,7 @@ Controller mock 不替代 HTTP 证据。
 
 | 场景 | 最低验收 |
 | --- | --- |
-| A01 基线 | 新旧 fixture 原始哈希、离线引用解析、版本标识分离；Schema/runner 不在线下载 main。 |
+| A01 基线 | 新旧 fixture 原始哈希、离线引用解析、版本标识分离；Schema/context 不在线下载 main。 |
 | A02 发布 | 新 host 与旧 host/namespace 三个入口；host 仅 Registry，namespace 跨 100 条完整枚举。 |
 | A03 路由鉴权 | 独立端口、ARD-only 开关、显式无效凭据 401、匿名策略、不同身份可见性。 |
 | A04 Entry | 完整/部分两种约束；url/data 排他；没有 score/source 泄漏；扩展属性与小写 trust 校验。 |
@@ -386,22 +383,23 @@ Controller mock 不替代 HTTP 证据。
 | A13 分页 | Search 10/50/51/100/101、0/负数/错误类型，List 边界和 namespace 过滤。 |
 | A14 Artifact | 四类非空资源；纯 A2A/多协议/旧版本仅 A2A；ZIP、版本/digest、offline、Runtime 排除。 |
 | A15 历史回归 | 无 context 旧请求、旧 catalog Schema、所有 federation 值、协议错误体、ARD 关闭不影响 RAD。 |
-| A16 工具 | 固定 runner manifest/publisher/registry 模式及其覆盖盲区；strict jsonschema 不能静默跳过。 |
+| A16 契约校验 | 现有 Java UT 与 HTTP IT 共用固定 Schema；缺失、篡改、未知引用及非法 URI/date-time 明确失败。上游工具的局部结果不代表完整能力。 |
 
-官方 publisher 模式需要可访问的 HTTPS 域名或受控等价 resolver fixture；
-只对 localhost:9080 跑 manifest/registry 不得记为 publisher 模式通过。
-外部请求助手不继承主服务管理员凭据；鉴权 IT 使用明确的适配器目标和专用测试身份。
-如现有 helper 一律拒绝 Authorization，应新增受目标约束的 opt-in helper，
-并继续验证通用外部 helper 拒绝凭据转发，不放宽全局保护。
+Java 契约测试验证结构、格式和协议语义；真实 HTTP IT 从 well-known 的 Registry 地址
+查询非空公共 Agent，并读取返回的 Artifact URL，对照主资源 API 的名称、版本和 digest。
+外部请求助手不继承主服务管理员凭据；鉴权 IT 使用受目标约束的适配器请求和专用测试身份。
 
-本轮不改公共 Java SDK。若后续新增资源写模型、SDK 方法或异常契约，
-必须重新执行 Java SDK IT 影响分析，不能沿用“无需 SDK IT”的结论。
+上游工具仅用于本地独立对照，使用固定版本的完整上游目录，不修改其内部校验或 HTTP 行为。
+manifest、registry 和 publisher 的结果分别记录；缺依赖或 Schema 导致跳过时不算通过。
+publisher 模式需要 HTTPS 域名；受控 resolver fixture 仅证明该测试环境，
+localhost 直连结果不代表公网 publisher 验证。
 
-## 7. 交付门禁与后续能力
+ARD 提供 HTTP 发现接口；资源写入继续使用已有的主服务 API 和 SDK。
 
-- DAUTH-F03 当前使私有跨类型共享索引 IT Disabled。先在目标分支复现，
-  再独立修复后台 canonical 投影读取与前台可见性边界；未经真实复测不得直接删除 Disabled。
-  未关闭时可以报告局部适配通过，但不能宣布本设计完整验收。
+## 7. 支持限制与后续能力
+
+- 私有 MCP 的共享索引完整召回、MCP Artifact 的 canonical 名称与 UUID 映射仍待完善。
+  DAUTH-F03 保持 Disabled；公共 Agent 验证不覆盖这些缺口，不代表完整资源一致性验收。
 - 旧、新上游均要求 Search 与 Explore 使用一致 relevance cutoff。
   当前可选 Jev 增强只作用 Search，属于已有偏离；严格基础一致性测试使用默认关闭状态。
   要把增强模式纳入同一兼容声明，须单独设计完整集合过滤及成本预算，不能拿 Search 单页算 facets。

@@ -55,8 +55,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <ul>
  *     <li>Expected capability: Admin APIs publish Agent, Skill, Prompt, and MCP resources through
  *     the main server, while the separate ARD web context recalls the same durable shared-index
- *     projections through Search, List, Explore, Catalog, and exact artifact URLs; MCP uses
- *     its canonical name while retaining the compatible ID in metadata.</li>
+ *     projections through Search, List, Explore, Catalog, and exact artifact URLs. The private
+ *     cross-type case remains disabled; MCP recall and Artifact name/ID mapping are unresolved.</li>
+ *     <li>Discovery: follow the advertised Registry URL to a nonempty public Agent result,
+ *     then retrieve its Artifact URL and compare the version and digest with the main API.</li>
  *     <li>Representation boundary: a pure A2A Agent defaults to an A2A Agent Card, a
  *     multi-protocol Agent defaults to the Nacos Agent artifact while remaining selectable as
  *     A2A, and an Agent whose latest Version is custom-only is excluded from A2A results even
@@ -552,6 +554,44 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertFalse(legacyAfter.path("entries").get(0).has("@context"));
         assertEquals(registry.path("identifier"), legacyAfter.path("entries").get(0).path("identifier"));
         assertEquals(404, executeArdRaw(new HttpGet(ARD_BASE_URL + ARD_PATH + "/ard.json"), identity).code());
+    }
+
+    @Test
+    public void testDiscoveredRegistryReturnsPublicAgentArtifact() throws Exception {
+        String name = randomAiName("ard-discovered");
+        publishPublicAgent(name, "1.0.0");
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        awaitSearch(searchRequest(name, TYPE_NACOS_AGENT), Set.of(name), identity);
+        JsonNode manifest = discoveryGet("/.well-known/ard.json", identity);
+        var errors = CONTRACTS.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        JsonNode registry = manifest.path("entries").get(0);
+        assertEquals("application/ai-registry+json", registry.path("type").asText());
+        String base = registry.path("url").asText();
+        HttpPost search = new HttpPost(base + "/search?namespaceId=" + DEFAULT_NAMESPACE);
+        search.setEntity(new StringEntity(JacksonUtils.toJson(searchRequest(name, TYPE_NACOS_AGENT)),
+                ContentType.APPLICATION_JSON));
+        HttpResponse response = executeArdRaw(search, identity);
+        assertEquals(200, response.code(), response.body());
+        JsonNode result = JacksonUtils.toObj(response.body());
+        assertResponseSchemas("SearchResponse", result);
+        assertEquals(Set.of(name), resourceNames(result.path("results")));
+        assertEquals(1, result.path("results").size());
+        JsonNode entry = findResource(result.path("results"), name);
+        assertEquals(TYPE_NACOS_AGENT, entry.path("type").asText());
+        String artifactUrl = entry.path("url").asText();
+        HttpResponse downloaded = executeArdRaw(new HttpGet(artifactUrl), identity);
+        assertEquals(200, downloaded.code(), downloaded.body());
+        JsonNode artifact = JacksonUtils.toObj(downloaded.body());
+        JsonNode detail = getJsonOk(ADMIN_AGENT_PATH + "/version",
+                agentVersionIdentityQuery(DEFAULT_NAMESPACE, name, "1.0.0")).get("data");
+        assertEquals(name, artifact.path("agentName").asText());
+        assertEquals("1.0.0", artifact.path("version").asText());
+        assertFalse(artifact.path("contentDigest").asText().isBlank());
+        assertEquals(detail.get("contentDigest"), artifact.get("contentDigest"));
+        if (AUTH_ENABLED) {
+            assertArdUnauthenticated(executeArdRaw(new HttpGet(artifactUrl), AuthIdentity.INVALID));
+        }
     }
 
     @Test

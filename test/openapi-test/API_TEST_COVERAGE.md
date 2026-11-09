@@ -152,11 +152,12 @@ External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
 has two covered scenario rows and three partial rows (strict 40%, effective 70%,
 counted separately from Nacos API totals). The new host manifest is validated
-against the pinned v0.91 schema, followed to Search, and checked under both
+against the pinned v0.91 schema, followed to nonempty public Agent Search and
+exact Version/digest Artifact retrieval, and checked under both
 anonymous policies and invalid credentials. Legacy catalogs cover 105 public
 resources and namespace isolation; private completeness remains `DAUTH-F03`.
-Its standalone conformance
-suite publishes canonical resources through the main-server Admin APIs and then
+MCP private recall and canonical-name/UUID Artifact mapping remain unresolved;
+public Agent assertions do not close those gaps. Its standalone HTTP suite publishes canonical resources through the main-server Admin APIs and then
 verifies the separate ARD port against the same shared index, including singular
 Agent catalog entries, A2A/Nacos representation selection and filtering,
 latest-Version eligibility, facets, and exact Version/digest artifacts.
