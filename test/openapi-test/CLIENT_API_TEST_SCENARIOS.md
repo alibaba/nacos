@@ -89,7 +89,7 @@ authorization resource from the client `name` parameter.
 | `AgentSpecClientOpenApiITCase` | `GET /v3/client/ai/agentspecs` | Covered | Queries online AgentSpecs by latest, version, and label with manifest/resource content; covers namespace defaulting, label/version resolution, missing name, absent AgentSpec, unknown version, and controlled not-found errors. |
 | `AgentSpecSearchClientOpenApiITCase` | `GET /v3/client/ai/agentspecs/search` | Covered | Searches shared-index AgentSpec projections with online versions, literal keyword filtering, and `tagsAll`; covers eventual index convergence, optional keyword, namespace defaulting, page defaults and validation, empty page success, and invalid pagination errors. |
 | `AiCapabilitiesClientOpenApiITCase` | `GET /v3/client/ai/capabilities` | Covered | Five HTTP features; four real identity roles; denied anonymous/invalid/expired/replaced credentials; resource-free parsing and continued business authorization; no Client creation or Endpoint lease renewal; secured 405 method errors. C06 also executes Client/Admin/Console auth-switch isolation and records directed dual-JSON/old-server component probes separately. |
-| `AiResourceSearchClientOpenApiITCase` | `GET /v3/client/ai/resources/search`<br>`GET /v3/client/ai/skills/search`<br>`GET /v3/client/ai/prompt/search`<br>`GET /v3/client/ai/mcp/search` | Partial | Validation, empty-result, numbered-page, basic projection, and resource-specific scenarios remain active. The compound private-resource cross-type/facade/filter/cursor scenario is retained but disabled as `DAUTH-F03` because the rolled-back product implementation removes private projections from the shared index. Restore it after the canonical background projection fix and visibility non-leakage tests pass. |
+| `AiResourceSearchClientOpenApiITCase` | `GET /v3/client/ai/resources/search`<br>`GET /v3/client/ai/skills/search`<br>`GET /v3/client/ai/prompt/search`<br>`GET /v3/client/ai/mcp/search` | Partial | Validation, empty-result, numbered-page, basic projection, and resource-specific scenarios remain active. The private-resource cross-type/facade/filter/cursor scenario is active. Private MCP owner/grantee visibility, revocation, scope changes and lifecycle removal are covered; external-runtime and enhanced-search deployments remain separate. |
 | `AgentDiscoveryClientOpenApiITCase` | `GET /v3/client/ai/agents/search`<br>`GET /v3/client/ai/agents` | Covered | Publishes Agents through management helpers with exact Client visibility, and publishes the special-name search set directly as the Client owner, then verifies RAD Search and Discover projections. Search covers the `AUTO/INDEX/SCAN`-compatible eventual contract: `AUTO` and `INDEX` return a successful current snapshot without readiness 503 while convergence polling establishes the complete catalog; it also covers case-sensitive literal name filtering including `%`, `_`, and `\`, `tagsAll`/`protocolsAny` composition, stable ASCII numbered pagination including an out-of-range page, complete multi-Version catalogs, latest/offline convergence, and the invariant that Runtime Endpoint writes do not change Search. In the two-Version rollout workflow, independent HTTP publishers keep Version 1 and Version 2 Endpoints concurrently: an omitted selector returns latest metadata plus all online-Version-compatible Endpoints and binding provenance, while explicit `label=latest` returns only Version 2 Endpoints; exact Version 1 remains isolated, and taking Version 1 offline removes its Endpoint only from the default pool. Also covers default namespace, typed empty protocol results, empty search, pagination validation, mutually exclusive version/label, missing identity, and absent Agent errors. |
 | `AgentWatchClientOpenApiITCase` | `POST /v3/client/ai/agents/watch` | Covered | Verifies request-scoped HTTP Batch Long Poll with immediate opaque invalidation for changed fingerprints, bounded unchanged timeout, multi-intent batches, custom namespaces, Runtime Endpoint wake-up, and Discover materialization of the complete current snapshot. It covers required stateful headers, generation and timeout ranges, empty/malformed/oversized lists, duplicate ids, mixed namespaces, malformed fingerprints, per-client soft growth, whole-generation replacement, per-request item/byte hard limits, controlled node waiter-capacity rejection, capacity reuse after client cancellation, and same-client generation cleanup. A two-node run verifies that self-describing generations remain correct when consecutive requests reach different servers: either node can observe the mutation, the peer generation quickly reports the opaque id, both Discover results converge to the same fingerprint, and the next current-fingerprint generation times out unchanged. Responses are checked not to expose Agent identity, fingerprints, descriptors, Endpoints, or per-item authorization/error details. |
 | `AgentPublishClientOpenApiITCase` | `POST /v3/client/ai/agents` | Partial | C05: first-Version submit, Admin draft replacement, later autoSubmit, non-draft/no-op including offline, direct/copy inputs, raw Form validation and cross-surface projection. C05 auth-off and final auth-on stage tests passed; final routing/migration environments remain assigned to C10/C11. |
@@ -112,7 +112,7 @@ CallInterface → EndpointSet → Endpoint 统一已落地，验收要求见 [�
 | EP-03/07：HTTP 注册上报健康值及维护字段隔离 | `AgentEndpointClientOpenApiITCase.testReportedHealthAndIgnoredManagementFieldsAcrossReadSurfaces` | false 注册及 ACTIVE heartbeat 后仍 false；替换为 true 可发现；bindings 逐字段继承 Batch；enabled/state 暂保持服务端维护；Admin 三层非空读取及 RAD 字段隔离 |
 | EP-12：公开 Agent 实际索引与目录 | `AiResourceSearchClientOpenApiITCase.testPublicAgentIndexTracksUnifiedVersionCatalog` | 旧 A2A 创建 PUBLIC Agent，新 Agent 发布第二版；tag/协议/namespace、onlineVersions/labels、offline 与 delete 收敛；默认 AUTO/显式 INDEX 均走共享索引 |
 
-原私有 Search DAUTH-F03 Disabled 保持；公开 fixture 通过旧 A2A 的既有 PUBLIC 语义准备，不关闭鉴权，不写内部存储。
+原私有 Search DAUTH-F03 用例已恢复；公开 fixture 通过旧 A2A 的既有 PUBLIC 语义准备，不关闭鉴权，不写内部存储。
 
 ### 2026-09-15 请求整合回归
 
@@ -322,3 +322,22 @@ HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK I
 This extends the existing Agent Discover row; API surface totals and strict/effective
 coverage denominators remain unchanged. The optional diagnostic header never changes
 authorization or discovery semantics.
+
+## MCP private background indexing
+
+| Scenario | Existing test class / method |
+| --- | --- |
+| Five-type recall, canonical MCP name, dedicated facade, filters and cursor traversal | `AiResourceSearchClientOpenApiITCase.testCrossTypeSearchSpecificFacadesFiltersAndCursor` (restored DAUTH-F03) |
+| PRIVATE MCP owner/admin/grantee recall; unrelated reader excluded; grant/revoke; PUBLIC/PRIVATE changes; disable/enable, offline and deletion | `AiResourceSearchClientOpenApiITCase.testPrivateMcpIndexPreservesQueryVisibilityAndLifecycle` |
+| Main-server generic and MCP Search still reject anonymous requests with 403 | Same private MCP case, with authentication enabled |
+| ARD anonymous visibility, mixed private results filtered before pagination and facet counts | `ArdAdaptorOpenApiITCase.testPrivateMcpSearchFiltersBeforePaginationAndFacets` |
+
+The integration workflow starts with fresh data and waits for managed cutover using the
+current MCP search projection readiness before running these HTTP cases. An older
+readiness generation cannot satisfy that gate.
+
+These cases use public HTTP lifecycle and visibility APIs against an external standalone
+server. Background indexing includes eligible PRIVATE and PUBLIC resources; query-time
+authorization is unchanged. Upgrade recovery of pre-existing private resources is a
+separate persisted-data validation, not simulated by republishing a resource in API IT.
+MCP Artifact canonical-name/UUID handling remains outside this fix.

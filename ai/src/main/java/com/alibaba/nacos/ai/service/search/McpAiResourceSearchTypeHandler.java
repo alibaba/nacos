@@ -18,9 +18,10 @@ package com.alibaba.nacos.ai.service.search;
 
 import com.alibaba.nacos.ai.config.ConditionalOnAiResourceSearchEnabled;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
-import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
@@ -59,19 +60,23 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     
     private final McpLifecycleOperationService mcpOperationService;
     
+    private final AiResourceManager resourceManager;
+    
     private final AiResourceSearchDocumentBuilder documentBuilder =
         new AiResourceSearchDocumentBuilder();
     
     private final AiResourceIndexProjectionBuilder projectionBuilder =
         new AiResourceIndexProjectionBuilder();
     
-    public McpAiResourceSearchTypeHandler(McpLifecycleOperationService mcpOperationService) {
+    public McpAiResourceSearchTypeHandler(McpLifecycleOperationService mcpOperationService,
+        AiResourceManager resourceManager) {
         this.mcpOperationService = mcpOperationService;
+        this.resourceManager = resourceManager;
     }
     
     @Override
     public int projectionVersion() {
-        return 2;
+        return AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION;
     }
     
     @Override
@@ -85,16 +90,9 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
         if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
             return null;
         }
-        try {
-            McpServerDetailInfo detail = mcpOperationService.getMcpServerDetail(namespaceId,
-                null, resourceName, version);
-            return projectServer(namespaceId, detail);
-        } catch (NacosException e) {
-            if (e.getErrCode() == NacosException.NOT_FOUND) {
-                return null;
-            }
-            throw e;
-        }
+        AiResource resource = resourceManager.findMeta(namespaceId, resourceName, resourceType);
+        return projectServer(namespaceId,
+            mcpOperationService.getMcpServerIndexSource(resource, version));
     }
     
     @Override
@@ -103,18 +101,19 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
         if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
             return new AiResourceIndexSourcePage(Collections.emptyList(), false);
         }
-        Page<McpServerBasicInfo> page = mcpOperationService.listMcpServerWithPage(namespaceId,
-            null, Constants.MCP_LIST_SEARCH_ACCURATE, pageNo, pageSize);
-        List<McpServerBasicInfo> servers = page == null ? null : page.getPageItems();
+        Page<AiResource> page = resourceManager.listMetaByType(namespaceId, resourceType,
+            null, null, pageNo, pageSize);
+        List<AiResource> servers = page == null ? null : page.getPageItems();
         if (servers == null || servers.isEmpty()) {
             return new AiResourceIndexSourcePage(Collections.emptyList(), false);
         }
         List<AiResourceIndexSource> items = new ArrayList<>();
-        for (McpServerBasicInfo server : servers) {
+        for (AiResource server : servers) {
             String resourceName = server == null ? null : server.getName();
             try {
                 items.add(AiResourceIndexSource.success(resourceName,
-                    projectServer(namespaceId, server)));
+                    projectServer(namespaceId,
+                        mcpOperationService.getMcpServerIndexSource(server, null))));
             } catch (Exception e) {
                 items.add(AiResourceIndexSource.failed(resourceName, e));
             }
@@ -145,18 +144,8 @@ public class McpAiResourceSearchTypeHandler implements AiResourceSearchTypeHandl
     @Override
     public boolean exists(String namespaceId, String resourceType, String resourceName)
         throws NacosException {
-        if (!AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
-            return false;
-        }
-        try {
-            return mcpOperationService.getMcpServerDetail(namespaceId, null, resourceName,
-                null) != null;
-        } catch (NacosException e) {
-            if (e.getErrCode() == NacosException.NOT_FOUND) {
-                return false;
-            }
-            throw e;
-        }
+        return AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)
+            && resourceManager.findMeta(namespaceId, resourceName, resourceType) != null;
     }
     
     private AiResourceIndexProjection projectServer(String namespaceId,

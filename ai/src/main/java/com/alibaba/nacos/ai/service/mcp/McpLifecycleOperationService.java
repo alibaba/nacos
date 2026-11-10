@@ -582,23 +582,68 @@ public class McpLifecycleOperationService implements McpOperationService {
         return buildMcpServerDetail(lifecycle, selected);
     }
     
+    /**
+     * Read canonical current content for background index maintenance without request visibility.
+     *
+     * <p>This internal projection source does not resolve runtime endpoints. Request-facing reads
+     * must continue to enforce caller visibility through the normal detail methods.</p>
+     *
+     * @param resource canonical MCP Resource row
+     * @param version optional exact Version, which must match common latest
+     * @return current index source, or null when absent, disabled or without an online latest
+     * @throws NacosException when canonical identity or persisted content is inconsistent
+     */
+    public McpServerDetailInfo getMcpServerIndexSource(AiResource resource, String version)
+        throws NacosException {
+        if (resource == null || !isResourceEnabled(resource)) {
+            return null;
+        }
+        String mcpId = requireMcpId(resource);
+        String latest = AiResourceManager.resolveVersion(resource, null,
+            AiResourceConstants.LABEL_LATEST);
+        if (StringUtils.isBlank(latest) || StringUtils.isNotBlank(version)
+            && !latest.equals(version)) {
+            return null;
+        }
+        AiResourceVersion row = resourceManager.findVersion(resource.getNamespaceId(),
+            resource.getName(), RESOURCE_TYPE, latest);
+        if (row == null || !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(
+            row.getStatus())) {
+            return null;
+        }
+        LifecycleResource lifecycle = new LifecycleResource(resource, mcpId, latest,
+            Collections.singletonList(row));
+        McpServerDetailInfo result = loadMcpServerContent(lifecycle, row);
+        result.setDescription(resource.getDesc());
+        ServerVersionDetail versionDetail = copyVersionDetail(result.getVersionDetail());
+        versionDetail.setVersion(latest);
+        versionDetail.setIs_latest(true);
+        result.setVersionDetail(versionDetail);
+        return result;
+    }
+    
     private McpServerDetailInfo buildMcpServerDetail(LifecycleResource lifecycle,
         AiResourceVersion selected) throws NacosException {
-        AiResource resource = lifecycle.resource;
+        McpServerDetailInfo result = loadMcpServerContent(lifecycle, selected);
+        List<ServerVersionDetail> versions = buildVersionDetails(lifecycle);
+        result.setAllVersions(versions);
+        result.setVersionDetail(findVersionDetail(versions, selected.getVersion()));
+        if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(result.getProtocol())) {
+            endpointOperationService.injectEndpoint(result);
+        }
+        return result;
+    }
+    
+    private McpServerDetailInfo loadMcpServerContent(LifecycleResource lifecycle,
+        AiResourceVersion selected) throws NacosException {
         LoadedVersion loaded = loadVersion(lifecycle, selected);
         McpServerDetailInfo result = new McpServerDetailInfo();
         BeanUtils.copyProperties(loaded.server, result);
         result.setId(lifecycle.mcpId);
-        result.setNamespaceId(resource.getNamespaceId());
-        result.setEnabled(isResourceEnabled(resource));
-        List<ServerVersionDetail> versions = buildVersionDetails(lifecycle);
-        result.setAllVersions(versions);
+        result.setNamespaceId(lifecycle.resource.getNamespaceId());
+        result.setEnabled(isResourceEnabled(lifecycle.resource));
         result.setVersion(selected.getVersion());
-        result.setVersionDetail(findVersionDetail(versions, selected.getVersion()));
-        injectOptionalContent(loaded, result, resource.getName());
-        if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(loaded.server.getProtocol())) {
-            endpointOperationService.injectEndpoint(result);
-        }
+        injectOptionalContent(loaded, result, lifecycle.resource.getName());
         return result;
     }
     
@@ -1394,6 +1439,19 @@ public class McpLifecycleOperationService implements McpOperationService {
     
     private LifecycleResource requireLifecycleResource(AiResource resource)
         throws NacosException {
+        String mcpId = requireMcpId(resource);
+        List<AiResourceVersion> versions = listVersionRows(resource.getNamespaceId(),
+            resource.getName(), null);
+        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
+        String latest = info.getLabels() == null ? null
+            : info.getLabels().get(AiResourceConstants.LABEL_LATEST);
+        if (StringUtils.isBlank(latest) || findVersion(versions, latest) == null) {
+            latest = selectLatestOnline(versions);
+        }
+        return new LifecycleResource(resource, mcpId, latest, versions);
+    }
+    
+    private String requireMcpId(AiResource resource) throws NacosException {
         if (resource == null || StringUtils.isBlank(resource.getNamespaceId())
             || StringUtils.isBlank(resource.getName())
             || !RESOURCE_TYPE.equals(resource.getType())) {
@@ -1406,15 +1464,7 @@ public class McpLifecycleOperationService implements McpOperationService {
             throw integrityFailure("MCP Resource has invalid compatibility identity: "
                 + resource.getName(), e);
         }
-        List<AiResourceVersion> versions = listVersionRows(resource.getNamespaceId(),
-            resource.getName(), null);
-        ResourceVersionInfo info = AiResourceManager.requireVersionInfo(resource);
-        String latest = info.getLabels() == null ? null
-            : info.getLabels().get(AiResourceConstants.LABEL_LATEST);
-        if (StringUtils.isBlank(latest) || findVersion(versions, latest) == null) {
-            latest = selectLatestOnline(versions);
-        }
-        return new LifecycleResource(resource, mcpId, latest, versions);
+        return mcpId;
     }
     
     private AiResourceVersion resolveVersion(LifecycleResource lifecycle, String version)

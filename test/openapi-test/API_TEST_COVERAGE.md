@@ -139,6 +139,8 @@ two private shared-index projection scenarios (`DAUTH-F03`). The other five
 are pre-existing environment-conditional scenarios. Exact disabled methods and
 their restoration criteria are recorded in
 `Codex/design/nacos-3.3-client-api-default-auth/UNEXPECTED_PRODUCT_FINDINGS.md`.
+This is a historical run: both `DAUTH-F03` methods are now active; see the private
+MCP index matrix below. The historical pass/skip counts are not rewritten.
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -155,8 +157,8 @@ counted separately from Nacos API totals). The new host manifest is validated
 against the pinned v0.91 schema, followed to nonempty public Agent Search and
 exact Version/digest Artifact retrieval, and checked under both
 anonymous policies and invalid credentials. Legacy catalogs cover 105 public
-resources and namespace isolation; private completeness remains `DAUTH-F03`.
-MCP private recall and canonical-name/UUID Artifact mapping remain unresolved;
+resources and namespace isolation; the former `DAUTH-F03` cross-type cases are now active.
+Private MCP recall and visibility have dedicated HTTP coverage; canonical-name/UUID Artifact mapping remains unresolved;
 public Agent assertions do not close those gaps. Its standalone HTTP suite publishes canonical resources through the main-server Admin APIs and then
 verifies the separate ARD port against the same shared index, including singular
 Agent catalog entries, A2A/Nacos representation selection and filtering,
@@ -714,14 +716,14 @@ Resolver/loader and enhanced-provider boundaries also have UT coverage;
 controlled remote contexts and enabled-provider deployments require separate test environments.
 See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)
 for test methods and execution limits. API-surface counts and strict/effective coverage are unchanged;
-private canonical completeness remains excluded as `DAUTH-F03`.
+private canonical recall is covered by the restored `DAUTH-F03` cases and the private MCP matrix below.
 
 ## ARD query-example publication
 
 The example-projection IT also verifies that the legacy five-item response
 limit does not truncate the search index or the exact artifact. New manifest
 recommendations do not add a visibility gate. This extends the existing adaptor
-rows without changing the Nacos API-surface totals; `DAUTH-F03` remains excluded.
+rows without changing the Nacos API-surface totals. Private-index coverage is tracked separately below.
 
 ## ARD online relevance filtering
 
@@ -811,6 +813,23 @@ ordinary resources never inherit Registry trust. Authentication and request-vali
 priority, schemas and resource IDs across Registry identity changes are checked.
 See the [deployment scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-trust-declaration-consistency).
 These extend existing rows, so strict 40% and effective 70% coverage remain unchanged;
-`DAUTH-F03` remains disabled and is not counted as passed. Resource publisher/trust
+Private-index recovery is tracked separately below. Resource publisher/trust
 registration, authorization, storage and indexing remain unsupported, not covered by
 substituting Registry configuration.
+
+## MCP private index coverage
+
+The existing generic/facade/cursor and ARD cross-type tests previously disabled as
+`DAUTH-F03` are active. Two focused authenticated HTTP cases additionally verify
+PRIVATE MCP owner/admin/grantee recall, denied readers, grant/revoke, scope changes,
+enable/disable, offline/delete, and ARD visibility before pagination and facet counts.
+Generic/MCP Search keeps anonymous HTTP 403; ARD anonymous queries follow its configured
+policy and cannot expose an ungranted private resource.
+The existing integration startup guard also verifies managed cutover from fresh data
+after the current MCP projection becomes ready; this is not an additional API surface.
+
+See the [client scenario matrix](CLIENT_API_TEST_SCENARIOS.md#mcp-private-background-indexing)
+and [ARD scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#private-mcp-index-and-query-visibility).
+No HTTP operation is added, so API-surface totals and existing Partial classifications
+are unchanged. Persisted-data upgrade recovery is verified separately from fresh API
+fixtures. MCP Artifact name/UUID mapping remains pending.

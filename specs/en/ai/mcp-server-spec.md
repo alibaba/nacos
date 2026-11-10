@@ -642,6 +642,9 @@ After the root `ApplicationReadyEvent`, a background task:
 10. writes the completion marker only after every known cluster member supports
     managed writes and write-after-reconcile hooks.
 
+When Search is enabled, managed cutover requires readiness for the current MCP
+search projection generation; readiness from an older generation is insufficient.
+
 The Version/Resource upsert phase creates pointers only. It never saves or
 rewrites historical payloads and never mutates Naming. Until the canonical
 name Search projector and the common lifecycle delete/recovery handlers are
@@ -701,17 +704,15 @@ MCP participates in generic AI Resource Search and the MCP-specific Search
 facade through one shared index and Query Planner. Canonical Search
 `resourceName` is `mcpName`, never `mcpId`.
 
-The MCP Search projector follows the same complete compatibility operation
-router as management traffic. While `SYNCING`, it projects the complete
-historical view through MCP Storage by canonical name so partially reconciled
-Resource rows cannot hide MCP Servers. After `LIFECYCLE_MANAGED`, that same
-router loads the visible Resource, online Version, and content through the
-persisted storage descriptor. The projector input and Search identity never use
-`mcpId`; the `SYNCING` strategy may still resolve the internal compatibility
-alias needed to read the unchanged Manifest and Config coordinates. It may
-project public description, Tools, Resources, tags, protocols, and capabilities.
-Credentials, runtime instances, and sensitive authentication metadata never
-enter Search chunks.
+The MCP Search projector reads canonical Resource rows, the online Version
+referenced by common `latest`, and content through its persisted storage
+descriptor, independently of request identity and `PRIVATE`/`PUBLIC` scope.
+It does not use the management compatibility router, serving Manifest, or
+runtime endpoints. During historical reconciliation, Search reflects the
+currently indexed canonical subset and converges through background backfill.
+Query-time visibility checks remain mandatory. Public description, Tools,
+Resources, tags, protocols, and capabilities may enter the index; credentials,
+runtime instances, and sensitive authentication metadata must not.
 
 Every successful create, update, publish, online, offline, delete,
 enable/disable, label, or import mutation schedules a durable asynchronous
