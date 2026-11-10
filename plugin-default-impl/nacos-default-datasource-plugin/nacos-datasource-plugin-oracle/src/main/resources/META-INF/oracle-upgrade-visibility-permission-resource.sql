@@ -18,7 +18,8 @@
 -- in the default RBAC permissions table.
 --
 -- The visibility plugin stores the original canonical resource identifier in
--- permissions.resource, for example:
+-- permissions.resources (`resources` because `resource` is an Oracle reserved
+-- word), for example:
 -- @@visibility/{namespaceId}/{resourceType}/{resourceName}
 
-ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);
+ALTER TABLE permissions MODIFY (resources VARCHAR2(512 CHAR) NOT NULL);
