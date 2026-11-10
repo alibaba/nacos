@@ -40,7 +40,7 @@ public enum ConnectionSource {
     }
     
     /**
-     * Name used in logs and in the connection status exposed to the console.
+     * Stable lower-case name of this source.
      *
      * @return source name
      */

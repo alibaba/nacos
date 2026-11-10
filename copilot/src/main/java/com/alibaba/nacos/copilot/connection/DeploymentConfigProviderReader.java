@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * Reads model connections from {@code nacos.copilot.connections.<name>.*}.
  *
- * <p>Each connection is bound separately, so a malformed block only disables that connection
+ * <p>Each connection is bound separately, so a malformed block only drops that connection
  * instead of hiding the others.
  *
  * @author nacos

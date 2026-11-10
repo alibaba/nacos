@@ -32,14 +32,15 @@ import java.util.concurrent.Executors;
 /**
  * Refreshes Copilot configuration after the server configuration file changes.
  *
- * <p>Equivalent to core's {@code AbstractDynamicConfig}, implemented here because copilot
- * must not depend on nacos-core.
+ * <p>Modeled on core's {@code AbstractDynamicConfig}, implemented here because copilot must
+ * not depend on nacos-core.
  *
- * TODO: merge with core's AbstractDynamicConfig once it moves down to nacos-common. See #15906.
+ * TODO: merge with core's AbstractDynamicConfig in the future. See #15906.
  *
- * <p>Only merged and standalone deployments watch the configuration file, so a console
- * deployment still needs a restart. Removed keys are also not visible to a running process,
- * which is a limitation of the underlying watcher rather than of this subscriber.
+ * <p>Only server-side deployments ({@code merged} or {@code server}) watch the configuration
+ * file, so a console deployment still needs a restart. Removed keys are also not visible to a
+ * running process, which is a limitation of the underlying watcher rather than of this
+ * subscriber.
  *
  * @author nacos
  */

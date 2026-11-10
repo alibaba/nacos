@@ -25,8 +25,11 @@ import java.util.Map;
 /**
  * One model connection managed by Nacos.
  *
- * <p>The first four fields are Nacos management fields. The remaining fields mirror
- * {@link ModelCreationContext} and are passed through to AgentScope without translation.
+ * <p>The management fields (name, providerId, displayName, enabled, source, priority,
+ * availability and unavailableReason) are owned by Nacos. The creation fields (apiKey,
+ * baseUrl, endpointPath, stream, enableThinking and options) mirror
+ * {@link ModelCreationContext} and are passed through to AgentScope without translation;
+ * model is combined with providerId into the model id.
  *
  * <p>Instances are immutable, so a connection held by {@link ConnectionTable} can not be
  * changed without a refresh.

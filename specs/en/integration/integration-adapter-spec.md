@@ -173,9 +173,9 @@ Current enablement and surface:
 - stream operations use server-sent events rather than the ordinary JSON
   response wrapper;
 - LLM access is served by the deployment model connections configured under
-  `nacos.copilot.connections.<name>.*`, falling back to the reserved `legacy`
-  connection mapped from `nacos.copilot.apiKey` and `nacos.copilot.model` when
-  none is configured;
+  `nacos.copilot.connections.<name>.*`, falling back to the `legacy` connection
+  mapped from `nacos.copilot.apiKey`, `nacos.copilot.model`, and
+  `COPILOT_API_KEY` when no deployment connection is usable;
 - `nacos.copilot.selectedConnection` names the connection selected in the
   console;
 - AgentScope Studio is configured through `nacos.copilot.studioUrl` and
@@ -186,17 +186,22 @@ Model connection rules:
 - Deployment connections use the `nacos.copilot.connections.<name>` prefix with
   `providerId`, `model`, `apiKey`, `baseUrl`, `endpointPath`, `displayName`,
   `enabled`, `stream`, `enableThinking`, and `options`; `<name>` is the
-  connection name and `legacy` is reserved for the deprecated configuration.
+  connection name, and `legacy` is the name of the connection built from the
+  deprecated configuration, which a deployment connection with the same name
+  replaces.
 - Connections are merged by source: a deployment connection replaces the
   deprecated connection with the same name; within one source the first
   duplicate wins and is reported.
 - Selection order is the connection named by
   `nacos.copilot.selectedConnection`, then the first available deployment
-  connection, then the deprecated connection.
+  connection, then the first available `legacy` connection. Connections are
+  ordered by priority and then by name, so ties within a source resolve
+  deterministically.
 - Every connection is validated at load time: `providerId` and `model` are
-  required; the deprecated connection needs an explicit `apiKey`, because
-  clearing the credential stops using that connection rather than falling back
-  to an upstream environment variable; the provider prefix is checked with
+  required; the `legacy` connection is usable only when `COPILOT_API_KEY` or
+  the stored `apiKey` provides a key, so clearing both makes the connection
+  unavailable instead of leaving the provider's own environment fallback in
+  charge; the provider prefix is checked with
   `canResolve` before a `resolve` probe reports construction errors; an
   explicit `baseUrl` must use https and resolve to a public address unless its
   host matches `nacos.copilot.base-url.allowlist`.
@@ -221,12 +226,15 @@ nacos.copilot.selectedConnection=prod-qwen
 
 Configuration refresh rules:
 
-- Merged and standalone deployments publish `ServerConfigChangeEvent` when the
+- A merged deployment publishes `ServerConfigChangeEvent` when the
   configuration file changes; Copilot subscribes and re-binds
   `nacos.copilot.*`, so the connection table, `selectedConnection`, `enabled`,
   and the other deployment fields all apply.
-- Pure console deployments do not watch the configuration file and require a
-  restart.
+- A `selectedConnection` that is missing, disabled, or unavailable falls back
+  to the default selection order and is reported with a warning on the
+  refresh.
+- A pure console deployment does not watch the configuration file and requires
+  a restart.
 - Keys removed while the process runs are not visible to a refresh and require a
   restart; environment variables do not trigger a refresh.
 

@@ -26,11 +26,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Reads the legacy Copilot configuration as one reserved connection.
+ * Reads the legacy Copilot configuration as one connection named {@code legacy}.
  *
  * <p>Until the {@code nacos.copilot.connections.*} keys replace it, the existing
- * {@code copilot-config.json} plus {@code COPILOT_API_KEY} remain the only source, mapped
- * to a reserved {@code legacy} connection that keeps today's DashScope behavior.
+ * {@code copilot-config.json} values plus {@code COPILOT_API_KEY} are mapped to the
+ * {@code legacy} connection that keeps today's DashScope behavior. The connection is usable
+ * only when one of those two sources provides a key, so clearing both stops using the
+ * connection instead of falling back to the provider's own environment variables.
  *
  * @author nacos
  */
@@ -38,7 +40,7 @@ import java.util.List;
 public class LegacyConfigProviderReader implements ProviderReader {
     
     /**
-     * Reserved connection name used by the deprecated configuration.
+     * Connection name used by the deprecated configuration.
      */
     public static final String CONNECTION_NAME = "legacy";
     

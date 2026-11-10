@@ -135,7 +135,7 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Refresh configuration from storage.
+     * Reload the effective configuration and rebuild the connection table.
      */
     public void refreshConfig() {
         CopilotProperties config;
@@ -233,7 +233,8 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Get effective configuration (from Nacos Config or default).
+     * Get the effective configuration: stored configuration, then deployment configuration,
+     * then defaults.
      *
      * @return effective CopilotProperties
      */
