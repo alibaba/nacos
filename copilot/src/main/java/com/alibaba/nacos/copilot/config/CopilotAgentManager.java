@@ -61,6 +61,9 @@ public class CopilotAgentManager {
     private volatile RuntimeSnapshot snapshot = RuntimeSnapshot.empty();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
+    private String activeStudioUrl;
+    private String activeStudioProject;
+    
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
         CopilotProperties defaultProperties, ProviderReaderAggregator providerReaders,
@@ -75,10 +78,11 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Initialize AgentScope Studio if studioUrl is configured.
-     * This method should be called without holding any locks.
+     * Initialize AgentScope Studio if studioUrl is configured and changed since the last
+     * successful initialization. This method must not be called while holding the
+     * configuration lock.
      */
-    private void initStudio() {
+    private synchronized void initStudio() {
         CopilotProperties config = snapshot.getConfig();
         if (config == null) {
             return;
@@ -90,11 +94,16 @@ public class CopilotAgentManager {
             return;
         }
         
+        String studioProject = config.getStudioProject();
+        if (StringUtils.isBlank(studioProject)) {
+            studioProject = "NacosCopilot";
+        }
+        if (studioUrl.equals(activeStudioUrl) && studioProject.equals(activeStudioProject)) {
+            LOGGER.debug("AgentScope Studio is already initialized for {}", studioUrl);
+            return;
+        }
+        
         try {
-            String studioProject = config.getStudioProject();
-            if (StringUtils.isBlank(studioProject)) {
-                studioProject = "NacosCopilot";
-            }
             LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl,
                 studioProject);
             StudioManager.init()
@@ -103,6 +112,8 @@ public class CopilotAgentManager {
                 .runName("nacos_copilot_" + System.currentTimeMillis())
                 .initialize()
                 .block();
+            activeStudioUrl = studioUrl;
+            activeStudioProject = studioProject;
             LOGGER.info("AgentScope Studio initialized successfully");
         } catch (Exception e) {
             LOGGER.warn("Failed to initialize AgentScope Studio: {}", e.getMessage(), e);
@@ -112,7 +123,6 @@ public class CopilotAgentManager {
     @PostConstruct
     public void init() {
         refreshConfig();
-        initStudio();
     }
     
     /**
@@ -128,18 +138,40 @@ public class CopilotAgentManager {
      * Refresh configuration from storage.
      */
     public void refreshConfig() {
+        CopilotProperties config;
+        ConnectionTable connectionTable;
         lock.writeLock().lock();
         try {
-            CopilotProperties config = getEffectiveConfig();
-            ConnectionTable connectionTable =
-                providerReaders.readAll(new ProviderReadContext(config));
+            config = getEffectiveConfig();
+            connectionTable = providerReaders.readAll(new ProviderReadContext(config));
             snapshot = new RuntimeSnapshot(config, connectionTable);
-            LOGGER.info("Copilot configuration refreshed");
         } finally {
             lock.writeLock().unlock();
         }
+        warnOnIgnoredSelection(config, connectionTable);
+        LOGGER.info("Copilot configuration refreshed");
         // Re-initialize Studio if URL changed (outside lock to avoid blocking)
         initStudio();
+    }
+    
+    private void warnOnIgnoredSelection(CopilotProperties config,
+        ConnectionTable connectionTable) {
+        if (config == null || StringUtils.isBlank(config.getSelectedConnection())) {
+            return;
+        }
+        String selected = config.getSelectedConnection();
+        CopilotModelConnection connection = connectionTable.get(selected);
+        if (connection == null) {
+            LOGGER.warn("Selected Copilot connection [{}] does not exist, routing falls back "
+                + "to the default selection order", selected);
+        } else if (!connection.isEnabled()) {
+            LOGGER.warn("Selected Copilot connection [{}] is disabled, routing falls back to "
+                + "the default selection order", selected);
+        } else if (!connection.isAvailable()) {
+            LOGGER.warn("Selected Copilot connection [{}] is unavailable ({}), routing falls "
+                + "back to the default selection order", selected,
+                connection.getUnavailableReason());
+        }
     }
     
     /**

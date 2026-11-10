@@ -24,7 +24,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.concurrent.ExecutorService;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -53,6 +57,23 @@ class CopilotDynamicConfigTest {
         dynamicConfig = new CopilotDynamicConfig(agentManager);
         
         assertSame(ServerConfigChangeEvent.class, dynamicConfig.subscribeType());
+    }
+    
+    @Test
+    void testUsesDedicatedExecutor() {
+        dynamicConfig = new CopilotDynamicConfig(agentManager);
+        
+        assertNotNull(dynamicConfig.executor());
+    }
+    
+    @Test
+    void testDestroyShutsDownExecutor() {
+        dynamicConfig = new CopilotDynamicConfig(agentManager);
+        ExecutorService executor = (ExecutorService) dynamicConfig.executor();
+        
+        dynamicConfig.destroy();
+        
+        assertTrue(executor.isShutdown());
     }
     
     @Test

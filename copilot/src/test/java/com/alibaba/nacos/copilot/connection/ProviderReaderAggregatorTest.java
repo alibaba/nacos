@@ -156,6 +156,18 @@ class ProviderReaderAggregatorTest {
     }
     
     @Test
+    void testSamePriorityConnectionsAreOrderedByName() {
+        ProviderReaderAggregator aggregator = aggregator(
+            reader(10, Arrays.asList(buildConnection(" Prod-Qwen ", "qwen-max", true, 10),
+                buildConnection("alpha", "qwen2.5", true, 10))));
+        
+        ConnectionTable table = aggregator.readAll(CONTEXT);
+        
+        assertEquals("alpha", table.getAll().iterator().next().getName());
+        assertEquals("alpha", table.getDefault().getName());
+    }
+    
+    @Test
     void testEveryConnectionIsValidated() {
         CopilotModelConnection unavailable = buildConnection("prod-qwen", "qwen-max", true, 10)
             .withAvailability(false, "no provider");

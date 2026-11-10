@@ -25,17 +25,27 @@ import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.DefaultCopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.Model;
+import io.agentscope.core.studio.StudioManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
+import reactor.core.publisher.Mono;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,8 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -313,6 +325,117 @@ class CopilotAgentManagerTest {
         manager.refreshConfig();
         
         assertEquals("prod-qwen", manager.getConfig().getSelectedConnection());
+    }
+    
+    @Test
+    void testRefreshWarnsWhenSelectedConnectionIsUnavailable() {
+        CopilotModelConnection connection =
+            buildConnection("test-api-key", ConnectionSource.DEPLOYMENT)
+                .withAvailability(false, "missing provider");
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
+        when(defaultProperties.getSelectedConnection()).thenReturn("prod-qwen");
+        
+        List<ILoggingEvent> warnings = refreshAndCaptureWarnings();
+        
+        assertEquals(1, warnings.size());
+        assertTrue(warnings.get(0).getFormattedMessage().contains("prod-qwen"));
+        assertTrue(warnings.get(0).getFormattedMessage().contains("missing provider"));
+    }
+    
+    @Test
+    void testRefreshWarnsWhenSelectedConnectionDoesNotExist() {
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(defaultProperties.getSelectedConnection()).thenReturn("unknown");
+        
+        List<ILoggingEvent> warnings = refreshAndCaptureWarnings();
+        
+        assertEquals(1, warnings.size());
+        assertTrue(warnings.get(0).getFormattedMessage().contains("unknown"));
+    }
+    
+    @Test
+    void testRefreshDoesNotWarnWithoutSelection() {
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        assertTrue(refreshAndCaptureWarnings().isEmpty());
+    }
+    
+    @Test
+    void testInitInitializesStudioOnce() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            StudioManager.Builder builder = mockStudio(studio);
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.init();
+            
+            studio.verify(StudioManager::init, times(1));
+            verify(builder, times(1)).initialize();
+        }
+    }
+    
+    @Test
+    void testRefreshKeepsStudioWhenConfigurationIsUnchanged() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            StudioManager.Builder builder = mockStudio(studio);
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            
+            studio.verify(StudioManager::init, times(1));
+            verify(builder, times(1)).initialize();
+        }
+    }
+    
+    @Test
+    void testRefreshReinitializesStudioWhenUrlChanges() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            StudioManager.Builder builder = mockStudio(studio);
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio", "http://studio-2");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            
+            studio.verify(StudioManager::init, times(2));
+            verify(builder, times(2)).initialize();
+        }
+    }
+    
+    private List<ILoggingEvent> refreshAndCaptureWarnings() {
+        Logger logger = (Logger) LoggerFactory.getLogger(CopilotAgentManager.class);
+        ListAppender<ILoggingEvent> events = new ListAppender<>();
+        events.start();
+        logger.addAppender(events);
+        try {
+            copilotAgentManager.refreshConfig();
+        } finally {
+            logger.detachAppender(events);
+            events.stop();
+        }
+        return events.list.stream().filter(event -> Level.WARN.equals(event.getLevel()))
+            .collect(Collectors.toList());
+    }
+    
+    private StudioManager.Builder mockStudio(MockedStatic<StudioManager> studio) {
+        StudioManager.Builder builder = mock(StudioManager.Builder.class);
+        studio.when(StudioManager::init).thenReturn(builder);
+        when(builder.studioUrl(anyString())).thenReturn(builder);
+        when(builder.project(anyString())).thenReturn(builder);
+        when(builder.runName(anyString())).thenReturn(builder);
+        when(builder.initialize()).thenReturn(Mono.empty());
+        return builder;
     }
     
     private CopilotModelConnection buildConnection(String apiKey) {

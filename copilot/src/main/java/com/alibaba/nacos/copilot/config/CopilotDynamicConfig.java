@@ -20,9 +20,14 @@ import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Refreshes Copilot configuration after the server configuration file changes.
@@ -44,6 +49,12 @@ public class CopilotDynamicConfig extends Subscriber<ServerConfigChangeEvent>
     
     private final CopilotAgentManager agentManager;
     
+    // Refreshing re-reads storage and probes connections, so it must not run on the shared
+    // event publisher thread that also serves the other ServerConfigChangeEvent subscribers.
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(
+        new ThreadFactoryBuilder().daemon(true)
+            .nameFormat("nacos-copilot-config-refresh-%d").build());
+    
     public CopilotDynamicConfig(CopilotAgentManager agentManager) {
         this.agentManager = agentManager;
     }
@@ -56,11 +67,17 @@ public class CopilotDynamicConfig extends Subscriber<ServerConfigChangeEvent>
     @Override
     public void destroy() {
         NotifyCenter.deregisterSubscriber(this);
+        executor.shutdownNow();
     }
     
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
         agentManager.refreshConfig();
+    }
+    
+    @Override
+    public Executor executor() {
+        return executor;
     }
     
     @Override

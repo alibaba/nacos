@@ -100,8 +100,10 @@ public class ProviderReaderAggregator {
         }
         List<CopilotModelConnection> connections = new ArrayList<>(merged.values());
         // Higher priority sources come first, so the first entry is also the default when
-        // nothing is explicitly selected.
-        connections.sort(Comparator.comparingInt(CopilotModelConnection::getPriority));
+        // nothing is explicitly selected. Connections with the same priority are ordered by
+        // name because the underlying property source does not preserve declaration order.
+        connections.sort(Comparator.comparingInt(CopilotModelConnection::getPriority)
+            .thenComparing(connection -> ConnectionTable.normalizeName(connection.getName())));
         for (int i = 0; i < connections.size(); i++) {
             connections.set(i, validate(connections.get(i)));
         }
