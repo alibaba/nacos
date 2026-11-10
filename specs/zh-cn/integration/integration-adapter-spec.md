@@ -175,7 +175,7 @@ nacos.copilot.selectedConnection=prod-qwen
 配置刷新规则：
 
 - 合并部署与单体部署在配置文件变化时发布 `ServerConfigChangeEvent`，Copilot 订阅该事件并
-  重新读取连接与选择配置。
+  重新绑定 `nacos.copilot.*`，连接表、`selectedConnection`、`enabled` 等部署配置一并生效。
 - 纯控制台部署不监听配置文件，必须重启生效。
 - 运行中删除的配置键不会在刷新时消失，需要重启；环境变量不会触发热更新。
 

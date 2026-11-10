@@ -31,6 +31,10 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.bind.BindResult;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -45,11 +49,14 @@ public class CopilotAgentManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CopilotAgentManager.class);
     
+    private static final String CONFIG_PREFIX = "nacos.copilot";
+    
     private final CopilotConfigStorage configStorage;
     private final CopilotProperties defaultProperties;
     private final ProviderReaderAggregator providerReaders;
     private final CopilotModelResolver modelResolver;
     private final CopilotModelRouter modelRouter;
+    private final ConfigurableEnvironment environment;
     
     private volatile RuntimeSnapshot snapshot = RuntimeSnapshot.empty();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -57,12 +64,14 @@ public class CopilotAgentManager {
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
         CopilotProperties defaultProperties, ProviderReaderAggregator providerReaders,
-        CopilotModelResolver modelResolver, CopilotModelRouter modelRouter) {
+        CopilotModelResolver modelResolver, CopilotModelRouter modelRouter,
+        ConfigurableEnvironment environment) {
         this.configStorage = configStorage;
         this.defaultProperties = defaultProperties;
         this.providerReaders = providerReaders;
         this.modelResolver = modelResolver;
         this.modelRouter = modelRouter;
+        this.environment = environment;
     }
     
     /**
@@ -204,6 +213,15 @@ public class CopilotAgentManager {
                 LOGGER.debug("Using Copilot config from Nacos Config");
                 return config;
             }
+        }
+        
+        // Re-bind the deployment configuration so a refresh also applies changed
+        // nacos.copilot.* fields, not only the connection table.
+        BindResult<CopilotProperties> bound = Binder.get(environment)
+            .bind(CONFIG_PREFIX, Bindable.of(CopilotProperties.class));
+        if (bound.isBound()) {
+            LOGGER.debug("Using Copilot config from deployment configuration");
+            return bound.get();
         }
         
         // Fallback to default properties

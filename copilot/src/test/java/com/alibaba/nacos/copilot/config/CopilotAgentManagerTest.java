@@ -33,6 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 
@@ -77,7 +78,7 @@ class CopilotAgentManagerTest {
     @BeforeEach
     void setUp() {
         copilotAgentManager = new CopilotAgentManager(configStorage, defaultProperties,
-            providerReaders, modelResolver, modelRouter);
+            providerReaders, modelResolver, modelRouter, new MockEnvironment());
     }
     
     @Test
@@ -184,7 +185,8 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection("test-api-key")
             .withAvailability(false, "missing provider");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
-            providerReaders, modelResolver, new DefaultCopilotModelRouter());
+            providerReaders, modelResolver, new DefaultCopilotModelRouter(),
+            new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.isEnabled()).thenReturn(true);
@@ -264,7 +266,8 @@ class CopilotAgentManagerTest {
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
             Collections.singletonList(new LegacyConfigProviderReader(environment)), validator);
         CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
-            realReaders, new CopilotModelResolver(), new DefaultCopilotModelRouter());
+            realReaders, new CopilotModelResolver(), new DefaultCopilotModelRouter(),
+            new MockEnvironment());
         realManager.refreshConfig();
         
         // When
@@ -288,13 +291,28 @@ class CopilotAgentManagerTest {
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
             Collections.singletonList(new LegacyConfigProviderReader(environment)), validator);
         CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
-            realReaders, modelResolver, new DefaultCopilotModelRouter());
+            realReaders, modelResolver, new DefaultCopilotModelRouter(), new MockEnvironment());
         
         realManager.refreshConfig();
         
         verify(configStorage, times(1)).getConfig();
         assertEquals("qwen-max", realManager.getConfig().getModel());
         assertTrue(realManager.isEnabled());
+    }
+    
+    @Test
+    void testRefreshRebindsDeploymentConfiguration() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.copilot.selectedConnection", "prod-qwen");
+        environment.setProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        assertEquals("prod-qwen", manager.getConfig().getSelectedConnection());
     }
     
     private CopilotModelConnection buildConnection(String apiKey) {

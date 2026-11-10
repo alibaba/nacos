@@ -222,8 +222,9 @@ nacos.copilot.selectedConnection=prod-qwen
 Configuration refresh rules:
 
 - Merged and standalone deployments publish `ServerConfigChangeEvent` when the
-  configuration file changes; Copilot subscribes and re-reads the connections
-  and selection.
+  configuration file changes; Copilot subscribes and re-binds
+  `nacos.copilot.*`, so the connection table, `selectedConnection`, `enabled`,
+  and the other deployment fields all apply.
 - Pure console deployments do not watch the configuration file and require a
   restart.
 - Keys removed while the process runs are not visible to a refresh and require a
