@@ -44,16 +44,21 @@ public class ProviderReaderAggregator {
     
     private final List<ProviderReader> readers;
     
+    private final CopilotConnectionValidator connectionValidator;
+    
     /**
      * Create the aggregator from all discovered readers.
      *
-     * @param readers readers discovered by Spring
+     * @param readers             readers discovered by Spring
+     * @param connectionValidator load-time validator applied to the merged connections
      */
     @Autowired
-    public ProviderReaderAggregator(List<ProviderReader> readers) {
+    public ProviderReaderAggregator(List<ProviderReader> readers,
+        CopilotConnectionValidator connectionValidator) {
         List<ProviderReader> sorted = new ArrayList<>(readers);
         sorted.sort(Comparator.comparingInt(ProviderReader::order).reversed());
         this.readers = Collections.unmodifiableList(sorted);
+        this.connectionValidator = connectionValidator;
     }
     
     /**
@@ -93,6 +98,25 @@ public class ProviderReaderAggregator {
                     reader.getClass().getSimpleName(), e);
             }
         }
-        return new ConnectionTable(new ArrayList<>(merged.values()));
+        List<CopilotModelConnection> connections = new ArrayList<>(merged.values());
+        // Higher priority sources come first, so the first entry is also the default when
+        // nothing is explicitly selected.
+        connections.sort(Comparator.comparingInt(CopilotModelConnection::getPriority));
+        for (int i = 0; i < connections.size(); i++) {
+            connections.set(i, validate(connections.get(i)));
+        }
+        return new ConnectionTable(connections);
+    }
+    
+    private CopilotModelConnection validate(CopilotModelConnection connection) {
+        try {
+            return connectionValidator.validate(connection);
+        } catch (RuntimeException e) {
+            String reason = StringUtils.isBlank(e.getMessage())
+                ? e.getClass().getSimpleName() : e.getMessage();
+            LOGGER.warn("Failed to validate Copilot connection [{}]: {}", connection.getName(),
+                reason);
+            return connection.withAvailability(false, reason);
+        }
     }
 }

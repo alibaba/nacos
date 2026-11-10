@@ -58,6 +58,11 @@ public class CopilotProperties {
      */
     private String studioProject = "NacosCopilot";
     
+    /**
+     * Connection selected from the console, empty to use the default order.
+     */
+    private String selectedConnection;
+    
     public boolean isEnabled() {
         return enabled;
     }
@@ -144,5 +149,23 @@ public class CopilotProperties {
      */
     public void setStudioProject(String studioProject) {
         this.studioProject = studioProject;
+    }
+    
+    /**
+     * Get the connection selected from the console.
+     *
+     * @return selected connection name, or {@code null} to use the default order
+     */
+    public String getSelectedConnection() {
+        return selectedConnection;
+    }
+    
+    /**
+     * Set the connection selected from the console.
+     *
+     * @param selectedConnection selected connection name
+     */
+    public void setSelectedConnection(String selectedConnection) {
+        this.selectedConnection = selectedConnection;
     }
 }

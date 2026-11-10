@@ -139,8 +139,45 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 - 当 `nacos.deployment.type=server` 时不会加载该模块；
 - 控制台 route 位于 `/v3/console/copilot/*`；
 - 流式操作使用 server-sent events，而不是普通 JSON response wrapper；
-- LLM 访问通过 `nacos.copilot.apiKey`、`nacos.copilot.model`、
-  `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
+- LLM 访问通过 `nacos.copilot.connections.<name>.*` 配置的部署侧模型连接提供；未配置时回退到
+  `nacos.copilot.apiKey`、`nacos.copilot.model` 映射出的保留连接 `legacy`；
+- `nacos.copilot.selectedConnection` 指定控制台选中的连接；
+- AgentScope Studio 通过 `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
+
+模型连接规则：
+
+- 部署侧连接使用 `nacos.copilot.connections.<name>` 前缀，字段包括 `providerId`、`model`、
+  `apiKey`、`baseUrl`、`endpointPath`、`displayName`、`enabled`、`stream`、
+  `enableThinking` 与 `options`；`<name>` 是连接名，`legacy` 由旧配置保留。
+- 连接按来源合并：部署侧连接替换同名的旧配置连接；同一来源内重名时保留第一个并告警。
+- 选择顺序为：`nacos.copilot.selectedConnection` 指定的连接、第一个可用部署侧连接、
+  旧配置连接。
+- 加载期校验每个连接：`providerId` 与 `model` 必填；旧配置连接必须显式配置 `apiKey`，
+  清空凭据表示停止使用该连接，不得隐式回退到上游环境变量；先确认 classpath 上存在对应
+  provider（`canResolve`），再用 `resolve` 探测构造错误；显式设置的 `baseUrl` 必须为
+  https 且解析到公网地址，除非其 host 命中 `nacos.copilot.base-url.allowlist`。
+- 校验失败的连接只标记为不可用并保留诊断原因，不影响其他连接继续服务；上游 provider
+  的诊断信息按原样保留，不得替换为通用错误。
+- 连接字段只在运行时从部署配置读取；通过通用配置接口写入 `copilot-config.json` 的同名字段
+  不会覆盖部署连接。
+- Copilot 不做跨节点连接同步：连接表随部署配置分发，各节点的连接配置与 classpath 上的
+  provider 依赖需由部署管线保持一致。
+
+示例：
+
+```properties
+nacos.copilot.connections.prod-qwen.providerId=dashscope
+nacos.copilot.connections.prod-qwen.model=qwen-max
+nacos.copilot.connections.prod-qwen.apiKey=<api-key>
+nacos.copilot.selectedConnection=prod-qwen
+```
+
+配置刷新规则：
+
+- 合并部署与单体部署在配置文件变化时发布 `ServerConfigChangeEvent`，Copilot 订阅该事件并
+  重新读取连接与选择配置。
+- 纯控制台部署不监听配置文件，必须重启生效。
+- 运行中删除的配置键不会在刷新时消失，需要重启；环境变量不会触发热更新。
 
 规则：
 

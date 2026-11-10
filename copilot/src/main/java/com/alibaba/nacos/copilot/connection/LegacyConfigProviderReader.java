@@ -71,6 +71,8 @@ public class LegacyConfigProviderReader implements ProviderReader {
             .providerId(PROVIDER_ID)
             .displayName("Legacy DashScope")
             .enabled(true)
+            .source(ConnectionSource.LEGACY)
+            .priority(100)
             .model(config.getModel())
             .apiKey(resolveApiKey(config))
             .stream(Boolean.TRUE)

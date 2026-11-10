@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.connection.ConnectionTable;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
+import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.ProviderReadContext;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
 import io.agentscope.core.ReActAgent;
@@ -48,6 +49,7 @@ public class CopilotAgentManager {
     private final CopilotProperties defaultProperties;
     private final ProviderReaderAggregator providerReaders;
     private final CopilotModelResolver modelResolver;
+    private final CopilotModelRouter modelRouter;
     
     private volatile RuntimeSnapshot snapshot = RuntimeSnapshot.empty();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -55,11 +57,12 @@ public class CopilotAgentManager {
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
         CopilotProperties defaultProperties, ProviderReaderAggregator providerReaders,
-        CopilotModelResolver modelResolver) {
+        CopilotModelResolver modelResolver, CopilotModelRouter modelRouter) {
         this.configStorage = configStorage;
         this.defaultProperties = defaultProperties;
         this.providerReaders = providerReaders;
         this.modelResolver = modelResolver;
+        this.modelRouter = modelRouter;
     }
     
     /**
@@ -145,15 +148,10 @@ public class CopilotAgentManager {
             return null;
         }
         
-        CopilotModelConnection connection = current.getConnectionTable().getDefault();
+        CopilotModelConnection connection = modelRouter.route(current.getConnectionTable(),
+            config.getSelectedConnection());
         if (connection == null) {
             LOGGER.warn("No available Copilot model connection");
-            return null;
-        }
-        
-        if (StringUtils.isBlank(connection.getApiKey())) {
-            LOGGER.warn("Copilot API Key is not configured for connection {}",
-                connection.getName());
             return null;
         }
         
@@ -189,9 +187,8 @@ public class CopilotAgentManager {
         if (config == null || !config.isEnabled()) {
             return false;
         }
-        
-        CopilotModelConnection connection = current.getConnectionTable().getDefault();
-        return connection != null && StringUtils.isNotBlank(connection.getApiKey());
+        return modelRouter.route(current.getConnectionTable(),
+            config.getSelectedConnection()) != null;
     }
     
     /**
