@@ -133,16 +133,17 @@ public class ServiceInfoHolder implements Closeable {
                 JsonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
-        ServiceInfo oldService = serviceInfoMap.get(serviceKey);
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
             NAMING_LOGGER.warn(
                 "process service info but found empty or error push, serviceKey: {}, "
                     + "pushEmptyProtection: {}, hosts: {}",
                 serviceKey, pushEmptyProtection, serviceInfo.getHosts());
-            return oldService;
+            return serviceInfoMap.get(serviceKey);
         }
-        serviceInfoMap.put(serviceKey, serviceInfo);
+        // put() returns the entry it actually replaced, so the diff is always computed against the
+        // value this update superseded, even when updates for the same service overlap.
+        ServiceInfo oldService = serviceInfoMap.put(serviceKey, serviceInfo);
         InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JsonUtils.toJson(serviceInfo));

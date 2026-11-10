@@ -25,6 +25,10 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +41,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -383,5 +391,128 @@ class ServiceInfoHolderTest {
         Field field = ServiceInfoHolder.class.getDeclaredField("serviceInfoDiskCacheRefresher");
         field.setAccessible(true);
         return (ServiceInfoDiskCacheRefresher) field.get(holder);
+    }
+    
+    @Test
+    void testConcurrentUpdateComputesDiffAgainstTheEntryItReplaced() throws Exception {
+        List<Instance> v0Hosts = new ArrayList<>();
+        v0Hosts.add(createInstance("1.1.1.1", 1));
+        ServiceInfo v0 = buildServiceInfo(v0Hosts, 1L);
+        
+        List<Instance> v1Hosts = new ArrayList<>();
+        v1Hosts.add(createInstance("1.1.1.1", 1));
+        v1Hosts.add(createInstance("1.1.1.2", 2));
+        ServiceInfo v1 = buildServiceInfo(v1Hosts, 2L);
+        
+        List<Instance> v2Hosts = new ArrayList<>();
+        v2Hosts.add(createInstance("1.1.1.2", 2));
+        BlockingServiceInfo v2 = new BlockingServiceInfo(v2Hosts, 3L);
+        
+        InstancesEventSubscriber subscriber = new InstancesEventSubscriber(3);
+        NotifyCenter.registerSubscriber(subscriber);
+        try {
+            holder.processServiceInfo(v0);
+            
+            // v2 stalls inside the empty-push validation, which the current code runs after it has
+            // already read the cache and before it writes, so the update below lands in that window.
+            Thread concurrent = new Thread(() -> holder.processServiceInfo(v2));
+            concurrent.start();
+            assertTrue(v2.awaitEntered(5, TimeUnit.SECONDS), "v2 should stall before writing the cache");
+            
+            holder.processServiceInfo(v1);
+            
+            v2.release();
+            concurrent.join(5000);
+            assertFalse(concurrent.isAlive());
+            
+            assertTrue(subscriber.latch.await(5, TimeUnit.SECONDS), "expected three instances events");
+            assertEquals(1, subscriber.countAdded("1.1.1.2:2"),
+                "1.1.1.2 must be reported as added only by the update that introduced it");
+            assertEquals(1, subscriber.countRemoved("1.1.1.1:1"),
+                "1.1.1.1 must be reported as removed exactly once");
+        } finally {
+            NotifyCenter.deregisterSubscriber(subscriber);
+        }
+    }
+    
+    private ServiceInfo buildServiceInfo(List<Instance> hosts, long lastRefTime) {
+        ServiceInfo serviceInfo = new ServiceInfo("a@@b@@c");
+        serviceInfo.setHosts(hosts);
+        serviceInfo.setLastRefTime(lastRefTime);
+        return serviceInfo;
+    }
+    
+    /**
+     * Service info that stalls the first {@link ServiceInfo#getHosts()} call, which is the read the
+     * empty-push validation performs between reading and writing the cache.
+     */
+    private static class BlockingServiceInfo extends ServiceInfo {
+        
+        private final CountDownLatch entered = new CountDownLatch(1);
+        
+        private final CountDownLatch release = new CountDownLatch(1);
+        
+        private final AtomicBoolean blocking = new AtomicBoolean(true);
+        
+        BlockingServiceInfo(List<Instance> hosts, long lastRefTime) {
+            super("a@@b@@c");
+            setHosts(hosts);
+            setLastRefTime(lastRefTime);
+        }
+        
+        @Override
+        public List<Instance> getHosts() {
+            if (blocking.compareAndSet(true, false)) {
+                entered.countDown();
+                try {
+                    release.await(5, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return super.getHosts();
+        }
+        
+        boolean awaitEntered(long timeout, TimeUnit unit) throws InterruptedException {
+            return entered.await(timeout, unit);
+        }
+        
+        void release() {
+            release.countDown();
+        }
+    }
+    
+    private static class InstancesEventSubscriber extends Subscriber<InstancesChangeEvent> {
+        
+        private final CountDownLatch latch;
+        
+        private final List<InstancesChangeEvent> events = new CopyOnWriteArrayList<>();
+        
+        InstancesEventSubscriber(int expectedEvents) {
+            this.latch = new CountDownLatch(expectedEvents);
+        }
+        
+        @Override
+        public void onEvent(InstancesChangeEvent event) {
+            events.add(event);
+            latch.countDown();
+        }
+        
+        @Override
+        public Class<? extends Event> subscribeType() {
+            return InstancesChangeEvent.class;
+        }
+        
+        long countAdded(String inetAddr) {
+            return events.stream().filter(event -> contains(event.getInstancesDiff().getAddedInstances(), inetAddr)).count();
+        }
+        
+        long countRemoved(String inetAddr) {
+            return events.stream().filter(event -> contains(event.getInstancesDiff().getRemovedInstances(), inetAddr)).count();
+        }
+        
+        private boolean contains(List<Instance> instances, String inetAddr) {
+            return instances.stream().anyMatch(instance -> inetAddr.equals(instance.toInetAddr()));
+        }
     }
 }
