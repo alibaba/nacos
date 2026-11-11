@@ -32,6 +32,7 @@ extension mechanisms, and cross-cutting security rules.
 - [Internal RPC And Cluster Request Spec](design/foundation-internal-rpc-spec.md)
 - [AP Consistency Spec](design/foundation-ap-consistency-spec.md)
 - [CP Consistency Spec](design/foundation-cp-consistency-spec.md)
+- [Raft File Log Storage Spec](design/foundation-raft-file-log-storage-spec.md)
 - [Persistence And Dump Spec](design/foundation-persistence-dump-spec.md)
 - [Task Execution Spec](design/foundation-task-execution-spec.md)
 - [Event Dispatch And NotifyCenter Spec](design/foundation-event-dispatch-spec.md)

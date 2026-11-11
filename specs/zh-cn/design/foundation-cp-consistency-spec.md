@@ -104,6 +104,24 @@ JRaft 是当前使用的多 group CP 运行时。
 实现中的超时是运维默认值，不是公开 API 保证。除非领域 API 明确声明，领域规范不得把 JRaft
 超时值暴露为用户可见正确性契约。
 
+### Raft 日志存储后端
+
+当前内置 JRaft 运行时支持 RocksDB 和文件两种日志存储后端，通过
+`nacos.core.protocol.raft.data.log_storage_type` 选择。默认值 `rocksdb` 使用
+JRaft 默认的 RocksDB 日志存储，`file` 使用 Nacos 的文件日志存储实现。
+后端在初始化阶段确定，所有 group 必须使用选定的工厂，不支持运行中热切换。
+
+文件后端通过 `FileJRaftServiceFactory` 接入，只替换 `LogStorage`，元数据存储、
+快照存储和 LogEntry codec 继续使用默认工厂。每个 group 使用独立的文件日志目录，
+由 Segment 保存日志、Manifest 发布本地保留范围、Index 提供可重建的位置索引。
+本地日志发布不等同于 Raft 多数派提交，committed index 和状态机 apply 仍由上层协议负责。
+
+文件后端要求 `nacos.core.protocol.raft.data.sync=true`，不受 `sync_meta` 取值影响，
+并依赖排他文件锁、普通文件刷盘和同目录 Manifest 原子替换。后端配置不提供已有日志、
+元数据或快照的格式转换，不能作为已有节点的数据迁移方式。配置校验、文件格式、发布与恢复
+顺序、故障状态及平台持久性边界由
+[Raft 文件日志存储规范](foundation-raft-file-log-storage-spec.md)定义。
+
 ### JRaft 传输鉴权
 
 JRaft 原生 gRPC 是服务端间 inner transport。新版本 JRaft client 始终通过 gRPC
@@ -206,6 +224,7 @@ CP 基础能力和[持久化与 Dump 规范](foundation-persistence-dump-spec.md
 
 - [基础能力规范](foundation-capabilities-spec.md)
 - [AP 一致性规范](foundation-ap-consistency-spec.md)
+- [Raft 文件日志存储规范](foundation-raft-file-log-storage-spec.md)
 - [持久化与 Dump 规范](foundation-persistence-dump-spec.md)
 - [事件分发与 NotifyCenter 规范](foundation-event-dispatch-spec.md)
 - [集群成员规范](foundation-cluster-membership-spec.md)

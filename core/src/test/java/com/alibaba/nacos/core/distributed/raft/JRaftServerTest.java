@@ -30,7 +30,16 @@ import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupExcep
 import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.distributed.raft.storage.FileJRaftServiceFactory;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
+import com.alipay.sofa.jraft.option.NodeOptions;
+import com.alipay.sofa.jraft.JRaftServiceFactory;
+import com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory;
+import org.mockito.MockedConstruction;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -98,6 +107,7 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -220,6 +230,65 @@ class JRaftServerTest {
         Field isStartedField = JRaftServer.class.getDeclaredField("isStarted");
         isStartedField.setAccessible(true);
         isStartedField.set(server, true);
+    }
+    
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"rocksdb", " RoCkSdB ", "file", " FiLe "})
+    void testLogStorageSelectionOnEveryGroup(String backend) {
+        config.setVal("log_storage_type", backend);
+        JRaftServer selectedServer = new JRaftServer(jRaftAuthUpgradeCoordinator);
+        selectedServer.init(config);
+        ReflectionTestUtils.setField(selectedServer, "isStarted", true);
+        config.setVal("log_storage_type", "changed-after-init");
+        Class<? extends JRaftServiceFactory> expectedFactory =
+            backend != null && "file".equalsIgnoreCase(backend.trim())
+                ? FileJRaftServiceFactory.class : DefaultJRaftServiceFactory.class;
+        List<NodeOptions> groupOptions = new ArrayList<>();
+        try (MockedStatic<RaftExecutor> executor = mockStatic(RaftExecutor.class);
+            MockedConstruction<RaftGroupService> groups = mockConstruction(RaftGroupService.class,
+                (service, context) -> {
+                    groupOptions.add((NodeOptions) context.arguments().get(2));
+                    when(service.start(false)).thenReturn(node);
+                })) {
+            for (String name : Arrays.asList("storage-first", "storage-second")) {
+                RequestProcessor4CP processor = mock(RequestProcessor4CP.class);
+                when(processor.group()).thenReturn(name);
+                selectedServer.createMultiRaftGroup(Collections.singletonList(processor));
+            }
+            assertEquals(2, groupOptions.size());
+            for (NodeOptions options : groupOptions) {
+                assertInstanceOf(expectedFactory, options.getServiceFactory());
+            }
+        } finally {
+            selectedServer.shutdown();
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"unknown", "", " "})
+    void testRejectInvalidLogStorageBeforeStartingRuntime(String backend) {
+        RaftConfig invalid = new RaftConfig();
+        invalid.setVal("log_storage_type", backend);
+        try (MockedStatic<RaftExecutor> executor = mockStatic(RaftExecutor.class)) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> new JRaftServer(jRaftAuthUpgradeCoordinator).init(invalid));
+            assertTrue(failure.getMessage().contains("log_storage_type"));
+            executor.verifyNoInteractions();
+        }
+    }
+    
+    @Test
+    void testFileStorageRequiresSynchronousWrites() {
+        RaftConfig invalid = new RaftConfig();
+        invalid.setVal("log_storage_type", "file");
+        invalid.setVal(RaftSysConstants.SYNC, "false");
+        try (MockedStatic<RaftExecutor> executor = mockStatic(RaftExecutor.class)) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> new JRaftServer(jRaftAuthUpgradeCoordinator).init(invalid));
+            assertTrue(failure.getMessage().contains("sync"));
+            executor.verifyNoInteractions();
+        }
     }
     
     private void initPeersAndConfiguration() {
