@@ -218,3 +218,13 @@ runs for both Admin and Console audiences through the existing Skill list path.
 It verifies the default Hub update-time order, stable Hub ID ties, download-count
 order using Hub counters, and page-two consistency after server-side ordering.
 Client discovery keeps its popularity order; no new route or Client sort parameter is added.
+
+
+### Hub reserved namespace and failure regressions (PR #15913 review)
+
+| Scenario | Expected result | Evidence |
+| --- | --- | --- |
+| Create a Prompt draft in `__nacos_ai_hub__` | HTTP 400 / `ILLEGAL_NAMESPACE`, rejected before storage writes | `PromptAdminApiOpenApiITCase.testPromptDraftRejectsReservedHubNamespace`; `ai` service boundary tests assert no collaborator access |
+| Ordinary Skill/Prompt/AgentSpec/Agent/MCP and compatibility mutations target the Hub namespace | Reject before storage or compatibility dispatch; internal Hub persistence remains separate | `ai:HubReservedNamespaceWriteTest`; HTTP IT currently covers Prompt draft creation |
+| Source metadata/version lookup fails during a shared directory request | Sanitized 5xx, never a successful empty or partial page | `ai:HubSkillDirectoryServiceTest.sourceQueryFailurePropagatesThroughRealValidationToDirectory`, using real eligibility/read validators; standalone IT cannot inject DB outages |
+| Import rollback file cleanup fails | Disabled resource, draft version and storage descriptor survive for recovery | `ai:HubSkillDraftTransferWriterTest.fileCleanupFailureKeepsDisabledNameReservation`; standalone IT cannot inject storage failures |

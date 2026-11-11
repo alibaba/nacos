@@ -699,3 +699,11 @@ runs for both Admin and Console audiences through the existing Skill list path.
 It verifies the default Hub update-time order, stable Hub ID ties, download-count
 order using Hub counters, and page-two consistency after server-side ordering.
 Client discovery keeps its popularity order; no new route or Client sort parameter is added.
+
+
+PR #15913 review regression: `PromptAdminApiOpenApiITCase.testPromptDraftRejectsReservedHubNamespace`
+checks HTTP 400 / `ILLEGAL_NAMESPACE` for ordinary Prompt draft writes to the Hub
+namespace. All ordinary resource mutation boundaries are also exercised by
+`HubReservedNamespaceWriteTest` in `ai`. Source metadata/version backend failures
+and rollback file-deletion failures require deterministic fault injection and are
+covered by AI module tests; standalone HTTP IT does not inject database outages.

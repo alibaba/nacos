@@ -17,10 +17,17 @@
 package com.alibaba.nacos.ai.service.hub;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
+import com.alibaba.nacos.ai.controller.SkillAdminController;
+import com.alibaba.nacos.ai.service.skills.SkillOperationServiceImpl;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
 import com.alibaba.nacos.ai.service.repository.HubEntryStorage;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.hub.HubSkillListRequest;
@@ -33,6 +40,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -520,6 +529,59 @@ class HubSkillDirectoryServiceTest {
         HubSkillSummary result = directory.list(request(1, 10)).getPageItems().get(0);
         assertTrue(result.getTags().isEmpty());
         assertEquals("find-skills", result.getDisplayName());
+    }
+    
+    @ParameterizedTest
+    @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+    void sourceQueryFailurePropagatesThroughRealValidationToDirectory(boolean metadataFailure,
+        boolean checkedFailure) throws Exception {
+        add(3L, "team-a", "owner");
+        AiResourceManager manager = mock(AiResourceManager.class);
+        AiResource source = sources.get(3L);
+        source.setType(AiResourceConstants.RESOURCE_TYPE_SKILL);
+        source.setStatus(AiResourceConstants.META_STATUS_ENABLE);
+        source.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        Exception backendFailure = checkedFailure
+            ? new NacosException(503, "jdbc-secret-source-id")
+            : new IllegalStateException("jdbc-secret-source-id");
+        when(manager.findMeta("team-a", "find-skills", "skill")).thenAnswer(invocation -> {
+            if (metadataFailure) {
+                throw backendFailure;
+            }
+            return source;
+        });
+        when(manager.findVersion("team-a", "find-skills", "skill", "1.0.0"))
+            .thenAnswer(invocation -> {
+                throw backendFailure;
+            });
+        HubSkillSourceReadValidator validator = new HubSkillSourceReadValidator(
+            new HubSkillEligibilityValidator(manager));
+        HubSkillReadAccessService access =
+            new HubSkillReadAccessService(permission, validator, resolver);
+        HubSkillDirectoryService actual =
+            new HubSkillDirectoryService(storage, permission, resolver,
+                access, namespaces);
+        NacosException failure = assertThrows(NacosException.class,
+            () -> actual.list(request(1, 5)));
+        assertEquals(NacosException.SERVER_ERROR, failure.getErrCode());
+        assertFalse(failure.getMessage().contains("jdbc-secret"));
+        org.junit.jupiter.api.Assertions.assertSame(backendFailure, failure.getCause());
+        
+        SkillOperationServiceImpl skills =
+            new SkillOperationServiceImpl(null, null, null, null, manager);
+        skills.setSharedSkills(new HubSkillManagementAdapter(null, actual));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SkillAdminController(skills))
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+        String response = mvc
+            .perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/v3/admin/ai/skills/list").param("namespaceId", AiConstants.Hub.NAMESPACE_ID))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isInternalServerError())
+            .andReturn().getResponse().getContentAsString();
+        assertFalse(response.contains("jdbc-secret"));
+        assertFalse(response.contains("team-a"));
+        assertEquals(com.alibaba.nacos.api.model.v2.ErrorCode.SERVER_ERROR.getCode(),
+            JacksonUtils.toObj(response, Map.class).get("code"));
     }
     
     private HubSkillListRequest request(int pageNo, int pageSize) {

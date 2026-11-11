@@ -228,15 +228,16 @@ public class HubSkillDraftTransferWriter {
                             "Unexpected version row; refuse destructive cleanup"));
                         throw operationFailure;
                     }
-                    if (!commit.deleteDraftVersion(id, namespaceId, name, expectedMetaVersion,
-                        insertedVersionId, targetVersion)) {
-                        throw new IllegalStateException(
-                            "Draft cleanup lost reservation or version identity");
-                    }
                 }
                 // Keep the unique name reserved until every touched key is removed. A cleanup
-                // failure retains the disabled reservation for recovery instead of allowing reuse.
+                // failure retains both the disabled reservation and the version's storage
+                // descriptor, so later cleanup can still locate the remaining files.
                 files.delete(namespaceId, name, targetVersion, provider, touchedFiles);
+                if (currentVersion != null && !commit.deleteDraftVersion(id, namespaceId, name,
+                    expectedMetaVersion, insertedVersionId, targetVersion)) {
+                    throw new IllegalStateException(
+                        "Draft cleanup lost reservation or version identity");
+                }
                 if (!commit.deleteDisabled(id, namespaceId, name, expectedMetaVersion)) {
                     operationFailure.addSuppressed(new IllegalStateException(
                         "Reservation cleanup lost metaVersion CAS"));

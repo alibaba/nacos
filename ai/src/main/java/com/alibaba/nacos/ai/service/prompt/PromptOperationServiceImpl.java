@@ -21,6 +21,7 @@ import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_D
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_ONLINE;
 import static com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
 
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -133,6 +134,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String template, List<PromptVariable> variables, String commitMsg, String description,
         String bizTags)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "promptKey is required");
@@ -235,6 +237,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public void updateDraft(String namespaceId, String promptKey, String template,
         List<PromptVariable> variables,
         String commitMsg) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "promptKey is required");
@@ -270,6 +273,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doDeleteDraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
             v -> deletePromptStorageForVersion(namespaceId, promptKey, v));
     }
@@ -277,6 +281,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public String submit(String namespaceId, String promptKey, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
@@ -351,6 +356,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public void publish(String namespaceId, String promptKey, String version,
         boolean updateLatestLabel)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doPublish(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version, true);
         try {
             refreshLatestMirror(namespaceId, promptKey);
@@ -364,6 +370,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public void forcePublish(String namespaceId, String promptKey, String version,
         boolean updateLatestLabel)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doForcePublish(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
             true);
         try {
@@ -377,6 +384,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public void redraft(String namespaceId, String promptKey, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doRedraft(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version);
     }
     
@@ -384,6 +392,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public void changeOnlineStatus(String namespaceId, String promptKey, String version,
         boolean online)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
@@ -409,6 +418,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.validateAndUpdateLabels(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
             labels);
         schedulePromptIndexMaintenance(namespaceId, promptKey);
@@ -417,6 +427,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public void updateBizTags(String namespaceId, String promptKey, String bizTags)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         updateMetaBizTagsCas(namespaceId, meta, bizTags);
@@ -429,6 +440,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public void updateDescription(String namespaceId, String promptKey, String description)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         updateMetaDescriptionCas(namespaceId, meta, description);
@@ -440,6 +452,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void deletePrompt(String namespaceId, String promptKey) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "promptKey is required");
@@ -693,6 +706,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void refreshLatestMirror(String namespaceId, String promptKey) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         if (meta == null) {
             return;
@@ -1134,6 +1148,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String template,
         String commitMsg, String description, String bizTags, List<PromptVariable> variables)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         createDraft(namespaceId, promptKey, null, version, template, variables, commitMsg,
             description, bizTags);
         submit(namespaceId, promptKey, version);
@@ -1159,6 +1174,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public boolean bindLabel(String namespaceId, String promptKey, String label, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         rejectReservedLatestLabel(label);
         PromptMetaInfo detail = getPromptDetail(namespaceId, promptKey);
         Map<String, String> labels =
@@ -1173,6 +1189,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public boolean unbindLabel(String namespaceId, String promptKey, String label)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         rejectReservedLatestLabel(label);
         PromptMetaInfo detail = getPromptDetail(namespaceId, promptKey);
         Map<String, String> labels =
@@ -1203,6 +1220,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public boolean updatePromptMetadata(String namespaceId, String promptKey, String description,
         String bizTags)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (description != null) {
             updateDescription(namespaceId, promptKey, description);
         }

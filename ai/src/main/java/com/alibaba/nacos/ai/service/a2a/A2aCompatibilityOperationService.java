@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a;
 
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationDefinitionWriteAfterHook;
 import com.alibaba.nacos.ai.service.a2a.migration.A2aMigrationLegacyMutationGuard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
@@ -64,6 +65,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.registerAgent(agentCard, namespaceId, registrationType);
@@ -73,6 +75,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void releaseAgent(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.releaseAgent(agentCard, namespaceId, registrationType, setAsLatest);
@@ -82,6 +85,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void updateAgentCard(AgentCard agentCard, String namespaceId, String registrationType,
         boolean setAsLatest) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.updateAgentCard(agentCard, namespaceId, registrationType, setAsLatest);
@@ -91,6 +95,7 @@ public class A2aCompatibilityOperationService implements A2aOperationService {
     @Override
     public void deleteAgent(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         migrationMutationGuard.checkMutable();
         A2aOperationService selected = current();
         selected.deleteAgent(namespaceId, agentName, version);

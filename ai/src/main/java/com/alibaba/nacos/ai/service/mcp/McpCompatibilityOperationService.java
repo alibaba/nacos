@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.mcp;
 
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
@@ -93,6 +94,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
         McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return current().createMcpServer(namespaceId, serverSpecification, toolSpecification,
             resourceSpecification, endpointSpecification);
     }
@@ -102,6 +104,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
         boolean overrideExisting) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         current().updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
             resourceSpecification, endpointSpecification, overrideExisting);
     }
@@ -109,6 +112,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         current().deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
     
@@ -135,6 +139,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().createMcpServerDraft(namespaceId, serverSpecification,
             toolSpecification, resourceSpecification, endpointSpecification);
     }
@@ -146,6 +151,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
         McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
         McpResourceSpecification resourceSpecification,
         McpEndpointSpec endpointSpecification) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().updateMcpServerDraft(namespaceId, serverSpecification,
             toolSpecification, resourceSpecification, endpointSpecification);
     }
@@ -155,6 +161,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public void deleteMcpServerDraft(String namespaceId, String mcpName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         managed().deleteMcpServerDraft(namespaceId, mcpName, version);
     }
     
@@ -163,6 +170,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary submitMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().submitMcpServerVersion(namespaceId, mcpName, version);
     }
     
@@ -171,6 +179,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary publishMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().publishMcpServerVersion(namespaceId, mcpName, version);
     }
     
@@ -179,6 +188,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary forcePublishMcpServerVersion(String namespaceId,
         String mcpName, String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().forcePublishMcpServerVersion(namespaceId, mcpName, version);
     }
     
@@ -187,6 +197,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary redraftMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().redraftMcpServerVersion(namespaceId, mcpName, version);
     }
     
@@ -195,6 +206,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary onlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().onlineLifecycleVersion(namespaceId, mcpName, version);
     }
     
@@ -203,6 +215,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionSummary offlineMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().offlineLifecycleVersion(namespaceId, mcpName, version);
     }
     
@@ -211,6 +224,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public Map<String, String> updateMcpServerLabels(String namespaceId, String mcpName,
         Map<String, String> labels) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         return managed().updateMcpServerLabels(namespaceId, mcpName, labels);
     }
     
@@ -219,6 +233,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public void updateMcpServerStatus(String namespaceId, String mcpName, boolean enabled)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         managed().updateMcpServerStatus(namespaceId, mcpName, enabled);
     }
     
@@ -227,6 +242,7 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public void updateMcpServerScope(String namespaceId, String mcpName, String scope)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         managed().updateMcpServerScope(namespaceId, mcpName, scope);
     }
     

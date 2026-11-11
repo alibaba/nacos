@@ -58,7 +58,7 @@ public class HubSkillSourceReadValidator {
      */
     public AiResource requireLiveSource(ResolvedHubSkillReference publication)
         throws NacosException {
-        return qualifySource(publication, false).getSourceMeta();
+        return qualifySource(publication).getSourceMeta();
     }
     
     /**
@@ -70,7 +70,7 @@ public class HubSkillSourceReadValidator {
      */
     public AiResource requireLiveSourceForIndex(ResolvedHubSkillReference publication)
         throws NacosException {
-        return qualifySource(publication, true).getSourceMeta();
+        return qualifySource(publication).getSourceMeta();
     }
     
     /**
@@ -82,11 +82,10 @@ public class HubSkillSourceReadValidator {
      */
     public HubEligibleSkillVersion requireLiveVersion(ResolvedHubSkillReference publication)
         throws NacosException {
-        return qualifySource(publication, false);
+        return qualifySource(publication);
     }
     
-    private HubEligibleSkillVersion qualifySource(ResolvedHubSkillReference publication,
-        boolean preserveStorageFailure)
+    private HubEligibleSkillVersion qualifySource(ResolvedHubSkillReference publication)
         throws NacosException {
         if (publication == null) {
             throw unavailable();
@@ -110,10 +109,13 @@ public class HubSkillSourceReadValidator {
             }
             return new HubEligibleSkillVersion(current, eligible.getSourceVersion(), expected);
         } catch (NacosException | RuntimeException invalidSource) {
-            if (preserveStorageFailure && (invalidSource instanceof RuntimeException
-                || ((NacosException) invalidSource).getErrCode() >= NacosException.SERVER_ERROR)) {
-                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                    "Hub Skill source validation unavailable");
+            if (invalidSource instanceof RuntimeException
+                || ((NacosException) invalidSource).getErrCode() >= NacosException.SERVER_ERROR) {
+                NacosApiException failure =
+                    new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        "Hub Skill source validation unavailable");
+                failure.initCause(invalidSource);
+                throw failure;
             }
             // An absent, withdrawn, private, offline or replaced source must be
             // indistinguishable. Do not leak internal IDs or source storage paths.

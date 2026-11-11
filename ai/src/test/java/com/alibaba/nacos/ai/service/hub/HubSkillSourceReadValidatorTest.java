@@ -207,12 +207,14 @@ class HubSkillSourceReadValidatorTest {
     
     @Test
     void unexpectedStorageErrorsAreRedacted() {
+        IllegalStateException backendFailure = new IllegalStateException("storage team-a/501");
         when(manager.findVersion("team-a", "find-skills",
             AiResourceConstants.RESOURCE_TYPE_SKILL, "1.0.0"))
-            .thenThrow(new IllegalStateException("storage team-a/501"));
+            .thenThrow(backendFailure);
         NacosException error = assertThrows(NacosException.class,
             () -> validator.requireLiveSource(snapshot));
-        assertEquals(NacosException.NOT_FOUND, error.getErrCode());
+        assertEquals(NacosException.SERVER_ERROR, error.getErrCode());
+        assertSame(backendFailure, error.getCause());
         assertFalse(error.getMessage().contains("team-a"));
         assertFalse(error.getMessage().contains("501"));
     }

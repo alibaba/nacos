@@ -275,6 +275,11 @@ explicit bootstrap flow owned by the server. Dependency handling, such as a
 Skill referencing MCP tools, is previewed through the unified import flow and
 must not recursively import dependencies by default.
 
+Hub import rollback must clean up target files before deleting the draft version
+and disabled resource reservation. If file cleanup fails, retain the version row
+and its complete storage descriptor (provider, scope and files), together with the
+disabled reservation, so that later cleanup can locate the remaining files.
+
 ## 6. Runtime Behavior
 
 Runtime clients may download Skill ZIP content by latest, explicit version, or
@@ -423,6 +428,12 @@ only the business namespace; explicit true combines shared results. This option 
 default namespace. Console sharing belongs
 to each resource domain; only Skill currently implements the full lifecycle.
 Type-specific Admin/Console sharing, import and governance APIs remain available.
+
+Source metadata/version query failures are not revocations. Database and other
+system failures must return a sanitized 5xx with the original cause retained for
+internal diagnosis; directory listing must fail rather than return an empty or
+partial successful page. Only explicitly unavailable sources (deleted, withdrawn,
+private, disabled, offline or identity-replaced) are hidden as 404.
 
 ## 7. Pending Alignment Issues
 

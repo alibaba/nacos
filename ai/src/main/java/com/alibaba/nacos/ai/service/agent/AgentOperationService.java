@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -276,6 +277,7 @@ public class AgentOperationService {
      */
     public AgentVersionDetail createDraft(String namespaceId, AgentDraftCreateRequest request)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (request == null) {
             throw new IllegalArgumentException("Agent draft request must not be null");
         }
@@ -294,6 +296,7 @@ public class AgentOperationService {
      */
     public PublicationResult writeDraftFromPublication(String namespaceId,
         AgentPublishRequest request) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (request == null) {
             throw new IllegalArgumentException("Agent publish request must not be null");
         }
@@ -415,6 +418,7 @@ public class AgentOperationService {
      */
     public AgentVersionDetail registerLegacyOnlineVersion(String namespaceId,
         AgentDraftCreateRequest request) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -453,6 +457,7 @@ public class AgentOperationService {
      */
     public AgentVersionDetail releaseLegacyOnlineVersion(String namespaceId,
         AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -504,6 +509,7 @@ public class AgentOperationService {
      */
     public AgentVersionDetail updateLegacyOnlineVersion(String namespaceId,
         AgentDraftCreateRequest request, boolean setAsLatest) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         validateDirectOnlineRequest(namespaceId, request);
         String agentName = request.getAgentName();
         String version = request.getVersion();
@@ -533,6 +539,7 @@ public class AgentOperationService {
      */
     public boolean deleteLegacyVersionIfPresent(String namespaceId, String agentName,
         String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         AgentValidationUtils.validateVersion(version);
@@ -569,6 +576,7 @@ public class AgentOperationService {
      */
     public boolean deleteLegacyAgentIfPresent(String namespaceId, String agentName)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AgentValidationUtils.validateNamespaceId(namespaceId);
         AgentValidationUtils.validateAgentName(agentName);
         try {
@@ -606,6 +614,7 @@ public class AgentOperationService {
     public AgentVersionDetail updateDraft(String namespaceId, String agentName, String version,
         List<AgentCallInterface> callInterfaces, String changeDescription)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         AgentVersionDetail result = persistenceService.updateDraft(namespaceId, agentName, version,
             callInterfaces, changeDescription);
@@ -625,6 +634,7 @@ public class AgentOperationService {
      */
     public void deleteDraft(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         persistenceService.deleteDraft(namespaceId, agentName, version);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, version,
@@ -640,6 +650,7 @@ public class AgentOperationService {
      * @throws NacosException when deletion fails
      */
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         persistenceService.deleteAgent(namespaceId, agentName);
         scheduleAgentIndexMaintenance(namespaceId, agentName,
@@ -660,6 +671,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary submit(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireWritableMeta(namespaceId, agentName);
         AiResourceVersion row = requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_DRAFT);
@@ -702,6 +714,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary publish(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireWritableMeta(namespaceId, agentName);
         AiResourceVersion row = requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_REVIEWED);
@@ -725,6 +738,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary forcePublish(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         String fromStatus = "unknown";
         String operator = VisibilityHelper.resolveCurrentIdentity();
         String clientIp = VisibilityHelper.resolveClientIp();
@@ -769,6 +783,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary redraft(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = requireWritableMeta(namespaceId, agentName);
         requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_REVIEWED);
@@ -794,6 +809,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary online(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         AiResourceVersion row = requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_OFFLINE);
@@ -815,6 +831,7 @@ public class AgentOperationService {
      */
     public AgentVersionSummary offline(String namespaceId, String agentName, String version)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_ONLINE);
@@ -841,6 +858,7 @@ public class AgentOperationService {
     public AgentSummary updateLabels(String namespaceId, String agentName,
         Map<String, String> labels)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         requireWritableMeta(namespaceId, agentName);
         AgentSummary result =
             persistenceService.synchronizeDerivedState(namespaceId, agentName, null,
@@ -1060,6 +1078,7 @@ public class AgentOperationService {
      */
     public void updateScope(String namespaceId, String agentName, String scope)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (StringUtils.isBlank(scope)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter 'scope' type String is not present");

@@ -29,6 +29,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 
 import java.util.HashMap;
@@ -99,6 +101,7 @@ class HubSkillDraftTransferWriterTest {
         });
         when(commit.deleteDraftVersion(eq(900L), eq("target-ns"), eq("target"), anyLong(),
             eq(2001L), eq("0.0.1"))).thenAnswer(i -> {
+                assertEquals(1, cleanedFiles.get());
                 version.set(null);
                 return true;
             });
@@ -238,15 +241,26 @@ class HubSkillDraftTransferWriterTest {
             eq("target"), anyLong());
     }
     
-    @Test
-    void fileCleanupFailureKeepsDisabledNameReservation() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fileCleanupFailureKeepsDisabledNameReservation(boolean published) throws Exception {
         doThrow(new NacosException(500, "storage unavailable")).when(files).delete(
             eq("target-ns"), eq("target"), eq("0.0.1"), eq("nacos_config"), any());
+        AtomicInteger checks = new AtomicInteger();
         assertThrows(NacosException.class, () -> run(() -> {
-            throw new NacosException(404, "withdrawn");
+            if (!published || checks.incrementAndGet() == 2) {
+                throw new NacosException(404, "withdrawn");
+            }
         }));
         assertNotNull(meta.get());
         assertEquals("disable", meta.get().getStatus());
+        assertNotNull(version.get());
+        Map<?, ?> descriptor = JacksonUtils.toObj(version.get().getStorage(), Map.class);
+        assertEquals("nacos_config", descriptor.get("provider"));
+        assertEquals("target-ns:target:0.0.1", descriptor.get("scope"));
+        assertEquals(java.util.List.of("SKILL.md"), descriptor.get("files"));
+        verify(commit, never()).deleteDraftVersion(eq(900L), eq("target-ns"), eq("target"),
+            anyLong(), eq(2001L), eq("0.0.1"));
         verify(commit, never()).deleteDisabled(eq(900L), eq("target-ns"), eq("target"), anyLong());
     }
     

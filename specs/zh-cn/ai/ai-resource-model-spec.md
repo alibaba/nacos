@@ -36,6 +36,10 @@ namespaceId + resourceType + resourceName + version
 公开资源名可以使用类型专属别名，例如 `mcpName`、`agentName`、`promptKey` 或
 `name`，但底层身份仍然是 `resourceName`。
 
+`__nacos_ai_hub__` 是服务端 Hub 记录专用的保留命名空间。普通资源写入口
+（Skill、Prompt、AgentSpec、Agent、MCP，包括兼容 API）必须在存储写入或委托前拒绝该值。
+Hub 发布通过内部专用持久化路径维护记录，不受普通入口的限制影响。
+
 ## 2. 元数据行
 
 `AiResource` 是标准元数据行。

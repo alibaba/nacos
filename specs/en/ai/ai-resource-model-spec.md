@@ -37,6 +37,12 @@ The public resource name may be exposed with type-specific aliases such as
 `mcpName`, `agentName`, `promptKey`, or `name`, but the underlying identity is
 still `resourceName`.
 
+The namespace `__nacos_ai_hub__` is reserved for server-owned Hub records.
+Ordinary resource write entry points (Skill, Prompt, AgentSpec, Agent and MCP,
+including compatibility APIs) must reject it before storage writes or delegation.
+Hub publication uses its dedicated internal persistence path; the reservation does
+not prevent that path from maintaining Hub records.
+
 ## 2. Metadata Row
 
 `AiResource` is the canonical metadata row.
