@@ -55,8 +55,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <ul>
  *     <li>Expected capability: Admin APIs publish Agent, Skill, Prompt, and MCP resources through
  *     the main server, while the separate ARD web context recalls the same durable shared-index
- *     projections through Search, List, Explore, Catalog, and exact Agent/Skill artifact URLs.
- *     Private MCP recall preserves caller visibility; MCP Artifact name/ID mapping is separate.</li>
+ *     projections through Search, List, Explore, Catalog, and exact Agent/Skill/MCP artifact URLs.
+ *     MCP artifacts use canonical names and preserve caller visibility.</li>
  *     <li>Discovery: follow the advertised Registry URL to a nonempty public Agent result,
  *     then retrieve its Artifact URL and compare the version and digest with the main API.</li>
  *     <li>Representation boundary: a pure A2A Agent defaults to an A2A Agent Card, a
@@ -94,6 +94,86 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
 
     private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    @EnabledIfSystemProperty(named = "nacos.test.auth.enabled", matches = "true")
+    public void testDiscoveredMcpArtifactUsesCanonicalName(boolean uuidName) throws Exception {
+        String name = uuidName ? UUID.randomUUID().toString() : randomAiName("ard-mcp-artifact");
+        addCleanup(() -> deleteMcpServerQuietly(name, null));
+        postFormOk(nacosPath("/v3/client/ai/mcp"),
+            mcpServerForm(name, "1.0.0", name, "artifact_tool", "artifact_resource"));
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", name, "scope", "PUBLIC"));
+        JsonNode search = awaitSearch(searchRequest(name, TYPE_MCP), Set.of(name),
+            AuthIdentity.CLIENT_READ_WRITE);
+        String url = findResource(search.path("results"), name).path("url").asText();
+        JsonNode detail = assertMcpArtifact(url, name, AuthIdentity.CLIENT_READ_ONLY);
+        assertNotEquals(name, detail.path("id").asText(), detail.toString());
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            assertMcpArtifact(url, name, AuthIdentity.ANONYMOUS);
+        }
+        assertArdUnauthenticated(executeArdRaw(new HttpGet(url), AuthIdentity.INVALID));
+        Query query = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+            .addParam("resourceType", "mcp").addParam("resourceName", name)
+            .addParam("version", "1.0.0");
+        assertMcpArtifact(ardUrl(ARD_PATH + "/artifacts", query), name, AuthIdentity.CLIENT_READ_WRITE);
+        query.addParam("mcpName", " ");
+        assertMcpArtifact(ardUrl(ARD_PATH + "/artifacts", query), name, AuthIdentity.CLIENT_READ_WRITE);
+        query.addParam("mcpName", name + "-other");
+        assertArdInvalid(executeArdRaw(new HttpGet(ardUrl(ARD_PATH + "/artifacts", query)),
+            AuthIdentity.CLIENT_READ_WRITE));
+        query.addParam("mcpName", name).addParam("version", "99.0.0");
+        assertMcpArtifactNotFound(ardUrl(ARD_PATH + "/artifacts", query), AuthIdentity.CLIENT_READ_WRITE);
+        query.addParam("version", "1.0.0").addParam("namespaceId", "missing-" + UUID.randomUUID());
+        assertMcpArtifactNotFound(ardUrl(ARD_PATH + "/artifacts", query), AuthIdentity.ADMIN);
+        
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", name, "scope", "PRIVATE"));
+        JsonNode privateSearch = awaitSearch(searchRequest(name, TYPE_MCP), Set.of(name),
+            AuthIdentity.CLIENT_READ_WRITE);
+        assertEquals(url, findResource(privateSearch.path("results"), name).path("url").asText());
+        assertMcpArtifact(url, name, AuthIdentity.CLIENT_READ_WRITE);
+        assertMcpArtifact(url, name, AuthIdentity.ADMIN);
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        assertMcpArtifactNotFound(url, AuthIdentity.CLIENT_READ_ONLY);
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            assertMcpArtifactNotFound(url, AuthIdentity.ANONYMOUS);
+        }
+        String grantPath = nacosPath("/v3/auth/visibility");
+        Query grant = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+            .addParam("resourceType", "mcp").addParam("resourceName", name)
+            .addParam("username", identityUsername(AuthIdentity.CLIENT_READ_ONLY)).addParam("action", "r");
+        addCleanup(() -> deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE));
+        assertEquals(200, postRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, true);
+        assertMcpArtifact(url, name, AuthIdentity.CLIENT_READ_ONLY);
+        assertEquals(200, deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        assertMcpArtifactNotFound(url, AuthIdentity.CLIENT_READ_ONLY);
+    }
+
+    private JsonNode assertMcpArtifact(String url, String name, AuthIdentity identity) throws Exception {
+        ByteResponse response = ardGetBytesOk(url, identity);
+        assertTrue(response.contentType().startsWith(TYPE_MCP), response.contentType());
+        JsonNode detail = JacksonUtils.toObj(new String(response.body(), StandardCharsets.UTF_8));
+        assertEquals(name, detail.path("name").asText(), detail.toString());
+        assertEquals("1.0.0", detail.path("version").asText(), detail.toString());
+        assertEquals("1.0.0", detail.path("versionDetail").path("version").asText());
+        assertFalse(detail.path("id").asText().isBlank());
+        assertEquals("artifact_tool", detail.path("toolSpec").path("tools").get(0).path("name").asText());
+        assertEquals("artifact_resource", detail.path("resourceSpec").path("resources").get(0).path("name").asText());
+        return detail;
+    }
+
+    private void assertMcpArtifactNotFound(String url, AuthIdentity identity) throws Exception {
+        HttpResponse response = executeArdRaw(new HttpGet(url), identity);
+        assertEquals(404, response.code(), response.body());
+        JsonNode body = JacksonUtils.toObj(response.body());
+        assertEquals("NOT_FOUND", body.path("errorCode").asText(), response.body());
+        assertFalse(body.path("message").asText().isBlank());
+        assertEquals(2, body.size());
+    }
 
     @Test
     @EnabledIfSystemProperty(named = "nacos.test.auth.enabled", matches = "true")

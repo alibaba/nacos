@@ -76,7 +76,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
   latest 为 custom 而旧 online Version 支持 A2A 的 Agent，以及 Skill、Prompt、MCP。
   全部带同一查询标记；不要通过直接写 search table 准备 IT。
 - F-AUTH：公开资源、显式授权的私有资源、无权限私有资源、不同 namespace 的同名资源。
-  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；私有索引 DAUTH-F03 已恢复为实际 HTTP 场景；MCP Artifact 名称/UUID 缺口仍独立记录。
+  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；私有索引 DAUTH-F03 已恢复为实际 HTTP 场景；MCP Artifact 名称映射由发现到下载用例覆盖，消费生命周期仍独立记录。
 - F-PAGE：至少 105 个确定性公开候选，同一唯一标记；通过公开 API 创建及等待索引。
   UT 固定排序/分数；IT 比较完整 identifier 集合、无重复和稳定续页，不依赖任意排名分数。
 - F-SCHEMA：最小合法完整 Entry、仅 identifier 的 List item、
@@ -403,7 +403,7 @@ IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内�
 manifest/registry/publisher 分别记录结果；依赖或 Schema 跳过不计为通过。
 
 DAUTH-F03 的两个索引用例已恢复；私有 MCP 召回与搜索权限由专项 HTTP 场景验证。
-TODO：MCP Artifact canonical 名称/UUID 映射及其生命周期仍待修复和验证；公共 Agent 链路不覆盖该缺口。
+MCP Artifact 名称映射由 `testDiscoveredMcpArtifactUsesCanonicalName` 覆盖：实际跟随普通名和UUID形状名的搜索URL，验证精确版本和Tools/Resources；同时验证可选mcpName缺省/空白/冲突、PUBLIC/PRIVATE授权/撤权、非法凭据、缺失版本和namespace隔离。offline/disabled生命周期仍单列TODO，公共Agent链路不替代该验收。
 编译失败、环境失败、既有缺陷、新回归和未实现能力分别记录。
 
 <a id="regressions"></a>

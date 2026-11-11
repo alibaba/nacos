@@ -136,6 +136,8 @@ Search score 只表示相关度。
 Artifact URL 指向适配器的 `/v3/ai/ard/artifacts`，携带精确版本、content digest 和表示 key。
 版本 offline、digest 不匹配或表示不可用时返回 404 / `NOT_FOUND`。主服务与适配器可使用独立端口。
 Skill 返回完整 `application/agent-skills+zip` 包，Prompt 和 MCP 使用各自原生表示。
+MCP 的 `resourceName` 是 namespace 内的标准名称，不是兼容 UUID；可选 `mcpName` 非空时
+必须与其完全一致，否则返回 400 / `INVALID_ARGUMENT`。下载仍检查当前调用者的读取权限。
 
 Agent 的 common latest 版本含完整合法 A2A Card 时支持 `application/a2a-agent-card+json`；
 `application/vnd.nacos.ai-agent+json` 返回版本化 Nacos 定义，遵循 [Agent 制品 Schema][agent-artifact]，
@@ -148,8 +150,8 @@ Agent 的 common latest 版本含完整合法 A2A Card 时支持 `application/a2
 
 ## 7. 支持限制
 
-发现接口读取当前共享索引，收敛前结果可能不完整。私有 MCP 召回及 MCP Artifact 名称/UUID
-映射仍有已知缺口。外部 manifest/网页抓取、完整上游联邦、任意词汇存储、资源级 publisher/trust
+发现接口读取当前共享索引，收敛前结果可能不完整。MCP 制品的生命周期约束
+尚未完整实现。外部 manifest/网页抓取、完整上游联邦、任意词汇存储、资源级 publisher/trust
 管理尚不支持，因此不声明完整 Registry 一致性。Federation 的 `auto`（默认）、`referrals`、
 `none` 当前均执行本地检索，referrals 为空。
 

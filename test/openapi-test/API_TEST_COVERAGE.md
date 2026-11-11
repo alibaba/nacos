@@ -158,8 +158,8 @@ against the pinned v0.91 schema, followed to nonempty public Agent Search and
 exact Version/digest Artifact retrieval, and checked under both
 anonymous policies and invalid credentials. Legacy catalogs cover 105 public
 resources and namespace isolation; the former `DAUTH-F03` cross-type cases are now active.
-Private MCP recall and visibility have dedicated HTTP coverage; canonical-name/UUID Artifact mapping remains unresolved;
-public Agent assertions do not close those gaps. Its standalone HTTP suite publishes canonical resources through the main-server Admin APIs and then
+Private MCP recall and visibility have dedicated HTTP coverage. MCP discovery-to-Artifact
+cases cover canonical names and request visibility; offline/disabled Artifact lifecycle remains pending. Its standalone HTTP suite publishes canonical resources through the main-server Admin APIs and then
 verifies the separate ARD port against the same shared index, including singular
 Agent catalog entries, A2A/Nacos representation selection and filtering,
 latest-Version eligibility, facets, and exact Version/digest artifacts.
@@ -832,4 +832,16 @@ See the [client scenario matrix](CLIENT_API_TEST_SCENARIOS.md#mcp-private-backgr
 and [ARD scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#private-mcp-index-and-query-visibility).
 No HTTP operation is added, so API-surface totals and existing Partial classifications
 are unchanged. Persisted-data upgrade recovery is verified separately from fresh API
-fixtures. MCP Artifact name/UUID mapping remains pending.
+fixtures. MCP Artifact name mapping is covered by the separate discovery-to-download cases below;
+Artifact lifecycle enforcement remains pending.
+
+## MCP Artifact canonical names
+
+`ArdAdaptorOpenApiITCase.testDiscoveredMcpArtifactUsesCanonicalName` follows actual
+Search result URLs for ordinary and UUID-shaped MCP names, compares the exact version
+and Tools/Resources payload, and exercises PUBLIC/PRIVATE owner, admin, grantee,
+revocation and anonymous visibility. It also covers omitted/blank/conflicting `mcpName`,
+invalid credentials, missing versions and namespace isolation. `resourceName` is a name,
+not a deprecated MCP ID selector. Offline/disabled consumption rules remain outside
+these cases. The existing Artifact row remains Partial; standalone API totals and
+ARD strict/effective coverage (40%/70%) are unchanged.
