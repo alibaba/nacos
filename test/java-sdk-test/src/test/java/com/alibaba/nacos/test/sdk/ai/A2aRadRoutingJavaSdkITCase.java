@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.A2aService;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -25,6 +26,9 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentDiscoveryListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentSkill;
+import com.alibaba.nacos.api.ai.model.a2a.SecurityRequirement;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -38,6 +42,7 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
@@ -55,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,6 +75,180 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String V1 = "1.0.0";
     private static final String V2 = "1.2.0";
+
+    @ParameterizedTest
+    @ValueSource(strings = {"grpc", "http"})
+    void skillSecurityRequirementsSurviveRadQueryAndSubscription(String mode) throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode);
+        AiService service = createAiServiceWithoutReadiness(properties);
+        waitUntil("RAD capability is ready",
+            () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        AiMaintainerService maintainer = AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
+        String name = randomServiceName("a2a-skill-security-" + mode);
+        addCleanup(() -> maintainer.a2a().deleteAgent(name));
+        String initial = "[{\"schemes\":{\"skillOauth\":{\"list\":[\"skill-read\",\"profile\"]},"
+            + "\"apiKey\":{\"list\":[]}}},{\"schemes\":{\"bearer\":{\"list\":[]}}}]";
+        AgentCard first = skillSecurityCard(name, V1, initial);
+        service.releaseAgentCard(first, "URL", true);
+        assertTrue(sameSkills(first, service.getAgentCard(name)));
+        assertTrue(sameSkills(first, service.agent().a2aConverter()
+            .convert(service.agent().discoverAgent(reference(name, V1)))));
+        assertEquals(first.getSkills(), maintainer.a2a().getAgentCard(name).getSkills());
+        AtomicReference<AgentCard> facadeEvent = new AtomicReference<>();
+        AbstractNacosAgentCardListener facadeListener = new AbstractNacosAgentCardListener() {
+            @Override
+            public void onEvent(NacosAgentCardEvent event) {
+                facadeEvent.set(event.getAgentCard());
+            }
+        };
+        AtomicReference<AgentCard> nativeEvent = new AtomicReference<>();
+        AbstractNacosAgentDiscoveryListener nativeListener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                nativeEvent.set(service.agent().a2aConverter().convert(event.getAgentDiscoveryResult()));
+            }
+        };
+        AgentReference latest = reference(name, null);
+        latest.setLabel("latest");
+        try {
+            service.subscribeAgentCard(name, facadeListener);
+            service.agent().subscribeAgent(latest, nativeListener);
+            waitUntil("both RAD subscriptions preserve initial Skill requirements",
+                () -> sameSkills(first, facadeEvent.get()) && sameSkills(first, nativeEvent.get()));
+            String[] updates = {"[{\"schemes\":{\"skillOauth\":{\"list\":[\"skill-write\"]}}}]", "[]", "null"};
+            for (int i = 0; i < updates.length; i++) {
+                AgentCard next = skillSecurityCard(name, "1." + (i + 1) + ".0", updates[i]);
+                service.releaseAgentCard(next, "URL", true);
+                waitUntil("RAD subscriptions preserve changed, empty and removed Skill requirements",
+                    () -> sameSkills(next, facadeEvent.get()) && sameSkills(next, nativeEvent.get()));
+                assertTrue(sameSkills(next, service.getAgentCard(name)));
+                assertTrue(sameSkills(next, service.agent().a2aConverter()
+                    .convert(service.agent().discoverAgent(reference(name, next.getVersion())))));
+            }
+            assertNull(first.getSecurity(), "publication must not mutate the caller's Card");
+            assertEquals(Arrays.asList("skill-read", "profile"), first.getSkills().get(0)
+                .getSecurityRequirements().get(0).getSchemes().get("skillOauth").getList());
+            AgentCard invalid = skillSecurityCard(name, "2.0.0", "[]");
+            invalid.getSkills().get(0).setSecurityRequirements(Collections.singletonList(new SecurityRequirement()));
+            assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+                () -> service.releaseAgentCard(invalid, "URL", true)).getErrCode());
+        } finally {
+            service.unsubscribeAgentCard(name, facadeListener);
+            service.agent().unsubscribeAgent(latest, nativeListener);
+        }
+    }
+
+    private static boolean sameSkills(AgentCard expected, AgentCard actual) {
+        return actual != null && expected.getVersion().equals(actual.getVersion())
+            && expected.getSkills().equals(actual.getSkills())
+            && expected.getSecurityRequirements().equals(actual.getSecurityRequirements());
+    }
+
+    private static AgentCard skillSecurityCard(String name, String version, String requirements) {
+        AgentCard card = securityCard(name, version, true);
+        AgentSkill protectedSkill = JsonUtils.toObj("{\"id\":\"protected\",\"name\":\"Protected\","
+            + "\"description\":\"Skill requirements\",\"tags\":[],\"securityRequirements\":"
+            + requirements + "}", AgentSkill.class);
+        AgentSkill absent = JsonUtils.toObj("{\"id\":\"absent\",\"name\":\"Absent\","
+            + "\"description\":\"No declaration\",\"tags\":[]}", AgentSkill.class);
+        AgentSkill empty = JsonUtils.toObj("{\"id\":\"empty\",\"name\":\"Empty\","
+            + "\"description\":\"Empty declaration\",\"tags\":[],\"securityRequirements\":[]}", AgentSkill.class);
+        card.setSkills(Arrays.asList(protectedSkill, absent, empty));
+        return card;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"grpc", "http"})
+    void cardSecurityRequirementsSurviveQueryAndSubscription(String mode) throws Exception {
+        Properties properties = sdkProperties();
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode);
+        AiService service = createAiServiceWithoutReadiness(properties);
+        waitUntil("RAD capability is ready",
+            () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        AiMaintainerService maintainer = AiMaintainerFactory.createAiMaintainerService(maintainerProperties());
+        String name = randomServiceName("a2a-security-" + mode);
+        addCleanup(() -> maintainer.a2a().deleteAgent(name));
+        AgentCard first = securityCard(name, V1, true);
+        service.releaseAgentCard(first, "URL", true);
+        assertTrue(sameSecurityRequirements(first, service.getAgentCard(name)));
+        assertTrue(sameSecurityRequirements(first, service.agent().a2aConverter()
+            .convert(service.agent().discoverAgent(reference(name, V1)))));
+        AtomicReference<AgentCard> legacyEvent = new AtomicReference<>();
+        AbstractNacosAgentCardListener legacyListener = new AbstractNacosAgentCardListener() {
+            @Override
+            public void onEvent(NacosAgentCardEvent event) {
+                legacyEvent.set(event.getAgentCard());
+            }
+        };
+        AtomicReference<AgentCard> nativeEvent = new AtomicReference<>();
+        AbstractNacosAgentDiscoveryListener nativeListener = new AbstractNacosAgentDiscoveryListener() {
+            @Override
+            public void onEvent(NacosAgentDiscoveryEvent event) {
+                nativeEvent.set(service.agent().a2aConverter().convert(event.getAgentDiscoveryResult()));
+            }
+        };
+        AgentReference latest = reference(name, null);
+        latest.setLabel("latest");
+        try {
+            service.subscribeAgentCard(name, legacyListener);
+            service.agent().subscribeAgent(latest, nativeListener);
+            waitUntil("both subscriptions preserve initial requirements",
+                () -> sameSecurityRequirements(first, legacyEvent.get())
+                    && sameSecurityRequirements(first, nativeEvent.get()));
+            AgentCard historicalFlat = securityCard(name, V2, false);
+            AgentCard legacyOnly = securityCard(name, "1.3.0", false);
+            legacyOnly.setSecurity(A2aSecurityUtils.toLegacy(legacyOnly.getSecurityRequirements()));
+            legacyOnly.setSecurityRequirements(null);
+            legacyOnly.getSupportedInterfaces().get(0).setProtocolVersion("0.3");
+            AgentCard empty = securityCard(name, "1.4.0", true);
+            empty.setSecurity(A2aSecurityUtils.toLegacy(first.getSecurityRequirements()));
+            empty.setSecurityRequirements(Collections.emptyList());
+            for (AgentCard next : Arrays.asList(historicalFlat, legacyOnly, empty)) {
+                service.releaseAgentCard(next, "URL", true);
+                waitUntil("both subscriptions synchronize changed requirements", () -> legacyEvent.get() != null
+                    && nativeEvent.get() != null && next.getVersion().equals(legacyEvent.get().getVersion())
+                    && next.getVersion().equals(nativeEvent.get().getVersion())
+                    && sameSecurityRequirements(next, legacyEvent.get())
+                    && sameSecurityRequirements(next, nativeEvent.get()));
+                assertTrue(sameSecurityRequirements(next, service.getAgentCard(name)));
+                assertTrue(sameSecurityRequirements(next, service.agent().a2aConverter()
+                    .convert(service.agent().discoverAgent(reference(name, next.getVersion())))));
+            }
+            assertNull(legacyOnly.getSecurityRequirements(), "release must not mutate the caller's Card");
+            assertNull(first.getSecurity(), "release must not mutate the caller's Card");
+        } finally {
+            service.unsubscribeAgentCard(name, legacyListener);
+            service.agent().unsubscribeAgent(latest, nativeListener);
+        }
+    }
+
+    private static boolean sameSecurityRequirements(AgentCard expected, AgentCard actual) {
+        List<Map<String, List<String>>> requirements = expected.getSecurityRequirements() != null
+            ? A2aSecurityUtils.toLegacy(expected.getSecurityRequirements()) : expected.getSecurity();
+        if (actual == null || !requirements.equals(A2aSecurityUtils.toLegacy(actual.getSecurityRequirements()))
+            || !requirements.equals(actual.getSecurity())) {
+            return false;
+        }
+        AgentCard normalized = new AgentCard();
+        normalized.setSecurityRequirements(A2aSecurityUtils.fromLegacy(requirements));
+        return JsonUtils.toObj(JsonUtils.toJson(normalized), Map.class).get("securityRequirements")
+            .equals(JsonUtils.toObj(JsonUtils.toJson(actual), Map.class).get("securityRequirements"));
+    }
+
+    private static AgentCard securityCard(String name, String version, boolean standard) {
+        String requirements = standard
+            ? "[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\"]}}}]"
+            : "[{\"schemes\":{\"apiKey\":{\"list\":[]},\"oauth2\":{\"list\":[\"read\",\"write\"]}}}]";
+        AgentCard card = JsonUtils.toObj("{\"description\":\"security requirements\",\"capabilities\":{},"
+            + "\"supportedInterfaces\":[{\"url\":\"http://127.0.0.1:19001/agent\","
+            + "\"protocolBinding\":\"JSONRPC\",\"protocolVersion\":\"1.0\"}],"
+            + "\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"text/plain\"],"
+            + "\"skills\":[],\"securityRequirements\":" + requirements + "}", AgentCard.class);
+        card.setName(name);
+        card.setVersion(version);
+        return card;
+    }
 
     @ParameterizedTest
     @CsvSource({"grpc,false", "grpc,true", "http,false", "http,true", "auto,false", "auto,true"})
@@ -357,6 +537,10 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, address);
         properties.setProperty(AiConstants.AI_TRANSPORT_MODE, mode);
         AiService service = createAiServiceWithoutReadiness(properties);
+        if (rad) {
+            waitUntil("query observes RAD capability before legacy operations",
+                () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        }
         A2aService entry = resource ? service.agent() : service;
         Properties admin = rad ? maintainerProperties() : new Properties();
         admin.setProperty(PropertyKeyConst.SERVER_ADDR, rad
@@ -367,6 +551,8 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
         AgentCard first = card(name, V1);
         // The default false must still publish a newly created first Version.
         entry.releaseAgentCard(first);
+        assertEquals(rad ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED,
+            service.getAgentDiscoveryCapability());
         assertEquals(V1, entry.getAgentCard(name).getVersion());
         assertEquals(V1, entry.getAgentCard(name, V1).getVersion());
         AgentCardDetailInfo exact = entry.getAgentCard(name, V1, "URL");
@@ -474,8 +660,8 @@ class A2aRadRoutingJavaSdkITCase extends JavaSdkBaseITCase {
                 }
             }
         };
-        assertNotNull(service.agent().subscribeAgent(reference, listener));
-        assertNotNull(service.agent().subscribeAgent(reference, filter, listener));
+        service.agent().subscribeAgent(reference, listener);
+        service.agent().subscribeAgent(reference, filter, listener);
         service.agent().registerAgentEndpoints(batch);
         // Polling compatibility uses the configured ten-second refresh interval.
         waitUntil("native subscriptions receive runtime updates", 30000L, () -> changes.get() >= 2);

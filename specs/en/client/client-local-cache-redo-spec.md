@@ -86,6 +86,10 @@ Naming service-info cache stores `ServiceInfo` objects keyed by grouped service
 name and clusters. Server push or query responses update the in-memory map and
 schedule a disk-cache refresh when the instance view changes.
 
+For an accepted update, replacing the cached value and obtaining the previous
+value must be atomic. Instance differences must use the value actually replaced
+by that update, including when push and query responses are processed concurrently.
+
 The cache is a recovery aid:
 
 - it may be loaded at startup when the load-cache option is enabled;
@@ -96,6 +100,27 @@ The cache is a recovery aid:
 
 Push-empty protection may ignore empty or invalid pushes to avoid replacing a
 known usable view with an accidental empty view.
+
+### 4.1 Cached Reads With Active Naming Subscription Intent
+
+Java SDK discovery queries with `subscribe=true` must use an existing cached
+view, including an empty view, for subsequent query processing without synchronous
+resubscription when an active local subscription intent exists. Active intent
+means the client still expects the subscription to be maintained and cancellation
+has not begun. Subscription intent is retained across disconnects. Background Redo
+is responsible for retrying subscription recovery without requiring application
+queries; cached reads must preserve that recovery.
+
+Active intent does not require a previously successful subscription. If the
+first subscription attempt fails while cache exists, later queries use the cached
+view for subsequent query processing while background Redo retries. Loading disk
+cache alone does not establish subscription intent.
+
+With cache but without active intent, including after cancellation, queries attempt
+synchronous subscription and fall back to cache on `NacosException`. Without cache,
+queries retain synchronous subscription and existing exception behavior. Instance
+filtering and selection rules remain unchanged. Explicit listener subscription
+and `subscribe=false` queries retain their existing semantics.
 
 ## 5. Naming Failover View
 

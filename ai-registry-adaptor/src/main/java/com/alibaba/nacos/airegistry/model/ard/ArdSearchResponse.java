@@ -17,6 +17,7 @@
 package com.alibaba.nacos.airegistry.model.ard;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,18 @@ import java.util.List;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArdSearchResponse {
+    
+    @JsonIgnore
+    private String enhancementStatus = "disabled";
+    
+    @JsonIgnore
+    public String getEnhancementStatus() {
+        return enhancementStatus;
+    }
+    
+    public void setEnhancementStatus(String enhancementStatus) {
+        this.enhancementStatus = enhancementStatus;
+    }
     
     private List<ArdSearchResult> results = new ArrayList<>();
     

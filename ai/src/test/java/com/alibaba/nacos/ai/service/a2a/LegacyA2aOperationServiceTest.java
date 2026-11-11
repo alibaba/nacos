@@ -78,6 +78,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -766,6 +767,32 @@ public class LegacyA2aOperationServiceTest {
         
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
         assertEquals(ErrorCode.AGENT_VERSION_NOT_FOUND.getCode(), exception.getDetailErrCode());
+    }
+    
+    @Test
+    void testHistoricalRequirementsReadDoesNotWriteStorage() throws NacosApiException {
+        ConfigQueryChainResponse version = mock(ConfigQueryChainResponse.class);
+        when(version.getContent()).thenReturn(JacksonUtils.toJson(buildTestAgentCardVersionInfo()));
+        when(version.getStatus())
+            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        Map<String, Object> stored = JacksonUtils.toObj(
+            JacksonUtils.toJson(buildTestAgentCardDetailInfo()), Map.class);
+        stored.put("securityRequirements", List.of(Map.of("oauth2", List.of("read"))));
+        String original = JacksonUtils.toJson(stored);
+        ConfigQueryChainResponse detail = mock(ConfigQueryChainResponse.class);
+        when(detail.getContent()).thenReturn(original);
+        when(detail.getStatus())
+            .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(version,
+            detail);
+        
+        AgentCardDetailInfo result = a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID,
+            TEST_AGENT_NAME, TEST_AGENT_VERSION, TEST_REGISTRATION_TYPE);
+        
+        assertEquals(List.of("read"),
+            result.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+        assertEquals(original, detail.getContent());
+        verifyNoInteractions(configOperationService, syncEffectService);
     }
     
     @Test

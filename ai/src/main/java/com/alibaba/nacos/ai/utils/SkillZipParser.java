@@ -28,6 +28,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -131,6 +134,9 @@ public class SkillZipParser {
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
         "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
+    
+    private static final Pattern YAML_BLOCK_SCALAR =
+        Pattern.compile("[|>](?:[1-9][+-]?|[+-][1-9]?)?(?:\\s+#.*)?");
     
     private static final Pattern SEED_FRONT_MATTER =
         Pattern.compile("^---\\s*\\n(.*?)\\n---\\s*\\n", Pattern.DOTALL);
@@ -1029,13 +1035,14 @@ public class SkillZipParser {
         return skill;
     }
     
-    private static Map<String, String> parseYamlFrontMatter(String yamlContent) {
+    static Map<String, String> parseYamlFrontMatter(String yamlContent) {
         Map<String, String> result = new HashMap<>(4);
-        String[] lines = yamlContent.split("\\n");
+        String[] lines = yamlContent.split("\\r?\\n", -1);
         String currentKey = null;
         StringBuilder currentValue = null;
         
-        for (String line : lines) {
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
             if (line.trim().isEmpty()) {
                 continue;
             }
@@ -1067,6 +1074,19 @@ public class SkillZipParser {
             if (colonIndex > 0) {
                 String key = trimmedLine.substring(0, colonIndex).trim();
                 String value = trimmedLine.substring(colonIndex + 1).trim();
+                if (YAML_BLOCK_SCALAR.matcher(value).matches()) {
+                    StringBuilder scalar = new StringBuilder(value).append('\n');
+                    while (i + 1 < lines.length && (lines[i + 1].trim().isEmpty()
+                        || Character.isWhitespace(lines[i + 1].charAt(0)))) {
+                        scalar.append(lines[++i]).append('\n');
+                    }
+                    // Parse only the scalar to retain the existing representation of other fields.
+                    result.put(key,
+                        new Yaml(new SafeConstructor(new LoaderOptions())).load(scalar.toString()));
+                    currentKey = null;
+                    currentValue = null;
+                    continue;
+                }
                 value = parseYamlScalarValue(value);
                 currentKey = key;
                 currentValue = new StringBuilder(value);

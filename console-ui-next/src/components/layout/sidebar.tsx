@@ -232,7 +232,7 @@ export function Sidebar() {
           {/* Core Section Label */}
           {!sidebarCollapsed && (
             <div className="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t('menu.configManagement').split('').length > 0 ? '核心功能' : 'Core'}
+              {t('menu.coreFeatures')}
             </div>
           )}
 

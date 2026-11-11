@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.remote.handler.agent;
 import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.param.AgentClientRpcParamExtractor;
 import com.alibaba.nacos.ai.service.agent.AgentDiscoveryApplicationService;
+import com.alibaba.nacos.ai.service.trace.AgentDiscoveryTraceService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.remote.request.AgentDiscoveryRpcRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentDiscoveryResponse;
 import com.alibaba.nacos.api.annotation.Since;
@@ -27,6 +29,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
+import com.alibaba.nacos.core.context.addition.BasicContext;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -65,8 +68,15 @@ public class AgentDiscoveryRpcRequestHandler
             request.getDiscoveryRequest().setNamespaceId(NamespaceUtil.processNamespaceParameter(
                 request.getDiscoveryRequest().getNamespaceId()));
             migrationGuard.checkReady();
-            response.setDiscoveryResult(
-                discoveryService.discover(request.getDiscoveryRequest()));
+            try {
+                response.setDiscoveryResult(
+                    discoveryService.discover(request.getDiscoveryRequest()));
+            } finally {
+                AgentDiscoveryTraceService.record(request.getDiscoveryRequest(),
+                    response.getDiscoveryResult(), BasicContext.GRPC_PROTOCOL,
+                    meta.getConnectionId(),
+                    request.getHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER));
+            }
         } catch (Exception e) {
             AgentGrpcResponseErrorMapper.apply(response, e);
         }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.ai.model.agent.AgentVersionContent;
 import com.alibaba.nacos.ai.service.agent.storage.AgentVersionContentSerializer;
@@ -61,7 +62,7 @@ public final class AgentArtifactBuilder {
                 continue;
             }
             try {
-                AgentCard card = JsonUtils.toObj(
+                AgentCard card = A2aSecurityUtils.readCard(
                     JsonUtils.toJson(callInterface.getNativeDescriptor()), AgentCard.class);
                 AgentRequestUtil.validateAgentCard(card);
                 if (Objects.equals(agentName, card.getName()) && Objects.equals(

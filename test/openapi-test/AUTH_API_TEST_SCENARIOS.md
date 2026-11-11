@@ -52,13 +52,22 @@ coverage calculation.
 
 ## Cross-Cutting Authorization Coverage
 
+- `AiVisibilityAccountMatrixOpenApiITCase` adds the
+  [default-plugin account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md) for Agent, MCP,
+  Prompt, Skill and AgentSpec. It requires `nacos.test.visibility.matrix.enabled=true`;
+  ordinary CI does not execute or count this diagnostic suite as passing. It records independent detail/list/search/write/delete
+  results with anonymous access disabled and enabled, and exercises visibility grants,
+  downgrade/revoke, management authority, the separate API permission gate, mixed pagination
+  and cross-type/namespace grant isolation. Coverage is partial: PUBLIC Prompt has no supported
+  HTTP fixture path; per-operation lifecycle and full Console account matrices remain gaps.
+
 - [AUTHORIZATION_OPERATION_COVERAGE.md](AUTHORIZATION_OPERATION_COVERAGE.md) is the live
-  method-level inventory for all 386 production `@Secured` operations across 56 Controllers.
+  method-level inventory for all 394 production `@Secured` operations across 57 Controllers.
   `ModuleAuthorizationITCase` compares every operation and normalized annotation tuple with
   source on each run; 50 representative Controller scenarios exercise the common four-state
   matrix.
-- `ConditionalAnonymousAuthorizationITCase` directly covers all ten current
-  `ALLOW_ANONYMOUS` operations. Missing credentials enter the documented public path, while an
+- `ConditionalAnonymousAuthorizationITCase` directly covers all eleven current
+  `ALLOW_ANONYMOUS` operations, including the ARD host manifest. Missing credentials enter the documented public path, while an
   explicitly blank or invalid credential is rejected and never downgraded to anonymous.
 - `IdentityOnlyAuthorizationITCase` directly covers the three Console `ONLY_IDENTITY`
   operations in merged and independent Console deployments. Missing, blank, and invalid

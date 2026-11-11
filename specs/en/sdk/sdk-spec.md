@@ -86,6 +86,18 @@ The Maintainer SDK should be treated as a typed facade over the Nacos Admin API
 surface. When a capability is only useful for management, UI, gateway, or
 operation tools, it belongs here instead of the Client SDK.
 
+If the Maintainer SDK exposes `changeMessage`, ordinary and CAS publish APIs
+handle inserts and updates identically. Preserve existing signature compatibility
+and behavior when the message is omitted. Deletion, Beta/gray, and rollback gain
+no message capability. Optional history-detail messages and `ext_info`
+compatibility follow the
+[Config Persistence And History Spec](../config/config-persistence-history-spec.md).
+An otherwise successful publish must not become an SDK error solely because the
+server datasource lacks optional message support; real publish errors retain
+their mappings. Add no application `ConfigService` method in this phase. Review
+SDK signatures and transport entry points with the interface design; public
+contract changes must update the appropriate SDK ITs and scenario documentation.
+
 ## 4. Agent And RAD Target Contract
 
 This section defines the target SDK contract for Agent management and
@@ -102,8 +114,8 @@ The target Client SDK must:
 - expose Agent Search, Discover with and without a Filter, Watch and cancel,
   and runtime Endpoint Register and Deregister;
 - expose optional code-first Agent definition publication through
-  `AiService.agent().publishAgent`, creating only a draft by default and optionally
-  running the ordinary submit Pipeline through `autoSubmit`;
+  `AiService.agent().publishAgent`: a newly created first Version always enters ordinary
+  submission; other editable drafts follow `autoSubmit`, and existing non-drafts remain unchanged;
 - inject the bound namespace into a transport request without mutating a
   caller-owned object; and
 - preserve Watch and Endpoint publication intent across reconnect according to

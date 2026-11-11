@@ -18,6 +18,12 @@ package com.alibaba.nacos.test.sdk.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+import com.alibaba.nacos.api.ai.AgentTransportMode;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
@@ -81,7 +87,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     <li>Expected capability: release/query MCP server and A2A agent card through the
  *     public Java SDK factory, including current-value subscription callbacks, latest-version
  *     lookup, direct/ref MCP endpoint publication and registration, duplicate release behavior,
- *     A2A unsubscribe-stop behavior, and single/batch/TLS A2A endpoint registration APIs.</li>
+ *     A2A unsubscribe-stop behavior, single/batch/TLS A2A endpoint registration, and RAD capability
+ *     queries followed by Discover and explicit A2A conversion across all three effective
+ *     Agent transport modes.</li>
  *     <li>Boundary/validation: missing MCP, A2A, Prompt, Skill, AgentSpec, endpoint, and
  *     listener parameters throw controlled {@link NacosException} values; missing subscribed
  *     resources return nullable SDK shapes where the SDK defines them.</li>
@@ -109,6 +117,41 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
     private static final String MCP_ENDPOINT_SPEC_PORT = "port";
 
     private static final String MCP_ENDPOINT_SPEC_TRANSPORT_PROTOCOL = "transportProtocol";
+
+    @ParameterizedTest
+    @EnumSource(AgentTransportMode.class)
+    void testDiscoveryCapabilityBeforeBusinessCallsAndAfterShutdown(AgentTransportMode mode)
+        throws Exception {
+        Properties properties = sdkProperties();
+        // Query must follow the Agent override, independent of other resource defaults.
+        properties.setProperty(AiConstants.AI_TRANSPORT_MODE,
+            mode == AgentTransportMode.HTTP ? "grpc" : "http");
+        properties.setProperty(AiConstants.AI_AGENT_TRANSPORT_MODE, mode.getValue());
+        AiService service = createAiServiceWithoutReadiness(properties);
+        waitUntil("RAD capability should become supported over " + mode,
+            () -> service.getAgentDiscoveryCapability() == AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, service.getAgentDiscoveryCapability());
+        AgentMaintainerService maintainer = createAgentMaintainerService();
+        String name = randomServiceName("capability-" + mode.getValue());
+        addCleanup(() -> maintainer.deleteAgent(Constants.DEFAULT_NAMESPACE_ID, name));
+        service.agent().releaseAgentCard(buildAgentCard(name, "1.0.0"),
+            AiConstants.A2a.A2A_ENDPOINT_TYPE_URL, true);
+        AgentReference reference = new AgentReference();
+        reference.setAgentName(name);
+        reference.setVersion("1.0.0");
+        AgentDiscoveryResult discovered = service.agent().discoverAgent(reference);
+        assertEquals(name, discovered.getAgentName());
+        assertEquals("1.0.0", discovered.getVersion());
+        AgentCard converted = service.agent().a2aConverter().convert(discovered);
+        assertEquals(name, converted.getName());
+        assertEquals("1.0.0", converted.getVersion());
+        assertEquals("https://example.com:443/" + name + "/jsonrpc", converted.getUrl());
+        assertEquals(name, service.getAgentCard(name, "1.0.0").getName());
+        assertEquals(AbilityStatus.SUPPORTED, service.getAgentDiscoveryCapability());
+        service.shutdown();
+        assertEquals(NacosException.CLIENT_DISCONNECT, assertThrows(NacosException.class,
+            service::getAgentDiscoveryCapability).getErrCode());
+    }
 
     @Test
     public void testResourceAccessorsReuseServicesAndValidateThroughBothEntrypoints() throws Exception {

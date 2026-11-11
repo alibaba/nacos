@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.sdk.naming;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -30,9 +31,11 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,6 +44,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -513,6 +517,10 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
                 RECONNECT_TIMEOUT_MILLIS,
                 () -> "DOWN".equals(publisher.getServerStatus())
                         && "DOWN".equals(subscriber.getServerStatus()));
+        assertTrue(containsInstance(subscriber.getAllInstances(serviceName, groupName, true),
+                beforeRestart.getPort()), "discovery with an active intent should keep the cached view while DOWN");
+        assertEquals(beforeRestart.getPort(),
+                subscriber.selectOneHealthyInstance(serviceName, groupName, true).getPort());
         writeMarker(downObserved, serviceName);
         waitForMarker(serverRestarted, "external harness should restart the standalone server");
 
@@ -554,6 +562,65 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         waitUntil("subscribe=true cached service info should be refreshed after server push",
                 () -> !containsInstance(namingService.getAllInstances(serviceName, groupName,
                         true), instance.getPort()));
+    }
+
+    @Test
+    public void testCachedDiscoveryResubscribesAfterUnsubscribe() throws Exception {
+        NamingService publisher = createNamingService();
+        NamingService subscriber = createNamingService();
+        String serviceName = randomServiceName("cached-resubscribe");
+        String groupName = randomGroup("naming");
+        Instance first = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance second = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        EventListener listener = event -> { };
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, listener));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, second));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, first));
+
+        publisher.registerInstance(serviceName, groupName, first);
+        waitUntil("the first instance should become visible",
+                () -> containsInstance(publisher.getAllInstances(serviceName, groupName, false), first.getPort()));
+        subscriber.subscribe(serviceName, groupName, listener);
+        assertTrue(containsInstance(subscriber.getAllInstances(serviceName, groupName, true), first.getPort()));
+        subscriber.unsubscribe(serviceName, groupName, listener);
+
+        publisher.registerInstance(serviceName, groupName, second);
+        waitUntil("the second instance should become visible remotely",
+                () -> containsInstance(publisher.getAllInstances(serviceName, groupName, false), second.getPort()));
+
+        assertTrue(containsInstance(subscriber.getAllInstances(serviceName, groupName, true), second.getPort()),
+                "discovery without an active intent should synchronously establish a new subscription");
+    }
+
+    @Test
+    public void testDiskCachedDiscoverySubscribesBeforeReturning(@TempDir Path cacheRoot)
+            throws Exception {
+        NamingService publisher = createNamingService();
+        String serviceName = randomServiceName("disk-cache");
+        String groupName = randomGroup("naming");
+        Instance stale = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance current = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, current));
+        publisher.registerInstance(serviceName, groupName, current);
+        waitUntil("the current instance should become visible remotely",
+                () -> containsInstance(publisher.getAllInstances(serviceName, groupName, false), current.getPort()));
+
+        ServiceInfo cached = new ServiceInfo(groupName + "@@" + serviceName);
+        cached.addHost(stale);
+        Path cacheDir = Files.createDirectories(cacheRoot.resolve("nacos/naming/public"));
+        Path cacheFile = cacheDir.resolve(cached.getKeyEncoded());
+        Files.write(cacheFile, JsonUtils.toJson(cached).getBytes(StandardCharsets.UTF_8));
+        Properties properties = sdkProperties();
+        properties.setProperty(PropertyKeyConst.NAMESPACE, "public");
+        properties.setProperty("JM.SNAPSHOT.PATH", cacheRoot.toString());
+        properties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "true");
+        properties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "false");
+        NamingService subscriber = createNamingService(properties);
+
+        List<Instance> refreshed = subscriber.getAllInstances(serviceName, groupName, true);
+        assertTrue(containsInstance(refreshed, current.getPort()),
+                "disk cache without an active intent should still attempt synchronous subscription");
+        assertFalse(containsInstance(refreshed, stale.getPort()));
     }
 
     @Test

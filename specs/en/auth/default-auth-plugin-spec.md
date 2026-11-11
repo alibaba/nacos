@@ -220,6 +220,12 @@ operational errors and must not be converted into credential failures.
 
 ## RBAC Storage Model
 
+External user, role, and permission persistence beans must initialize their datasource before
+first use, on both ordinary JVM and AOT paths. AOT bean definitions must expose lifecycle
+callbacks declared on the implementation; interface factory return types must not hide
+`@PostConstruct`. This does not change ordinary JVM bean names, implementation selection,
+initialization order, or authentication API contracts.
+
 The default plugin stores:
 
 | Object | Meaning |

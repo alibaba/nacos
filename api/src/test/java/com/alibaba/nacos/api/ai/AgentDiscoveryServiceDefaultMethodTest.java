@@ -76,14 +76,13 @@ class AgentDiscoveryServiceDefaultMethodTest {
             }
             
             @Override
-            public AgentDiscoveryResult subscribeAgent(AgentReference actualReference,
+            public void subscribeAgent(AgentReference actualReference,
                 AgentDiscoveryFilter filter,
                 AbstractNacosAgentDiscoveryListener actualListener) {
                 assertSame(reference, actualReference);
                 assertNull(filter);
                 assertSame(listener, actualListener);
                 invocationCount.incrementAndGet();
-                return null;
             }
             
             @Override
@@ -119,6 +118,11 @@ class AgentDiscoveryServiceDefaultMethodTest {
         }
         assertEquals(Page.class, AgentDiscoveryService.class.getMethod(
             "searchAgents", AgentSearchRequest.class).getReturnType());
+        assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod("subscribeAgent",
+            AgentReference.class, AbstractNacosAgentDiscoveryListener.class).getReturnType());
+        assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod("subscribeAgent",
+            AgentReference.class, AgentDiscoveryFilter.class,
+            AbstractNacosAgentDiscoveryListener.class).getReturnType());
         assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod(
             "registerAgentEndpoints", AgentEndpointRegistrationBatch.class).getReturnType());
         assertEquals(Void.TYPE, AgentDiscoveryService.class.getMethod(

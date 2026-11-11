@@ -417,11 +417,11 @@ public class NacosNamingService implements NamingService {
         if (null == cachedServiceInfo) {
             return clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
         }
-        // found in cache, and subscribed.
-        if (clientProxy.isSubscribed(serviceName, groupName, StringUtils.EMPTY)) {
+        // An active local intent lets background redo recover without blocking cached reads.
+        if (clientProxy.hasSubscriptionIntent(serviceName, groupName, StringUtils.EMPTY)) {
             return cachedServiceInfo;
         }
-        // found in cached, but not subscribed, such as cached from local file when starting.
+        // A cached view without an active intent still needs the initial synchronous subscription.
         ServiceInfo result = cachedServiceInfo;
         try {
             result = clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);

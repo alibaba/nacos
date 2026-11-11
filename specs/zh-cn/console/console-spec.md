@@ -152,6 +152,17 @@ Console Controller
   的领域实现；
 - 即使传输路径不同，handler 实现也必须在不同部署模式下返回相同领域语义。
 
+首期目标是在新版控制台已有正式配置的普通更新和 CAS 更新界面提供可选 `changeMessage`
+输入，在历史详情中以纯文本展示；首期不修改旧版控制台。新建和删除流程不提供说明
+输入；Beta/灰度和回滚不增加说明输入；不要求历史列表展示，也不提供按说明检索、排序或
+索引。后台普通和 CAS 发布 API
+对插入和更新采用相同的说明处理，不根据资源是否新建而忽略 API 调用方传入的说明。
+说明与配置描述独立，不从配置或历史记录预填。正式发布成功后清空输入，失败时保留输入。
+Beta 发布不提交或清空尚未发送的正式发布说明。
+适配器未保留该 JSON 属性时，历史详情可不显示说明；数据库持久化故障仍按原规则处理。
+合并部署和独立控制台转发必须遵循相同的
+[Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
+
 ## 7. 独立 Console 部署
 
 在 `console` 部署模式下，Console 是访问一个或多个远端 Nacos Server 节点的管理面网关。
@@ -238,6 +249,21 @@ Console 应让 UI 用户能读懂错误，同时保持共享 API 契约：
 - Console module state 应暴露低基数运维状态，例如 UI 是否开启、默认 UI 版本和 Console
   auth 状态；
 - Console 指标和日志不得包含密钥、token、完整凭据或大体积用户载荷。
+
+### 10.1 实验性 AOT / Native 验收
+
+Console 遵循[服务端生命周期规范](../design/foundation-server-lifecycle-env-spec.md)中的
+多 Context AOT 契约。该契约不表示所有数据库、插件和业务路径已完成 Native 验证。
+
+- `merged` 的 console context 保留 core parent；`console` 只生成并启动独立 console context，
+  不能为了适配 Native 而启动本地域服务或存储。
+- 构建产物必须匹配部署类型、function mode 和插件集合；这些结构性选择改变时重新生成。
+  远端 Server 地址、端口和运行期凭据不得固化在生成的初始化代码中。
+- 普通 JVM 未开启 AOT 时，不得要求生成产物、运行其一致性检查或改变原有 handler 选择。
+- Native 验收必须包含 UI 入口及其 JS/CSS 资源、登录、匿名拒绝和真实 Console 业务读写，
+  不能以 liveness 或空列表代替功能成功。独立部署还应验证远端 handler 的返回模型和实际操作。
+- 普通 JVM 与 Native 的 Console / Server 互通结果应分别记录；合并部署通过不能代替独立部署。
+  AI 功能和扩展协议启用时应单独验证，未执行的数据库、集群和业务路径须明确列出。
 
 ## 11. 待处理问题
 

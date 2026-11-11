@@ -18,13 +18,13 @@ package com.alibaba.nacos.client.ai.utils;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
-import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
@@ -32,7 +32,7 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.utils.A2aAgentCardUtils;
 import com.alibaba.nacos.api.ai.utils.A2aEndpointUtils;
-import com.alibaba.nacos.api.ai.utils.EndpointCanonicalizer;
+import com.alibaba.nacos.api.ai.utils.A2aRequestUtils;
 import com.alibaba.nacos.api.ai.utils.EndpointNaturalKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -42,10 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Stateless conversion between complete A2A Cards and RAD discovery/publication.
@@ -97,42 +94,12 @@ public final class A2aRadConverter {
         try {
             AgentCard card = JsonUtils.toObj(JsonUtils.toJson(source), AgentCard.class);
             A2aAgentCardUtils.validateAgentCard(card);
-            AgentCallInterface call = new AgentCallInterface();
-            call.setProtocol(A2A_PROTOCOL);
-            call.setProtocolVersion(card.getProtocolVersion());
-            call.setDescriptorMediaType("application/json");
-            call.setNativeDescriptor(JsonUtils.toObj(JsonUtils.toJson(card), Map.class));
-            call.setEndpointSourceOrder(AiConstants.A2a.A2A_ENDPOINT_TYPE_URL.equals(type)
-                ? Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME)
-                : Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED));
-            EndpointSet declared = new EndpointSet();
-            declared.setSource(EndpointSource.DECLARED);
-            List<Endpoint> addresses = new ArrayList<Endpoint>();
-            Set<EndpointNaturalKey> keys = new LinkedHashSet<EndpointNaturalKey>();
-            for (AgentInterface address : card.getSupportedInterfaces()) {
-                Endpoint endpoint = new Endpoint();
-                endpoint.setUri(address.getUrl());
-                endpoint.setTransport(address.getProtocolBinding());
-                endpoint = EndpointCanonicalizer.canonicalize(endpoint);
-                if (keys.add(EndpointNaturalKey.of(namespaceId, card.getName(), A2A_PROTOCOL,
-                    endpoint))) {
-                    addresses.add(endpoint);
-                }
-            }
-            declared.setEndpoints(addresses);
-            call.setEndpointSets(Collections.singletonList(declared));
-            AgentPublishRequest request = new AgentPublishRequest();
-            request.setAgentName(card.getName());
-            request.setVersion(card.getVersion());
-            request.setDescription(card.getDescription());
-            request.setIconUrl(card.getIconUrl());
-            if (card.getProvider() != null) {
-                AgentProvider provider = new AgentProvider();
-                provider.setName(card.getProvider().getOrganization());
-                provider.setUrl(card.getProvider().getUrl());
-                request.setProvider(provider);
-            }
-            request.setCallInterfaces(Collections.singletonList(call));
+            AgentPublishRequest request =
+                A2aRequestUtils.populateDraft(new AgentPublishRequest(), card,
+                    AiConstants.A2a.A2A_ENDPOINT_TYPE_URL.equals(type)
+                        ? Arrays.asList(EndpointSource.DECLARED, EndpointSource.RUNTIME)
+                        : Arrays.asList(EndpointSource.RUNTIME, EndpointSource.DECLARED),
+                    A2aRequestUtils.legacyDeclaredEndpoints(namespaceId, card), true);
             request.setAutoSubmit(autoSubmit);
             request.validate();
             return request;
@@ -160,8 +127,9 @@ public final class A2aRadConverter {
                 throw notFound();
             }
             AgentCallInterface call = requireInterface(source);
-            AgentCardDetailInfo card = JsonUtils.toObj(JsonUtils.toJson(call.getNativeDescriptor()),
-                AgentCardDetailInfo.class);
+            AgentCardDetailInfo card =
+                A2aSecurityUtils.readCard(JsonUtils.toJson(call.getNativeDescriptor()),
+                    AgentCardDetailInfo.class);
             A2aAgentCardUtils.validateAgentCard(card);
             if (!source.getAgentName().equals(card.getName())
                 || !source.getVersion().equals(card.getVersion())) {

@@ -1,1 +1,1 @@
-import{a as e}from"./vendor-markdown.js";var t=e();function n(){return(0,t.jsx)(`div`,{children:`ConfigSyncPage - TODO`})}export{n as default};
+typeof Object.hasOwn!=`function`&&Object.defineProperty(Object,"hasOwn",{configurable:!0,writable:!0,value:function(e,t){return Object.prototype.hasOwnProperty.call(Object(e),t)}});import{a as e}from"./vendor-markdown.js";var t=e();function n(){return(0,t.jsx)(`div`,{children:`ConfigSyncPage - TODO`})}export{n as default};

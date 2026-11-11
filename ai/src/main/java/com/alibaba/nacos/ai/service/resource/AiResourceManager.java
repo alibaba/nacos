@@ -1173,6 +1173,15 @@ public class AiResourceManager {
      */
     public AiResourceVersion toggleVersionOnlineStatus(String namespaceId, AiResource meta,
         ResourceVersionInfo info, String version, boolean online) throws NacosException {
+        return toggleVersionOnlineStatus(namespaceId, meta, info, version, online, null);
+    }
+    
+    /**
+     * Toggle a version and retain its supplied description in the lifecycle CAS when no online or working version remains.
+     */
+    public AiResourceVersion toggleVersionOnlineStatus(String namespaceId, AiResource meta,
+        ResourceVersionInfo info, String version, boolean online, String lastOfflineDescription)
+        throws NacosException {
         String name = meta.getName();
         String type = meta.getType();
         AiResourceVersion v =
@@ -1193,6 +1202,15 @@ public class AiResourceManager {
             latestInfo.setOnlineCnt(online ? cnt + 1 : Math.max(0, cnt - 1));
             refreshLatestLabelForOnlineVersions(namespaceId, name, type, latestInfo);
             return latestInfo;
+        }, (update, latestMeta) -> {
+            if (!online && lastOfflineDescription != null) {
+                ResourceVersionInfo updatedInfo = requireVersionInfo(update);
+                if (updatedInfo.getOnlineCnt() == 0
+                    && StringUtils.isBlank(updatedInfo.getEditingVersion())
+                    && StringUtils.isBlank(updatedInfo.getReviewingVersion())) {
+                    update.setDesc(lastOfflineDescription);
+                }
+            }
         });
         String operation = online ? AiResourceTraceService.OP_ONLINE_VERSION
             : AiResourceTraceService.OP_OFFLINE_VERSION;

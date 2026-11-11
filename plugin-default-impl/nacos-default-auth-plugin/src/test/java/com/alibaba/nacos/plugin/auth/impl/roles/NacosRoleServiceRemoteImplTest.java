@@ -33,6 +33,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -59,6 +60,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -202,6 +204,32 @@ class NacosRoleServiceRemoteImplTest {
         
         assertTrue(getCachedRoleSet(service).contains(AuthConstants.GLOBAL_ADMIN_ROLE));
         assertTrue(service.hasGlobalAdminRole());
+    }
+    
+    @Test
+    void testHasGlobalAdminRoleQueriesAdminRoleWithBoundedPage() throws Exception {
+        prepareRemoteServer();
+        NacosRoleServiceRemoteImpl service = newServiceWithRestTemplate();
+        RoleInfo adminRole = new RoleInfo();
+        adminRole.setRole(AuthConstants.GLOBAL_ADMIN_ROLE);
+        adminRole.setUsername("nacos");
+        Page<RoleInfo> rolePage = new Page<>();
+        rolePage.setTotalCount(1);
+        rolePage.setPageItems(Collections.singletonList(adminRole));
+        when(restTemplate.<String>get(anyString(), any(Header.class), any(Query.class),
+            eq(String.class))).thenReturn(okJson(rolePage));
+        
+        assertTrue(service.hasGlobalAdminRole());
+        
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(restTemplate).get(anyString(), any(Header.class), queryCaptor.capture(),
+            eq(String.class));
+        Query query = queryCaptor.getValue();
+        assertEquals(AuthConstants.GLOBAL_ADMIN_ROLE, query.getValue("role"));
+        assertEquals("", query.getValue("username"));
+        assertEquals(1, query.getValue("pageNo"));
+        assertEquals(1, query.getValue("pageSize"));
+        assertEquals("accurate", query.getValue("search"));
     }
     
     @Test

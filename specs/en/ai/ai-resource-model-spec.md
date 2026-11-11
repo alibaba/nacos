@@ -19,6 +19,8 @@
 This document defines the standard metadata and version model for AI Registry
 resources. It refines the [AI Registry Spec](ai-registry-spec.md).
 
+Scope validation follows the selected visibility service catalog; built-in values and creation defaults remain unchanged.
+
 ## 1. Identity
 
 AI resource metadata identity is:

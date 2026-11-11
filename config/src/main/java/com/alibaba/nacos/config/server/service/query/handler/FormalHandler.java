@@ -21,6 +21,8 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -31,6 +33,8 @@ import java.io.IOException;
  * @author Nacos
  */
 public class FormalHandler extends AbstractConfigQueryHandler {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(FormalHandler.class);
     
     private static final String FORMAL_HANDLER = "formalHandler";
     
@@ -66,7 +70,9 @@ public class FormalHandler extends AbstractConfigQueryHandler {
         }
         
         String content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-        if (StringUtils.isBlank(content)) {
+        if (content == null) {
+            LOGGER.debug("Formal config content not found, dataId={}, group={}, tenant={}", dataId,
+                group, tenant);
             response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
             return response;
         }

@@ -16,11 +16,18 @@
 
 package com.alibaba.nacos.dns;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * Auto-configuration for Nacos DNS server.
+ *
+ * <p>{@link NacosDnsMetrics} is created with an optional {@link MeterRegistry}:
+ * when actuator is not on the classpath, a no-op in-memory registry is used so
+ * the DNS server can start without any monitoring dependency.
  *
  * @author Nacos
  */
@@ -28,4 +35,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(NacosDnsProperties.class)
 public class NacosDnsAutoConfiguration {
     
+    @Bean
+    public NacosDnsMetrics nacosDnsMetrics(ObjectProvider<MeterRegistry> registryProvider) {
+        return new NacosDnsMetrics(registryProvider.getIfAvailable());
+    }
 }

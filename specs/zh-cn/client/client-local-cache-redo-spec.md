@@ -73,6 +73,9 @@ Config listener recovery 不是写操作 redo，而是读/监听运行时意图�
 Naming service-info cache 按 grouped service name 和 clusters 存储 `ServiceInfo`。服务端 push 或
 query response 会更新内存 map，并在实例视图变化时写入磁盘缓存。
 
+对于被接受的更新，替换缓存值与获取旧值必须是原子操作。实例差异必须基于本次更新实际替换的
+旧值计算，包括 push 与 query response 并发处理的情况。
+
 该缓存是恢复辅助：
 
 - load-cache 选项开启时，可在启动时加载；
@@ -80,6 +83,20 @@ query response 会更新内存 map，并在实例视图变化时写入磁盘缓�
 - 不得创建、更新或删除 Naming 服务端资源。
 
 Push-empty protection 可以忽略空或无效 push，避免把已知可用视图意外替换为空视图。
+
+### 4.1 有效 Naming 订阅意图下的缓存读取
+
+Java SDK 使用 `subscribe=true` 查询实例时，如果已有缓存视图且存在有效的本地订阅意图，必须使用
+该缓存视图完成后续查询，不同步重新订阅；空实例视图同样适用。有效订阅意图表示客户端仍期望维持订阅，
+且尚未开始取消。订阅意图在断连后保留，由后台 Redo 负责重试恢复，无需业务查询驱动；缓存读取不得
+破坏该恢复过程。
+
+有效订阅意图不要求此前订阅成功。如果首次订阅尝试失败但已有缓存，后续查询使用缓存视图完成查询处理，
+由后台 Redo 重试。仅加载磁盘缓存不会建立订阅意图。
+
+已有缓存但没有有效订阅意图时，包括取消订阅后，查询仍尝试同步订阅，并在发生 `NacosException` 时回退缓存。
+没有缓存时，保留同步订阅和原有异常行为。实例过滤和选择规则保持不变；显式监听订阅和
+`subscribe=false` 查询保持原有语义。
 
 ## 5. Naming Failover 视图
 

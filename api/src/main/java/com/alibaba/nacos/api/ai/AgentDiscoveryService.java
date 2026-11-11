@@ -86,28 +86,47 @@ public interface AgentDiscoveryService {
     /**
      * Subscribe to one Agent through transport-neutral Watch.
      *
+     * <p>The listener receives the initial complete state and subsequent changes. The first
+     * callback may run before or after this method returns; prepare listener state beforehand.
+     * Repeating the same reference, filter and listener does not repeat initialization.
+     *
      * @param reference Agent reference
      * @param listener discovery listener
-     * @return current snapshot, or {@code null} when the target does not exist yet
-     * @throws NacosException when validation or the initial Discover fails
+     * @throws NacosException when validation, initial Discover, or synchronous Watch admission fails
      */
     @Since("3.3.0")
-    default AgentDiscoveryResult subscribeAgent(AgentReference reference,
+    default void subscribeAgent(AgentReference reference,
         AbstractNacosAgentDiscoveryListener listener) throws NacosException {
-        return subscribeAgent(reference, null, listener);
+        subscribeAgent(reference, null, listener);
     }
     
     /**
      * Subscribe to one filtered Agent view through transport-neutral Watch.
      *
+     * <p>A new listener receives the current complete state even when joining an existing
+     * Watch. An initially absent target produces an UNAVAILABLE event and remains pending.
+     * Accepted subscriptions remain until unsubscribe or service shutdown. Background failures
+     * retry internally without data callbacks. UNAVAILABLE means authorized Discover confirmed
+     * the requested Agent reference does not exist; empty or unhealthy endpoints remain snapshots.
+     * HTTP Watch admission is asynchronous: quota failures retain accepted additions and retry
+     * while observing the acknowledged set. Further growth during known exhaustion is rejected
+     * synchronously. Joining an existing Watch does not count as remote growth.
+     * Initial state and changes use the same serialized callback channel; an initialization
+     * superseded by a newer notification is not sent afterwards. Cancellation and shutdown
+     * invalidate queued notifications. Intermediate snapshots and brief UNAVAILABLE states may
+     * coalesce: each listener eventually receives the latest complete state when execution is
+     * available. Executor rejection and getExecutor failures retain that state for local retry,
+     * including initialization, without another server change. A callback that has already
+     * started and throws is logged but not automatically replayed. Pending delivery memory
+     * does not grow with the number of changes. Bound blocking I/O in your callback with timeouts.
+     *
      * @param reference Agent reference
      * @param filter optional discovery filter
      * @param listener discovery listener
-     * @return current snapshot, or {@code null} when the target does not exist yet
-     * @throws NacosException when validation or the initial Discover fails
+     * @throws NacosException when validation, initial Discover, or synchronous Watch admission fails
      */
     @Since("3.3.0")
-    default AgentDiscoveryResult subscribeAgent(AgentReference reference,
+    default void subscribeAgent(AgentReference reference,
         AgentDiscoveryFilter filter, AbstractNacosAgentDiscoveryListener listener)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
@@ -144,6 +163,10 @@ public interface AgentDiscoveryService {
     
     /**
      * Replace this SDK publisher's complete Endpoint Batch for one Agent protocol.
+     *
+     * <p>Include every Endpoint to retain for this Agent and protocol. Omitted addresses from
+     * this publisher are removed; other publishers and protocols are unaffected. To replace an
+     * address, register the desired complete Batch without subsequently deregistering the old one.</p>
      *
      * @param batch complete Endpoint registration batch
      * @throws NacosException when validation or publication fails

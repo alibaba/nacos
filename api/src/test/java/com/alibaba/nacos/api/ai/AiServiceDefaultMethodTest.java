@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
@@ -60,6 +62,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AiServiceDefaultMethodTest {
+    
+    @Test
+    void discoveryCapabilityDefaultsToUnknownWithoutResourceAccessor() throws NacosException {
+        AiService legacy = mock(AiService.class, CALLS_REAL_METHODS);
+        assertEquals(AbilityStatus.UNKNOWN, legacy.getAgentDiscoveryCapability());
+        verify(legacy, org.mockito.Mockito.never()).agent();
+        assertThrows(UnsupportedOperationException.class, legacy::agent);
+    }
     
     private AtomicBoolean invokeMark;
     

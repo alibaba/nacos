@@ -56,6 +56,7 @@ import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
@@ -622,6 +623,41 @@ class AiGrpcClientTest {
         assertEquals("ag", cap.getValue().getAgentName());
         assertEquals("1.0", cap.getValue().getVersion());
         assertEquals("service", cap.getValue().getRegistrationType());
+    }
+    
+    @Test
+    void getAgentCardRejectsIncompleteRequirementsAfterGenericJsonBinding() throws Exception {
+        mockAgentCardResponse("\"securityRequirements\":[{\"oauth2\":[\"read\"]}]");
+        NacosException error = assertThrows(NacosException.class,
+            () -> aiGrpcClient.getAgentCard("ag", "1.0", "service"));
+        assertEquals(NacosException.SERVER_ERROR, error.getErrCode());
+        assertEquals("Invalid AgentCard securityRequirements in response", error.getErrMsg());
+    }
+    
+    @Test
+    void getAgentCardNormalizesLegacySecurityAtQueryBoundary() throws Exception {
+        mockAgentCardResponse("\"security\":[{\"oauth2\":[\"read\"]}]");
+        AgentCardDetailInfo card = aiGrpcClient.getAgentCard("ag", "1.0", "service");
+        assertEquals("read", card.getSecurityRequirements().get(0)
+            .getSchemes().get("oauth2").getList().get(0));
+    }
+    
+    @Test
+    void getAgentCardNormalizesStandardRequirementsAtQueryBoundary() throws Exception {
+        mockAgentCardResponse(
+            "\"securityRequirements\":[{\"schemes\":{\"oauth2\":{\"list\":[\"read\"]}}}]");
+        AgentCardDetailInfo card = aiGrpcClient.getAgentCard("ag", "1.0", "service");
+        assertEquals("read", card.getSecurity().get(0).get("oauth2").get(0));
+    }
+    
+    private void mockAgentCardResponse(String securityJson) throws Exception {
+        injectMock();
+        when(rpcClient.isRunning()).thenReturn(true);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_AGENT_REGISTRY))
+            .thenReturn(AbilityStatus.SUPPORTED);
+        QueryAgentCardResponse response = JsonUtils.toObj(
+            "{\"agentCardDetailInfo\":{" + securityJson + "}}", QueryAgentCardResponse.class);
+        when(rpcClient.request(any(QueryAgentCardRequest.class))).thenReturn(response);
     }
     
     @Test

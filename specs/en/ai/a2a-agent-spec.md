@@ -89,6 +89,85 @@ The current descriptor baseline supports A2A 1.0 fields and the existing 0.x
 compatibility fields. Adapter normalization must not replace the stored native
 descriptor with a synthetic generic Agent object.
 
+Card-level `securityRequirements` follows the A2A 1.0 `SecurityRequirement`
+and `StringList` definitions: `[{"schemes":{"oauth2":{"list":["read"]}}}]`.
+The Java model directly uses `List<SecurityRequirement>`, whose `schemes` is
+`Map<String,StringList>` and whose `StringList.list` is `List<String>`.
+Plain JSON mappers read and write this shape without annotations, modules, or
+special Map types. Historical reads try the standard POJO first and retry the old
+flat representation `[{"oauth2":["read"]}]` only after decoding fails. Ordinary
+serialization performs no conversion. Correcting the historical model changes
+the getter/setter element type: callers must rebuild against the standard POJOs;
+List type erasure does not make old source or compiled callers compatible.
+
+Both `security` and `securityRequirements` remain available. `security` retains
+the 0.3 flat wire format and is deprecated, pending removal when Nacos stops
+supporting the 0.3 `protocolVersion`; its replacement is `securityRequirements`.
+Existing Card adapters synchronize them during normalization: a non-null
+`securityRequirements` takes precedence, including an explicitly empty list;
+otherwise `security` supplies it. Equivalent content is then projected to
+`security`. If both are absent/null, no empty requirement is created. Conflicting
+fields use the new field rather than concatenating alternatives and changing
+authentication semantics. Synchronization belongs to the adapter normalization
+boundary, not model setters or JSON parsing. The projection copies lists, maps,
+and scope lists to avoid mutable aliases. This follows the existing precedence
+for interface fields and extended Card capabilities.
+
+Alternatives, all
+schemes within an alternative, scope ordering, and empty scopes survive Card
+registration, query, and subscription. An omitted `StringList.list` means an
+empty scope list; malformed requirements must fail decoding rather than lose
+access declarations. Missing/null requirements and an empty requirements list
+remain distinct. Historical flat input remains readable, but standard output
+requires a decoder supporting that shape; including legacy `security` does not
+guarantee that a pre-fix Nacos decoder can parse the new field.
+
+Queries first bind the standard POJO. Only a decoding failure or a missing
+`schemes` structure retries the historical flat representation. A parser that
+ignores unknown fields must not silently accept lost security declarations as an
+empty requirement. The retry validates scheme-to-string-array entries and changes
+only the returned object; it never rewrites storage, enqueues repairs, or changes
+Version digests. Invalid data still fails. Publications use the standard model;
+there is no historical data rewrite or scan. Flat compatibility applies only to Card-level fields.
+Compatibility decoding requires the original Card JSON and belongs to A2A read
+boundaries. Generic gRPC parsing does not recognize A2A request or response types.
+If an old peer sends flat `securityRequirements` in a typed gRPC payload, the A2A
+release/query boundary rejects an incomplete bound object instead of treating lost
+scopes as empty requirements. It cannot recover fields already discarded by the
+JSON parser. Standard requirements and 0.3 `security` remain supported on this path.
+Older Nacos nodes and SDKs may not decode the corrected standard field. Upgrade
+readers first and retain pre-upgrade backups; rollback cannot assume old binaries
+can read newly published standard data. Keeping `security` does not remove this limitation.
+
+Reference: [A2A specification](https://a2a-protocol.org/latest/specification/)
+and [v1.0.1 protobuf definitions](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto).
+The official Python SDK 1.3.0 [0.3 conversion layer](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
+maps these security fields in both directions in `to_core_agent_card` and
+`to_compat_agent_card`. This is version-adapter behavior, not automatic alias
+handling by a plain JSON parser.
+
+`AgentCard.skills[].securityRequirements` uses the same A2A 1.0 POJOs,
+`List<SecurityRequirement>` and the `schemes/list` JSON structure, without Jackson
+annotations or modules. Skill requirements remain independent of Card requirements
+and other Skills. Nacos preserves declarations rather than merging, promoting, or
+materializing effective permissions. Missing/null and explicitly empty lists stay
+distinct. Alternatives, schemes, scope ordering, and empty scopes are preserved;
+an omitted `list` means empty scopes. A2A publication and read boundaries validate
+requirement items, `schemes`, scope containers, and string lists. Malformed or
+incomplete structures fail with controlled errors instead of losing declarations.
+This additive field has no historical flat fallback and does not introduce the
+0.3 Skill `security` field or conversion. Missing historical fields remain readable
+without storage rewrites; declarations already discarded by old models require
+republication by their owner.
+
+Complete Skill declarations remain in `nativeDescriptor`, queries, conversions,
+and RAD subscriptions. Existing content digest and RAD fingerprint algorithms are
+unchanged: a Skill requirement change is a descriptor change, while identical
+snapshots do not trigger repeated notifications. Legacy polling subscriptions are
+unchanged. Old SDKs or servers may still ignore the new field; end-to-end preservation
+requires upgrading typed readers/writers and downstream adapters, and does not add
+this capability to old versions.
+
 An A2A call interface in the exact common-latest Version declares the ARD
 representation `application/a2a-agent-card+json` only when it passes complete
 AgentCard validation for that baseline. The artifact returns the stored native
@@ -342,8 +421,8 @@ only to RAD fields that do not affect the Card do not trigger a legacy callback.
 A missing Agent or missing valid A2A descriptor returns no invented Card and retains the
 existing pending observation. Unavailability clears Card comparison state without sending
 stale content; recovery can notify even when the recovered Card equals the old one. The
-legacy listener has no unavailable-event shape; native terminal authorization/capacity
-errors still end observation and require explicit resubscription. No authentication error
+legacy listener has no unavailable-event shape; background authorization/capacity
+errors retain accepted observation and retry internally. No authentication error
 is converted into polling fallback. Where the selected binding lacks Watch, existing RAD
 Discover polling is used. This never changes to legacy A2A polling in RAD mode.
 
@@ -356,6 +435,12 @@ ordering, so a late-enqueued older event cannot overwrite a newer delivered stat
 C09 prepares this component; C10 enables all legacy facade operations together.
 
 ### Client instance routing activation
+
+`AiService.getAgentDiscoveryCapability()` independently queries three-state RAD evidence for the
+current effective Agent transport. It neither makes the initial A2A selection nor changes a fixed
+selection; it does not report the legacy facade's selected mode. Cache refresh, query errors and
+migration admission cannot implicitly switch that mode. See the
+[Agent API Spec](agent-api-spec.md#21-java-sdk-contract) for the full contract.
 
 The 3.3 Java SDK routes every inherited A2A overload through the same Agent facade.
 The first reliable selection is fixed for that AiService lifetime. Initial preferred
@@ -389,3 +474,21 @@ or reachability: each RAD-backed legacy business operation still checks its conf
 transport. A negative HTTP declaration therefore produces unsupported on HTTP rather
 than silently sending legacy gRPC. Cancellation and full cleanup retain their local
 and existing-owner paths.
+
+## Explicit SDK conversion
+
+The public `AgentConverters.a2a()` / `AgentService.a2aConverter()` operation is
+explicit offline conversion governed by the [Agent API spec](agent-api-spec.md#public-discovery-snapshot-converters).
+It honors filtered EndpointSets and their returned order, taking the first address
+for legacy preferred fields. It shares per-Endpoint mapping through A2aEndpointUtils
+with the legacy facade. It does not change the facade's registrationType override,
+preferredTransport selection, empty-Runtime descriptor fallback, latestVersion or
+NOT_FOUND mapping, and it is not inserted into native Discover/Listener dispatch.
+
+### Java SDK Watch lifetime
+
+A wire termination (including migration rejection 50105) ends that remote binding,
+not the accepted Java SDK subscription. The SDK retains intent and confirmed data
+and retries under normal authorization and quota. Only authorized Discover target
+absence produces SDK UNAVAILABLE; other failures stay internal. Legacy A2A retains
+its complete-card callbacks and empty-push protection, without lifecycle callbacks.

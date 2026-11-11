@@ -155,12 +155,15 @@ class SkillSpectorPipelineServiceTest {
     void buildScanCommandStaticOnlyTest() {
         SkillSpectorPipelineService service = new SkillSpectorPipelineService("skillspector",
             null);
+        Path skillPath = Path.of("/tmp/skill");
+        Path reportPath = Path.of("/tmp/report.json");
         
-        List<String> command = service.buildScanCommand(Path.of("/tmp/skill"),
-            Path.of("/tmp/report.json"), "skillspector", SkillSpectorScanOptions.none());
+        List<String> command = service.buildScanCommand(skillPath, reportPath, "skillspector",
+            SkillSpectorScanOptions.none());
         
-        assertEquals(List.of("skillspector", "scan", "/tmp/skill", "--format", "json",
-            "--output", "/tmp/report.json", "--no-llm"), command);
+        assertEquals(List.of("skillspector", "scan", skillPath.toAbsolutePath().toString(),
+            "--format", "json", "--output", reportPath.toAbsolutePath().toString(), "--no-llm"),
+            command);
     }
     
     @Test

@@ -219,6 +219,16 @@ class AgentGrpcTransportTest {
     }
     
     @Test
+    void discoveryNotificationAttributionReachesGrpcClient() throws NacosException {
+        AgentGrpcTransport transport = transport(AgentTransportMode.GRPC);
+        AgentDiscoveryRequest request = new AgentDiscoveryRequest();
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        when(client.discoverAgent(request, true)).thenReturn(result);
+        assertSame(result, transport.discoverAgent(request, true));
+        verify(client).discoverAgent(request, true);
+    }
+    
+    @Test
     @SuppressWarnings("unchecked")
     void requiredProxyAcquiresGrpcForEveryLegacyOperation() throws NacosException {
         AgentGrpcTransport transport = transport(AgentTransportMode.HTTP);

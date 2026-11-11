@@ -158,6 +158,7 @@ class A2aRadConverterTest {
         address.setUrl("https://declared.example/rpc");
         address.setProtocolBinding("HTTP+JSON");
         address.setProtocolVersion("1.0");
+        address.setTenant("legacy-tenant");
         card.setSupportedInterfaces(Arrays.asList(address, address));
         card.setUrl(null);
         card.setProtocolVersion(null);
@@ -171,6 +172,8 @@ class A2aRadConverterTest {
             call.getEndpointSets().get(0).getEndpoints().get(0).getUri());
         assertNull(card.getUrl());
         assertNull(address.getTransport());
+        assertNull(call.getEndpointSets().get(0).getEndpoints().get(0).getMetadata());
+        assertEquals(0, call.getEndpointSets().get(0).getEndpoints().get(0).getPriority());
     }
     
     @Test
@@ -333,7 +336,8 @@ class A2aRadConverterTest {
             + "\"skills\":[{\"id\":\"s\",\"name\":\"skill\",\"tags\":[\"tag\"]}],"
             + "\"provider\":{\"organization\":\"Nacos\",\"url\":\"https://nacos.io\"},"
             + "\"securitySchemes\":{\"token\":{\"type\":\"http\",\"scheme\":\"bearer\"}},"
-            + "\"security\":[{\"token\":[]}],\"securityRequirements\":[{\"token\":[]}],"
+            + "\"security\":[{\"token\":[]}],"
+            + "\"securityRequirements\":[{\"schemes\":{\"token\":{\"list\":[]}}}],"
             + "\"signatures\":[{\"protected\":\"header\",\"signature\":\"signature\"}],"
             + "\"documentationUrl\":\"https://docs.example\","
             + "\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"]}",

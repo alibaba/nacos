@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.mcp.storage.McpServingManifestStorage;
 import com.alibaba.nacos.ai.service.mcp.storage.McpResourceExtSerializer;
 import com.alibaba.nacos.ai.service.mcp.storage.McpVersionStorageContents;
@@ -65,6 +66,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -102,6 +104,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -232,6 +237,98 @@ class McpLifecycleOperationServiceTest {
     }
     
     @Test
+    void testIndexSourceReadsPrivateContentWithoutCallerVisibilityOrRuntimeEndpoints()
+        throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"),
+            new McpToolSpecification(), resourceSpecification(), null);
+        AiResource current = resource.get();
+        current.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        current.setOwner("alice");
+        clearInvocations(endpointOperationService, canonicalAuthorizationService, manifestStorage);
+        try (MockedStatic<VisibilityHelper> visibility = mockStatic(VisibilityHelper.class)) {
+            McpServerDetailInfo source = service.getMcpServerIndexSource(current, null);
+            assertEquals(MCP_ID, source.getId());
+            assertEquals(NAMESPACE_ID, source.getNamespaceId());
+            assertEquals(MCP_NAME, source.getName());
+            assertEquals(VERSION_ONE, source.getVersion());
+            assertTrue(source.getVersionDetail().getIs_latest());
+            assertNotNull(source.getToolSpec());
+            assertNotNull(source.getResourceSpec());
+            visibility.verifyNoInteractions();
+            verifyNoInteractions(endpointOperationService, canonicalAuthorizationService,
+                manifestStorage);
+            assertEquals(NacosException.NOT_FOUND, assertThrows(NacosException.class,
+                () -> service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, null)).getErrCode());
+            visibility.verify(() -> VisibilityHelper.canReadResource(current));
+        }
+    }
+    
+    @Test
+    void testIndexSourceRequiresEnabledResourceAndExactOnlineCommonLatest() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        AiResource current = resource.get();
+        assertNull(service.getMcpServerIndexSource(null, null));
+        assertNotNull(service.getMcpServerIndexSource(current, VERSION_ONE));
+        assertNull(service.getMcpServerIndexSource(current, VERSION_TWO));
+        current.setStatus(AiResourceConstants.META_STATUS_DISABLE);
+        assertNull(service.getMcpServerIndexSource(current, null));
+        current.setStatus(AiResourceConstants.META_STATUS_ENABLE);
+        AiResourceVersion row = versions.get(VERSION_ONE);
+        for (String status : List.of(AiResourceConstants.VERSION_STATUS_OFFLINE,
+            AiResourceConstants.VERSION_STATUS_DRAFT)) {
+            row.setStatus(status);
+            assertNull(service.getMcpServerIndexSource(current, null));
+        }
+        row.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
+        ResourceVersionInfo info = versionInfo(current);
+        info.getLabels().remove(AiResourceConstants.LABEL_LATEST);
+        current.setVersionInfo(JacksonUtils.toJson(info));
+        assertNull(service.getMcpServerIndexSource(current, null));
+        info.getLabels().put(AiResourceConstants.LABEL_LATEST, VERSION_TWO);
+        current.setVersionInfo(JacksonUtils.toJson(info));
+        assertNull(service.getMcpServerIndexSource(current, null));
+    }
+    
+    @Test
+    void testDetailFallbackDoesNotMakeResourceIndexableWithoutCommonLatest() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        ResourceVersionInfo missingLabels = new ResourceVersionInfo();
+        ResourceVersionInfo missingVersion = new ResourceVersionInfo();
+        missingVersion.setLabels(Map.of(AiResourceConstants.LABEL_LATEST, VERSION_TWO));
+        for (ResourceVersionInfo info : List.of(missingLabels, missingVersion)) {
+            resource.get().setVersionInfo(JacksonUtils.toJson(info));
+            McpServerDetailInfo detail = service.getMcpServerDetail(NAMESPACE_ID, null,
+                MCP_NAME, null);
+            assertEquals(VERSION_ONE, detail.getVersion());
+            assertTrue(detail.getVersionDetail().getIs_latest());
+            assertEquals(VERSION_ONE,
+                service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME, null).getVersion());
+            assertNull(service.getMcpServerIndexSource(resource.get(), null));
+        }
+    }
+    
+    @Test
+    void testIndexSourceRetainsCanonicalIdentityAndDescriptorIntegrityChecks() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
+        AiResource current = resource.get();
+        AiResourceVersion row = versions.get(VERSION_ONE);
+        String descriptor = row.getStorage();
+        row.setStorage("invalid");
+        assertThrows(NacosException.class, () -> service.getMcpServerIndexSource(current, null));
+        row.setStorage(descriptor);
+        McpVersionStorageContents original = contents.get(descriptor);
+        McpServerStorageInfo stored = JacksonUtils.toObj(
+            new String(original.getServerContent(), StandardCharsets.UTF_8),
+            McpServerStorageInfo.class);
+        stored.setName("different-mcp");
+        contents.put(descriptor, new McpVersionStorageContents(
+            JacksonUtils.toJson(stored).getBytes(StandardCharsets.UTF_8), null, null));
+        assertThrows(NacosException.class, () -> service.getMcpServerIndexSource(current, null));
+        contents.remove(descriptor);
+        assertThrows(NacosException.class, () -> service.getMcpServerIndexSource(current, null));
+    }
+    
+    @Test
     void testIdOnlyCompatibilityOperationsAuthorizeResolvedCanonicalName() throws Exception {
         service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "first"), null, null, null);
         
@@ -261,9 +358,15 @@ class McpLifecycleOperationServiceTest {
         assertEquals("first", resource.get().getDesc());
         assertEquals(2, manifest.get().getVersionDetails().size());
         assertEquals(VERSION_ONE, manifest.get().getLatestPublishedVersion());
-        assertEquals("second",
-            service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_TWO)
-                .getDescription());
+        McpServerDetailInfo detail = service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME,
+            VERSION_TWO);
+        assertEquals("second", detail.getDescription());
+        assertEquals(VERSION_TWO, detail.getVersion());
+        assertFalse(detail.getVersionDetail().getIs_latest());
+        assertEquals(2, detail.getAllVersions().size());
+        assertTrue(detail.getAllVersions().stream()
+            .filter(each -> VERSION_ONE.equals(each.getVersion()))
+            .findFirst().orElseThrow().getIs_latest());
         
         service.updateMcpServer(NAMESPACE_ID, true, second, null, null, null, false);
         
@@ -292,6 +395,10 @@ class McpLifecycleOperationServiceTest {
             VERSION_ONE);
         assertEquals("draft", detail.getDescription());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, detail.getProtocol());
+        McpServerDetailInfo source = service.getMcpServerIndexSource(resource.get(), VERSION_ONE);
+        assertEquals("first", source.getDescription());
+        assertEquals(VERSION_ONE, source.getVersionDetail().getVersion());
+        assertTrue(source.getVersionDetail().getIs_latest());
     }
     
     @Test
@@ -516,9 +623,17 @@ class McpLifecycleOperationServiceTest {
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE,
             stored.getRemoteServerConfig().getServiceRef().getTransportProtocol());
         
-        service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME, VERSION_ONE);
+        clearInvocations(endpointOperationService);
+        McpServerDetailInfo source = service.getMcpServerIndexSource(resource.get(), VERSION_ONE);
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, source.getProtocol());
+        verifyNoInteractions(endpointOperationService);
+        McpServerDetailInfo detail = service.getMcpServerDetail(NAMESPACE_ID, null, MCP_NAME,
+            VERSION_ONE);
+        McpServerDetailInfo serving = service.getServingMcpServerDetail(NAMESPACE_ID, MCP_NAME,
+            VERSION_ONE);
         
-        verify(endpointOperationService).injectEndpoint(any(McpServerDetailInfo.class));
+        verify(endpointOperationService).injectEndpoint(detail);
+        verify(endpointOperationService).injectEndpoint(serving);
     }
     
     @Test

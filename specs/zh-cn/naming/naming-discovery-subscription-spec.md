@@ -67,6 +67,13 @@ HTTP Open API 不支持长轮询或推送订阅。自定义 HTTP 客户端应显
 客户端可以在订阅建立、重连、缓存缺失或轮询兜底时重新查询服务端。本地磁盘缓存是恢复和 failover
 辅助，不是服务端持久化数据源。
 
+Java SDK 使用 `subscribe=true` 发现服务时，如果已有缓存视图且存在有效的本地订阅意图，则使用该视图
+完成后续查询，不同步重新订阅；订阅正在恢复或首次订阅尚未成功时同样适用。恢复继续由现有后台 Redo
+负责。没有有效意图时，磁盘缓存启动及完成取消后的再次查询沿用同步订阅和失败回退缓存的流程。
+无缓存、显式 listener 订阅和
+`subscribe=false` 查询保留原有流程。具体契约遵循
+[客户端本地缓存与 Redo 规范](../client/client-local-cache-redo-spec.md#41-有效-naming-订阅意图下的缓存读取)。
+
 服务端推送 fan-out 和重试任务必须遵循
 [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)和
 [任务执行规范](../design/foundation-task-execution-spec.md)。

@@ -14,8 +14,14 @@ describe('Config detail layout', () => {
   it('provides a larger content viewer and fullscreen mode', () => {
     expect(DETAIL_SOURCE).toContain('const [contentFullscreen, setContentFullscreen] = useState(false);');
     expect(DETAIL_SOURCE).toContain("'fixed inset-0 z-50 flex flex-col rounded-none border-0 bg-background'");
-    expect(DETAIL_SOURCE).toContain("'max(420px, calc(100vh - 320px))'");
+    expect(DETAIL_SOURCE).toContain("'min-h-0 flex-1 gap-3 py-4'");
+    expect(DETAIL_SOURCE).toContain('height="100%"');
     expect(DETAIL_SOURCE).toContain("t('config.viewFullscreen')");
     expect(DETAIL_SOURCE).toContain("event.key === 'Escape'");
+  });
+
+  it('fits the page into the viewport without page scrolling', () => {
+    expect(DETAIL_SOURCE).toContain('flex h-[calc(100vh-6.5rem)] min-h-[560px] flex-col gap-4');
+    expect(DETAIL_SOURCE).not.toContain('calc(100vh - 320px)');
   });
 });

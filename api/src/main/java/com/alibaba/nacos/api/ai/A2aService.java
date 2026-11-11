@@ -85,12 +85,12 @@ public interface A2aService {
     /**
      * Release new agent card or new version with default service type endpoint.
      *
-     * <p>
-     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
-     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard agent card need to release
      * @throws NacosException if request parameter is invalid or handle error
@@ -103,12 +103,12 @@ public interface A2aService {
     /**
      * Release new agent card or new version.
      *
-     * <p>
-     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
-     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard        agent card need to release
      * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
@@ -124,19 +124,19 @@ public interface A2aService {
     /**
      * Release new agent card or new version.
      *
-     * <p>
-     * With legacy routing, an existing Version is unchanged. With RAD routing, an existing draft
-     * is replaced and submission follows setAsLatest; an existing non-draft Version is unchanged. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard        agent card need to release
      * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
      *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
-     * @param setAsLatest      whether set new version as latest, default is false. This parameter is only effect when
-     *                         new version is released. If current agent card not exist, whatever this parameter is, it
-     *                         will be set as latest.
+     * @param setAsLatest whether to select the new Version as latest on legacy routing, or submit
+     *                    it through the ordinary pipeline on RAD routing; defaults to false and
+     *                    does not suppress the first-Version behavior described above
      * @throws NacosException if request parameter is invalid or handle error
      */
     @Since("3.1.0")
@@ -145,6 +145,11 @@ public interface A2aService {
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName name of agent
      * @param version   version of this endpoint
@@ -161,6 +166,11 @@ public interface A2aService {
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName name of agent
      * @param version   version of this endpoint
@@ -179,6 +189,11 @@ public interface A2aService {
     /**
      * Register endpoint to agent card.
      *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
+     *
      * @param agentName name of agent
      * @param version   version of this endpoint
      * @param address   address for this endpoint
@@ -196,6 +211,11 @@ public interface A2aService {
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName  name of agent
      * @param version    version of this endpoint
@@ -223,6 +243,11 @@ public interface A2aService {
     /**
      * Register endpoint to agent card.
      *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
+     *
      * @param agentName name of agent
      * @param endpoint  endpoint info
      * @throws NacosException if request parameter is invalid or handle error or agent not found
@@ -234,8 +259,9 @@ public interface A2aService {
      * Batch register endpoints to agent card.
      *
      * <p>
-     * Conflict with {@link #registerAgentEndpoint(String, AgentEndpoint)}, this API will overwrite all endpoint
-     * registered by {@link #registerAgentEndpoint(String, AgentEndpoint)}.
+     * Replaces this client's complete Endpoint set for the same Agent and exact Version,
+     * including a prior single-Endpoint registration. Include every address to retain in the
+     * collection; other clients' registrations are unaffected.
      * </p>
      *
      * @param agentName name of agent
@@ -289,6 +315,10 @@ public interface A2aService {
     /**
      * Subscribe agent card.
      *
+     * <p>Callbacks contain complete AgentCards. The legacy API suppresses empty updates: deletion
+     * does not deliver a null/empty Card or a lifecycle event. Keeping the last Card does not
+     * guarantee its addresses remain callable.</p>
+     *
      * @param agentName         name of agent
      * @param agentCardListener the callback listener for agent card
      * @return current agent card when subscribe success
@@ -303,6 +333,10 @@ public interface A2aService {
     
     /**
      * Subscribe agent card.
+     *
+     * <p>Callbacks contain complete AgentCards. The legacy API suppresses empty updates: deletion
+     * does not deliver a null/empty Card or a lifecycle event. Keeping the last Card does not
+     * guarantee its addresses remain callable.</p>
      *
      * @param agentName         name of agent
      * @param version           version of agent, if empty or null, means subscribe latest version

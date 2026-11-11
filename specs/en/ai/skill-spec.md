@@ -121,6 +121,9 @@ Standard-compatible Skill packages follow these rules:
   instruction content.
 - `name` and `description` are required frontmatter fields. Nacos maps `name`
   to the AI resource name and maps `description` to searchable metadata.
+- `description` supports YAML literal (`|`) and folded (`>`) block scalars,
+  including chomping indicators. Creation, upload, reads, lists, and details use
+  the complete parsed text; colons within that text must not create nested fields.
 - `license`, `compatibility`, `metadata`, and `allowed-tools` are optional
   standard fields. Nacos must preserve them in `SKILL.md`; it may index selected
   fields later, but the descriptor remains the source of truth for package
@@ -128,6 +131,9 @@ Standard-compatible Skill packages follow these rules:
 - Standard package roots may include optional `scripts/`, `references/`, and
   `assets/` directories. Nacos stores and distributes these files as Skill
   resources.
+- Ordinary resource files may be zero-byte or whitespace-only. Storage, reads,
+  and downloads must preserve the files and their content instead of treating
+  empty content as a missing file.
 - Upload parsing must ignore platform-generated ZIP metadata files, such as
   macOS `.DS_Store`, `._*` AppleDouble files, and the `__MACOSX/` directory.
   These files must not be stored or distributed as Skill resources. This
@@ -212,6 +218,30 @@ keys. This change does not add frontmatter search or alter the package parser.
 The display version is the server-managed `latest`, falling back to
 `editingVersion`, then `reviewingVersion`. An editing draft must not replace an
 online version's frontmatter. No display version means `frontMatter = null`.
+
+The Skill resource description must come from the displayed version's
+`storage.frontMatter.description`, never from its commit message. Creating,
+uploading, overwriting or saving a draft must not overwrite another online
+display version's description. Update the description and custom frontmatter
+snapshot in the same metadata CAS. Lifecycle refreshes must check and repair the
+description even if the display version or custom fields are unchanged, and
+reselect the display version after conflicts.
+
+When the last online version goes offline, select an editing or reviewing
+version using the priority above if one remains. Otherwise retain the correct
+description of the version just taken offline. Do not clear it, select the
+maximum historical published version, or blindly retain stale resource metadata
+such as a discarded draft's description or `|`. This description is for management
+display only: remove `latest`, keep `onlineCnt=0`, and continue returning null
+frontmatter when no display version exists. Persist the retained description with
+the offline lifecycle pointers in the same CAS so a delayed snapshot refresh
+cannot overwrite a description retained by a concurrent operation.
+
+Historical descriptors missing parsed frontmatter or description do not trigger
+package reads or automatic migration. Preserve the existing description and log
+a WARN with namespace, Skill and version until a content update supplies the
+metadata. Log refresh failures and exhausted CAS retries without description
+contents; do not turn an already completed lifecycle operation into a failure.
 
 New or updated content stores the complete parsed `frontMatter` alongside the
 version's storage descriptor. Upload, upload overwrite, draft

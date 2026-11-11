@@ -12,133 +12,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#===========================================================================================
-# Setting system properties
-#===========================================================================================
+# Native-only launcher. The ordinary JVM launcher remains startup.sh.
+BASE_DIR=$(cd "$(dirname "$0")/.." && pwd) || exit 1
+NACOS_SERVER="${BASE_DIR}/target/nacos-server"
+MANIFEST="${BASE_DIR}/target/aot-manifest.properties"
+
+if [ ! -x "$NACOS_SERVER" ] || [ ! -f "$MANIFEST" ]; then
+    echo "Missing Native executable or AOT manifest in ${BASE_DIR}/target" >&2
+    exit 1
+fi
+
+manifest_value() {
+    awk -v key="$1" 'index($0, key "=") == 1 { print substr($0, length(key) + 2); exit }' "$MANIFEST"
+}
 
 MODE="cluster"
-BASE_DIR="/opt/nacos"
-CUSTOM_SEARCH_LOCATIONS="file:${BASE_DIR}/conf/"
+[ "$(manifest_value standalone)" = "true" ] && MODE="standalone"
+DEPLOYMENT=$(manifest_value deployment | tr '[:upper:]' '[:lower:]')
+FUNCTION_MODE=$(manifest_value functionMode)
+EMBEDDED_STORAGE=$(manifest_value embeddedStorage)
 
-if [ -f "${BASE_DIR}/target/nacos-server.jar" ]; then
-    NACOS_TYPE="Java"
-    NACOS_SERVER="${BASE_DIR}/target/nacos-server.jar"
-elif [ -x "${BASE_DIR}/target/nacos-server" ]; then
-    NACOS_TYPE="Native"
-    NACOS_SERVER="${BASE_DIR}/target/nacos-server"
-else
-    echo "Nacos server application doesn't exist in ${BASE_DIR}/target"
-    exit -1
-fi
-
-while getopts ":m:" opt; do
-    case $opt in
-        m)
-            MODE=$OPTARG
-            ;;
-        *)
-            echo "Unknown parameter"
-            exit 1
-            ;;
+while getopts ":m:d:f:" opt; do
+    case "$opt" in
+        m) MODE=$OPTARG ;;
+        d) DEPLOYMENT=$OPTARG ;;
+        f) FUNCTION_MODE=$OPTARG ;;
+        *) echo "Usage: $0 [-m standalone|cluster] [-d merged|server|console] [-f function-mode]" >&2; exit 1 ;;
     esac
 done
+case "$MODE" in
+    standalone) STANDALONE=true ;;
+    cluster) STANDALONE=false ;;
+    *) echo "Invalid mode: $MODE" >&2; exit 1 ;;
+esac
+case "$DEPLOYMENT" in
+    merged|server|console) ;;
+    *) echo "Invalid deployment: $DEPLOYMENT" >&2; exit 1 ;;
+esac
 
-#===========================================================================================
-# Setting start log
-#===========================================================================================
-
-if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
-    touch "${BASE_DIR}/logs/start.out"
-fi
-
-#===========================================================================================
-# Setting application properties
-#===========================================================================================
-
-RUN_CMD="-Dnacos.home=${BASE_DIR}"
-RUN_CMD="${RUN_CMD} -Dnacos.member.list="
-RUN_CMD="${RUN_CMD} -Dnacos.preferHostnameOverIp=true"
-
-### If use standalone mode:
-if [ "${MODE}" = "standalone" ]; then
-  RUN_CMD="${RUN_CMD} -Dnacos.standalone=true"
-fi
-
-if [ "${NACOS_TYPE}" = "Java" ]; then
-    ### Define JAVA_HOME, JAVA_PATH and JAVA
-    [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
-    [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/java
-    [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/opt/taobao/java
-    [ ! -e "$JAVA_HOME/bin/java" ] && unset JAVA_HOME
-
-    if [ -z "$JAVA_HOME" ]; then
-        if $darwin; then
-            if [ -x '/usr/libexec/java_home' ] ; then
-                export JAVA_HOME=`/usr/libexec/java_home`
-            elif [ -d "/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home" ]; then
-                export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
-            fi
-        else
-            JAVA_PATH=`dirname $(readlink -f $(which javac))`
-            if [ "x$JAVA_PATH" != "x" ]; then
-                export JAVA_HOME=`dirname $JAVA_PATH 2>/dev/null`
-            fi
-        fi
-        if [ -z "$JAVA_HOME" ]; then
-            JAVA_PATH=$(which java)
-            if [ -z "$JAVA_PATH" ]; then
-                error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
-            fi
-            JAVA_HOME=$(dirname "$JAVA_PATH")/..
-            export JAVA_HOME=$(cd "$JAVA_HOME" && pwd)
-        fi
-    fi
-
-    export JAVA_HOME
-    export JAVA="$JAVA_HOME/bin/java"
-
-    ### Define gc log rule
-    JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
-    if [ "$JAVA_MAJOR_VERSION" -ge "9" ]; then
-        RUN_CMD="${RUN_CMD} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=102400"
-        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang=ALL-UNNAMED"
-        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
-        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.util=ALL-UNNAMED"
-    else
-        JAVA_OPT_EXT_FIX="-Djava.ext.dirs=${JAVA_HOME}/jre/lib/ext:${JAVA_HOME}/lib/ext"
-        RUN_CMD="${RUN_CMD} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
-    fi
-
-    if [ "${MODE}" = "standalone" ]; then
-        RUN_CMD="${RUN_CMD} -Xms512m -Xmx512m -Xmn256m"
-    else
-        RUN_CMD="${RUN_CMD} -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
-    fi
-
-    RUN_CMD="${RUN_CMD} -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${BASE_DIR}/logs/java_heapdump.hprof"
-    RUN_CMD="${RUN_CMD} -XX:-UseLargePages"
-    RUN_CMD="${RUN_CMD} -jar ${NACOS_SERVER}"
-
-    RUN_CMD="${RUN_CMD} --server.max-http-header-size=524288"
-
-    if [ "$JAVA_OPT_EXT_FIX" = "" ]; then
-        RUN_CMD="${JAVA} ${RUN_CMD}"
-    else
-        RUN_CMD="${JAVA} ${JAVA_OPT_EXT_FIX} ${RUN_CMD}"
-    fi
-elif [ "${NACOS_TYPE}" = "Native" ]; then
-    RUN_CMD="${NACOS_SERVER} ${RUN_CMD}"
-fi
-
-RUN_CMD="${RUN_CMD} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
-RUN_CMD="${RUN_CMD} --spring.config.additional-location=${CUSTOM_SEARCH_LOCATIONS}"
-
-#===========================================================================================
-# Start application
-#===========================================================================================
-
-echo "${RUN_CMD} nacos.nacos" > ${BASE_DIR}/logs/start.out 2>&1 &
-
-echo "${NACOS_TYPE} Nacos is now starting with ${MODE} mode, checkout ${BASE_DIR}/logs/start.out for more information."
-
-nohup ${RUN_CMD} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
+mkdir -p "${BASE_DIR}/logs" || exit 1
+LOGFILE="${BASE_DIR}/logs/startup.log"
+# Native VM options are whitespace-separated flags such as -Xmx1g.
+read -r -a NATIVE_OPTIONS <<< "${NACOS_NATIVE_OPTS:-}"
+COMMAND=("$NACOS_SERVER" "${NATIVE_OPTIONS[@]}"
+    "-Dnacos.home=${BASE_DIR}"
+    "-Dnacos.standalone=${STANDALONE}"
+    "-Dnacos.deployment.type=${DEPLOYMENT}"
+    "-DembeddedStorage=${EMBEDDED_STORAGE}"
+    "-Dspring.config.additional-location=file:${BASE_DIR}/conf/"
+    "-Dlogging.config=${BASE_DIR}/conf/nacos-logback.xml")
+case "$FUNCTION_MODE" in
+    ""|All) ;;
+    config|naming|microservice|ai) COMMAND+=("-Dnacos.functionMode=${FUNCTION_MODE}") ;;
+    *) echo "Invalid function mode: $FUNCTION_MODE" >&2; exit 1 ;;
+esac
+nohup "${COMMAND[@]}" nacos.nacos > "$LOGFILE" 2>&1 &
+echo "Native Nacos is starting with ${MODE}/${DEPLOYMENT}; check ${LOGFILE}"

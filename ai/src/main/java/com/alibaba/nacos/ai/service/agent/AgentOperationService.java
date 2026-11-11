@@ -1055,7 +1055,7 @@ public class AgentOperationService {
      *
      * @param namespaceId namespace identifier
      * @param agentName canonical Agent name
-     * @param scope PUBLIC or PRIVATE, case-insensitive
+     * @param scope registered visibility scope, case-insensitive
      * @throws NacosException when validation, authorization, migration, or persistence fails
      */
     public void updateScope(String namespaceId, String agentName, String scope)
@@ -1064,10 +1064,10 @@ public class AgentOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter 'scope' type String is not present");
         }
-        if (!VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
-            && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
+        if (!VisibilityHelper.scopeRegistry().contains(scope)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
-                ErrorCode.PARAMETER_VALIDATE_ERROR, "Parameter 'scope' must be PUBLIC or PRIVATE");
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "Parameter 'scope' must be "
+                    + String.join(" or ", VisibilityHelper.scopeRegistry().getScopeNames()));
         }
         requireWritableMeta(namespaceId, agentName);
         resourceManager.doUpdateScope(namespaceId, agentName, RESOURCE_TYPE, scope);
@@ -1192,9 +1192,9 @@ public class AgentOperationService {
             throw new IllegalArgumentException("Invalid Agent tag filter: " + tag);
         }
         if (StringUtils.isNotBlank(scope)
-            && !VisibilityConstants.SCOPE_PUBLIC.equals(scope)
-            && !VisibilityConstants.SCOPE_PRIVATE.equals(scope)) {
-            throw new IllegalArgumentException("Agent scope must be PUBLIC or PRIVATE");
+            && !VisibilityHelper.scopeRegistry().getScopeNames().contains(scope)) {
+            throw new IllegalArgumentException("Agent scope must be "
+                + String.join(" or ", VisibilityHelper.scopeRegistry().getScopeNames()));
         }
         if (StringUtils.isNotBlank(orderBy) && !"download_count".equals(orderBy)) {
             throw new IllegalArgumentException("Unsupported Agent orderBy: " + orderBy);

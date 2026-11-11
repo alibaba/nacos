@@ -1,0 +1,1 @@
+typeof Object.hasOwn!=`function`&&Object.defineProperty(Object,"hasOwn",{configurable:!0,writable:!0,value:function(e,t){return Object.prototype.hasOwnProperty.call(Object(e),t)}});function e(e,t){return Object.prototype.hasOwnProperty.call(e,t)}export{e as t};

@@ -144,7 +144,7 @@ The Agent resource contains the following fields:
 | `extensions` | No | Namespaced `Map<String, JsonValue>` for public Agent-level extensions. |
 | `status` | Yes | `enable` or `disable`. |
 | `owner` | Yes | Management owner. |
-| `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` in this version. |
+| `scope` | Yes | Shared visibility scope; `PUBLIC` or `PRIVATE` by default, with plugin extensions as defined by the visibility spec. |
 | `versionInfo` | Read-only | editingVersion, reviewingVersion, complete labels and onlineVersions[]. |
 | `metaVersion` | Read-only | Monotonic metadata revision shared with the AI Resource model. The initial Agent Admin API does not expose a conditional-write parameter. |
 | `createTime`, `updateTime` | Read-only | Audit timestamps. |
@@ -518,3 +518,5 @@ This organization does not rename protocol/schema concepts or change storage and
 Optional reference properties may be absent or null, without adding new business meaning. Endpoint priority/weight/healthy/enabled are non-null effective values: 0/1/true/true, respectively. Priority sorts ascending. Definition storage remains an explicit projection and excludes health, bindings, enabled and observations. Management runtime queries retain current Naming health and enabled. Java derived version helpers are onlineCnt()/latestVersion(); JSON remains labels plus onlineVersions.
 
 Use [management schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json). [Artifact schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) references that public shape; the artifact payload schemaVersion remains 1.0. Historical schema revisions are retained in Git tags/commits.
+
+The shared JSON Schema retains the default PUBLIC/PRIVATE contract. AgentModelValidator resolves supported scopes internally through AgentScopeProvider without changing caller signatures; without a provider, only the built-ins are accepted. Deployments that declare additional scopes must extend their schema distribution accordingly; the upstream schema is not relaxed to accept arbitrary strings.

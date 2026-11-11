@@ -86,6 +86,7 @@ export default function ConfigEditorPage() {
   const [groupName, setGroupName] = useState('');
   const [content, setContent] = useState('');
   const [desc, setDesc] = useState('');
+  const [changeMessage, setChangeMessage] = useState('');
   const [appName, setAppName] = useState('');
   const [configTags, setConfigTags] = useState('');
   const [type, setType] = useState<ConfigType>('text');
@@ -118,13 +119,14 @@ export default function ConfigEditorPage() {
   }), [appName, configTags, content, dataId, desc, groupName, type]);
 
   const hasUnsavedChanges = loadedSnapshot !== null
-    && !isSameConfigEditorSnapshot(currentSnapshot, loadedSnapshot);
+    && (!isSameConfigEditorSnapshot(currentSnapshot, loadedSnapshot) || changeMessage.length > 0);
 
   const clearEditorState = useCallback(() => {
     setDataId('');
     setGroupName('');
     setContent('');
     setDesc('');
+    setChangeMessage('');
     setAppName('');
     setConfigTags('');
     setType('text');
@@ -171,6 +173,7 @@ export default function ConfigEditorPage() {
         setGroupName(nextSnapshot.groupName);
         setContent(nextSnapshot.content);
         setDesc(nextSnapshot.desc);
+        setChangeMessage('');
         setAppName(nextSnapshot.appName);
         setConfigTags(nextSnapshot.configTags);
         setType(nextSnapshot.type);
@@ -267,11 +270,13 @@ export default function ConfigEditorPage() {
         groupName,
         content,
         desc,
+        ...(isEditing ? { changeMessage } : {}),
         configTags,
         type,
         appName,
         namespaceId: urlNamespace,
       });
+      setChangeMessage('');
       toast.success(t('config.publishSuccess'));
       setPublishConfirmOpen(false);
       navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
@@ -372,9 +377,9 @@ export default function ConfigEditorPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-[calc(100vh-6.5rem)] flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-4">
         <Button variant="outline" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -382,11 +387,11 @@ export default function ConfigEditorPage() {
       </div>
 
       {/* Form Card with Tabs */}
-      <Card className="gap-3 py-4">
+      <Card className="flex-1 gap-3 py-4">
         <CardHeader className="px-5">
           <CardTitle>{t('config.editConfig')}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 px-5">
+        <CardContent className="flex flex-1 flex-col gap-4 px-5">
           {/* Shared fields - always visible */}
           <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
             <Label className="md:text-right">{t('config.dataId')}</Label>
@@ -430,6 +435,19 @@ export default function ConfigEditorPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {isEditing && activeTab === 'production' && (
+            <div className="space-y-2">
+              <Label htmlFor="changeMessage">{t('config.changeMessage')}</Label>
+              <Textarea
+                id="changeMessage"
+                value={changeMessage}
+                onChange={(e) => setChangeMessage(e.target.value)}
+                placeholder={t('config.changeMessagePlaceholder')}
+                rows={3}
+              />
+            </div>
+          )}
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="rounded-lg border border-dashed bg-muted/20">
@@ -477,32 +495,35 @@ export default function ConfigEditorPage() {
 
           {/* Tabs for Production / Beta content */}
           {isEditing ? (
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-1 flex-col">
+              <TabsList className="self-start">
                 <TabsTrigger value="production">{t('config.production')}</TabsTrigger>
                 <TabsTrigger value="beta">{t('config.beta')}</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="production">
-                <div className="space-y-2">
+              <TabsContent value="production" className="flex-1 flex-col data-[state=active]:flex">
+                <div className="flex flex-1 flex-col gap-2">
                   <Label>{t('config.content')}</Label>
-                  <MonacoEditor
-                    value={content}
-                    onChange={setContent}
-                    language={type}
-                    height="350px"
-                  />
+                  <div className="relative min-h-[240px] flex-1">
+                    <MonacoEditor
+                      value={content}
+                      onChange={setContent}
+                      language={type}
+                      height="100%"
+                      className="absolute inset-0"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="beta">
+              <TabsContent value="beta" className="flex-1 flex-col data-[state=active]:flex">
                 {betaLoading ? (
-                  <div className="space-y-4 py-4">
+                  <div className="flex flex-1 flex-col gap-4 py-4">
                     <div className="h-4 w-32 bg-accent animate-pulse rounded" />
-                    <div className="h-[350px] bg-accent animate-pulse rounded" />
+                    <div className="min-h-[240px] flex-1 bg-accent animate-pulse rounded" />
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="flex flex-1 flex-col gap-4">
                     {/* Beta IPs */}
                     <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
                       <Label className="md:text-right">{t('config.betaIps')}</Label>
@@ -515,35 +536,41 @@ export default function ConfigEditorPage() {
                     </div>
 
                     {/* Beta content editor */}
-                    <div className="space-y-2">
+                    <div className="flex flex-1 flex-col gap-2">
                       <Label>{t('config.content')}</Label>
-                      <MonacoEditor
-                        value={betaContent}
-                        onChange={setBetaContent}
-                        language={type}
-                        height="350px"
-                      />
+                      <div className="relative min-h-[240px] flex-1">
+                        <MonacoEditor
+                          value={betaContent}
+                          onChange={setBetaContent}
+                          language={type}
+                          height="100%"
+                          className="absolute inset-0"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </TabsContent>
             </Tabs>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-1 flex-col gap-2">
               <Label>{t('config.content')}</Label>
-              <MonacoEditor
-                value={content}
-                onChange={setContent}
-                language={type}
-                height="350px"
-              />
+              <div className="relative min-h-[240px] flex-1">
+                <MonacoEditor
+                  value={content}
+                  onChange={setContent}
+                  language={type}
+                  height="100%"
+                  className="absolute inset-0"
+                />
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Footer Actions */}
-      <div className="flex items-center justify-end gap-4">
+      <div className="flex shrink-0 items-center justify-end gap-4">
         <Button variant="outline" onClick={handleCancel} disabled={publishing || betaPublishing}>
           {t('common.cancel')}
         </Button>

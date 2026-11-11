@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.3.0-RC</revision>
+        <revision>3.3.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -138,7 +138,7 @@
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.12</postgresql.version>
-        <derby.version>10.14.2.0</derby.version>
+        <derby.version>10.16.1.1</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.81.0</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
@@ -377,6 +377,8 @@
                         <!-- Pinned upstream ARD schema; license and provenance are stored beside it. -->
                         <exclude>**/ard-spec/**/ai-catalog.schema.json</exclude>
                         <exclude>**/ard-spec/**/ard.openapi.yaml</exclude>
+                        <exclude>**/ard-spec/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/ard-entry.schema.json</exclude>
+                        <exclude>**/ard-spec/f073b1ea9b01a5f068d0b0986426f2ea49fa30b2/ard.context.jsonld</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>
@@ -530,6 +532,12 @@
     </build>
     
     <profiles>
+        <profile>
+            <id>native</id>
+            <properties>
+                <nacos.native.enabled>true</nacos.native.enabled>
+            </properties>
+        </profile>
         <profile>
             <id>jdk17</id>
             <activation>
@@ -984,6 +992,17 @@
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
+                <version>${derby.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derbyshared</artifactId>
+                <version>${derby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derbytools</artifactId>
                 <version>${derby.version}</version>
             </dependency>
 

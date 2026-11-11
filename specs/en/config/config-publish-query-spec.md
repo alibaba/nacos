@@ -88,6 +88,10 @@ The effective semantic order is:
    and config type.
 8. Resolve the response content type from the config type, defaulting to text.
 
+Existing formal config content may be empty or whitespace-only. Queries must
+return that content unchanged with its metadata. Only a `null` content read
+denotes missing formal content; blank-content checks must not determine existence.
+
 Runtime query must use cached and dumped content rather than broad persistence
 queries. The shared dump and cache boundary is defined by the
 [Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md).
@@ -156,3 +160,16 @@ Import, export, and clone are management operations:
 | HTTP Console API | Console clone uses `namespaceId` as source namespace and `targetNamespaceId` as target namespace; omitted `namespaceId` defaults source to target. |
 | gRPC API | Query, publish compatibility, remove compatibility, listen, fuzzy watch, and push messages must preserve the same Config identity and md5 semantics. |
 | Client SDK | Runtime query and listener APIs should be preferred for applications; broad management APIs belong to Maintainer SDK. |
+
+### Publish operation messages
+
+Ordinary and CAS publish APIs may accept optional `changeMessage` and handle
+inserts and updates identically, without checking whether the config is new.
+Console create and delete workflows have no message input. Delete, Beta, tag/gray,
+and rollback APIs are out of scope in this phase. Messages belong to the
+successful publish, not config description or content. Omitting the parameter
+preserves existing behavior; failed CAS records no message.
+See [Config Persistence And History Spec](config-persistence-history-spec.md#publish-operation-messages)
+for input rules (512 Unicode code points), JSON storage, history-detail
+display, plugin degradation, and acceptance scenarios. This is a target for
+review, not a claim that current APIs implement and validate this scope.

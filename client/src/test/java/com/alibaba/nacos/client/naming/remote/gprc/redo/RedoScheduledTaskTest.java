@@ -224,4 +224,18 @@ class RedoScheduledTaskTest {
         verify(redoService, never()).findInstanceRedoData();
         verify(redoService, never()).findSubscriberRedoData();
     }
+    
+    @Test
+    void testRunRedoInstanceWithError() {
+        when(redoService.findInstanceRedoData()).thenThrow(new OutOfMemoryError("test"));
+        redoTask.run();
+        // Not any error thrown, otherwise the periodic redo task would be silently cancelled
+    }
+    
+    @Test
+    void testRunRedoSubscriberWithError() {
+        when(redoService.findSubscriberRedoData()).thenThrow(new OutOfMemoryError("test"));
+        redoTask.run();
+        // Not any error thrown, otherwise the periodic redo task would be silently cancelled
+    }
 }

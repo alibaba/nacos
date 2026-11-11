@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
@@ -44,6 +45,28 @@ import java.util.Collection;
  */
 public interface AiService
     extends McpService, A2aService, SkillService, AgentSpecService, PromptService {
+    
+    /**
+     * Query RAD discovery capability for the effective Agent transport.
+     *
+     * <p>The default returns {@link AbilityStatus#UNKNOWN} without requiring {@link #agent()}.
+     * The official client reads current gRPC negotiation or cached HTTP capability evidence.
+     * A cold HTTP lookup may block and try multiple configured addresses; individual network
+     * timeouts are not an overall query deadline. This query does not select or change the
+     * legacy A2A route, start another gRPC connection, or probe a business API.
+     *
+     * <p>Evidence applies to the observed target and transport, not the entire cluster.
+     * Support does not guarantee authorization, resource visibility, migration readiness or
+     * success of a subsequent operation. Missing evidence is not proof of missing support.
+     *
+     * @return supported, not supported, or unknown capability evidence
+     * @throws NacosException if an HTTP capability probe fails or the official client is closed;
+     *         such failures are not converted into {@code NOT_SUPPORTED}
+     * @since 3.3.0
+     */
+    default AbilityStatus getAgentDiscoveryCapability() throws NacosException {
+        return AbilityStatus.UNKNOWN;
+    }
     
     /**
      * Return the mcp resource service.
@@ -686,11 +709,12 @@ public interface AiService
     /**
      * Release new agent card or new version with default service type endpoint.
      *
-     * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard agent card need to release
      * @throws NacosException if request parameter is invalid or handle error
@@ -706,11 +730,12 @@ public interface AiService
     /**
      * Release new agent card or new version.
      *
-     * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard        agent card need to release
      * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
@@ -729,18 +754,19 @@ public interface AiService
     /**
      * Release new agent card or new version.
      *
-     * <p>
-     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
-     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
-     * card.
-     * </p>
+     * <p>Legacy routing directly publishes a new Version and leaves existing Versions unchanged.
+     * RAD routing maps {@code setAsLatest} to {@code AgentPublishRequest.autoSubmit}: existing
+     * drafts are replaced, while existing non-drafts are unchanged. A newly created first Version
+     * is submitted even when the flag is false. Without a Pipeline, ordinary submission publishes
+     * it and sets latest; with a Pipeline, completion follows that workflow and may not be immediate.
+     * The first-Version rule means the Agent had no Versions before this creation.</p>
      *
      * @param agentCard        agent card need to release
      * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
      *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
-     * @param setAsLatest      whether set new version as latest, default is false. This parameter is only effect when
-     *                         new version is released. If current agent card not exist, whatever this parameter is, it
-     *                         will be set as latest.
+     * @param setAsLatest whether to select the new Version as latest on legacy routing, or submit
+     *                    it through the ordinary pipeline on RAD routing; defaults to false and
+     *                    does not suppress the first-Version behavior described above
      * @throws NacosException if request parameter is invalid or handle error
      * @deprecated Use {@link #agent()} instead.
      */
@@ -754,6 +780,11 @@ public interface AiService
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName name of agent
      * @param version   version of this endpoint
@@ -773,6 +804,11 @@ public interface AiService
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName name of agent
      * @param version   version of this endpoint
@@ -794,6 +830,11 @@ public interface AiService
     /**
      * Register endpoint to agent card.
      *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
+     *
      * @param agentName name of agent
      * @param version   version of this endpoint
      * @param address   address for this endpoint
@@ -814,6 +855,11 @@ public interface AiService
     
     /**
      * Register endpoint to agent card.
+     *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
      *
      * @param agentName  name of agent
      * @param version    version of this endpoint
@@ -844,6 +890,11 @@ public interface AiService
     /**
      * Register endpoint to agent card.
      *
+     * <p>Replaces this client's complete Endpoint registration for the same Agent and exact
+     * Version. To retain multiple addresses, submit the complete collection instead. Other clients'
+     * registrations are unaffected. Replace an address by registering the desired new set;
+     * do not deregister the old address after the replacement.</p>
+     *
      * @param agentName name of agent
      * @param endpoint  endpoint info
      * @throws NacosException if request parameter is invalid or handle error or agent not found
@@ -861,8 +912,9 @@ public interface AiService
      * Batch register endpoints to agent card.
      *
      * <p>
-     * Conflict with {@link #registerAgentEndpoint(String, AgentEndpoint)}, this API will overwrite all endpoint
-     * registered by {@link #registerAgentEndpoint(String, AgentEndpoint)}.
+     * Replaces this client's complete Endpoint set for the same Agent and exact Version,
+     * including a prior single-Endpoint registration. Include every address to retain in the
+     * collection; other clients' registrations are unaffected.
      * </p>
      *
      * @param agentName name of agent
@@ -930,6 +982,10 @@ public interface AiService
     /**
      * Subscribe agent card.
      *
+     * <p>Callbacks contain complete AgentCards. The legacy API suppresses empty updates: deletion
+     * does not deliver a null/empty Card or a lifecycle event. Keeping the last Card does not
+     * guarantee its addresses remain callable.</p>
+     *
      * @param agentName         name of agent
      * @param agentCardListener the callback listener for agent card
      * @return current agent card when subscribe success
@@ -947,6 +1003,10 @@ public interface AiService
     
     /**
      * Subscribe agent card.
+     *
+     * <p>Callbacks contain complete AgentCards. The legacy API suppresses empty updates: deletion
+     * does not deliver a null/empty Card or a lifecycle event. Keeping the last Card does not
+     * guarantee its addresses remain callable.</p>
      *
      * @param agentName         name of agent
      * @param version           version of agent, if empty or null, means subscribe latest version

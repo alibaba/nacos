@@ -558,7 +558,7 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testUploadSkillFromZipShouldSyncMetaDescriptionForExistingSkill()
+    void testUploadSkillFromZipShouldPreserveOnlineDescriptionForExistingSkill()
         throws NacosException, IOException {
         String namespaceId = "test-namespace";
         final byte[] zipBytes = createValidZipBytes();
@@ -591,7 +591,7 @@ class SkillOperationServiceImplTest {
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq("test-skill"),
             anyString(),
             eq(2L), metaCaptor.capture());
-        assertEquals("Test skill description", metaCaptor.getValue().getDesc());
+        assertEquals("Old description", metaCaptor.getValue().getDesc());
     }
     
     @Test
@@ -2554,6 +2554,11 @@ class SkillOperationServiceImplTest {
         when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(),
             eq("v1")))
             .thenReturn(vRow);
+        when(aiResourceVersionPersistService.updateStorage(eq(namespaceId), eq(skillName),
+            eq("skill"), eq("v1"), anyString())).thenAnswer(call -> {
+                vRow.setStorage(call.getArgument(4));
+                return 1;
+            });
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"),
             eq(1L), any()))
             .thenReturn(true);

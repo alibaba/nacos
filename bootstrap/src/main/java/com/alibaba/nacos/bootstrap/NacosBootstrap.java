@@ -96,36 +96,47 @@ public class NacosBootstrap {
     
     private static ConfigurableApplicationContext startCoreContext(String[] args) {
         NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosServerBasicApplication.class)
-            .web(WebApplicationType.NONE)
-            .banner(getBanner("core-banner.txt")).run(args);
+        SpringApplicationBuilder builder =
+            new SpringApplicationBuilder(NacosServerBasicApplication.class)
+                .web(WebApplicationType.NONE)
+                .banner(getBanner("core-banner.txt"));
+        return NacosAotInitializer.configure(builder, NacosStartUp.CORE_START_UP_PHASE).run(args);
     }
     
     private static ConfigurableApplicationContext startServerWebContext(String[] args,
         ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.WEB_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosServerWebApplication.class).parent(coreContext)
-            .banner(getBanner("nacos-server-web-banner.txt")).run(args);
+        SpringApplicationBuilder builder =
+            new SpringApplicationBuilder(NacosServerWebApplication.class).parent(coreContext)
+                .banner(getBanner("nacos-server-web-banner.txt"));
+        return NacosAotInitializer.configure(builder, NacosStartUp.WEB_START_UP_PHASE).run(args);
     }
     
     private static ConfigurableApplicationContext startConsoleContext(String[] args,
         ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
-            .banner(getBanner("nacos-console-banner.txt")).run(args);
+        SpringApplicationBuilder builder =
+            new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
+                .banner(getBanner("nacos-console-banner.txt"));
+        return NacosAotInitializer.configure(builder, NacosStartUp.CONSOLE_START_UP_PHASE)
+            .run(args);
     }
     
     private static ConfigurableApplicationContext startAiRegistryContext(String[] args,
         ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.AI_REGISTRY_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosAiRegistry.class).parent(coreContext)
-            .banner(getBanner("nacos-ai-registry-banner.txt")).run(args);
+        SpringApplicationBuilder builder =
+            new SpringApplicationBuilder(NacosAiRegistry.class).parent(coreContext)
+                .banner(getBanner("nacos-ai-registry-banner.txt"));
+        return NacosAotInitializer.configure(builder, NacosStartUp.AI_REGISTRY_START_UP_PHASE)
+            .run(args);
     }
     
     private static void startOnlyConsole(String[] args) {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
-        new SpringApplicationBuilder(NacosConsole.class).banner(
-            getBanner("nacos-console-banner.txt")).run(args);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(NacosConsole.class)
+            .banner(getBanner("nacos-console-banner.txt"));
+        NacosAotInitializer.configure(builder, NacosStartUp.CONSOLE_START_UP_PHASE).run(args);
     }
     
     private static Banner getBanner(String bannerFileName) {

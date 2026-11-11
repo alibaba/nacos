@@ -38,6 +38,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -79,7 +80,15 @@ public class ArdSearchController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
         tags = {ALLOW_ANONYMOUS})
     public ArdSearchResponse search(@RequestParam(required = false) String namespaceId,
-        @RequestBody ArdSearchRequest request)
+        @RequestBody ArdSearchRequest request, HttpServletResponse httpResponse)
+        throws NacosException {
+        ArdSearchResponse response = search(namespaceId, request);
+        httpResponse.setHeader("X-Nacos-ARD-Enhancement", response.getEnhancementStatus());
+        return response;
+    }
+    
+    /** Search using the existing in-process adaptor contract. */
+    public ArdSearchResponse search(String namespaceId, ArdSearchRequest request)
         throws NacosException {
         bindNamespaceId(namespaceId, request);
         return ardSearchService.search(request);

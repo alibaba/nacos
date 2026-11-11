@@ -617,4 +617,19 @@ class ConfigPublishRequestHandlerTest {
         }
     }
     
+    @Test
+    void testPublishOperationMessageFromAdditionalParameter() throws Exception {
+        ConfigOperationService operation = Mockito.mock(ConfigOperationService.class);
+        ConfigPublishRequestHandler handler = new ConfigPublishRequestHandler(operation);
+        ConfigPublishRequest request =
+            new ConfigPublishRequest("dataId", "group", "tenant", "content");
+        request.putAdditionalParam("changeMessage", "current operation");
+        request.putAdditionalParam("encryptedDataKey", "key");
+        RequestMeta meta = new RequestMeta();
+        meta.setClientIp("127.0.0.1");
+        handler.handle(request, meta);
+        Mockito.verify(operation).publishConfig(org.mockito.ArgumentMatchers.argThat(
+            form -> "current operation".equals(form.getChangeMessage())), any(), anyString());
+    }
+    
 }

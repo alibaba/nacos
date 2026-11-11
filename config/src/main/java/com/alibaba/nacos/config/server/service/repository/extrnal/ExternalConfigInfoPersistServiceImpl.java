@@ -173,8 +173,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp,
                         srcUser, now, "I",
                         Constants.FORMAL, null,
-                        ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo,
-                            srcUser));
+                        ConfigExtInfoUtil.withChangeMessage(
+                            ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo,
+                                srcUser),
+                            configInfo.getChangeMessage()));
                 }
                 ConfigInfoStateWrapper configInfoCurrent =
                     this.findConfigInfoState(configInfo.getDataId(),
@@ -716,7 +718,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(
                         oldConfigAllInfo.getId(),
                         oldConfigAllInfo, srcIp, srcUser, now, "U", Constants.FORMAL, null,
-                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
+                        ConfigExtInfoUtil.withChangeMessage(
+                            ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo),
+                            configInfo.getChangeMessage()));
                 }
                 return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
@@ -780,7 +784,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(
                         oldAllConfigInfo.getId(),
                         oldAllConfigInfo, srcIp, srcUser, now, "U", Constants.FORMAL, null,
-                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldAllConfigInfo));
+                        ConfigExtInfoUtil.withChangeMessage(
+                            ConfigExtInfoUtil.getExtInfoFromAllInfo(oldAllConfigInfo),
+                            configInfo.getChangeMessage()));
                 }
                 
                 ConfigInfoStateWrapper configInfoLast =

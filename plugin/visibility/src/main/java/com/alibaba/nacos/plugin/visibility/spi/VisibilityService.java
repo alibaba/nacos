@@ -20,7 +20,10 @@ import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeDefinition;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 
 /**
@@ -59,6 +62,15 @@ public interface VisibilityService extends PluginConfigSpec {
     default String resolveDefaultScopeForCreate(String identity, String apiType,
         String resourceType) {
         return VisibilityConstants.SCOPE_PRIVATE;
+    }
+    
+    /**
+     * Declare additional scopes supported by this service. Built-in PUBLIC and PRIVATE are reserved.
+     *
+     * @return immutable declarations; empty by default for existing plugins
+     */
+    default Collection<VisibilityScopeDefinition> getAdditionalScopes() {
+        return Collections.emptyList();
     }
     
     ValidationResult validateVisibility(String identity, String action, String apiType,

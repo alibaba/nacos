@@ -20,6 +20,7 @@ import com.alibaba.nacos.airegistry.annotation.ArdApi;
 import com.alibaba.nacos.airegistry.config.ConditionalOnArdEnabled;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.common.ApiType;
@@ -51,6 +52,19 @@ public class ArdWellKnownController {
     
     public ArdWellKnownController(ArdSearchService ardSearchService) {
         this.ardSearchService = ardSearchService;
+    }
+    
+    /**
+     * Return the current host-level ARD manifest.
+     *
+     * @return registry discovery manifest
+     */
+    @Since("3.3.0")
+    @GetMapping(value = "/ard.json", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
+    public ArdManifest manifest() {
+        return ardSearchService.hostManifest();
     }
     
     /**

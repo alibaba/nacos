@@ -136,6 +136,40 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>check-native-artifact</id>
+                                <phase>prepare-package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <exportAntProperties>true</exportAntProperties>
+                                    <target>
+                                        <fail message="release-native requires -Pnative,release-native and a successful Native build">
+                                            <condition><not><equals arg1="${nacos.native.enabled}" arg2="true"/></not></condition>
+                                        </fail>
+                                        <fail message="release-native requires compilation; nativeDryRun and skipNativeBuild cannot produce a release">
+                                            <condition><or>
+                                                <equals arg1="${nativeDryRun}" arg2="true"/>
+                                                <equals arg1="${skipNativeBuild}" arg2="true"/>
+                                            </or></condition>
+                                        </fail>
+                                        <loadproperties srcFile="${project.basedir}/../bootstrap/target/native/build.properties"/>
+                                        <condition property="nacos.native.executable.exists">
+                                            <or>
+                                                <available file="${project.basedir}/../bootstrap/target/native/nacos-server"/>
+                                                <available file="${project.basedir}/../bootstrap/target/native/nacos-server.exe"/>
+                                            </or>
+                                        </condition>
+                                        <fail unless="nacos.native.executable.exists" message="Native executable is missing; compile with -Pnative before packaging"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
                             <descriptors>
@@ -145,8 +179,8 @@
                         </configuration>
                         <executions>
                             <execution>
-                                <id>make-assembly</id>
-                                <phase>install</phase>
+                                <id>make-native-assembly</id>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>single</goal>
                                 </goals>

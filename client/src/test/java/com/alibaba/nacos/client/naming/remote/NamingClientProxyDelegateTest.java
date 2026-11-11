@@ -367,7 +367,19 @@ class NamingClientProxyDelegateTest {
         ServiceInfo actual = delegate.subscribe(serviceName, groupName, clusters, true);
         assertEquals(info, actual);
         verify(holder, times(1)).processServiceInfo(info, true);
+        verify(holder, times(1)).processServiceInfo(info);
+    }
+    
+    @Test
+    void testHasSubscriptionIntentOnlyReadsLocalState() throws NacosException {
+        assertFalse(delegate.hasSubscriptionIntent("service1", "group1", ""));
+        when(mockGrpcClient.hasSubscriptionIntent("service1", "group1", "")).thenReturn(true);
+        assertTrue(delegate.hasSubscriptionIntent("service1", "group1", ""));
         
+        verify(serviceInfoUpdateServiceConstruction.constructed().get(0), Mockito.never())
+            .scheduleUpdateIfAbsent(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        verify(mockGrpcClient, Mockito.never()).subscribe(Mockito.anyString(), Mockito.anyString(),
+            Mockito.anyString());
     }
     
     @Test

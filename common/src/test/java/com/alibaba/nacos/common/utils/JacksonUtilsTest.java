@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.common.model.RestResult;
@@ -51,6 +52,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JacksonUtilsTest {
+    
+    @Test
+    void testAgentCardSecurityRequirements() {
+        for (String requirements : new String[] {
+            "[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]"}) {
+            String json = "{\"securityRequirements\":" + requirements + "}";
+            AgentCardDetailInfo card = JacksonUtils.toObj(json, AgentCardDetailInfo.class);
+            assertEquals(Collections.emptyList(),
+                card.getSecurityRequirements().get(0).getSchemes().get("apiKey").getList());
+            assertEquals(
+                JacksonUtils.toObj("[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]", List.class),
+                JacksonUtils.toObj(JacksonUtils.toJson(card), Map.class)
+                    .get("securityRequirements"));
+        }
+    }
     
     @Test
     void testToJson1() {

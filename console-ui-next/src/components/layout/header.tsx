@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun,
   Moon,
-  Languages,
   LogOut,
   KeyRound,
   Layers,
@@ -21,6 +20,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -37,10 +38,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ChangePasswordDialog } from '@/components/layout/change-password-dialog';
+import { SUPPORTED_LANGUAGES, getLanguageMeta, isSupportedLanguage } from '@/locales/languages';
 
-function getBaseUrl(language: string) {
-  return language.toLowerCase() === 'en-us' ? 'https://nacos.io/en/' : 'https://nacos.io/';
-}
+// Not translated on purpose: users who switched to a language they cannot read
+// must still recognize the language selector.
+const LANGUAGE_SELECTOR_LABEL = 'Lang.';
 
 interface NavLink {
   key: string;
@@ -66,7 +68,7 @@ const NAV_LINKS: NavLink[] = [
 ];
 
 export function Header() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme, language, setLanguage, sidebarCollapsed, toggleSidebar } = useAppStore();
@@ -75,14 +77,17 @@ export function Header() {
   const { authEnabled } = useServerStore();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
-  const baseUrl = getBaseUrl(language);
+  const currentLanguage = getLanguageMeta(language);
+  const baseUrl = currentLanguage.docsBase;
   const sidebarToggleLabel = sidebarCollapsed ? t('common.expand') : t('common.collapse');
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
-  const toggleLanguage = () => {
-    const newLang = language === 'zh-CN' ? 'en-US' : 'zh-CN';
-    setLanguage(newLang);
-    window.location.reload();
+  const handleLanguageChange = (value: string) => {
+    if (!isSupportedLanguage(value) || value === language) {
+      return;
+    }
+    setLanguage(value);
+    i18n.changeLanguage(value);
   };
 
   const handleNamespaceChange = (value: string) => {
@@ -178,15 +183,32 @@ export function Header() {
 
         <Separator orientation="vertical" className="mx-1 h-5" />
 
-        {/* Language switch */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={toggleLanguage}>
-              <Languages size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('header.languageSwitch')}</TooltipContent>
-        </Tooltip>
+        {/* Language selector */}
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-8 gap-1 px-2 text-xs text-muted-foreground"
+                  aria-label={t('header.language')}
+                >
+                  {LANGUAGE_SELECTOR_LABEL} {currentLanguage.shortLabel}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>{t('header.language')}</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
+              {Object.entries(SUPPORTED_LANGUAGES).map(([code, { label }]) => (
+                <DropdownMenuRadioItem key={code} value={code} className="text-xs">
+                  {label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Theme toggle */}
         <Tooltip>
@@ -195,7 +217,7 @@ export function Header() {
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{theme === 'light' ? 'Dark mode' : 'Light mode'}</TooltipContent>
+          <TooltipContent>{theme === 'light' ? t('header.darkMode') : t('header.lightMode')}</TooltipContent>
         </Tooltip>
 
         {/* User menu */}

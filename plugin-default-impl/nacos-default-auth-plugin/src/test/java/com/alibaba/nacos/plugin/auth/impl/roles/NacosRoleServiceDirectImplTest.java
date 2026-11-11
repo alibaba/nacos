@@ -52,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -287,8 +288,8 @@ class NacosRoleServiceDirectImplTest {
     @Test
     void addAdminRoleBindsFirstAdminAndMarksConfig() {
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
-        when(rolePersistService.getRolesByUserNameAndRoleName("", "", 1,
-            Integer.MAX_VALUE)).thenReturn(rolePage(Collections.emptyList()));
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenReturn(rolePage(Collections.emptyList()));
         
         nacosRoleService.addAdminRole("nacos");
         
@@ -482,6 +483,67 @@ class NacosRoleServiceDirectImplTest {
         permission.setResource(new Resource("", "group", "service", "naming", new Properties()));
         
         assertTrue(nacosRoleService.hasPermission(new NacosUser("nacos"), permission));
+    }
+    
+    @Test
+    void hasGlobalAdminRoleQueriesAdminRoleWithBoundedPage() {
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenReturn(rolePage(
+                Collections.singletonList(roleInfo(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos"))));
+        
+        assertTrue(nacosRoleService.hasGlobalAdminRole());
+        assertTrue(nacosRoleService.hasGlobalAdminRole());
+        
+        verify(rolePersistService, times(1)).getRolesByUserNameAndRoleName("",
+            AuthConstants.GLOBAL_ADMIN_ROLE, 1, 1);
+        verify(rolePersistService, never()).getRolesByUserNameAndRoleName("", "", 1,
+            Integer.MAX_VALUE);
+    }
+    
+    @Test
+    void hasGlobalAdminRoleReturnsFalseWhenNoAdminRoleExists() {
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenReturn(rolePage(Collections.emptyList()));
+        
+        assertFalse(nacosRoleService.hasGlobalAdminRole());
+        verify(rolePersistService, never()).getRolesByUserNameAndRoleName("",
+            AuthConstants.GLOBAL_ADMIN_ROLE, 1, 100);
+    }
+    
+    @Test
+    void hasGlobalAdminRoleKeepsExactRoleNameMatchUnderCaseInsensitiveFilter() {
+        RoleInfo lowerCaseRole = roleInfo("role_admin", "alice");
+        RoleInfo adminRole = roleInfo(AuthConstants.GLOBAL_ADMIN_ROLE, "nacos");
+        Page<RoleInfo> firstPage = rolePage(Collections.singletonList(lowerCaseRole));
+        firstPage.setTotalCount(2);
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenReturn(firstPage);
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 100)).thenReturn(rolePage(List.of(lowerCaseRole, adminRole)));
+        
+        assertTrue(nacosRoleService.hasGlobalAdminRole());
+    }
+    
+    @Test
+    void hasGlobalAdminRoleIgnoresOnlyCaseVariantRoles() {
+        RoleInfo lowerCaseRole = roleInfo("role_admin", "alice");
+        RoleInfo mixedCaseRole = roleInfo("Role_Admin", "bob");
+        Page<RoleInfo> firstPage = rolePage(Collections.singletonList(lowerCaseRole));
+        firstPage.setTotalCount(2);
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenReturn(firstPage);
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 100)).thenReturn(rolePage(List.of(lowerCaseRole, mixedCaseRole)));
+        
+        assertFalse(nacosRoleService.hasGlobalAdminRole());
+    }
+    
+    @Test
+    void hasGlobalAdminRolePropagatesQueryFailure() {
+        when(rolePersistService.getRolesByUserNameAndRoleName("", AuthConstants.GLOBAL_ADMIN_ROLE,
+            1, 1)).thenThrow(new IllegalStateException("query failed"));
+        
+        assertThrows(IllegalStateException.class, () -> nacosRoleService.hasGlobalAdminRole());
     }
     
     @Test

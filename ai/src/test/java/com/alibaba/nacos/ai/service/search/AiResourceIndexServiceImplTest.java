@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.vector.AiResourceVectorDocument;
 import com.alibaba.nacos.plugin.ai.vector.spi.AiResourceVectorIndex;
@@ -503,6 +504,23 @@ class AiResourceIndexServiceImplTest {
     }
     
     @Test
+    void failedMcpStorageReadShouldPreserveExistingIndexForRetry() throws Exception {
+        AiResourceIndexServiceImpl service = service();
+        AiResource resource = new AiResource();
+        when(resourceManager.findMeta("public", "private-mcp",
+            AiResourceConstants.RESOURCE_TYPE_MCP)).thenReturn(resource);
+        when(mcpServerOperationService.getMcpServerIndexSource(resource, null))
+            .thenThrow(new NacosException(NacosException.NOT_FOUND, "version content missing"));
+        
+        assertThrows(NacosException.class, () -> service.rebuildLatestAiResource("public",
+            AiResourceConstants.RESOURCE_TYPE_MCP, "private-mcp"));
+        
+        verify(repository, never()).deleteByResource(any(), any(), any());
+        verify(repository, never()).replaceEntry(any(), anyList());
+        verify(vectorIndex, never()).deleteByResource(any(), any(), any());
+    }
+    
+    @Test
     void rebuildMcpServerShouldPersistToolContentChunks() throws Exception {
         AiResourceIndexServiceImpl service = service(enhancementService, contentLoader);
         McpServerDetailInfo mcpServer = mcpServer();
@@ -518,7 +536,11 @@ class AiResourceIndexServiceImplTest {
                 return chunks;
             });
         
-        when(mcpServerOperationService.getMcpServerDetail("public", null, "mcp-avatar", null))
+        AiResource source = meta();
+        source.setType("mcp");
+        source.setName("mcp-avatar");
+        when(resourceManager.findMeta("public", "mcp-avatar", "mcp")).thenReturn(source);
+        when(mcpServerOperationService.getMcpServerIndexSource(source, null))
             .thenReturn(mcpServer);
         service.rebuildLatestAiResource("public", AiResourceConstants.RESOURCE_TYPE_MCP,
             "mcp-avatar");
@@ -560,7 +582,7 @@ class AiResourceIndexServiceImplTest {
         AiResourceSearchTypeHandlerRegistry registry =
             new AiResourceSearchTypeHandlerRegistry(List.of(
                 new StoredAiResourceSearchTypeHandler(resourceManager, indexContentLoader),
-                new McpAiResourceSearchTypeHandler(mcpServerOperationService)));
+                new McpAiResourceSearchTypeHandler(mcpServerOperationService, resourceManager)));
         return new AiResourceIndexServiceImpl(repository, embeddingService, vectorIndex,
             indexEnhancementService, registry);
     }

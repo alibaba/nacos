@@ -28,9 +28,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
+import com.alibaba.nacos.ai.form.agent.admin.AgentScopeForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityScopeDefinition;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,6 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class VisibilityHelperTest {
     
@@ -143,4 +152,40 @@ class VisibilityHelperTest {
         field.setAccessible(true);
         field.set(null, null);
     }
+    
+    @Test
+    void scopeDeclarationsFollowSelectedPluginAndFormsShareValidation() throws Exception {
+        VisibilityService service = mock(VisibilityService.class);
+        when(service.getAdditionalScopes()).thenReturn(List.of(
+            new VisibilityScopeDefinition("TEAM_EDIT", true)));
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(service));
+        assertEquals(Set.of("PUBLIC", "PRIVATE", "TEAM_EDIT"),
+            VisibilityHelper.scopeRegistry().getScopeNames());
+        SkillScopeForm skill = new SkillScopeForm();
+        skill.setSkillName("my-skill");
+        skill.setScope("team_edit");
+        skill.validate();
+        AgentSpecScopeForm agentSpec = new AgentSpecScopeForm();
+        agentSpec.setAgentSpecName("my-agent");
+        agentSpec.setScope("TEAM_EDIT");
+        agentSpec.validate();
+        AiResourceFilterableForm filter = new AiResourceFilterableForm();
+        filter.setScope("TEAM_EDIT");
+        filter.validate();
+        AgentScopeForm agent = new AgentScopeForm();
+        agent.setAgentName("scope-extension");
+        agent.setScope("team_edit");
+        agent.validate();
+        when(visibilityPluginManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.empty());
+        assertThrows(NacosApiException.class, skill::validate);
+        assertThrows(NacosApiException.class, agentSpec::validate);
+        assertThrows(NacosApiException.class, filter::validate);
+        assertThrows(NacosApiException.class, agent::validate);
+        filter.setScope(null);
+        filter.validate();
+        assertEquals(Set.of("PUBLIC", "PRIVATE"), VisibilityHelper.scopeRegistry().getScopeNames());
+    }
+    
 }

@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ModuleAuthorizationITCase extends AuthITCase {
 
-    private static final int EXPECTED_SECURED_OPERATION_COUNT = 393;
+    private static final int EXPECTED_SECURED_OPERATION_COUNT = 394;
 
     private static final String OPERATION_COVERAGE_MANIFEST =
             "test/openapi-test/AUTHORIZATION_OPERATION_COVERAGE.md";
@@ -71,7 +71,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("AiResourceImportAdminController", 4),
             Map.entry("AiResourceSearchClientController", 1),
             Map.entry("ArdSearchController", 5),
-            Map.entry("ArdWellKnownController", 1),
+            Map.entry("ArdWellKnownController", 2),
             Map.entry("CapacityControllerV3", 2),
             Map.entry("ClientControllerV3", 7),
             Map.entry("ClusterControllerV3", 1),

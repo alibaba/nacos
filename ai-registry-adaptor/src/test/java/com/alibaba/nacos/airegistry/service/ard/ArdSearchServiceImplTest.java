@@ -24,9 +24,13 @@ import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchHit;
 import com.alibaba.nacos.ai.service.mcp.McpLifecycleOperationService;
 import com.alibaba.nacos.ai.service.search.AiResourceEmbeddingService;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceConfiguration;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceFilter;
+import com.alibaba.nacos.ai.service.search.AiResourceRelevanceProvider;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchRepository;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService;
+import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandler;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandlerRegistry;
 import com.alibaba.nacos.ai.service.search.AiResourceIndexProjection;
@@ -85,8 +89,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -101,6 +107,8 @@ class ArdSearchServiceImplTest {
         "nacos.ai.resource.search.ranking.enhanced.enabled";
     
     private static final String CATALOG_BASE_URL_KEY = "nacos.ai.ard.catalog.base-url";
+    
+    private static final String REGISTRY_PUBLISHER_KEY = "nacos.ai.ard.registry.publisher";
     
     private static final String CATALOG_TRUST_IDENTITY_KEY =
         "nacos.ai.ard.catalog.trust.identity";
@@ -128,6 +136,7 @@ class ArdSearchServiceImplTest {
         System.clearProperty(RANKING_ENABLED_KEY);
         System.clearProperty(CATALOG_BASE_URL_KEY);
         System.clearProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER);
+        System.clearProperty(REGISTRY_PUBLISHER_KEY);
         System.clearProperty(CATALOG_TRUST_IDENTITY_KEY);
         System.clearProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY);
         EnvUtil.setContextPath(null);
@@ -510,15 +519,11 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void searchShouldAcceptPinnedOpenApiNestedFieldPathExample() throws Exception {
+    void searchShouldRejectUnavailableTrustDimension() throws Exception {
         ArdSearchServiceImpl service = service();
         ArdSearchRequest request = request("api",
-            Map.of("type", (Object) List.of(ArdProtocolConstants.MEDIA_TYPE_MCP),
-                "trustManifest.attestations.type", (Object) List.of("SOC2-Type2")));
-        
-        ArdSearchResponse response = service.search(request);
-        
-        assertTrue(response.getResults().isEmpty());
+            Map.of("trustManifest.attestations.type", (Object) List.of("SOC2-Type2")));
+        assertThrows(NacosException.class, () -> service.search(request));
         verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
     }
     
@@ -639,13 +644,13 @@ class ArdSearchServiceImplTest {
             .thenReturn(List.of(missingPrimary, unknownPrimary, skillOne, skillTwo, prompt));
         
         ArdExploreResponse response = service.explore(exploreRequest("public", Map.of(),
-            List.of(facet("type", 1, 1), facet("publisher", 10, 1))));
+            List.of(facet("type", 1, 1), facet("source", 10, 1))));
         
         assertEquals(1, response.getFacets().get("type").getBuckets().size());
         assertEquals(2, response.getFacets().get("type").getBuckets().get(0).getCount());
         assertEquals(3, response.getFacets().get("type").getOtherCount());
-        assertEquals(1, response.getFacets().get("publisher").getBuckets().size());
-        assertEquals(5, response.getFacets().get("publisher").getBuckets().get(0).getCount());
+        assertEquals(1, response.getFacets().get("source").getBuckets().size());
+        assertEquals(5, response.getFacets().get("source").getBuckets().get(0).getCount());
     }
     
     @Test
@@ -774,6 +779,35 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
+    void hostManifestShouldKeepLegacyProjectionAndRequestOriginIsolated() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com/proxy/");
+        ArdSearchServiceImpl service = service();
+        JsonNode before =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class);
+        JsonNode manifest =
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostManifest()), JsonNode.class);
+        var contracts = new com.alibaba.nacos.airegistry.contract.ArdContractSchemas();
+        var errors = contracts.validateEntry("ArdManifest", manifest);
+        assertTrue(errors.isEmpty(), errors.toString());
+        assertEquals(1, manifest.size());
+        assertEquals(1, manifest.path("entries").size());
+        JsonNode entry = manifest.path("entries").get(0);
+        assertEquals(ArdProtocolConstants.BASE_CONTEXT, entry.path("@context").asText());
+        assertEquals("https://nacos.example.com/proxy/v3/ai/ard", entry.path("url").asText());
+        assertTrue(entry.path("score").isMissingNode());
+        assertTrue(entry.path("source").isMissingNode());
+        assertTrue(entry.path("trustManifest").isMissingNode());
+        assertTrue(entry.path("tags").isArray());
+        assertTrue(entry.path("capabilities").isArray());
+        assertTrue(entry.path("version").isMissingNode());
+        assertEquals(before,
+            JacksonUtils.toObj(JacksonUtils.toJson(service.hostCatalog()), JsonNode.class));
+        assertTrue(contracts.validateLegacyCatalog(before).isEmpty());
+        assertTrue(before.path("entries").get(0).path("@context").isMissingNode());
+        verifyNoInteractions(repository, resourceManager, mcpServerOperationService);
+    }
+    
+    @Test
     void catalogShouldUseConfiguredBaseUrlAndHostIdentifier() throws Exception {
         System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
         System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "nacos.example.com");
@@ -817,13 +851,177 @@ class ArdSearchServiceImplTest {
     }
     
     @Test
-    void catalogShouldIncludeConfiguredTrustIdentity() {
+    void inconsistentRegistryTrustShouldNotRejectEmptyResourceQueries() throws Exception {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "spiffe://other.example/workload");
+        System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "enterprise-custom");
+        ArdSearchServiceImpl service = service();
+        assertThrows(IllegalStateException.class, service::hostManifest);
+        assertThrows(IllegalStateException.class, service::hostCatalog);
+        assertThrows(IllegalStateException.class, () -> service.catalog("public"));
+        Map<String, Object> noMatch = Map.of("type", "application/unknown");
+        assertTrue(service.search(request("anything", noMatch)).getResults().isEmpty());
+        assertTrue(service.list("public", "type = 'application/unknown'", null, 10, null)
+            .getItems().isEmpty());
+        assertTrue(service.explore(exploreRequest("public", noMatch,
+            List.of(facet("type", 10, 1)))).getFacets().get("type").getBuckets().isEmpty());
+        verifyNoInteractions(repository, vectorIndex, embeddingService, resourceManager);
+    }
+    
+    @Test
+    void resourcesShouldNeverInheritRegistryIdentity() throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://registry.example");
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "legacy-prefix");
+        AiResourceSearchService core = mock(AiResourceSearchService.class);
+        var page = new AiResourceSearchService.Page(List.of(resourceResult("first-resource"),
+            resourceResult("second-resource")), null);
+        when(core.search(any())).thenReturn(page);
+        when(core.list(any())).thenReturn(page);
+        when(core.aggregate(any(), anyList()))
+            .thenReturn(new AiResourceSearchService.AggregationResult(2, Map.of()));
+        ArdSearchServiceImpl service = new ArdSearchServiceImpl(core);
+        List<String> identifiers = null;
+        for (String publisher : List.of("example.com", "another.example")) {
+            System.setProperty(REGISTRY_PUBLISHER_KEY, publisher);
+            for (String identity : List.of("https://" + publisher + "/identity",
+                "https://conflicting.example/identity", "did:web")) {
+                System.setProperty(CATALOG_TRUST_IDENTITY_KEY, identity);
+                var results = service.search(request("resource", Map.of())).getResults();
+                var current = results.stream().map(ArdSearchResult::getIdentifier).toList();
+                if (identifiers == null) {
+                    identifiers = current;
+                } else {
+                    assertEquals(identifiers, current);
+                }
+                for (var result : results) {
+                    assertTrue(result.getIdentifier().startsWith("urn:air:legacy-prefix:"));
+                    assertNull(result.getTrustManifest());
+                    assertEquals("https://registry.example/v3/ai/ard", result.getSource());
+                }
+                for (var result : service.list("public", null, null, 10, null).getItems()) {
+                    assertNull(result.getTrustManifest());
+                }
+                assertEquals(2, service.explore(exploreRequest("public", Map.of(),
+                    List.of(facet("source", 10, 1)))).getFacets().get("source")
+                    .getBuckets().get(0).getCount());
+            }
+            System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://" + publisher + "/identity");
+            var catalog = service.catalog("public");
+            assertEquals("urn:air:" + publisher + ":registry:nacos",
+                catalog.getEntries().get(0).getIdentifier());
+            assertNotNull(catalog.getEntries().get(0).getTrustManifest());
+            assertNull(catalog.getEntries().get(1).getTrustManifest());
+            assertNull(catalog.getEntries().get(2).getTrustManifest());
+        }
+    }
+    
+    private AiResourceSearchResult resourceResult(String name) {
+        AiResourceSearchResult result = new AiResourceSearchResult();
+        result.setNamespaceId("public");
+        result.setResourceType("skill");
+        result.setResourceName(name);
+        result.setResourceVersion("1.0.0");
+        result.setDisplayName(name);
+        result.setScore(100);
+        return result;
+    }
+    
+    @Test
+    void unsupportedResourceIdentityDimensionsShouldFailBeforeShortCircuit() {
+        ArdSearchServiceImpl service = service();
+        for (String field : List.of("publisher", "publisherId", "trustManifest.identity",
+            "trustManifest.attestations.type")) {
+            Map<String, Object> filter = Map.of("type", "application/unknown", field, List.of());
+            assertThrows(NacosException.class, () -> service.search(request("resource", filter)));
+            assertThrows(NacosException.class, () -> service.explore(exploreRequest("public",
+                filter, List.of(facet("type", 10, 1)))));
+            assertThrows(NacosException.class, () -> service.explore(exploreRequest("public",
+                Map.of("type", "application/unknown"), List.of(facet(field, 10, 1)))));
+            assertThrows(NacosException.class, () -> service.list("public",
+                "type = 'application/unknown' AND " + field + " = 'example.com'", null, 10, null));
+            ArdSearchRequest legacy = request("resource", Map.of());
+            ArdSearchFilter oldFilter = new ArdSearchFilter();
+            oldFilter.setFieldPath(field);
+            oldFilter.setValue("example.com");
+            legacy.getQuery().setFilters(List.of(oldFilter));
+            assertThrows(NacosException.class, () -> service.search(legacy));
+        }
+        for (String field : List.of("p", "t.identity",
+            "https://agenticresourcediscovery.org/ns#publisher")) {
+            ArdSearchRequest request = request("resource", Map.of());
+            request.getQuery().setContext(Map.of("p",
+                "https://agenticresourcediscovery.org/ns#publisher", "t",
+                "https://agenticresourcediscovery.org/ns#trustManifest"));
+            request.getQuery().setFilter(Map.of(field, "example.com"));
+            assertThrows(NacosException.class, () -> service.search(request));
+        }
+        verifyNoInteractions(repository, vectorIndex, embeddingService, resourceManager);
+    }
+    
+    @Test
+    void registryTrustShouldRequireExplicitPublisherInsteadOfLegacyPrefix() {
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://example.com/identity");
+        assertThrows(IllegalStateException.class, () -> service().hostManifest());
+    }
+    
+    @Test
+    void registryPublisherShouldRequireFqdnSyntaxEvenWithoutTrust() {
+        for (String publisher : List.of("nacos", "localhost", "127.0.0.1", "https://example.com",
+            "example.com:443", "-example.com", "example-.com", "example..com", "example_1.com",
+            "example.123", "a".repeat(64) + ".com")) {
+            System.setProperty(REGISTRY_PUBLISHER_KEY, publisher);
+            assertThrows(IllegalStateException.class, () -> service().hostManifest(), publisher);
+        }
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "EXAMPLE.COM.");
+        assertEquals("urn:air:example.com:registry:nacos",
+            service().hostManifest().getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void unknownRegistryTrustShouldPreserveOnlyCurrentManifestHint() throws Exception {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "did:example:opaque-subject");
+        System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "enterprise-custom");
+        ArdSearchServiceImpl service = service();
+        var current = service.hostManifest().getEntries().get(0);
+        assertEquals("enterprise-custom", current.getTrustManifest().get("identityType"));
+        assertEquals("did:example:opaque-subject", current.getTrustManifest().get("identity"));
+        assertEquals("urn:air:example.com:registry:nacos", current.getIdentifier());
+        var legacy = service.hostCatalog();
+        assertNull(legacy.getHost().getTrustManifest().get("identityType"));
+        assertEquals("did:example:opaque-subject",
+            legacy.getHost().getTrustManifest().get("identity"));
+        assertCatalogSchemaValid(legacy);
+        assertEquals(current.getIdentifier(), legacy.getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void registryTrustShouldNotUseLegacyPrefixRequestHostOrBaseUrl() {
+        System.setProperty(ArdProtocolConstants.KEY_CATALOG_HOST_IDENTIFIER, "legacy-prefix");
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://example.com/identity");
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://proxy.example/registry");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/.well-known/ard.json");
+        request.setServerName("unrelated.example");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        ArdSearchServiceImpl service = service();
+        var first = service.hostManifest().getEntries().get(0);
+        assertEquals("urn:air:example.com:registry:nacos", first.getIdentifier());
+        assertEquals("https://proxy.example/registry/v3/ai/ard", first.getUrl());
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "new.example");
+        assertThrows(IllegalStateException.class, service::hostManifest);
+        System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "https://new.example/identity");
+        assertEquals("urn:air:new.example:registry:nacos",
+            service.hostManifest().getEntries().get(0).getIdentifier());
+    }
+    
+    @Test
+    void catalogShouldIncludeRegistryTrustIdentity() {
+        System.setProperty(REGISTRY_PUBLISHER_KEY, "example.com");
         System.setProperty(CATALOG_TRUST_IDENTITY_KEY, "spiffe://example.com/nacos/ard");
         System.setProperty(CATALOG_TRUST_IDENTITY_TYPE_KEY, "spiffe");
-        ArdSearchServiceImpl service = service();
-        
-        ArdCatalog catalog = service.hostCatalog();
-        
+        ArdCatalog catalog = service().hostCatalog();
         assertEquals("spiffe://example.com/nacos/ard",
             catalog.getHost().getTrustManifest().get("identity"));
         assertEquals("spiffe", catalog.getHost().getTrustManifest().get("identityType"));
@@ -892,11 +1090,271 @@ class ArdSearchServiceImplTest {
         assertCatalogSchemaValid(catalog);
     }
     
+    @Test
+    void searchShouldApplyOrWithinKeysAndAndAcrossAliases() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        var first = entry(101L, "ab");
+        first.setTags("[\"a\",\"b\"]");
+        var second = entry(102L, "a");
+        second.setTags("[\"a\"]");
+        var third = entry(103L, "b");
+        third.setTags("[\"b\"]");
+        when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+        when(repository.findEntriesByIds(anyCollection()))
+            .thenReturn(List.of(first, second, third));
+        ArdSearchRequest request = request("api", Map.of("tags", List.of("a", "b")));
+        assertEquals(List.of("ab", "a", "b"), resultNames(service.search(request)));
+        request.getQuery().setContext(JacksonUtils
+            .toObj("{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+        request.getQuery()
+            .setFilter(new LinkedHashMap<>(Map.of("tags", List.of("a"), "t", List.of("b"))));
+        assertEquals(List.of("ab"), resultNames(service.search(request)));
+    }
+    
+    @Test
+    void searchShouldResolveTypeAndMetadataAliasesWithoutChangingProjection() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(10001)))
+            .thenReturn(List.of(hit(100L, 1)));
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(List.of(entry()));
+        ArdSearchRequest plain =
+            request("api", Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+                "metadata.resourceType", "skill"));
+        var before = service.search(plain);
+        ArdSearchRequest alias =
+            request("api", Map.of("a:mediaType", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+                "m.resourceType", "skill"));
+        alias.getQuery()
+            .setContext(JacksonUtils.toObj("{\"a\":\"https://agenticresourcediscovery.org/ns#\","
+                + "\"m\":\"a:metadata\"}", JsonNode.class));
+        assertEquals(JacksonUtils.toJson(before), JacksonUtils.toJson(service.search(alias)));
+        alias.getQuery().setFilter(Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE,
+            "a:mediaType", ArdProtocolConstants.MEDIA_TYPE_MCP));
+        assertTrue(service.search(alias).getResults().isEmpty());
+    }
+    
+    @Test
+    void searchShouldPreserveBasicCursorAndRecoverAfterAnchorRemoval() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        var entries =
+            new ArrayList<>(List.of(entry(101L, "one"), entry(102L, "two"), entry(103L, "three")));
+        when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+            .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+        when(repository.findEntriesByIds(anyCollection())).thenAnswer(invocation -> entries);
+        ArdSearchRequest request = request("api", Map.of("tags", "api"));
+        request.setPageSize(1);
+        var first = service.search(request);
+        assertNotNull(first.getPageToken());
+        request.setPageToken(first.getPageToken());
+        request.setPageSize(2);
+        request.getQuery().setContext(JacksonUtils
+            .toObj("{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+        request.getQuery().setFilter(Map.of("t", "api"));
+        assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+        entries.remove(0);
+        assertThrows(NacosException.class, () -> service.search(request));
+        request.setPageToken(null);
+        assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+        request.setPageToken("invalid");
+        request.getQuery().setFilter(Map.of("type", "application/unknown+json"));
+        assertTrue(service.search(request).getResults().isEmpty());
+    }
+    
+    @Test
+    void searchShouldPreserveEnhancedCursorFingerprintAndRecoverWithoutToken() throws Exception {
+        Map<String, String> settings = Map.of(
+            "nacos.ai.ard.search.enhancement.enabled", "true",
+            "nacos.ai.resource.search.relevance.endpoint", "http://localhost:9000/v1/systemone",
+            "nacos.ai.resource.search.relevance.api-key", "test-key",
+            "nacos.ai.resource.search.relevance.model", "test-model");
+        Map<String, String> previous = new LinkedHashMap<>();
+        settings.forEach((key, value) -> previous.put(key, System.setProperty(key, value)));
+        var previousEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new org.springframework.core.env.StandardEnvironment());
+        AiResourceRelevanceFilter filter = null;
+        try {
+            AiResourceRelevanceProvider provider = mock(AiResourceRelevanceProvider.class);
+            when(provider.name()).thenReturn("jev");
+            when(provider.maxBatchSize()).thenReturn(60);
+            when(provider.maxInputBytes()).thenReturn(65536);
+            when(provider.contractVersion()).thenReturn("test-v1");
+            when(provider.evaluateBatch(any(), any(), any(), anyLong())).thenAnswer(invocation -> {
+                List<Map<String, String>> batch = invocation.getArgument(1);
+                Map<String, Double> scores = new LinkedHashMap<>();
+                batch.forEach(candidate -> scores.put(candidate.get("id"), 0.9));
+                return scores;
+            });
+            filter = new AiResourceRelevanceFilter(new AiResourceRelevanceConfiguration(),
+                List.of(provider));
+            AiResourceSearchService core = new AiResourceSearchService(
+                new AiResourceSearchTypeHandlerRegistry(List.of(new AlwaysCurrentHandler())),
+                repository, embeddingService, vectorIndex);
+            core.setRelevanceFilter(filter);
+            ArdSearchServiceImpl service = new ArdSearchServiceImpl(core);
+            when(repository.searchChunks(eq("public"), eq("api"), anyList(), eq(10001)))
+                .thenReturn(List.of(hit(101L, 1), hit(102L, .9), hit(103L, .8)));
+            when(repository.findEntriesByIds(anyCollection()))
+                .thenReturn(List.of(entry(101L, "one"), entry(102L, "two"), entry(103L, "three")));
+            ArdSearchRequest request = request("api", Map.of("tags", List.of("api", "absent")));
+            request.setPageSize(1);
+            String token = service.search(request).getPageToken();
+            assertNotNull(token);
+            request.setPageToken(token);
+            request.setPageSize(2);
+            request.getQuery().setContext(JacksonUtils.toObj(
+                "{\"t\":\"https://agenticresourcediscovery.org/ns#tags\"}", JsonNode.class));
+            request.getQuery().setFilter(Map.of("t", List.of("api", "absent")));
+            assertEquals(List.of("two", "three"), resultNames(service.search(request)));
+            request.getQuery().setFilter(Map.of("t", List.of("absent", "api")));
+            assertThrows(NacosException.class, () -> service.search(request));
+            request.getQuery().setFilter(Map.of("t", List.of("api", "absent")));
+            filter.close();
+            // Changing provider configuration invalidates the old fingerprint.
+            System.setProperty("nacos.ai.resource.search.relevance.model", "new-model");
+            filter = new AiResourceRelevanceFilter(new AiResourceRelevanceConfiguration(),
+                List.of(provider));
+            core.setRelevanceFilter(filter);
+            assertThrows(NacosException.class, () -> service.search(request));
+            request.setPageToken(null);
+            request.setPageSize(10);
+            assertEquals(List.of("one", "two", "three"), resultNames(service.search(request)));
+        } finally {
+            if (filter != null) {
+                filter.close();
+            }
+            EnvUtil.setEnvironment(previousEnvironment);
+            previous.forEach((key, value) -> {
+                if (value == null) {
+                    System.clearProperty(key);
+                } else {
+                    System.setProperty(key, value);
+                }
+            });
+        }
+    }
+    
+    @Test
+    void exploreShouldAggregateAllPagesAndKeepAliasOptionsIndependent() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (int i = 1; i <= 501; i++) {
+            var document = entry((long) i, "item-" + i);
+            document.setTags(JacksonUtils.toJson(List.of("tag-" + (i % 3))));
+            documents.add(document);
+        }
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents.subList(0, 500));
+        when(repository.scanEnabledEntries("public", List.of("skill"), 500L, 500))
+            .thenReturn(documents.subList(500, 501));
+        ArdExploreRequest request = exploreRequest("public",
+            Map.of("kind", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE),
+            List.of(facet("tags", 1, 1), facet("t", 2, 1), facet("kind", 20, 1),
+                facet("__ard_type_resource", 3, 1)));
+        request.getQuery().setContext(Map.of("t", "https://agenticresourcediscovery.org/ns#tags",
+            "kind", "https://agenticresourcediscovery.org/ns#mediaType",
+            "__ard_type_resource", "https://agenticresourcediscovery.org/ns#tags"));
+        ArdExploreResponse response = service.explore(request);
+        assertEquals(1, response.getFacets().get("tags").getBuckets().size());
+        assertEquals(334, response.getFacets().get("tags").getOtherCount());
+        assertEquals(2, response.getFacets().get("t").getBuckets().size());
+        assertEquals(167, response.getFacets().get("t").getOtherCount());
+        assertEquals(501, response.getFacets().get("kind").getBuckets().get(0).getCount());
+        request.getResultType().setFacets(List.of(facet("t", 1, 1), facet("t", 3, 1)));
+        assertEquals(3, service.explore(request).getFacets().get("t").getBuckets().size());
+        request.getQuery().setFilter(Map.of("kind", "application/unknown+json"));
+        assertTrue(service.explore(request).getFacets().get("t").getBuckets().isEmpty());
+    }
+    
+    @Test
+    void exploreShouldPreserveFacetLimitAndMinCountBoundsForAliases() throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        for (int i = 1; i <= 105; i++) {
+            var document = entry((long) i, "item-" + i);
+            document.setTags(JacksonUtils.toJson(List.of("tag-" + i)));
+            documents.add(document);
+        }
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents);
+        for (Integer limit : java.util.Arrays.asList(null, -1, 0, 1, 20, 100, 101)) {
+            ArdFacetRequest facet = facet("t", 1, 0);
+            facet.setLimit(limit);
+            ArdExploreRequest request = exploreRequest("public",
+                Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE), List.of(facet));
+            request.getQuery()
+                .setContext(Map.of("t", "https://agenticresourcediscovery.org/ns#tags"));
+            int expected = limit == null || limit <= 0 ? 20 : Math.min(limit, 100);
+            var result = service.explore(request).getFacets().get("t");
+            assertEquals(expected, result.getBuckets().size());
+            assertEquals(105 - expected, result.getOtherCount());
+            facet.setMinCount(2);
+            assertTrue(service.explore(request).getFacets().get("t").getBuckets().isEmpty());
+        }
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(
+        ints = {-1, 0, 1, 50, 51, 100, 101, Integer.MAX_VALUE})
+    void searchAndListShouldNormalizePageSizes(Integer size) throws Exception {
+        var service = serviceWithAllResourcesCurrent();
+        List<AiResourceSearchDocument> documents = new ArrayList<>();
+        List<AiResourceSearchHit> hits = new ArrayList<>();
+        for (long i = 1; i <= 105; i++) {
+            documents.add(entry(i, "item-" + i));
+            hits.add(hit(i, 1D));
+        }
+        when(repository.searchChunks(eq("public"), eq("api"), eq(List.of("skill")), eq(10001)))
+            .thenReturn(hits);
+        when(repository.findEntriesByIds(anyCollection())).thenReturn(documents);
+        when(repository.scanEnabledEntries("public", List.of("skill"), 0L, 500))
+            .thenReturn(documents);
+        ArdSearchRequest request =
+            request("api", Map.of("type", ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE));
+        request.setPageSize(size);
+        int expectedSearch = size == null || size <= 0 ? 10 : Math.min(size, 100);
+        int expectedList = size == null || size <= 0 ? 20 : Math.min(size, 100);
+        var response = service.search(request);
+        assertEquals(expectedSearch, response.getResults().size());
+        assertNotNull(response.getPageToken());
+        var listed =
+            service.list("public", "type = '" + ArdProtocolConstants.MEDIA_TYPE_SKILL_PACKAGE + "'",
+                "displayName asc", size, null);
+        assertEquals(expectedList, listed.getItems().size());
+        assertNotNull(listed.getPageToken());
+    }
+    
+    private List<String> resultNames(ArdSearchResponse response) {
+        return response.getResults().stream().map(ArdSearchResult::getDisplayName).toList();
+    }
+    
     private ArdSearchServiceImpl service() {
         AiResourceSearchService searchService = new AiResourceSearchService(
             resourceManager, mcpServerOperationService, repository, embeddingService,
             vectorIndex);
         return new ArdSearchServiceImpl(searchService);
+    }
+    
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 5, 6})
+    void queryProjectionShouldNotTrimIndexOrHideCatalogResources(int count) throws Exception {
+        System.setProperty(CATALOG_BASE_URL_KEY, "https://nacos.example.com");
+        AiResourceSearchDocument document = entry();
+        List<String> queries = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            queries.add("Find capability " + i);
+        }
+        String canonical = JacksonUtils.toJson(queries);
+        document.setRepresentativeQueries(canonical);
+        when(repository.scanEnabledEntries("public", List.of("agent", "skill", "prompt", "mcp"),
+            0L, 500)).thenReturn(List.of(document));
+        ArdCatalog catalog = serviceWithAllResourcesCurrent().catalog("public");
+        assertEquals(2, catalog.getEntries().size());
+        assertEquals(count < 2 ? null : queries.subList(0, Math.min(count, 5)),
+            catalog.getEntries().get(1).getRepresentativeQueries());
+        assertEquals(canonical, document.getRepresentativeQueries());
+        assertCatalogSchemaValid(catalog);
     }
     
     private ArdSearchServiceImpl serviceWithAllResourcesCurrent() {

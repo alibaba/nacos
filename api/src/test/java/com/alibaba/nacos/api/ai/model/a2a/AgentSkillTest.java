@@ -19,16 +19,76 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSkillTest extends BasicRequestTest {
+    
+    @ParameterizedTest
+    @MethodSource("changedDeclarations")
+    void testEqualityDetectsEachChangedDeclaration(Consumer<AgentSkill> change) throws Exception {
+        String json = "{\"id\":\"s\",\"name\":\"Skill\",\"description\":\"Description\","
+            + "\"tags\":[\"tag\"],\"examples\":[\"example\"],\"inputModes\":[\"text\"],"
+            + "\"outputModes\":[\"text\"],\"securityRequirements\":[]}";
+        AgentSkill first = mapper.readValue(json, AgentSkill.class);
+        AgentSkill second = mapper.readValue(json, AgentSkill.class);
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        change.accept(second);
+        assertNotEquals(first, second);
+        assertNotEquals(second, first);
+    }
+    
+    static Stream<Consumer<AgentSkill>> changedDeclarations() {
+        return Stream.of(skill -> skill.setId("other"), skill -> skill.setName("Other"),
+            skill -> skill.setDescription("Other"),
+            skill -> skill.setTags(Collections.singletonList("other")),
+            skill -> skill.setExamples(Collections.singletonList("other")),
+            skill -> skill.setInputModes(Collections.singletonList("image")),
+            skill -> skill.setOutputModes(Collections.singletonList("image")),
+            skill -> skill.setSecurityRequirements(null));
+    }
+    
+    @Test
+    void testStandardSecurityRequirementsRoundTripAndEquality() throws Exception {
+        String json = "{\"id\":\"protected\",\"securityRequirements\":[{\"schemes\":{"
+            + "\"oauth2\":{\"list\":[\"read\",\"write\"]},\"apiKey\":{\"list\":[]}}}]}";
+        AgentSkill first = mapper.readValue(json, AgentSkill.class);
+        AgentSkill second = mapper.readValue(mapper.writeValueAsString(first), AgentSkill.class);
+        assertEquals(Arrays.asList("read", "write"), first.getSecurityRequirements().get(0)
+            .getSchemes().get("oauth2").getList());
+        assertEquals(mapper.readTree(json).get("securityRequirements"),
+            mapper.readTree(mapper.writeValueAsString(second)).get("securityRequirements"));
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        second.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList().clear();
+        assertNotEquals(first, second);
+    }
+    
+    @Test
+    void testMissingAndEmptySecurityRequirementsStayDistinct() throws Exception {
+        AgentSkill absent = mapper.readValue("{\"id\":\"s\"}", AgentSkill.class);
+        AgentSkill explicitNull = mapper.readValue(
+            "{\"id\":\"s\",\"securityRequirements\":null}", AgentSkill.class);
+        assertNull(absent.getSecurityRequirements());
+        assertEquals(absent, explicitNull);
+        explicitNull.setSecurityRequirements(Collections.emptyList());
+        assertNotEquals(absent, explicitNull);
+        assertTrue(mapper.readTree(mapper.writeValueAsString(explicitNull))
+            .get("securityRequirements").isArray());
+    }
     
     @Test
     void testSerialize() throws JsonProcessingException {

@@ -26,6 +26,6 @@ public enum NacosAgentDiscoveryEventType {
     /** A complete replacement discovery snapshot is available. */
     SNAPSHOT,
     
-    /** The watched Agent is currently unavailable. */
+    /** Authorized Discover confirmed the subscribed Agent reference does not exist. */
     UNAVAILABLE
 }

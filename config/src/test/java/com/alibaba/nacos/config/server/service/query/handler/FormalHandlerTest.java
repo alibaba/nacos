@@ -26,6 +26,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -73,10 +75,10 @@ class FormalHandlerTest {
     }
     
     @Test
-    public void handleContentEmptyShouldReturnConfigNotFound() throws IOException {
+    public void handleContentNullShouldReturnConfigNotFound() throws IOException {
         when(cacheItem.getConfigCache()).thenReturn(configCache);
         when(configCache.getMd5()).thenReturn("mockMd5");
-        when(configDiskService.getContent("dataId", "group", "tenant")).thenReturn("");
+        when(configDiskService.getContent("dataId", "group", "tenant")).thenReturn(null);
         
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId("dataId");
@@ -87,6 +89,31 @@ class FormalHandlerTest {
         
         assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND,
             response.getStatus());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "\n\t"})
+    void handleBlankContentShouldReturnConfigFoundFormal(String content) throws IOException {
+        when(cacheItem.getConfigCache()).thenReturn(configCache);
+        when(configCache.getMd5()).thenReturn("mockMd5");
+        when(configCache.getLastModifiedTs()).thenReturn(123456789L);
+        when(configCache.getEncryptedDataKey()).thenReturn("mockEncryptedDataKey");
+        when(cacheItem.getType()).thenReturn("text");
+        when(configDiskService.getContent("dataId", "group", "tenant")).thenReturn(content);
+        ConfigQueryChainRequest request = new ConfigQueryChainRequest();
+        request.setDataId("dataId");
+        request.setGroup("group");
+        request.setTenant("tenant");
+        
+        ConfigQueryChainResponse response = formalHandler.handle(request);
+        
+        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL,
+            response.getStatus());
+        assertEquals(content, response.getContent());
+        assertEquals("mockMd5", response.getMd5());
+        assertEquals(123456789L, response.getLastModified());
+        assertEquals("mockEncryptedDataKey", response.getEncryptedDataKey());
+        assertEquals("text", response.getConfigType());
     }
     
     @Test

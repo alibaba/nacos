@@ -69,6 +69,14 @@ Maintainer SDK 面向管理接入，可以暴露 Client SDK 有意不包含的�
 Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对管理、UI、
 网关或运维工具有意义的能力，应归入 Maintainer SDK，而不是 Client SDK。
 
+若通过 Maintainer SDK 暴露 `changeMessage`，普通和 CAS 发布 API 对插入、更新采用相同
+处理；保留已有签名兼容性和省略参数时的行为。删除、Beta/灰度和回滚不增加说明能力。
+历史详情的可选说明及 ext_info 兼容遵循
+[Config 持久化与历史规范](../config/config-persistence-history-spec.md)。
+不因服务端数据源缺少可选说明能力而将原本成功的发布变成 SDK 异常；真实发布错误保持
+原映射。首期不新增应用层 `ConfigService` 方法。具体 SDK 签名及传输入口须随接口方案
+审阅，公开合同变更同时更新对应 SDK IT 和场景文档。
+
 ## 4. Agent 与 RAD 目标契约
 
 本节定义 Agent 管理和 [Remote Agent Discovery（RAD）](../ai/rad-protocol-spec.md)
@@ -82,8 +90,8 @@ Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对
   不传 namespace；
 - 提供 Agent Search、带或不带 Filter 的 Discover、Watch 与取消 Watch，以及运行时
   Endpoint Register 和 Deregister；
-- 通过 `AiService.agent().publishAgent` 提供可选的代码式 Agent 定义发布，默认只创建 draft，并可通过
-  `autoSubmit` 执行普通 submit Pipeline；
+- 通过 `AiService.agent().publishAgent` 提供可选的代码式 Agent 定义发布，新建首版始终普通提交，
+  其他可编辑 draft 按 `autoSubmit` 执行普通 submit Pipeline，既有非 draft 保持不变；
 - 在不修改调用方对象的前提下，把绑定的 namespace 注入传输请求；
 - 按客户端恢复规范在 reconnect 后恢复 Watch 和 Endpoint 发布意图。
 

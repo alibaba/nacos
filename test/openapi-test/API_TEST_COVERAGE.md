@@ -33,6 +33,29 @@ context is verified by focused `core` module tests. The
 records the boundary and cleanup scenarios and why standalone API responses cannot
 assert this internal state. Endpoint coverage counts remain unchanged.
 
+## Card-level A2A security requirements (#15975, item 1)
+
+`A2aAdminApiOpenApiITCase` additionally covers standard and historical flat
+Card-level `securityRequirements` imports, standard query output, synchronized
+legacy `security`, old-field-only input, conflict precedence, empty/anonymous/
+absent requirements, and malformed requirement HTTP 400 responses.
+The dedicated AUTO/SYNCING fixture additionally runs
+`A2aMigrationAdminApiOpenApiITCase.testHistoricalSecurityReadFallsBackWithoutChangingStorage`:
+queries decode historical flat requirements into standard POJOs while the original
+persisted data remains unchanged. The same scenario can run on a LEGACY fixture.
+No asynchronous repair or storage migration is part of this fix.
+This extends the existing A2A Admin surface; classifications and API-surface
+totals remain unchanged. Skill-level requirements are separate.
+
+## Visibility scope extension compatibility
+
+VisibilityScopeAdminApiOpenApiITCase and VisibilityScopeConsoleApiOpenApiITCase reject
+unregistered TEAM_EDIT on Agent/Skill/AgentSpec list
+and scope updates with HTTP 400 / PARAMETER_VALIDATE_ERROR. PUBLIC/PRIVATE lifecycle,
+missing parameters and pagination remain covered by existing scenarios. Plugin success
+is covered by registry/Form/query tests. Extended-plugin deployments are outside the
+default standalone HTTP suite. Surface counts and classifications remain unchanged.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI
@@ -90,7 +113,7 @@ liveness probe available, and verifies that requests to the independent ARD
 port cannot inherit a Nacos authorization header. The guard complements rather
 than replaces the functional scenario rows. The live
 [authorization operation registry](AUTHORIZATION_OPERATION_COVERAGE.md) maps all
-393 production `@Secured` methods in 57 Controllers to direct tests or reviewed
+394 production `@Secured` methods in 57 Controllers to direct tests or reviewed
 parser/resource-equivalence groups and is checked against source by
 `ModuleAuthorizationITCase`.
 
@@ -116,6 +139,8 @@ two private shared-index projection scenarios (`DAUTH-F03`). The other five
 are pre-existing environment-conditional scenarios. Exact disabled methods and
 their restoration criteria are recorded in
 `Codex/design/nacos-3.3-client-api-default-auth/UNEXPECTED_PRODUCT_FINDINGS.md`.
+This is a historical run: both `DAUTH-F03` methods are now active; see the private
+MCP index matrix below. The historical pass/skip counts are not rewritten.
 
 Partial rows are documented in the matching scenario document. The current
 partial set is limited to operations whose remaining success paths mutate
@@ -127,8 +152,14 @@ Visibility API workflows are now all `Covered` in the unified OpenAPI module.
 
 External protocol adaptors are tracked separately from the Nacos API coverage
 totals because they run in independent web contexts. The ARD adaptor currently
-has one covered scenario row and three partial rows. Its standalone conformance
-suite publishes canonical resources through the main-server Admin APIs and then
+has two covered scenario rows and three partial rows (strict 40%, effective 70%,
+counted separately from Nacos API totals). The new host manifest is validated
+against the pinned v0.91 schema, followed to nonempty public Agent Search and
+exact Version/digest Artifact retrieval, and checked under both
+anonymous policies and invalid credentials. Legacy catalogs cover 105 public
+resources and namespace isolation; the former `DAUTH-F03` cross-type cases are now active.
+Private MCP recall and visibility have dedicated HTTP coverage; canonical-name/UUID Artifact mapping remains unresolved;
+public Agent assertions do not close those gaps. Its standalone HTTP suite publishes canonical resources through the main-server Admin APIs and then
 verifies the separate ARD port against the same shared index, including singular
 Agent catalog entries, A2A/Nacos representation selection and filtering,
 latest-Version eligibility, facets, and exact Version/digest artifacts.
@@ -410,6 +441,26 @@ delegation instead of applying the target Admin API's unrelated resource permiss
 
 Agent/MCP visibility coverage: the existing Agent Admin, Agent Console and MCP rows include independent scope updates and default PUBLIC creation. `AiResourceVisibilityOpenApiITCase` strengthens those rows with auth-enabled non-owner READ/WRITE and explicit grant/revoke tests; it does not add a new counted API surface. Default creation tests do not grant explicit visibility to their readers. Auth-disabled runs cannot validate isolation. Existing unrelated coverage gaps remain unchanged.
 
+`AiVisibilityAccountMatrixOpenApiITCase` adds a cross-cutting
+[account/scope matrix](AI_VISIBILITY_ACCOUNT_MATRIX.md) over the existing five AI resource
+surfaces. This diagnostic suite requires `nacos.test.visibility.matrix.enabled=true` and is
+not counted as passing coverage when disabled in ordinary CI. It separates ordinary API
+permission from explicit visibility grants and records
+anonymous-disabled/enabled outcomes for detail, list/count/pages, search, labels and deletion.
+PUBLIC Prompt fixtures are blocked by the current HTTP contract. Failed scenarios remain
+failures, and unexecuted lifecycle or Console combinations are not marked covered. Existing
+surface counts, classifications and strict/effective coverage totals remain unchanged.
+
+The [2026-10-28 execution](AI_VISIBILITY_ACCOUNT_MATRIX_RESULTS.md) recorded 59 passing,
+4 failing and 7 blocked account combinations. PRIVATE MCP Client Search failed for four
+authorized identities; Agent draft creation returned intermittent 500 responses before two
+successful focused reruns. These findings are retained rather than counted as passing coverage.
+An explicitly authorized offline Derby fixture experiment then passed all seven PUBLIC Prompt
+combinations and 43 checks, bringing the combined matrix to 66 passing and four failing rows.
+This manual fixture coverage does not remove the ordinary IT's PUBLIC Prompt preparation gap.
+Its administrator grant-revocation cleanup returned 403; isolated leftover grants/roles were
+removed and verified separately, with the cleanup exception retained in the execution report.
+
 Skill frontmatter (#15345) is covered on Admin and Console lists through draft
 creation/update, draft deletion, publish and version online/offline transitions.
 Both Skill API scenario matrices record null/legacy behavior and deterministic
@@ -418,6 +469,16 @@ package storage. HTTP IT verifies generated reserved fields and an untruncated
 projection; service unit tests cover custom-field priority and all snapshot
 limits while preserving complete version metadata. They also verify that malformed
 historical `ai_resource.ext` metadata cannot fail list or detail requests.
+Skill description lifecycle consistency (#15949) is asserted in the Admin and Console
+frontmatter workflows with different descriptions per version: draft edits do not
+overwrite online metadata, last-online offline selects a working draft when
+present, and otherwise retains the just-offlined version's description without
+choosing a higher historical version. Service tests cover uploads, overwrites,
+forks, stale descriptions, unchanged snapshots, legacy descriptors and CAS retries.
+`SkillUploadAdminApiOpenApiITCase.testCreateAndUploadPreserveEmptyFilesAndMultilineDescription`
+also checks creation and upload with literal multiline descriptions and empty
+resource files through list/detail, version reads, and ZIP downloads. The focused
+parser tests cover folded scalars, chomping, indentation, and colons in the text.
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
@@ -612,7 +673,6 @@ row denominator. See the SDK scenario and coverage records and
 the applicable API/SDK scenario tables for actual result scopes and baseline exclusions; gated
 migration cases in the ordinary suite are not treated as executed coverage.
 
-
 C11 final product `9f5ab4d9f`: the complete auth-enabled OpenAPI suite runs 470
 cases, with 459 passes, 11 conditional/baseline skips and no failures. The
 separately deployed Console AI suite passes all 31 cases. Nine direct HTTP
@@ -642,3 +702,134 @@ Client 发布契约仍为首版普通提交、已有 DRAFT 完整覆盖、非 DR
 contentDigest、nativeDescriptor 与 Endpoint sourceRevision 不变，未透出展示及管理字段。
 HTTP/gRPC/auto Watch 元数据变更及无变化通知边界由对应 Java SDK IT 验证。
 公共响应与指纹契约见 [RAD 协议规范](../../specs/zh-cn/ai/rad-protocol-spec.md)。
+
+## ARD query contexts and pagination
+
+Existing adaptor rows cover Search context/IRI aliases, independent filter groups,
+standard-value validation with legacy binding preserved, namespace isolation,
+valid cursor continuation and explicit recovery.
+Explore adds query/facet aliases, independent facet options and full-set counts.
+Search/List HTTP cases use 105 resources to verify page-size boundaries,
+complete traversal, ordering and token recovery. Search now caps pages at 100;
+List retains its existing rules. GET non-integer pageSize still has a known 500 mapping gap.
+Resolver/loader and enhanced-provider boundaries also have UT coverage;
+controlled remote contexts and enabled-provider deployments require separate test environments.
+See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)
+for test methods and execution limits. API-surface counts and strict/effective coverage are unchanged;
+private canonical recall is covered by the restored `DAUTH-F03` cases and the private MCP matrix below.
+
+## ARD query-example publication
+
+The example-projection IT also verifies that the legacy five-item response
+limit does not truncate the search index or the exact artifact. New manifest
+recommendations do not add a visibility gate. This extends the existing adaptor
+rows without changing the Nacos API-surface totals. Private-index coverage is tracked separately below.
+
+## ARD online relevance filtering
+
+| Scenario | Coverage |
+| --- | --- |
+| Default-off Search header, unchanged JSON, invalid cursor | `ArdAdaptorOpenApiITCase.testSearchEnhancementStatusAndCursorBoundary` against standalone ARD |
+| Enabled empty result bypass | Same IT with server enhancement enabled and `-Dnacos.test.ard.relevance.empty-status=bypassed` |
+| Jev protocol, invalid scores/IDs, 429, no retry | `JevRelevanceProviderTest`, deterministic local HTTP stub |
+| Concurrent batches, timeout/cancel, node saturation, all-or-nothing fallback | `AiResourceRelevanceFilterTest` |
+| Threshold, stable order/score, empty continuation, fallback boundary, currentness, cursor binding | `AiResourceSearchRelevanceTest` |
+| Header propagation and no JSON field leakage | `ArdSearchControllerTest` |
+
+The paid-provider success path is not a prerequisite for standalone IT. Deterministic provider
+and Search Core tests exercise nonempty success and failure paths without external credentials.
+Live empty-result IT covers the HTTP boundary in both configurations; it does not claim live
+nonempty Jev filtering coverage. No public Java SDK contract changes.
+
+## Native binding and serialization regression
+
+The existing Config Admin and Console CRUD rows also verify non-empty inherited `srcUser` and
+`appName` parameters and persisted `createUser` / `appName` detail fields. This catches missing
+Native form-binding metadata without changing the API contract. Native and JVM execution are
+separate validation targets; these additional scenarios do not change surface-row coverage totals.
+
+Existing Service Admin and Console IT cases are also reused to check persisted service metadata
+and populated service-list names/groups. HTTP 200 with empty serialized objects is a failure.
+
+### Agent Discover notification Header compatibility
+
+| API surface / IT class | Covered API operations | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent Discover / `AgentDiscoveryClientOpenApiITCase` | GET `/v3/client/ai/agents` | Covered | `testDiscoveryTriggerHeaderDoesNotChangeSnapshotOrErrors` checks `watch-notify`, missing, empty, unknown and case-mismatched `X-Nacos-Agent-Discovery-Trigger` values against full snapshot, not-found and invalid version/label responses. SDK emission and retry attribution use client wire UT. Discover now emits best-effort `AiResourceTraceEvent` (`DISCOVER`) at HTTP/gRPC business-query boundaries; server UT verifies source, resolved/requested version, protocol, subscription attribution and diagnostic failure isolation. Event payload/log delivery is internal and has no public query API, so standalone HTTP IT verifies response compatibility rather than claiming event or SDK emission coverage. |
+
+This extends the existing Agent Discover row; API surface totals and strict/effective
+coverage denominators remain unchanged. The optional diagnostic header never changes
+authorization or discovery semantics.
+
+## Config publish operation messages (#10978)
+
+`ConfigHistoryAdminApiOpenApiITCase#testPublishOperationMessages` and
+`ConfigHistoryConsoleApiOpenApiITCase#testPublishOperationMessages` cover a
+message on initial API insert and later updates, selected history detail and
+previous detail, message omission from history-list responses, a 512-code-point
+emoji round-trip, and 513-character rejection with unchanged content/history.
+
+The `unicodeDetail` history-detail read parses the raw response bytes to avoid the
+known lossy Apache test-response carrier's secondary encoding when the response
+has no charset. The complete Unicode equality assertion remains unchanged. Shared
+public HTTP response handling is outside #10978 and is not fixed by this
+scenario-local read path.
+
+Unit tests cover whitespace normalization, invalid legacy extensions, snapshot
+metadata preservation, RPC/service propagation, and embedded gray history
+without messages. Maintainer SDK IT covers formal message-to-history;
+Maintainer SDK unit tests cover controlled oversized-input exceptions.
+`ConfigRemoteHandlerTest` covers rejection before forwarding with the same
+parameter-validation error, blank-message normalization, and Beta bypass.
+Database-specific transaction fault injection, rolling-version deployments,
+independent-console deployment, and interactive UI behavior remain deployment
+validation scenarios; test definitions do not imply those environments were run.
+
+`ConfigHistoryAdminApiOpenApiITCase#testGrayPublishDoesNotRecordOperationMessage`
+checks that out-of-scope gray publishes omit the message. The Admin case also
+verifies successful CAS messages and unchanged history after a stale-md5
+conflict. Execution results are reported separately from these scenario
+definitions.
+
+## A2A Skill security requirements (#15975, item 2)
+
+`A2aAdminApiOpenApiITCase` now verifies standard Skill requirement registration/query,
+independence from Card requirements, absent/null/empty lists, and controlled HTTP 400
+for malformed or flat Skill structures. See the A2A Skill scenario matrix in
+`ADMIN_API_TEST_SCENARIOS.md`. This extends an existing surface; row classifications,
+strict/effective coverage totals, API paths, and storage mechanisms are unchanged.
+
+## ARD trust declaration consistency
+
+The existing five adaptor surface rows additionally cover Registry-scoped identity
+through `ArdAdaptorOpenApiITCase.testConfiguredTrustDeclaration`. Default CI verifies
+omission and `testResourceIdentityDimensionsAreUnsupported` verifies 400 responses for
+unavailable resource identity filters/facets (aliases, full IRIs and legacy filters).
+Configured standalone deployments cover recognized matches, unknown/custom hints,
+missing or malformed Registry publisher, identity mismatch and malformed authority.
+Only manifest and catalogs containing the Registry reject bad Registry configuration
+with the ARD 500 envelope. Nonempty Search/List/type Explore and Artifact remain usable;
+ordinary resources never inherit Registry trust. Authentication and request-validation
+priority, schemas and resource IDs across Registry identity changes are checked.
+See the [deployment scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-trust-declaration-consistency).
+These extend existing rows, so strict 40% and effective 70% coverage remain unchanged;
+Private-index recovery is tracked separately below. Resource publisher/trust
+registration, authorization, storage and indexing remain unsupported, not covered by
+substituting Registry configuration.
+
+## MCP private index coverage
+
+The existing generic/facade/cursor and ARD cross-type tests previously disabled as
+`DAUTH-F03` are active. Two focused authenticated HTTP cases additionally verify
+PRIVATE MCP owner/admin/grantee recall, denied readers, grant/revoke, scope changes,
+enable/disable, offline/delete, and ARD visibility before pagination and facet counts.
+Generic/MCP Search keeps anonymous HTTP 403; ARD anonymous queries follow its configured
+policy and cannot expose an ungranted private resource.
+The existing integration startup guard also verifies managed cutover from fresh data
+after the current MCP projection becomes ready; this is not an additional API surface.
+
+See the [client scenario matrix](CLIENT_API_TEST_SCENARIOS.md#mcp-private-background-indexing)
+and [ARD scenario matrix](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#private-mcp-index-and-query-visibility).
+No HTTP operation is added, so API-surface totals and existing Partial classifications
+are unchanged. Persisted-data upgrade recovery is verified separately from fresh API
+fixtures. MCP Artifact name/UUID mapping remains pending.

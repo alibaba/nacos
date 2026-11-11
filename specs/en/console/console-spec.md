@@ -183,6 +183,22 @@ Rules:
 - handler implementations must return the same domain meaning across deployment
   modes even if the transport path differs.
 
+The first-phase target offers optional `changeMessage` input in the new console
+for ordinary and CAS updates to existing formal configs, with plain-text display
+in history detail. The legacy console is unchanged in this phase. Create and
+delete workflows have no input; Beta/gray and rollback gain
+no message input. Backend ordinary and CAS publish APIs handle inserts and
+updates identically and must not ignore an API caller's message for new configs.
+History-list display and searching, sorting, or indexing by message are out of
+scope. This contract does not require a legacy-console UI change.
+The message is independent of description and is never prefilled from config or
+history. Clear input after a successful formal publish and retain it after
+failure. Beta publishes do not submit or clear an unsent formal message. If an adapter
+does not preserve the JSON property, history detail may omit the message; actual
+database persistence failures retain their existing behavior.
+Merged and independent console handlers must preserve the same semantics defined
+by the [Config Persistence And History Spec](../config/config-persistence-history-spec.md).
+
 ## 7. Independent Console Deployment
 
 In `console` deployment, Console is a management-plane gateway to one or more
@@ -300,6 +316,27 @@ contract:
   UI enabled/default version and console auth status;
 - Console metrics and logs must not include secrets, tokens, full credentials,
   or large user payloads.
+
+### 10.1 Experimental AOT / Native Verification
+
+Console follows the multi-context AOT contract in the
+[Server Lifecycle Spec](../design/foundation-server-lifecycle-env-spec.md).
+This contract does not certify every database, plugin, or business path for Native execution.
+
+- In `merged`, the console context retains its core parent. In `console`, only the independent
+  console context is generated and started; Native adaptation must not start local domain services
+  or storage.
+- Generated artifacts must match deployment type, function mode, and plugins. Structural changes
+  require regeneration. Remote Server addresses, ports, and runtime credentials must not be embedded
+  in generated initialization code.
+- Ordinary JVM execution without AOT must not require generated artifacts, perform their consistency
+  checks, or change existing handler selection.
+- Native verification must exercise UI entry points and referenced JS/CSS, login, anonymous rejection,
+  and real Console business reads and writes. Liveness or empty lists cannot replace functional
+  success. Independent deployments must also exercise remote handler response models and operations.
+- Record JVM / Native Console and Server interoperability separately; merged deployment results do
+  not certify independent deployment. Verify AI features and registry protocols when enabled, and
+  explicitly identify untested databases, clusters, and business paths.
 
 ## 11. Pending Issues
 

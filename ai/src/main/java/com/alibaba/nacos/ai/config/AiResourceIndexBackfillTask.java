@@ -159,7 +159,7 @@ public class AiResourceIndexBackfillTask
         this(new AiResourceSearchTypeHandlerRegistry(List.of(
             new StoredAiResourceSearchTypeHandler(resourceManager,
                 AiResourceIndexContentLoader.NOOP),
-            new McpAiResourceSearchTypeHandler(mcpOperationService))), repository,
+            new McpAiResourceSearchTypeHandler(mcpOperationService, resourceManager))), repository,
             indexMaintenanceService, embeddingService, vectorIndex, namespaceOperationService,
             configQueryChainService, configOperationService,
             AiResourceSearchReadinessService.NOOP);

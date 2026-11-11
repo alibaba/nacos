@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { MonacoEditor } from '@/components/config/MonacoEditor';
+import { ConfigTagsInput } from '@/components/config/ConfigTagsInput';
 import { configApi } from '@/api/config';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { CONFIG_TYPES, type ConfigType } from '@/types/config';
@@ -35,6 +41,7 @@ export default function NewConfigPage() {
   const [configTags, setConfigTags] = useState('');
   const [type, setType] = useState<ConfigType>('text');
   const [content, setContent] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = (): boolean => {
@@ -79,6 +86,7 @@ export default function NewConfigPage() {
       toast.success(t('config.publishSuccess'));
       navigate('/configurationManagement');
     } catch (error) {
+      console.error('Failed to publish config:', error);
       toast.error(t('config.publishFailed'));
     } finally {
       setIsSubmitting(false);
@@ -90,9 +98,9 @@ export default function NewConfigPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-[calc(100vh-6.5rem)] flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-4">
         <Button variant="outline" size="icon" onClick={handleCancel}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -100,42 +108,43 @@ export default function NewConfigPage() {
       </div>
 
       {/* Form Card */}
-      <Card>
-        <CardHeader>
+      <Card className="flex-1 gap-3 py-4">
+        <CardHeader className="px-5">
           <CardTitle>{t('config.newConfig')}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 pt-0">
-          {/* Data ID and Group - 2 columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="dataId">
-                {t('config.dataId')}
-                <span className="text-destructive ml-1">*</span>
-              </Label>
-              <Input
-                id="dataId"
-                value={dataId}
-                onChange={(e) => setDataId(e.target.value)}
-                placeholder={t('config.dataId')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group">
-                {t('config.group')}
-                <span className="text-destructive ml-1">*</span>
-              </Label>
-              <Input
-                id="group"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder={t('config.group')}
-              />
-            </div>
+        <CardContent className="flex flex-1 flex-col gap-4 px-5">
+          {/* Data ID and Group */}
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label htmlFor="dataId" className="md:text-right">
+              {t('config.dataId')}
+              <span className="text-destructive ml-1">*</span>
+            </Label>
+            <Input
+              id="dataId"
+              value={dataId}
+              onChange={(e) => setDataId(e.target.value)}
+              placeholder={t('config.dataId')}
+            />
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label htmlFor="group" className="md:text-right">
+              {t('config.group')}
+              <span className="text-destructive ml-1">*</span>
+            </Label>
+            <Input
+              id="group"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder={t('config.group')}
+            />
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="desc">{t('config.description')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-start">
+            <Label htmlFor="desc" className="md:pt-2 md:text-right">
+              {t('config.description')}
+            </Label>
             <Textarea
               id="desc"
               value={desc}
@@ -145,34 +154,12 @@ export default function NewConfigPage() {
             />
           </div>
 
-          {/* App Name and Tags - 2 columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="appName">{t('config.appName')}</Label>
-              <Input
-                id="appName"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                placeholder={t('config.appName')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">{t('config.tags')}</Label>
-              <Input
-                id="tags"
-                value={configTags}
-                onChange={(e) => setConfigTags(e.target.value)}
-                placeholder="tag1,tag2,tag3"
-              />
-            </div>
-          </div>
-
           {/* Config Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">{t('config.type')}</Label>
+          <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+            <Label htmlFor="type" className="md:text-right">{t('config.type')}</Label>
             <Select value={type} onValueChange={(value) => setType(value as ConfigType)}>
-              <SelectTrigger id="type" className="w-full md:w-[280px]">
-                <SelectValue />
+              <SelectTrigger id="type">
+                <SelectValue placeholder={t('config.type')} />
               </SelectTrigger>
               <SelectContent>
                 {CONFIG_TYPES.map((configType) => (
@@ -184,24 +171,72 @@ export default function NewConfigPage() {
             </Select>
           </div>
 
+          {/* App Name and Tags */}
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <div className="rounded-lg border border-dashed bg-muted/20">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto w-full justify-between px-4 py-3 hover:bg-muted/50"
+                >
+                  <span className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                    <span>{t('config.advancedOptions')}</span>
+                    <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
+                      {t('config.appName')} · {t('config.tags')}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 px-4 pb-4 pt-3">
+                <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+                  <Label htmlFor="appName" className="md:text-right">{t('config.appName')}</Label>
+                  <Input
+                    id="appName"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    placeholder={t('config.appName')}
+                  />
+                </div>
+
+                <div className="grid gap-2 md:grid-cols-[4rem_minmax(0,1fr)] md:items-center">
+                  <Label htmlFor="tags" className="md:text-right">{t('config.tags')}</Label>
+                  <ConfigTagsInput
+                    id="tags"
+                    value={configTags}
+                    onChange={setConfigTags}
+                    placeholder={t('config.tagsInputPlaceholder')}
+                  />
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+
           {/* Config Content */}
-          <div className="space-y-2">
-            <Label htmlFor="content">
+          <div className="flex flex-1 flex-col gap-2">
+            <Label>
               {t('config.content')}
               <span className="text-destructive ml-1">*</span>
             </Label>
-            <MonacoEditor
-              value={content}
-              onChange={setContent}
-              language={type}
-              height="400px"
-            />
+            <div className="relative min-h-[240px] flex-1">
+              <MonacoEditor
+                value={content}
+                onChange={setContent}
+                language={type}
+                height="100%"
+                className="absolute inset-0"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Footer Actions */}
-      <div className="flex items-center justify-end gap-4">
+      <div className="flex shrink-0 items-center justify-end gap-4">
         <Button variant="outline" onClick={handleCancel}>
           {t('common.cancel')}
         </Button>
