@@ -3,6 +3,7 @@
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider"},
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.NettyServer$1"},
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler"},
+    {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.NettyServerProvider"},
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "fields": [{"name": "writeQueue"}], "type": "io.grpc.netty.shaded.io.grpc.netty.NettyServerStream"},
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$PlaintextHandler"},
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "type": "io.grpc.netty.shaded.io.grpc.netty.UdsNameResolverProvider"},
@@ -46,6 +47,7 @@
     {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "fields": [{"name": "producerLimit"}], "type": "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueProducerLimitField"}
   ],
   "resources": [
-    {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "glob": "META-INF/native/libio_grpc_netty_shaded_netty_transport_native_epoll_x86_64.so"}
+    {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "glob": "META-INF/native/libio_grpc_netty_shaded_netty_transport_native_epoll_x86_64.so"},
+    {"condition": {"typeReached": "io.grpc.netty.shaded.io.grpc.netty.Utils"}, "glob": "META-INF/services/io.grpc.ServerProvider"}
   ]
 }

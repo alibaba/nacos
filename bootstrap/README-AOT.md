@@ -60,8 +60,10 @@ build helpers nor test dependencies are included in the Native application. It a
 
 Prepare a build configuration using the normal `application.properties` format. It only has to
 carry the structural choices: `spring.sql.init.platform=postgresql` is a complete build
-configuration for a PostgreSQL image (`mysql` for MySQL), plus the AI registry switches if those
-contexts are wanted. Ports, database URLs and credentials belong to the runtime configuration.
+configuration for a PostgreSQL image (`mysql` for MySQL), plus the switches of the AI registries,
+of the Kubernetes sync (`nacos.k8s.sync.enabled`) and of the Istio adaptor
+(`nacos.extension.naming.istio.enabled`) if those are wanted. Ports, database URLs and credentials
+belong to the runtime configuration.
 Use a disposable build configuration, not production credentials. The reachability metadata for
 the bundled plugins and the MySQL and PostgreSQL drivers ships with Bootstrap (see
 [Bundled reachability metadata](#bundled-reachability-metadata)); additional plugins, JDBC drivers
@@ -200,13 +202,34 @@ sets only the fields that a response contains, and a real cluster contains more 
 It was traced on standalone, merged-deployment Servers with an external datasource. What the
 suites cannot reach was added separately, on builds of its own: the three AI registry contexts
 (`nacos.ai.mcp.registry.enabled`, `nacos.ai.skill.registry.enabled`, `nacos.ai.ard.enabled`), the
-Kubernetes sync, the DNS adaptor and a cluster of three nodes. It does **not** cover embedded Derby (see
-[below](#native-scope-and-derby-compatibility)), Oracle, the Istio adaptor, or other third-party
-plugins or drivers. Whoever enables anything else supplies the missing metadata through
+Kubernetes sync (`nacos.k8s.sync.enabled`), the Istio adaptor
+(`nacos.extension.naming.istio.enabled`), the DNS adaptor and a cluster of three nodes. It does
+**not** cover embedded Derby (see [below](#native-scope-and-derby-compatibility)), Oracle, or other
+third-party plugins or drivers. Whoever enables anything else supplies the missing metadata through
 `nacos.native.metadata` or in the plugin's own `META-INF/native-image`, and validates the result.
 
-Oracle and the Istio adaptor are left out because they fail on the ordinary JVM Server as well, and
-a test of the executable can say nothing about them until they work:
+The Istio adaptor is a switch of the build, like the Kubernetes sync: a package filter keeps it out
+of the component scan unless the build configuration has
+`nacos.extension.naming.istio.enabled=true`, and `nacos.istio.mcp.server.enabled=true` opens its
+gRPC port at run time. It reaches three things dynamically: the service loader of gRPC, which finds
+the server provider behind `ServerBuilder`; SnakeYAML, which builds the model classes of a
+VirtualService and of a DestinationRule from the configurations that carry an Istio tag (they are
+registered in full); and the accessors of the generated protobuf messages of its MCP and xDS
+responses. The adaptor logs every response that it pushes when its logger
+`com.alibaba.nacos.istio.main` is at debug level, and printing a message makes protobuf look up
+every accessor of the message and of its builder. A lookup that is not registered fails, and the
+push with it. The logging configuration of the distribution sets that level for the ordinary Server.
+The AOT application logs with the packaged default configuration and does not read it, so a Native
+Server needs `logging.level.com.alibaba.nacos.istio.main=DEBUG` to get there. The tracing agent
+records only the accessors that a run invokes, so the entries of these messages come from the
+lookups themselves, observed on a JVM with a `MethodEntryRequest` of the Java Debug Interface on
+`GeneratedMessageV3.getMethodOrDie` while the messages were printed. The incremental xDS protocol
+(`DeltaAggregatedResources`) is not covered: its generators answer the first request with `null`,
+and `DeltaConnection.push` fails on that with a `NullPointerException` on the ordinary JVM Server as
+well.
+
+Oracle is left out because it fails on the ordinary JVM Server as well, and a test of the
+executable can say nothing about it until it works:
 
 - Oracle. The schema file of the datasource plugin is not valid for Oracle: `DEFAULT` has to
   precede `NOT NULL` (ORA-03076) and `RESOURCE` is a reserved word (ORA-03050), so six tables are
@@ -215,12 +238,6 @@ a test of the executable can say nothing about them until they work:
   #15979. A namespace cannot be created either, because `TenantInfoMapperByOracle` writes epoch
   milliseconds into the `TIMESTAMP` columns of `tenant_info` (ORA-00932,
   [#16010](https://github.com/alibaba/nacos/issues/16010)).
-- The Istio adaptor. `NacosResourceManager` builds its first snapshot in its constructor, before
-  `IstioConfig` is injected. The first stream of the mesh configuration protocol that connects to
-  a Server whose registry holds a service is answered from that snapshot and ends with a
-  `NullPointerException` of the Server (`ServiceEntryMcpGenerator.generate`); the stream after it
-  works, because the adaptor has replaced the snapshot by then
-  ([#16011](https://github.com/alibaba/nacos/issues/16011)).
 
 ### What the build gets elsewhere
 

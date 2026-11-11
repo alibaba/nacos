@@ -182,6 +182,19 @@ CONDITION_GROUPS = (
         "io.grpc/grpc-util",)),
     ("io.grpc.netty.shaded.io.grpc.netty.Utils", (
         "io.grpc/grpc-netty-shaded",)),
+    # The generated messages of the xDS API and the common protos are there for the Istio adaptor,
+    # and the Server reaches them by reflection when the adaptor logs a response at debug level (the
+    # logging configuration of the distribution sets that for the ordinary Server, and a Native Server
+    # needs logging.level.com.alibaba.nacos.istio.main=DEBUG): protobuf looks up every accessor of a
+    # message and of its builder, and a lookup that is not registered fails. IstioServer starts the
+    # adaptor, so it is the type that makes the Server use them, and a build without the adaptor
+    # leaves these entries out.
+    # The classes are loaded earlier, as the superclasses of the Spring beans of the adaptor, when the
+    # definitions of the beans are registered, but a class log of a run shows that none of them is
+    # initialized before IstioServer starts to initialize.
+    ("com.alibaba.nacos.istio.server.IstioServer", (
+        "com.google.api.grpc/proto-google-common-protos",
+        "io.envoyproxy.controlplane/api")),
     # The JDK reads the service file of dnsjava when it first resolves a name, early in the start.
     ("java.net.InetAddress", (
         "dnsjava/dnsjava",)),

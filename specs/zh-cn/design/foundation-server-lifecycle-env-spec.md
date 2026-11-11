@@ -229,9 +229,9 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
 - 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
   PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
   OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及这些测试覆盖不到、在各自独立
-  构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、DNS 适配器和由三个节点组成的
-  集群（Distro、
-  Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby、Oracle 以及 Istio 适配器不在内置范围内；
+  构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、Istio 适配器、DNS 适配器和由
+  三个节点组成的集群（Distro、Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby 以及 Oracle
+  不在内置范围内；
   它们的元数据来自扩展自身或 `nacos.native.metadata`，其支持情况必须单独验证和报告。
 - 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。追踪记录不到的条目来自
   exact 模式构建的缺失报告；对 tracing agent 不记录的查找（例如 protobuf 对生成消息及其 Builder 的

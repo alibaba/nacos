@@ -1,0 +1,9 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "type": "com.google.protobuf.BoolValue"},
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "type": "com.google.protobuf.Duration"},
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "methods": [{"name": "getNanos", "parameterTypes": []}, {"name": "getSeconds", "parameterTypes": []}, {"name": "newBuilder", "parameterTypes": []}], "type": "com.google.protobuf.Timestamp"},
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "methods": [{"name": "clearNanos", "parameterTypes": []}, {"name": "clearSeconds", "parameterTypes": []}, {"name": "getNanos", "parameterTypes": []}, {"name": "getSeconds", "parameterTypes": []}, {"name": "setNanos", "parameterTypes": ["int"]}, {"name": "setSeconds", "parameterTypes": ["long"]}], "type": "com.google.protobuf.Timestamp$Builder"},
+    {"condition": {"typeReached": "com.google.protobuf.ExtensionRegistryLite"}, "type": "com.google.protobuf.UInt32Value"}
+  ]
+}

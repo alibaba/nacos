@@ -306,9 +306,9 @@ build does not require the operator to trace the Server first.
   bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
   classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
   Java SDK and Maintainer SDK integration suites, and, as exercised on builds of their own, the
-  three AI registry contexts, the Kubernetes sync, the DNS adaptor and a cluster of three nodes
-  (Distro, Raft and the requests between the nodes), which those suites do not reach. Other
-  plugins and drivers, embedded Derby, Oracle and the Istio adaptor are outside the bundled scope.
+  three AI registry contexts, the Kubernetes sync, the Istio adaptor, the DNS adaptor and a
+  cluster of three nodes (Distro, Raft and the requests between the nodes), which those suites do
+  not reach. Other plugins and drivers, embedded Derby and Oracle are outside the bundled scope.
   Their metadata comes from the extension itself or from `nacos.native.metadata`, and their
   support must be validated and reported separately.
 - Content rules. Entries derive from tracing representative runs on the exact classpath of the
