@@ -200,8 +200,9 @@ Model connection rules:
   order is used; the other spellings are reported and ignored, including their
   fields.
 - Connections are merged by source: a deployment connection replaces the
-  deprecated connection with the same name; within one source the first
-  duplicate wins and is reported.
+  deprecated connection with the same name; deployment spellings are resolved by
+  the rule above, and for any reader that still returns duplicate connections
+  the aggregator keeps the first one and reports it.
 - Selection order is the connection named by
   `nacos.copilot.selectedConnection`, then the first available deployment
   connection, then the first available `legacy` connection. Connections are
