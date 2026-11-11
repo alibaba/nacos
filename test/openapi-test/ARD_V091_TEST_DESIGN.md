@@ -76,7 +76,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
   latest 为 custom 而旧 online Version 支持 A2A 的 Agent，以及 Skill、Prompt、MCP。
   全部带同一查询标记；不要通过直接写 search table 准备 IT。
 - F-AUTH：公开资源、显式授权的私有资源、无权限私有资源、不同 namespace 的同名资源。
-  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；私有资源完整性问题（DAUTH-F03）未解决的部分记阻塞。
+  身份为匿名、合法读取身份、已认证但无权限身份、显式坏凭据；私有索引 DAUTH-F03 已恢复为实际 HTTP 场景；MCP Artifact 名称/UUID 缺口仍独立记录。
 - F-PAGE：至少 105 个确定性公开候选，同一唯一标记；通过公开 API 创建及等待索引。
   UT 固定排序/分数；IT 比较完整 identifier 集合、无重复和稳定续页，不依赖任意排名分数。
 - F-SCHEMA：最小合法完整 Entry、仅 identifier 的 List item、
@@ -126,7 +126,7 @@ cursor 指纹和副作用清理均为 Nacos 约束，不冒充 ARD 条款。
 | Explore | 服务 UT 和 HTTP IT 覆盖 query/facet 别名、独立选项与完整集合统计。 |
 | 分页 | 服务 UT 与 105 条资源 HTTP IT 覆盖 Search 100 上限、List 既有规则、续页与原条件重查。 |
 | Trust | `ArdTrustIdentityValidatorTest`、服务/契约 UT 与部署参数化 HTTP IT 覆盖 authority 一致性、开放结构、未知框架、配置错误及新旧投影。 |
-| 最终一致性验收 | 完整一致性验收仍待完成；私有资源完整性用例 `DAUTH-F03` 仍 Disabled，不计为通过。 |
+| 最终一致性验收 | 完整一致性验收仍待完成；`DAUTH-F03` 已恢复，私有 MCP 索引与权限由专项 HTTP 场景验证，MCP Artifact 仍未修复。 |
 
 HTTP 场景及覆盖限制统一见[场景索引](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md)。
 设计、实现和执行分开记录；具体运行结果以对应提交的测试报告为准。
@@ -395,15 +395,15 @@ IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内�
 | --- | --- | --- | --- |
 | UT-C10-01 | 复用 ArdOpenApiContractTest/ArdContractSchemas：缺失/篡改 fixture、未知引用、合法与非法 URI/date-time | 离线校验明确失败；完整 Entry 与部分响应使用各自 Schema | 已有契约测试补齐格式反例 |
 | IT-C10-01 | 独立部署的新 well-known -> Registry Search -> 公共 Agent artifact | 精确非空集合，读取返回的 URL，名称/版本/digest 与主资源 API 一致；显式坏凭据 E401 | 空结果路由验证 -> 可用资源完整链路 |
-| IT-C10-02 | F-AUTH，各种身份与生命周期变化 | 私有授权可见、无权不可见、bad credential E401；分页前可见性；下线/删除后的 artifact 失效 | 私有资源旧 Disabled 用例 -> 必须真实验证 |
+| IT-C10-02 | F-AUTH，各种身份与生命周期变化 | 私有授权可见、无权不可见、bad credential E401；分页前可见性；下线/删除后的 artifact 失效 | 私有索引旧 Disabled 用例已恢复；MCP Artifact 生命周期仍待验证 |
 | IT-C10-03 | ARD关闭、SearchCore开启；共享资源API | 主服务资源Search/RAD继续工作，适配器未暴露；不改变SDK生命周期 | 既有模块隔离保持 |
 
 契约验证复用现有 Java UT；真实服务场景由现有 standalone HTTP IT 执行。
 上游固定版本工具只作本地独立对照，保留原目录结构和执行逻辑，
 manifest/registry/publisher 分别记录结果；依赖或 Schema 跳过不计为通过。
 
-TODO：PRIVATE MCP 的完整召回及 MCP Artifact canonical 名称/UUID 映射仍未解决。
-DAUTH-F03 保持 Disabled，不计通过；公共 Agent 链路不覆盖这些缺口。
+DAUTH-F03 的两个索引用例已恢复；私有 MCP 召回与搜索权限由专项 HTTP 场景验证。
+TODO：MCP Artifact canonical 名称/UUID 映射及其生命周期仍待修复和验证；公共 Agent 链路不覆盖该缺口。
 编译失败、环境失败、既有缺陷、新回归和未实现能力分别记录。
 
 <a id="regressions"></a>

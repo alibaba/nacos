@@ -177,6 +177,11 @@ exists(namespaceId, resourceName) -> boolean
 该资源的 enabled、可见性、当前版本和 source digest 校验。处理器属于 `ai` 模块，不能引用
 ARD DTO、URL 或 media type。
 
+后台 `project`、`scan`、`exists` 按标准资源状态读取，不依赖请求身份或资源可见范围。
+`PRIVATE` 与 `PUBLIC` 资源满足生命周期条件时均建立索引。内容或存储读取失败应传播并重试，
+不能视为资源不存在。查询时的 `isCurrent` 仍在分页、聚合之前按真实调用者检查当前可见性。
+周期对账应自动补建缺失的私有资源索引，无需重新发布资源或修改 scope。
+
 每个可检索处理器必须声明正数 `projectionVersion`，初始 generation 为 `1`，投影契约变化时
 递增。Readiness 是所有可检索类型共享的完整性与可观测信号，而不是仅由保留旧扫描路径的类型
 实现的兼容切换开关。

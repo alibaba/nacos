@@ -140,7 +140,7 @@ public class AiResourceSearchService {
         this(new AiResourceSearchTypeHandlerRegistry(List.of(
             new StoredAiResourceSearchTypeHandler(resourceManager,
                 AiResourceIndexContentLoader.NOOP),
-            new McpAiResourceSearchTypeHandler(mcpOperationService))), repository,
+            new McpAiResourceSearchTypeHandler(mcpOperationService, resourceManager))), repository,
             embeddingService, vectorIndex);
     }
     

@@ -25,8 +25,8 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.nio.charset.StandardCharsets;
 import java.net.URI;
@@ -55,8 +55,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <ul>
  *     <li>Expected capability: Admin APIs publish Agent, Skill, Prompt, and MCP resources through
  *     the main server, while the separate ARD web context recalls the same durable shared-index
- *     projections through Search, List, Explore, Catalog, and exact artifact URLs. The private
- *     cross-type case remains disabled; MCP recall and Artifact name/ID mapping are unresolved.</li>
+ *     projections through Search, List, Explore, Catalog, and exact Agent/Skill artifact URLs.
+ *     Private MCP recall preserves caller visibility; MCP Artifact name/ID mapping is separate.</li>
  *     <li>Discovery: follow the advertised Registry URL to a nonempty public Agent result,
  *     then retrieve its Artifact URL and compare the version and digest with the main API.</li>
  *     <li>Representation boundary: a pure A2A Agent defaults to an A2A Agent Card, a
@@ -94,6 +94,97 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
 
     private static final ArdContractSchemas CONTRACTS = new ArdContractSchemas();
+
+    @Test
+    @EnabledIfSystemProperty(named = "nacos.test.auth.enabled", matches = "true")
+    public void testPrivateMcpSearchFiltersBeforePaginationAndFacets() throws Exception {
+        String marker = randomAiName("ard-private-mcp");
+        String name = marker + "-z";
+        addCleanup(() -> deleteMcpServerQuietly(name, null));
+        postFormOk(nacosPath("/v3/client/ai/mcp"),
+            mcpServerForm(name, "1.0.0", name, "private_tool", "private_resource"));
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", name, "scope", "PRIVATE"));
+        awaitSearch(searchRequest(name, TYPE_MCP), Set.of(name), AuthIdentity.CLIENT_READ_WRITE);
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_WRITE, true);
+        assertMcpSearchVisibility(name, AuthIdentity.ADMIN, true);
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            assertMcpSearchVisibility(name, AuthIdentity.ANONYMOUS, false);
+        }
+        String hidden = marker + "-a";
+        addCleanup(() -> deleteMcpServerQuietly(hidden, null));
+        postFormOk(ADMIN_MCP_PATH,
+            mcpServerForm(hidden, "1.0.0", hidden, "hidden_tool", "hidden_resource"));
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", hidden, "scope", "PRIVATE"));
+        awaitSearch(searchRequest(marker, TYPE_MCP), Set.of(hidden, name), AuthIdentity.ADMIN);
+        Map<String, Object> mixedRequest = searchRequest(marker, TYPE_MCP);
+        mixedRequest.put("pageSize", 1);
+        JsonNode mixed = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, mixedRequest,
+            AuthIdentity.CLIENT_READ_WRITE);
+        assertEquals(Set.of(name), resourceNames(mixed.path("results")), mixed.toString());
+        assertFalse(mixed.hasNonNull("pageToken"), mixed.toString());
+        Query listQuery = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+            .addParam("filter", "metadata.resourceName = '" + hidden + ',' + name
+                + "' AND type = '" + TYPE_MCP + "'")
+            .addParam("orderBy", "identifier asc").addParam("pageSize", "1");
+        String listPath = ARD_PATH + "/agents?" + listQuery.toQueryUrl();
+        JsonNode adminList = discoveryGet(listPath, AuthIdentity.ADMIN);
+        assertEquals(Set.of(hidden), resourceNames(adminList.path("items")), adminList.toString());
+        assertTrue(adminList.hasNonNull("pageToken"), adminList.toString());
+        JsonNode callerList = discoveryGet(listPath, AuthIdentity.CLIENT_READ_WRITE);
+        assertEquals(Set.of(name), resourceNames(callerList.path("items")), callerList.toString());
+        assertFalse(callerList.hasNonNull("pageToken"), callerList.toString());
+        JsonNode mixedFacets = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE,
+            Map.of("query", mixedRequest.get("query"), "resultType",
+                Map.of("facets", List.of(Map.of("field", "type")))),
+            AuthIdentity.CLIENT_READ_WRITE);
+        JsonNode mixedBuckets = mixedFacets.path("facets").path("type").path("buckets");
+        assertEquals(1, mixedBuckets.size(), mixedFacets.toString());
+        assertEquals(1, mixedBuckets.get(0).path("count").asInt(), mixedFacets.toString());
+        String grantPath = nacosPath("/v3/auth/visibility");
+        Query grant = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+            .addParam("resourceType", "mcp").addParam("resourceName", name)
+            .addParam("username", identityUsername(AuthIdentity.CLIENT_READ_ONLY))
+            .addParam("action", "r");
+        addCleanup(() -> deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE));
+        assertEquals(200, postRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, true);
+        assertEquals(200, deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", name, "scope", "PUBLIC"));
+        assertMcpSearchVisibility(name, AuthIdentity.CLIENT_READ_ONLY, true);
+        if (EXPECTED_ANONYMOUS_AI_ENABLED) {
+            assertMcpSearchVisibility(name, AuthIdentity.ANONYMOUS, true);
+        }
+    }
+
+    private void assertMcpSearchVisibility(String name, AuthIdentity identity, boolean visible)
+        throws Exception {
+        Map<String, Object> request = searchRequest(name, TYPE_MCP);
+        request.put("pageSize", 1);
+        Set<String> expected = visible ? Set.of(name) : Set.of();
+        JsonNode search = null;
+        for (int retry = 0; retry <= SEARCH_MAX_RETRIES; retry++) {
+            search = ardPostJsonOk(ARD_PATH + "/search", DEFAULT_NAMESPACE, request, identity);
+            if (expected.equals(resourceNames(search.path("results")))) {
+                break;
+            }
+            Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+        }
+        assertEquals(expected, resourceNames(search.path("results")), search.toString());
+        assertFalse(search.hasNonNull("pageToken"), search.toString());
+        JsonNode explore = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE,
+            Map.of("query", request.get("query"), "resultType",
+                Map.of("facets", List.of(Map.of("field", "type")))), identity);
+        JsonNode buckets = explore.path("facets").path("type").path("buckets");
+        assertEquals(visible ? 1 : 0, buckets.size(), explore.toString());
+        if (visible) {
+            assertEquals(1, buckets.get(0).path("count").asInt(), explore.toString());
+        }
+    }
 
     @Test
     public void testConfiguredTrustDeclaration() throws Exception {
@@ -801,15 +892,14 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals(400, executeRaw(invalid, identity).code());
     }
 
-    @Disabled("DAUTH-F03: private shared-index projection is incomplete with auth enabled; "
-            + "see UNEXPECTED_PRODUCT_FINDINGS.md")
     @Test
     public void testLiveAdaptorUsesSharedIndexAndExactArtifacts() throws Exception {
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.CLIENT_READ_WRITE : AuthIdentity.ANONYMOUS;
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         ArdFixture fixture = publishFixture(suffix);
         Set<String> expectedNames = fixture.allResourceNames();
         
-        JsonNode defaultSearch = awaitSearch(searchRequest(suffix, null), expectedNames);
+        JsonNode defaultSearch = awaitSearch(searchRequest(suffix, null), expectedNames, identity);
         assertEquals(expectedNames, resourceNames(defaultSearch.get("results")),
                 defaultSearch.toString());
         JsonNode pureDefault = findResource(defaultSearch.get("results"), fixture.pureA2aAgent);
@@ -824,7 +914,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals(6, defaultSearch.get("results").size(), defaultSearch.toString());
         
         JsonNode a2aSearch = awaitSearch(searchRequest(suffix, TYPE_A2A),
-                Set.of(fixture.pureA2aAgent, fixture.multiAgent));
+                Set.of(fixture.pureA2aAgent, fixture.multiAgent), identity);
         assertEquals(Set.of(fixture.pureA2aAgent, fixture.multiAgent),
                 resourceNames(a2aSearch.get("results")), a2aSearch.toString());
         JsonNode multiA2a = findResource(a2aSearch.get("results"), fixture.multiAgent);
@@ -834,17 +924,17 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertNotEquals(multiDefault.get("url").asText(), multiA2a.get("url").asText());
         
         JsonNode nacosSearch = awaitSearch(searchRequest(suffix, TYPE_NACOS_AGENT),
-                Set.of(fixture.pureA2aAgent, fixture.multiAgent, fixture.latestCustomAgent));
+                Set.of(fixture.pureA2aAgent, fixture.multiAgent, fixture.latestCustomAgent), identity);
         assertEquals(Set.of(fixture.pureA2aAgent, fixture.multiAgent,
                         fixture.latestCustomAgent), resourceNames(nacosSearch.get("results")),
                 nacosSearch.toString());
         
         assertListRepresentation(fixture.multiAgent, TYPE_A2A);
-        assertExploreFacetCounts(suffix);
-        assertCatalogsContain(expectedNames);
+        assertExploreFacetCounts(suffix, identity);
+        assertCatalogsContain(expectedNames, identity);
         assertAgentArtifacts(multiA2a, multiDefault, fixture.multiAgent);
         assertSkillArtifact(findResource(defaultSearch.get("results"), fixture.skillName),
-                fixture);
+                fixture, identity);
         assertExternalErrorShape(suffix);
     }
     
@@ -934,7 +1024,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         addCleanup(() -> deleteSkillQuietly(fixture.skillName));
         postFormOk(ADMIN_SKILL_PATH + "/force-publish",
                 skillPublishForm(fixture.skillName, "1.0.0"));
-        grantAnonymousReadVisibility("skill", fixture.skillName);
+        grantClientReadVisibility("skill", fixture.skillName);
         
         fixture.promptKey = "oit_ard_prompt_" + suffix;
         postFormOk(ADMIN_PROMPT_PATH + "/draft", promptDraftForm(fixture.promptKey,
@@ -943,7 +1033,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         addCleanup(() -> deletePromptQuietly(fixture.promptKey));
         postFormOk(ADMIN_PROMPT_PATH + "/force-publish",
                 promptPublishForm(fixture.promptKey, "1.0.0"));
-        grantAnonymousReadVisibility("prompt", fixture.promptKey);
+        grantClientReadVisibility("prompt", fixture.promptKey);
         
         fixture.mcpName = "oit-ard-mcp-" + suffix;
         JsonNode created = postFormOk(ADMIN_MCP_PATH, mcpServerForm(fixture.mcpName,
@@ -954,7 +1044,9 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         addCleanup(() -> deleteMcpServerQuietly(fixture.mcpName, fixture.mcpId));
         putFormOk(ADMIN_MCP_PATH, mcpServerForm(fixture.mcpName, "1.0.0",
                 "ARD MCP " + suffix, "tool_" + suffix, "resource_" + suffix));
-        grantAnonymousReadVisibility("mcp", fixture.mcpName);
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+            "mcpName", fixture.mcpName, "scope", "PRIVATE"));
+        grantClientReadVisibility("mcp", fixture.mcpName);
         return fixture;
     }
     
@@ -966,7 +1058,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         addCleanup(() -> deleteAgentDefinitionQuietly(DEFAULT_NAMESPACE, agentName));
         postFormOk(ADMIN_AGENT_PATH + "/force-publish",
                 agentForm(agentVersionCommand(null, agentName, version)));
-        grantAnonymousReadVisibility("agent", agentName);
+        grantClientReadVisibility("agent", agentName);
     }
     
     private void publishNextAgentVersion(String agentName, String version,
@@ -1071,7 +1163,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals(type, item.get("type").asText(), item.toString());
     }
     
-    private void assertExploreFacetCounts(String suffix) throws Exception {
+    private void assertExploreFacetCounts(String suffix, AuthIdentity identity) throws Exception {
         Map<String, Object> facet = new LinkedHashMap<>();
         facet.put("field", "type");
         facet.put("limit", 10);
@@ -1082,7 +1174,7 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         Map<String, Object> request = new LinkedHashMap<>();
         request.put("query", query);
         request.put("resultType", resultType);
-        JsonNode response = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request);
+        JsonNode response = ardPostJsonOk(ARD_PATH + "/explore", DEFAULT_NAMESPACE, request, identity);
         assertEquals("facets", response.get("resultType").asText(), response.toString());
         Map<String, Integer> counts = facetCounts(response.get("facets").get("type"));
         assertEquals(1, counts.get(TYPE_A2A), response.toString());
@@ -1093,8 +1185,12 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     }
     
     private void assertCatalogsContain(Set<String> expectedNames) throws Exception {
+        assertCatalogsContain(expectedNames, AuthIdentity.ANONYMOUS);
+    }
+
+    private void assertCatalogsContain(Set<String> expectedNames, AuthIdentity identity) throws Exception {
         JsonNode namespaceCatalog = ardGetJsonOk(ARD_PATH + "/ai-catalog.json",
-                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE));
+                Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE), identity);
         assertLegacyCatalog(namespaceCatalog);
         assertEquals("1.0", namespaceCatalog.get("specVersion").asText(),
                 namespaceCatalog.toString());
@@ -1128,8 +1224,8 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertFalse(artifact.has("namespaceId"), artifact.toString());
     }
     
-    private void assertSkillArtifact(JsonNode skillResult, ArdFixture fixture) throws Exception {
-        ByteResponse skill = ardGetBytesOk(skillResult.get("url").asText());
+    private void assertSkillArtifact(JsonNode skillResult, ArdFixture fixture, AuthIdentity identity) throws Exception {
+        ByteResponse skill = ardGetBytesOk(skillResult.get("url").asText(), identity);
         assertTrue(skill.contentType().startsWith(TYPE_SKILL), skill.contentType());
         Map<String, String> entries = unzipTextEntries(skill.body());
         String skillMd = entries.get(fixture.skillName + "/SKILL.md");
@@ -1182,15 +1278,23 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     }
     
     private JsonNode ardGetJsonOk(String path, Query query) throws Exception {
-        HttpResponse response = executeExternalRaw(new HttpGet(ardUrl(path, query)));
+        return ardGetJsonOk(path, query, AuthIdentity.ANONYMOUS);
+    }
+
+    private JsonNode ardGetJsonOk(String path, Query query, AuthIdentity identity) throws Exception {
+        HttpResponse response = executeArdRaw(new HttpGet(ardUrl(path, query)), identity);
         assertEquals(200, response.code(), response.body());
         return JacksonUtils.toObj(response.body());
     }
     
     private ByteResponse ardGetBytesOk(String absoluteUrl) throws Exception {
+        return ardGetBytesOk(absoluteUrl, AuthIdentity.ANONYMOUS);
+    }
+
+    private ByteResponse ardGetBytesOk(String absoluteUrl, AuthIdentity identity) throws Exception {
         assertTrue(absoluteUrl.startsWith(ARD_BASE_URL + ARD_PATH + "/artifacts?"),
                 absoluteUrl);
-        ByteResponse response = executeExternalRawBytes(new HttpGet(absoluteUrl));
+        ByteResponse response = executeRawBytes(new HttpGet(absoluteUrl), identity);
         assertEquals(200, response.code(),
                 new String(response.body(), StandardCharsets.UTF_8));
         return response;

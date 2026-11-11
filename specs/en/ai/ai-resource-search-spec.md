@@ -230,6 +230,14 @@ resource's enabled, visibility, current-version, and source-digest rules. A
 handler belongs to the `ai` module and must not reference ARD DTOs, URLs, or
 media types.
 
+Background `project`, `scan`, and `exists` read canonical state independently
+of request identity and resource visibility scope. Both `PRIVATE` and `PUBLIC`
+resources are indexed when their lifecycle state is eligible. Content or storage
+failures propagate for retry rather than being treated as absence. Query-time
+`isCurrent` continues to enforce the real caller's current visibility before
+pagination and aggregation. Reconciliation repairs missing private-resource
+indexes without republishing resources or changing their scope.
+
 Every searchable handler declares a positive `projectionVersion`. The initial
 generation is `1`; a projection-contract change increments it. Readiness is a
 shared completeness and observability signal for every searchable type, not a

@@ -64,8 +64,6 @@ public class McpLifecycleManagementStateService {
     
     private static final int MARKER_SCHEMA_VERSION = 1;
     
-    private static final int MCP_SEARCH_PROJECTION_VERSION = 2;
-    
     private static final String INTERNAL_GROUP = "nacos_internal";
     
     private static final long MARKER_REFRESH_INTERVAL_MILLIS = 3000L;
@@ -176,7 +174,8 @@ public class McpLifecycleManagementStateService {
             boolean searchEnabled = Boolean.parseBoolean(
                 EnvUtil.getProperty(Constants.AI_RESOURCE_SEARCH_ENABLED_KEY, "true"));
             return !searchEnabled || searchReadinessService.isReady(
-                AiResourceConstants.RESOURCE_TYPE_MCP, MCP_SEARCH_PROJECTION_VERSION);
+                AiResourceConstants.RESOURCE_TYPE_MCP,
+                AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION);
         } catch (Exception e) {
             LOGGER.warn("Failed to inspect MCP search projection readiness", e);
             return false;

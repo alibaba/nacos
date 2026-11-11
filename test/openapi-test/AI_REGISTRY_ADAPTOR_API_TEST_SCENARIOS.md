@@ -53,11 +53,11 @@ administrator or Client credential.
 
 | API surface / test class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Public-resource HTTP cases verify query results, legacy binding and pagination; context and facet scenarios are detailed below. Private authorized-resource completeness remains excluded as `DAUTH-F03`, so this row stays Partial. |
+| `ArdSearchServiceImplTest`, `ArdSearchControllerTest`, `ArdOpenApiContractTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard`, `GET /v3/ai/ard/agents`, `POST /v3/ai/ard/search`, `POST /v3/ai/ard/explore` | Partial | Public-resource HTTP cases verify query results, legacy binding and pagination; context and facet scenarios are detailed below. The restored cross-type case and private MCP account matrix cover authorized recall, revocation, anonymous exclusion and filtering before pagination/facets. External enhanced-search deployments remain separate. |
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
-| `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. Private authorized completeness remains blocked by `DAUTH-F03`. |
+| `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. The restored cross-type case covers explicitly granted private resources; exhaustive Catalog account combinations remain separate. |
 | `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed to nonempty public Agent Search and exact Version/digest Artifact, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
-| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. Private authorized-resource completeness remains excluded as `DAUTH-F03`. MCP canonical-name/UUID Artifact mapping remains unresolved and is not covered by public Agent assertions. |
+| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. The restored cross-type case verifies granted Agent/Skill artifacts. MCP canonical-name/UUID Artifact mapping remains unresolved and is not covered by public Agent assertions. |
 
 ### Agent 地址模型统一：实施与验收（2026-09-15）
 
@@ -66,7 +66,7 @@ ARD artifact 的非空 HTTP 覆盖见下文；编译通过和历史测试数量�
 
 ### 统一地址模型新增场景（2026-09-15）
 
-`ArdAdaptorOpenApiITCase.testPublicAgentIndexAndUnifiedArtifacts`：旧 A2A 创建 PUBLIC Agent，再通过 Agent API 发布多协议新版本；ARD Search 返回非空 Nacos Agent 与原生 A2A 表示，实际 HTTP 下载验证 exact version/contentDigest、DECLARED Set/Endpoint 新结构，排除 runtime/健康/管理字段，下线后旧 Artifact URL 返回受控 404。原私有资源 DAUTH-F03 用例继续 Disabled。
+`ArdAdaptorOpenApiITCase.testPublicAgentIndexAndUnifiedArtifacts`：旧 A2A 创建 PUBLIC Agent，再通过 Agent API 发布多协议新版本；ARD Search 返回非空 Nacos Agent 与原生 A2A 表示，实际 HTTP 下载验证 exact version/contentDigest、DECLARED Set/Endpoint 新结构，排除 runtime/健康/管理字段，下线后旧 Artifact URL 返回受控 404。原私有资源 DAUTH-F03 用例已恢复；MCP Artifact 不在其下载断言内。
 
 ## Agent JSON / Artifact Schema 更新（2026-09-16）
 
@@ -105,7 +105,7 @@ Search 正式 HTTP 场景由`testQueryContextAndIndependentFilterGroups`（非�
 `testQueryValidationKeepsLegacyHttpBinding`（原始JSON、context/标准值错误与绑定兼容）、
 `testQueryCursorContinuationAndExplicitRecovery`（有效续页、等价context、页大小变化、token错误及原条件重查）承担。
 增强token的配置/查询指纹由真实Core+确定性provider UT验证，并在本地独立增强部署复跑HTTP续页；
-受控远程context的成功与加载错误由本地HTTP矩阵验证。不新增API，DAUTH-F03仍单独Disabled。
+受控远程context的成功与加载错误由本地HTTP矩阵验证。不新增 API；私有索引场景见下文。
 
 `testExploreResolvesContextAndKeepsFacetOptionsIndependent` verifies query/facet aliases,
 independent limit/minCount options, nonempty full-set counts and agreement with Search.
@@ -154,8 +154,7 @@ Parser tests cover FQDN syntax, malformed authorities, exact domain comparison a
 identity-type-independent checks. No test claims cryptographic verification, DID
 resolution, ownership or delegated authority. Multi-publisher resource registration,
 resource trust persistence/indexing and legacy-ID migration remain unavailable;
-these tests must not claim that capability. Existing coverage classifications and
-`DAUTH-F03` remain unchanged; the disabled case is not counted as passed.
+these tests must not claim that capability. Coverage classifications remain unchanged; private-index scenarios are tracked separately below.
 
 ## Nonempty discovery-to-artifact coverage
 
@@ -167,11 +166,27 @@ bound to the adaptor origin and fixtures use the existing cleanup helpers.
 
 `ArdOpenApiContractTest` and the HTTP cases share the existing offline schema
 validator. Java format checks and any local upstream-tool results are separate
-from API coverage totals. Private MCP recall and MCP Artifact identity mapping
-remain TODO; the existing coverage classifications are unchanged.
+from API coverage totals. Private MCP recall is covered separately below;
+MCP Artifact identity mapping remains TODO. Coverage classifications are unchanged.
 
 ## MCP Registry `/v0` response conversion
 
 | API surface / test class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
 | `NacosMcpRegistryServiceTest` (module UT), `McpRegistryControllerTest` | `GET /v0/servers`, `GET /v0/servers/{serverName}/versions/{version}` response assembly | Partial | Module unit tests verify remotes URL construction for `DIRECT` endpoints (null protocol/path defaults to `http` and empty path; explicit protocol/path and default-port omission preserved) and `_meta.official.status` population from the MCP server lifecycle status. Controller contract tests verify routing and envelope shape with a mocked service. Standalone IT: `McpRegistryAdaptorOpenApiITCase` registers a `DIRECT`-endpoint MCP server without `protocol`/`path` through the admin flow and verifies `GET /v0/servers` plus `GET /v0/servers/{name}/versions/{version}` render an `http` remotes URL with no `null` fragment and a populated `_meta.official.status` (requires `nacos.ai.mcp.registry.enabled=true`, now enabled in the IT workflows). |
+
+## Private MCP index and query visibility
+
+`testLiveAdaptorUsesSharedIndexAndExactArtifacts` is active again after the canonical
+background MCP projection fix. It covers cross-type Search/List/Explore/Catalog recall
+and Agent/Skill Artifact retrieval; it does not follow an MCP Artifact URL.
+
+`testPrivateMcpSearchFiltersBeforePaginationAndFacets` publishes PRIVATE MCP resources
+with distinct owners. It verifies owner/admin/grantee recall, unrelated-reader and
+anonymous exclusion, grant/revoke, PUBLIC visibility, and a mixed query where a hidden
+resource sorts before the caller's result. The hidden resource contributes neither a
+page token nor a type-facet count. Main-server Search has no anonymous opt-in and
+continues to return 403; ARD uses its existing configurable anonymous policy.
+
+MCP Artifact name/UUID mapping and its lifecycle checks remain pending. This index
+fix does not establish complete ARD Registry compatibility.

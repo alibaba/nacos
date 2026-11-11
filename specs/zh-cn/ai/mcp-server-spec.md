@@ -519,6 +519,8 @@ content = {"schemaVersion":1,"state":"LIFECYCLE_MANAGED","completedAt":<epochMil
 9. 完成一轮零差异校验；
 10. 只有所有已知集群成员都支持托管写入和写后对账 Hook 时才写完成 Marker。
 
+启用 Search 时，托管切换必须等待当前 MCP 搜索投影代际就绪，旧代际的 readiness 不能代替。
+
 Version/Resource Upsert 阶段只创建指针，绝不保存或重写历史 payload，也不修改 Naming。
 在所有 Member 都具备标准名称 Search Projector 和通用生命周期 Delete/Recovery Handler 前，
 `SYNCING` Reconciler 把 Search Backfill、额外 Version 和孤儿 `legacy-mcp` 工作记录为阻断性
@@ -561,13 +563,12 @@ Config/Naming 消费者增加新的协商要求。
 MCP 通过同一个 Index 和 Query Planner 参与通用 AI Resource Search 与 MCP 专用
 Search Facade。标准 Search `resourceName` 是 `mcpName`，绝不能是 `mcpId`。
 
-MCP Search Projector 与管理流量使用同一个完整兼容操作 Router。`SYNCING` 期间，它按标准名称
-通过 MCP Storage 投影完整历史视图，避免部分完成对账的 Resource Row 隐藏 MCP Server；进入
-`LIFECYCLE_MANAGED` 后，同一个 Router 根据持久化 Storage Descriptor 加载可见 Resource、
-Online Version 和内容。Projector 输入和 Search Identity 绝不使用 `mcpId`；`SYNCING` 策略仍可
-解析读取未变更 Manifest/Config 坐标所需的内部兼容 Alias。它可以投影公开 Description、Tools、
-Resources、Tag、Protocol 和 Capability；Credential、Runtime Instance 和敏感 Auth Metadata 不进入
-Search Chunk。
+MCP Search Projector 读取标准 Resource、common `latest` 指向的 Online Version，
+并按持久化 Storage Descriptor 加载内容，不依赖请求身份或 `PRIVATE`/`PUBLIC` scope。
+它不使用管理兼容 Router、Serving Manifest 或 Runtime Endpoint。历史数据对账期间，
+Search 返回当前已建立索引的标准资源子集，并通过后台补建收敛。查询时仍必须检查调用者可见性。
+索引可以包含公开描述、Tools、Resources、Tag、Protocol 和 Capability；不得包含凭据、
+运行时实例及敏感鉴权元数据。
 
 每次成功的 Create、Update、Publish、Online、Offline、Delete、Enable/Disable、Label 或 Import
 变更，都按 `namespaceId + type=mcp + mcpName` 调度耐久异步维护任务。任务可以合并连续更新并重试失败；
