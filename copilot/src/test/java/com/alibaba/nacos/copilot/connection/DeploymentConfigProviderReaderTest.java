@@ -91,6 +91,25 @@ class DeploymentConfigProviderReaderTest {
     }
     
     @Test
+    void testRejectsNamesOutsideDocumentedGrammar() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.prod-qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.prod_qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.prod_qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.生产.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.生产.model", "qwen-max")
+            .withProperty("nacos.copilot.connections. prod-qwen .providerId", "dashscope")
+            .withProperty("nacos.copilot.connections. prod-qwen .model", "qwen-max");
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader(environment);
+        
+        List<CopilotModelConnection> connections = reader.read(CONTEXT);
+        
+        assertEquals(1, connections.size());
+        assertEquals("prod-qwen", connections.get(0).getName());
+    }
+    
+    @Test
     void testDuplicateSpellingsKeepOneConnection() {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")

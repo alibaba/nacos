@@ -204,7 +204,8 @@ Model connection rules:
   and selection, so `Prod-Qwen`, `PROD-QWEN`, and `prod-qwen` identify the same
   connection and `selectedConnection` follows the same rule. A name is one
   configuration-key element, so it uses ASCII letters, digits, and `-`, with no
-  dots; surrounding whitespace is not valid in a key.
+  dots; surrounding whitespace is not valid in a key. A declared name that does
+  not follow this grammar is skipped and reported instead of being loaded.
 - When the same connection is declared under several spellings, the lower-case
   spelling wins if it is present, otherwise the first spelling in lexicographic
   order is used; the other spellings are reported and ignored, including their

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Reads model connections from {@code nacos.copilot.connections.<name>.*}.
@@ -60,6 +61,8 @@ public class DeploymentConfigProviderReader implements ProviderReader {
     static final String PREFIX = "nacos.copilot.connections.";
     
     private static final String BIND_PREFIX = "connection";
+    
+    private static final Pattern VALID_NAME = Pattern.compile("[A-Za-z0-9-]+");
     
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DeploymentConfigProviderReader.class);
@@ -142,6 +145,11 @@ public class DeploymentConfigProviderReader implements ProviderReader {
                 int separator = remainder.indexOf('.');
                 String declaredName = separator < 0 ? remainder : remainder.substring(0, separator);
                 if (StringUtils.isBlank(declaredName)) {
+                    continue;
+                }
+                if (!VALID_NAME.matcher(declaredName).matches()) {
+                    LOGGER.warn("Copilot connection name [{}] is not valid: names use ASCII "
+                        + "letters, digits, and '-'; skipping it", declaredName);
                     continue;
                 }
                 String normalized = ConnectionTable.normalizeName(declaredName);
