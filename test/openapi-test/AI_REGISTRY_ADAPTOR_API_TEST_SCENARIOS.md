@@ -57,7 +57,7 @@ administrator or Client credential.
 | `ArdExceptionHandlerTest`, `AuthFilterTest`, `ArdWebAuthenticationTest`, `ArdOpenApiContractTest` | Errors from ARD controller and authentication operations | Covered | Verifies in the independent adaptor web context that rejected credentials return HTTP 401 with the exact `{errorCode, message}` body, while a valid identity reaches canonical visibility checks without the Nacos `Result<T>` envelope. |
 | `ArdSearchServiceImplTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/ai-catalog.json`, `GET /.well-known/ai-catalog.json` | Partial | Live public catalogs cover 105 resources, namespace isolation, legacy schema and unchanged projection after reading the new manifest. The restored cross-type case covers explicitly granted private resources; exhaustive Catalog account combinations remain separate. |
 | `ArdWellKnownControllerTest`, `ArdWebAuthenticationTest`, `ArdAdaptorOpenApiITCase`, `ConditionalAnonymousAuthorizationITCase` | `GET /.well-known/ard.json` | Covered | New manifest schema, registry-only publication, context, absolute base URL followed to nonempty public Agent Search and exact Version/digest Artifact, explicit invalid/blank credentials, valid identity and anonymous policy; the method-level authorization inventory includes the new operation. Legacy routes retain their contracts. No namespace-level new route is introduced. |
-| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. The restored cross-type case verifies granted Agent/Skill artifacts. MCP canonical-name/UUID Artifact mapping remains unresolved and is not covered by public Agent assertions. |
+| `ArdArtifactServiceTest`, `ArdSearchControllerTest`, `ArdWebContextIsolationTest`, `ArdAdaptorOpenApiITCase` | `GET /v3/ai/ard/artifacts` | Partial | Public-resource HTTP and component tests cover exact Version/digest artifacts, representation selection, web-context isolation and offline errors. The restored cross-type case verifies granted Agent/Skill artifacts. MCP cases follow Search URLs with ordinary/UUID-shaped names, optional-name validation, exact-version payload and caller visibility; MCP offline/disabled consumption remains pending. |
 
 ### Agent 地址模型统一：实施与验收（2026-09-15）
 
@@ -167,7 +167,7 @@ bound to the adaptor origin and fixtures use the existing cleanup helpers.
 `ArdOpenApiContractTest` and the HTTP cases share the existing offline schema
 validator. Java format checks and any local upstream-tool results are separate
 from API coverage totals. Private MCP recall is covered separately below;
-MCP Artifact identity mapping remains TODO. Coverage classifications are unchanged.
+MCP Artifact identity mapping is covered below. Coverage classifications are unchanged.
 
 ## MCP Registry `/v0` response conversion
 
@@ -188,5 +188,15 @@ resource sorts before the caller's result. The hidden resource contributes neith
 page token nor a type-facet count. Main-server Search has no anonymous opt-in and
 continues to return 403; ARD uses its existing configurable anonymous policy.
 
-MCP Artifact name/UUID mapping and its lifecycle checks remain pending. This index
-fix does not establish complete ARD Registry compatibility.
+MCP Artifact name mapping is covered separately below; its lifecycle checks remain
+pending. These cases do not establish complete ARD Registry compatibility.
+
+## MCP Artifact canonical-name download
+
+| API surface / IT class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `ArdAdaptorOpenApiITCase.testDiscoveredMcpArtifactUsesCanonicalName` | Search → `GET /v3/ai/ard/artifacts` | Partial | Ordinary and UUID-shaped canonical names; use the returned URL and verify name, exact version, internal ID, Tools and Resources. PUBLIC/PRIVATE owner/admin/grantee access, grant/revoke, anonymous exclusion and invalid credentials. Omitted/blank `mcpName` is accepted, nonblank conflict is 400; absent version and another namespace are 404. Offline/disabled download semantics and migration-mode transitions remain separate. |
+
+This expands the existing Artifact surface row; it does not add a row to the
+coverage denominator. Standard MCP Artifact URLs identify a canonical name, even
+when it looks like a UUID. Legacy MCP management ID selectors are unchanged.

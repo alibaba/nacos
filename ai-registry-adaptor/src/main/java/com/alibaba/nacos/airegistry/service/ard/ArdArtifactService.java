@@ -108,8 +108,13 @@ public class ArdArtifactService {
             return promptArtifact(namespaceId, resourceType, resourceName, version);
         }
         if (AiResourceConstants.RESOURCE_TYPE_MCP.equals(resourceType)) {
+            if (StringUtils.isNotBlank(mcpName) && !resourceName.equals(mcpName)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "MCP artifact mcpName must match resourceName");
+            }
             McpServerDetailInfo detail = mcpServerOperationService.getMcpServerDetail(namespaceId,
-                resourceName, mcpName, version);
+                null, resourceName, version);
             return new ArdArtifact(ArdProtocolConstants.MEDIA_TYPE_MCP, detail);
         }
         if (Constants.Agent.RESOURCE_TYPE_AGENT.equals(resourceType)) {

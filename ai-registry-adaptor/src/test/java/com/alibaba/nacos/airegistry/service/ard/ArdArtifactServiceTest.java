@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
@@ -39,6 +40,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.airegistry.constant.ArdProtocolConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -52,8 +55,10 @@ import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -78,6 +83,50 @@ class ArdArtifactServiceTest {
     
     @Mock
     private AgentPersistenceService agentPersistenceService;
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"weather-tool", "4d7939c0-72ea-4ef4-b232-418d1e16b45c"})
+    void getShouldResolveMcpArtifactByCanonicalName(String name) throws Exception {
+        McpServerDetailInfo detail = new McpServerDetailInfo();
+        detail.setName(name);
+        detail.setVersion("1.0.0");
+        when(mcpServerOperationService.getMcpServerDetail("public", null, name, "1.0.0"))
+            .thenReturn(detail);
+        ArdArtifactService service = service();
+        
+        for (String mcpName : new String[] {null, "", " ", name}) {
+            ArdArtifact artifact = service.get("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+                name, "1.0.0", mcpName);
+            assertEquals(ArdProtocolConstants.MEDIA_TYPE_MCP, artifact.getMediaType());
+            assertSame(detail, artifact.getBody());
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"other-tool", "Weather-tool", " weather-tool "})
+    void getShouldRejectConflictingMcpName(String mcpName) {
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service().get("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+                "weather-tool", "1.0.0", mcpName));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("MCP artifact mcpName must match resourceName", exception.getErrMsg());
+        verifyNoInteractions(mcpServerOperationService);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {NacosException.NOT_FOUND, NacosException.SERVER_ERROR})
+    void getShouldPropagateMcpReadFailure(int errorCode) throws Exception {
+        NacosException expected = new NacosException(errorCode, "MCP read failed");
+        when(mcpServerOperationService.getMcpServerDetail("public", null, "weather-tool",
+            "1.0.0")).thenThrow(expected);
+        
+        NacosException actual = assertThrows(NacosException.class,
+            () -> service().get("public", AiResourceConstants.RESOURCE_TYPE_MCP,
+                "weather-tool", "1.0.0", null));
+        
+        assertSame(expected, actual);
+    }
     
     @Test
     void getShouldReturnCompleteSkillZip() throws Exception {

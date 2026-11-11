@@ -159,6 +159,9 @@ content digest and representation key. Offline versions, digest mismatches and u
 representations return 404 / `NOT_FOUND`. Main server and adaptor may use separate ports.
 Skill artifacts are complete `application/agent-skills+zip` archives; Prompt and MCP use
 their native representations.
+For MCP, `resourceName` is the canonical name within the namespace, not the compatibility
+UUID. A nonblank optional `mcpName` must match it exactly; conflicts return 400 /
+`INVALID_ARGUMENT`. Downloads still check the current caller's read access.
 
 Agent supports `application/a2a-agent-card+json` when the common latest version contains
 a valid complete A2A card, and `application/vnd.nacos.ai-agent+json` for the versioned
@@ -175,8 +178,8 @@ Representation selection changes the artifact URL, not the logical identifier.
 ## 7. Support limits
 
 Discovery uses the current shared index and may be incomplete before convergence.
-Private MCP recall and MCP artifact name/UUID mapping remain known gaps. External
-manifest/webpage ingestion, full upstream federation, arbitrary vocabulary storage and
+MCP artifact lifecycle enforcement remains incomplete. External manifest/webpage ingestion,
+full upstream federation, arbitrary vocabulary storage and
 resource publisher/trust management are unsupported; this is not full Registry conformance.
 Federation values `auto` (default), `referrals` and `none` currently execute locally,
 with empty referrals.
