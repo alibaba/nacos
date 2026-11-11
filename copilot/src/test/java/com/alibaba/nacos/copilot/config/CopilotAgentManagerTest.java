@@ -334,6 +334,99 @@ class CopilotAgentManagerTest {
     }
     
     @Test
+    void testDeploymentSelectionOverridesStoredConfiguration() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("old-key");
+        stored.setModel("qwen-turbo");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "beta");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        assertEquals("beta", manager.getConfig().getSelectedConnection());
+        assertEquals("qwen-turbo", manager.getConfig().getModel());
+        assertEquals("old-key", manager.getConfig().getApiKey());
+    }
+    
+    @Test
+    void testDeploymentConfigurationOverridesStoredValues() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setEnabled(false);
+        stored.setDefaultNamespace("legacy-namespace");
+        stored.setApiKey("old-key");
+        stored.setModel("qwen-turbo");
+        stored.setSelectedConnection("stored-choice");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.enabled", "true")
+            .withProperty("nacos.copilot.model", "qwen-max")
+            .withProperty("nacos.copilot.selectedConnection", "beta");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        CopilotProperties config = manager.getConfig();
+        assertTrue(config.isEnabled());
+        assertEquals("qwen-max", config.getModel());
+        assertEquals("beta", config.getSelectedConnection());
+        assertEquals("old-key", config.getApiKey());
+        assertEquals("legacy-namespace", config.getDefaultNamespace());
+    }
+    
+    @Test
+    void testDeploymentSelectionChangeAppliesWhileStoredConfigurationExists() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("old-key");
+        stored.setModel("qwen-turbo");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "alpha");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        assertEquals("alpha", manager.getConfig().getSelectedConnection());
+        
+        environment.setProperty("nacos.copilot.selectedConnection", "beta");
+        manager.refreshConfig();
+        
+        assertEquals("beta", manager.getConfig().getSelectedConnection());
+        verify(configStorage, times(2)).getConfig();
+    }
+    
+    @Test
+    void testStoredConfigurationRemainsEffectiveWithoutDeploymentOverrides() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setEnabled(false);
+        stored.setApiKey("old-key");
+        stored.setModel("qwen-turbo");
+        stored.setSelectedConnection("stored-choice");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, new MockEnvironment());
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        CopilotProperties config = manager.getConfig();
+        assertFalse(config.isEnabled());
+        assertEquals("qwen-turbo", config.getModel());
+        assertEquals("old-key", config.getApiKey());
+        assertEquals("stored-choice", config.getSelectedConnection());
+    }
+    
+    @Test
     void testMixedCaseConnectionAndSelectionRouteEndToEnd() {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")

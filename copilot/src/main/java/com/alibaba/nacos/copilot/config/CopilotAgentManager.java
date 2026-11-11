@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.bind.BindResult;
-import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
@@ -238,33 +237,68 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Get the effective configuration: stored configuration, then deployment configuration,
-     * then defaults.
+     * Get the effective configuration: deployment configuration overrides the stored
+     * configuration for the fields it declares, and the stored configuration overrides the
+     * defaults. The stored configuration is read once per refresh.
      *
      * @return effective CopilotProperties
      */
     private CopilotProperties getEffectiveConfig() {
-        // First try to get from Nacos Config
+        CopilotProperties stored = null;
         if (configStorage != null && configStorage.isAvailable()) {
-            CopilotProperties config = configStorage.getConfig();
-            if (config != null) {
-                LOGGER.debug("Using Copilot config from Nacos Config");
-                return config;
-            }
+            stored = configStorage.getConfig();
         }
-        
-        // Re-bind the deployment configuration so a refresh also applies changed
-        // nacos.copilot.* fields, not only the connection table.
-        BindResult<CopilotProperties> bound = Binder.get(environment)
-            .bind(CONFIG_PREFIX, Bindable.of(CopilotProperties.class));
-        if (bound.isBound()) {
-            LOGGER.debug("Using Copilot config from deployment configuration");
-            return bound.get();
+        CopilotProperties effective =
+            stored == null ? new CopilotProperties() : copyOf(stored);
+        boolean deploymentApplied = applyDeploymentConfig(effective);
+        if (stored == null && !deploymentApplied) {
+            return defaultProperties;
         }
-        
-        // Fallback to default properties
-        LOGGER.debug("Using default Copilot config");
-        return defaultProperties;
+        return effective;
+    }
+    
+    /**
+     * Apply the deployment configuration fields that are explicitly set, so that every
+     * other field keeps its stored or default value.
+     *
+     * @param target configuration to update
+     * @return whether the deployment configuration declares at least one field
+     */
+    private boolean applyDeploymentConfig(CopilotProperties target) {
+        Binder binder = Binder.get(environment);
+        BindResult<Boolean> enabled =
+            binder.bind(CONFIG_PREFIX + ".enabled", Boolean.class);
+        enabled.ifBound(target::setEnabled);
+        BindResult<String> defaultNamespace =
+            binder.bind(CONFIG_PREFIX + ".default-namespace", String.class);
+        defaultNamespace.ifBound(target::setDefaultNamespace);
+        BindResult<String> apiKey = binder.bind(CONFIG_PREFIX + ".api-key", String.class);
+        apiKey.ifBound(target::setApiKey);
+        BindResult<String> model = binder.bind(CONFIG_PREFIX + ".model", String.class);
+        model.ifBound(target::setModel);
+        BindResult<String> studioUrl = binder.bind(CONFIG_PREFIX + ".studio-url", String.class);
+        studioUrl.ifBound(target::setStudioUrl);
+        BindResult<String> studioProject =
+            binder.bind(CONFIG_PREFIX + ".studio-project", String.class);
+        studioProject.ifBound(target::setStudioProject);
+        BindResult<String> selectedConnection =
+            binder.bind(CONFIG_PREFIX + ".selected-connection", String.class);
+        selectedConnection.ifBound(target::setSelectedConnection);
+        return enabled.isBound() || defaultNamespace.isBound() || apiKey.isBound()
+            || model.isBound() || studioUrl.isBound() || studioProject.isBound()
+            || selectedConnection.isBound();
+    }
+    
+    private CopilotProperties copyOf(CopilotProperties source) {
+        CopilotProperties copy = new CopilotProperties();
+        copy.setEnabled(source.isEnabled());
+        copy.setDefaultNamespace(source.getDefaultNamespace());
+        copy.setApiKey(source.getApiKey());
+        copy.setModel(source.getModel());
+        copy.setStudioUrl(source.getStudioUrl());
+        copy.setStudioProject(source.getStudioProject());
+        copy.setSelectedConnection(source.getSelectedConnection());
+        return copy;
     }
     
     /**

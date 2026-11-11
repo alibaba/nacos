@@ -145,6 +145,12 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 - `nacos.copilot.selectedConnection` 指定控制台选中的连接；
 - AgentScope Studio 通过 `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
 
+生效配置按字段合并：`nacos.copilot.*` 中显式设置的字段覆盖 `copilot-config.json` 中的同名值，
+`copilot-config.json` 中的值覆盖内置默认值；部署配置未设置的字段回退到 `copilot-config.json`，
+两者都没有时使用默认值。`selectedConnection`、`enabled`、`studioUrl` 等字段遵循同一优先级，
+因此升级时已存在的旧 `copilot-config.json` 不会掩盖新部署配置中显式设置的值。连接表按连接
+来源规则独立合并（部署侧连接替换同名 `legacy` 连接）。
+
 模型连接规则：
 
 - 部署侧连接使用 `nacos.copilot.connections.<name>` 前缀，字段包括 `providerId`、`model`、

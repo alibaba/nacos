@@ -181,6 +181,16 @@ Current enablement and surface:
 - AgentScope Studio is configured through `nacos.copilot.studioUrl` and
   `nacos.copilot.studioProject`.
 
+The effective configuration is merged field by field: a field explicitly set in
+`nacos.copilot.*` overrides the same field in `copilot-config.json`, and
+`copilot-config.json` overrides the built-in default. A field that the deployment
+configuration does not set falls back to the stored value, then to the default.
+`selectedConnection`, `enabled`, and `studioUrl` follow the same precedence, so an
+existing `copilot-config.json` from an older installation does not hide values
+explicitly set in the new deployment configuration. The connection table is merged
+independently by connection source (a deployment connection replaces the `legacy`
+connection with the same name).
+
 Model connection rules:
 
 - Deployment connections use the `nacos.copilot.connections.<name>` prefix with
