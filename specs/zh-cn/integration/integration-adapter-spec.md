@@ -141,8 +141,64 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 - 当 `nacos.deployment.type=server` 时不会加载该模块；
 - 控制台 route 位于 `/v3/console/copilot/*`；
 - 流式操作使用 server-sent events，而不是普通 JSON response wrapper；
-- LLM 访问通过 `nacos.copilot.apiKey`、`nacos.copilot.model`、
-  `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
+- LLM 访问通过 `nacos.copilot.connections.<name>.*` 配置的部署侧模型连接提供；没有可用部署侧
+  连接时回退到由 `nacos.copilot.apiKey`、`nacos.copilot.model` 与 `COPILOT_API_KEY` 映射出的
+  `legacy` 连接；
+- `nacos.copilot.selectedConnection` 指定控制台选中的连接；
+- AgentScope Studio 通过 `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
+
+生效配置按字段合并：`nacos.copilot.*` 中显式设置的字段覆盖 `copilot-config.json` 中的同名值，
+`copilot-config.json` 中的值覆盖内置默认值；部署配置未设置的字段回退到 `copilot-config.json`，
+两者都没有时使用默认值。`selectedConnection`、`enabled`、`studioUrl` 等字段遵循同一优先级，
+因此升级时已存在的旧 `copilot-config.json` 不会掩盖新部署配置中显式设置的值。连接表按连接
+来源规则独立合并（部署侧连接替换同名 `legacy` 连接）。
+
+模型连接规则：
+
+- 部署侧连接使用 `nacos.copilot.connections.<name>` 前缀，字段包括 `providerId`、`model`、
+  `apiKey`、`baseUrl`、`endpointPath`、`displayName`、`enabled`、`stream`、
+  `enableThinking` 与 `options`；`<name>` 是连接名，`legacy` 是旧配置映射出的连接名，同名部署侧
+  连接会替换它。
+- 连接名大小写不敏感：合并、查找与选择前会去掉首尾空白并用 `Locale.ROOT` 转为小写，因此
+  `Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个连接，`selectedConnection` 遵循同样规则。
+  连接名是配置 key 的一个元素，可用 ASCII 字母、数字与 `-`，不含点号；key 中不允许首尾空白。
+  不符合该语法的名称会被跳过并上报，不会加载。
+- 同一连接用多种拼写声明时，存在全小写拼写则采用它，否则采用字典序最小的拼写；其余拼写
+  （包括其字段）被忽略并上报。
+- 连接按来源合并：部署侧连接替换同名的旧配置连接；部署侧同名多拼写按上一条规则去重，
+  聚合器对任一 reader 返回的重复连接仍保留第一个并告警。
+- 选择顺序为：`nacos.copilot.selectedConnection` 指定的连接、第一个可用部署侧连接、
+  第一个可用 `legacy` 连接。连接先按优先级、再按连接名排序，因此同一来源内的并列顺序是
+  确定的。
+- 加载期校验每个连接：`providerId` 与 `model` 必填；`legacy` 连接仅在 `COPILOT_API_KEY`
+  或已保存的 `apiKey` 提供非空 key 时可用，两者都清空时该连接不可用，而不是把凭据交给
+  provider 自己的环境变量兜底；先确认 classpath 上存在对应 provider
+  （`canResolve`），再用 `resolve` 探测构造错误；显式设置的 `baseUrl` 必须为 https 且解析
+  到公网地址，除非其 host 命中 `nacos.copilot.base-url.allowlist`。
+- 校验失败的连接只标记为不可用并保留诊断原因，不影响其他连接继续服务；上游 provider
+  的诊断信息按原样保留，不得替换为通用错误。
+- 连接字段只在运行时从部署配置读取；通过通用配置接口写入 `copilot-config.json` 的同名字段
+  不会覆盖部署连接。
+- Copilot 不做跨节点连接同步：连接表随部署配置分发，各节点的连接配置与 classpath 上的
+  provider 依赖需由部署管线保持一致。
+
+示例：
+
+```properties
+nacos.copilot.connections.prod-qwen.providerId=dashscope
+nacos.copilot.connections.prod-qwen.model=qwen-max
+nacos.copilot.connections.prod-qwen.apiKey=<api-key>
+nacos.copilot.selectedConnection=prod-qwen
+```
+
+配置刷新规则：
+
+- merged 部署在配置文件变化时发布 `ServerConfigChangeEvent`，Copilot 订阅该事件并重新绑定
+  `nacos.copilot.*`，连接表、`selectedConnection`、`enabled` 等部署配置一并生效。
+- `selectedConnection` 指定的连接不存在、被禁用或不可用时，路由回退到默认选择顺序，并在
+  刷新时输出告警。
+- 纯控制台部署不监听配置文件，必须重启生效。
+- 运行中删除的配置键不会在刷新时消失，需要重启；环境变量不会触发热更新。
 
 规则：
 

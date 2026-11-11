@@ -21,8 +21,8 @@ import com.alibaba.nacos.copilot.config.CopilotProperties;
 /**
  * Configuration snapshot shared by all readers during one refresh.
  *
- * <p>The effective Copilot configuration is read once per refresh, so the manager and the
- * legacy connection always describe the same configuration generation.
+ * <p>The effective Copilot configuration is read once per refresh, so the manager snapshot
+ * and the connections describe the same configuration generation.
  *
  * @author nacos
  */

@@ -25,8 +25,11 @@ import java.util.Map;
 /**
  * One model connection managed by Nacos.
  *
- * <p>The first four fields are Nacos management fields. The remaining fields mirror
- * {@link ModelCreationContext} and are passed through to AgentScope without translation.
+ * <p>The management fields (name, providerId, displayName, enabled, source, priority,
+ * availability and unavailableReason) are owned by Nacos. The creation fields (apiKey,
+ * baseUrl, endpointPath, stream, enableThinking and options) mirror
+ * {@link ModelCreationContext} and are passed through to AgentScope without translation;
+ * model is combined with providerId into the model id.
  *
  * <p>Instances are immutable, so a connection held by {@link ConnectionTable} can not be
  * changed without a refresh.
@@ -42,6 +45,14 @@ public final class CopilotModelConnection {
     private final String displayName;
     
     private final boolean enabled;
+    
+    private final ConnectionSource source;
+    
+    private final int priority;
+    
+    private final boolean available;
+    
+    private final String unavailableReason;
     
     private final String model;
     
@@ -62,6 +73,10 @@ public final class CopilotModelConnection {
         this.providerId = builder.providerId;
         this.displayName = builder.displayName;
         this.enabled = builder.enabled;
+        this.source = builder.source;
+        this.priority = builder.priority;
+        this.available = builder.available;
+        this.unavailableReason = builder.unavailableReason;
         this.model = builder.model;
         this.apiKey = builder.apiKey;
         this.baseUrl = builder.baseUrl;
@@ -79,6 +94,18 @@ public final class CopilotModelConnection {
      */
     public static Builder builder() {
         return new Builder();
+    }
+    
+    /**
+     * Return a copy of this connection with the load-time validation result.
+     *
+     * @param available         whether the connection can currently create a model
+     * @param unavailableReason diagnostic reason, or {@code null} when available
+     * @return connection copy carrying the validation result
+     */
+    public CopilotModelConnection withAvailability(boolean available, String unavailableReason) {
+        return new Builder(this).available(available).unavailableReason(unavailableReason)
+            .build();
     }
     
     /**
@@ -122,6 +149,22 @@ public final class CopilotModelConnection {
         return enabled;
     }
     
+    public ConnectionSource getSource() {
+        return source;
+    }
+    
+    public int getPriority() {
+        return priority;
+    }
+    
+    public boolean isAvailable() {
+        return available;
+    }
+    
+    public String getUnavailableReason() {
+        return unavailableReason;
+    }
+    
     public String getModel() {
         return model;
     }
@@ -163,6 +206,14 @@ public final class CopilotModelConnection {
         
         private boolean enabled = true;
         
+        private ConnectionSource source = ConnectionSource.LEGACY;
+        
+        private int priority = 100;
+        
+        private boolean available = true;
+        
+        private String unavailableReason;
+        
         private String model;
         
         private String apiKey;
@@ -176,6 +227,27 @@ public final class CopilotModelConnection {
         private Boolean enableThinking;
         
         private Map<String, Object> options;
+        
+        private Builder() {
+        }
+        
+        private Builder(CopilotModelConnection connection) {
+            this.name = connection.name;
+            this.providerId = connection.providerId;
+            this.displayName = connection.displayName;
+            this.enabled = connection.enabled;
+            this.source = connection.source;
+            this.priority = connection.priority;
+            this.available = connection.available;
+            this.unavailableReason = connection.unavailableReason;
+            this.model = connection.model;
+            this.apiKey = connection.apiKey;
+            this.baseUrl = connection.baseUrl;
+            this.endpointPath = connection.endpointPath;
+            this.stream = connection.stream;
+            this.enableThinking = connection.enableThinking;
+            this.options = connection.options;
+        }
         
         public Builder name(String name) {
             this.name = name;
@@ -194,6 +266,26 @@ public final class CopilotModelConnection {
         
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+        
+        public Builder source(ConnectionSource source) {
+            this.source = source;
+            return this;
+        }
+        
+        public Builder priority(int priority) {
+            this.priority = priority;
+            return this;
+        }
+        
+        public Builder available(boolean available) {
+            this.available = available;
+            return this;
+        }
+        
+        public Builder unavailableReason(String unavailableReason) {
+            this.unavailableReason = unavailableReason;
             return this;
         }
         

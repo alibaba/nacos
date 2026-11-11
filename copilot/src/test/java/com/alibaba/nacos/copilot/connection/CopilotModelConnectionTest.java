@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,5 +95,35 @@ class CopilotModelConnectionTest {
     @Test
     void testEnabledByDefault() {
         assertTrue(CopilotModelConnection.builder().build().isEnabled());
+    }
+    
+    @Test
+    void testMetadataDefaults() {
+        CopilotModelConnection connection = CopilotModelConnection.builder().build();
+        
+        assertEquals(ConnectionSource.LEGACY, connection.getSource());
+        assertEquals(100, connection.getPriority());
+        assertTrue(connection.isAvailable());
+        assertNull(connection.getUnavailableReason());
+    }
+    
+    @Test
+    void testWithAvailabilityKeepsOtherFields() {
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .name("prod-qwen")
+            .providerId("dashscope")
+            .model("qwen-max")
+            .source(ConnectionSource.DEPLOYMENT)
+            .priority(10)
+            .build();
+        
+        CopilotModelConnection unavailable = connection.withAvailability(false, "no key");
+        
+        assertFalse(unavailable.isAvailable());
+        assertEquals("no key", unavailable.getUnavailableReason());
+        assertEquals("prod-qwen", unavailable.getName());
+        assertEquals(ConnectionSource.DEPLOYMENT, unavailable.getSource());
+        assertEquals(10, unavailable.getPriority());
+        assertTrue(connection.isAvailable());
     }
 }

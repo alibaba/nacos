@@ -175,9 +175,93 @@ Current enablement and surface:
 - console routes are under `/v3/console/copilot/*`;
 - stream operations use server-sent events rather than the ordinary JSON
   response wrapper;
-- LLM access is configured through `nacos.copilot.apiKey`,
-  `nacos.copilot.model`, `nacos.copilot.studioUrl`, and
+- LLM access is served by the deployment model connections configured under
+  `nacos.copilot.connections.<name>.*`, falling back to the `legacy` connection
+  mapped from `nacos.copilot.apiKey`, `nacos.copilot.model`, and
+  `COPILOT_API_KEY` when no deployment connection is usable;
+- `nacos.copilot.selectedConnection` names the connection selected in the
+  console;
+- AgentScope Studio is configured through `nacos.copilot.studioUrl` and
   `nacos.copilot.studioProject`.
+
+The effective configuration is merged field by field: a field explicitly set in
+`nacos.copilot.*` overrides the same field in `copilot-config.json`, and
+`copilot-config.json` overrides the built-in default. A field that the deployment
+configuration does not set falls back to the stored value, then to the default.
+`selectedConnection`, `enabled`, and `studioUrl` follow the same precedence, so an
+existing `copilot-config.json` from an older installation does not hide values
+explicitly set in the new deployment configuration. The connection table is merged
+independently by connection source (a deployment connection replaces the `legacy`
+connection with the same name).
+
+Model connection rules:
+
+- Deployment connections use the `nacos.copilot.connections.<name>` prefix with
+  `providerId`, `model`, `apiKey`, `baseUrl`, `endpointPath`, `displayName`,
+  `enabled`, `stream`, `enableThinking`, and `options`; `<name>` is the
+  connection name, and `legacy` is the name of the connection built from the
+  deprecated configuration, which a deployment connection with the same name
+  replaces.
+- Connection names are case-insensitive: leading and trailing whitespace is
+  trimmed and the name is lower-cased with `Locale.ROOT` before merging, lookup,
+  and selection, so `Prod-Qwen`, `PROD-QWEN`, and `prod-qwen` identify the same
+  connection and `selectedConnection` follows the same rule. A name is one
+  configuration-key element, so it uses ASCII letters, digits, and `-`, with no
+  dots; surrounding whitespace is not valid in a key. A declared name that does
+  not follow this grammar is skipped and reported instead of being loaded.
+- When the same connection is declared under several spellings, the lower-case
+  spelling wins if it is present, otherwise the first spelling in lexicographic
+  order is used; the other spellings are reported and ignored, including their
+  fields.
+- Connections are merged by source: a deployment connection replaces the
+  deprecated connection with the same name; deployment spellings are resolved by
+  the rule above, and for any reader that still returns duplicate connections
+  the aggregator keeps the first one and reports it.
+- Selection order is the connection named by
+  `nacos.copilot.selectedConnection`, then the first available deployment
+  connection, then the first available `legacy` connection. Connections are
+  ordered by priority and then by name, so ties within a source resolve
+  deterministically.
+- Every connection is validated at load time: `providerId` and `model` are
+  required; the `legacy` connection is usable only when `COPILOT_API_KEY` or
+  the stored `apiKey` provides a key, so clearing both makes the connection
+  unavailable instead of leaving the provider's own environment fallback in
+  charge; the provider prefix is checked with
+  `canResolve` before a `resolve` probe reports construction errors; an
+  explicit `baseUrl` must use https and resolve to a public address unless its
+  host matches `nacos.copilot.base-url.allowlist`.
+- A connection that fails validation is only marked unavailable with its
+  diagnostic reason; other connections keep serving. Upstream provider
+  diagnostics are preserved verbatim rather than replaced by a generic error.
+- Connection fields are read from the deployment configuration at runtime only;
+  writing the same fields into `copilot-config.json` through the generic
+  configuration API does not override a deployment connection.
+- Copilot does not synchronize connections across nodes: the table follows the
+  deployment configuration, and every node must receive the same connection
+  configuration and provider dependencies through the deployment pipeline.
+
+Example:
+
+```properties
+nacos.copilot.connections.prod-qwen.providerId=dashscope
+nacos.copilot.connections.prod-qwen.model=qwen-max
+nacos.copilot.connections.prod-qwen.apiKey=<api-key>
+nacos.copilot.selectedConnection=prod-qwen
+```
+
+Configuration refresh rules:
+
+- A merged deployment publishes `ServerConfigChangeEvent` when the
+  configuration file changes; Copilot subscribes and re-binds
+  `nacos.copilot.*`, so the connection table, `selectedConnection`, `enabled`,
+  and the other deployment fields all apply.
+- A `selectedConnection` that is missing, disabled, or unavailable falls back
+  to the default selection order and is reported with a warning on the
+  refresh.
+- A pure console deployment does not watch the configuration file and requires
+  a restart.
+- Keys removed while the process runs are not visible to a refresh and require a
+  restart; environment variables do not trigger a refresh.
 
 Rules:
 

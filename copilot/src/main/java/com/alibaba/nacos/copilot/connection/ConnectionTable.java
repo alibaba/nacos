@@ -78,7 +78,10 @@ public final class ConnectionTable {
     }
     
     /**
-     * The connection used when no explicit selection is made: the first enabled one.
+     * The first enabled connection in table order.
+     *
+     * <p>This is not the selection policy: use {@link CopilotModelRouter} to pick the
+     * connection serving a request.
      *
      * @return connection, or {@code null} when the table is empty or all are disabled
      */

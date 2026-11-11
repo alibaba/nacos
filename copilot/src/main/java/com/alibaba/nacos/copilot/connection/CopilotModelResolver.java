@@ -29,6 +29,16 @@ import org.springframework.stereotype.Component;
 public class CopilotModelResolver {
     
     /**
+     * Check whether a provider implementation for the connection's model id is on the classpath.
+     *
+     * @param connection model connection
+     * @return true when the provider prefix can be handled
+     */
+    public boolean canResolve(CopilotModelConnection connection) {
+        return ModelRegistry.canResolve(connection.getModelId());
+    }
+    
+    /**
      * Resolve the connection through AgentScope's registry.
      *
      * @param connection model connection

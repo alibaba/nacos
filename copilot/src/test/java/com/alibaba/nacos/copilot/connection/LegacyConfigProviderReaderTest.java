@@ -72,6 +72,8 @@ class LegacyConfigProviderReaderTest {
         assertTrue(connection.isEnabled());
         assertTrue(connection.getStream());
         assertTrue(connection.getEnableThinking());
+        assertEquals(ConnectionSource.LEGACY, connection.getSource());
+        assertEquals(100, connection.getPriority());
     }
     
     @Test
