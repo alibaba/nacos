@@ -151,6 +151,11 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
   `apiKey`、`baseUrl`、`endpointPath`、`displayName`、`enabled`、`stream`、
   `enableThinking` 与 `options`；`<name>` 是连接名，`legacy` 是旧配置映射出的连接名，同名部署侧
   连接会替换它。
+- 连接名大小写不敏感：合并、查找与选择前会去掉首尾空白并用 `Locale.ROOT` 转为小写，因此
+  `Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个连接，`selectedConnection` 遵循同样规则。
+  连接名是配置 key 的一个元素，可用 ASCII 字母、数字与 `-`，不含点号；key 中不允许首尾空白。
+- 同一连接用多种拼写声明时，存在全小写拼写则采用它，否则采用字典序最小的拼写；其余拼写
+  （包括其字段）被忽略并上报。
 - 连接按来源合并：部署侧连接替换同名的旧配置连接；同一来源内重名时保留第一个并告警。
 - 选择顺序为：`nacos.copilot.selectedConnection` 指定的连接、第一个可用部署侧连接、
   第一个可用 `legacy` 连接。连接先按优先级、再按连接名排序，因此同一来源内的并列顺序是

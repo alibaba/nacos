@@ -23,21 +23,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Reads model connections from {@code nacos.copilot.connections.<name>.*}.
  *
  * <p>Each connection is bound separately, so a malformed block only drops that connection
  * instead of hiding the others.
+ *
+ * <p>Connection names are case-insensitive. Each block is bound through a synthetic source
+ * so the declared spelling does not reach Spring, which rejects property names containing
+ * upper-case characters. When one connection is declared under several spellings, the
+ * lower-case spelling wins if present, otherwise the first spelling in lexicographic order;
+ * the other spellings are reported and ignored.
  *
  * @author nacos
  */
@@ -50,6 +58,8 @@ public class DeploymentConfigProviderReader implements ProviderReader {
     public static final int ORDER = 10;
     
     static final String PREFIX = "nacos.copilot.connections.";
+    
+    private static final String BIND_PREFIX = "connection";
     
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DeploymentConfigProviderReader.class);
@@ -74,23 +84,52 @@ public class DeploymentConfigProviderReader implements ProviderReader {
     @Override
     public List<CopilotModelConnection> read(ProviderReadContext context) {
         List<CopilotModelConnection> result = new ArrayList<>();
-        for (String name : connectionNames()) {
+        for (Map.Entry<String, String> entry : connectionNames().entrySet()) {
             try {
-                BindResult<DeploymentConnectionDefinition> bound = Binder.get(environment)
-                    .bind(PREFIX + name, Bindable.of(DeploymentConnectionDefinition.class));
+                BindResult<DeploymentConnectionDefinition> bound = bind(entry.getValue());
                 if (bound.isBound()) {
-                    result.add(bound.get().toConnection(name));
+                    result.add(bound.get().toConnection(entry.getKey()));
                 }
             } catch (RuntimeException e) {
-                LOGGER.warn("Failed to read Copilot connection [{}], skipping it: {}", name,
-                    e.getMessage());
+                LOGGER.warn("Failed to read Copilot connection [{}], skipping it: {}",
+                    entry.getValue(), e.getMessage());
             }
         }
         return result;
     }
     
-    private Set<String> connectionNames() {
-        Set<String> names = new LinkedHashSet<>();
+    /**
+     * Bind one declared block through a synthetic source, so properties of a spelling that
+     * was not selected can not leak into the connection.
+     */
+    private BindResult<DeploymentConnectionDefinition> bind(String declaredName) {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        String blockPrefix = PREFIX + declaredName + ".";
+        for (PropertySource<?> source : environment.getPropertySources()) {
+            if (!(source instanceof EnumerablePropertySource)) {
+                continue;
+            }
+            for (String propertyName : ((EnumerablePropertySource<?>) source).getPropertyNames()) {
+                if (!propertyName.startsWith(blockPrefix)) {
+                    continue;
+                }
+                String suffix = propertyName.substring(blockPrefix.length());
+                String value = environment.getProperty(propertyName);
+                if (StringUtils.isNotBlank(suffix) && value != null) {
+                    properties.putIfAbsent(BIND_PREFIX + "." + suffix, value);
+                }
+            }
+        }
+        return new Binder(ConfigurationPropertySources.from(
+            new MapPropertySource("copilot-connection-" + declaredName, properties)))
+            .bind(BIND_PREFIX, Bindable.of(DeploymentConnectionDefinition.class));
+    }
+    
+    /**
+     * Map normalized connection names to the declared spelling used to bind each block.
+     */
+    private Map<String, String> connectionNames() {
+        Map<String, String> names = new LinkedHashMap<>();
         for (PropertySource<?> source : environment.getPropertySources()) {
             if (!(source instanceof EnumerablePropertySource)) {
                 continue;
@@ -101,12 +140,33 @@ public class DeploymentConfigProviderReader implements ProviderReader {
                 }
                 String remainder = propertyName.substring(PREFIX.length());
                 int separator = remainder.indexOf('.');
-                String name = separator < 0 ? remainder : remainder.substring(0, separator);
-                if (StringUtils.isNotBlank(name)) {
-                    names.add(name);
+                String declaredName = separator < 0 ? remainder : remainder.substring(0, separator);
+                if (StringUtils.isBlank(declaredName)) {
+                    continue;
+                }
+                String normalized = ConnectionTable.normalizeName(declaredName);
+                String existing = names.get(normalized);
+                if (existing == null) {
+                    names.put(normalized, declaredName);
+                } else if (!existing.equals(declaredName)) {
+                    String kept = preferredSpelling(normalized, existing, declaredName);
+                    String ignored = kept.equals(existing) ? declaredName : existing;
+                    LOGGER.warn("Copilot connection [{}] is declared under multiple spellings, "
+                        + "using [{}] and ignoring [{}]", normalized, kept, ignored);
+                    names.put(normalized, kept);
                 }
             }
         }
         return names;
+    }
+    
+    private String preferredSpelling(String normalized, String first, String second) {
+        if (first.equals(normalized)) {
+            return first;
+        }
+        if (second.equals(normalized)) {
+            return second;
+        }
+        return first.compareTo(second) <= 0 ? first : second;
     }
 }

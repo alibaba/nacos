@@ -23,6 +23,7 @@ import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
 import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.DefaultCopilotModelRouter;
+import com.alibaba.nacos.copilot.connection.DeploymentConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
 import ch.qos.logback.classic.Level;
@@ -43,6 +44,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -325,6 +327,30 @@ class CopilotAgentManagerTest {
         manager.refreshConfig();
         
         assertEquals("prod-qwen", manager.getConfig().getSelectedConnection());
+    }
+    
+    @Test
+    void testMixedCaseConnectionAndSelectionRouteEndToEnd() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.Prod-Qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.Prod-Qwen.apiKey", "secret")
+            .withProperty("nacos.copilot.selectedConnection", "PROD-QWEN");
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(modelResolver.canResolve(any())).thenReturn(true);
+        when(modelResolver.resolve(any())).thenReturn(mock(Model.class));
+        CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
+        ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
+            Arrays.asList(new DeploymentConfigProviderReader(environment),
+                new LegacyConfigProviderReader(environment)),
+            validator);
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            realReaders, modelResolver, new DefaultCopilotModelRouter(), environment);
+        
+        manager.refreshConfig();
+        
+        assertEquals("PROD-QWEN", manager.getConfig().getSelectedConnection());
+        assertTrue(manager.isEnabled());
     }
     
     @Test

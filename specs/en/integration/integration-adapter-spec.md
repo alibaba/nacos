@@ -189,6 +189,16 @@ Model connection rules:
   connection name, and `legacy` is the name of the connection built from the
   deprecated configuration, which a deployment connection with the same name
   replaces.
+- Connection names are case-insensitive: leading and trailing whitespace is
+  trimmed and the name is lower-cased with `Locale.ROOT` before merging, lookup,
+  and selection, so `Prod-Qwen`, `PROD-QWEN`, and `prod-qwen` identify the same
+  connection and `selectedConnection` follows the same rule. A name is one
+  configuration-key element, so it uses ASCII letters, digits, and `-`, with no
+  dots; surrounding whitespace is not valid in a key.
+- When the same connection is declared under several spellings, the lower-case
+  spelling wins if it is present, otherwise the first spelling in lexicographic
+  order is used; the other spellings are reported and ignored, including their
+  fields.
 - Connections are merged by source: a deployment connection replaces the
   deprecated connection with the same name; within one source the first
   duplicate wins and is reported.
