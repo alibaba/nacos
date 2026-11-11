@@ -211,6 +211,11 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     @Override
+    public boolean hasSubscriptionIntent(String serviceName, String groupName, String clusters) {
+        return grpcClientProxy.hasSubscriptionIntent(serviceName, groupName, clusters);
+    }
+    
+    @Override
     public boolean serverHealthy() {
         return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
     }

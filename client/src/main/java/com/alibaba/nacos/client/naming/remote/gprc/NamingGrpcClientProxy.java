@@ -463,6 +463,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         return redoService.isSubscriberRegistered(serviceName, groupName, clusters);
     }
     
+    @Override
+    public boolean hasSubscriptionIntent(String serviceName, String groupName, String clusters) {
+        return redoService.hasSubscriptionIntent(serviceName, groupName, clusters);
+    }
+    
     /**
      * Execute unsubscribe operation.
      *
