@@ -25,9 +25,12 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -37,12 +40,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
@@ -102,6 +111,70 @@ class ServiceInfoHolderTest {
         
         ServiceInfo actual2 = holder.processServiceInfo(info2);
         assertEquals(info2, actual2);
+    }
+    
+    @Test
+    void testConcurrentUpdateDiffUsesReplacedServiceInfo() throws Exception {
+        ServiceInfo initial = new ServiceInfo("a@@b");
+        initial.setHosts(Collections.singletonList(createInstance("1.1.1.1", 1)));
+        holder.processServiceInfo(initial);
+        
+        Instance intermediateInstance = createInstance("1.1.1.2", 2);
+        ServiceInfo intermediate = new ServiceInfo("a@@b");
+        intermediate.setHosts(Collections.singletonList(intermediateInstance));
+        Instance incomingInstance = createInstance("1.1.1.3", 3);
+        ServiceInfo incoming = Mockito.spy(new ServiceInfo("a@@b"));
+        incoming.setHosts(Collections.singletonList(incomingInstance));
+        CountDownLatch validating = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        Mockito.doAnswer(invocation -> {
+            validating.countDown();
+            assertTrue(resume.await(10, TimeUnit.SECONDS));
+            return invocation.callRealMethod();
+        }).doCallRealMethod().when(incoming).getHosts();
+        
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<InstancesChangeEvent> update = executor.submit(() -> {
+                try (MockedStatic<NotifyCenter> notifyCenter =
+                    Mockito.mockStatic(NotifyCenter.class)) {
+                    holder.processServiceInfo(incoming);
+                    ArgumentCaptor<InstancesChangeEvent> event =
+                        ArgumentCaptor.forClass(InstancesChangeEvent.class);
+                    notifyCenter.verify(() -> NotifyCenter.publishEvent(event.capture()));
+                    return event.getValue();
+                }
+            });
+            assertTrue(validating.await(10, TimeUnit.SECONDS));
+            holder.processServiceInfo(intermediate);
+            resume.countDown();
+            
+            InstancesChangeEvent event = update.get(10, TimeUnit.SECONDS);
+            assertEquals(Collections.singletonList(intermediateInstance),
+                event.getInstancesDiff().getRemovedInstances());
+            assertEquals(Collections.singletonList(incomingInstance),
+                event.getInstancesDiff().getAddedInstances());
+            assertEquals(Collections.singletonList(incomingInstance), event.getHosts());
+            assertSame(incoming, holder.getServiceInfoMap().get(incoming.getKeyWithoutClusters()));
+        } finally {
+            resume.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+    }
+    
+    @Test
+    void testProtectedEmptyPushDoesNotReplaceCachedServiceInfo() throws NacosException {
+        nacosClientProperties.setProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION, "true");
+        holder.shutdown();
+        holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
+        ServiceInfo initial = new ServiceInfo("a@@b");
+        initial.setHosts(Collections.singletonList(createInstance("1.1.1.1", 1)));
+        holder.processServiceInfo(initial);
+        ServiceInfo empty = new ServiceInfo("a@@b");
+        
+        assertSame(initial, holder.processServiceInfo(empty));
+        assertSame(initial, holder.getServiceInfoMap().get(initial.getKeyWithoutClusters()));
     }
     
     @Test

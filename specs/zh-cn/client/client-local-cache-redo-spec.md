@@ -73,6 +73,9 @@ Config listener recovery 不是写操作 redo，而是读/监听运行时意图�
 Naming service-info cache 按 grouped service name 和 clusters 存储 `ServiceInfo`。服务端 push 或
 query response 会更新内存 map，并在实例视图变化时写入磁盘缓存。
 
+对于被接受的更新，替换缓存值与获取旧值必须是原子操作。实例差异必须基于本次更新实际替换的
+旧值计算，包括 push 与 query response 并发处理的情况。
+
 该缓存是恢复辅助：
 
 - load-cache 选项开启时，可在启动时加载；
