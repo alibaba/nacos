@@ -169,3 +169,9 @@ bound to the adaptor origin and fixtures use the existing cleanup helpers.
 validator. Java format checks and any local upstream-tool results are separate
 from API coverage totals. Private MCP recall and MCP Artifact identity mapping
 remain TODO; the existing coverage classifications are unchanged.
+
+## MCP Registry `/v0` response conversion
+
+| API surface / test class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `NacosMcpRegistryServiceTest` (module UT), `McpRegistryControllerTest` | `GET /v0/servers`, `GET /v0/servers/{serverName}/versions/{version}` response assembly | Partial | Module unit tests verify remotes URL construction for `DIRECT` endpoints (null protocol/path defaults to `http` and empty path; explicit protocol/path and default-port omission preserved) and `_meta.official.status` population from the MCP server lifecycle status. Controller contract tests verify routing and envelope shape with a mocked service. Standalone IT: `McpRegistryAdaptorOpenApiITCase` registers a `DIRECT`-endpoint MCP server without `protocol`/`path` through the admin flow and verifies `GET /v0/servers` plus `GET /v0/servers/{name}/versions/{version}` render an `http` remotes URL with no `null` fragment and a populated `_meta.official.status` (requires `nacos.ai.mcp.registry.enabled=true`, now enabled in the IT workflows). |
