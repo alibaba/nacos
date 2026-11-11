@@ -77,52 +77,32 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     @Override
     public List<Class<? extends com.alibaba.nacos.common.notify.Event>> subscribeTypes() {
         List<Class<? extends com.alibaba.nacos.common.notify.Event>> result = new LinkedList<>();
-        result.add(ClientOperationEvent.ClientRegisterServiceEvent.class);
-        result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
+        result.add(ClientOperationEvent.ClientServiceIndexChangedEvent.class);
         result.add(InfoChangeEvent.ServiceInfoChangeEvent.class);
         result.add(InfoChangeEvent.InstanceInfoChangeEvent.class);
         return result;
     }
     
-    public void onEvent(com.alibaba.nacos.common.notify.Event event) {
+    public synchronized void onEvent(com.alibaba.nacos.common.notify.Event event) {
         if (isInitial) {
             init();
             isInitial = false;
             cycleDebounce(new ToNotify());
         }
         
-        if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
-            // If service changed, push to all subscribers.
-            ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent =
-                (ClientOperationEvent.ClientRegisterServiceEvent) event;
-            Service service = clientRegisterServiceEvent.getService();
+        if (event instanceof ClientOperationEvent.ClientServiceIndexChangedEvent) {
+            ClientOperationEvent.ClientServiceIndexChangedEvent indexChangedEvent =
+                (ClientOperationEvent.ClientServiceIndexChangedEvent) event;
+            Service service = indexChangedEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            
             IstioService old = serviceInfoMap.get(serviceName);
-            PushRequest pushRequest;
-            
             boolean full = update(serviceName, service);
-            if (old != null) {
-                pushRequest = new PushRequest(serviceName, full);
-            } else {
-                pushRequest = new PushRequest(serviceName, true);
-            }
-            pushRequestQueue.add(pushRequest);
-        } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
-            ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent =
-                (ClientOperationEvent.ClientDeregisterServiceEvent) event;
-            Service service = clientDeregisterServiceEvent.getService();
-            String serviceName = IstioCrdUtil.buildServiceName(service);
-            PushRequest pushRequest;
-            
-            boolean full = update(serviceName, service);
-            if (serviceStorage.getPushData(service).ipCount() <= 0) {
-                pushRequest = new PushRequest(serviceName, true);
+            IstioService current = serviceInfoMap.get(serviceName);
+            if (current == null || current.getHosts().isEmpty()) {
                 serviceInfoMap.remove(serviceName);
-            } else {
-                pushRequest = new PushRequest(serviceName, full);
+                full = true;
             }
-            pushRequestQueue.add(pushRequest);
+            pushRequestQueue.add(new PushRequest(serviceName, old == null || full));
         } else if (event instanceof InfoChangeEvent.ServiceInfoChangeEvent) {
             InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent =
                 (InfoChangeEvent.ServiceInfoChangeEvent) event;

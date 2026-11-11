@@ -73,6 +73,18 @@ public class ClientOperationEvent extends Event {
     }
     
     /**
+     * Published after a client's service publisher index has been updated.
+     */
+    public static class ClientServiceIndexChangedEvent extends ClientOperationEvent {
+        
+        private static final long serialVersionUID = 7915406914359723390L;
+        
+        public ClientServiceIndexChangedEvent(Service service, String clientId) {
+            super(clientId, service);
+        }
+    }
+    
+    /**
      * Client subscribe service event.
      */
     public static class ClientSubscribeServiceEvent extends ClientOperationEvent {

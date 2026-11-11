@@ -142,6 +142,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         NotifyCenter
             .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
         publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
+        notifyPublisherIndexChanged(service, clientId);
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
@@ -153,6 +154,16 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
                 new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });
+        notifyPublisherIndexChanged(service, clientId);
+    }
+    
+    private void notifyPublisherIndexChanged(Service service, String clientId) {
+        // The Istio adapter is optional; do not publish an unconsumed event when it is absent.
+        if (NotifyCenter
+            .getPublisher(ClientOperationEvent.ClientServiceIndexChangedEvent.class) != null) {
+            NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientServiceIndexChangedEvent(service, clientId));
+        }
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
