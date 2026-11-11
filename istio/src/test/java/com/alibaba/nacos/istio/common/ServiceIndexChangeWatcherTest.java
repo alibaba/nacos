@@ -19,16 +19,13 @@ package com.alibaba.nacos.istio.common;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -82,13 +79,8 @@ class ServiceIndexChangeWatcherTest {
             waitFor(() -> watcher.snapshot().get("orders.DEFAULT-GROUP.issue-16023").getHosts()
                 .size() == 1);
             
-            Client disconnected = mock(Client.class);
-            InstancePublishInfo publishInfo = mock(InstancePublishInfo.class);
-            when(disconnected.getClientId()).thenReturn("client-2");
-            when(disconnected.getAllSubscribeService()).thenReturn(Collections.emptySet());
-            when(disconnected.getAllPublishedService()).thenReturn(Collections.singleton(service));
-            when(disconnected.getInstancePublishInfo(service)).thenReturn(publishInfo);
-            indexes.onEvent(new ClientOperationEvent.ClientReleaseEvent(disconnected, true));
+            indexes.onEvent(
+                new ClientOperationEvent.ClientDeregisterServiceEvent(service, "client-2"));
             waitFor(() -> !watcher.snapshot().containsKey("orders.DEFAULT-GROUP.issue-16023"));
             
             indexes

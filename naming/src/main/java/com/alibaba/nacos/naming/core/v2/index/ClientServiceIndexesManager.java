@@ -124,8 +124,10 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         String clientId = event.getClientId();
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             addPublisherIndexes(service, clientId);
+            notifyPublisherIndexChanged(service, clientId);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
             removePublisherIndexes(service, clientId);
+            notifyPublisherIndexChanged(service, clientId);
         } else if (event instanceof ClientOperationEvent.ClientSubscribeServiceEvent) {
             addSubscriberIndexes(service, clientId);
         } else if (event instanceof ClientOperationEvent.ClientUnsubscribeServiceEvent) {
@@ -142,7 +144,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         NotifyCenter
             .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
         publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
-        notifyPublisherIndexChanged(service, clientId);
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
@@ -154,7 +155,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
                 new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });
-        notifyPublisherIndexChanged(service, clientId);
     }
     
     private void notifyPublisherIndexChanged(Service service, String clientId) {

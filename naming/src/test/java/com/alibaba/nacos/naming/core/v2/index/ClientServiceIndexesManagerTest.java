@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.EventPublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -203,6 +206,27 @@ class ClientServiceIndexesManagerTest {
         
         assertTrue(clientServiceIndexesManager.getAllClientsSubscribeService(service).isEmpty());
         assertTrue(clientServiceIndexesManager.getAllClientsRegisteredService(service).isEmpty());
+    }
+    
+    @Test
+    void testClientReleaseDoesNotPublishIndexChangeNotification() {
+        Mockito.when(client.getClientId()).thenReturn(NACOS);
+        Mockito.when(client.getAllSubscribeService()).thenReturn(Collections.emptySet());
+        Mockito.when(client.getAllPublishedService()).thenReturn(Collections.singleton(service));
+        Mockito.when(client.getInstancePublishInfo(service))
+            .thenReturn(new InstancePublishInfo("1.1.1.1", 8848));
+        try (MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+            notifications.when(() -> NotifyCenter.getPublisher(
+                ClientOperationEvent.ClientServiceIndexChangedEvent.class))
+                .thenReturn(Mockito.mock(EventPublisher.class));
+            clientServiceIndexesManager
+                .onEvent(new ClientOperationEvent.ClientReleaseEvent(client, true));
+            assertTrue(
+                clientServiceIndexesManager.getAllClientsRegisteredService(service).isEmpty());
+            notifications.verify(() -> NotifyCenter.publishEvent(
+                Mockito.isA(ClientOperationEvent.ClientServiceIndexChangedEvent.class)),
+                Mockito.never());
+        }
     }
     
     @Test
