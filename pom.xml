@@ -130,15 +130,11 @@
         <nacos.logback.adapter.version>1.1.5</nacos.logback.adapter.version>
         <spring-boot-dependencies.version>4.0.6</spring-boot-dependencies.version>
 
-        <commons-io.version>2.20.0</commons-io.version>
+        <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <logback.version>1.5.32</logback.version>
         <log4j.version>2.25.5</log4j.version>
-        <dnsjava.version>3.6.0</dnsjava.version>
-        <testcontainers.version>2.0.5</testcontainers.version>
-        <json-schema-validator.version>2.0.0</json-schema-validator.version>
-        <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.12</postgresql.version>
@@ -201,11 +197,6 @@
                     <groupId>org.sonatype.central</groupId>
                     <artifactId>central-publishing-maven-plugin</artifactId>
                     <version>${central.publishing.maven.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven-dependency-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1184,26 +1175,6 @@
                 <version>${ojdbc.version}</version>
                 <scope>provided</scope>
                 <optional>true</optional>
-            </dependency>
-
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>${dnsjava.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.networknt</groupId>
-                <artifactId>json-schema-validator</artifactId>
-                <version>${json-schema-validator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

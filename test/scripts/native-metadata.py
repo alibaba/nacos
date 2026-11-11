@@ -46,8 +46,8 @@ entry, whatever the inputs carry; ``check`` rejects an entry that another condit
 ``--exact-reachability-metadata`` and started with ``-XX:MissingRegistrationReportingMode=Warn``
 prints every dynamic access that has no metadata. This command turns such logs into the same
 format as the agent output, so ``refresh`` can merge them. Reports about lambda-proxy classes are
-counted and skipped. A report it does not understand is printed as ``UNPARSED``, and the ``exact``
-variant of the Native validation fails on it instead of ignoring a gap that it cannot name.
+counted and skipped. A report it does not understand is printed as ``UNPARSED``, so that a gap that
+it cannot name is not ignored.
 
 Typical refresh, after tracing the Server with the exact classpath of the Native build. The
 committed metadata is an input as well, because some of its entries are in no trace::
@@ -57,10 +57,10 @@ committed metadata is an input as well, because some of its entries are in no tr
         bootstrap/src/main/resources/META-INF/native-image /path/to/trace-run-1 /path/to/trace-run-2
 
 The files are written below ``bootstrap/src/main/resources/META-INF/native-image``, or below the
-directory of ``--output-dir``. ``--output FILE`` writes one merged file instead; the Native validation
-uses it to list the registrations that an exact-mode build reports as missing. That file is a list
-for a reader: its entries carry the Server entry point as a provisional condition, and a refresh
-into the bundle sets the condition of each entry from its owner.
+directory of ``--output-dir``. ``--output FILE`` writes one merged file instead, which lists the
+registrations that an exact-mode build reports as missing. That file is a list for a reader: its
+entries carry the Server entry point as a provisional condition, and a refresh into the bundle sets
+the condition of each entry from its owner.
 """
 import argparse
 import contextlib
@@ -97,11 +97,12 @@ SERVER_ENTRY_POINT = "com.alibaba.nacos.bootstrap.NacosBootstrap"
 
 # A third-party artifact: the type that makes the Server use it. It is often not a type of the
 # artifact itself, because something else usually looks up the classes of an artifact before any
-# of them is initialized. test/scripts/native-condition-order.py compares each type below with the
-# order in which a run of the Server (JVM, the classpath of the Native build) loaded and initialized
-# its classes: the type is initialized before the first class of the entries of its owners is
-# loaded, apart from the owners of REASONED_CONDITIONS. An owner without a row stops a refresh; add
-# it after such a comparison, and let the 'exact' variant of the Native validation confirm it.
+# of them is initialized. Each type below was compared with the order in which a run of the Server
+# (JVM, the classpath of the Native build, -Xlog:class+load=info,class+init=info) loaded and
+# initialized its classes: the type is initialized before the first class of the entries of its
+# owners is loaded, apart from the two owners that give a reason below. An owner without a row
+# stops a refresh; add it after such a comparison (see "Conditions" in bootstrap/README-AOT.md),
+# and let an exact-mode build confirm it.
 SPRING_BOOT = "org.springframework.boot.SpringApplication"
 CONDITION_GROUPS = (
     # (condition type, owners)
@@ -188,28 +189,19 @@ CONDITION_GROUPS = (
     # key with the BouncyCastle provider, which looks up the classes of its algorithms by name.
     ("io.kubernetes.client.util.ClientBuilder", (
         "org.bouncycastle/bcprov-jdk18on",)),
-    # See REASONED_CONDITIONS.
+    # A class log cannot confirm the next two, and the types are early enough anyway. The classes of
+    # the entries are package-private superclasses of the type, which look up their fields in
+    # static initializers; those only run as part of the initialization of the type, and GraalVM
+    # reaches a type right before that starts (the 'SuperType' example in its documentation of
+    # conditions). Guava: AbstractFutureState, the class of the entries, is a package-private
+    # superclass of AbstractFuture, and no other class extends it. JCTools: the Fields classes of
+    # the entries are package-private superclasses of BaseMpscLinkedAtomicArrayQueue.
     ("com.google.common.util.concurrent.AbstractFuture", (
         "com.google.guava/guava",)),
     ("org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueue", (
         "org.jctools/jctools-core",)),
 )
 SPRING_FAMILY = "org.springframework"
-
-# Owners whose condition type test/scripts/native-condition-order.py cannot confirm, and why the
-# type is early enough anyway. The script compares the load of a class with the initialization of
-# the type, and not what a static initializer does. The classes that these entries name are
-# package-private superclasses of the type, which look up their fields in static initializers; those
-# only run as part of the initialization of the type, and GraalVM reaches a type right before that
-# starts (the 'SuperType' example in its documentation of conditions).
-REASONED_CONDITIONS = {
-    "com.google.guava/guava":
-        "AbstractFutureState, the class of the entries, is a package-private superclass of "
-        "AbstractFuture, and no other class extends it",
-    "org.jctools/jctools-core":
-        "the Fields classes of the entries are package-private superclasses of "
-        "BaseMpscLinkedAtomicArrayQueue",
-}
 
 
 def owner_condition(owner):

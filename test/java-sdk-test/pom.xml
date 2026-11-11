@@ -30,6 +30,8 @@
     <url>https://nacos.io</url>
 
     <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <nacos.client.json.adapter>auto</nacos.client.json.adapter>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <nacos.host>127.0.0.1</nacos.host>
@@ -191,6 +193,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
                         <executions>
                             <execution>
                                 <id>copy-released-ai-sdk</id>
