@@ -85,10 +85,11 @@ public class NacosSkillCacheHolder implements Closeable {
      * @param skillName skill name
      * @param version   skill version, optional
      * @param label     skill label, optional
-     * @return current skill ZIP bytes, never null when the server has the skill
+     * @return initial query response carrying the skill ZIP bytes together with the published
+     *         MD5 and resolved version, or {@code null} when the server has no such skill
      * @throws NacosException if error occurs
      */
-    public byte[] subscribeSkill(String skillName, String version, String label)
+    public SkillQueryResponse subscribeSkill(String skillName, String version, String label)
         throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosException(NacosException.INVALID_PARAM,
@@ -96,10 +97,9 @@ public class NacosSkillCacheHolder implements Closeable {
         }
         String cacheKey = CacheKeyUtils.buildSkillKey(skillName, version, label);
         
-        byte[] zipBytes = null;
+        SkillQueryResponse response = null;
         try {
-            SkillQueryResponse response = aiClientProxy.querySkill(skillName, version, label, null);
-            zipBytes = response.getZipBytes();
+            response = aiClientProxy.querySkill(skillName, version, label, null);
             // Only update cache during initial subscribe; do NOT publish event here.
             // The caller (NacosAiService) handles the first listener notification to avoid
             // duplicate callbacks racing with the async NotifyCenter dispatch.
@@ -115,7 +115,7 @@ public class NacosSkillCacheHolder implements Closeable {
         }
         addSkillUpdateTask(skillName, version, label);
         LOGGER.info("Subscribed skill: {}, version: {}, label: {}", skillName, version, label);
-        return zipBytes;
+        return response;
     }
     
     /**

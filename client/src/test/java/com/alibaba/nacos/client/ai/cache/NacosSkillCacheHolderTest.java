@@ -86,7 +86,7 @@ class NacosSkillCacheHolderTest {
         when(aiClientProxy.querySkill("s1", "1.0.0", null, null))
             .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         
-        byte[] result = cacheHolder.subscribeSkill("s1", "1.0.0", null);
+        SkillQueryResponse result = cacheHolder.subscribeSkill("s1", "1.0.0", null);
         
         assertNull(result);
         assertEquals(1, getUpdateTaskMap().size());
@@ -99,9 +99,11 @@ class NacosSkillCacheHolderTest {
         when(aiClientProxy.querySkill("s1", "1.0.0", null, null)).thenReturn(response);
         MockSkillEventSubscriber subscriber = registerMockSubscriber();
         
-        byte[] result = cacheHolder.subscribeSkill("s1", "1.0.0", null);
+        SkillQueryResponse result = cacheHolder.subscribeSkill("s1", "1.0.0", null);
         
-        assertArrayEquals(zipBytes, result);
+        assertArrayEquals(zipBytes, result.getZipBytes());
+        assertEquals("m1", result.getMd5());
+        assertEquals("1.0.0", result.getResolvedVersion());
         assertEquals("m1", getMd5Cache().get("s1::version:1.0.0"));
         // Initial subscribe must NOT publish event; the caller (NacosAiService)
         // is responsible for the first listener notification to avoid double-invocation.

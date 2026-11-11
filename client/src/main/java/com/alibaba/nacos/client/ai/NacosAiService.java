@@ -95,6 +95,7 @@ import com.alibaba.nacos.client.ai.remote.McpGrpcTransport;
 import com.alibaba.nacos.client.ai.remote.McpHttpTransport;
 import com.alibaba.nacos.client.ai.remote.McpTransportRouter;
 import com.alibaba.nacos.client.ai.remote.PromptTransportRouter;
+import com.alibaba.nacos.client.ai.remote.SkillQueryResponse;
 import com.alibaba.nacos.client.ai.utils.AgentModelUtils;
 import com.alibaba.nacos.client.ai.watch.AgentWatchTransportRouter;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -635,9 +636,12 @@ public class NacosAiService implements AiService {
             
             SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
             aiChangeNotifier.registerListener(skillName, version, label, listenerInvoker);
-            byte[] zipBytes = skillCacheHolder.subscribeSkill(skillName, version, label);
+            SkillQueryResponse response =
+                    skillCacheHolder.subscribeSkill(skillName, version, label);
+            byte[] zipBytes = response == null ? null : response.getZipBytes();
             if (null != zipBytes && !listenerInvoker.isInvoked()) {
-                listenerInvoker.invoke(new NacosSkillEvent(skillName, zipBytes, null, null));
+                listenerInvoker.invoke(new NacosSkillEvent(skillName, zipBytes,
+                    response.getMd5(), response.getResolvedVersion()));
             }
             return zipBytes;
         }
