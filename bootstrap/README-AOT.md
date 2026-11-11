@@ -60,8 +60,9 @@ build helpers nor test dependencies are included in the Native application. It a
 
 Prepare a build configuration using the normal `application.properties` format. It only has to
 carry the structural choices: `spring.sql.init.platform=postgresql` is a complete build
-configuration for a PostgreSQL image (`mysql` for MySQL), plus the switches of the AI registries,
-of the Kubernetes sync (`nacos.k8s.sync.enabled`) and of the Istio adaptor
+configuration for a PostgreSQL image (`mysql` for MySQL; `oracle` also needs a driver, see
+[What it covers](#what-it-covers)), plus the switches of the AI registries, of the Kubernetes sync
+(`nacos.k8s.sync.enabled`) and of the Istio adaptor
 (`nacos.extension.naming.istio.enabled`) if those are wanted. Ports, database URLs and credentials
 belong to the runtime configuration.
 Use a disposable build configuration, not production credentials. The reachability metadata for
@@ -95,7 +96,8 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.standalone` | `false` | Standalone or cluster Bean selection |
 | `nacos.native.embedded-storage` | `false` | Explicit embedded storage selection |
 | `nacos.native.plugins` | `bootstrap/target/native-plugins` | Additional plugin/driver JAR directory |
-| `nacos.native.metadata` | `bootstrap/target/native-metadata` | Additional exercised Native metadata directory |
+| `nacos.native.oracle.driver` | unset | Version of `ojdbc8` that the build adds as a dependency, for Oracle as the datasource, see [What it covers](#what-it-covers) |
+| `nacos.native.metadata` | `bootstrap/target/native-metadata`, or `bootstrap/src/main/native/oracle-metadata` with `nacos.native.oracle.driver` | Additional exercised Native metadata directory |
 | `nacos.native.derby.experimental` | `false` | Explicit opt-in to the experimental Derby arguments below |
 | `nacos.native.repository.enabled` | `true` | Adds the [GraalVM reachability metadata repository](#the-graalvm-reachability-metadata-repository) to the Native classpath; `false` leaves it out and the executable about 35 MB smaller |
 | `nacos.native.options` | empty | Path of a Native Image argument file appended after the toolchain options, for example `--exact-reachability-metadata` for [diagnostic builds](#find-gaps-with-an-exact-mode-build) or `-march=compatibility` for an executable that must run on older CPUs |
@@ -203,10 +205,12 @@ It was traced on standalone, merged-deployment Servers with an external datasour
 suites cannot reach was added separately, on builds of its own: the three AI registry contexts
 (`nacos.ai.mcp.registry.enabled`, `nacos.ai.skill.registry.enabled`, `nacos.ai.ard.enabled`), the
 Kubernetes sync (`nacos.k8s.sync.enabled`), the Istio adaptor
-(`nacos.extension.naming.istio.enabled`), the DNS adaptor and a cluster of three nodes. It does
-**not** cover embedded Derby (see [below](#native-scope-and-derby-compatibility)), Oracle, or other
-third-party plugins or drivers. Whoever enables anything else supplies the missing metadata through
-`nacos.native.metadata` or in the plugin's own `META-INF/native-image`, and validates the result.
+(`nacos.extension.naming.istio.enabled`), the DNS adaptor, Oracle as the datasource (see below) and
+a cluster of three nodes. It does **not** cover embedded Derby (see
+[below](#native-scope-and-derby-compatibility)), or third-party plugins and drivers, except the
+driver of that Oracle build in the version named below. Whoever enables anything else supplies the
+missing metadata through `nacos.native.metadata` or in the plugin's own `META-INF/native-image`, and
+validates the result.
 
 The Istio adaptor is a switch of the build, like the Kubernetes sync: a package filter keeps it out
 of the component scan unless the build configuration has
@@ -228,16 +232,41 @@ lookups themselves, observed on a JVM with a `MethodEntryRequest` of the Java De
 and `DeltaConnection.push` fails on that with a `NullPointerException` on the ordinary JVM Server as
 well.
 
-Oracle is left out because it fails on the ordinary JVM Server as well, and a test of the
-executable can say nothing about it until it works:
+Oracle as the datasource is a build of its own as well, and it needs a driver that the Server does
+not ship: the datasource plugin takes `ojdbc8` as an optional dependency that is only `provided`
+when it compiles. The build adds the driver as a dependency of the Bootstrap module when
+`-Dnacos.native.oracle.driver=<version>` is given (the profile `native-oracle`, together with
+`-Pnative`) and has `spring.sql.init.platform=oracle` in its configuration. The driver is a
+dependency of the module and not a jar in the plugin directory on purpose: the metadata that the
+build takes from the [GraalVM reachability metadata repository](#the-graalvm-reachability-metadata-repository)
+is selected by the artifacts that Maven resolves for the module, and a driver in the plugin
+directory would be on the classpath without any, so that the build depends on that repository
+(`nacos.native.repository.enabled` stays `true`). The repository has metadata for `ojdbc8`
+23.26.1.0.0 and nothing for 19.7.0.0, the version that the root pom manages for compiling the
+plugin, so the version has to be one that the repository covers. Its metadata for 23.26.1.0.0 lacks
+four resources, the character sets that the driver loads when it creates its first statement
+(`DynamicByteArray` loads five converters and the repository lists one): without them a Native
+Server stops at its first statement with a `NullPointerException` in the initializer of that class.
+They are in `bootstrap/src/main/native/oracle-metadata/reachability-metadata.json`, and the profile
+makes that directory the default of `nacos.native.metadata`, so a build that sets the property
+itself has to carry the file. The classes of the datasource plugin need no entries of their own,
+because the SPI manifest of the AOT output lists its dialect and its mappers. It was validated with
+`ojdbc8` 23.26.1.0.0 on a Native executable of this build (the build that users get, and one with
+`--exact-reachability-metadata`) against Oracle Database Free 23 in a container: the storage of
+configurations and of their history, gray configurations, the paging of lists and namespaces, with
+authentication switched off (`nacos.core.auth.enabled`, `nacos.core.auth.admin.enabled` and
+`nacos.core.auth.console.enabled` set to `false`).
 
-- Oracle. The schema file of the datasource plugin is not valid for Oracle: `DEFAULT` has to
-  precede `NOT NULL` (ORA-03076) and `RESOURCE` is a reserved word (ORA-03050), so six tables are
-  not created, and the default auth plugin names the column `resource` in SQL that Oracle rejects
-  (ORA-00936). That is [#15978](https://github.com/alibaba/nacos/issues/15978) and pull request
-  #15979. A namespace cannot be created either, because `TenantInfoMapperByOracle` writes epoch
-  milliseconds into the `TIMESTAMP` columns of `tenant_info` (ORA-00932,
-  [#16010](https://github.com/alibaba/nacos/issues/16010)).
+Authentication is left out, and that is not a matter of the executable: the ordinary JVM Server has
+the same limit. The schema script of the datasource plugin puts `NOT NULL` before `DEFAULT`, which
+Oracle rejects (ORA-03076), so that it creates neither `config_info`, `his_config_info`,
+`config_info_gray` and `tenant_info` nor the table `users`, and the table `permissions` has a column
+`resource`, which is a reserved word of Oracle (ORA-03050); the default auth plugin names that
+column in SQL that Oracle rejects as well. The validation used a copy of the script with the clauses
+in the order that Oracle accepts. The default auth plugin cannot run on Oracle yet: see
+[#15978](https://github.com/alibaba/nacos/issues/15978) and pull request #15979. A namespace could
+not be created on Oracle either until [#16016](https://github.com/alibaba/nacos/pull/16016) fixed
+[#16010](https://github.com/alibaba/nacos/issues/16010).
 
 ### What the build gets elsewhere
 
@@ -265,7 +294,9 @@ passes the exact one in `classpath.args`. So the profile runs the plugin's
 `add-reachability-metadata` goal, which copies the configuration of the artifacts of the module to
 `bootstrap/target/native-reachability`, and the Ant step that writes `classpath.args` puts that
 directory on it. The directory is not `target/classes`, because a file of the repository and a
-bundled file of the same artifact have the same name.
+bundled file of the same artifact have the same name. For the same reason a jar in the plugin
+directory gets none of the repository, and a driver that relies on it has to be a dependency of
+the module, as the Oracle driver is.
 
 The files do not rely on the repository, and `refresh` takes nothing out for it, so a build with
 the repository and a build without it both work, and a new release of it needs no refresh. It
@@ -590,6 +621,7 @@ The opt-in Maven packaging does not establish full API, plugin or platform certi
 | --- | --- |
 | Ordinary JVM or JVM AOT / Derby | Supported by the tested paths; no runtime class-loading experiment is required |
 | Oracle GraalVM 25.0.4 Native Server / MySQL or PostgreSQL | Selected standalone All-mode paths passed |
+| GraalVM Community 25.0.4 Native Server / Oracle Database with `ojdbc8` 23.26.1.0.0 | Configuration storage with authentication switched off passed, see [What it covers](#what-it-covers) |
 | Oracle GraalVM 25.0.4 Native Server / embedded Derby without runtime class loading | Image compiles, but SQL execution fails |
 | GraalVM CE 25.4.4.1.1 Native Server / Derby with experimental runtime class loading | Selected standalone paths passed; experimental, not a stable compatibility promise |
 | Native Console / ordinary JVM Server with Derby | Selected paths passed; Derby runs in the JVM Server |

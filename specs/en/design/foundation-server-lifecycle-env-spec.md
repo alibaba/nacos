@@ -306,11 +306,14 @@ build does not require the operator to trace the Server first.
   bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
   classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
   Java SDK and Maintainer SDK integration suites, and, as exercised on builds of their own, the
-  three AI registry contexts, the Kubernetes sync, the Istio adaptor, the DNS adaptor and a
-  cluster of three nodes (Distro, Raft and the requests between the nodes), which those suites do
-  not reach. Other plugins and drivers, embedded Derby and Oracle are outside the bundled scope.
-  Their metadata comes from the extension itself or from `nacos.native.metadata`, and their
-  support must be validated and reported separately.
+  three AI registry contexts, the Kubernetes sync, the Istio adaptor, the DNS adaptor, the Oracle
+  datasource plugin with a driver that the build adds as a dependency of the Bootstrap module, and
+  a cluster of three nodes (Distro, Raft and the requests between the nodes), which those suites
+  do not reach. Other plugins and drivers, the Oracle driver among them, and embedded Derby are
+  outside the bundled scope. Their metadata comes from the extension itself, from the GraalVM
+  reachability metadata repository, which applies to the Maven dependencies of the module and not
+  to the jars of the plugin directory, or from `nacos.native.metadata`, and their support must be
+  validated and reported separately.
 - Content rules. Entries derive from tracing representative runs on the exact classpath of the
   Native build. What no trace contains comes from the reports of an exact-mode build or, for
   lookups that the tracing agent does not record (for example the accessors that protobuf looks up

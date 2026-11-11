@@ -182,6 +182,32 @@ def main():
         assert "core" not in manifest and "web" not in manifest
         assert not (native / "aot/core").exists() and not (native / "aot/web").exists()
         assert not list((native / "classes").rglob("*__CoreApplicationContextInitializer.class"))
+        # The driver of Oracle is a dependency of the module, which is what selects its metadata in
+        # the GraalVM reachability metadata repository. A jar in the plugin directory would not.
+        repository = root / "bootstrap/target/native-reachability"
+        shutil.rmtree(repository, ignore_errors=True)
+        run("oracle-driver", common + [configuration("oracle", "oracle", False),
+            "-Dnacos.native.oracle.driver=23.26.1.0.0"])
+        manifest = properties(native / "aot-manifest.properties")
+        assert manifest["datasource"] == "oracle"
+        assert "oracle.jdbc.OracleDriver" in manifest["spi.java.sql.Driver"]
+        classpath = shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)
+        assert any(part.endswith("/ojdbc8-23.26.1.0.0.jar") for part in classpath)
+        assert str(repository) in classpath
+        assert list((repository / "META-INF/native-image/com.oracle.database.jdbc/ojdbc8")
+                    .rglob("reachability-metadata.json"))
+        # The repository lacks four resources of the driver. The profile makes the directory that
+        # holds them the default of nacos.native.metadata, and a build can still set its own.
+        evaluate = command + ["-q", "-Pnative,!dev", "-pl", "bootstrap", "help:evaluate",
+                              "-Dexpression=nacos.native.metadata", "-DforceStdout"]
+        supplement = subprocess.run(evaluate + ["-Dnacos.native.oracle.driver=23.26.1.0.0"],
+                                    cwd=root, capture_output=True, text=True, timeout=120).stdout.strip()
+        assert supplement == str(root / "bootstrap/src/main/native/oracle-metadata"), supplement
+        assert json.loads((Path(supplement) / "reachability-metadata.json").read_text())["resources"]
+        own = subprocess.run(evaluate + ["-Dnacos.native.oracle.driver=23.26.1.0.0",
+                                         "-Dnacos.native.metadata=" + str(work)],
+                             cwd=root, capture_output=True, text=True, timeout=120).stdout.strip()
+        assert own == str(work), own
         run("derby-opt-in-required", common + [configuration("derby", "derby", True),
             "-Dnacos.native.standalone=true"], "Embedded Derby Native requires")
         release = ["-pl", "distribution", "package"]
