@@ -39,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
@@ -47,6 +48,7 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -88,6 +90,8 @@ class CopilotAgentManagerTest {
     private CopilotModelRouter modelRouter;
     
     private CopilotAgentManager copilotAgentManager;
+    
+    private final AtomicBoolean studioInitialized = new AtomicBoolean();
     
     @BeforeEach
     void setUp() {
@@ -439,6 +443,81 @@ class CopilotAgentManagerTest {
         }
     }
     
+    @Test
+    void testRefreshRecoversStudioAfterFailedReconfiguration() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            int[] attempts = {0};
+            StudioManager.Builder builder = mockStudio(studio, invocation -> {
+                attempts[0]++;
+                if (attempts[0] == 2) {
+                    // AgentScope calls StudioManager.shutdown() when initialization fails.
+                    studioInitialized.set(false);
+                    return Mono.error(new IllegalStateException("studio unavailable"));
+                }
+                studioInitialized.set(true);
+                return Mono.empty();
+            });
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio-a",
+                "http://studio-b", "http://studio-a");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            
+            studio.verify(StudioManager::init, times(3));
+            verify(builder, times(3)).initialize();
+            assertTrue(studioInitialized.get());
+        }
+    }
+    
+    @Test
+    void testRefreshReinitializesStudioWhenInitializedStateIsCleared() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            StudioManager.Builder builder = mockStudio(studio);
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.refreshConfig();
+            studioInitialized.set(false);
+            copilotAgentManager.refreshConfig();
+            
+            studio.verify(StudioManager::init, times(2));
+            verify(builder, times(2)).initialize();
+        }
+    }
+    
+    @Test
+    void testRefreshRetriesStudioAfterFailureClearsCachedConfiguration() {
+        try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
+            int[] attempts = {0};
+            StudioManager.Builder builder = mockStudio(studio, invocation -> {
+                attempts[0]++;
+                if (attempts[0] == 2) {
+                    return Mono.error(new IllegalStateException("studio unavailable"));
+                }
+                studioInitialized.set(true);
+                return Mono.empty();
+            });
+            when(configStorage.isAvailable()).thenReturn(false);
+            when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+            when(defaultProperties.getStudioUrl()).thenReturn("http://studio-a",
+                "http://studio-b", "http://studio-a");
+            when(defaultProperties.getStudioProject()).thenReturn("project");
+            
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            copilotAgentManager.refreshConfig();
+            
+            studio.verify(StudioManager::init, times(3));
+            verify(builder, times(3)).initialize();
+        }
+    }
+    
     private List<ILoggingEvent> refreshAndCaptureWarnings() {
         Logger logger = (Logger) LoggerFactory.getLogger(CopilotAgentManager.class);
         ListAppender<ILoggingEvent> events = new ListAppender<>();
@@ -455,12 +534,22 @@ class CopilotAgentManagerTest {
     }
     
     private StudioManager.Builder mockStudio(MockedStatic<StudioManager> studio) {
+        return mockStudio(studio, invocation -> {
+            studioInitialized.set(true);
+            return Mono.empty();
+        });
+    }
+    
+    private StudioManager.Builder mockStudio(MockedStatic<StudioManager> studio,
+        Answer<Mono<Void>> initializeAnswer) {
         StudioManager.Builder builder = mock(StudioManager.Builder.class);
         studio.when(StudioManager::init).thenReturn(builder);
+        studio.when(StudioManager::isInitialized)
+            .thenAnswer(invocation -> studioInitialized.get());
         when(builder.studioUrl(anyString())).thenReturn(builder);
         when(builder.project(anyString())).thenReturn(builder);
         when(builder.runName(anyString())).thenReturn(builder);
-        when(builder.initialize()).thenReturn(Mono.empty());
+        when(builder.initialize()).thenAnswer(initializeAnswer);
         return builder;
     }
     

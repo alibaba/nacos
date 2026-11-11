@@ -79,8 +79,8 @@ public class CopilotAgentManager {
     
     /**
      * Initialize AgentScope Studio if studioUrl is configured and changed since the last
-     * successful initialization. This method must not be called while holding the
-     * configuration lock.
+     * successful initialization, or if the initialized state was cleared after a failure.
+     * This method must not be called while holding the configuration lock.
      */
     private synchronized void initStudio() {
         CopilotProperties config = snapshot.getConfig();
@@ -98,7 +98,8 @@ public class CopilotAgentManager {
         if (StringUtils.isBlank(studioProject)) {
             studioProject = "NacosCopilot";
         }
-        if (studioUrl.equals(activeStudioUrl) && studioProject.equals(activeStudioProject)) {
+        if (studioUrl.equals(activeStudioUrl) && studioProject.equals(activeStudioProject)
+            && StudioManager.isInitialized()) {
             LOGGER.debug("AgentScope Studio is already initialized for {}", studioUrl);
             return;
         }
@@ -116,6 +117,10 @@ public class CopilotAgentManager {
             activeStudioProject = studioProject;
             LOGGER.info("AgentScope Studio initialized successfully");
         } catch (Exception e) {
+            // AgentScope shuts Studio down when initialization fails, so the cached
+            // configuration no longer describes an active Studio and must not be reused.
+            activeStudioUrl = null;
+            activeStudioProject = null;
             LOGGER.warn("Failed to initialize AgentScope Studio: {}", e.getMessage(), e);
         }
     }
