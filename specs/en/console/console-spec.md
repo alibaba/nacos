@@ -141,6 +141,8 @@ Console owns the browser entry and static asset serving behavior:
   configured files when present;
 - static asset paths and browser resources may be excluded from auth checks, but
   that exclusion must not include domain mutation APIs.
+- In the Next console header, translated navigation labels must not push the
+  authenticated user's menu and logout action outside the visible desktop viewport.
 
 Console guide and announcement content are UI presentation data. They are not
 canonical Core server state and must not be used as domain configuration.
