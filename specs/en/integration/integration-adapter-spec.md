@@ -129,6 +129,9 @@ Rules:
 
 - Nacos service and instance semantics remain defined by Naming specs.
 - Istio MCP/xDS response shape follows Istio and Envoy protocol expectations.
+- The initial and subsequent snapshots used for Istio MCP/xDS streams must use
+  the configured Istio settings when generating resources, including on the
+  first connection before any later Naming change event.
 - The adapter must tolerate Naming changes through debounce and push behavior
   without becoming the authoritative Naming store.
 - Port exposure, auth, and network placement must be documented by deployment
