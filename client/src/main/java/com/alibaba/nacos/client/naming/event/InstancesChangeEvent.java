@@ -43,14 +43,22 @@ public class InstancesChangeEvent extends Event {
     
     private InstancesDiff instancesDiff;
     
+    private final boolean initial;
+    
     public InstancesChangeEvent(String eventScope, String serviceName, String groupName,
         String clusters, List<Instance> hosts, InstancesDiff diff) {
+        this(eventScope, serviceName, groupName, clusters, hosts, diff, false);
+    }
+    
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName,
+        String clusters, List<Instance> hosts, InstancesDiff diff, boolean initial) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.hosts = hosts;
         this.instancesDiff = diff;
+        this.initial = initial;
     }
     
     public String getServiceName() {
@@ -71,6 +79,10 @@ public class InstancesChangeEvent extends Event {
     
     public InstancesDiff getInstancesDiff() {
         return instancesDiff;
+    }
+    
+    public boolean isInitial() {
+        return initial;
     }
     
     @Override

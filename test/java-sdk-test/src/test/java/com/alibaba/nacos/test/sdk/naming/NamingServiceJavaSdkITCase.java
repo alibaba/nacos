@@ -74,11 +74,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     persistent batch instance, empty batch deregister, plus mismatched group-prefix inputs
  *     throw controlled SDK exceptions where the SDK defines them; null batch lists fail before
  *     a remote call.</li>
- *     <li>Listener/error handling: subscribe receives an instance change event, subscribe=true
- *     queries refresh cached service info through later push, subscribe state is visible, cluster
- *     and selector subscribe overloads filter listener events, null listener subscribe is a no-op,
- *     unsubscribe stops later callbacks, fuzzy watch returns matched service keys, receives add
- *     events, stops callbacks after cancel, and deregister cleanup plus SDK shutdown are safe.</li>
+ *     <li>Listener/error handling: subscribe marks the initial view and cached replay for a new
+ *     local listener, later instance changes and reconnect/redo events are non-initial,
+ *     subscribe=true queries refresh cached service info through later push, subscribe state is
+ *     visible, cluster and selector subscribe overloads filter listener events, null listener
+ *     subscribe is a no-op, unsubscribe stops later callbacks, fuzzy watch returns matched service
+ *     keys, receives add events, stops callbacks after cancel, and deregister cleanup plus SDK
+ *     shutdown are safe.</li>
  *     <li>Directed recovery: the original publisher and subscriber reconnect after a real
  *     standalone process replacement, redo an ephemeral registration, restore the subscription,
  *     and observe a later instance update.</li>
@@ -411,6 +413,66 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    public void testSubscribeMarksInitialSnapshotAndLaterChanges() throws Exception {
+        NamingService publisher = createNamingService();
+        NamingService subscriber = createNamingService();
+        String serviceName = randomServiceName("initial-subscribe");
+        String groupName = randomGroup("naming");
+        Instance initialInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        Instance laterInstance = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
+        CountDownLatch initialLatch = new CountDownLatch(1);
+        CountDownLatch changeLatch = new CountDownLatch(1);
+        AtomicReference<Boolean> initialFlag = new AtomicReference<>();
+        AtomicReference<Boolean> changeFlag = new AtomicReference<>();
+        EventListener listener = event -> {
+            if (event instanceof NamingEvent) {
+                NamingEvent namingEvent = (NamingEvent) event;
+                if (eventContainsInstance(event, initialInstance.getPort())) {
+                    initialFlag.set(namingEvent.isInitial());
+                    initialLatch.countDown();
+                }
+                if (eventContainsInstance(event, laterInstance.getPort())) {
+                    changeFlag.set(namingEvent.isInitial());
+                    changeLatch.countDown();
+                }
+            }
+        };
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, listener));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, laterInstance));
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, initialInstance));
+
+        publisher.registerInstance(serviceName, groupName, initialInstance);
+        subscriber.subscribe(serviceName, groupName, listener);
+
+        assertTrue(initialLatch.await(10, TimeUnit.SECONDS),
+                "listener should receive the initial subscription view");
+        assertEquals(Boolean.TRUE, initialFlag.get(),
+                "initial subscription event should be marked as initial");
+
+        CountDownLatch replayLatch = new CountDownLatch(1);
+        AtomicReference<Boolean> replayFlag = new AtomicReference<>();
+        EventListener replayListener = event -> {
+            if (event instanceof NamingEvent && eventContainsInstance(event,
+                    initialInstance.getPort())) {
+                replayFlag.set(((NamingEvent) event).isInitial());
+                replayLatch.countDown();
+            }
+        };
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, replayListener));
+        subscriber.subscribe(serviceName, groupName, replayListener);
+        assertTrue(replayLatch.await(10, TimeUnit.SECONDS),
+                "new local listener should receive the cached initial view");
+        assertEquals(Boolean.TRUE, replayFlag.get(),
+                "cached replay for a new listener should be marked as initial");
+
+        publisher.registerInstance(serviceName, groupName, laterInstance);
+        assertTrue(changeLatch.await(10, TimeUnit.SECONDS),
+                "listener should receive a later instance change");
+        assertEquals(Boolean.FALSE, changeFlag.get(),
+                "later instance change should not be marked as initial");
+    }
+
+    @Test
     @EnabledIfSystemProperty(named = RECONNECT_ENABLED_PROPERTY, matches = "true")
     public void shouldRedoEphemeralRegistrationAndSubscriptionAfterRealServerRestart()
             throws Exception {
@@ -427,10 +489,12 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Instance beforeRestart = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         Instance afterRestart = buildInstance(randomPort(), Constants.DEFAULT_CLUSTER_NAME);
         AtomicReference<List<Instance>> received = new AtomicReference<>();
+        AtomicReference<Boolean> receivedInitial = new AtomicReference<>();
         EventListener listener = event -> {
             if (event instanceof NamingEvent
                     && eventContainsInstance(event, afterRestart.getPort())) {
                 received.set(((NamingEvent) event).getInstances());
+                receivedInitial.set(((NamingEvent) event).isInitial());
             }
         };
         addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, listener));
@@ -467,6 +531,8 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
                         && containsInstance(received.get(), afterRestart.getPort()));
         assertTrue(containsInstance(subscriber.getAllInstances(serviceName, groupName, false),
                 afterRestart.getPort()));
+        assertEquals(Boolean.FALSE, receivedInitial.get(),
+                "redo and later changes should not be marked as initial subscription events");
     }
 
     @Test

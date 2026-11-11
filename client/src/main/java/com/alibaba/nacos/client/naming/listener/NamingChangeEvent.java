@@ -33,14 +33,24 @@ public class NamingChangeEvent extends NamingEvent {
     
     public NamingChangeEvent(String serviceName, List<Instance> instances,
         InstancesDiff instancesDiff) {
-        super(serviceName, instances);
+        this(serviceName, instances, instancesDiff, false);
+    }
+    
+    public NamingChangeEvent(String serviceName, List<Instance> instances,
+        InstancesDiff instancesDiff, boolean initial) {
+        super(serviceName, instances, initial);
         this.instancesDiff = instancesDiff;
     }
     
     public NamingChangeEvent(String serviceName, String groupName, String clusters,
         List<Instance> instances,
         InstancesDiff instancesDiff) {
-        super(serviceName, groupName, clusters, instances);
+        this(serviceName, groupName, clusters, instances, instancesDiff, false);
+    }
+    
+    public NamingChangeEvent(String serviceName, String groupName, String clusters,
+        List<Instance> instances, InstancesDiff instancesDiff, boolean initial) {
+        super(serviceName, groupName, clusters, instances, initial);
         this.instancesDiff = instancesDiff;
     }
     

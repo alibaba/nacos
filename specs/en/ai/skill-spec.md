@@ -348,6 +348,9 @@ any SDK implementing this contract must respect:
 - **Cancellation**: `unsubscribeSkill` must cancel the corresponding task,
   remove the md5 cache entry, and stop emitting polling requests to the
   server.
+- **Initial callback metadata**: When the initial subscription query returns a ZIP,
+  the first `NacosSkillEvent` must carry the ZIP, published md5, and resolved
+  version returned by that query. The `subscribeSkill` return value remains the ZIP bytes.
 
 ## 7. Pending Alignment Issues
 

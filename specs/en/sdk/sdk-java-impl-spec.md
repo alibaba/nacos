@@ -169,7 +169,7 @@ SDK instead of `ConfigService`.
 | Register | `registerInstance`, `batchRegisterInstance` | Register one or more instances under a service and group. |
 | Deregister | `deregisterInstance`, `batchDeregisterInstance` | Remove one or more instances. |
 | Query instances | `getAllInstances`, `selectInstances`, `selectOneHealthyInstance` | Query cached or remote service information by cluster, health, and subscribe options. |
-| Subscribe | `subscribe`, `unsubscribe` | Receive service instance change events. Unsubscribe requires the same listener instance. |
+| Subscribe | `subscribe`, `unsubscribe` | Receive service instance change events; `NamingEvent#isInitial()` marks the initial-view notification for a new local listener without changing existing delivery behavior. Unsubscribe requires the same listener instance. |
 | Fuzzy watch | `fuzzyWatch`, `fuzzyWatchWithServiceKeys`, `cancelFuzzyWatch` | Watch service keys by group or service pattern and receive service-level events. |
 | List services | `getServicesOfServer` | Compatibility broad query surface. New broad listing should use the Maintainer SDK. |
 | Local status | `getSubscribeServices`, `getServerStatus`, `shutDown` | Query subscribed services, status, and release resources. |
@@ -307,7 +307,7 @@ type specs. The currently implemented compatibility methods include:
 | A2A AgentCard release | `releaseAgentCard` | Create an AgentCard or release a new version; `setAsLatest` only affects the new version. |
 | A2A endpoint | `registerAgentEndpoint`, `deregisterAgentEndpoint` | Register or remove endpoints owned by the current client. Batch registration replaces endpoints previously registered by this client for the same agent. |
 | A2A subscription | `subscribeAgentCard`, `unsubscribeAgentCard` | Subscribe to AgentCard changes. |
-| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | Download Skill zip bytes by latest, version, or label. |
+| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | Download Skill zip bytes by latest, version, or label. The initial `NacosSkillEvent` from `subscribeSkill` includes the ZIP bytes, published md5, and resolved version when provided by the server. |
 | AgentSpec | `loadAgentSpec`, `subscribeAgentSpec`, `unsubscribeAgentSpec` | Load assembled AgentSpec and subscribe to changes. |
 | Prompt | `getPrompt`, `getPromptByVersion`, `getPromptByLabel`, `subscribePrompt`, `unsubscribePrompt` | Query and subscribe to Prompt resources by key, version, or label. |
 

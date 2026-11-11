@@ -349,7 +349,24 @@ class NamingClientProxyDelegateTest {
         ServiceInfo actual = delegate.subscribe(serviceName, groupName, clusters);
         assertEquals(info, actual);
         verify(mockGrpcClient, times(1)).subscribe(serviceName, groupName, clusters);
-        verify(holder, times(1)).processServiceInfo(info);
+        verify(holder, times(1)).processServiceInfo(info, false);
+        
+    }
+    
+    @Test
+    void testInitialListenerSubscribe() throws NacosException {
+        String serviceName = "service1";
+        String groupName = "group1";
+        String clusters = "cluster1";
+        ServiceInfo info = new ServiceInfo();
+        info.setName(serviceName);
+        info.setGroupName(groupName);
+        info.setClusters(clusters);
+        when(mockGrpcClient.subscribe(serviceName, groupName, clusters)).thenReturn(info);
+        
+        ServiceInfo actual = delegate.subscribe(serviceName, groupName, clusters, true);
+        assertEquals(info, actual);
+        verify(holder, times(1)).processServiceInfo(info, true);
         
     }
     

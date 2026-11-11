@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,6 +42,7 @@ class NamingEventTest {
         assertNull(event.getGroupName());
         assertNull(event.getClusters());
         assertTrue(event.getInstances().isEmpty());
+        assertFalse(event.isInitial());
         eventListener.onEvent(event);
         assertNull(event.getServiceName());
         assertNull(event.getGroupName());
@@ -56,11 +58,19 @@ class NamingEventTest {
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());
         assertTrue(event.getInstances().isEmpty());
+        assertFalse(event.isInitial());
         eventListener.onEvent(event);
         assertNull(event.getServiceName());
         assertNull(event.getGroupName());
         assertNull(event.getClusters());
         assertNull(event.getInstances());
+    }
+    
+    @Test
+    void testInitialEvent() {
+        NamingEvent event = new NamingEvent("serviceName", "group", "clusters",
+            Collections.emptyList(), true);
+        assertTrue(event.isInitial());
     }
     
     private static class MockNamingEventListener extends AbstractEventListener {

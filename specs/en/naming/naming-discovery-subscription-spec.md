@@ -51,6 +51,14 @@ subscription where possible. Local listener selection is performed by
 client-side `NamingSelector` wrappers, as defined by the
 [Naming Metadata And Selector Spec](naming-metadata-selector-spec.md).
 
+`NamingEvent#isInitial()` identifies an initial-view notification delivered to
+a newly registered local listener. This includes a view returned while creating
+a server subscription and a cached view replayed to a new local listener when a
+server subscription already exists. The marker does not change event delivery,
+instance lists, or diffs, and does not guarantee that the view matches an
+earlier independent query. Later instance changes and reconnect/redo
+synchronization must not be marked as initial notifications.
+
 HTTP Open API does not support long polling or push subscription. Custom HTTP
 clients should query service instances explicitly or use gRPC for subscription.
 

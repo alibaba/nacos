@@ -35,17 +35,28 @@ public class NamingEvent implements Event {
     
     private List<Instance> instances;
     
+    private final boolean initial;
+    
     public NamingEvent(String serviceName, List<Instance> instances) {
-        this.serviceName = serviceName;
-        this.instances = instances;
+        this(serviceName, null, null, instances, false);
     }
     
     public NamingEvent(String serviceName, String groupName, String clusters,
         List<Instance> instances) {
+        this(serviceName, groupName, clusters, instances, false);
+    }
+    
+    public NamingEvent(String serviceName, List<Instance> instances, boolean initial) {
+        this(serviceName, null, null, instances, initial);
+    }
+    
+    public NamingEvent(String serviceName, String groupName, String clusters,
+        List<Instance> instances, boolean initial) {
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.instances = instances;
+        this.initial = initial;
     }
     
     public String getServiceName() {
@@ -78,5 +89,14 @@ public class NamingEvent implements Event {
     
     public void setClusters(String clusters) {
         this.clusters = clusters;
+    }
+    
+    /**
+     * Whether this event represents the initial view delivered for a listener subscription.
+     *
+     * @return true if this is an initial subscription event
+     */
+    public boolean isInitial() {
+        return initial;
     }
 }

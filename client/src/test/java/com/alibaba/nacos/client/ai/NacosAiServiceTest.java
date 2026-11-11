@@ -77,6 +77,7 @@ import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
+import com.alibaba.nacos.client.ai.remote.SkillQueryResponse;
 import com.alibaba.nacos.client.ai.remote.AgentCapabilityResolver;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
@@ -1314,7 +1315,10 @@ class NacosAiServiceTest {
         SkillService service = resourceEntry ? nacosAiService.skill() : nacosAiService;
         AbstractNacosSkillListener listener = Mockito.mock(AbstractNacosSkillListener.class);
         byte[] zip = hasInitialResult ? new byte[] {1, 2, 3} : null;
-        when(skillCacheHolder.subscribeSkill("skill", "1.0.0", "stable")).thenReturn(zip);
+        SkillQueryResponse response = hasInitialResult
+            ? new SkillQueryResponse(zip, "md5-1", "1.0.0") : null;
+        when(skillCacheHolder.subscribeSkillWithResponse("skill", "1.0.0", "stable"))
+            .thenReturn(response);
         
         assertSame(zip, service.subscribeSkill("skill", "1.0.0", "stable", listener));
         verify(aiChangeNotifier).registerListener(eq("skill"), eq("1.0.0"), eq("stable"),
@@ -1324,6 +1328,8 @@ class NacosAiServiceTest {
             verify(listener).onEvent(event.capture());
             assertEquals("skill", event.getValue().getSkillName());
             assertSame(zip, event.getValue().getZipBytes());
+            assertEquals("md5-1", event.getValue().getMd5());
+            assertEquals("1.0.0", event.getValue().getResolvedVersion());
         } else {
             verifyNoInteractions(listener);
         }
@@ -1408,7 +1414,8 @@ class NacosAiServiceTest {
         when(grpcClient.subscribeAgentCard("agent", "1.0.0")).thenReturn(card);
         when(agentSpecCacheHolder.subscribeAgentSpec("spec")).thenReturn(spec);
         when(promptCacheHolder.subscribePrompt("prompt", "1.0.0", null)).thenReturn(prompt);
-        when(skillCacheHolder.subscribeSkill("skill", "1.0.0", null)).thenReturn(zip);
+        when(skillCacheHolder.subscribeSkillWithResponse("skill", "1.0.0", null))
+            .thenReturn(new SkillQueryResponse(zip, "md5-1", "1.0.0"));
         
         AbstractNacosMcpServerListener mcpListener =
             Mockito.mock(AbstractNacosMcpServerListener.class);

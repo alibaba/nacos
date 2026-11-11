@@ -45,6 +45,11 @@ Java SDK 会尽可能将同一 service 的多个本地 listener 映射成一个�
 客户端侧 `NamingSelector` wrapper 完成，规则见
 [Naming 元数据与 Selector 规范](naming-metadata-selector-spec.md)。
 
+Java SDK 的 `NamingEvent#isInitial()` 标记用于识别新注册的本地 listener 所收到的初始视图通知，
+包括新建服务端订阅的视图响应，以及已有服务端订阅向新本地 listener 重放的缓存视图。标记不改变
+事件的投递时机、实例列表或 diff；它也不保证该视图与应用先前独立查询的结果相同。后续实例变化及
+连接恢复后的 redo 同步不得标记为初始通知。
+
 HTTP Open API 不支持长轮询或推送订阅。自定义 HTTP 客户端应显式查询服务实例，或使用 gRPC 完成
 订阅。
 
