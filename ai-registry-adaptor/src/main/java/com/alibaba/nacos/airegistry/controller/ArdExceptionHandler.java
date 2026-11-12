@@ -31,6 +31,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Exception handler for the external ARD protocol.
@@ -69,7 +70,7 @@ public class ArdExceptionHandler {
      */
     @ExceptionHandler({
         HttpMessageConversionException.class, MissingServletRequestParameterException.class,
-        IllegalArgumentException.class
+        MethodArgumentTypeMismatchException.class, IllegalArgumentException.class
     })
     public ResponseEntity<ArdErrorResponse> handleInvalidArgument(Exception exception) {
         LOGGER.warn("Invalid ARD request: {}", exception.getMessage());

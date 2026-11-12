@@ -711,7 +711,10 @@ valid cursor continuation and explicit recovery.
 Explore adds query/facet aliases, independent facet options and full-set counts.
 Search/List HTTP cases use 105 resources to verify page-size boundaries,
 complete traversal, ordering and token recovery. Search now caps pages at 100;
-List retains its existing rules. GET non-integer pageSize still has a known 500 mapping gap.
+List retains its existing page-size normalization. `testListRejectsInvalidPageSize` covers
+GET fractional/boolean/nonnumeric/overflow inputs as ARD 400 / INVALID_ARGUMENT,
+including the two-field error body and invalid-credential 401 precedence.
+Controller binding UTs also retain valid-integer and genuine-service-failure 500 controls.
 Resolver/loader and enhanced-provider boundaries also have UT coverage;
 controlled remote contexts and enabled-provider deployments require separate test environments.
 See the [ARD scenario index](AI_REGISTRY_ADAPTOR_API_TEST_SCENARIOS.md#ard-query-contexts-and-pagination)

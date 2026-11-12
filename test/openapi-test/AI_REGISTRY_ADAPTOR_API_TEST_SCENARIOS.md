@@ -116,7 +116,11 @@ Pagination coverage extends `ArdAdaptorOpenApiITCase.testLegacyCatalogEnumerates
 with 105-resource Search/List page-size boundaries, complete non-overlapping traversal with changed
 page sizes, stable List ordering/date filters, raw input coercion, and invalid List token recovery.
 Search cap increases from 50 to 100; List and existing artifact/identifier contracts are unchanged.
-GET non-integer pageSize still returns the previously observed 500 and is a separate error-mapping gap.
+`ArdAdaptorOpenApiITCase.testListRejectsInvalidPageSize` verifies that fractional, boolean,
+nonnumeric and out-of-range GET page sizes return 400 / INVALID_ARGUMENT with exactly
+errorCode/message fields. Invalid credentials retain 401 precedence.
+`ArdExceptionHandlerTest` exercises Spring parameter binding, verifies rejected values never
+reach the service, and retains successful integer binding and unexpected-service-error 500 controls.
 
 `ArdContextResolverTest` covers the offline base, IRI expansion, reset and
 controlled loader success/error cases; see the [context test design](ARD_V091_TEST_DESIGN.md#context-processing).

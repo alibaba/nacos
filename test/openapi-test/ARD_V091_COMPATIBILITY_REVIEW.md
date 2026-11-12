@@ -53,7 +53,7 @@ HTTP 绑定结论来自真实请求基线；已实现测试和仍待完成的验
 
 分类：保持、新增、收紧、修复、待决。每项对应正式正常/错误或边界用例；
 BC03是旧协议已要求的输入收紧，BC13是既有上限偏差修复，不能标成v0.91新增限制。
-BC05须区分context缺省/显式null；BC09/14的HTTP基线已在查询语义升级前采集，详见[Search测试设计](ARD_V091_TEST_DESIGN.md#search)；GET非整数pageSize现为500，单列既有缺口。
+BC05须区分context缺省/显式null；BC09/14的HTTP基线已在查询语义升级前采集，详见[Search测试设计](ARD_V091_TEST_DESIGN.md#search)；旧基线GET非整数pageSize为500；现按BC14修正为400，并保持鉴权优先级。
 
 | ID / 功能 | 升级前事实与兼容风险 | ARD依据及是否要求变化 | 兼容方案与迁移 | 正式案例 |
 | --- | --- | --- | --- | --- |
@@ -70,13 +70,13 @@ BC05须区分context缺省/显式null；BC09/14的HTTP基线已在查询语义�
 | BC11 / Explore | facets必需非空、field trim；limit缺省/非正20、上限100；minCount缺省1/小于1归1；重复原key后者覆盖 | [§5.3.3][s06]/[Facet][facet]没有规定全部拒绝策略 | 保持上述规则及旧key覆盖，不新增重复facet400；新增别名仍回显原key。全量聚合、enhancement默认关闭的cutoff验收不变 | UT-C06-03、IT-C06-03 |
 | BC12 / 分页与地址 | GET filter接受date/instant、引号转义/AND；orderBy默认updatedAt desc，name/updated_at别名，非desc第二词按asc且尾词目前未拒绝 | [§5.3.4][list]/[Appendix A][list-filter]/[GET参数][get-params]不要求本轮改语法 | 保持GET与POST语法分离、现有别名/排序宽容；不借JSON-LD升级新增排序拒绝。原本畸形filter继续E400。若收紧多余排序词单列后续设计 | UT-C09-03、IT-C09-04 |
 | BC13 / 分页与地址 | Search max50/default10；List max100/default20；null/非正默认、超限clamp | [§5.3.2][s10]新旧都max100；非正策略未指定 | 修复Search max100；50以内不变、51..100不再截50、101+截100；List不变。不接受增大上限的客户端可升级前显式pageSize=50；不要将“少于请求数”当结束，按token续页 | UT-C09-01、IT-C09-01/05 |
-| BC14 / 分页与地址 | pageSize为Integer；真实HTTP baseline：POST数字字符串/浮点coercion保持，boolean/object/超int为400；GET小数/boolean/超int既有500，独立记录错误映射缺口 | [SearchRequest][query]/[GET参数][get-params]为integer；未新加coercion规则 | 保持已有绑定配置；确定不可转换的输入受控错误。不得把数字字符串/浮点一律400写成已定兼容预期；记录实际before并原样回归，不把通用Search的正数/长度限制搬到ARD | UT-C09-04、IT-C09-05 |
+| BC14 / 分页与地址 | pageSize为Integer；真实HTTP baseline：POST数字字符串/浮点coercion保持，boolean/object/超int为400；GET小数/boolean/超int既有500，独立记录错误映射缺口 | [SearchRequest][query]/[GET参数][get-params]为integer；未新加coercion规则 | 保持POST既有绑定配置；GET小数/boolean/非数字文本/整数越界修正为400 INVALID_ARGUMENT，坏凭据仍优先401。合法GET整数及缺省/非正/上限策略保持，不把通用Search的正数/长度限制搬到ARD | UT-C09-04、IT-C09-05 |
 | BC15 / Search,分页与地址 | 基础Search/List token仅Base64url文档id，无查询指纹/TTL/签名；空白token当首屏；锚点在当前集合有效即可续页 | [§5.3.2][s10]/[§5.3.4][list]未定义跨版ABI或绑定/过期规则 | 复用现有格式/decoder，不新增包裹、签名、TTL或“改查询必400”。基础Search改查询但锚点仍有效可续；失效按E400-T；List另校验namespace/type/predicate/currentness；不自动重置首屏，不保证跨版本复用 | UT/IT-C05-12/14 |
 | BC16 / Search,分页与地址 | 增强token为id+relevanceV1，绑定Query/配置；不含pageSize；predicate/values顺序参与JSON hash | [共享检索增强规范](../../specs/zh-cn/ai/ai-resource-search-spec.md)，属于Nacos，不是ARD新要求 | 复用当前fingerprint和mapper顺序；同有效Query/config续页、变化则E400-T；调整pageSize可续。等价context映射Query不变可复用，不承诺filter重排或跨版本存活；必要语义改变指纹时按 ARD 规范§4恢复 | UT/IT-C05-13/14 |
 | BC17 / Search,完整验收 | 升级/回滚、id或增强指纹变化可能使token失效；旧节点不认识context；原计划要求跨版复用 | [§5.3.2][s10]/[§5.3.4][list]未规定跨版互通；错误类别见[Appendix B][errors]，恢复流程是Nacos选择 | 调整：不承诺跨版复用，不为兼容新增ABI转换/协商；可自然续用。新节点检测无效时E400-T，无静默重置；客户端清除旧结果与token，原条件无token重查，最多重开一次。context仅升级池启用；回滚先停新语义并主动清分页状态。真实双版本演练可选，不阻塞本版验收 | UT-C05-14、IT-C05-14；双版本演练可选，本版恢复必选 |
 | BC18 / Search,分页与地址,完整验收 | token锚点不是快照；下线、删除、投影重建、权限变化可失效；协议前置无匹配分支可在解析token前返回空集合 | Nacos当前性/可见性；ARD无跨页快照承诺 | 保持每页重新授权/校验；冻结数据才断言全页无重漏，变动数据不承诺快照。权限收回不泄露数据；trust配置检查通过后，前置空匹配仍200空，不因“坏token一律400”改变错误优先级。无效token错误后调用方明确重开，服务端不偷偷回第一页 | UT-C05-12/13、IT-C05-12/13、IT-C10-02 |
 | BC19 / 查询示例,Trust,分页与地址 | 示例>5修复会截断旧展示；publisher改值会改URN；身份/loader新拒绝或URL重写会破坏运行 | [§4.2][s03]/[D.2][s07]、[§4.5][s08]、[Appendix C][urn] | 旧示例修复明确披露，索引不裁剪；publisher不自动迁移，Host/baseURL不重写URN；加载策略见 ARD 规范§3；Registry身份按 ARD 规范§5有限校验，仅含Registry的文档因无效配置500；普通检索不继承trust、不检查Registry身份；资源身份filter/facet明确400；新Registry publisher不改旧资源ID；真实资源身份与迁移待实现，未知框架保持未验证且不启动失败；artifact版本/digest/表示/地址保持 | UT-C07-02、UT-C08-02、IT-C08-01/02、IT-C09-03 |
-| BC20 / 发现入口,Search,完整验收 | 新validator可能绕过鉴权或改401/400/500优先级、错误体/空结果；通用helper会禁止转发凭据 | [Appendix B][errors]、Nacos认证/适配器规范 | 保持ArdApi错误体和既有auth先后链；同时坏凭据/坏body按baseline，不新建路由旁路。400修复若发现GET绑定当前落500须独立记录及测试；无权限资源过滤与请求级401分开，不将错误文案逐字当契约 | UT-C05-11、IT-C05-11、IT-C10-02 |
+| BC20 / 发现入口,Search,完整验收 | 新validator可能绕过鉴权或改401/400/500优先级、错误体/空结果；通用helper会禁止转发凭据 | [Appendix B][errors]、Nacos认证/适配器规范 | 保持ArdApi错误体和既有auth先后链；同时坏凭据/坏body按baseline，不新建路由旁路。GET参数类型转换失败由ARD局部异常处理返回400；Spring绑定UT和独立HTTP用例覆盖，真实服务异常仍500；无权限资源过滤与请求级401分开，不将错误文案逐字当契约 | UT-C05-11、IT-C05-11、IT-C10-02 |
 
 ## 3. 验证入口
 

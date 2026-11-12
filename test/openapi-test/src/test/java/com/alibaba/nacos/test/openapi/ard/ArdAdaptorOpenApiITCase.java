@@ -63,8 +63,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  *     multi-protocol Agent defaults to the Nacos Agent artifact while remaining selectable as
  *     A2A, and an Agent whose latest Version is custom-only is excluded from A2A results even
  *     when an older online Version supported A2A.</li>
- *     <li>Exception/error handling: namespace conflicts use the exact external ARD error shape
- *     without the Nacos {@code Result<T>} envelope.</li>
+ *     <li>Exception/error handling: namespace conflicts and invalid GET page sizes return the
+ *     external ARD error shape without the Nacos {@code Result<T>} envelope; invalid credentials
+ *     retain 401 precedence over invalid parameters.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -653,6 +654,20 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     }
 
     @Test
+    public void testListRejectsInvalidPageSize() throws Exception {
+        for (String size : List.of("10.5", "true", "abc", "2147483648", "-2147483649")) {
+            String url = ardUrl(ARD_PATH + "/agents", Query.newInstance().addParam("pageSize", size));
+            HttpResponse response = executeArdRaw(new HttpGet(url),
+                AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS);
+            assertArdInvalid(response);
+            assertTrue(JacksonUtils.toObj(response.body()).path("message").asText().contains("pageSize"));
+            if (AUTH_ENABLED) {
+                assertArdUnauthenticated(executeArdRaw(new HttpGet(url), AuthIdentity.INVALID));
+            }
+        }
+    }
+
+    @Test
     public void testRepresentativeQueriesPreserveSearchAndArtifactContent() throws Exception {
         String name = randomAiName("ard-query-examples");
         String lastQuery = "tailquery" + UUID.randomUUID().toString().replace("-", "");
@@ -865,13 +880,6 @@ public class ArdAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
             Map<String, Object> search = searchRequest(prefix, TYPE_A2A);
             search.put("pageSize", size);
             assertArdInvalid(ardPostJsonRaw(ARD_PATH + "/search", DEFAULT_NAMESPACE, search));
-        }
-        for (String size : List.of("10.5", "true", "2147483648")) {
-            HttpResponse invalid = executeExternalRaw(new HttpGet(ardUrl(ARD_PATH + "/agents",
-                Query.newInstance().addParam("pageSize", size))));
-            // Existing GET converter error mapping is recorded separately, not changed by the cap fix.
-            assertEquals(500, invalid.code(), invalid.body());
-            assertEquals("INTERNAL_ERROR", JacksonUtils.toObj(invalid.body()).path("errorCode").asText());
         }
         Query list = Query.newInstance().addParam("filter", filter).addParam("orderBy", "displayName asc")
             .addParam("pageSize", "1");
