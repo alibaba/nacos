@@ -368,13 +368,14 @@ build does not require the operator to trace the Server first.
   what the suites cannot reach (the AI registries, the Kubernetes sync, the DNS adaptor, a cluster)
   needs tests of its own. Tests that also fail against the ordinary JVM Server in the same setup
   are not Native regressions. The suites never restart the Server, so the run must also create
-  data that no suite creates, wait for the Raft snapshots of the naming service, restart the
-  Native Server on the same data and read that data again; only then do the Raft groups load a
-  snapshot and replay the log behind it. Dynamic accesses without metadata can be listed by
-  building with `--exact-reachability-metadata` and running with
-  `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the GraalVM version,
-  the scenario, the datasource, the suites and tests that ran and whether the Server was restarted
-  on the same data.
+  data that no suite creates, wait until the Raft snapshots of the naming service hold that data,
+  restart the Native Server on the same data, confirm from the logs that the groups loaded those
+  snapshots, and read that data again. A snapshot that was taken before the data does not hold it,
+  and a restart then replays the log and does not reach the code that loads a snapshot. Dynamic
+  accesses without metadata can be listed by building with `--exact-reachability-metadata` and
+  running with `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the
+  GraalVM version, the scenario, the datasource, the suites and tests that ran and whether the
+  Server was restarted on the same data.
 
 ## 11. Pending Issues
 

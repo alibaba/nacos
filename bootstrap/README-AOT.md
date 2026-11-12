@@ -181,9 +181,13 @@ switch that is replicated. The bundle covers the Hessian and Jackson payloads of
 well. They were serialized and read back through the serializers of the Server on a JVM under the
 tracing agent, and a Native executable that saw only the bundled metadata printed what the JVM
 printed. A Native run reaches the code that saves a snapshot, and the code that loads one and
-replays the log behind it, only if it waits for the snapshot interval of JRaft (30 minutes by
-default) and then restarts the Server on the same data; without that, this part of the bundle is
-not checked.
+replays the log behind it, only if the snapshots of the Raft groups hold the data when the Server
+restarts on the same data, and the restart loads them. JRaft saves a snapshot every 30 minutes by
+default, and a snapshot that was taken before the data was written does not hold it: the restart
+then reads the data back by replaying the log and never loads it from a snapshot. Waiting for a
+snapshot is not enough for that reason; the logs of the restart have to show the groups that the
+data was written to loading snapshots that hold it. Without that, this part of the bundle is not
+checked.
 
 A cluster is another thing that no suite runs. The classes that only the nodes send to each other
 are in no trace: the gRPC requests of the cluster (`DistroDataRequest`, `MemberReportRequest`,

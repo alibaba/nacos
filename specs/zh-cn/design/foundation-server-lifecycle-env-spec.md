@@ -269,11 +269,11 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   固定（数据源、AI 注册表开关、适配器、插件 jar、单机或集群模式），因此每个被验收的配置都是一个
   验证场景，在独立的构建上运行；套件无法覆盖的部分（AI 注册表、Kubernetes 同步、DNS 适配器、
   集群）需要单独的测试。在相同环境下普通 JVM Server 同样失败的用例不属于 Native 回归。套件不会
-  重启 Server，因此验收还必须创建套件不会创建的数据，等待命名服务的 Raft 快照落盘，在同一份数据上
-  重启 Native Server 并再次读取这些数据；只有这样 Raft 组才会加载快照并回放其后的日志。可使用
-  `--exact-reachability-metadata` 构建并以 `-XX:MissingRegistrationReportingMode=Warn` 运行，
-  以列出缺少元数据的动态访问。验证报告必须写明 GraalVM 版本、场景、数据源、实际运行的套件和测试
-  以及是否在同一份数据上重启过 Server。
+  重启 Server，因此验收还必须创建套件不会创建的数据，等待命名服务的 Raft 快照包含这些数据，在同一份
+  数据上重启 Native Server，从日志确认各 Raft 组加载了这些快照，并再次读取这些数据。早于这些数据的
+  快照不包含它们，此时重启只会回放日志，不会执行加载快照的代码。可使用 `--exact-reachability-metadata`
+  构建并以 `-XX:MissingRegistrationReportingMode=Warn` 运行，以列出缺少元数据的动态访问。验证报告
+  必须写明 GraalVM 版本、场景、数据源、实际运行的套件和测试以及是否在同一份数据上重启过 Server。
 
 ## 11. 待处理问题
 
