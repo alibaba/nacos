@@ -58,6 +58,8 @@ public final class CopilotModelConnection {
     
     private final String apiKey;
     
+    private final CredentialSource credentialSource;
+    
     private final String baseUrl;
     
     private final String endpointPath;
@@ -79,6 +81,7 @@ public final class CopilotModelConnection {
         this.unavailableReason = builder.unavailableReason;
         this.model = builder.model;
         this.apiKey = builder.apiKey;
+        this.credentialSource = builder.credentialSource;
         this.baseUrl = builder.baseUrl;
         this.endpointPath = builder.endpointPath;
         this.stream = builder.stream;
@@ -173,6 +176,15 @@ public final class CopilotModelConnection {
         return apiKey;
     }
     
+    /**
+     * Get where the effective credential comes from.
+     *
+     * @return credential source, or {@code null} when the connection has no credential
+     */
+    public CredentialSource getCredentialSource() {
+        return credentialSource;
+    }
+    
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -218,6 +230,8 @@ public final class CopilotModelConnection {
         
         private String apiKey;
         
+        private CredentialSource credentialSource;
+        
         private String baseUrl;
         
         private String endpointPath;
@@ -242,6 +256,7 @@ public final class CopilotModelConnection {
             this.unavailableReason = connection.unavailableReason;
             this.model = connection.model;
             this.apiKey = connection.apiKey;
+            this.credentialSource = connection.credentialSource;
             this.baseUrl = connection.baseUrl;
             this.endpointPath = connection.endpointPath;
             this.stream = connection.stream;
@@ -296,6 +311,11 @@ public final class CopilotModelConnection {
         
         public Builder apiKey(String apiKey) {
             this.apiKey = apiKey;
+            return this;
+        }
+        
+        public Builder credentialSource(CredentialSource credentialSource) {
+            this.credentialSource = credentialSource;
             return this;
         }
         

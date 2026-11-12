@@ -22,7 +22,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * Sanitized view of one model connection, safe to expose to the console.
  *
  * <p>The credential itself is never part of this view: {@code apiKeyConfigured} only tells
- * whether the connection carries one.
+ * whether the connection carries one, and {@code actualSource} only tells where it comes
+ * from.
  *
  * @author nacos
  */
@@ -46,6 +47,8 @@ public class CopilotConnectionInfo {
     
     private boolean apiKeyConfigured;
     
+    private CredentialSource actualSource;
+    
     /**
      * Create the view from a connection.
      *
@@ -63,6 +66,7 @@ public class CopilotConnectionInfo {
         info.setAvailable(connection.isAvailable());
         info.setUnavailableReason(connection.getUnavailableReason());
         info.setApiKeyConfigured(StringUtils.isNotBlank(connection.getApiKey()));
+        info.setActualSource(connection.getCredentialSource());
         return info;
     }
     
@@ -136,5 +140,18 @@ public class CopilotConnectionInfo {
     
     public void setApiKeyConfigured(boolean apiKeyConfigured) {
         this.apiKeyConfigured = apiKeyConfigured;
+    }
+    
+    /**
+     * Get where the effective credential comes from.
+     *
+     * @return credential source, or {@code null} when the connection has no credential
+     */
+    public CredentialSource getActualSource() {
+        return actualSource;
+    }
+    
+    public void setActualSource(CredentialSource actualSource) {
+        this.actualSource = actualSource;
     }
 }

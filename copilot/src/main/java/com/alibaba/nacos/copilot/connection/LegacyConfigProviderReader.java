@@ -68,6 +68,11 @@ public class LegacyConfigProviderReader implements ProviderReader {
     @Override
     public List<CopilotModelConnection> read(ProviderReadContext context) {
         CopilotProperties config = context.getLegacyConfig();
+        String environmentApiKey = Boolean.TRUE.equals(config.getApiKeyCleared())
+            ? null : environment.getProperty(ENV_API_KEY);
+        boolean useEnvironment = StringUtils.isNotBlank(environmentApiKey);
+        String apiKey = useEnvironment ? environmentApiKey : config.getApiKey();
+        CredentialSource credentialSource = resolveCredentialSource(apiKey, useEnvironment);
         CopilotModelConnection connection = CopilotModelConnection.builder()
             .name(CONNECTION_NAME)
             .providerId(PROVIDER_ID)
@@ -76,24 +81,18 @@ public class LegacyConfigProviderReader implements ProviderReader {
             .source(ConnectionSource.LEGACY)
             .priority(100)
             .model(config.getModel())
-            .apiKey(resolveApiKey(config))
+            .apiKey(apiKey)
+            .credentialSource(credentialSource)
             .stream(Boolean.TRUE)
             .enableThinking(Boolean.TRUE)
             .build();
         return Collections.singletonList(connection);
     }
     
-    private String resolveApiKey(CopilotProperties config) {
-        if (Boolean.TRUE.equals(config.getApiKeyCleared())) {
-            // The console cleared the stored key, so the process environment must not revive
-            // the credential behind the operator's back. An explicit deployment key still
-            // applies through the effective configuration value itself.
-            return config.getApiKey();
+    private CredentialSource resolveCredentialSource(String apiKey, boolean useEnvironment) {
+        if (StringUtils.isBlank(apiKey)) {
+            return null;
         }
-        String apiKey = environment.getProperty(ENV_API_KEY);
-        if (StringUtils.isNotBlank(apiKey)) {
-            return apiKey;
-        }
-        return config.getApiKey();
+        return useEnvironment ? CredentialSource.ENVIRONMENT : CredentialSource.CONFIGURATION;
     }
 }

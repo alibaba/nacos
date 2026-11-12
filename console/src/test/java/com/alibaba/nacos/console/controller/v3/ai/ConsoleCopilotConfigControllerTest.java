@@ -29,6 +29,8 @@ import com.alibaba.nacos.copilot.connection.ConnectionSource;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
+import com.alibaba.nacos.copilot.connection.CredentialSource;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +44,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -82,7 +87,7 @@ class ConsoleCopilotConfigControllerTest {
             new ConsoleCopilotConfigController(agentManager, configProxy);
         ReflectionTestUtils.setField(controller, "configNamespace", NAMESPACE);
         mockMvc = MockMvcBuilders.standaloneSetup(
-            controller).build();
+            controller).setControllerAdvice(new NacosApiExceptionHandler()).build();
     }
     
     @Test
@@ -264,10 +269,88 @@ class ConsoleCopilotConfigControllerTest {
     void testSaveConfigWritesTrimmedSelectedConnection() throws Exception {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(deploymentConnection("prod-qwen", true, true, null)));
         
         saveConfig("{\"selectedConnection\":\"  prod-qwen  \"}");
         
         assertEquals("prod-qwen", savedConfig().get("selectedConnection"));
+    }
+    
+    @Test
+    void testSaveConfigStoresCanonicalSelectedConnectionName() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(deploymentConnection("prod-qwen", true, true, null)));
+        
+        saveConfig("{\"selectedConnection\":\"PROD-QWEN\"}");
+        
+        assertEquals("prod-qwen", savedConfig().get("selectedConnection"));
+    }
+    
+    @Test
+    void testSaveConfigRejectsUnknownSelectedConnection() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(deploymentConnection("prod-qwen", true, true, null)));
+        
+        mockMvc.perform(post("/v3/console/copilot/config")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"selectedConnection\":\"missing\"}"))
+            .andExpect(status().isBadRequest());
+        
+        verify(configProxy, never()).publishConfig(any(), any());
+        verify(agentManager, never()).refreshConfig();
+    }
+    
+    @Test
+    void testSaveConfigRejectsDisabledSelectedConnection() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(deploymentConnection("prod-qwen", false, true, null)));
+        
+        mockMvc.perform(post("/v3/console/copilot/config")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"selectedConnection\":\"prod-qwen\"}"))
+            .andExpect(status().isBadRequest());
+        
+        verify(configProxy, never()).publishConfig(any(), any());
+    }
+    
+    @Test
+    void testSaveConfigRejectsUnavailableSelectedConnection() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(deploymentConnection("prod-qwen", true, false, "no provider")));
+        
+        mockMvc.perform(post("/v3/console/copilot/config")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"selectedConnection\":\"prod-qwen\"}"))
+            .andExpect(status().isBadRequest());
+        
+        verify(configProxy, never()).publishConfig(any(), any());
+    }
+    
+    @Test
+    void testGetConfigExposesActualCredentialSource() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .name("legacy")
+            .providerId("dashscope")
+            .model("qwen-plus")
+            .source(ConnectionSource.LEGACY)
+            .apiKey("env-key")
+            .credentialSource(CredentialSource.ENVIRONMENT)
+            .build();
+        when(agentManager.getConnectionStatus())
+            .thenReturn(statusOfConnections(connection));
+        
+        ConsoleCopilotConfig result = getConfig();
+        
+        assertEquals(CredentialSource.ENVIRONMENT,
+            result.getConnections().get(0).getActualSource());
+        assertTrue(result.getConnections().get(0).isApiKeyConfigured());
     }
     
     @Test
@@ -363,6 +446,28 @@ class ConsoleCopilotConfigControllerTest {
             .build();
         return new CopilotConnectionStatus(
             Collections.singletonList(CopilotConnectionInfo.from(connection)), activeConnection);
+    }
+    
+    private CopilotConnectionStatus statusOfConnections(CopilotModelConnection... connections) {
+        List<CopilotConnectionInfo> infos = Arrays.stream(connections)
+            .map(CopilotConnectionInfo::from).collect(Collectors.toList());
+        return new CopilotConnectionStatus(infos, null);
+    }
+    
+    private CopilotModelConnection deploymentConnection(String name, boolean enabled,
+        boolean available, String unavailableReason) {
+        return CopilotModelConnection.builder()
+            .name(name)
+            .providerId("dashscope")
+            .displayName(name)
+            .model("qwen-max")
+            .source(ConnectionSource.DEPLOYMENT)
+            .priority(10)
+            .apiKey("configured-key")
+            .enabled(enabled)
+            .available(available)
+            .unavailableReason(unavailableReason)
+            .build();
     }
     
     private ConfigDetailInfo configDetail(CopilotProperties config) {

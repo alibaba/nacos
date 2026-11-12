@@ -552,6 +552,29 @@ class CopilotAgentManagerTest {
     }
     
     @Test
+    void testRefreshWarnsAboutDeprecatedLegacyConnection() {
+        CopilotModelConnection legacy = buildConnection("test-api-key");
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(legacy));
+        
+        List<ILoggingEvent> warnings = refreshAndCaptureWarnings();
+        
+        assertEquals(1, warnings.size());
+        assertTrue(warnings.get(0).getFormattedMessage().contains("legacy"));
+        assertTrue(warnings.get(0).getFormattedMessage().contains("nacos.copilot.connections"));
+    }
+    
+    @Test
+    void testRefreshDoesNotWarnAboutLegacyForDeploymentConnection() {
+        CopilotModelConnection deployment =
+            buildConnection("test-api-key", ConnectionSource.DEPLOYMENT);
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(deployment));
+        
+        assertTrue(refreshAndCaptureWarnings().isEmpty());
+    }
+    
+    @Test
     void testInitInitializesStudioOnce() {
         try (MockedStatic<StudioManager> studio = mockStatic(StudioManager.class)) {
             StudioManager.Builder builder = mockStudio(studio);

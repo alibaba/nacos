@@ -1,5 +1,7 @@
 export type CopilotConnectionSource = 'DEPLOYMENT' | 'LEGACY';
 
+export type CopilotCredentialSource = 'ENVIRONMENT' | 'CONFIGURATION';
+
 export interface CopilotConnectionInfo {
   name: string;
   providerId?: string;
@@ -10,6 +12,7 @@ export interface CopilotConnectionInfo {
   available?: boolean;
   unavailableReason?: string;
   apiKeyConfigured?: boolean;
+  actualSource?: CopilotCredentialSource | null;
 }
 
 export interface CopilotConfigView {
@@ -39,6 +42,10 @@ export function hasLegacyConnection(connections?: CopilotConnectionInfo[]): bool
   return (connections ?? []).some(
     (connection) => (connection.source ?? '').toUpperCase() === 'LEGACY'
   );
+}
+
+export function isConnectionUsable(connection: CopilotConnectionInfo): boolean {
+  return connection.enabled !== false && connection.available !== false;
 }
 
 export function buildCopilotConfigPayload({

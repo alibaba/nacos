@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCopilotConfigPayload,
   hasLegacyConnection,
+  isConnectionUsable,
   type CopilotConnectionInfo,
   type CopilotConnectionSource,
 } from '../copilot-config';
@@ -81,5 +82,11 @@ describe('copilot config payload', () => {
       ])
     ).toBe(true);
     expect(hasLegacyConnection(undefined)).toBe(false);
+  });
+
+  it('treats only enabled and available connections as usable', () => {
+    expect(isConnectionUsable(deploymentConnection)).toBe(true);
+    expect(isConnectionUsable({ ...deploymentConnection, enabled: false })).toBe(false);
+    expect(isConnectionUsable({ ...deploymentConnection, available: false })).toBe(false);
   });
 });

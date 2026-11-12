@@ -23,6 +23,7 @@ import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
 import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
+import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.ProviderReadContext;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
 import io.agentscope.core.ReActAgent;
@@ -180,6 +181,7 @@ public class CopilotAgentManager {
             lock.writeLock().unlock();
         }
         warnOnIgnoredSelection(config, connectionTable);
+        warnOnLegacyConnection(connectionTable);
         LOGGER.info("Copilot configuration refreshed");
         // Re-initialize Studio if URL changed (outside lock to avoid blocking)
         initStudio();
@@ -203,6 +205,18 @@ public class CopilotAgentManager {
                 + "back to the default selection order", selected,
                 connection.getUnavailableReason());
         }
+    }
+    
+    private void warnOnLegacyConnection(ConnectionTable connectionTable) {
+        CopilotModelConnection legacy =
+            connectionTable.get(LegacyConfigProviderReader.CONNECTION_NAME);
+        if (legacy == null) {
+            return;
+        }
+        LOGGER.warn("Copilot is using the deprecated legacy connection [{}]. Define connections "
+            + "with nacos.copilot.connections.* and remove the legacy apiKey/model settings; "
+            + "the legacy connection keeps working during the deprecation window.",
+            legacy.getName());
     }
     
     /**

@@ -269,8 +269,12 @@ Console configuration API rules:
   `studioUrl`, `studioProject`, `selectedConnection`), the sanitized connection
   list, and the routed `activeConnection`. Each connection exposes `name`,
   `providerId`, `displayName`, `model`, `source`, `enabled`, `available`,
-  `unavailableReason`, and `apiKeyConfigured`; the stored api key is returned
-  masked and no credential appears in the connection metadata.
+  `unavailableReason`, `apiKeyConfigured`, and `actualSource`; the stored api key
+  is returned masked, and neither the credential nor the value behind
+  `actualSource` appears in the connection metadata. `actualSource` is
+  `ENVIRONMENT` when the `legacy` connection resolved its key from
+  `COPILOT_API_KEY`, `CONFIGURATION` when the key comes from the effective
+  configuration value, and `null` when the connection has no credential.
 - `POST /v3/console/copilot/config` accepts only `apiKey`, `model`, `studioUrl`,
   `studioProject`, and `selectedConnection`; other fields are ignored. A field
   absent from the request keeps its stored value.
@@ -281,13 +285,17 @@ Console configuration API rules:
   does not start blocking the environment. An explicit deployment
   `nacos.copilot.apiKey` still applies through the regular precedence.
 - `selectedConnection` is trimmed before it is stored; an empty value clears the
-  stored selection so routing uses the default order. The console does not
-  validate the name, so an unresolvable selection keeps the stored value and
-  falls back with the refresh warning.
+  stored selection so routing uses the default order. A non-empty value must name
+  an existing, enabled, and available connection: the declared connection name is
+  stored, and a selection that does not exist, is disabled, or is unavailable is
+  rejected with HTTP 400 instead of being saved.
 - The stored api key and model remain editable only as a deprecation path for
   the `legacy` connection: new deployments declare
   `nacos.copilot.connections.*`, and the console presents these fields as
   deprecated, only when the `legacy` connection exists.
+- Loading a `legacy` connection logs a deprecation warning with the
+  `nacos.copilot.connections.*` migration hint on every refresh; the connection
+  keeps serving during the deprecation window.
 
 Rules:
 

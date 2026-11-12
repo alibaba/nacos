@@ -11,6 +11,7 @@ import { useServerStore } from '@/stores/server-store';
 import {
   buildCopilotConfigPayload,
   hasLegacyConnection,
+  isConnectionUsable,
   type CopilotConfigView,
   type CopilotConnectionInfo,
 } from '@/lib/copilot-config';
@@ -61,9 +62,15 @@ function ConnectionOption({
 }: {
   connection: CopilotConnectionInfo;
   active: boolean;
-  labels: { unavailable: string; disabled: string; deployment: string; legacy: string };
+  labels: {
+    unavailable: string;
+    disabled: string;
+    deployment: string;
+    legacy: string;
+    environment: string;
+  };
 }) {
-  const usable = connection.enabled !== false && connection.available !== false;
+  const usable = isConnectionUsable(connection);
   return (
     <label
       htmlFor={`copilot-connection-${connection.name}`}
@@ -90,6 +97,9 @@ function ConnectionOption({
           )}
           {connection.available === false && (
             <Badge variant="destructive">{labels.unavailable}</Badge>
+          )}
+          {connection.actualSource === 'ENVIRONMENT' && (
+            <Badge variant="secondary">{labels.environment}</Badge>
           )}
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -133,8 +143,12 @@ export default function SettingCenterPage() {
       const next = body.data || {};
       const storedSelection = (next.selectedConnection ?? '').trim();
       const matched = matchConnection(next.connections ?? [], storedSelection);
+      // A stored selection that can no longer serve requests falls back to automatic, so the
+      // form never submits a connection the server would reject.
       setConfig(next);
-      setSelectedConnection(matched ? matched.name : storedSelection);
+      setSelectedConnection(
+        matched && isConnectionUsable(matched) ? matched.name : ''
+      );
       setApiKey(next.apiKey || '');
       setModel(next.model || 'qwen-turbo');
     } catch {
@@ -189,6 +203,7 @@ export default function SettingCenterPage() {
     legacy: t('settings.sourceLegacy'),
     unavailable: t('settings.connectionUnavailable'),
     disabled: t('settings.connectionDisabled'),
+    environment: t('settings.credentialEnvironment'),
   };
 
   return (
@@ -260,25 +275,15 @@ export default function SettingCenterPage() {
                       />
                     ))}
                     {!selectionKnown && (
-                      <label
-                        htmlFor="copilot-connection-missing"
-                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-dashed border-destructive/50 p-3"
-                      >
-                        <RadioGroupItem
-                          id="copilot-connection-missing"
-                          value={storedSelection}
-                          className="mt-0.5"
-                        />
+                      <div className="flex items-start gap-3 rounded-lg border border-dashed border-destructive/50 p-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                         <div className="flex flex-col gap-1">
-                          <span className="flex items-center gap-2 text-sm font-medium">
-                            <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                            {storedSelection}
-                          </span>
+                          <span className="text-sm font-medium">{storedSelection}</span>
                           <span className="text-xs text-muted-foreground">
                             {t('settings.connectionMissing')}
                           </span>
                         </div>
-                      </label>
+                      </div>
                     )}
                   </RadioGroup>
                   <p className="text-xs text-muted-foreground">{t('settings.connectionDesc')}</p>

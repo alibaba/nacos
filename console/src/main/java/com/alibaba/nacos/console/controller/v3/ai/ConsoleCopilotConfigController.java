@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.ConfigItemType;
@@ -37,6 +39,7 @@ import com.alibaba.nacos.console.model.ai.ConsoleCopilotConfigForm;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
 import com.alibaba.nacos.core.plugin.config.PluginConfigMasker;
@@ -45,11 +48,14 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Locale;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
 
@@ -129,8 +135,9 @@ public class ConsoleCopilotConfigController {
      *
      * <p>The api key is three-state: absent or masked keeps the stored key, a new value
      * replaces it, and an empty value clears it. Clearing a stored key also stops the legacy
-     * connection from falling back to the process environment. The connection selection is
-     * trimmed, and an empty value clears it so routing uses the default order.
+     * connection from falling back to the process environment. The connection selection must
+     * name an existing, enabled, and available connection; an empty value clears it so routing
+     * uses the default order.
      *
      * @param request HTTP servlet request.
      * @param config configuration fields to update, other fields are ignored
@@ -192,12 +199,46 @@ public class ConsoleCopilotConfigController {
     }
     
     private void applySelectedConnection(CopilotProperties target,
-        String submittedConnection) {
+        String submittedConnection) throws NacosException {
         if (submittedConnection == null) {
             return;
         }
         String trimmed = submittedConnection.trim();
-        target.setSelectedConnection(trimmed.isEmpty() ? null : trimmed);
+        if (trimmed.isEmpty()) {
+            target.setSelectedConnection(null);
+            return;
+        }
+        CopilotConnectionInfo connection = findConnection(trimmed);
+        if (connection == null) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Copilot connection [" + trimmed + "] does not exist");
+        }
+        if (!connection.isEnabled()) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Copilot connection [" + trimmed + "] is disabled");
+        }
+        if (!connection.isAvailable()) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Copilot connection [" + trimmed + "] is unavailable: "
+                    + connection.getUnavailableReason());
+        }
+        // Store the declared spelling so the selection matches the connection table exactly.
+        target.setSelectedConnection(connection.getName());
+    }
+    
+    private CopilotConnectionInfo findConnection(String name) {
+        String normalized = name.toLowerCase(Locale.ROOT);
+        for (CopilotConnectionInfo connection : agentManager.getConnectionStatus()
+            .getConnections()) {
+            if (connection.getName() != null
+                && connection.getName().toLowerCase(Locale.ROOT).equals(normalized)) {
+                return connection;
+            }
+        }
+        return null;
     }
     
     private String maskApiKey(String apiKey) {

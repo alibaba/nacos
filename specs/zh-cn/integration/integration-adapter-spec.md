@@ -205,18 +205,24 @@ nacos.copilot.selectedConnection=prod-qwen
 - `GET /v3/console/copilot/config` 返回可编辑的已存字段（`model`、`studioUrl`、
   `studioProject`、`selectedConnection`）、脱敏后的连接列表，以及路由得到的
   `activeConnection`。每个连接只暴露 `name`、`providerId`、`displayName`、`model`、
-  `source`、`enabled`、`available`、`unavailableReason` 和 `apiKeyConfigured`；已保存的
-  apiKey 以掩码返回，连接元数据中不包含任何凭据。
+  `source`、`enabled`、`available`、`unavailableReason`、`apiKeyConfigured` 和
+  `actualSource`；已保存的 apiKey 以掩码返回，连接元数据中既不包含凭据，也不包含
+  `actualSource` 背后的值。`legacy` 连接从 `COPILOT_API_KEY` 解析到密钥时
+  `actualSource` 为 `ENVIRONMENT`，密钥来自生效配置值时为 `CONFIGURATION`，连接没有
+  凭据时为 `null`。
 - `POST /v3/console/copilot/config` 只接受 `apiKey`、`model`、`studioUrl`、
   `studioProject` 和 `selectedConnection`，其他字段被忽略；请求中缺失的字段保留已存值。
 - apiKey 为三态：缺失或掩码值保留已存密钥；非空值替换密钥；空值清除已存密钥，并标记
   `legacy` 连接不再回退到 `COPILOT_API_KEY`。没有已存密钥时提交空值是无操作，避免未改动的
   旧版控制台表单开始阻断环境变量。部署配置显式设置的 `nacos.copilot.apiKey` 仍按既有优先级
   生效。
-- `selectedConnection` 写入前会去除首尾空白；空值清除已存选择，路由回到默认顺序。控制台不
-  校验连接名，无法解析的选择会保留已存值，并在刷新时回退并告警。
+- `selectedConnection` 写入前会去除首尾空白；空值清除已存选择，路由回到默认顺序。非空值必须
+  指向存在、已启用且可用的连接：保存的是连接的声明名；选择不存在、被禁用或不可用时返回
+  HTTP 400，而不是保存该值。
 - 已存的 apiKey 与 model 仅作为 `legacy` 连接的废弃路径保留可编辑：新部署应声明
   `nacos.copilot.connections.*`，控制台只在 `legacy` 连接存在时以废弃样式展示这些字段。
+- 加载到 `legacy` 连接时，每次刷新都会输出带 `nacos.copilot.connections.*` 迁移提示的废弃
+  告警；弃用窗口内该连接继续服务。
 
 规则：
 
