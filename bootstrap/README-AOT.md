@@ -161,14 +161,13 @@ The owner of an entry is the artifact whose jar on the Native classpath contains
 resource; of several jars with the same class, the first on the classpath owns it. A proxy belongs
 to Nacos if one of its interfaces does, otherwise to the owner of its first interface that is not a
 JDK type. A resource that several jars hold, such as a `META-INF/services` file, is written once:
-to Nacos if Nacos has it, otherwise to the first jar that does. `refresh` places the entries and
-removes the file of an owner that has none left, so nobody moves entries by hand, and
-`check --classpath` verifies the placement.
+to Nacos if Nacos has it, otherwise to the first jar that does. The file of an owner that has no
+entry left is removed.
 
-The version on the folder is the version of that jar on the Native classpath. `check --classpath`
-fails when they differ, so a version bump cannot silently reuse the entries of another version:
-refresh after a bump, which moves the file. Nacos and the JDK keep unversioned folders; GraalVM
-does not look at the names of folders.
+The version on the folder is the version of that jar on the Native classpath, so that a version
+bump cannot silently reuse the entries of another version: the entries are checked again after a
+bump, and the file moves to the folder of the new version. Nacos and the JDK keep unversioned
+folders; GraalVM does not look at the names of folders.
 
 ### What it covers
 
@@ -278,10 +277,10 @@ The Native build reads reachability metadata from more places than these files:
 - The files that the AOT generator writes for the application contexts, in
   `bootstrap/target/native/aot`.
 
-The files repeat none of what these sources provide. `refresh` takes it out of the entries, and an
-entry that they provide in full altogether; `check --classpath` reports what repeats them. Only an
-entry without a condition counts as provided. An entry with a `typeReached` condition is available
-once its type is reached, and the access that the bundled entry serves may come before.
+The files repeat none of what these sources provide: an entry that they provide in full is not
+kept, and of an entry that they provide in part only the rest is kept. Only an entry without a
+condition counts as provided. An entry with a `typeReached` condition is available once its type is
+reached, and the access that the bundled entry serves may come before.
 
 ### The GraalVM reachability metadata repository
 
@@ -298,9 +297,9 @@ bundled file of the same artifact have the same name. For the same reason a jar 
 directory gets none of the repository, and a driver that relies on it has to be a dependency of
 the module, as the Oracle driver is.
 
-The files do not rely on the repository, and `refresh` takes nothing out for it, so a build with
-the repository and a build without it both work, and a new release of it needs no refresh. It
-guards nearly all of its entries with a `typeReached` condition, and a guard may be reached later
+The files do not rely on the repository, and nothing was taken out of them for it, so a build with
+the repository and a build without it both work, and a new release of it needs no change of the
+files. It guards nearly all of its entries with a `typeReached` condition, and a guard may be reached later
 than the access that the Server needs it for. The repository guards the methods of
 `com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql` with `HealthCheckerFactory`, which a
 Server that loads its persistent services from a Raft snapshot does not reach: a restarted Server
@@ -319,8 +318,7 @@ the `add-reachability-metadata` execution in `bootstrap/pom.xml` to a copy of
 
 ### What it leaves out
 
-`test/scripts/native-metadata.py` applies these rules each time the files are refreshed, and `check`
-enforces them in the ordinary CI build:
+The files follow these rules:
 
 - Classes that Spring AOT generates during the build (`$$SpringCGLIB$$` subclasses and
   `__BeanDefinitions`, `__ApplicationContextInitializer` and similar). The build derives their
@@ -333,102 +331,52 @@ enforces them in the ordinary CI build:
   that such an entry changes nothing that reflection on the class finds, with or without member
   flags. A build with `--exact-reachability-metadata` reports these classes anyway. The Server's
   four reports come from Spring checking infrastructure beans for advisors, and the default and the
-  exact build pass and fail the same tests. `collect-missing` counts and skips them.
+  exact build pass and fail the same tests.
 - Lookups of classes and resources that do not exist on the Native classpath, such as probes for
   optional libraries or locale variants like `LocalStrings_zh_CN.properties`. They describe the
   machine that was traced, and the default reachability mode does not need them. A build with
   `--exact-reachability-metadata` reports them anyway; ignore reports for names that do not exist.
 - Anything that identifies a machine or a person, such as absolute paths, host names and
-  addresses. `check` rejects them.
+  addresses.
 
-Entries are sorted and written one per line, so a refresh produces a reviewable diff. Run
-`python3 test/scripts/native-metadata.py check` to verify the committed files. Adding
-`--classpath bootstrap/target/native/classpath.args` also reports entries whose class, resource or
-condition type disappeared, for example after a rename, and entries that sit in the file of another
-owner. The ordinary CI step `native-build-it.py` runs the tool's self test and the classpath-free
-check.
+Entries are sorted and written one per line, so that a change produces a reviewable diff.
 
 ### Conditions
 
-Every entry carries a `typeReached` condition (see GraalVM docs). The condition is a function of the owner, see `CONDITION_GROUPS` in `native-metadata.py`:
+Every entry carries a `typeReached` condition (see GraalVM docs). The condition is a function of the owner:
 
 - Nacos and the JDK: `com.alibaba.nacos.bootstrap.NacosBootstrap`.
 - Spring family and libraries Spring Boot looks up: `org.springframework.boot.SpringApplication`.
-- JDBC drivers: `com.zaxxer.hikari.HikariConfig`; logback: `LoggerFactory`/`LoggerContext`; others: the type that loads the library (see the script for the full table).
+- JDBC drivers: `com.zaxxer.hikari.HikariConfig`; logback: `LoggerFactory`/`LoggerContext`; others: the type that loads the library (see the files).
 
 Validate a condition type against a run of the Server on a JVM, with the classpath and the
-structural configuration of the Native build (the JVM options of `native-trace-server.sh`, with the
-agent replaced by `-Xlog:class+load=info,class+init=info:file=<log>:uptime:filecount=0`). The type
+structural configuration of the Native build (the JVM options of the agent run in
+[Generate and run JVM AOT](#generate-and-run-jvm-aot), with the agent replaced by `-Xlog:class+load=info,class+init=info:file=<log>:uptime:filecount=0`). The type
 must be initialized before the first class of the entries of its owner is loaded or initialized;
 loads during class verification do not count, and resources are not in the log. A build with
 `--exact-reachability-metadata` reports the accesses that come before the condition type is
 reached, resources included.
 
-`refresh` sets the condition of every entry from its owner, whatever the inputs carry, so that a
-trace, the report of an exact-mode build and the committed files can be mixed freely. It stops at
-an owner without a row: add the owner to `CONDITION_GROUPS` after the comparison above. `check`
-rejects an entry that another condition guards and an owner without a row, and it fails when the
-source of the main class is gone, because renaming `NacosBootstrap` would otherwise leave the
-entries of Nacos and of the JDK guarded by a type that does not exist. After such a rename, update
-`SERVER_ENTRY_POINT` in `native-metadata.py` and the conditions in the bundled files.
+Every entry of an owner carries the same condition, whatever was traced, so that traces and the
+reports of an exact-mode build can be mixed freely. A new owner needs a condition type chosen after
+the comparison above. Renaming `NacosBootstrap` would leave the entries of Nacos and of the JDK
+guarded by a type that does not exist, so after such a rename the conditions in the bundled files
+have to be updated.
 
 ### Refresh the bundled metadata
 
 Refresh the metadata when the Server's dependencies, plugin SPI providers, reflectively serialized
-model classes or reflective code paths change, and review the result like source code. Use
-GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases and homes.
+model classes or reflective code paths change, and review the result like source code. Trace the AOT
+application with the Native Image agent as described in
+[Generate and run JVM AOT](#generate-and-run-jvm-aot), once for every JDBC driver that the metadata
+should cover, and put what the traces contain into the files of their owners by the rules above. Use
+GraalVM 25+ (`JAVA_HOME` must contain `native-image`) and disposable databases and homes. A dry run
+prepares the AOT output and the exact classpath of the Native build without compiling it:
 
-1. Prepare the AOT output and the exact classpath of the Native build. Compilation is not needed:
-
-   ```sh
-   mvn -B '-Pnative,!dev' -pl bootstrap -am package -DnativeDryRun=true \
-     -Dnacos.native.standalone=true -Dnacos.native.config=/absolute/path/build.properties
-   ```
-
-2. Start the AOT application under the tracing agent. The script reads the classpath and the
-   structural configuration from the build output. The trace directory must be absolute and
-   outside the source tree; the script fixes an English locale so that the trace does not depend
-   on the machine:
-
-   ```sh
-   bash test/scripts/native-trace-server.sh output /absolute/path/trace /absolute/path/nacos-home
-   ```
-
-3. Exercise the Server. Bootstrap the administrator and the test identities with
-   `test/scripts/auth-it-identity.sh bootstrap` and `prepare`, then run the OpenAPI, Java SDK
-   and Maintainer SDK suites against it, and open the Web console.
-4. Stop the Server with `SIGTERM`, because the agent writes its output on exit. Start it again
-   with `merge` instead of `output` against the same data, and repeat a few authenticated
-   requests so that reads of persisted records are traced as well.
-5. The datasource is a structural choice, so repeat steps 1 to 4 with `merge` into the same trace
-   directory for every JDBC driver the metadata should cover.
-6. Curate the trace together with the committed files:
-
-   ```sh
-   BUNDLE=bootstrap/src/main/resources/META-INF/native-image
-   python3 test/scripts/native-metadata.py refresh \
-     --classpath bootstrap/target/native/classpath.args "$BUNDLE" /absolute/path/trace
-   ```
-
-   The command merges all inputs, drops what the rules above exclude, takes out what the build
-   gets elsewhere (see [above](#what-the-build-gets-elsewhere)), sets the condition of every entry
-   from its owner (see [Conditions](#conditions)), sorts the entries into the files of their owners
-   (see [Layout](#layout)), and rewrites the files below `BUNDLE`; it removes the file of an owner
-   that has no entries left, and it stops at a new owner that has no condition type yet. Taking out
-   what the build gets elsewhere needs the output of the build in step 1, `classpath.args` and the
-   AOT files; `--provided-dir` names other directories of metadata files instead. Pass
-   `--output-dir` to write below another directory, or `--output` for one merged file, which lists
-   what an exact-mode build reports and does not take anything out. The committed files are an
-   input as well, because some of their entries are in no trace: the reports of an exact-mode build
-   (see below), and the accessors that protobuf looks up on a generated message and on its
-   `Builder`, which the agent does not record because it records only the methods that are
-   invoked. The ones of JRaft's
-   `SnapshotMeta` matter: JRaft turns the message into text when it loads a snapshot. A refresh
-   from the trace alone drops these entries, and a restarted Native Server stops coming up, so
-   restart the executable on the same data after a refresh.
-7. If the dependencies changed, check the condition types against a run of the Server, as
-   described under [Conditions](#conditions), and validate the result against the Native
-   executable, as described next.
+```sh
+mvn -B '-Pnative,!dev' -pl bootstrap -am package -DnativeDryRun=true \
+  -Dnacos.native.standalone=true -Dnacos.native.config=/absolute/path/build.properties
+```
 
 ### Find gaps with an exact-mode build
 
@@ -447,20 +395,11 @@ mvn -B '-Pnative,release-native,!dev' -pl distribution -am clean package \
 NACOS_NATIVE_OPTS='-Xmx1g -XX:MissingRegistrationReportingMode=Warn' bash bin/startup-native.sh
 ```
 
-After exercising the executable, turn the reports in `logs/startup.log` into metadata:
-
-```sh
-python3 test/scripts/native-metadata.py collect-missing logs/startup.log --output /absolute/path/missing
-python3 test/scripts/native-metadata.py refresh --classpath bootstrap/target/native/classpath.args \
-  --output /absolute/path/delta.json /absolute/path/missing
-```
-
-`delta.json` lists what is missing and exists on the classpath. Pass it together with the original
-trace to a final `refresh` to merge it into the bundled files. Each report names the exact class,
-method or field. Repeat the cycle of exercising, collecting and merging until no relevant report
-remains. Reports that the tool cannot parse are printed as `UNPARSED`; each is a gap that the tool
-cannot name, so look at it by hand. Reports about lambda-proxy classes are counted and skipped, as
-described above.
+After exercising the executable, `logs/startup.log` holds one report for every access without
+metadata, and each report names the exact class, method or field. Put what is missing, and exists on
+the Native classpath, into the files of its owner by the rules above, and repeat the cycle of
+exercising, building and reading the reports until no relevant report remains. Ignore the reports
+about lambda-proxy classes and about names that do not exist, as described above.
 
 ## Build integration tests
 
@@ -551,8 +490,7 @@ without Maven, or to see by hand what the helper scripts do.
 
 Use a GraalVM installation compatible with the dependencies and a working C compiler. Start the
 JVM AOT application with the Native Image agent, using the runtime flags above and a fresh
-`TRACE_DIR` outside the source tree (`test/scripts/native-trace-server.sh` does the same with the
-classpath and structural configuration of a finished `native` build):
+`TRACE_DIR` outside the source tree:
 
 ```sh
 "$GRAALVM_HOME/bin/java" \
@@ -572,8 +510,7 @@ after restart. Refresh tracing when the application, dependencies or plugins cha
 
 Confirm that `TRACE_DIR/reachability-metadata.json` is valid JSON. Do not commit a raw trace: it
 is specific to the exercised plugin and deployment combination and contains machine specific
-lookups. Changes to the bundled metadata go through `native-metadata.py refresh`, which applies
-the rules described above. For the MySQL/PostgreSQL experiment with a raw trace, compile with:
+lookups. Changes to the bundled metadata follow the rules described above. For the MySQL/PostgreSQL experiment with a raw trace, compile with:
 
 ```sh
 "$GRAALVM_HOME/bin/native-image" --no-fallback -J-Xmx8g --parallelism=2 \

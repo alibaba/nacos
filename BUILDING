@@ -45,4 +45,4 @@ Build Instructions for NACOS
     GraalVM 25+ with native-image is required. The Server can be compiled to a platform specific
     GraalVM Native Image with the "native" Maven profile. The Server ships reachability metadata
     for the default plugins with MySQL or PostgreSQL. See bootstrap/README-AOT.md for the supported
-    combinations, the build command and how the metadata is maintained.
+    combinations and the build command.

@@ -223,8 +223,8 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   `reachability-metadata.json`，每个归属方一个文件：
   `com.alibaba.nacos/nacos-bootstrap` 存放 Nacos 自身构建的内容，每个第三方构件使用它自己的
   `<groupId>/<artifactId>/<version>/` 目录，`jdk/runtime` 存放 JDK 的类。条目的归属方是 Native
-  classpath 上包含该类或资源的 jar 所属的构件。目录上的版本号即该 jar 的版本；对 classpath
-  的检查在两者不一致时失败，因此版本升级不可能静默复用另一个版本的条目。`native` profile
+  classpath 上包含该类或资源的 jar 所属的构件。目录上的版本号即该 jar 的版本，因此版本升级不可能
+  静默复用另一个版本的条目。`native` profile
   将这些文件作为 Bootstrap 类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
 - 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
   PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
@@ -249,14 +249,13 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   变化后遗留过期条目。构建还会读取 Native classpath 上各 jar 内的 `META-INF/native-image`
   文件（`native-image.args` 排除的除外），以及同一构建中 AOT 生成器写出的文件。这些来源已完整提供的
   条目不保留，只提供一部分的条目只保留其余部分。只有不带条件的条目才算已提供：带 `typeReached` 条件的
-  条目要等其条件类型被触达后才可用，而内置条目所服务的访问可能发生得更早。刷新文件时，工具会去掉
-  构建已提供的内容，并拒绝仍然重复这些内容的文件。
+  条目要等其条件类型被触达后才可用，而内置条目所服务的访问可能发生得更早。
 - 可达性元数据仓库。`native` profile 会把根 POM 的 `graalvm-reachability-metadata.version`
   所指定版本的 GraalVM 可达性元数据仓库加入 Native classpath。`native-maven-plugin` 只会把仓库加入
   它自己构建的 classpath，因此 profile 运行其 `add-reachability-metadata` 目标，并把输出放到
-  Native classpath 上。`nacos.native.repository.enabled=false` 可将其排除。这些文件不依赖它，工具也
+  Native classpath 上。`nacos.native.repository.enabled=false` 可将其排除。这些文件不依赖它，也
   不把它当作来源，因为它给几乎所有条目都加了条件：带仓库和不带仓库的构建都能工作，仓库发布新版本
-  也无需刷新。
+  也无需改动这些文件。
 - 条件。每个条目都带有取决于其归属方的 `typeReached` 条件。Nacos 自身与 JDK 的条目使用
   `com.alibaba.nacos.bootstrap.NacosBootstrap`，即 Server 入口类，它先于其他 Server 代码完成初始化。
   第三方构件的条目使用“让 Server 用到该构件”的类型，例如 Spring 家族以及由 Spring Boot 查找其类的库
@@ -265,10 +264,9 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   完成初始化，这常常早于该构件自身类的首次使用；仅以类字面量出现的类永远不会被初始化。对于客户端和服务端都会使用的
   构件，条件类必须是两者都会初始化的类型：集群中的节点在构建核心 context 时就创建 RPC 客户端，早于任何
   gRPC 服务端启动。条件类须经与 Server 一次运行的类加载与初始化顺序比对后才能采用。
-  工具按归属方为每个条目设定条件，并拒绝被其他条件保护的条目。
+  同一归属方的所有条目带有相同的条件。
 - 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
-  重新验证 Native 可执行程序。刷新属于需要评审的源码变更。仓库提供 `test/scripts/native-metadata.py`
-  用于整理和检查这些文件，并把每个条目放进其归属方的文件；普通 CI 构建会检查它们。
+  重新验证 Native 可执行程序。刷新属于需要评审的源码变更，每个条目放进其归属方的文件。
 - 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收。可执行程序包含什么在构建时就已
   固定（数据源、AI 注册表开关、适配器、插件 jar、单机或集群模式），因此每个被验收的配置都是一个
   验证场景，在独立的构建上运行；套件无法覆盖的部分（AI 注册表、Kubernetes 同步、DNS 适配器、

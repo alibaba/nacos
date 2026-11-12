@@ -298,8 +298,8 @@ build does not require the operator to trace the Server first.
   artifact holds its own folder below `<groupId>/<artifactId>/<version>/`, and `jdk/runtime`
   holds classes of the JDK. The owner of an entry is the artifact whose jar on the Native
   classpath holds the class or the resource. The version on the folder is the version of that
-  jar; a check against the classpath fails when they differ, so a version bump cannot silently
-  reuse the entries of another version. The `native` profile reads the files
+  jar, so a version bump cannot silently reuse the entries of another version. The `native`
+  profile reads the files
   as part of Bootstrap's classes. An ordinary JVM must not read them, and the JVM artifact
   contract must not depend on them.
 - Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
@@ -337,16 +337,15 @@ build does not require the operator to trace the Server first.
   entry that these sources provide in full is not kept, and of an entry that they provide in part
   only the rest is kept. Only an entry without a condition counts as provided: an entry with a
   `typeReached` condition is available once its type is reached, and the access that the bundled
-  entry serves may come before. The tooling removes what the build provides when it refreshes the
-  files and rejects a file that repeats it.
+  entry serves may come before.
 - Reachability metadata repository. The `native` profile adds the GraalVM reachability metadata
   repository, in the release that `graalvm-reachability-metadata.version` of the root POM names, to
   the Native classpath. The `native-maven-plugin` adds it only to a classpath that it builds
   itself, so the profile runs its `add-reachability-metadata` goal and puts the output on the
   Native classpath. `nacos.native.repository.enabled=false` leaves it out. The files do not rely on
-  it and the tooling does not count it as a source, because it guards nearly all of its entries
-  with a condition: a build with and a build without the repository both work, and a new release
-  of it needs no refresh.
+  it and do not count it as a source, because it guards nearly all of its entries with a
+  condition: a build with and a build without the repository both work, and a new release of it
+  needs no change of the files.
 - Conditions. Every entry carries a `typeReached` condition that depends on its owner. The entries
   of Nacos and of the JDK carry `com.alibaba.nacos.bootstrap.NacosBootstrap`, the Server entry
   point, which is initialized before any other Server code runs. The entries of a third-party
@@ -359,13 +358,12 @@ build does not require the operator to trace the Server first.
   by a class literal never is. For an artifact that a client and a server both use, the type must
   be one that both initialize: a node of a cluster creates its RPC clients while the core context
   is built, before any gRPC server starts. A condition type is accepted after a comparison with the
-  order in which a run of the Server loads and initializes classes. The tooling sets the condition
-  of every entry from its owner and rejects an entry that another condition guards.
+  order in which a run of the Server loads and initializes classes. Every entry of an owner carries
+  the same condition.
 - Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
   model classes or reflective code paths requires refreshing the metadata and validating the
-  Native executable again. A refresh is a reviewed source change. The repository provides
-  `test/scripts/native-metadata.py` to curate and check the files, and to put each entry into the
-  file of its owner; the ordinary CI build checks them.
+  Native executable again. A refresh is a reviewed source change, and each entry goes into the
+  file of its owner.
 - Acceptance. The metadata is accepted by running the standalone integration suites against the
   Native executable. What an executable contains is fixed when it is built (the datasource, the
   switches of the AI registries, the adaptors, the plugin jars, standalone or cluster mode), so
