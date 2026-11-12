@@ -229,11 +229,12 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
 - 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
   PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
   OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及这些测试覆盖不到、在各自独立
-  构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、Istio 适配器、DNS 适配器、
-  驱动由构建作为 Bootstrap 模块依赖加入的 Oracle 数据源插件，以及由三个节点组成的集群（Distro、
-  Raft 以及节点之间的请求）。其他插件与驱动（包括 Oracle 驱动）以及内嵌 Derby 不在内置范围内；
-  它们的元数据来自扩展自身、GraalVM 可达性元数据仓库（只适用于模块的 Maven 依赖，不适用于插件目录中的
-  jar）或 `nacos.native.metadata`，其支持情况必须单独验证和报告。
+  构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、Istio 适配器、DNS 适配器和由
+  三个节点组成的集群（Distro、Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby 以及 Oracle
+  不在内置范围内；它们的元数据来自扩展自身、GraalVM 可达性元数据仓库（只适用于模块的 Maven 依赖，
+  不适用于插件目录中的 jar）或 `nacos.native.metadata`，其支持情况必须单独验证和报告。Oracle 驱动还有
+  额外要求：在驱动的再分发条款，以及驱动所支持的数据库版本（少于数据源插件支持的 Oracle 12c 及以后
+  版本）明确之前，不支持带该驱动的 Native 构建。
 - 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。追踪记录不到的条目来自
   exact 模式构建的缺失报告；对 tracing agent 不记录的查找（例如 protobuf 对生成消息及其 Builder 的
   访问器查找），则按产生这些查找的代码推导，并必须由 exact 模式构建和在同一份数据上重启 Native Server 来确认。只在集群中才会被

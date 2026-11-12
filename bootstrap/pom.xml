@@ -257,35 +257,5 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Oracle as the datasource. The Oracle datasource plugin takes the JDBC driver as an optional
-             dependency, so a build has to supply it, and it has to be a dependency of this module:
-             the add-reachability-metadata goal of the native profile finds the metadata of a driver in
-             the GraalVM reachability metadata repository only for the artifacts that Maven resolves for
-             this module, not for a jar in the plugin directory. The repository has no metadata for
-             ojdbc8 19.7.0.0, which the root pom manages for compiling the plugin, and has some for
-             23.26.1.0.0, except for four character set resources that the driver loads when it creates
-             its first statement. Those are in src/main/native/oracle-metadata, which this profile makes
-             the default of nacos.native.metadata: a build that sets that property itself has to carry
-             the file. Activated by the version of the driver, together with the native profile:
-             mvn -Pnative -Dnacos.native.oracle.driver=23.26.1.0.0 ... -->
-        <profile>
-            <id>native-oracle</id>
-            <activation>
-                <property>
-                    <name>nacos.native.oracle.driver</name>
-                </property>
-            </activation>
-            <properties>
-                <nacos.native.metadata>${project.basedir}/src/main/native/oracle-metadata</nacos.native.metadata>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ojdbc8</artifactId>
-                    <version>${nacos.native.oracle.driver}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
 </project>

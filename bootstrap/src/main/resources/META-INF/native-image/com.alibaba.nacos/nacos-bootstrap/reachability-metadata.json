@@ -164,7 +164,6 @@
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.alibaba.nacos.auth.parser.http.AgentSpecCardHttpResourceParser"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.alibaba.nacos.auth.parser.http.AgentSpecNameHttpResourceParser"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.alibaba.nacos.auth.serveridentity.DefaultChecker"},
-    {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.alibaba.nacos.bootstrap.NacosBootstrap"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.alibaba.nacos.client.ability.ClientAbilityControlManager"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.alibaba.nacos.client.address.EndpointServerListProvider"},
     {"condition": {"typeReached": "com.alibaba.nacos.bootstrap.NacosBootstrap"}, "type": "com.alibaba.nacos.client.address.PropertiesListProvider"},
