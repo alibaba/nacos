@@ -98,7 +98,6 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.metadata` | `bootstrap/target/native-metadata` | Additional exercised Native metadata directory |
 | `nacos.native.derby.experimental` | `false` | Explicit opt-in to the experimental Derby arguments below |
 | `nacos.native.repository.enabled` | `true` | Adds the [GraalVM reachability metadata repository](#the-graalvm-reachability-metadata-repository) to the Native classpath; `false` leaves it out and the executable about 35 MB smaller |
-| `nacos.native.options` | empty | Path of a Native Image argument file appended after the toolchain options, for example `--exact-reachability-metadata` for [diagnostic builds](#find-gaps-with-an-exact-mode-build) or `-march=compatibility` for an executable that must run on older CPUs |
 | `nacos.native.build.heap` | `8g` | Maximum Native builder heap |
 | `nacos.native.build.parallelism` | `2` | Native compiler parallelism |
 
@@ -378,28 +377,11 @@ mvn -B '-Pnative,!dev' -pl bootstrap -am package -DnativeDryRun=true \
   -Dnacos.native.standalone=true -Dnacos.native.config=/absolute/path/build.properties
 ```
 
-### Find gaps with an exact-mode build
-
-A trace only contains what was exercised. To find what is still missing, build the executable with
-`--exact-reachability-metadata` and run it with `-XX:MissingRegistrationReportingMode=Warn`: every
-dynamic access without metadata is then reported instead of silently returning nothing. GraalVM
-Community 25.0.2 stops an exact-mode build at some entries of the reachability metadata repository
-("Bulk queries can only be set with 'name' ... run-time conditions"); 25.1.3 and later build it.
-The metadata was validated with GraalVM Community 25.0.4.
-
-```sh
-printf -- '--exact-reachability-metadata\n' > /absolute/path/exact.args
-mvn -B '-Pnative,release-native,!dev' -pl distribution -am clean package \
-  -Dnacos.native.config=/absolute/path/build.properties -Dnacos.native.standalone=true \
-  -Dnacos.native.options=/absolute/path/exact.args
-NACOS_NATIVE_OPTS='-Xmx1g -XX:MissingRegistrationReportingMode=Warn' bash bin/startup-native.sh
-```
-
-After exercising the executable, `logs/startup.log` holds one report for every access without
-metadata, and each report names the exact class, method or field. Put what is missing, and exists on
-the Native classpath, into the files of its owner by the rules above, and repeat the cycle of
-exercising, building and reading the reports until no relevant report remains. Ignore the reports
-about lambda-proxy classes and about names that do not exist, as described above.
+A trace only contains what was exercised. Building the executable with
+`--exact-reachability-metadata` and running it with `-XX:MissingRegistrationReportingMode=Warn`
+reports every dynamic access without metadata, and each report names the exact class, method or
+field. The reports about lambda-proxy classes and about names that do not exist can be ignored, as
+described above.
 
 ## Build integration tests
 

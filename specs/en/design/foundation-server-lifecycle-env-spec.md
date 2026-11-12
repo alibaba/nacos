@@ -283,10 +283,6 @@ processing, including inherited and optional property accessors. Registration mu
 on fields observed by tracing requests, instantiate Controllers, or change ordinary JVM request
 binding. Independent Console requests to Native Servers follow the same binding contract.
 
-The build accepts an optional operator-supplied Native Image argument file that is appended after
-the toolchain options. It affects only Native Image compilation. It must not change AOT
-generation, the structural manifest or ordinary JVM behavior.
-
 ### 10.1 Bundled Reachability Metadata
 
 Bootstrap ships GraalVM reachability metadata for the default Server combination, so a Native

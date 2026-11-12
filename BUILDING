@@ -38,11 +38,3 @@ Build Instructions for NACOS
     #build nacos
     $ mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
     $ ./mvnw -Prelease-nacos -Dmaven.test.skip=true clean install -U
-
-
-(5) Build the experimental Native executable
-
-    GraalVM 25+ with native-image is required. The Server can be compiled to a platform specific
-    GraalVM Native Image with the "native" Maven profile. The Server ships reachability metadata
-    for the default plugins with MySQL or PostgreSQL. See bootstrap/README-AOT.md for the supported
-    combinations and the build command.

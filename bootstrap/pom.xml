@@ -118,8 +118,6 @@
                 <nacos.native.standalone>false</nacos.native.standalone>
                 <nacos.native.embedded-storage>false</nacos.native.embedded-storage>
                 <nacos.native.derby.experimental>false</nacos.native.derby.experimental>
-                <!-- Optional Native Image argument file appended after the toolchain options. -->
-                <nacos.native.options></nacos.native.options>
                 <nacos.native.build.heap>8g</nacos.native.build.heap>
                 <nacos.native.build.parallelism>2</nacos.native.build.parallelism>
             </properties>
@@ -187,7 +185,6 @@
                                             <sysproperty key="nacos.standalone" value="${nacos.native.standalone}"/>
                                             <sysproperty key="embeddedStorage" value="${nacos.native.embedded-storage}"/>
                                             <sysproperty key="nacos.native.derby.experimental" value="${nacos.native.derby.experimental}"/>
-                                            <sysproperty key="nacos.native.options" value="${nacos.native.options}"/>
                                             <arg value="${project.build.directory}/native"/>
                                             <arg value="${project.build.outputDirectory}"/>
                                             <arg value="${project.basedir}/src/test/resources/aot/derby-experimental.args"/>
@@ -233,16 +230,6 @@
                             <classpath><entry>${project.build.directory}/native/classes</entry></classpath>
                             <!-- Native Image does not expand nested argument files. -->
                             <useArgFile>false</useArgFile>
-                            <!-- Tracing agent: mvn -Pnative -Dagent=true package collects to
-                                 target/native/agent-output. Disabled by default so normal
-                                 builds do not attach the agent. -->
-                            <agent>
-                                <enabled>false</enabled>
-                                <metadataCopy>
-                                    <merge>true</merge>
-                                    <outputDirectory>${project.build.directory}/native/agent-output</outputDirectory>
-                                </metadataCopy>
-                            </agent>
                             <buildArgs>
                                 <buildArg>@${project.basedir}/src/test/resources/aot/native-image.args</buildArg>
                                 <buildArg>@${project.build.directory}/native/options.args</buildArg>
