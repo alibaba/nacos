@@ -111,6 +111,9 @@ Missing or nonpositive sizes use the default; larger sizes are clamped.
 Follow `pageToken` to completion: short and empty pages may still have a continuation token.
 Page size may change during traversal. Each page uses current data and permissions,
 without snapshot guarantees.
+A nonempty GET List `pageSize` must bind to a 32-bit integer. Fractional values, booleans,
+nonnumeric text and integer overflow return 400 / `INVALID_ARGUMENT`; explicit invalid
+credentials retain precedence and return 401 / `UNAUTHENTICATED`.
 
 Tokens are opaque and reuse shared Search Core pagination. Basic tokens identify an
 anchor; enhanced tokens also bind the query/configuration fingerprint. Invalid decoding,

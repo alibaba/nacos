@@ -98,6 +98,8 @@ Explore 共用字段解析，对完整匹配集聚合。Facet key 保留请求�
 Search 默认 10 条，List 默认 20 条，`pageSize` 上限均为 100。
 缺省或非正数使用默认值，超限截至上限。以 `pageToken` 判断是否继续，短页或空页仍可能
 携带续页 token；续页可调整 pageSize。每页使用当前数据与权限，不提供跨页快照保证。
+GET List 的非空 `pageSize` 须能绑定为 32 位整数；小数、布尔值、非数字文本或整数越界
+返回 400 / `INVALID_ARGUMENT`，显式无效凭据仍优先返回 401 / `UNAUTHENTICATED`。
 
 Token 不透明，复用共享 Search Core：基础 token 标识锚点，增强 token 额外绑定查询/配置指纹。
 进入分页校验后，解码失败、锚点无效或不可见、增强指纹不匹配、token 模式混用均返回

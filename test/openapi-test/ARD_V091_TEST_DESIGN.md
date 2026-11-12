@@ -208,8 +208,8 @@ ArdSearchServiceImplTest 及 ArdAdaptorOpenApiITCase。
 未知成员忽略，重复text以后值为准。federation null/blank/trim沿用auto，AUTO400。
 旧context被忽略，标准filter数组数字/boolean/object/null曾接受；这两类按BC03/05明确升级。
 Explore query缺省/空/blank均200；无效凭据先于坏JSON返回401。
-GET pageSize非整数/boolean/超范围当前500（不是400），空串使用缺省；这是既有错误映射缺口，
-该兼容行为保持不变。namespace对照需有效身份，匿名跨namespace401
+旧基线中GET pageSize非整数/boolean/超范围为500，空串使用缺省；现将参数类型转换失败
+修正为400 INVALID_ARGUMENT，保留绑定配置、默认值与坏凭据401优先级。namespace对照需有效身份，匿名跨namespace401
 不能误记为绑定失败。测试记录不包含凭据。
 
 Search使用原始key+解析字段标识合并组，同组OR，组间AND；单值type选择逐组求交，
@@ -362,23 +362,25 @@ HTTP测试通过外部部署参数指定预期配置，不在测试类中启动�
 
 ### 分页、地址与类型
 
-验证范围：仅Search上限50→100。`searchAndListShouldNormalizePageSizes`以105条真实Core
+验证范围：Search上限50→100，以及GET非法pageSize错误映射。`searchAndListShouldNormalizePageSizes`以105条真实Core
 候选参数化验证；修改前51/100/101/MAX四组失败（实际50），修改后全部满足目标。
 正式HTTP扩展`testLegacyCatalogEnumeratesMoreThanOneHundredPublicResources`的既有105条资源：
 9组页大小、调整续页大小、Search/List全集与排序、数值字符串/浮点/非法类型、List失效与重查。
-GET非整数500保持并明确标为既有错误映射缺口；URL/URN/artifact由原有回归覆盖。
+独立HTTP用例`testListRejectsInvalidPageSize`验证小数、boolean、非数字文本、正负整数越界为400，
+错误体仅含errorCode/message，坏凭据优先401。`ArdExceptionHandlerTest`通过Spring绑定验证
+非法值不进入服务、合法整数成功、真实服务异常仍500；URL/URN/artifact由原有回归覆盖。
 
 | ID | 前置与输入 | 应提交的断言 | 修改前 → 修改后 |
 | --- | --- | --- | --- |
 | UT-C09-01 | pageSize 缺省、0、-1、50、51、100、101 | Search 分别10/10/10/50/51/100/100；List 20默认/100上限保持 | Search 51..100被截50 -> 最大100 |
 | UT-C09-02 | base/referral URL、扩展 media type、Unicode/多段 URN | registry 为 base；未来 referral 值为完整端点；合法未知类型不因 enum 拒绝；标识稳定且无碰撞 | 保留已合规部分 |
 | UT-C09-03 | BC12；GET filter日期/转义/AND、orderBy默认/别名/第二词非desc/尾词 | 既有合法和宽容行为保持、已拒绝语法仍拒绝；不改成POST JSON-LD grammar | BC12；前后差异见兼容审计，正常场景对照保持 |
-| UT-C09-04 | BC13/14；已绑定Integer null/-1/0/1/50/51/100/101/MAX | Search10默认/100上限，List20默认/100上限；不把UT Integer结果误写成原始HTTP绑定证据 | BC13/14；前后差异见兼容审计，正常场景对照保持 |
+| UT-C09-04 | BC13/14；已绑定Integer null/-1/0/1/50/51/100/101/MAX；Spring GET绑定小数/boolean/文本/越界 | Search10默认/100上限，List20默认/100上限；非法绑定400且不调用服务；合法整数200、真实服务异常500 | BC13/14；前后差异见兼容审计，正常场景对照保持 |
 | IT-C09-01 | F-PAGE，各页大小及所有续页 | 实际候选足够时51/100请求返回对应数量；总并集无重漏；101按Nacos兼容截100；类型转换沿BC14先采HTTP baseline再冻结 | 明确页大小变化，避免无依据收紧绑定 |
 | IT-C09-02 | GET /agents 的时间过滤、排序、引号/AND/非法表达式 | 原成功结果保持；非法表达式 E400；不引入 POST context 参数 | 既有行为保持 |
 | IT-C09-03 | F-TYPE，跟随 url 下载；切换表示/精确版本/digest/offline | 两表示 identifier 相同、URL不同；正确制品内容/类型；错误digest/下线 E404；缺必需参数 E400；ZIP资源齐全 | 既有 Artifact 语义保持 |
 | IT-C09-04 | 固定不同name/time资源，真实GET排序/过滤 | 集合和顺序符合before；错误filter受控，大小写/时间边界可重现 | 前后差异见兼容审计，正常场景对照保持 |
-| IT-C09-05 | 105条候选，GET/POST各发整数、字符串"10"、10.5、true、对象、null、超int边界 | 整数确定预期；模糊coercion先采before、after保持；实际不可转换错误单列原有错误映射缺口；页大小跨50迁移与每页调整 | 前后差异见兼容审计，正常场景对照保持 |
+| IT-C09-05 | 105条候选，GET/POST各发整数、字符串"10"、10.5、true、对象、null、超int边界 | 整数确定预期；模糊coercion先采before、after保持；GET不可转换值400 INVALID_ARGUMENT、坏凭据401优先；POST既有转换保持；页大小跨50迁移与每页调整 | 前后差异见兼容审计，正常场景对照保持 |
 
 IT-C09-02的List响应同样做双版Schema与旧字段基线比较，items内保留完整既有投影，
 不得退化为仅identifier。空集合、可选字段缺省与有值样本都需覆盖；D07已登记的旧示例

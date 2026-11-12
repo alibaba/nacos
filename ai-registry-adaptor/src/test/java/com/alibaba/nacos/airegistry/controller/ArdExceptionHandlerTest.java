@@ -17,6 +17,9 @@
 package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.airegistry.model.ard.ArdErrorResponse;
+import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
+import com.alibaba.nacos.airegistry.service.ard.ArdArtifactService;
+import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -25,13 +28,26 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * Tests for {@link ArdExceptionHandler}.
@@ -39,6 +55,59 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author nacos
  */
 class ArdExceptionHandlerTest {
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"10.5", "true", "abc", "2147483648", "-2147483649"})
+    void shouldRejectInvalidPageSizeBeforeCallingService(String pageSize) throws Exception {
+        ArdSearchService service = mock(ArdSearchService.class);
+        
+        MockHttpServletResponse response = mvc(service)
+            .perform(get("/v3/ai/ard/agents").param("pageSize", pageSize))
+            .andReturn().getResponse();
+        
+        assertEquals(400, response.getStatus());
+        JsonNode body = JacksonUtils.toObj(response.getContentAsString());
+        assertEquals(2, body.size());
+        assertEquals("INVALID_ARGUMENT", body.path("errorCode").asText());
+        assertTrue(body.path("message").asText().contains("pageSize"));
+        verifyNoInteractions(service);
+    }
+    
+    @Test
+    void shouldKeepValidPageSizeBinding() throws Exception {
+        ArdSearchService service = mock(ArdSearchService.class);
+        when(service.list(null, null, null, 10, null)).thenReturn(new ArdListResponse());
+        
+        MockHttpServletResponse response = mvc(service)
+            .perform(get("/v3/ai/ard/agents").param("pageSize", "10"))
+            .andReturn().getResponse();
+        
+        assertEquals(200, response.getStatus());
+        verify(service).list(null, null, null, 10, null);
+    }
+    
+    @Test
+    void shouldKeepUnexpectedServiceFailureAsInternalError() throws Exception {
+        ArdSearchService service = mock(ArdSearchService.class);
+        when(service.list(null, null, null, 10, null))
+            .thenThrow(new IllegalStateException("internal detail"));
+        
+        MockHttpServletResponse response = mvc(service)
+            .perform(get("/v3/ai/ard/agents").param("pageSize", "10"))
+            .andReturn().getResponse();
+        
+        assertEquals(500, response.getStatus());
+        JsonNode body = JacksonUtils.toObj(response.getContentAsString());
+        assertEquals(2, body.size());
+        assertEquals("INTERNAL_ERROR", body.path("errorCode").asText());
+        assertEquals("Internal server error", body.path("message").asText());
+    }
+    
+    private MockMvc mvc(ArdSearchService service) {
+        return MockMvcBuilders
+            .standaloneSetup(new ArdSearchController(service, mock(ArdArtifactService.class)))
+            .setControllerAdvice(new ArdExceptionHandler()).build();
+    }
     
     @Test
     void shouldReturnArdErrorWithoutNacosEnvelope() {
@@ -71,6 +140,34 @@ class ArdExceptionHandlerTest {
         assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getErrorCode());
         assertEquals(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
             response.getBody().getMessage());
+    }
+    
+    @ParameterizedTest
+    @CsvSource({"403, 403, PERMISSION_DENIED", "404, 404, NOT_FOUND",
+        "599, 500, INTERNAL_ERROR"})
+    void shouldMapServiceErrorStatus(int serviceStatus, int httpStatus, String errorCode) {
+        ArdExceptionHandler handler = new ArdExceptionHandler();
+        
+        ResponseEntity<ArdErrorResponse> response = handler.handleNacosException(
+            new NacosException(serviceStatus, "operation rejected"));
+        
+        assertEquals(httpStatus, response.getStatusCode().value());
+        assertEquals(errorCode, response.getBody().getErrorCode());
+        assertEquals("operation rejected", response.getBody().getMessage());
+    }
+    
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " "})
+    void shouldUseReasonPhraseForMissingValidationMessage(String message) {
+        ArdExceptionHandler handler = new ArdExceptionHandler();
+        
+        ResponseEntity<ArdErrorResponse> response =
+            handler.handleInvalidArgument(new IllegalArgumentException(message));
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("INVALID_ARGUMENT", response.getBody().getErrorCode());
+        assertEquals(HttpStatus.BAD_REQUEST.getReasonPhrase(), response.getBody().getMessage());
     }
     
     @Test
