@@ -263,6 +263,32 @@ Configuration refresh rules:
 - Keys removed while the process runs are not visible to a refresh and require a
   restart; environment variables do not trigger a refresh.
 
+Console configuration API rules:
+
+- `GET /v3/console/copilot/config` returns the editable stored fields (`model`,
+  `studioUrl`, `studioProject`, `selectedConnection`), the sanitized connection
+  list, and the routed `activeConnection`. Each connection exposes `name`,
+  `providerId`, `displayName`, `model`, `source`, `enabled`, `available`,
+  `unavailableReason`, and `apiKeyConfigured`; the stored api key is returned
+  masked and no credential appears in the connection metadata.
+- `POST /v3/console/copilot/config` accepts only `apiKey`, `model`, `studioUrl`,
+  `studioProject`, and `selectedConnection`; other fields are ignored. A field
+  absent from the request keeps its stored value.
+- The api key is three-state: absent or masked keeps the stored key, a non-blank
+  value replaces it, and a blank value clears a stored key and marks the
+  `legacy` connection so it no longer falls back to `COPILOT_API_KEY`. A blank
+  value without a stored key is a no-op, so an untouched legacy console form
+  does not start blocking the environment. An explicit deployment
+  `nacos.copilot.apiKey` still applies through the regular precedence.
+- `selectedConnection` is trimmed before it is stored; an empty value clears the
+  stored selection so routing uses the default order. The console does not
+  validate the name, so an unresolvable selection keeps the stored value and
+  falls back with the refresh warning.
+- The stored api key and model remain editable only as a deprecation path for
+  the `legacy` connection: new deployments declare
+  `nacos.copilot.connections.*`, and the console presents these fields as
+  deprecated, only when the `legacy` connection exists.
+
 Rules:
 
 - Copilot is a console-side assistant integration. It does not redefine AI

@@ -16,14 +16,19 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.console.model.ai.ConsoleCopilotConfig;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
+import com.alibaba.nacos.copilot.connection.ConnectionSource;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
+import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +42,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Collections;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,42 +86,55 @@ class ConsoleCopilotConfigControllerTest {
     }
     
     @Test
-    void testGetConfigReturnsSimplifiedConfig() throws Exception {
-        CopilotProperties config = new CopilotProperties();
-        config.setApiKey("test-key");
-        config.setModel("qwen-plus");
-        config.setStudioUrl("http://studio.example.com");
-        config.setStudioProject("TestProject");
+    void testGetConfigMasksStoredApiKey() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("test-api-key-1234");
+        stored.setModel("qwen-plus");
+        stored.setStudioUrl("http://studio.example.com");
+        stored.setStudioProject("TestProject");
+        stored.setSelectedConnection("legacy");
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
-            .thenReturn(configDetail(config));
+            .thenReturn(configDetail(stored));
+        when(agentManager.getConnectionStatus()).thenReturn(statusOf("legacy"));
         
-        MockHttpServletResponse response = mockMvc.perform(
-            get("/v3/console/copilot/config"))
-            .andExpect(status().isOk()).andReturn().getResponse();
+        ConsoleCopilotConfig result = getConfig();
         
-        Result<CopilotProperties> result = JacksonUtils.toObj(
-            response.getContentAsString(), new TypeReference<>() {
-            });
-        assertNotNull(result.getData());
-        assertEquals("test-key", result.getData().getApiKey());
-        assertEquals("qwen-plus", result.getData().getModel());
-        assertEquals("http://studio.example.com", result.getData().getStudioUrl());
-        assertEquals("TestProject", result.getData().getStudioProject());
+        assertEquals("te******34", result.getApiKey());
+        assertNotEquals("test-api-key-1234", result.getApiKey());
+        assertEquals("qwen-plus", result.getModel());
+        assertEquals("http://studio.example.com", result.getStudioUrl());
+        assertEquals("TestProject", result.getStudioProject());
+        assertEquals("legacy", result.getSelectedConnection());
+        assertEquals("legacy", result.getActiveConnection());
+        assertEquals(1, result.getConnections().size());
+        assertEquals("legacy", result.getConnections().get(0).getName());
     }
     
     @Test
     void testGetConfigReturnsDefaultWhenNull() throws Exception {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(agentManager.getConnectionStatus()).thenReturn(statusOf(null));
         
-        MockHttpServletResponse response = mockMvc.perform(
-            get("/v3/console/copilot/config"))
-            .andExpect(status().isOk()).andReturn().getResponse();
+        ConsoleCopilotConfig result = getConfig();
         
-        Result<CopilotProperties> result = JacksonUtils.toObj(
-            response.getContentAsString(), new TypeReference<>() {
-            });
-        assertNotNull(result.getData());
-        assertNull(result.getData().getApiKey());
+        assertNotNull(result);
+        assertNull(result.getApiKey());
+        assertEquals("qwen-turbo", result.getModel());
+        assertEquals("NacosCopilot", result.getStudioProject());
+        assertNull(result.getActiveConnection());
+    }
+    
+    @Test
+    void testGetConfigReturnsDefaultWhenReadFails() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenThrow(new RuntimeException("read failed"));
+        when(agentManager.getConnectionStatus()).thenReturn(statusOf(null));
+        
+        ConsoleCopilotConfig result = getConfig();
+        
+        assertNotNull(result);
+        assertNull(result.getApiKey());
+        assertEquals("qwen-turbo", result.getModel());
     }
     
     @Test
@@ -120,7 +142,7 @@ class ConsoleCopilotConfigControllerTest {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
-        String body = "{\"apiKey\":\"new-key\",\"model\":\"qwen-max\","
+        String body = "{\"apiKey\":\"new-key-1234\",\"model\":\"qwen-max\","
             + "\"studioUrl\":\"http://new.url\",\"studioProject\":\"Proj\"}";
         
         MockHttpServletResponse response = mockMvc.perform(
@@ -146,25 +168,143 @@ class ConsoleCopilotConfigControllerTest {
         assertEquals("Copilot configuration", configFormCaptor.getValue().getDesc());
         assertEquals("json", configFormCaptor.getValue().getType());
         assertEquals("http", requestInfoCaptor.getValue().getSrcType());
+        Map<String, Object> saved = savedConfig();
+        assertEquals("new-key-1234", saved.get("apiKey"));
+        assertEquals("qwen-max", saved.get("model"));
     }
     
     @Test
-    void testSaveConfigUpdatesExistingConfig() throws Exception {
+    void testSaveConfigKeepsMaskedApiKey() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("keep-me-1234");
+        stored.setModel("old-model");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"apiKey\":\"ke******34\",\"model\":\"new-model\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertEquals("keep-me-1234", saved.get("apiKey"));
+        assertEquals("new-model", saved.get("model"));
+        assertFalse(saved.containsKey("apiKeyCleared"));
+        verify(agentManager).refreshConfig();
+    }
+    
+    @Test
+    void testSaveConfigReplacesApiKey() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("old-key-1234");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"apiKey\":\"new-key-5678\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertEquals("new-key-5678", saved.get("apiKey"));
+        assertFalse(saved.containsKey("apiKeyCleared"));
+    }
+    
+    @Test
+    void testSaveConfigClearsApiKeyAndBlocksEnvironmentFallback() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("old-key-1234");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"apiKey\":\"\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertEquals("", saved.get("apiKey"));
+        assertEquals(Boolean.TRUE, saved.get("apiKeyCleared"));
+        verify(agentManager).refreshConfig();
+    }
+    
+    @Test
+    void testSaveConfigEmptyApiKeyWithoutStoredKeyKeepsEnvironmentFallback() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setModel("qwen-plus");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"apiKey\":\"\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertFalse(saved.containsKey("apiKeyCleared"));
+        assertNull(saved.get("apiKey"));
+        assertEquals("qwen-plus", saved.get("model"));
+    }
+    
+    @Test
+    void testSaveConfigPreservesFieldsAbsentFromRequest() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("keep-me-1234");
+        stored.setModel("keep-model");
+        stored.setStudioUrl("keep-url");
+        stored.setStudioProject("keep-proj");
+        stored.setSelectedConnection("keep-connection");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"model\":\"new-model\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertEquals("keep-me-1234", saved.get("apiKey"));
+        assertEquals("new-model", saved.get("model"));
+        assertEquals("keep-url", saved.get("studioUrl"));
+        assertEquals("keep-proj", saved.get("studioProject"));
+        assertEquals("keep-connection", saved.get("selectedConnection"));
+    }
+    
+    @Test
+    void testSaveConfigWritesTrimmedSelectedConnection() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"selectedConnection\":\"  prod-qwen  \"}");
+        
+        assertEquals("prod-qwen", savedConfig().get("selectedConnection"));
+    }
+    
+    @Test
+    void testSaveConfigClearsSelectedConnection() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("prod-qwen");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"selectedConnection\":\"   \"}");
+        
+        assertFalse(savedConfig().containsKey("selectedConnection"));
+    }
+    
+    @Test
+    void testSaveConfigWithExplicitNullFieldsPreservesExisting() throws Exception {
         CopilotProperties existing = new CopilotProperties();
-        existing.setApiKey("old-key");
-        existing.setModel("old-model");
+        existing.setApiKey("keep-this-key");
+        existing.setModel("keep-model");
+        existing.setStudioUrl("keep-url");
+        existing.setStudioProject("keep-proj");
+        existing.setSelectedConnection("keep-connection");
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
             .thenReturn(configDetail(existing));
         when(configProxy.publishConfig(any(), any())).thenReturn(true);
         
-        String body = "{\"apiKey\":\"new-key\"}";
+        String body = "{\"apiKey\":null,\"model\":null,\"studioUrl\":null,"
+            + "\"studioProject\":null,\"selectedConnection\":null}";
+        saveConfig(body);
         
-        mockMvc.perform(post("/v3/console/copilot/config")
-            .contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().isOk());
-        
-        verify(configProxy).publishConfig(any(), any());
-        verify(agentManager).refreshConfig();
+        Map<String, Object> saved = savedConfig();
+        assertEquals("keep-this-key", saved.get("apiKey"));
+        assertEquals("keep-model", saved.get("model"));
+        assertEquals("keep-url", saved.get("studioUrl"));
+        assertEquals("keep-proj", saved.get("studioProject"));
+        assertEquals("keep-connection", saved.get("selectedConnection"));
     }
     
     @Test
@@ -172,11 +312,9 @@ class ConsoleCopilotConfigControllerTest {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(configProxy.publishConfig(any(), any())).thenReturn(false);
         
-        String body = "{\"apiKey\":\"key\"}";
-        
         MockHttpServletResponse response = mockMvc.perform(
             post("/v3/console/copilot/config")
-                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"apiKey\":\"key-1234\"}"))
             .andExpect(status().isOk()).andReturn().getResponse();
         
         Result<Boolean> result = JacksonUtils.toObj(
@@ -186,48 +324,45 @@ class ConsoleCopilotConfigControllerTest {
         verify(agentManager, never()).refreshConfig();
     }
     
-    @Test
-    void testSaveConfigWithExplicitNullFieldsPreservesExisting() throws Exception {
-        CopilotProperties existing = new CopilotProperties();
-        existing.setApiKey("keep-this");
-        existing.setModel("keep-model");
-        existing.setStudioUrl("keep-url");
-        existing.setStudioProject("keep-proj");
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
-            .thenReturn(configDetail(existing));
-        when(configProxy.publishConfig(any(), any())).thenReturn(true);
-        
-        String body = "{\"apiKey\":null,\"model\":null,\"studioUrl\":null,"
-            + "\"studioProject\":null}";
-        
-        mockMvc.perform(post("/v3/console/copilot/config")
-            .contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().isOk());
-        
-        ArgumentCaptor<ConfigForm> captor = ArgumentCaptor.forClass(ConfigForm.class);
-        verify(configProxy).publishConfig(captor.capture(), any());
-        CopilotProperties actual = JacksonUtils.toObj(captor.getValue().getContent(),
-            CopilotProperties.class);
-        assertEquals("keep-this", actual.getApiKey());
-        assertEquals("keep-model", actual.getModel());
-        assertEquals("keep-url", actual.getStudioUrl());
-        assertEquals("keep-proj", actual.getStudioProject());
-    }
-    
-    @Test
-    void testGetConfigReturnsDefaultWhenReadFails() throws Exception {
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
-            .thenThrow(new RuntimeException("read failed"));
-        
+    private ConsoleCopilotConfig getConfig() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(
             get("/v3/console/copilot/config"))
             .andExpect(status().isOk()).andReturn().getResponse();
-        
-        Result<CopilotProperties> result = JacksonUtils.toObj(
+        Result<ConsoleCopilotConfig> result = JacksonUtils.toObj(
             response.getContentAsString(), new TypeReference<>() {
             });
         assertNotNull(result.getData());
-        assertNull(result.getData().getApiKey());
+        return result.getData();
+    }
+    
+    private void saveConfig(String body) throws Exception {
+        mockMvc.perform(post("/v3/console/copilot/config")
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk());
+    }
+    
+    private Map<String, Object> savedConfig() throws Exception {
+        ArgumentCaptor<ConfigForm> captor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configProxy).publishConfig(captor.capture(), any());
+        Map<String, Object> saved = JacksonUtils.toObj(captor.getValue().getContent(),
+            new TypeReference<>() {
+            });
+        assertNotNull(saved);
+        return saved;
+    }
+    
+    private CopilotConnectionStatus statusOf(String activeConnection) {
+        CopilotModelConnection connection = CopilotModelConnection.builder()
+            .name("legacy")
+            .providerId("dashscope")
+            .displayName("Legacy DashScope")
+            .model("qwen-plus")
+            .source(ConnectionSource.LEGACY)
+            .priority(100)
+            .apiKey("configured-key")
+            .build();
+        return new CopilotConnectionStatus(
+            Collections.singletonList(CopilotConnectionInfo.from(connection)), activeConnection);
     }
     
     private ConfigDetailInfo configDetail(CopilotProperties config) {

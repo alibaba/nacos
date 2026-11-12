@@ -29,6 +29,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -86,5 +87,31 @@ class LegacyConfigProviderReaderTest {
         CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
         
         assertEquals("env-key", connection.getApiKey());
+    }
+    
+    @Test
+    void testReadBlocksEnvironmentApiKeyWhenConsoleClearedIt() {
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey("");
+        config.setApiKeyCleared(Boolean.TRUE);
+        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
+        
+        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        
+        assertEquals("", connection.getApiKey());
+    }
+    
+    @Test
+    void testReadUsesDeploymentApiKeyWhenConsoleClearedStoredKey() {
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey("deploy-key");
+        config.setApiKeyCleared(Boolean.TRUE);
+        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
+        
+        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        
+        assertEquals("deploy-key", connection.getApiKey());
     }
 }

@@ -18,6 +18,8 @@ package com.alibaba.nacos.copilot.config;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.connection.ConnectionTable;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
 import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
@@ -36,6 +38,8 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -136,6 +140,29 @@ public class CopilotAgentManager {
      */
     public CopilotProperties getConfig() {
         return snapshot.getConfig();
+    }
+    
+    /**
+     * Get the sanitized connection metadata for the console.
+     *
+     * <p>The returned view never carries a credential, so it can be published through the
+     * console API.
+     *
+     * @return connections in selection order and the one serving requests
+     */
+    public CopilotConnectionStatus getConnectionStatus() {
+        RuntimeSnapshot current = snapshot;
+        CopilotProperties config = current.getConfig();
+        String selectedConnection = config == null ? null : config.getSelectedConnection();
+        ConnectionTable connectionTable = current.getConnectionTable();
+        List<CopilotConnectionInfo> connections = new ArrayList<>();
+        for (CopilotModelConnection connection : connectionTable.getAll()) {
+            connections.add(CopilotConnectionInfo.from(connection));
+        }
+        CopilotModelConnection active =
+            modelRouter.route(connectionTable, selectedConnection);
+        return new CopilotConnectionStatus(connections,
+            active == null ? null : active.getName());
     }
     
     /**
@@ -294,6 +321,7 @@ public class CopilotAgentManager {
         copy.setEnabled(source.isEnabled());
         copy.setDefaultNamespace(source.getDefaultNamespace());
         copy.setApiKey(source.getApiKey());
+        copy.setApiKeyCleared(source.getApiKeyCleared());
         copy.setModel(source.getModel());
         copy.setStudioUrl(source.getStudioUrl());
         copy.setStudioProject(source.getStudioProject());

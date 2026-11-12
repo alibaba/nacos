@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.copilot.config;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.copilot.connection.ConnectionSource;
 import com.alibaba.nacos.copilot.connection.ConnectionTable;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionValidator;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
@@ -269,6 +272,68 @@ class CopilotAgentManagerTest {
         
         // Then
         assertNotNull(config);
+    }
+    
+    @Test
+    void testGetConnectionStatusReturnsSanitizedConnections() {
+        // Given
+        CopilotModelConnection connection = buildConnection("super-secret-key");
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
+        when(defaultProperties.getSelectedConnection()).thenReturn("legacy");
+        when(modelRouter.route(any(), eq("legacy"))).thenReturn(connection);
+        copilotAgentManager.refreshConfig();
+        
+        // When
+        CopilotConnectionStatus status = copilotAgentManager.getConnectionStatus();
+        
+        // Then
+        assertEquals(1, status.getConnections().size());
+        CopilotConnectionInfo info = status.getConnections().get(0);
+        assertEquals("legacy", info.getName());
+        assertEquals("dashscope", info.getProviderId());
+        assertEquals("qwen-plus", info.getModel());
+        assertEquals(ConnectionSource.LEGACY, info.getSource());
+        assertTrue(info.isEnabled());
+        assertTrue(info.isAvailable());
+        assertNull(info.getUnavailableReason());
+        assertTrue(info.isApiKeyConfigured());
+        assertEquals("legacy", status.getActiveConnection());
+        assertFalse(JacksonUtils.toJson(status).contains("super-secret-key"));
+    }
+    
+    @Test
+    void testGetConnectionStatusReportsNoActiveConnection() {
+        // Given
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(modelRouter.route(any(), any())).thenReturn(null);
+        copilotAgentManager.refreshConfig();
+        
+        // When
+        CopilotConnectionStatus status = copilotAgentManager.getConnectionStatus();
+        
+        // Then
+        assertTrue(status.getConnections().isEmpty());
+        assertNull(status.getActiveConnection());
+    }
+    
+    @Test
+    void testRefreshKeepsClearedApiKeyMarker() {
+        // Given
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("");
+        stored.setApiKeyCleared(Boolean.TRUE);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        // When
+        copilotAgentManager.refreshConfig();
+        
+        // Then
+        assertEquals(Boolean.TRUE, copilotAgentManager.getConfig().getApiKeyCleared());
+        assertEquals("", copilotAgentManager.getConfig().getApiKey());
     }
     
     @Test

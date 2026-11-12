@@ -84,6 +84,12 @@ public class LegacyConfigProviderReader implements ProviderReader {
     }
     
     private String resolveApiKey(CopilotProperties config) {
+        if (Boolean.TRUE.equals(config.getApiKeyCleared())) {
+            // The console cleared the stored key, so the process environment must not revive
+            // the credential behind the operator's back. An explicit deployment key still
+            // applies through the effective configuration value itself.
+            return config.getApiKey();
+        }
         String apiKey = environment.getProperty(ENV_API_KEY);
         if (StringUtils.isNotBlank(apiKey)) {
             return apiKey;

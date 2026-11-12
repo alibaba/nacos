@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -30,11 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Scenario coverage:
  * <ul>
- *     <li>Expected capability: console config save persists the visible API key, model, studio URL, and studio
- *     project fields; a subsequent read returns the configuration shape used by the controller.</li>
+ *     <li>Expected capability: console config save persists the api key, model, studio URL, and studio project
+ *     fields; a subsequent read returns the api key masked together with the connection metadata used by the
+ *     console.</li>
  *     <li>Boundary/validation: SSE skill/prompt generation, optimization, and debug endpoints accept empty request
  *     bodies as a controlled error event and validate required JSON fields before invoking any LLM provider; config
- *     fields outside the four editable fields are accepted but ignored by the save path.</li>
+ *     fields outside the editable fields are accepted but ignored by the save path.</li>
  *     <li>Exception/error handling: malformed config bodies return HTTP 400, and Copilot SSE validation failures
  *     complete with an {@code error} event instead of surfacing an HTTP 500 or hanging stream.</li>
  * </ul>
@@ -49,6 +51,8 @@ public class CopilotConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
 
     private static final String COPILOT_CONFIG_GROUP = "nacos-copilot";
 
+    private static final String SAVED_API_KEY = "openapi-it-key";
+
     @Test
     public void testCopilotConfigSaveAndGetSuccess() throws Exception {
         addCleanup(() -> deleteQuietly(CONFIG_PATH, Query.newInstance()
@@ -57,19 +61,19 @@ public class CopilotConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
                 .addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("tag", "")));
 
-        String configJson = "{\"apiKey\":\"openapi-it-key\",\"model\":\"openapi-it-model\","
+        String configJson = "{\"apiKey\":\"" + SAVED_API_KEY + "\",\"model\":\"openapi-it-model\","
                 + "\"studioUrl\":\"http://127.0.0.1/studio\","
                 + "\"studioProject\":\"openapi-it-project\",\"enabled\":false}";
         JsonNode saved = postJsonOk(CONSOLE_COPILOT_CONFIG_PATH, Query.EMPTY, configJson);
         assertTrue(saved.get("data").asBoolean(), saved.toString());
 
         JsonNode data = getJsonOk(CONSOLE_COPILOT_CONFIG_PATH, Query.EMPTY).get("data");
-        assertEquals("openapi-it-key", data.get("apiKey").asText(), data.toString());
+        assertEquals("op******ey", data.get("apiKey").asText(), data.toString());
         assertEquals("openapi-it-model", data.get("model").asText(), data.toString());
         assertEquals("http://127.0.0.1/studio", data.get("studioUrl").asText(), data.toString());
         assertEquals("openapi-it-project", data.get("studioProject").asText(), data.toString());
-        assertTrue(data.get("enabled").asBoolean(), data.toString());
-        assertEquals(DEFAULT_NAMESPACE, data.get("defaultNamespace").asText(), data.toString());
+        assertTrue(data.get("connections").isArray(), data.toString());
+        assertFalse(data.get("connections").isEmpty(), data.toString());
     }
 
     @Test

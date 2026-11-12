@@ -200,6 +200,24 @@ nacos.copilot.selectedConnection=prod-qwen
 - 纯控制台部署不监听配置文件，必须重启生效。
 - 运行中删除的配置键不会在刷新时消失，需要重启；环境变量不会触发热更新。
 
+控制台配置 API 规则：
+
+- `GET /v3/console/copilot/config` 返回可编辑的已存字段（`model`、`studioUrl`、
+  `studioProject`、`selectedConnection`）、脱敏后的连接列表，以及路由得到的
+  `activeConnection`。每个连接只暴露 `name`、`providerId`、`displayName`、`model`、
+  `source`、`enabled`、`available`、`unavailableReason` 和 `apiKeyConfigured`；已保存的
+  apiKey 以掩码返回，连接元数据中不包含任何凭据。
+- `POST /v3/console/copilot/config` 只接受 `apiKey`、`model`、`studioUrl`、
+  `studioProject` 和 `selectedConnection`，其他字段被忽略；请求中缺失的字段保留已存值。
+- apiKey 为三态：缺失或掩码值保留已存密钥；非空值替换密钥；空值清除已存密钥，并标记
+  `legacy` 连接不再回退到 `COPILOT_API_KEY`。没有已存密钥时提交空值是无操作，避免未改动的
+  旧版控制台表单开始阻断环境变量。部署配置显式设置的 `nacos.copilot.apiKey` 仍按既有优先级
+  生效。
+- `selectedConnection` 写入前会去除首尾空白；空值清除已存选择，路由回到默认顺序。控制台不
+  校验连接名，无法解析的选择会保留已存值，并在刷新时回退并告警。
+- 已存的 apiKey 与 model 仅作为 `legacy` 连接的废弃路径保留可编辑：新部署应声明
+  `nacos.copilot.connections.*`，控制台只在 `legacy` 连接存在时以废弃样式展示这些字段。
+
 规则：
 
 - Copilot 是控制台侧 assistant 集成。它不重新定义 AI Registry resource lifecycle、Config
