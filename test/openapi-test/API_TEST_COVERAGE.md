@@ -16,6 +16,13 @@
 
 # OpenAPI IT Coverage Registry
 
+Config HTTP namespace resolution is additionally verified by
+`ConfigNamespaceResolutionOpenApiITCase` and the existing Config functional ITs.
+The [namespace scenario matrix](CONFIG_NAMESPACE_API_TEST_SCENARIOS.md) records
+the affected operations, parser/Controller fields, defaults, binding boundaries,
+clone source READ / target WRITE checks, and compatibility scope. These scenarios
+strengthen existing surface rows; classifications and coverage totals are unchanged.
+
 This registry records which Nacos HTTP APIs are covered by
 `test/openapi-test` integration tests and where to find the scenario matrix for
 each API surface. It is meant for maintainers and agents to quickly locate

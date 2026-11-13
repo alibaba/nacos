@@ -30,6 +30,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.config.server.auth.ConfigCloneHttpResourceParser;
+import com.alibaba.nacos.config.server.auth.ConfigExportHttpResourceParser;
+import com.alibaba.nacos.config.server.auth.ConfigNamespaceHttpResourceParser;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -181,7 +184,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @DeleteMapping("/batchDelete")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
+        parser = ConfigNamespaceHttpResourceParser.class)
     public Result<Boolean> batchDeleteConfigs(HttpServletRequest request,
         @RequestParam(value = "ids") List<Long> ids,
         @RequestParam(value = "namespaceId", required = false) String namespaceId)
@@ -330,7 +334,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @GetMapping("/export2")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
+        parser = ConfigExportHttpResourceParser.class)
     public ResponseEntity<byte[]> exportConfigV2(ConfigFormV3 configForm,
         @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
         configForm.blurSearchValidate();
@@ -358,7 +363,8 @@ public class ConsoleConfigController {
      */
     @Since("3.0.0")
     @PostMapping("/import")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
+        parser = ConfigNamespaceHttpResourceParser.class)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
         @RequestParam(required = false) String srcUser,
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -392,6 +398,7 @@ public class ConsoleConfigController {
     @Since("3.0.0")
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API,
+        parser = ConfigCloneHttpResourceParser.class,
         tags = {
             com.alibaba.nacos.plugin.auth.constant.Constants.Tag.SECURED_SPECIAL_TAGS})
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,

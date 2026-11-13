@@ -50,6 +50,29 @@ Config 管理 API 或 SDK 请求中接受存储 ID 仅属于兼容行为，应�
 管理 API 不得把存储 ID 作为选择器暴露；现有 `ids` 或 `configId` 等选择器应在兼容窗口后移除，
 并迁移到以 `namespaceId`、`groupName`、`dataId` 或这些身份元组列表为基础的选择模型。
 
+### HTTP 命名空间解析
+
+Config v3 HTTP 鉴权与 Controller 执行使用相同的命名空间字段。普通 v3 API 使用
+`namespaceId` 解析鉴权资源，即使该字段缺省或为空，资源解析阶段也忽略 `tenant`。
+空值归一化为 `public`。参数校验提取器保留现有的别名校验行为，该独立校验阶段不在
+本次重构范围内。
+
+Admin clone 的目标字段为 `namespaceId`，源字段为 `sourceNamespaceId`；Console clone
+的目标字段为 `targetNamespaceId`，源字段为 `namespaceId`。显式空目标表示 `public`，
+不能回退到源。保留同命名空间克隆的源默认语义：源缺省或为空时使用目标。目标 WRITE 与
+源 READ 权限独立检查。
+
+clone、import、export 和 batch delete 使用专用资源解析器。每个命名空间字段接受一个
+显式值，拒绝重复值（包括相同值重复），并在主字段缺省时拒绝 `field[]`。export 使用
+表单绑定，主字段缺省时还拒绝 `!namespaceId`；显式主字段优先于这些回退字段。
+标量请求参数不解释 `!field`。会绑定为命名空间的 multipart 文件字段被拒绝；检查仅
+读取 Part 元数据，不读取文件内容或请求输入流。
+
+这些检查沿用现有鉴权链路，保留关闭鉴权和服务端身份的绕过语义，不改变普通 v3 的 MVC
+绑定、不扩大鉴权接口范围，也不引入旧版 `tenant` 别名规则。上述管理接口的调用方须发送
+单一文本命名空间字段；资源鉴权启用时不再接受绑定替代字段或重复值。存储 ID 的对象归属
+检查仍然必须执行。
+
 ## 2. 内容与版本字段
 
 | 字段 | 含义 |

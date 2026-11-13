@@ -43,6 +43,21 @@ import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.core.auth.AuthAdminFilter;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.web.MockPart;
+import org.springframework.test.web.servlet.MvcResult;
+import java.lang.reflect.Method;
+import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +75,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -92,6 +108,8 @@ class ConfigControllerV3Test {
     
     private MockMvc mockmvc;
     
+    private ConfigurableEnvironment previousEnvironment;
+    
     @MockitoBean
     private ServletContext servletContext;
     
@@ -118,6 +136,7 @@ class ConfigControllerV3Test {
     
     @BeforeEach
     void setUp() {
+        previousEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
         configControllerV3 =
@@ -128,6 +147,146 @@ class ConfigControllerV3Test {
                 configListenerStateDelegate,
                 configCloneService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();
+    }
+    
+    @Test
+    void testMvcFormDefaultsAndExplicitNamespacePrecedence() throws Exception {
+        mockmvc.perform(MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/export")
+            .param("!namespaceId", "fallback")).andReturn();
+        Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(any(), any(),
+            eq("fallback"), any(), any());
+        mockmvc.perform(MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/export")
+            .param("namespaceId", "selected").param("!namespaceId", "fallback")
+            .param("namespaceId[]", "array")).andReturn();
+        Mockito.verify(configInfoPersistService).findAllConfigInfo4Export(any(), any(),
+            eq("selected"), any(), any());
+    }
+    
+    @Test
+    void testMvcRepeatedScalarNamespaceAndServerIdentityBypass() throws Exception {
+        MvcResult result = performWithNamespaceAuth("cloneConfig",
+            MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH + "/clone")
+                .header("test-server-identity", "server").param("namespaceId", "first", "second")
+                .contentType("application/json").content("[]"),
+            "different", true);
+        assertEquals(200, result.getResponse().getStatus());
+        Mockito.verify(configCloneService).cloneConfig(any(), eq("first,second"), anyList(),
+            any(), any(), any(), any());
+    }
+    
+    @Test
+    void testCloneAuthUsesExplicitEmptyTargetWithDifferentSource() throws Exception {
+        MvcResult result = performWithNamespaceAuth("cloneConfig",
+            MockMvcRequestBuilders.post("/v3/admin/cs/config/clone")
+                .param("namespaceId", "").param("sourceNamespaceId", "source")
+                .param("tenant", "ignored").contentType("application/json").content("[]"),
+            "public", false);
+        assertEquals(200, result.getResponse().getStatus());
+        Mockito.verify(configCloneService).cloneConfig(eq("source"), eq(""), anyList(),
+            any(), any(), any(), any());
+    }
+    
+    @Test
+    void testCloneAuthRejectsAmbiguousSourceAndTarget() throws Exception {
+        for (String field : new String[] {"namespaceId", "sourceNamespaceId"}) {
+            MvcResult result = performWithNamespaceAuth("cloneConfig",
+                MockMvcRequestBuilders.post("/v3/admin/cs/config/clone")
+                    .param("namespaceId", "target").param(field, "source", "other")
+                    .contentType("application/json").content("[]"),
+                "target", false);
+            assertEquals(400, result.getResponse().getStatus());
+        }
+    }
+    
+    @Test
+    void testCloneAuthPluginFailureAndExceptionPreventExecution() throws Exception {
+        for (boolean thrown : new boolean[] {false, true}) {
+            MvcResult result = performWithNamespaceAuth("cloneConfig",
+                MockMvcRequestBuilders.post("/v3/admin/cs/config/clone")
+                    .param("namespaceId", "target").contentType("application/json").content("[]"),
+                "different", thrown);
+            assertEquals(403, result.getResponse().getStatus());
+        }
+        Mockito.verifyNoInteractions(configCloneService);
+    }
+    
+    @Test
+    void testExportAuthMatchesFormDefaultBinding() throws Exception {
+        for (String field : new String[] {"namespaceId[]", "!namespaceId"}) {
+            MvcResult result = performWithNamespaceAuth("exportConfig",
+                MockMvcRequestBuilders.get("/v3/admin/cs/config/export")
+                    .param(field, "fallback"),
+                "public", false);
+            assertEquals(400, result.getResponse().getStatus());
+        }
+        Mockito.verifyNoInteractions(configInfoPersistService);
+    }
+    
+    @Test
+    void testImportAuthRejectsNamespaceFilePart() throws Exception {
+        MockMultipartHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.multipart("/v3/admin/cs/config/import");
+        builder.part(new MockPart("namespaceId", "namespace.txt", new byte[0]));
+        MvcResult result =
+            performWithNamespaceAuth("importAndPublishConfig", builder, "public", false);
+        assertEquals(400, result.getResponse().getStatus());
+        Mockito.verifyNoInteractions(configInfoPersistService);
+    }
+    
+    @Test
+    void testBatchDeleteAuthRejectsRepeatedNamespace() throws Exception {
+        MvcResult result = performWithNamespaceAuth("deleteConfigs",
+            MockMvcRequestBuilders.delete("/v3/admin/cs/config/batch")
+                .param("namespaceId", "first", "second").param("ids", "1"),
+            "first", false);
+        assertEquals(400, result.getResponse().getStatus());
+        Mockito.verifyNoInteractions(configInfoPersistService);
+    }
+    
+    /**
+     * Exercises the actual auth service/parser and MVC Controller with a scoped plugin double.
+     */
+    private MvcResult performWithNamespaceAuth(String methodName,
+        RequestBuilder request, String allowedNamespace, boolean throwDenied)
+        throws Exception {
+        NacosAuthConfig authConfig = Mockito.mock(NacosAuthConfig.class);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getNacosAuthSystemType()).thenReturn("namespace-test");
+        when(authConfig.getServerIdentityKey()).thenReturn("test-server-identity");
+        when(authConfig.getServerIdentityValue()).thenReturn("server");
+        ControllerMethodsCache cache = Mockito.mock(ControllerMethodsCache.class);
+        Method method = Arrays.stream(ConfigControllerV3.class.getMethods())
+            .filter(candidate -> candidate.getName().equals(methodName)).findFirst().orElseThrow();
+        when(cache.getMethod(any())).thenReturn(method);
+        AuthPluginManager manager = Mockito.mock(AuthPluginManager.class);
+        AuthPluginService plugin = Mockito.mock(AuthPluginService.class);
+        when(manager.findAuthServiceSpiImpl("namespace-test")).thenReturn(Optional.of(plugin));
+        when(plugin.enableAuth(any(), anyString())).thenReturn(true);
+        when(plugin.validateIdentity(any(), any())).thenReturn(AuthResult.successResult());
+        when(plugin.validateAuthority(any(), any())).thenAnswer(invocation -> {
+            Permission permission = invocation.getArgument(1);
+            if (allowedNamespace.equals(permission.getResource().getNamespaceId())) {
+                return AuthResult.successResult();
+            }
+            if (throwDenied) {
+                throw new AccessException("namespace denied");
+            }
+            return AuthResult.failureResult(403, "namespace denied");
+        });
+        try (MockedStatic<AuthPluginManager> mocked = Mockito.mockStatic(AuthPluginManager.class)) {
+            mocked.when(AuthPluginManager::getInstance).thenReturn(manager);
+            AuthAdminFilter filter = new AuthAdminFilter(authConfig, cache);
+            return MockMvcBuilders.standaloneSetup(configControllerV3).addFilters(filter)
+                .build().perform(request).andReturn();
+        } finally {
+            RequestContextHolder.removeContext();
+        }
+    }
+    
+    @AfterEach
+    void restoreNamespaceTestEnvironment() {
+        EnvUtil.setEnvironment(previousEnvironment);
+        RequestContextHolder.removeContext();
     }
     
     @Test

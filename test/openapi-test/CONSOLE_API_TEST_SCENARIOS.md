@@ -16,6 +16,13 @@
 
 # Console API IT Scenario Index
 
+Config HTTP namespace resolution is additionally verified by
+`ConfigNamespaceResolutionOpenApiITCase` and the existing Config functional ITs.
+The [namespace scenario matrix](CONFIG_NAMESPACE_API_TEST_SCENARIOS.md) records
+the affected operations, parser/Controller fields, defaults, binding boundaries,
+clone source READ / target WRITE checks, and compatibility scope. These scenarios
+strengthen existing surface rows; classifications and coverage totals are unchanged.
+
 This document records which console API operations are covered by the
 standalone-server IT classes under
 `src/test/java/com/alibaba/nacos/test/consoleapi`.
