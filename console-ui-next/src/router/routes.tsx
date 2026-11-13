@@ -216,6 +216,14 @@ export const routes: RouteObject[] = [
               {
                 element: <HubGuard />,
                 children: [
+                  { path: 'mcpServerManagement/shared/list', element: lazyPage(() => import('@/pages/hubResourceManagement')) },
+                  { path: 'mcpServerManagement/shared/detail/:hubEntryId', element: lazyPage(() => import('@/pages/hubResourceDetail')) },
+                  { path: 'agentManagement/shared/list', element: lazyPage(() => import('@/pages/hubResourceManagement')) },
+                  { path: 'agentManagement/shared/detail/:hubEntryId', element: lazyPage(() => import('@/pages/hubResourceDetail')) },
+                  { path: 'promptManagement/shared/list', element: lazyPage(() => import('@/pages/hubResourceManagement')) },
+                  { path: 'promptManagement/shared/detail/:hubEntryId', element: lazyPage(() => import('@/pages/hubResourceDetail')) },
+                  { path: 'agentspec/shared/list', element: lazyPage(() => import('@/pages/hubResourceManagement')) },
+                  { path: 'agentspec/shared/detail/:hubEntryId', element: lazyPage(() => import('@/pages/hubResourceDetail')) },
                   {
                     path: 'skill/shared/list',
                     element: lazyPage(() => import('@/pages/hubSkillManagement')),

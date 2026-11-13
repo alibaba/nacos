@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.mcp;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -89,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -187,6 +190,30 @@ class McpLifecycleOperationServiceTest {
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
+    }
+    
+    @Test
+    void hubRevocationFailureStopsLegacyOverwriteOfflineAndDelete() throws Exception {
+        service.createMcpServer(NAMESPACE_ID, server(VERSION_ONE, "original"), null, null, null);
+        HubResourceLifecycleRevoker revoker = mock(HubResourceLifecycleRevoker.class);
+        service.setHubResourceLifecycleRevoker(revoker);
+        when(revoker.around(any(), any(), any())).thenThrow(
+            new NacosException(NacosException.CONFLICT, "publication changed"));
+        String key = storageKey(McpVersionStorageDescriptorSerializer.deserialize(
+            versions.get(VERSION_ONE).getStorage()));
+        McpVersionStorageContents original = contents.get(key);
+        assertNotNull(original);
+        assertThrows(NacosException.class, () -> service.updateMcpServer(NAMESPACE_ID, true,
+            server(VERSION_ONE, "must not overwrite"), null, null, null, true));
+        assertSame(original, contents.get(key));
+        assertThrows(NacosException.class,
+            () -> service.offlineMcpServerVersion(NAMESPACE_ID, MCP_NAME, VERSION_ONE));
+        assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE,
+            versions.get(VERSION_ONE).getStatus());
+        assertThrows(NacosException.class,
+            () -> service.deleteMcpServer(NAMESPACE_ID, MCP_NAME, null, VERSION_ONE));
+        assertNotNull(resource.get());
+        assertNotNull(manifest.get());
     }
     
     @Test

@@ -454,3 +454,6 @@ deprecated.
 ### Console Source Sharing Panel
 
 All five resource detail pages place the same sharing-management card immediately below the resource summary and lifecycle actions, above the content tabs/grid. The card groups share/adjust/unshare and direct cross-namespace copy. Copy authorization is independent of share WRITE/public eligibility; source READ and target WRITE are checked on submission. Skill direct copy reuses the existing management /copy route and requires an enabled online source version; the other four types retain their existing published-version copy rules. An unavailable version leaves the copy button visible and disabled with a reason. Hub-disabled pages show no sharing card. Prompt omits PUBLIC/private eligibility messages and adds no scope control.
+
+
+Hub scope, clone restrictions and service instance behavior follow [Agentic Resource Hub](agentic-resource-hub-spec.md).

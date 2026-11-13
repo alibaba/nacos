@@ -1025,4 +1025,28 @@ class AgentDiscoveryApplicationServiceTest {
         result.setPageItems(new ArrayList<AgentSummary>(Arrays.asList(summaries)));
         return result;
     }
+    
+    @Test
+    void sharedSearchUsesTypedAdapterBeforeOrdinaryIndexOrSourceAccess() throws Exception {
+        com.alibaba.nacos.ai.service.hub.HubAgentReadAdapter adapter =
+            mock(com.alibaba.nacos.ai.service.hub.HubAgentReadAdapter.class);
+        service.setSharedAgentReadAdapter(adapter);
+        AgentSearchRequest request = searchRequest();
+        Page<AgentSummary> page = new Page<>();
+        when(adapter.search(request)).thenReturn(page);
+        assertSame(page, service.search("__nacos_ai_hub__", request));
+        org.mockito.Mockito.verifyNoInteractions(operationService, persistenceService,
+            resourceManager,
+            runtimeRegistryService, searchService);
+    }
+    
+    @Test
+    void asynchronousWatchProjectionCannotParseHubReferencesAsSourceDescriptors() {
+        AgentDiscoveryRequest request = discoveryRequest(null, null, null);
+        request.setNamespaceId("__nacos_ai_hub__");
+        assertThrows(NacosException.class, () -> service.projectCurrentFact(request));
+        org.mockito.Mockito.verifyNoInteractions(operationService, persistenceService,
+            runtimeRegistryService);
+    }
+    
 }

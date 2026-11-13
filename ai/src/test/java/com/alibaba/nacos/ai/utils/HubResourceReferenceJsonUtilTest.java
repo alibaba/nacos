@@ -29,16 +29,16 @@ class HubResourceReferenceJsonUtilTest {
     @Test
     void testBuildAndRoundTrip() throws NacosException {
         HubResourceReference reference =
-                HubResourceReferenceJsonUtil.build(
-                        "222",
-                        101L,
-                        "find-skills",
-                        501L,
-                        "1.0.0");
+            HubResourceReferenceJsonUtil.build(
+                "222",
+                101L,
+                "find-skills",
+                501L,
+                "1.0.0");
         
         String json = HubResourceReferenceJsonUtil.toJson(reference);
         HubResourceReference parsed =
-                HubResourceReferenceJsonUtil.parse(json);
+            HubResourceReferenceJsonUtil.parse(json);
         
         assertEquals(1, parsed.getSchemaVersion());
         assertEquals("HUB_REFERENCE", parsed.getEntryKind());
@@ -52,53 +52,53 @@ class HubResourceReferenceJsonUtilTest {
     @Test
     void testMissingSourceResourceIdShouldFail() {
         String json = "{"
-                + "\"schemaVersion\":1,"
-                + "\"entryKind\":\"HUB_REFERENCE\","
-                + "\"sourceNamespaceId\":\"222\","
-                + "\"sourceName\":\"find-skills\","
-                + "\"sourceVersionId\":501,"
-                + "\"sourceVersion\":\"1.0.0\""
-                + "}";
+            + "\"schemaVersion\":1,"
+            + "\"entryKind\":\"HUB_REFERENCE\","
+            + "\"sourceNamespaceId\":\"222\","
+            + "\"sourceName\":\"find-skills\","
+            + "\"sourceVersionId\":501,"
+            + "\"sourceVersion\":\"1.0.0\""
+            + "}";
         
         assertThrows(NacosException.class,
-                () -> HubResourceReferenceJsonUtil.parse(json));
+            () -> HubResourceReferenceJsonUtil.parse(json));
     }
     
     @Test
     void testWrongEntryKindShouldFail() {
         String json = "{"
-                + "\"schemaVersion\":1,"
-                + "\"entryKind\":\"NORMAL_STORAGE\","
-                + "\"sourceNamespaceId\":\"222\","
-                + "\"sourceResourceId\":101,"
-                + "\"sourceName\":\"find-skills\","
-                + "\"sourceVersionId\":501,"
-                + "\"sourceVersion\":\"1.0.0\""
-                + "}";
+            + "\"schemaVersion\":1,"
+            + "\"entryKind\":\"NORMAL_STORAGE\","
+            + "\"sourceNamespaceId\":\"222\","
+            + "\"sourceResourceId\":101,"
+            + "\"sourceName\":\"find-skills\","
+            + "\"sourceVersionId\":501,"
+            + "\"sourceVersion\":\"1.0.0\""
+            + "}";
         
         assertThrows(NacosException.class,
-                () -> HubResourceReferenceJsonUtil.parse(json));
+            () -> HubResourceReferenceJsonUtil.parse(json));
     }
     
     @Test
     void testUnsupportedSchemaVersionShouldFail() {
         String json = "{"
-                + "\"schemaVersion\":2,"
-                + "\"entryKind\":\"HUB_REFERENCE\","
-                + "\"sourceNamespaceId\":\"222\","
-                + "\"sourceResourceId\":101,"
-                + "\"sourceName\":\"find-skills\","
-                + "\"sourceVersionId\":501,"
-                + "\"sourceVersion\":\"1.0.0\""
-                + "}";
+            + "\"schemaVersion\":2,"
+            + "\"entryKind\":\"HUB_REFERENCE\","
+            + "\"sourceNamespaceId\":\"222\","
+            + "\"sourceResourceId\":101,"
+            + "\"sourceName\":\"find-skills\","
+            + "\"sourceVersionId\":501,"
+            + "\"sourceVersion\":\"1.0.0\""
+            + "}";
         
         assertThrows(NacosException.class,
-                () -> HubResourceReferenceJsonUtil.parse(json));
+            () -> HubResourceReferenceJsonUtil.parse(json));
     }
     
     @Test
     void testMalformedJsonShouldFail() {
         assertThrows(NacosException.class,
-                () -> HubResourceReferenceJsonUtil.parse("{"));
+            () -> HubResourceReferenceJsonUtil.parse("{"));
     }
 }

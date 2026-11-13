@@ -1708,4 +1708,22 @@ class AgentSpecOperationServiceImplTest {
         zos.write(content.getBytes(StandardCharsets.UTF_8));
         zos.closeEntry();
     }
+    
+    @Test
+    void reservedNamespaceRejectsOrdinaryMutationsBeforeStorage() {
+        // Provider registration in setUp calls type(); only request-time interactions matter.
+        org.mockito.Mockito.clearInvocations(storage, externalStorage);
+        String hub = "__nacos_ai_hub__";
+        assertThrows(NacosException.class, () -> service.deleteAgentSpec(hub, "501"));
+        assertThrows(NacosException.class, () -> service.createDraft(hub, "501", null, "1.0.0"));
+        assertThrows(NacosException.class, () -> service.updateLabels(hub, "501", Map.of()));
+        assertThrows(NacosException.class,
+            () -> service.changeOnlineStatus(hub, "501", "PUBLIC", "1.0.0", false));
+        assertThrows(NacosException.class,
+            () -> service.uploadAgentSpecFromZip(hub, new byte[0], true));
+        org.mockito.Mockito.verifyNoInteractions(aiResourcePersistService,
+            aiResourceVersionPersistService,
+            storage, externalStorage);
+    }
+    
 }

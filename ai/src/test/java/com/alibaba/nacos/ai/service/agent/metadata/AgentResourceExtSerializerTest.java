@@ -412,4 +412,28 @@ class AgentResourceExtSerializerTest {
         }
         return result.toString();
     }
+    
+    @Test
+    void transferredOriginRoundTripsWithoutChangingOtherSchemaFields() {
+        AgentResourceExt ext = createMinimalResourceExt();
+        java.util.Map<String, Object> origin = new java.util.LinkedHashMap<>();
+        origin.put("schemaVersion", 1);
+        origin.put("sourceNamespaceId", "source");
+        origin.put("sourceResourceId", 101L);
+        origin.put("sourceName", "same-name");
+        origin.put("sourceVersionId", 201L);
+        origin.put("sourceVersion", "1.0.0");
+        origin.put("importedAt", "2026-10-23T01:00:00Z");
+        ext.setOrigin(origin);
+        origin.put("sourceName", "changed externally");
+        AgentResourceExt restored =
+            AgentResourceExtSerializer.deserialize(AgentResourceExtSerializer.serialize(ext));
+        assertEquals("same-name", restored.getOrigin().get("sourceName"));
+        java.util.Map<String, Object> readCopy = restored.getOrigin();
+        readCopy.put("sourceName", "changed externally");
+        assertEquals("same-name", restored.getOrigin().get("sourceName"));
+        origin.put("untrustedExtra", true);
+        assertThrows(IllegalArgumentException.class, () -> ext.setOrigin(origin));
+    }
+    
 }

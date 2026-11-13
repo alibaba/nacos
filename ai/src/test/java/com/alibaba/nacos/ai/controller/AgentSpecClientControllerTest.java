@@ -21,6 +21,8 @@ import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecQueryForm;
 import com.alibaba.nacos.ai.form.agentspecs.client.AgentSpecSearchForm;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecQueryResult;
+import com.alibaba.nacos.ai.service.hub.HubAgentSpecReadAdapter;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
@@ -42,6 +44,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link AgentSpecClientController}.
@@ -54,6 +58,9 @@ class AgentSpecClientControllerTest {
     
     @Mock
     private AiResourceSearchApplicationService searchService;
+    
+    @Mock
+    private HubAgentSpecReadAdapter sharedAgentSpecs;
     
     private AgentSpecClientController controller;
     
@@ -78,6 +85,34 @@ class AgentSpecClientControllerTest {
         
         assertEquals(1, result.getData().getTotalCount());
         assertEquals("agent-one", result.getData().getPageItems().get(0).getName());
+    }
+    
+    @Test
+    void sharedSearchUsesExistingRouteWithIndependentPagination() throws NacosException {
+        controller.setSharedAgentSpecReadAdapter(sharedAgentSpecs);
+        AgentSpecSearchForm form = new AgentSpecSearchForm();
+        form.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        form.setKeyword("same-name");
+        form.setTagsAll(List.of("stable"));
+        PageForm paging = new PageForm();
+        paging.setPageNo(2);
+        paging.setPageSize(7);
+        Page<AgentSpecBasicInfo> page = new Page<>();
+        page.setPageItems(List.of());
+        when(sharedAgentSpecs.search("same-name", List.of("stable"), 2, 7)).thenReturn(page);
+        
+        assertEquals(page, controller.search(form, paging).getData());
+        verifyNoInteractions(searchService, agentSpecOperationService);
+    }
+    
+    @Test
+    void sharedSearchWithoutInstalledReaderFailsClosed() {
+        AgentSpecSearchForm form = new AgentSpecSearchForm();
+        form.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        assertEquals(NacosException.SERVER_ERROR,
+            assertThrows(NacosException.class, () -> controller.search(form, new PageForm()))
+                .getErrCode());
+        verifyNoInteractions(searchService);
     }
     
     @Test

@@ -44,6 +44,11 @@ class HubSkillTransferAdminControllerTest {
             .setControllerAdvice(new NacosApiExceptionHandler()).build();
     
     @Test
+    void oldCopyEndpointIsRemoved() throws Exception {
+        mvc.perform(post(PATH + "/copy")).andExpect(status().isNotFound());
+    }
+    
+    @Test
     void invalidHubIdsAreControlled400BeforeCallingService() throws Exception {
         for (String value : new String[] {"", "abc", "0", "-1", "9223372036854775808"}) {
             mvc.perform(post(PATH + "/import").param("hubEntryId", value)
@@ -71,7 +76,7 @@ class HubSkillTransferAdminControllerTest {
         mvc.perform(post(PATH + "/import").param("hubEntryId", "1").param("sourceName", "")
             .param("targetNamespaceId", "target-ns").param("targetName", "new-skill"))
             .andExpect(status().isBadRequest());
-        mvc.perform(post(PATH + "/copy").param("sourceNamespaceId", "source-ns")
+        mvc.perform(post(PATH + "/clone").param("sourceNamespaceId", "source-ns")
             .param("sourceName", "original").param("sourceVersion", "latest")
             .param("targetNamespaceId", "target-ns").param("targetName", "new-skill"))
             .andExpect(status().isBadRequest());
@@ -80,14 +85,14 @@ class HubSkillTransferAdminControllerTest {
     
     @Test
     void copyDelegatesConcreteSourceAndTargetSeparately() throws Exception {
-        when(service.copyDirect(any())).thenReturn(new HubSkillTransferResult());
-        mvc.perform(post(PATH + "/copy").param("sourceNamespaceId", "source-ns")
+        when(service.cloneDirect(any())).thenReturn(new HubSkillTransferResult());
+        mvc.perform(post(PATH + "/clone").param("sourceNamespaceId", "source-ns")
             .param("sourceName", "original").param("sourceVersion", "1.0.0")
             .param("targetNamespaceId", "target-ns").param("targetName", "new-skill"))
             .andExpect(status().isOk());
         ArgumentCaptor<HubSkillTransferRequest> captor =
             ArgumentCaptor.forClass(HubSkillTransferRequest.class);
-        verify(service).copyDirect(captor.capture());
+        verify(service).cloneDirect(captor.capture());
         assertEquals("source-ns", captor.getValue().getSourceNamespaceId());
         assertEquals("1.0.0", captor.getValue().getSourceVersion());
     }

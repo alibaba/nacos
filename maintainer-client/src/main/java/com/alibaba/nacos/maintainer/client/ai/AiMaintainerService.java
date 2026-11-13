@@ -16,6 +16,16 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubMcpImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubShareMcpRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -301,4 +311,41 @@ public interface AiMaintainerService extends McpMaintainerService, A2aMaintainer
         return a2a().listAgentCards(namespaceId, agentName, pageNo, pageSize);
     }
     
+    @Override
+    default HubShareResult shareHubMcp(HubShareMcpRequest request) throws NacosException {
+        return mcp().shareHubMcp(request);
+    }
+    
+    @Override
+    default HubShareResult adjustHubMcpShare(HubAdjustShareRequest request) throws NacosException {
+        return mcp().adjustHubMcpShare(request);
+    }
+    
+    @Override
+    default HubShareResult unshareHubMcp(HubUnshareRequest request) throws NacosException {
+        return mcp().unshareHubMcp(request);
+    }
+    
+    @Override
+    default HubShareResult forceUnshareHubMcp(HubForceUnshareRequest request)
+        throws NacosException {
+        return mcp().forceUnshareHubMcp(request);
+    }
+    
+    @Override
+    default HubResourceShareState getHubMcpSourceState(String namespaceId, String name)
+        throws NacosException {
+        return mcp().getHubMcpSourceState(namespaceId, name);
+    }
+    
+    @Override
+    default HubResourceShareState getHubMcpGovernanceState(Long entryId) throws NacosException {
+        return mcp().getHubMcpGovernanceState(entryId);
+    }
+    
+    @Override
+    default HubResourceTransferResult importHubMcp(HubMcpImportRequest request)
+        throws NacosException {
+        return mcp().importHubMcp(request);
+    }
 }

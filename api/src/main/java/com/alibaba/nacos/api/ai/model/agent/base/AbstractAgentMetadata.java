@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.ai.model.agent.base;
 
 import java.util.Map;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
+
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import java.io.Serializable;
 import java.util.List;
@@ -31,6 +33,16 @@ import java.util.List;
 public abstract class AbstractAgentMetadata implements Serializable {
     
     private static final long serialVersionUID = 1L;
+    
+    private HubResourceDiscoveryInfo hub;
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
     
     private String agentName;
     

@@ -117,4 +117,19 @@ class PromptClientControllerTest {
         
         assertThrows(NacosException.class, () -> controller.queryPrompt(form, response));
     }
+    
+    @Test
+    void sharedSearchUsesTheSameRouteWithoutOrdinaryNamespaceSearch() throws Exception {
+        com.alibaba.nacos.ai.service.hub.HubPromptReadAdapter shared =
+            org.mockito.Mockito.mock(com.alibaba.nacos.ai.service.hub.HubPromptReadAdapter.class);
+        controller.setSharedPromptReadAdapter(shared);
+        AiResourcePageSearchForm form = new AiResourcePageSearchForm();
+        form.setNamespaceId("__nacos_ai_hub__");
+        form.setQuery("template");
+        Page<PromptMetaSummary> page = new Page<>();
+        when(shared.search("template", java.util.Collections.emptyList(), 1, 100)).thenReturn(page);
+        assertEquals(page, controller.search(form, new PageForm()).getData());
+        org.mockito.Mockito.verifyNoInteractions(searchService, promptClientOperationService);
+    }
+    
 }

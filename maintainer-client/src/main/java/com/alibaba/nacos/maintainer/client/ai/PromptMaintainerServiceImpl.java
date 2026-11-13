@@ -16,11 +16,21 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubPromptImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubSharePromptRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
@@ -36,8 +46,11 @@ import java.util.Map;
 final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     implements PromptMaintainerService {
     
+    private final HubResourceMaintainerServiceImpl hubPublications;
+    
     PromptMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
+        this.hubPublications = new HubResourceMaintainerServiceImpl(context);
     }
     
     @Override
@@ -486,5 +499,51 @@ final class PromptMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
             JsonUtils.toObj(restResult.getData(), new NacosTypeReference<Result<Boolean>>() {
             });
         return Boolean.TRUE.equals(result.getData());
+    }
+    
+    /** Execute Prompt Hub share. */
+    @Override
+    public HubShareResult shareHubPrompt(HubSharePromptRequest request) throws NacosException {
+        return hubPublications.share("prompt", request);
+    }
+    
+    /** Execute Prompt Hub adjust. */
+    @Override
+    public HubShareResult adjustHubPromptShare(HubAdjustShareRequest request)
+        throws NacosException {
+        return hubPublications.adjust("prompt", request);
+    }
+    
+    /** Execute Prompt Hub unshare. */
+    @Override
+    public HubShareResult unshareHubPrompt(HubUnshareRequest request) throws NacosException {
+        return hubPublications.unshare("prompt", request);
+    }
+    
+    /** Execute Prompt Hub forceUnshare. */
+    @Override
+    public HubShareResult forceUnshareHubPrompt(HubForceUnshareRequest request)
+        throws NacosException {
+        return hubPublications.forceUnshare("prompt", request);
+    }
+    
+    /** Execute Prompt Hub sourceState. */
+    @Override
+    public HubResourceShareState getHubPromptSourceState(String namespaceId, String name)
+        throws NacosException {
+        return hubPublications.sourceState("prompt", namespaceId, name);
+    }
+    
+    /** Execute Prompt Hub governanceState. */
+    @Override
+    public HubResourceShareState getHubPromptGovernanceState(Long entryId) throws NacosException {
+        return hubPublications.governanceState("prompt", entryId);
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    @Override
+    public HubResourceTransferResult importHubPrompt(HubPromptImportRequest request)
+        throws NacosException {
+        return hubPublications.importFromHub("prompt", request);
     }
 }

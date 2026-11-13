@@ -127,7 +127,7 @@ public class NamespaceOperationService {
             }
             result = new Namespace(namespaceId, tenantInfo.getTenantName(),
                 tenantInfo.getTenantDesc(), DEFAULT_QUOTA,
-                    0, type.getType());
+                0, type.getType());
         }
         NamespaceDetailInjectorHolder.getInstance().injectDetail(result);
         return result;
@@ -170,7 +170,7 @@ public class NamespaceOperationService {
      * edit namespace.
      */
     public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc)
-            throws NacosApiException {
+        throws NacosApiException {
         validateNamespaceIdForType(namespaceId, NamespaceTypeEnum.CUSTOM);
         namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName,
             namespaceDesc);
@@ -215,23 +215,23 @@ public class NamespaceOperationService {
     }
     
     private void validateNamespaceIdForType(String namespaceId, NamespaceTypeEnum type)
-            throws NacosApiException {
+        throws NacosApiException {
         boolean hubNamespaceId = AiConstants.Hub.NAMESPACE_ID.equals(namespaceId);
         
         if (NamespaceTypeEnum.AI_HUB == type) {
             if (!hubNamespaceId) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
-                        ErrorCode.ILLEGAL_NAMESPACE,
-                        "AI Hub namespace must use reserved namespaceId ["
-                                + AiConstants.Hub.NAMESPACE_ID + "]");
+                    ErrorCode.ILLEGAL_NAMESPACE,
+                    "AI Hub namespace must use reserved namespaceId ["
+                        + AiConstants.Hub.NAMESPACE_ID + "]");
             }
             return;
         }
         
         if (hubNamespaceId) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
-                    ErrorCode.ILLEGAL_NAMESPACE,
-                    "namespaceId [" + namespaceId + "] is reserved for Nacos AI Resource Hub");
+                ErrorCode.ILLEGAL_NAMESPACE,
+                "namespaceId [" + namespaceId + "] is reserved for Nacos AI Resource Hub");
         }
     }
 }

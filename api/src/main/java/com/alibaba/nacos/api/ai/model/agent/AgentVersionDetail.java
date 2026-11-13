@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.agent;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
 import java.util.List;
 
 /**
@@ -27,6 +28,16 @@ import java.util.List;
 public class AgentVersionDetail extends AgentVersionSummary {
     
     private static final long serialVersionUID = 1L;
+    
+    private HubResourceDiscoveryInfo hub;
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
     
     private String namespaceId;
     

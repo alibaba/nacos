@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.utils.HubSharedReadValidator;
+import com.alibaba.nacos.auth.parser.http.HubAwareAiReadHttpResourceParser;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
@@ -59,6 +61,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * Nacos AI MCP controller.
  *
@@ -90,7 +97,8 @@ public class McpAdminController {
      */
     @Since("3.0.1")
     @GetMapping(value = "/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<McpServerBasicInfo>> listMcpServers(McpListForm mcpListForm,
         PageForm pageForm)
         throws NacosException {
@@ -111,7 +119,8 @@ public class McpAdminController {
      */
     @Since("3.0.1")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
         return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(),
@@ -187,7 +196,8 @@ public class McpAdminController {
      */
     @Since("3.3.0")
     @GetMapping("/versions")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<McpServerVersionSummary>> listMcpServerVersions(
         McpServerVersionListForm form, PageForm pageForm) throws NacosException {
         form.validate();
@@ -202,7 +212,8 @@ public class McpAdminController {
      */
     @Since("3.3.0")
     @GetMapping("/version")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<McpServerVersionDetail> getMcpServerVersion(
         McpServerVersionForm form) throws NacosException {
         form.validate();
@@ -375,5 +386,61 @@ public class McpAdminController {
         lifecycleOperationService.updateMcpServerScope(form.getNamespaceId(), form.getMcpName(),
             form.getScope());
         return Result.success("ok");
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/list", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<McpServerBasicInfo>> listMcpServersShared(McpListForm mcpListForm,
+        PageForm pageForm)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(mcpListForm.getNamespaceId());
+        return listMcpServers(mcpListForm, pageForm);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<McpServerDetailInfo> getMcpServerShared(McpForm mcpForm) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(mcpForm.getNamespaceId());
+        return getMcpServer(mcpForm);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/versions", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<McpServerVersionSummary>> listMcpServerVersionsShared(
+        McpServerVersionListForm form, PageForm pageForm) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return listMcpServerVersions(form, pageForm);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<McpServerVersionDetail> getMcpServerVersionShared(
+        McpServerVersionForm form) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getMcpServerVersion(form);
     }
 }

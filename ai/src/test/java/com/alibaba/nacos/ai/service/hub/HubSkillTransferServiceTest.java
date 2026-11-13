@@ -98,7 +98,7 @@ class HubSkillTransferServiceTest {
             eq("0.0.1"), eq(content), any(), any()))
             .thenReturn(new HubSkillTransferResult());
         
-        service.copyDirect(request);
+        service.cloneDirect(request);
         verify(permissions, org.mockito.Mockito.times(2)).requireDirectSourceRead(meta);
         verifyNoInteractions(access);
         verify(writer).create(eq(directSnapshot), eq("target-ns"), eq("target-skill"),
@@ -110,7 +110,7 @@ class HubSkillTransferServiceTest {
         doThrow(new NacosException(NacosException.NO_RIGHT, "denied"))
             .when(permissions).requireTargetWrite("target-ns", "target-skill");
         assertEquals(NacosException.NO_RIGHT,
-            assertThrows(NacosException.class, () -> service.copyDirect(directRequest()))
+            assertThrows(NacosException.class, () -> service.cloneDirect(directRequest()))
                 .getErrCode());
         verifyNoInteractions(access, sources, files, writer);
     }
@@ -121,7 +121,7 @@ class HubSkillTransferServiceTest {
         doThrow(new NacosException(NacosException.NO_RIGHT, "source denied"))
             .when(permissions).requireDirectSourceRead(meta);
         assertEquals(NacosException.NO_RIGHT,
-            assertThrows(NacosException.class, () -> service.copyDirect(directRequest()))
+            assertThrows(NacosException.class, () -> service.cloneDirect(directRequest()))
                 .getErrCode());
         verifyNoInteractions(files);
         verify(writer, never()).create(any(), any(), any(), any(), any(), any(), any());
@@ -187,7 +187,7 @@ class HubSkillTransferServiceTest {
                 i.<HubSkillDraftTransferWriter.RunnableWithNacosException>getArgument(6).run();
                 return new HubSkillTransferResult();
             });
-        service.copyDirect(request);
+        service.cloneDirect(request);
         verify(permissions, org.mockito.Mockito.times(2)).requireTargetWrite("target-ns",
             "target-skill");
         verify(permissions, never()).requireTargetWrite("unapproved-ns", "unapproved-name");

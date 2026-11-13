@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.prompt;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.event.PromptDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -921,6 +923,21 @@ class PromptOperationServiceImplTest {
             any(AiResource.class));
     }
     
+    @Test
+    void hubPreFenceFailurePreventsLegacyAndCanonicalPromptCleanup() throws Exception {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        HubResourceLifecycleRevoker revoker = mock(HubResourceLifecycleRevoker.class);
+        service.setHubResourceLifecycleRevoker(revoker);
+        when(revoker.around(any(), any(), any())).thenThrow(
+            new NacosException(NacosException.CONFLICT, "publication changed"));
+        assertThrows(NacosException.class, () -> service.deletePrompt(NS, PROMPT_KEY));
+        verify(storage, never()).delete(any(StorageKey.class));
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
+        verify(promptDataMigrationTask, never()).cleanupLegacyConfig(anyString(), anyString(),
+            any());
+    }
+    
     // ========== deletePrompt ==========
     
     @Test
@@ -1396,4 +1413,20 @@ class PromptOperationServiceImplTest {
     private void mockStorageGet(byte[] content) throws NacosException {
         lenient().when(storage.get(any(StorageKey.class))).thenReturn(content);
     }
+    
+    @Test
+    void reservedNamespaceRejectsOrdinaryMutationsBeforeStorage() {
+        // Provider registration in setUp calls type(); only request-time interactions matter.
+        org.mockito.Mockito.clearInvocations(storage, externalStorage);
+        String hub = "__nacos_ai_hub__";
+        assertThrows(NacosException.class, () -> service.deletePrompt(hub, "501"));
+        assertThrows(NacosException.class, () -> service.submit(hub, "501", "1.0.0"));
+        assertThrows(NacosException.class, () -> service.updateLabels(hub, "501", Map.of()));
+        assertThrows(NacosException.class, () -> service.updateDescription(hub, "501", "changed"));
+        assertThrows(NacosException.class, () -> service.refreshLatestMirror(hub, "501"));
+        org.mockito.Mockito.verifyNoInteractions(aiResourcePersistService,
+            aiResourceVersionPersistService,
+            storage, externalStorage, configOperationService, promptDataMigrationTask);
+    }
+    
 }

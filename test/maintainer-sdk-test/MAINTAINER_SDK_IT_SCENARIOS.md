@@ -128,6 +128,6 @@ round-trip unit tests cover that boundary.
 | Shared meta/version/package through existing routes | `HubSkillMaintainerSdkITCase.sharedReadContractsReuseExistingNamespaceAwareMethods` | Controlled missing-entry 404; no Hub-specific read method. |
 | Anonymous list/meta/version/package | `HubSkillMaintainerSdkITCase.anonymousReadUsesExistingRoutesAndPreservesMissingEntry` | Existing routes with special namespace retain anonymous discovery behavior. |
 | Typed no-match shared page | `HubSkillMaintainerSdkITCase.sharedDirectoryReturnsExistingTypedSkillPage` | Existing `Page<SkillSummary>` response and pagination. |
-| Retained mutations, state, import/copy | Other `HubSkillMaintainerSdkITCase` methods | Local 400, anonymous 403, remote 404 and explicit source-version validation. |
+| Retained mutations, state, import/clone | Other `HubSkillMaintainerSdkITCase` methods | Local 400, anonymous 403, remote 404 and explicit source-version validation. |
 | Large opaque ID, pinned binary package and legacy implementations | `HubSkillReadMaintainerServiceTest`, `ClientHttpProxyTest` | Deterministic raw-byte transport, headers, identity/version mismatch rejection, old implementation 501. |
 | Successful durable shared lifecycle and independent download counter | HTTP Hub IT | Requires enabled Hub, storage and authenticated share-management fixture. |

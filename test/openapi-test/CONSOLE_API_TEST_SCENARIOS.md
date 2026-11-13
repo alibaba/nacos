@@ -221,7 +221,7 @@ revocation, safe source navigation, invalid/overflow IDs and page limits,
 and raw ZIP downloads for both audiences. Removed dedicated Hub
 list/detail/content/download routes must return 404, without compatibility aliases.
 
-Only share/adjust/unshare/force-unshare, source-share/governance-state, import/copy
+Only share/adjust/unshare/force-unshare, source-share/governance-state, import/clone
 retain special management routes. Existing CAS, source and target authorization,
 independent draft copy, lifecycle revocation and state scenarios remain.
 `HubDisabledApiOpenApiITCase` covers empty shared lists and controlled 501
@@ -234,3 +234,9 @@ runs for both Admin and Console audiences through the existing Skill list path.
 It verifies the default Hub update-time order, stable Hub ID ties, download-count
 order using Hub counters, and page-two consistency after server-side ordering.
 Client discovery keeps its popularity order; no new route or Client sort parameter is added.
+
+
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/governance only; Hub import only; no direct source clone API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.
+
+
+Fixed per-resource Hub controllers: MCP, Agent, Prompt, AgentSpec each expose their own literal route and deployment chain. Skill cross-namespace clone now uses `/hub/skills/clone` (old `/copy` removed); SDK `cloneHubSkill`. Updated Skill API/SDK IT source assertions require a deployed run. Dedicated Admin controller tests verify each fixed resource route and presence of Hub import and absence of direct clone/copy for non-Skill resources.

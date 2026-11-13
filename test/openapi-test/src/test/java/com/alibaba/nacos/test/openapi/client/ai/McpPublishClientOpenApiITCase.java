@@ -143,4 +143,19 @@ public class McpPublishClientOpenApiITCase extends McpClientOpenApiBaseITCase {
         assertEquals(version, latest.get("versionDetail").get("version").asText(),
                 latest.toString());
     }
+    @Test
+    public void testSharedMcpOriginalRouteIdentityAndEmptySearchBoundaries() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED, "Hub read requires auth-enabled baseline");
+        for (String id : new String[] {"0", "-1", "01", "source-name", "9223372036854775808"}) {
+            assertError(getRaw(MCP_CLIENT_PATH, Query.newInstance()
+                    .addParam("namespaceId", "__nacos_ai_hub__").addParam("mcpName", id),
+                AuthIdentity.CLIENT_NO_PERMISSION), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+        }
+        JsonNode page = getJsonOk(MCP_CLIENT_PATH + "/search", Query.newInstance()
+                .addParam("namespaceId", "__nacos_ai_hub__").addParam("query", randomAiName("absent-hub")),
+            AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals(0, page.get("totalCount").asInt());
+        assertEquals(0, page.get("pageItems").size());
+    }
+
 }

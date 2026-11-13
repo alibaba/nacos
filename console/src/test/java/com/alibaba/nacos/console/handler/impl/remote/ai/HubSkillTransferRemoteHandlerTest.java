@@ -47,12 +47,12 @@ class HubSkillTransferRemoteHandlerTest {
         HubSkillTransferRequest request = new HubSkillTransferRequest();
         HubSkillTransferResult result = new HubSkillTransferResult();
         when(skill.importHubSkill(request)).thenReturn(result);
-        when(skill.copyHubSkill(request)).thenReturn(result);
+        when(skill.cloneHubSkill(request)).thenReturn(result);
         assertSame(result, handler.importFromHub(request));
-        assertSame(result, handler.copyDirect(request));
+        assertSame(result, handler.cloneDirect(request));
         verify(caller, org.mockito.Mockito.times(2)).requireForwardableUser();
         verify(skill).importHubSkill(request);
-        verify(skill).copyHubSkill(request);
+        verify(skill).cloneHubSkill(request);
     }
     
     @Test

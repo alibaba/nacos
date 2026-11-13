@@ -1,3 +1,6 @@
+import { AgentDetailHeaderFrame, AgentDetailLayout, AgentDetailSidebar, AgentCallInterfaces } from '@/components/ai/AgentDetailContent';
+import { AgentRuntimeEndpoints } from '@/components/ai/AgentRuntimeEndpoints';
+import { ResourceHubActions } from '@/components/ai/hub/ResourceHubActions';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -7,18 +10,14 @@ import {
   Bot,
   CheckCircle2,
   Clock,
-  ExternalLink,
   FilePenLine,
   Globe,
   History,
-  Layers3,
   Pencil,
   Plus,
   Power,
   PowerOff,
-  RefreshCw,
   Send,
-  Server,
   ShieldAlert,
   Trash2,
 } from 'lucide-react';
@@ -26,7 +25,6 @@ import { toast } from 'sonner';
 import { agentApi } from '@/api/agent';
 import { AiResourceStatusControls } from '@/components/ai/AiResourceStatusControls';
 import { AiVersionSelectOption } from '@/components/ai/AiVersionSelectOption';
-import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import {
   VersionLifecycleActionBar,
   VersionLifecycleActionDivider,
@@ -34,8 +32,6 @@ import {
 import { VisibilityAuthorizationDialog } from '@/components/ai/VisibilityAuthorizationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -51,7 +47,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentStore } from '@/stores/agent-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
@@ -64,14 +59,9 @@ import { parsePipelineInfo } from '@/types/pipeline';
 import {
   type AgentVersionAction,
   buildAgentStatusUpdateData,
-  endpointSourceOrderLabelKey,
-  declaredEndpointsOf,
-  formatProtocolLabel,
   getProtocols,
   getVersionActions,
-  namingDetailPath,
   runtimeCacheKey,
-  runtimeEndpointStatus,
 } from '../newAgent/agent-console-model';
 
 type LifecycleAction = 'submit' | 'publish' | 'forcePublish' | 'redraft' | 'online' | 'offline';
@@ -231,10 +221,6 @@ export default function AgentDetailPage() {
     }
   }, [currentVersion, selectedProtocol, namespaceId, agentName, fetchRuntime]);
 
-  const selectedInterface = currentVersion?.callInterfaces.find(
-    (item) => item.protocol === selectedProtocol,
-  );
-  const sourceOrderLabelKey = endpointSourceOrderLabelKey(selectedInterface?.endpointSourceOrder);
   const runtimeView = currentVersion && selectedProtocol
     ? runtimeCache[runtimeCacheKey(currentVersion.version, selectedProtocol)]
     : undefined;
@@ -404,9 +390,7 @@ export default function AgentDetailPage() {
 
   return (
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-xl border bg-card">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.04] via-transparent to-fuchsia-500/[0.03]" />
-        <div className="relative p-5">
+      <AgentDetailHeaderFrame>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="ghost"
@@ -590,223 +574,18 @@ export default function AgentDetailPage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+      </AgentDetailHeaderFrame>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2 space-y-5">
-          <Card className="py-0 gap-0 overflow-hidden">
-            <div className="px-5 py-3.5 border-b bg-muted/30 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <Layers3 className="h-4 w-4" />
-                {t('agent.supportedProtocols')}
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                {protocols.length}
-              </span>
-            </div>
-            <CardContent className="p-5 space-y-4">
-              {currentVersion ? (
-                <>
-                  {protocols.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t('agent.noCallInterfaces')}</p>
-                  ) : (
-                      <Tabs value={selectedProtocol} onValueChange={setSelectedProtocol}>
-                        <div className="overflow-x-auto pb-1">
-                          <TabsList className="w-max min-w-full justify-start">
-                          {protocols.map((protocol) => (
-                            <TabsTrigger key={protocol} value={protocol}>
-                              {formatProtocolLabel(protocol)}
-                            </TabsTrigger>
-                          ))}
-                          </TabsList>
-                        </div>
-                      {selectedInterface && (
-                        <TabsContent value={selectedProtocol} className="mt-4 space-y-4">
-                          <div className="rounded-lg border bg-muted/15 p-4">
-                          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-                            <Info
-                              label={t('agent.protocol')}
-                              value={formatProtocolLabel(selectedInterface.protocol)}
-                            />
-                            <Info
-                              label={t('agent.protocolVersion')}
-                              value={selectedInterface.protocolVersion || '-'}
-                            />
-                            <Info
-                              label={t('agent.descriptorMediaType')}
-                              value={selectedInterface.descriptorMediaType || '-'}
-                            />
-                            <Info
-                              label={t('agent.sourceOrder')}
-                              value={sourceOrderLabelKey ? t(sourceOrderLabelKey) : '-'}
-                            />
-                          </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-xs font-medium">
-                                {t('agent.declaredEndpoints')}
-                              </h3>
-                              <span className="text-xs text-muted-foreground">
-                                {t('agent.declaredEndpointCount', {
-                                  count: declaredEndpointsOf(selectedInterface).length,
-                                })}
-                              </span>
-                            </div>
-                            {declaredEndpointsOf(selectedInterface).length === 0 ? (
-                              <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                                {t('agent.noDeclaredEndpoints')}
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                {declaredEndpointsOf(selectedInterface).map((endpoint) => (
-                                  <div
-                                    key={`${endpoint.uri}@@${endpoint.transport}`}
-                                    className="flex flex-col gap-1 rounded-lg border bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between"
-                                  >
-                                    <span className="break-all font-mono text-xs">
-                                      {endpoint.uri}
-                                    </span>
-                                    <Badge variant="outline">{endpoint.transport}</Badge>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <h3 className="text-xs font-medium">
-                            {t('agent.nativeDescriptorTitle')}
-                          </h3>
-                          <pre className="max-h-80 overflow-auto rounded-lg bg-muted/40 p-3 text-xs">
-                            {JSON.stringify(selectedInterface.nativeDescriptor, null, 2)}
-                          </pre>
-                        </TabsContent>
-                      )}
-                      </Tabs>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('agent.selectVersion')}</p>
-              )}
-            </CardContent>
-          </Card>
+      <ResourceHubActions type="agent" namespaceId={namespaceId} name={agentName} version={currentVersion?.version} status={currentVersion?.status} scope={agent.scope} enabled={agent.status === 'enable'} />
 
-          {currentVersion && selectedProtocol && (
-            <Card className="py-0 gap-0 overflow-hidden">
-              <div className="px-5 py-3.5 border-b bg-muted/30 flex items-center justify-between">
-                <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Server className="h-4 w-4" />
-                  {t('agent.runtimeEndpoints')}
-                </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={runtimeLoading}
-                  onClick={() => fetchRuntime(
-                    namespaceId,
-                    agentName,
-                    currentVersion.version,
-                    selectedProtocol,
-                    true,
-                  )}
-                >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  {t('common.refresh')}
-                </Button>
-              </div>
-              <CardContent className="p-5 space-y-4">
-                {runtimeLoading && !runtimeView ? (
-                  <Skeleton className="h-24 w-full" />
-                ) : (runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t('agent.noRuntimeEndpoints')}</p>
-                ) : (
-                  <div className="space-y-2">
-                    {runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.endpoints.map((item) => (
-                      <div key={`${item.uri}@@${item.transport}`} className="rounded-lg border p-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-sm break-all">{item.uri}</span>
-                          <Badge>{runtimeEndpointStatus(item)}</Badge>
-                          <Badge variant="outline">{item.transport}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {(item.bindings || []).map(
-                            (binding) => `${binding.runtimeVersion} → ${binding.versionRange}`,
-                          ).join(', ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatTime(runtimeView?.runtimeEndpointSnapshot.callInterface.endpointSets?.[0]?.lastUpdatedTime)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {runtimeView?.namingServiceRef && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(namingDetailPath(runtimeView.namingServiceRef))}
-                  >
-                    <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                    {runtimeView.namingServiceRef.groupName}
-                    @@
-                    {runtimeView.namingServiceRef.serviceName}
-                  </Button>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {t('agent.runtimeReadonly')}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="space-y-5">
-          <Card className="py-0 gap-0 overflow-hidden">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold">{t('agent.metadata')}</h2>
-            </div>
-            <CardContent className="p-5 space-y-3">
-              <Info label={t('agent.owner')} value={agent.owner || '-'} />
-              <Info label={t('agent.provider')} value={agent.provider?.name || '-'} />
-              <div>
-                <p className="text-xs text-muted-foreground">{t('agent.tags')}</p>
-                {(agent.tags || []).length > 0 ? (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {agent.tags?.map((tag) => <DetailTagChip key={tag} label={tag} />)}
-                  </div>
-                ) : (
-                  <p className="text-sm">-</p>
-                )}
-              </div>
-              <Info
-                label={t('agent.latestVersion')}
-                value={agent.versionInfo?.labels?.latest || '-'}
-              />
-              <Info
-                label={t('agent.onlineVersions')}
-                value={String(agent.versionInfo?.onlineVersions?.length || 0)}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="py-0 gap-0 overflow-hidden">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold">{t('agent.customLabels')}</h2>
-            </div>
-            <CardContent className="p-5 space-y-3">
-              <Textarea
-                value={labelsText}
-                rows={5}
-                className="font-mono text-xs"
-                onChange={(event) => setLabelsText(event.target.value)}
-              />
-              <Button size="sm" onClick={updateLabels}>{t('common.save')}</Button>
-              <p className="text-xs text-muted-foreground">{t('agent.latestLabelManaged')}</p>
-            </CardContent>
-          </Card>
-
-        </div>
-      </div>
+      <AgentDetailLayout sidebar={<AgentDetailSidebar agent={agent} labelsText={labelsText}
+        onLabelsChange={setLabelsText} onSave={updateLabels} />}>
+        <AgentCallInterfaces currentVersion={currentVersion} selectedProtocol={selectedProtocol} setSelectedProtocol={setSelectedProtocol} />
+        {currentVersion && selectedProtocol && (
+          <AgentRuntimeEndpoints runtimeView={runtimeView} runtimeLoading={runtimeLoading}
+            onRefresh={() => fetchRuntime(namespaceId, agentName, currentVersion.version, selectedProtocol, true)} />
+        )}
+      </AgentDetailLayout>
 
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
         <SheetContent className="flex flex-col p-0 sm:max-w-md">
@@ -926,15 +705,6 @@ export default function AgentDetailPage() {
           await loadOverview();
         }}
       />
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm break-words">{value}</p>
     </div>
   );
 }

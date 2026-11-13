@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.model.agent;
 
+import com.alibaba.nacos.ai.utils.AiResourceOriginUtils;
+
 import com.alibaba.nacos.api.ai.model.agent.AgentProvider;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionInfo;
 
@@ -41,6 +43,16 @@ public class AgentResourceExt {
     private Map<String, Object> extensions;
     
     private AgentVersionInfo versionCatalog;
+    
+    private Map<String, Object> origin;
+    
+    public Map<String, Object> getOrigin() {
+        return AiResourceOriginUtils.copy(origin);
+    }
+    
+    public void setOrigin(Map<String, Object> origin) {
+        this.origin = AiResourceOriginUtils.copy(origin);
+    }
     
     public Integer getSchemaVersion() {
         return schemaVersion;

@@ -186,4 +186,26 @@ class McpClientControllerTest {
         result.setVersion("1.0.0");
         return result;
     }
+    
+    @Test
+    void hubQueryDoesNotRenewPublisherAndEndpointWritesFailBeforeLifecycle() throws Exception {
+        AiResourceSearchApplicationService search = mock(AiResourceSearchApplicationService.class);
+        McpClientApplicationService application = mock(McpClientApplicationService.class);
+        AiHttpClientLifecycleService lifecycle = mock(AiHttpClientLifecycleService.class);
+        McpClientController controller = new McpClientController(search, application, lifecycle);
+        McpQueryForm query = new McpQueryForm();
+        query.setNamespaceId("__nacos_ai_hub__");
+        query.setMcpName("501");
+        controller.query(query, "publisher");
+        org.mockito.Mockito.verifyNoInteractions(lifecycle);
+        McpEndpointForm endpoint = new McpEndpointForm();
+        endpoint.setNamespaceId("__nacos_ai_hub__");
+        endpoint.setMcpName("501");
+        org.junit.jupiter.api.Assertions.assertThrows(NacosException.class,
+            () -> controller.registerEndpoint(endpoint, "publisher", "module", null));
+        org.junit.jupiter.api.Assertions.assertThrows(NacosException.class,
+            () -> controller.deregisterEndpoint(endpoint, "publisher", "module", null));
+        org.mockito.Mockito.verifyNoInteractions(lifecycle);
+    }
+    
 }

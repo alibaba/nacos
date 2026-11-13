@@ -1,3 +1,4 @@
+import { ResourceManagementTabs } from '@/components/ai/hub/ResourceManagementTabs';
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -152,6 +153,8 @@ export default function AgentSpecManagementPage() {
           </Button>
         </div>
       </div>
+
+      <ResourceManagementTabs type="agentspec" />
 
       {/* Search & filters bar */}
       <div className="flex flex-wrap items-center gap-2">

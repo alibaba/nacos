@@ -614,14 +614,14 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
     
     @Override
-    public HubSkillTransferResult copyHubSkill(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneHubSkill(HubSkillTransferRequest request)
         throws NacosException {
         validateHubTransfer(request, false);
         Map<String, String> params = hubTransferTargetParams(request);
         params.put("sourceNamespaceId", request.getSourceNamespaceId());
         params.put("sourceName", request.getSourceName());
         params.put("sourceVersion", request.getSourceVersion());
-        return executeHubTransfer("/copy", params);
+        return executeHubTransfer("/clone", params);
     }
     
     private Map<String, String> hubTransferTargetParams(HubSkillTransferRequest request) {

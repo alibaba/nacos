@@ -145,4 +145,5 @@ public interface PromptHandler {
      * Update biz tags.
      */
     void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException;
+    
 }

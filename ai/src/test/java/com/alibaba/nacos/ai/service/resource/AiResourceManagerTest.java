@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.resource;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -637,6 +639,31 @@ class AiResourceManagerTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
             () -> manager.updateBizTagsCas(NAMESPACE_ID, meta, "[\"tag\"]"));
         assertEquals(NacosException.CONFLICT, ex.getErrCode());
+    }
+    
+    @Test
+    void hubPreFenceFailurePreventsDisableScopeAndStorageDeletion() throws Exception {
+        AiResource source = buildMeta("res");
+        source.setType("agentspec");
+        HubResourceLifecycleRevoker revoker = mock(HubResourceLifecycleRevoker.class);
+        manager.setHubResourceLifecycleRevoker(revoker);
+        when(revoker.around(any(AiResource.class), isNull(), any())).thenThrow(
+            new NacosException(NacosException.CONFLICT, "publication changed"));
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", "agentspec")).thenReturn(source);
+        assertThrows(NacosException.class,
+            () -> manager.metaEnableDisable(NAMESPACE_ID, source, false));
+        assertThrows(NacosException.class,
+            () -> manager.doUpdateScope(NAMESPACE_ID, "res", "agentspec", "PRIVATE"));
+        AiResourceManager.VersionStorageDeleter deleter =
+            mock(AiResourceManager.VersionStorageDeleter.class);
+        assertThrows(NacosException.class,
+            () -> manager.deleteResourceWithVersions(NAMESPACE_ID, "res", "agentspec", deleter));
+        verifyNoInteractions(deleter, aiResourceVersionPersistService);
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+            anyString(), anyLong(), any());
+        verify(aiResourcePersistService, never()).updateScope(anyString(), anyString(), anyString(),
+            anyString());
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
     }
     
     // ---- metaEnableDisable ----

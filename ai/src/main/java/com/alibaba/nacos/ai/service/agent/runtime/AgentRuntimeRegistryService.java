@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.agent.runtime;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.service.agent.fingerprint.RuntimeEndpointRevision;
 import com.alibaba.nacos.ai.service.agent.identity.RadServiceNameComposer;
 import com.alibaba.nacos.ai.service.agent.metadata.AgentVersionComparator;
@@ -66,6 +67,14 @@ import java.util.TreeSet;
  */
 @Component
 public class AgentRuntimeRegistryService {
+    
+    private com.alibaba.nacos.ai.service.hub.HubResourcePublicationService hubPublications;
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setHubPublications(
+        com.alibaba.nacos.ai.service.hub.HubResourcePublicationService service) {
+        this.hubPublications = service;
+    }
     
     private static final int MAX_RUNTIME_ENDPOINTS = 1000;
     
@@ -154,6 +163,17 @@ public class AgentRuntimeRegistryService {
     public RuntimeEndpointSnapshot getRuntimeEndpointSnapshot(String namespaceId,
         String agentName,
         String protocol, String version) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return hubPublications.inspectPinned(
+                com.alibaba.nacos.ai.model.hub.HubResourceType.AGENT,
+                com.alibaba.nacos.ai.utils.HubResourceNameUtils.parseEntryId(agentName), version,
+                (hub, source, reference) -> {
+                    RuntimeEndpointSnapshot shared = getRuntimeEndpointSnapshot(
+                        reference.getSourceNamespaceId(), reference.getSourceName(), protocol,
+                        reference.getSourceVersion());
+                    return shared;
+                });
+        }
         validateReadIdentity(namespaceId, agentName, protocol, version);
         RuntimeEndpointSnapshot result = new RuntimeEndpointSnapshot();
         result.setNamespaceId(namespaceId);
@@ -395,6 +415,10 @@ public class AgentRuntimeRegistryService {
     }
     
     private Service composeService(String namespaceId, String agentName, String protocol) {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            throw new IllegalArgumentException(
+                "Hub entries do not own Runtime Endpoint publications");
+        }
         return Service.newService(namespaceId, Constants.Agent.AGENT_ENDPOINT_GROUP,
             RadServiceNameComposer.compose(agentName, protocol));
     }

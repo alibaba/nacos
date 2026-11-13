@@ -139,3 +139,6 @@ AgentSpec is expected to evolve with agent framework packaging. Future versions
 may add schema validation, signing, dependency manifests, or compatibility
 metadata. Such changes must preserve versioned retrieval or provide migration
 rules.
+
+
+Hub scope, clone restrictions and service instance behavior follow [Agentic Resource Hub](agentic-resource-hub-spec.md).

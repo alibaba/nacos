@@ -89,3 +89,6 @@ Prompt 存在从旧 Prompt 存储迁移到
 
 Prompt 格式、变量 schema、tool-call 约定和模型提供方要求可能快速变化。Prompt 规范
 调整可以引入新的内容字段或校验规则，但必须为已有 Prompt 保留版本化迁移路径。
+
+
+Hub 范围、克隆限制和服务实例语义见 [Agentic Resource Hub](agentic-resource-hub-spec.md).

@@ -487,3 +487,10 @@ directed restart/cluster cases use the existing
 Coverage is scoped to these behavior groups and does not promote unrelated SDK
 registry rows. Local upgrade experiments and one-off coverage/run summaries are
 kept outside the committed scenario matrix.
+
+
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/governance only; no transfer API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.
+
+2026-10-30 shared-detail parity: ordinary MCP detail/model/query are restored (no added instance table/field). MCP source and Hub reuse the detail body; Agent Hub reads the pinned source runtime snapshot and original Naming link. Prompt retains native template debugging and variable input. Prompt/MCP/Agent/AgentSpec preserve pinned-version review results and actual labels; unrelated source versions remain excluded. Regression tests cover runtime refresh, Prompt debug payload, label filtering and review fidelity. Live deployed API acceptance is pending.
+
+Pinned source navigation parity: non-Skill HubResourceDiscoveryInfo adds sourceReadable and permission-gated sourceNamespaceId/sourceName, following Skill. Cover independent source auth READ + visibility, anonymous/denied/plugin failure hiding coordinates without blocking Hub reads, large opaque entry identity preservation, and exact-version source navigation for each type. HTTP/SDK method signatures are unchanged; API JSON model/permission unit tests and frontend mapping tests cover the added contract. Deployed multi-identity acceptance remains pending.

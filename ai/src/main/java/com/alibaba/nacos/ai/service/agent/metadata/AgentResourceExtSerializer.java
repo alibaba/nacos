@@ -62,7 +62,7 @@ public final class AgentResourceExtSerializer {
         .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     
     private static final Set<String> ROOT_FIELDS = unmodifiableSet("schemaVersion",
-        "displayName", "iconUrl", "provider", "extensions", "versionCatalog");
+        "displayName", "iconUrl", "provider", "extensions", "versionCatalog", "origin");
     
     private static final Set<String> PROVIDER_FIELDS = unmodifiableSet("name", "url");
     
@@ -145,6 +145,7 @@ public final class AgentResourceExtSerializer {
         validateProvider(resourceExt.getProvider());
         validateExtensions(resourceExt.getExtensions());
         validateCatalog(resourceExt.getVersionCatalog());
+        resourceExt.getOrigin();
     }
     
     private static void validateProvider(AgentProvider provider) {
@@ -283,6 +284,7 @@ public final class AgentResourceExtSerializer {
             result.put("provider", provider);
         }
         putIfPresent(result, "extensions", resourceExt.getExtensions());
+        putIfPresent(result, "origin", resourceExt.getOrigin());
         result.put("versionCatalog", toStorageProjection(resourceExt.getVersionCatalog()));
         return result;
     }
@@ -329,6 +331,10 @@ public final class AgentResourceExtSerializer {
         validateProviderShape(root);
         validateExtensionsShape(root);
         validateCatalogShape(root);
+        if (root.containsKey("origin")) {
+            com.alibaba.nacos.ai.utils.AiResourceOriginUtils.copy(
+                requireJsonObject(root.get("origin"), "origin"));
+        }
     }
     
     private static void validateProviderShape(Map<?, ?> root) {

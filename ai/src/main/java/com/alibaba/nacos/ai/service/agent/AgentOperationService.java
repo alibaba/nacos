@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+import com.alibaba.nacos.ai.service.hub.HubAgentReadAdapter;
 import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -118,6 +121,36 @@ public class AgentOperationService {
         this.publishPipelineExecutor = publishPipelineExecutor;
     }
     
+    private HubAgentReadAdapter sharedAgents;
+    
+    /** Install typed shared projections without altering ordinary Agent construction. */
+    @Autowired
+    public void setSharedAgentReadAdapter(HubAgentReadAdapter adapter) {
+        this.sharedAgents = adapter;
+    }
+    
+    private HubAgentReadAdapter sharedReads() throws NacosException {
+        if (sharedAgents == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Shared Agent reader is unavailable");
+        }
+        return sharedAgents;
+    }
+    
+    private HubResourceLifecycleRevoker hubResourceLifecycleRevoker;
+    
+    /** Install cross-namespace publication revocation around authorized destructive operations. */
+    @Autowired(required = false)
+    public void setHubResourceLifecycleRevoker(HubResourceLifecycleRevoker revoker) {
+        this.hubResourceLifecycleRevoker = revoker;
+    }
+    
+    private <T> T withHubRevocation(AiResource source, String version,
+        HubResourceLifecycleRevoker.SourceMutation<T> mutation) throws NacosException {
+        return hubResourceLifecycleRevoker == null ? mutation.run()
+            : hubResourceLifecycleRevoker.around(source, version, mutation);
+    }
+    
     @Autowired(required = false)
     public void setAiResourceIndexMaintenanceService(
         AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
@@ -148,6 +181,9 @@ public class AgentOperationService {
      * @throws NacosException when absent or unreadable
      */
     public AgentSummary getAgent(String namespaceId, String agentName) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getAgent(agentName);
+        }
         AiResource meta = requireMeta(namespaceId, agentName);
         resourceManager.ensureReadableOrNotFound(meta, "Agent not found: " + agentName);
         return persistenceService.getAgent(namespaceId, agentName);
@@ -162,6 +198,9 @@ public class AgentOperationService {
      * @throws NacosException when absent or unreadable
      */
     public AgentOverview getOverview(String namespaceId, String agentName) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().overview(agentName);
+        }
         AiResource meta = requireMeta(namespaceId, agentName);
         resourceManager.ensureReadableOrNotFound(meta, "Agent not found: " + agentName);
         return persistenceService.getAgentOverview(namespaceId, agentName,
@@ -181,10 +220,13 @@ public class AgentOperationService {
         if (replacement == null) {
             throw new IllegalArgumentException("Agent replacement must not be null");
         }
+        HubNamespaceUtils.rejectIfHubNamespace(replacement.getNamespaceId());
         for (int i = 0; i < AiResourceConstants.MAX_WORKING_VERSION_RETRY; i++) {
             AiResource current =
                 requireWritableMeta(replacement.getNamespaceId(), replacement.getAgentName());
-            AgentSummary result = persistenceService.tryUpdateAgent(replacement, current);
+            AgentSummary result =
+                withHubRevocation("disable".equals(replacement.getStatus()) ? current : null,
+                    null, () -> persistenceService.tryUpdateAgent(replacement, current));
             if (result != null) {
                 scheduleAgentIndexMaintenance(replacement.getNamespaceId(),
                     replacement.getAgentName(), AiResourceChangeOperation.UPDATE, false);
@@ -214,6 +256,10 @@ public class AgentOperationService {
     public Page<AgentSummary> listAgents(String namespaceId, String agentNameContains,
         String tag, String scope, String owner, String orderBy, int pageNo, int pageSize)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().list(agentNameContains, tag, scope, owner, orderBy, pageNo,
+                pageSize);
+        }
         AgentValidationUtils.validateNamespaceId(namespaceId);
         validateListFilters(agentNameContains, tag, scope, orderBy);
         String nameLike = StringUtils.isBlank(agentNameContains) ? null
@@ -240,6 +286,9 @@ public class AgentOperationService {
      */
     public AgentVersionDetail getVersion(String namespaceId, String agentName, String version)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().version(agentName, version);
+        }
         AiResource meta = requireMeta(namespaceId, agentName);
         resourceManager.ensureReadableOrNotFound(meta, "Agent not found: " + agentName);
         return persistenceService.getAgentVersion(namespaceId, agentName, version);
@@ -258,6 +307,9 @@ public class AgentOperationService {
      */
     public Page<AgentVersionSummary> listVersions(String namespaceId, String agentName,
         String status, int pageNo, int pageSize) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().versions(agentName, status, pageNo, pageSize);
+        }
         AiResource meta = requireMeta(namespaceId, agentName);
         resourceManager.ensureReadableOrNotFound(meta, "Agent not found: " + agentName);
         return persistenceService.listAgentVersions(namespaceId, agentName, status, pageNo,
@@ -555,7 +607,10 @@ public class AgentOperationService {
             if (versionRow == null) {
                 return false;
             }
-            persistenceService.deleteVersion(namespaceId, agentName, version);
+            withHubRevocation(current, version, () -> {
+                persistenceService.deleteVersion(namespaceId, agentName, version);
+                return null;
+            });
             scheduleAgentIndexMaintenance(namespaceId, agentName,
                 AiResourceChangeOperation.UPDATE, true);
             traceLegacySuccess(agentName, version, OP_LEGACY_A2A_DELETE, "mode=version");
@@ -586,7 +641,10 @@ public class AgentOperationService {
             }
             VisibilityHelper.checkWritableResource(current);
             checkMigrationMutable(current);
-            persistenceService.deleteAgent(namespaceId, agentName);
+            withHubRevocation(current, null, () -> {
+                persistenceService.deleteAgent(namespaceId, agentName);
+                return null;
+            });
             scheduleAgentIndexMaintenance(namespaceId, agentName,
                 AiResourceChangeOperation.DELETE, true);
             traceLegacySuccess(agentName, null, OP_LEGACY_A2A_DELETE, "mode=agent");
@@ -651,8 +709,11 @@ public class AgentOperationService {
      */
     public void deleteAgent(String namespaceId, String agentName) throws NacosException {
         HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
-        requireWritableMeta(namespaceId, agentName);
-        persistenceService.deleteAgent(namespaceId, agentName);
+        AiResource source = requireWritableMeta(namespaceId, agentName);
+        withHubRevocation(source, null, () -> {
+            persistenceService.deleteAgent(namespaceId, agentName);
+            return null;
+        });
         scheduleAgentIndexMaintenance(namespaceId, agentName,
             AiResourceChangeOperation.DELETE, true);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, null,
@@ -832,12 +893,16 @@ public class AgentOperationService {
     public AgentVersionSummary offline(String namespaceId, String agentName, String version)
         throws NacosException {
         HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
-        requireWritableMeta(namespaceId, agentName);
+        AiResource source = requireWritableMeta(namespaceId, agentName);
         requireVersionState(namespaceId, agentName, version,
             AiConstants.Agent.VERSION_STATUS_ONLINE);
-        persistenceService.updateVersionStatus(namespaceId, agentName, version,
-            AiConstants.Agent.VERSION_STATUS_OFFLINE);
-        persistenceService.synchronizeDerivedState(namespaceId, agentName, null, null, null, null);
+        withHubRevocation(source, version, () -> {
+            persistenceService.updateVersionStatus(namespaceId, agentName, version,
+                AiConstants.Agent.VERSION_STATUS_OFFLINE);
+            persistenceService.synchronizeDerivedState(namespaceId, agentName, null, null, null,
+                null);
+            return null;
+        });
         scheduleAgentIndexMaintenance(namespaceId, agentName,
             AiResourceChangeOperation.UPDATE, false);
         AiResourceTraceService.logSuccess(RESOURCE_TYPE, agentName, version,
