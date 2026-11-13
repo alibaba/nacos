@@ -19,7 +19,8 @@ package com.alibaba.nacos.api.ai.listener;
 /**
  * Nacos AI module skill event.
  *
- * <p>Triggered when a subscribed skill changes on the server side. The {@link #zipBytes}
+ * <p>Delivered for the initial subscribed value and when a subscribed skill changes on the server
+ * side. The {@link #zipBytes}
  * payload carries the freshly downloaded skill ZIP archive (SKILL.md plus resources); the
  * {@link #md5} field is the server-published content fingerprint suitable for diffing
  * subsequent revisions or persisting alongside the local cache.
@@ -73,9 +74,8 @@ public class NacosSkillEvent implements NacosAiEvent {
     }
     
     /**
-     * Get the resolved version string when the listener was registered against a label, may be
-     * {@code null} when the request used an explicit version or the response did not carry the
-     * resolved version header.
+     * Get the version string resolved by the server for the query, including latest/label routing.
+     * May be {@code null} when the server response did not carry the resolved version header.
      *
      * @return resolved version, optional
      */

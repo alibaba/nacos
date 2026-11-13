@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
@@ -108,6 +109,21 @@ class NacosSkillCacheHolderTest {
         assertFalse(subscriber.await(200),
             "Initial subscribe should not publish event via NotifyCenter");
         assertFalse(subscriber.invokedMark.get(), "Subscriber should not be invoked");
+    }
+    
+    @Test
+    void subscribeSkillWithResponseShouldPreserveInitialMetadata() throws Exception {
+        byte[] zipBytes = new byte[] {0x50, 0x4B, 0x03, 0x04};
+        SkillQueryResponse expected = new SkillQueryResponse(zipBytes, "m1", "1.0.0");
+        when(aiClientProxy.querySkill("s1", "1.0.0", null, null)).thenReturn(expected);
+        
+        SkillQueryResponse actual = cacheHolder.subscribeSkillWithResponse("s1", "1.0.0",
+            null);
+        
+        assertSame(expected, actual);
+        assertArrayEquals(zipBytes, actual.getZipBytes());
+        assertEquals("m1", actual.getMd5());
+        assertEquals("1.0.0", actual.getResolvedVersion());
     }
     
     @Test

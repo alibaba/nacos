@@ -317,7 +317,7 @@ type specs. The currently implemented compatibility methods include:
 | A2A AgentCard release | `releaseAgentCard` | Create an AgentCard or release a new version; `setAsLatest` only affects the new version. |
 | A2A endpoint | `registerAgentEndpoint`, `deregisterAgentEndpoint` | Register or remove endpoints owned by the current client. Batch registration replaces endpoints previously registered by this client for the same agent. |
 | A2A subscription | `subscribeAgentCard`, `unsubscribeAgentCard` | Subscribe to AgentCard changes. |
-| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | Download Skill zip bytes by latest, version, or label. |
+| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | Download Skill zip bytes by latest, version, or label. The initial `NacosSkillEvent` from `subscribeSkill` includes the ZIP bytes, published md5, and resolved version when provided by the server. |
 | AgentSpec | `loadAgentSpec`, `subscribeAgentSpec`, `unsubscribeAgentSpec` | Load assembled AgentSpec and subscribe to changes. |
 | Prompt | `getPrompt`, `getPromptByVersion`, `getPromptByLabel`, `subscribePrompt`, `unsubscribePrompt` | Query and subscribe to Prompt resources by key, version, or label. |
 

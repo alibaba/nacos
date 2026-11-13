@@ -81,6 +81,7 @@ import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.event.SkillChangedEvent;
 import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
+import com.alibaba.nacos.client.ai.remote.SkillQueryResponse;
 import com.alibaba.nacos.client.ai.remote.AgentCapabilityResolver;
 import com.alibaba.nacos.client.ai.remote.A2aRadClientAdapter;
 import com.alibaba.nacos.client.ai.remote.capability.A2aModeSelector;
@@ -635,11 +636,14 @@ public class NacosAiService implements AiService {
             
             SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
             aiChangeNotifier.registerListener(skillName, version, label, listenerInvoker);
-            byte[] zipBytes = skillCacheHolder.subscribeSkill(skillName, version, label);
-            if (null != zipBytes && !listenerInvoker.isInvoked()) {
-                listenerInvoker.invoke(new NacosSkillEvent(skillName, zipBytes, null, null));
+            SkillQueryResponse response =
+                skillCacheHolder.subscribeSkillWithResponse(skillName, version, label);
+            if (null != response && null != response.getZipBytes()
+                && !listenerInvoker.isInvoked()) {
+                listenerInvoker.invoke(new NacosSkillEvent(skillName, response.getZipBytes(),
+                    response.getMd5(), response.getResolvedVersion()));
             }
-            return zipBytes;
+            return response == null ? null : response.getZipBytes();
         }
         
         @Override

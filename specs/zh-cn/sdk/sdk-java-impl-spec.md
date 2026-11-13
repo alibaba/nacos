@@ -270,7 +270,7 @@ Agent 定义发布，且不得隐式创建定义。
 | A2A AgentCard 发布 | `releaseAgentCard` | 创建 AgentCard 或发布新版本；`setAsLatest` 只影响新版本。 |
 | A2A endpoint | `registerAgentEndpoint`, `deregisterAgentEndpoint` | 注册或移除当前客户端拥有的 endpoint。批量注册会替换当前客户端此前为该 Agent 注册的 endpoints。 |
 | A2A 订阅 | `subscribeAgentCard`, `unsubscribeAgentCard` | 订阅 AgentCard 变化。 |
-| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | 按 latest、版本或标签下载 Skill zip 字节。 |
+| Skill | `downloadSkillZip`, `downloadSkillZipByVersion`, `downloadSkillZipByLabel` | 按 latest、版本或标签下载 Skill zip 字节。`subscribeSkill` 的首次 `NacosSkillEvent` 在服务端提供这些信息时应包含 ZIP 字节、发布内容 md5 和实际解析版本。 |
 | AgentSpec | `loadAgentSpec`, `subscribeAgentSpec`, `unsubscribeAgentSpec` | 加载组装后的 AgentSpec，并订阅其变化。 |
 | Prompt | `getPrompt`, `getPromptByVersion`, `getPromptByLabel`, `subscribePrompt`, `unsubscribePrompt` | 按 key、版本或标签查询和订阅 Prompt。 |
 
