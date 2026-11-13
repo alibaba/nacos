@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -29,9 +30,13 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigInfoMapperByMySqlTest {
     
@@ -312,19 +317,101 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult =
             configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
-        // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
         String expectedInnerSql =
-            "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
-                + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? ORDER BY id LIMIT "
+            "SELECT id FROM config_info WHERE tenant_id LIKE ? AND app_name = ? ORDER BY id LIMIT "
                 + startRow + "," + pageSize;
         String expectedSql =
-            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
-                + ",a.gmt_modified,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,"
+                + "c.encrypted_data_key,c.type,c.c_desc,c.gmt_modified,p.config_tags "
+                + "FROM (SELECT a.id,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
+                + "GROUP BY a.id) p JOIN config_info c ON c.id=p.id";
         assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "\t", "\n"})
+    void testFindConfigInfoLike4PageSkipsBlankFilters(String blank) {
+        MapperContext pageContext = new MapperContext(100, 100);
+        pageContext.putWhereParameter(FieldConstant.TENANT_ID, "public");
+        for (String field : new String[] {FieldConstant.DATA_ID, FieldConstant.GROUP_ID,
+            FieldConstant.APP_NAME, FieldConstant.CONTENT}) {
+            pageContext.putWhereParameter(field, blank);
+        }
+        pageContext.putWhereParameter(FieldConstant.TYPE, new String[0]);
+        
+        MapperResult result = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(pageContext);
+        
+        assertArrayEquals(new Object[] {"public"}, result.getParamList().toArray());
+        assertTrue(result.getSql().contains("WHERE tenant_id LIKE ? ORDER BY id LIMIT 100,100"));
+        assertFalse(result.getSql().contains("IN ()"));
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageBindsEveryOptionalFilterCombination() {
+        String[] fields = {FieldConstant.DATA_ID, FieldConstant.GROUP_ID, FieldConstant.APP_NAME,
+            FieldConstant.CONTENT};
+        String[] values = {"sample\\_routing%", "group\\\\name%", " sample-app ", "%body\\_%"};
+        String[] predicates = {" AND data_id LIKE ?", " AND group_id LIKE ?", " AND app_name = ?",
+            " AND content LIKE ?"};
+        for (int mask = 0; mask < 32; mask++) {
+            MapperContext pageContext = new MapperContext(170, 10);
+            pageContext.putWhereParameter(FieldConstant.TENANT_ID, "public");
+            List<Object> expectedParameters = new ArrayList<>();
+            expectedParameters.add("public");
+            StringBuilder predicate = new StringBuilder("WHERE tenant_id LIKE ?");
+            for (int index = 0; index < fields.length; index++) {
+                if ((mask & (1 << index)) != 0) {
+                    pageContext.putWhereParameter(fields[index], values[index]);
+                    expectedParameters.add(values[index]);
+                    predicate.append(predicates[index]);
+                }
+            }
+            if ((mask & 16) != 0) {
+                pageContext.putWhereParameter(FieldConstant.TYPE, new String[] {"yaml", "text"});
+                expectedParameters.add("yaml");
+                expectedParameters.add("text");
+                predicate.append(" AND type IN (?, ?)");
+            }
+            MapperResult result =
+                configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(pageContext);
+            assertEquals(expectedParameters, result.getParamList(), "filter mask " + mask);
+            assertTrue(result.getSql().contains("SELECT id FROM config_info " + predicate
+                + " ORDER BY id LIMIT 170,10"), "filter mask " + mask);
+            assertTrue(
+                result.getSql().endsWith("GROUP BY a.id) p JOIN config_info c ON c.id=p.id"));
+            assertFalse(result.getSql().contains("DISTINCT"));
+            assertFalse(result.getSql().contains("COALESCE"));
+        }
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageBindsSqlMetacharacters() {
+        String[] fields = {FieldConstant.TENANT_ID, FieldConstant.DATA_ID, FieldConstant.GROUP_ID,
+            FieldConstant.APP_NAME, FieldConstant.CONTENT};
+        String[] values = {"tenant' OR 1=1 --", "name'; SELECT 1; --", "group/* comment */",
+            "app' UNION SELECT 1 --", "%body\\' OR '1'='1%"};
+        MapperContext pageContext = new MapperContext(0, 10);
+        List<Object> expectedParameters = new ArrayList<>();
+        for (int index = 0; index < fields.length; index++) {
+            pageContext.putWhereParameter(fields[index], values[index]);
+            expectedParameters.add(values[index]);
+        }
+        String[] types = {"yaml') OR 1=1 --", "text; SELECT 1"};
+        pageContext.putWhereParameter(FieldConstant.TYPE, types);
+        expectedParameters.add(types[0]);
+        expectedParameters.add(types[1]);
+        
+        MapperResult result = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(pageContext);
+        
+        assertEquals(expectedParameters, result.getParamList());
+        assertEquals(7L, result.getSql().chars().filter(character -> character == '?').count());
+        for (Object parameter : expectedParameters) {
+            assertFalse(result.getSql().contains((String) parameter));
+        }
+        assertTrue(result.getSql().contains("AND type IN (?, ?) ORDER BY id LIMIT 0,10"));
     }
     
     @Test

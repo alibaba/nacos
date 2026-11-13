@@ -42,6 +42,51 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ConfigListConsoleApiOpenApiITCase extends ConfigConsoleApiBaseITCase {
 
     @Test
+    public void testBlurListAndDetailSearchKeepPageBoundariesAndFields() throws Exception {
+        String prefix = randomDataId("sample-routing");
+        String group = randomGroupName("page-fields");
+        String content = "sample-routing=true\nlast-line=true";
+        for (int index = 0; index < 3; index++) {
+            String dataId = prefix + "-" + index;
+            addCleanup(() -> deleteConfigQuietly(dataId, group, ""));
+            publishConfig(dataId, group, "", index == 2 ? content : "sample=" + index,
+                    ConfigType.TEXT.getType(), "sample description", index == 2 ? "sample-tag" : "");
+        }
+        for (String path : new String[] {CONSOLE_CONFIG_LIST_PATH, CONSOLE_CONFIG_SEARCH_DETAIL_PATH}) {
+            for (int pageNo = 1; pageNo <= 3; pageNo++) {
+                JsonNode page = getJsonOk(path, listQuery(prefix + "*", group, "", pageNo, 2)).get("data");
+                assertEquals(3, page.get("totalCount").asInt());
+                assertEquals(2, page.get("pagesAvailable").asInt());
+                assertEquals(pageNo, page.get("pageNumber").asInt());
+                int expectedSize = pageNo == 1 ? 2 : pageNo == 2 ? 1 : 0;
+                assertEquals(expectedSize, page.get("pageItems").size());
+                for (int index = 0; index < expectedSize; index++) {
+                    int ordinal = (pageNo - 1) * 2 + index;
+                    JsonNode item = page.get("pageItems").get(index);
+                    assertEquals(prefix + "-" + ordinal, item.get("dataId").asText());
+                    assertEquals(md5(ordinal == 2 ? content : "sample=" + ordinal), item.get("md5").asText());
+                    assertEquals(group, item.path("groupName").asText());
+                    assertEquals("public", item.path("namespaceId").asText());
+                    assertEquals(ConfigType.TEXT.getType(), item.path("type").asText());
+                    assertEquals("sample description", item.path("desc").asText());
+                    assertEquals(ordinal == 2 ? "sample-tag" : "", item.path("configTags").asText(""));
+                }
+            }
+        }
+        JsonNode noMatch = getJsonOk(CONSOLE_CONFIG_SEARCH_DETAIL_PATH,
+                listQuery(prefix + "*", group, "", 1, 10).addParam("configDetail", "missing' OR 1=1 --"))
+                .get("data");
+        assertEquals(0, noMatch.path("totalCount").asInt());
+        assertEquals(0, noMatch.path("pageItems").size());
+        JsonNode contentPage = getJsonOk(CONSOLE_CONFIG_SEARCH_DETAIL_PATH,
+                listQuery(prefix + "*", group, "", 1, 100).addParam("configDetail", "*last-line=true"))
+                .get("data");
+        assertEquals(1, contentPage.get("totalCount").asInt());
+        assertEquals(prefix + "-2", contentPage.get("pageItems").get(0).get("dataId").asText());
+        assertEquals(content, queryConfig(prefix + "-2", group, "").path("data").path("content").asText());
+    }
+
+    @Test
     public void testListConfigsByFuzzyDataIdAdvancedFiltersAndContentSearch() throws Exception {
         String prefix = randomDataId("list");
         String groupName = randomGroupName("list");

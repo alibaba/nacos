@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -39,6 +40,7 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1495,6 +1497,53 @@ class ExternalConfigInfoPersistServiceImplTest {
             "dataId*", "group*", "", configAdvanceInfo);
         
         assertEquals(1, page.getPageItems().size());
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageWithNoFilters() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {""}), eq(Integer.class)))
+            .thenReturn(0);
+        
+        Page<ConfigInfo> page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3,
+            null, null, null, null);
+        
+        assertEquals(0, page.getTotalCount());
+        assertEquals(1, page.getPageNumber());
+        assertTrue(page.getPageItems().isEmpty());
+        Mockito.verify(jdbcTemplate).queryForObject(anyString(), eq(new Object[] {""}),
+            eq(Integer.class));
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageDecryptsCompleteContentAndKey() {
+        String dataId = "cipher-sample-routing";
+        String encryptedContent = "encrypted-" + "x".repeat(1024 * 1024);
+        String decryptedContent = "decrypted-" + "y".repeat(1024 * 1024);
+        String encryptedKey = "sample-protected-key";
+        ConfigInfo configInfo = createMockConfigInfo(0);
+        configInfo.setDataId(dataId);
+        configInfo.setContent(encryptedContent);
+        configInfo.setEncryptedDataKey(encryptedKey);
+        when(jdbcTemplate.queryForObject(anyString(), Mockito.<Object[]>any(),
+            eq(Integer.class))).thenReturn(101);
+        when(jdbcTemplate.query(anyString(), Mockito.<Object[]>any(),
+            eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(Collections.singletonList(configInfo));
+        try (MockedStatic<EncryptionHandler> encryption =
+            Mockito.mockStatic(EncryptionHandler.class)) {
+            encryption
+                .when(
+                    () -> EncryptionHandler.decryptHandler(dataId, encryptedKey, encryptedContent))
+                .thenReturn(Pair.with("sample-key", decryptedContent));
+            Page<ConfigInfo> page = externalConfigInfoPersistService.findConfigInfoLike4Page(2, 100,
+                "cipher-sample*", "sample-group", "public", new HashMap<>());
+            assertEquals(101, page.getTotalCount());
+            assertEquals(2, page.getPageNumber());
+            assertEquals(1, page.getPageItems().size());
+            assertEquals(decryptedContent, page.getPageItems().get(0).getContent());
+            assertEquals(encryptedKey, page.getPageItems().get(0).getEncryptedDataKey());
+            encryption.verify(
+                () -> EncryptionHandler.decryptHandler(dataId, encryptedKey, encryptedContent));
+        }
     }
     
     @Test
