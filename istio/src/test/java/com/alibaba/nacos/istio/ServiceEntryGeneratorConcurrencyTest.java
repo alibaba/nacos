@@ -58,7 +58,7 @@ class ServiceEntryGeneratorConcurrencyTest {
             info.setGroupName("DEFAULT_GROUP");
             info.setHosts(List.of(instance));
             services.put("service-" + i, new IstioService(
-                    Service.newService("public", "DEFAULT_GROUP", "service-" + i), info));
+                Service.newService("public", "DEFAULT_GROUP", "service-" + i), info));
         }
         ResourceSnapshot snapshot = new ResourceSnapshot(new IstioConfig());
         snapshot.getIstioResources().setIstioServiceMap(services);
@@ -67,7 +67,7 @@ class ServiceEntryGeneratorConcurrencyTest {
         // the protobuf builder does not reject a null version.
         try {
             java.lang.reflect.Field versionField =
-                    ResourceSnapshot.class.getDeclaredField("version");
+                ResourceSnapshot.class.getDeclaredField("version");
             versionField.setAccessible(true);
             versionField.set(snapshot, "test-version");
         } catch (ReflectiveOperationException e) {
@@ -93,8 +93,8 @@ class ServiceEntryGeneratorConcurrencyTest {
         Runnable calls = () -> {
             for (int i = 0; i < CALLS_PER_THREAD; i++) {
                 try {
-                    if (ServiceEntryMcpGenerator.getInstance().generate(request).size()
-                            != SERVICE_COUNT) {
+                    if (ServiceEntryMcpGenerator.getInstance().generate(request)
+                        .size() != SERVICE_COUNT) {
                         wrongSize.incrementAndGet();
                     }
                 } catch (RuntimeException e) {
@@ -115,8 +115,8 @@ class ServiceEntryGeneratorConcurrencyTest {
         Runnable calls = () -> {
             for (int i = 0; i < CALLS_PER_THREAD; i++) {
                 try {
-                    if (ServiceEntryXdsGenerator.getInstance().generate(request).size()
-                            != SERVICE_COUNT) {
+                    if (ServiceEntryXdsGenerator.getInstance().generate(request)
+                        .size() != SERVICE_COUNT) {
                         wrongSize.incrementAndGet();
                     }
                 } catch (RuntimeException e) {
@@ -139,8 +139,8 @@ class ServiceEntryGeneratorConcurrencyTest {
         Runnable calls = () -> {
             for (int i = 0; i < CALLS_PER_THREAD; i++) {
                 try {
-                    if (ServiceEntryXdsGenerator.getInstance().deltaGenerate(request).size()
-                            != SERVICE_COUNT) {
+                    if (ServiceEntryXdsGenerator.getInstance().deltaGenerate(request)
+                        .size() != SERVICE_COUNT) {
                         wrongSize.incrementAndGet();
                     }
                 } catch (RuntimeException e) {
