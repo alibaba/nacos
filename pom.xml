@@ -171,8 +171,8 @@
         <!-- The index.json files of the metadata repository 1.0.x have no "module" field, which 0.10.x
              filters on, so only 1.1.x finds the configurations of the repository. -->
         <native-maven-plugin.version>1.1.18</native-maven-plugin.version>
-        <!-- Release of the GraalVM reachability metadata repository that the native profile adds
-             to the build, see bootstrap/README-AOT.md. -->
+        <!-- Release of the GraalVM reachability metadata repository that the native profile always
+             adds to the build, see bootstrap/README-AOT.md. -->
         <graalvm-reachability-metadata.version>1.0.22</graalvm-reachability-metadata.version>
     </properties>
     <!-- == -->

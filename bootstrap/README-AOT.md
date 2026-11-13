@@ -97,7 +97,6 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.plugins` | `bootstrap/target/native-plugins` | Additional plugin/driver JAR directory |
 | `nacos.native.metadata` | `bootstrap/target/native-metadata` | Additional exercised Native metadata directory |
 | `nacos.native.derby.experimental` | `false` | Explicit opt-in to the experimental Derby arguments below |
-| `nacos.native.repository.enabled` | `true` | Adds the [GraalVM reachability metadata repository](#the-graalvm-reachability-metadata-repository) to the Native classpath; `false` leaves it out and the executable about 35 MB smaller |
 | `nacos.native.build.heap` | `8g` | Maximum Native builder heap |
 | `nacos.native.build.parallelism` | `2` | Native compiler parallelism |
 
@@ -257,7 +256,7 @@ supplies the driver, its metadata and the validation, as for anything else that 
   apply, and whether bundling the driver in an executable complies with them and with the
   distribution policy of the project, has to be confirmed first. Adding the notices alone would not
   be that confirmation.
-- Metadata of the driver. The GraalVM reachability metadata repository has metadata for `ojdbc8`
+- Metadata of the driver. The upstream GraalVM reachability metadata repository has metadata for `ojdbc8`
   23.26.1.0.0 only (the root pom manages 19.7.0.0, for compiling the plugin) and for `ojdbc11`
   23.26.2.0.0 only. For `ojdbc8` it lists one of the five character set resources that the driver
   loads when it creates its first statement (`DynamicByteArray`), so that a Native Server without
@@ -287,10 +286,10 @@ reached, and the access that the bundled entry serves may come before.
 
 ### The GraalVM reachability metadata repository
 
-The `native` profile adds the [GraalVM reachability metadata repository][metadata-repository] to the
-Native classpath, in the release that `graalvm-reachability-metadata.version` of the root `pom.xml`
-names. It helps with the libraries of the Server: when a dependency is added or changes, the
-community metadata for it applies without a refresh, as far as the repository has it. The
+The `native` profile always adds the [GraalVM reachability metadata repository][metadata-repository]
+to the Native classpath, in the release that `graalvm-reachability-metadata.version` of the root
+`pom.xml` names. It helps with the libraries of the Server: when a dependency is added or changes,
+the community metadata for it applies without a refresh, as far as the repository has it. The
 `native-maven-plugin` adds the repository only to a classpath that it builds itself, and this build
 passes the exact one in `classpath.args`. So the profile runs the plugin's
 `add-reachability-metadata` goal, which copies the configuration of the artifacts of the module to
@@ -300,22 +299,25 @@ bundled file of the same artifact have the same name. For the same reason a jar 
 directory gets none of the repository, and a driver that relies on it has to be a dependency of
 the module.
 
-The files do not rely on the repository, and nothing was taken out of them for it, so a build with
-the repository and a build without it both work, and a new release of it needs no change of the
-files. It guards nearly all of its entries with a `typeReached` condition, and a guard may be reached later
-than the access that the Server needs it for. The repository guards the methods of
+The profile deletes `bootstrap/target/native-reachability` at `generate-resources`, before the goal
+runs, so that a dependency or repository-version change cannot leave stale metadata on the
+classpath.
+
+The files do not rely on the repository, and nothing was taken out of them for it, so a new release
+of the repository needs no change of the files. It guards nearly all of its entries with a
+`typeReached` condition, and a guard may be reached later than the access that the Server needs it
+for. The repository guards the methods of
 `com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql` with `HealthCheckerFactory`, which a
 Server that loads its persistent services from a Raft snapshot does not reach: a restarted Server
 failed to read such a service with a missing registration when the bundle lacked the entry of
 `Mysql`, and a bundle that relied on the repository would fail the same way.
 
-The repository costs about 35 MB: the executable of a test build was 288 MB with it and
-253 MB without it (GraalVM CE 25.2.4). To leave it out, build with
-`-Dnacos.native.repository.enabled=false`. The plugin downloads the release from GitHub into
-`bootstrap/target/graalvm-reachability-metadata` and reuses it until `clean`. A build without access
-to GitHub leaves the repository out, or sets `<url>` or `<localPath>` in the `metadataRepository` of
-the `add-reachability-metadata` execution in `bootstrap/pom.xml` to a copy of
-`graalvm-reachability-metadata-<version>.zip`.
+The repository costs about 35 MB: the executable of a test build was 288 MB with it and 253 MB
+without it (GraalVM CE 25.2.4). The plugin downloads the release from GitHub into
+`bootstrap/target/graalvm-reachability-metadata` and reuses it until `clean`; set `<url>` or
+`<localPath>` in the `metadataRepository` of the `add-reachability-metadata` execution in
+`bootstrap/pom.xml` to a copy of `graalvm-reachability-metadata-<version>.zip` when the build
+cannot reach GitHub.
 
 [metadata-repository]: https://github.com/oracle/graalvm-reachability-metadata
 

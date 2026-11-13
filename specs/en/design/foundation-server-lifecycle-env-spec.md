@@ -335,14 +335,14 @@ build does not require the operator to trace the Server first.
   only the rest is kept. Only an entry without a condition counts as provided: an entry with a
   `typeReached` condition is available once its type is reached, and the access that the bundled
   entry serves may come before.
-- Reachability metadata repository. The `native` profile adds the GraalVM reachability metadata
-  repository, in the release that `graalvm-reachability-metadata.version` of the root POM names, to
-  the Native classpath. The `native-maven-plugin` adds it only to a classpath that it builds
-  itself, so the profile runs its `add-reachability-metadata` goal and puts the output on the
-  Native classpath. `nacos.native.repository.enabled=false` leaves it out. The files do not rely on
-  it and do not count it as a source, because it guards nearly all of its entries with a
-  condition: a build with and a build without the repository both work, and a new release of it
-  needs no change of the files.
+- Reachability metadata repository. The `native` profile always adds the GraalVM reachability
+  metadata repository, in the release that `graalvm-reachability-metadata.version` of the root POM
+  names, to the Native classpath. The `native-maven-plugin` adds it only to a classpath that it
+  builds itself, so the profile runs its `add-reachability-metadata` goal and puts the output on
+  the Native classpath. The output directory is deleted before the goal runs, so stale metadata
+  cannot survive a dependency or repository-version change. The files do not rely on it and do not
+  count it as a source, because it guards nearly all of its entries with a condition: a new release
+  of the repository needs no change of the files.
 - Conditions. Every entry carries a `typeReached` condition that depends on its owner. The entries
   of Nacos and of the JDK carry `com.alibaba.nacos.bootstrap.NacosBootstrap`, the Server entry
   point, which is initialized before any other Server code runs. The entries of a third-party
