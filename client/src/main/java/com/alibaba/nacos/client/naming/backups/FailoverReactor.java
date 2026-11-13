@@ -117,7 +117,7 @@ public class FailoverReactor implements Closeable {
                             NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope,
                                 newService.getName(),
                                 newService.getGroupName(), newService.getClusters(),
-                                newService.getHosts(), diff));
+                                newService.getHosts(), diff, true));
                         }
                         failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
@@ -143,7 +143,7 @@ public class FailoverReactor implements Closeable {
                                     new InstancesChangeEvent(notifierEventScope,
                                         newService.getName(),
                                         newService.getGroupName(), newService.getClusters(),
-                                        newService.getHosts(), diff));
+                                        newService.getHosts(), diff, true));
                             }
                         }
                     }

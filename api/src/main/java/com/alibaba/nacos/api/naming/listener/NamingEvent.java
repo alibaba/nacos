@@ -35,17 +35,28 @@ public class NamingEvent implements Event {
     
     private List<Instance> instances;
     
+    private final boolean fromPush;
+    
     public NamingEvent(String serviceName, List<Instance> instances) {
-        this.serviceName = serviceName;
-        this.instances = instances;
+        this(serviceName, null, null, instances, false);
     }
     
     public NamingEvent(String serviceName, String groupName, String clusters,
         List<Instance> instances) {
+        this(serviceName, groupName, clusters, instances, false);
+    }
+    
+    public NamingEvent(String serviceName, String groupName, String clusters,
+        List<Instance> instances, boolean fromPush) {
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.instances = instances;
+        this.fromPush = fromPush;
+    }
+    
+    public boolean isFromPush() {
+        return fromPush;
     }
     
     public String getServiceName() {

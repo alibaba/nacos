@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InstancesChangeEventTest {
@@ -42,6 +43,7 @@ class InstancesChangeEventTest {
             new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts,
                 diff);
         assertEquals(eventScope, event.scope());
+        assertFalse(event.isFromPush());
         assertEquals(serviceName, event.getServiceName());
         assertEquals(clusters, event.getClusters());
         assertEquals(groupName, event.getGroupName());

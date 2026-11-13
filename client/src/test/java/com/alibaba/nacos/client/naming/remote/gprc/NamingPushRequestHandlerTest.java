@@ -50,7 +50,7 @@ class NamingPushRequestHandlerTest {
             handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
         //then
         assertTrue(response instanceof NotifySubscriberResponse);
-        verify(holder, times(1)).processServiceInfo(info);
+        verify(holder, times(1)).processServiceInfo(info, true);
     }
     
     @Test

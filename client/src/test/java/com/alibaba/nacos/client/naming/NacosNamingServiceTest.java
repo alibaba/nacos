@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -1173,7 +1174,10 @@ class NacosNamingServiceTest {
         when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP))
             .thenReturn(serviceInfo);
         final AtomicBoolean flag = new AtomicBoolean(false);
-        client.subscribe(serviceName, event -> flag.set(true));
+        client.subscribe(serviceName, event -> {
+            assertFalse(((NamingEvent) event).isFromPush());
+            flag.set(true);
+        });
         assertTrue(flag.get());
     }
     

@@ -38,6 +38,19 @@ HTTP API IT CI and should build this module without executing SDK IT cases.
 Destructive restart and cluster cases run through
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md).
 
+## Naming push notification flag (#15902)
+
+`NamingServiceJavaSdkITCase.testCacheReplayAndPushNotificationFlags` verifies cache replay
+to a new listener, no extra replay to an existing listener, server-push updates, and
+unsubscribe/resubscribe replay. Polling and startup disk-cache loading are disabled to
+isolate the push path.
+
+Client unit tests cover subscription-response/push races, legacy defaults, selector
+propagation, unchanged-view suppression, background queries, and failover changes/recovery.
+Standalone IT cannot reliably isolate polling from competing pushes or trigger failover
+through the public SDK. See `JAVA_SDK_IT_SCENARIOS.md` for the scenario matrix. No HTTP API
+or wire contract changes.
+
 ## Card-level A2A security requirements (#15975, item 1)
 
 Card-level A2A security requirements (#15975, item 1) are covered by
