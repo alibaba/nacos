@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Client and service index manager.
@@ -139,20 +140,23 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             // The only time the index needs to be updated is when the service is first created
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
+        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
         NotifyCenter
             .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
-        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
+        AtomicReference<String> changedType = new AtomicReference<>();
         publisherIndexes.computeIfPresent(service, (s, ids) -> {
             ids.remove(clientId);
-            String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
-                : Constants.ServiceChangedType.INSTANCE_CHANGED;
-            NotifyCenter.publishEvent(
-                new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
+            changedType.set(ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
+                : Constants.ServiceChangedType.INSTANCE_CHANGED);
             return ids.isEmpty() ? null : ids;
         });
+        if (changedType.get() != null) {
+            NotifyCenter.publishEvent(
+                new ServiceEvent.ServiceChangedEvent(service, changedType.get(), true));
+        }
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {

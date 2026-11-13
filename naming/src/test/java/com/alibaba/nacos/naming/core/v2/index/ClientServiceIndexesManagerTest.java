@@ -17,20 +17,25 @@
 package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -203,6 +208,74 @@ class ClientServiceIndexesManagerTest {
         
         assertTrue(clientServiceIndexesManager.getAllClientsSubscribeService(service).isEmpty());
         assertTrue(clientServiceIndexesManager.getAllClientsRegisteredService(service).isEmpty());
+    }
+    
+    @Test
+    void testClientReleasePublishesAfterPublisherIndexRemoval() {
+        Mockito.when(client.getClientId()).thenReturn(NACOS);
+        Mockito.when(client.getAllSubscribeService()).thenReturn(Collections.emptySet());
+        Mockito.when(client.getAllPublishedService()).thenReturn(Collections.singleton(service));
+        Mockito.when(client.getInstancePublishInfo(service))
+            .thenReturn(new InstancePublishInfo("1.1.1.1", 8848));
+        try (MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+            List<String> changes = new ArrayList<>();
+            notifications.when(() -> NotifyCenter.publishEvent(
+                Mockito.isA(ServiceEvent.ServiceChangedEvent.class))).thenAnswer(invocation -> {
+                    ServiceEvent.ServiceChangedEvent event = invocation.getArgument(0);
+                    assertTrue(clientServiceIndexesManager.getAllClientsRegisteredService(service)
+                        .isEmpty());
+                    changes.add(event.getChangedType());
+                    return true;
+                });
+            clientServiceIndexesManager
+                .onEvent(new ClientOperationEvent.ClientReleaseEvent(client, true));
+            assertTrue(
+                clientServiceIndexesManager.getAllClientsRegisteredService(service).isEmpty());
+            assertEquals(List.of(Constants.ServiceChangedType.DELETE_SERVICE), changes);
+        }
+    }
+    
+    @Test
+    void testPublisherIndexIsUpdatedBeforeServiceChangeNotification()
+        throws NoSuchFieldException, IllegalAccessException {
+        Service newService = Mockito.mock(Service.class);
+        List<Set<String>> indexes = new ArrayList<>();
+        List<String> changes = new ArrayList<>();
+        List<Boolean> entries = new ArrayList<>();
+        Field field = ClientServiceIndexesManager.class.getDeclaredField("publisherIndexes");
+        field.setAccessible(true);
+        ConcurrentMap<?, ?> publisherIndexes =
+            (ConcurrentMap<?, ?>) field.get(clientServiceIndexesManager);
+        try (MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+            notifications.when(() -> NotifyCenter.publishEvent(
+                Mockito.isA(ServiceEvent.ServiceChangedEvent.class)))
+                .thenAnswer(invocation -> {
+                    ServiceEvent.ServiceChangedEvent event = invocation.getArgument(0);
+                    assertEquals(newService, event.getService());
+                    changes.add(event.getChangedType());
+                    indexes.add(Set.copyOf(clientServiceIndexesManager
+                        .getAllClientsRegisteredService(newService)));
+                    entries.add(publisherIndexes.containsKey(newService));
+                    return true;
+                });
+            
+            clientServiceIndexesManager.onEvent(
+                new ClientOperationEvent.ClientRegisterServiceEvent(newService, "client-1"));
+            clientServiceIndexesManager.onEvent(
+                new ClientOperationEvent.ClientRegisterServiceEvent(newService, "client-2"));
+            clientServiceIndexesManager.onEvent(
+                new ClientOperationEvent.ClientDeregisterServiceEvent(newService, "client-1"));
+            clientServiceIndexesManager.onEvent(
+                new ClientOperationEvent.ClientDeregisterServiceEvent(newService, "client-2"));
+            
+            assertEquals(List.of(Set.of("client-1"), Set.of("client-1", "client-2"),
+                Set.of("client-2"), Set.of()), indexes);
+            assertEquals(List.of(true, true, true, false), entries);
+            assertEquals(List.of(Constants.ServiceChangedType.ADD_SERVICE,
+                Constants.ServiceChangedType.INSTANCE_CHANGED,
+                Constants.ServiceChangedType.INSTANCE_CHANGED,
+                Constants.ServiceChangedType.DELETE_SERVICE), changes);
+        }
     }
     
     @Test

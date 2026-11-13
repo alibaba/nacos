@@ -107,6 +107,8 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 - Istio MCP/xDS 响应形态遵循 Istio 和 Envoy 协议预期。
 - Istio MCP/xDS stream 使用的初始快照和后续快照必须按已配置的 Istio 设置生成资源，
   包括在后续 Naming 变更事件发生前的首次连接。
+- 实例注册或注销时，必须在对应 Naming 发布者索引更新后刷新 Istio 视图。
+- 服务变化事件也会在客户端释放、健康状态及实例元数据变化时刷新 Istio 视图；服务元数据变化仍需订阅。
 - Adapter 必须通过 debounce 和 push 行为容忍 Naming 变化，且不得成为权威 Naming store。
 - 当启用该 adapter 时，部署文档必须记录端口暴露、鉴权和网络放置方式。
 
