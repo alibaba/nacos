@@ -54,6 +54,19 @@ class HubSkillMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     }
 
     @Test
+    void resourceSpecificHubFacadesValidateBeforeTransport() throws Exception {
+        com.alibaba.nacos.maintainer.client.ai.AiMaintainerService ai = createAiMaintainerService();
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.mcp().importHubMcp(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.agent().importHubAgent(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.prompt().importHubPrompt(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.agentSpec().importHubAgentSpec(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.mcp().shareHubMcp(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.agent().shareHubAgent(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.prompt().shareHubPrompt(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> ai.agentSpec().shareHubAgentSpec(null)).getErrCode());
+    }
+
+    @Test
     void nullRequestsFailWithControlledLocal400() {
         assertEquals(400, assertThrows(NacosException.class, () -> skill.shareHubSkill(null)).getErrCode());
         assertEquals(400, assertThrows(NacosException.class, () -> skill.adjustHubShare(null)).getErrCode());
@@ -127,7 +140,7 @@ class HubSkillMaintainerSdkITCase extends MaintainerSdkBaseITCase {
     @Test
     void transferValidationAndAnonymousDenialArePreserved() throws Exception {
         assertEquals(400, assertThrows(NacosException.class, () -> skill.importHubSkill(null)).getErrCode());
-        assertEquals(400, assertThrows(NacosException.class, () -> skill.copyHubSkill(null)).getErrCode());
+        assertEquals(400, assertThrows(NacosException.class, () -> skill.cloneHubSkill(null)).getErrCode());
         HubSkillTransferRequest request =
             new HubSkillTransferRequest();
         request.setHubEntryId(Long.MAX_VALUE);

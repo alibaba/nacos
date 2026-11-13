@@ -16,7 +16,14 @@
 
 package com.alibaba.nacos.ai.hub;
 
+import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
+import com.alibaba.nacos.ai.service.SkillDownloadCountManager;
+import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
+import com.alibaba.nacos.ai.service.repository.AiResourcePersistServiceImpl;
+import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.EmbeddedAiResourcePersistServiceImpl;
 import com.alibaba.nacos.ai.service.repository.EmbeddedHubEntryStorage;
 import com.alibaba.nacos.ai.service.repository.ExternalHubEntryStorage;
 import com.alibaba.nacos.ai.service.repository.HubEntryStorage;
@@ -45,12 +52,14 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -93,6 +102,74 @@ class HubEntryStorageDerbyTest {
         if (database != null) {
             database.close();
         }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void typedDownloadCountersCommitTogetherAndPreserveRevisionAndSortDate(boolean embedded)
+        throws Exception {
+        HubEntryStorage storage = storage(embedded);
+        for (HubResourceType type : HubResourceType.values()) {
+            long entryId = insert(HUB, NAME, type.resourceType(), "hub");
+            long sourceId = insert("source", NAME, type.resourceType(), "local");
+            database.update("INSERT INTO ai_resource_version "
+                + "(namespace_id,name,type,version,status,storage) VALUES (?,?,?,'1.0.0','online','{}')",
+                HUB, NAME, type.resourceType());
+            long versionId = database.queryLong("SELECT id FROM ai_resource_version "
+                + "WHERE namespace_id=? AND name=? AND type=?", HUB, NAME, type.resourceType());
+            Timestamp sortDate = Timestamp.valueOf("2020-01-01 00:00:00");
+            database.update("UPDATE ai_resource SET gmt_modified=? WHERE id=?", sortDate, entryId);
+            database.update("UPDATE ai_resource_version SET gmt_modified=? WHERE id=?", sortDate,
+                versionId);
+            assertTrue(storage.incrementDownloads(type, entryId, versionId, NAME, 3));
+            assertEquals(3L, storage.findByEntryId(type, entryId).getDownloadCount());
+            assertEquals(3L, database
+                .queryLong("SELECT download_count FROM ai_resource_version WHERE id=?", versionId));
+            assertEquals(1L, storage.findByEntryId(type, entryId).getMetaVersion());
+            assertEquals(sortDate, storage.findByEntryId(type, entryId).getGmtModified());
+            assertFalse(storage.incrementDownloads(type, sourceId, versionId, NAME, 7));
+            assertFalse(storage.incrementDownloads(type, entryId, Long.MAX_VALUE, NAME, 7));
+            assertEquals(3L, storage.findByEntryId(type, entryId).getDownloadCount());
+            assertEquals(3L, database
+                .queryLong("SELECT download_count FROM ai_resource_version WHERE id=?", versionId));
+            assertEquals(0L,
+                database.queryLong("SELECT download_count FROM ai_resource WHERE id=?", sourceId));
+            assertEquals(sortDate, storage.findByEntryId(type, entryId).getGmtModified());
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void typedReadsAndCasNeverCrossResourceTypes(boolean embedded) throws Exception {
+        HubEntryStorage storage = storage(embedded);
+        for (HubResourceType type : HubResourceType.values()) {
+            insert(HUB, NAME, type.resourceType(), "hub");
+            insert("source-ns", NAME, type.resourceType(), "hub");
+            insert(HUB, NAME, type.resourceType(), "local");
+        }
+        for (HubResourceType type : HubResourceType.values()) {
+            AiResource entry = storage.findByInternalName(type, NAME);
+            assertEquals(type.resourceType(), entry.getType());
+            assertEquals(entry.getId(), storage.findByEntryId(type, entry.getId()).getId());
+            assertEquals(entry.getId(), storage.maxEntryId(type));
+            assertEquals(entry.getId(), storage.nextEntryId(type, 0, Long.MAX_VALUE));
+            assertEquals(1, storage.entriesInIdRange(type, 0, Long.MAX_VALUE).size());
+            for (HubResourceType other : HubResourceType.values()) {
+                if (other != type) {
+                    assertNull(storage.findByEntryId(other, entry.getId()));
+                    assertFalse(storage.updateMetaCas(other, entry, 1,
+                        desired("enable", "must-not-write")));
+                }
+            }
+            assertTrue(storage.updateMetaCas(type, entry, 1, desired("enable", "pinned")));
+            assertFalse(storage.updateMetaCas(type, entry, 1, desired("disable", "stale")));
+            AiResource updated = storage.findByEntryId(type, entry.getId());
+            assertEquals(2L, updated.getMetaVersion());
+            assertEquals("pinned", updated.getExt());
+            assertEquals(type.resourceType(), updated.getType());
+        }
+        assertEquals("skill", storage.findByInternalName(NAME).getType());
+        assertEquals(1, storage.entriesInIdRange(0, Long.MAX_VALUE).size());
     }
     
     @ParameterizedTest
@@ -158,6 +235,47 @@ class HubEntryStorageDerbyTest {
     
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
+    void metadataPublicationPreservesConcurrentHubDownloads(boolean embedded) throws Exception {
+        long id = insert(HUB, NAME, "skill", "hub");
+        HubEntryStorage storage = storage(embedded);
+        AiResource existing = storage.findByEntryId(id);
+        database.update("UPDATE ai_resource SET download_count=9 WHERE id=?", id);
+        AiResource next = desired("enable", "reference-v2");
+        next.setDownloadCount(0L);
+        assertTrue(storage.updateMetaCas(existing, 1L, next));
+        assertEquals(9L, storage.findByEntryId(id).getDownloadCount());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void hubDownloadFlushPreservesShareTimeAndIsolatesHubOrigin(boolean embedded) throws Exception {
+        long hubId = insert(HUB, NAME, "skill", "hub");
+        long localId = insert(HUB, NAME, "skill", "local");
+        long sourceId = insert("public", NAME, "skill", "local");
+        Timestamp sharedAt = Timestamp.valueOf("2026-01-01 12:00:00");
+        database.update("UPDATE ai_resource SET gmt_modified=?", sharedAt);
+        AiResourcePersistService persistence = resourcePersistence(embedded);
+        SkillDownloadCountManager manager = new SkillDownloadCountManager(persistence,
+            mock(AiResourceVersionPersistService.class));
+        manager.onEvent(new SkillDownloadEvent(HUB, NAME, "skill", "1.0.0"));
+        manager.shutdown();
+        assertEquals(1L,
+            database.queryLong("SELECT download_count FROM ai_resource WHERE id=?", hubId));
+        assertEquals(0L,
+            database.queryLong("SELECT download_count FROM ai_resource WHERE id=?", localId));
+        assertEquals(0L,
+            database.queryLong("SELECT download_count FROM ai_resource WHERE id=?", sourceId));
+        assertEquals(sharedAt, jdbcTemplate.queryForObject(
+            "SELECT gmt_modified FROM ai_resource WHERE id=?", Timestamp.class, hubId));
+        assertEquals(sharedAt, jdbcTemplate.queryForObject(
+            "SELECT gmt_modified FROM ai_resource WHERE id=?", Timestamp.class, localId));
+        assertTrue(persistence.incrementDownloadCount("public", NAME, "skill", 1L));
+        assertNotEquals(sharedAt, jdbcTemplate.queryForObject(
+            "SELECT gmt_modified FROM ai_resource WHERE id=?", Timestamp.class, sourceId));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     void casMustRejectWrongIdNameOrNonHubOrigin(boolean embedded) throws Exception {
         long id = insert(HUB, NAME, "skill", "hub");
         long localId = insert(HUB, NAME, "skill", "local");
@@ -210,6 +328,28 @@ class HubEntryStorageDerbyTest {
         }
     }
     
+    private AiResourcePersistService resourcePersistence(boolean embedded) {
+        DynamicDataSource dynamic = mock(DynamicDataSource.class);
+        DataSourceService source = mock(DataSourceService.class);
+        MapperManager manager = mock(MapperManager.class);
+        AiResourceMapper mapper = mock(AiResourceMapper.class);
+        when(mapper.getFunction("NOW()")).thenReturn("CURRENT_TIMESTAMP");
+        when(dynamic.getDataSource()).thenReturn(source);
+        when(source.getDataSourceType()).thenReturn("derby");
+        when(source.getJdbcTemplate()).thenReturn(jdbcTemplate);
+        when(manager.findMapper("derby", TableConstant.AI_RESOURCE)).thenReturn(mapper);
+        try (MockedStatic<DynamicDataSource> dataSources = mockStatic(DynamicDataSource.class);
+            MockedStatic<MapperManager> managers = mockStatic(MapperManager.class);
+            MockedStatic<EnvUtil> environment = mockStatic(EnvUtil.class)) {
+            dataSources.when(DynamicDataSource::getInstance).thenReturn(dynamic);
+            managers.when(() -> MapperManager.instance(false)).thenReturn(manager);
+            environment.when(() -> EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG,
+                Boolean.class, false)).thenReturn(false);
+            return embedded ? new EmbeddedAiResourcePersistServiceImpl(databaseOperate())
+                : new AiResourcePersistServiceImpl();
+        }
+    }
+    
     private DatabaseOperate databaseOperate() {
         DatabaseOperate operate = mock(DatabaseOperate.class, CALLS_REAL_METHODS);
         BaseDatabaseOperate base = mock(BaseDatabaseOperate.class, CALLS_REAL_METHODS);
@@ -220,6 +360,14 @@ class HubEntryStorageDerbyTest {
         doAnswer(invocation -> base.queryOne(jdbcTemplate, invocation.getArgument(0),
             invocation.<Object[]>getArgument(1), invocation.<RowMapper<AiResource>>getArgument(2)))
             .when(operate).queryOne(anyString(), any(Object[].class),
+                org.mockito.Mockito.<RowMapper<AiResource>>any());
+        doAnswer(invocation -> jdbcTemplate.queryForObject(invocation.getArgument(0),
+            Long.class, invocation.<Object[]>getArgument(1)))
+            .when(operate).queryOne(anyString(), any(Object[].class),
+                org.mockito.ArgumentMatchers.eq(Long.class));
+        doAnswer(invocation -> jdbcTemplate.query(invocation.getArgument(0),
+            invocation.<Object[]>getArgument(1), invocation.<RowMapper<AiResource>>getArgument(2)))
+            .when(operate).queryMany(anyString(), any(Object[].class),
                 org.mockito.Mockito.<RowMapper<AiResource>>any());
         return operate;
     }

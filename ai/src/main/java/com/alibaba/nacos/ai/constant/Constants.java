@@ -452,4 +452,32 @@ public class Constants {
         
         public static final String ENTRY_RESOURCE = AiConstants.Hub.ENTRY_RESOURCE;
     }
+    
+    /** Mcp Hub API paths. */
+    public static class HubMcp {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/hub/mcp";
+        public static final String CONSOLE_PATH = "/v3/console/ai/hub/mcp";
+    }
+    
+    /** Agent Hub API paths. */
+    public static class HubAgent {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/hub/agent";
+        public static final String CONSOLE_PATH = "/v3/console/ai/hub/agent";
+    }
+    
+    /** Prompt Hub API paths. */
+    public static class HubPrompt {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/hub/prompt";
+        public static final String CONSOLE_PATH = "/v3/console/ai/hub/prompt";
+    }
+    
+    /** AgentSpec Hub API paths. */
+    public static class HubAgentSpec {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/hub/agentspec";
+        public static final String CONSOLE_PATH = "/v3/console/ai/hub/agentspec";
+    }
 }

@@ -143,4 +143,5 @@ public class PromptProxy {
         throws NacosException {
         promptHandler.updateBizTags(namespaceId, promptKey, bizTags);
     }
+    
 }

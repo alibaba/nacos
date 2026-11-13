@@ -211,7 +211,8 @@ Only sharing, unsharing, transfer, and governance-specific operations retain
 their special management routes.
 
 
-This increment enables Hub only for Skill. MCP Server, Agent, Prompt and AgentSpec retain their original management and runtime behavior; their Hub integration is deferred.
+Hub sharing, discovery and independent draft import cover Skill, MCP Server, Agent, Prompt and AgentSpec. Direct cross-Namespace cloning remains Skill-only.
+Before taking the actively shared version offline, disabling a shared source, or making it PRIVATE where supported, the source detail must warn that the operation may immediately revoke sharing and allow cancellation before mutation. Taking another version offline must not show this warning. Source deletion and batch deletion confirmations must explain that deleting actively shared resources also revokes their shares. These reminders follow the Hub capability switch and do not change the underlying lifecycle or permission rules; Prompt does not acquire scope or enable controls from this feature.
 Skill Hub details retain SKILL.md, resource files, the native ZIP download and pinned CLI installation command. Basic information omits lifecycle status and source counters; only the independent Hub counter is shown.
 Successful import or direct copy opens the ordinary target Skill draft using the returned namespace, name and draft version. It never publishes, synchronizes with the source, or repeats the import because the target page failed to load.
 

@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.ai.service.prompt;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+import com.alibaba.nacos.ai.service.hub.HubPromptReadAdapter;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.LABEL_LATEST;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_DRAFT;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_ONLINE;
 import static com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
 
-import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -96,6 +99,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final AiResourceStorageRouter storageRouter;
     
+    private final PromptStorageReader contentReader;
+    
     private final PublishPipelineExecutor publishPipelineExecutor;
     
     private final ConfigOperationService configOperationService;
@@ -112,10 +117,35 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResourceManager resourceManager,
         PromptDataMigrationTask promptDataMigrationTask) {
         this.storageRouter = AiResourceStorageRouter.getInstance();
+        this.contentReader = new PromptStorageReader(storageRouter);
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.configOperationService = configOperationService;
         this.resourceManager = resourceManager;
         this.promptDataMigrationTask = promptDataMigrationTask;
+    }
+    
+    private HubPromptReadAdapter sharedPrompts;
+    
+    /** Install fixed-version shared reads while retaining ordinary Prompt service construction. */
+    @Autowired
+    public void setSharedPromptReadAdapter(HubPromptReadAdapter adapter) {
+        this.sharedPrompts = adapter;
+    }
+    
+    private HubPromptReadAdapter sharedReads() throws NacosException {
+        if (sharedPrompts == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Shared Prompt reader is unavailable");
+        }
+        return sharedPrompts;
+    }
+    
+    private HubResourceLifecycleRevoker hubResourceLifecycleRevoker;
+    
+    /** Protect canonical and legacy Prompt cleanup with the same publication fences. */
+    @Autowired(required = false)
+    public void setHubResourceLifecycleRevoker(HubResourceLifecycleRevoker revoker) {
+        this.hubResourceLifecycleRevoker = revoker;
     }
     
     @Autowired(required = false)
@@ -462,6 +492,17 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             VisibilityHelper.checkWritableResource(meta);
         }
         
+        if (hubResourceLifecycleRevoker == null) {
+            deletePromptContents(namespaceId, promptKey);
+        } else {
+            hubResourceLifecycleRevoker.around(meta, null, () -> {
+                deletePromptContents(namespaceId, promptKey);
+                return null;
+            });
+        }
+    }
+    
+    private void deletePromptContents(String namespaceId, String promptKey) throws NacosException {
         List<AiResourceVersion> allVersions = loadAllVersionRows(namespaceId, promptKey);
         
         // Delete legacy latest mirror in nacos-ai-prompt group
@@ -504,11 +545,15 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public PromptMetaInfo getPromptDetail(String namespaceId, String promptKey)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getMeta(promptKey);
+        }
         AiResource meta = requireReadableMeta(namespaceId, promptKey);
         PromptVersionInfoPojo versionInfo = requireVersionInfo(meta);
         
         PromptMetaInfo detail = new PromptMetaInfo();
         detail.setPromptKey(promptKey);
+        
         detail.setDescription(meta.getDesc());
         detail.setLatestVersion(
             versionInfo.getLabels() != null ? versionInfo.getLabels().get(LABEL_LATEST) : null);
@@ -550,6 +595,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public PromptVersionInfo getPromptVersionDetail(String namespaceId, String promptKey,
         String version)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getVersion(promptKey, version);
+        }
         requireReadableMeta(namespaceId, promptKey);
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -573,6 +621,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey,
         String version)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().download(promptKey, version);
+        }
         PromptVersionInfo info = getPromptVersionDetail(namespaceId, promptKey, version);
         NotifyCenter.publishEvent(new PromptDownloadEvent(namespaceId, promptKey, version));
         return info;
@@ -582,6 +633,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search,
         String bizTags,
         int pageNo, int pageSize) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().list(promptKey, search, bizTags, pageNo, pageSize);
+        }
         String nameLike = null;
         if (StringUtils.isNotBlank(promptKey)) {
             if ("blur".equalsIgnoreCase(search)) {
@@ -642,6 +696,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public Page<PromptVersionSummary> listPromptVersions(String namespaceId, String promptKey,
         int pageNo,
         int pageSize) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().versions(promptKey, pageNo, pageSize);
+        }
         requireReadableMeta(namespaceId, promptKey);
         
         Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, promptKey,
@@ -680,6 +737,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     public PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version,
         String label)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().query(promptKey, version, label);
+        }
         AiResource meta = requireReadableMeta(namespaceId, promptKey);
         
         PromptVersionInfoPojo info = requireVersionInfo(meta);
@@ -805,20 +865,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private PromptVersionInfo loadPromptFromStorage(String namespaceId, String promptKey,
         String version, String storageJson) throws NacosException {
-        String provider = parseStorageProvider(storageJson);
-        StorageKey storageKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-            RESOURCE_TYPE_PROMPT, promptKey, version,
-            PromptUtils.PROMPT_MAIN_DATA_ID);
-        byte[] data = storageRouter.route(storageKey).get(storageKey);
-        if (data == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Prompt content not found: " + promptKey + "@" + version);
-        }
-        PromptVersionInfo result =
-            JacksonUtils.toObj(new String(data, StandardCharsets.UTF_8), PromptVersionInfo.class);
-        result.setPromptKey(promptKey);
-        result.setVersion(version);
-        return result;
+        return contentReader.read(namespaceId, promptKey, version, storageJson);
     }
     
     private void deletePromptStorageForVersion(String namespaceId, String promptKey,

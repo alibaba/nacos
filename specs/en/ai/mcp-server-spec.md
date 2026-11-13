@@ -824,3 +824,6 @@ The following require later independent designs:
 Upstream MCP tool, resource, transport, auth, and Registry formats may evolve.
 Such changes must preserve the Nacos identity and ownership boundaries or
 publish an explicit schema and migration revision.
+
+
+Hub scope, clone restrictions and service instance behavior follow [Agentic Resource Hub](agentic-resource-hub-spec.md).

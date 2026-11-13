@@ -24,7 +24,7 @@ interface SkillState {
   selectedNames: Set<string>;
 
   // Detail
-  currentDetail: (SkillAdminDetail & { name: string }) | null;
+  currentDetail: (SkillAdminDetail & { name: string; namespaceId: string }) | null;
   detailLoading: boolean;
 
   // Error
@@ -45,6 +45,9 @@ interface SkillActions {
 }
 
 type SkillStore = SkillState & SkillActions;
+
+// Only the most recent request may update the detail, including after page cleanup.
+let detailRequestId = 0;
 
 export const useSkillStore = create<SkillStore>((set, get) => ({
   // List
@@ -103,15 +106,19 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
   },
 
   fetchDetail: async (namespaceId: string, name: string) => {
-    const hasDetail = get().currentDetail !== null;
-    set({ detailLoading: !hasDetail, error: null });
+    const requestId = ++detailRequestId;
+    const detail = get().currentDetail;
+    const hasDetail = detail?.namespaceId === namespaceId && detail.name === name;
+    set({ detailLoading: !hasDetail, error: null, currentDetail: hasDetail ? detail : null });
     try {
       const response = await skillApi.getDetail({ namespaceId, skillName: name });
+      if (requestId !== detailRequestId) return;
       set({
-        currentDetail: { ...response.data, name },
+        currentDetail: { ...response.data, name, namespaceId },
         detailLoading: false,
       });
     } catch (error) {
+      if (requestId !== detailRequestId) return;
       const axiosError = error as AxiosError<{ message?: string }>;
       set({
         detailLoading: false,
@@ -154,7 +161,8 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
   },
 
   clearDetail: () => {
-    set({ currentDetail: null });
+    ++detailRequestId;
+    set({ currentDetail: null, detailLoading: false });
   },
 
   clearError: () => {

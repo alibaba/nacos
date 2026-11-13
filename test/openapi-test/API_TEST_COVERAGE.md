@@ -16,6 +16,12 @@
 
 # OpenAPI IT Coverage Registry
 
+Hub regression coverage includes typed disabled cancellation/state gates and verified Hub-read
+admission without source READ. `HubDisabledApiOpenApiITCase` covers the disabled Admin/Console
+matrix; `HubTypedManagementOpenApiITCase` uses the native AgentSpec Client DTO and separately
+checks permission-gated management metadata. Reserved ordinary source Namespace validation
+preserves `ILLEGAL_NAMESPACE`. See `HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md` for the matrix.
+
 This registry records which Nacos HTTP APIs are covered by
 `test/openapi-test` integration tests and where to find the scenario matrix for
 each API surface. It is meant for maintainers and agents to quickly locate
@@ -687,8 +693,11 @@ and populated service-list names/groups. HTTP 200 with empty serialized objects 
 
 Shared Skill Admin/Console coverage also uses the existing resource paths with
 the reserved namespace. `HubSkillApiBaseITCase` verifies identical public DTOs,
-pinned content, raw ZIP downloads, safe provenance, revocation and removed
-dedicated read URLs (404). Eight special management operations remain per
+pinned content, raw ZIP downloads, safe provenance and revocation.
+`HubSkillReadRouteRegistrationTest` in `console` checks that the four removed
+dedicated read routes have no Spring controller mapping for either Admin or Console;
+it does not assert the framework's response status for an unmapped URL.
+Eight special management operations remain per
 audience; these are not runtime discovery APIs. `HubDisabledApiOpenApiITCase`
 exercises the same reused paths against a separately configured disabled server.
 `IdentityOnlyAuthorizationITCase` and `ConditionalAnonymousAuthorizationITCase`
@@ -701,9 +710,38 @@ order using Hub counters, and page-two consistency after server-side ordering.
 Client discovery keeps its popularity order; no new route or Client sort parameter is added.
 
 
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/import/governance; Hub import only; no direct source clone API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.
+
+
+Fixed per-resource Hub controllers: MCP, Agent, Prompt, AgentSpec each expose their own literal route and deployment chain. Skill cross-namespace clone now uses `/hub/skills/clone` (old `/copy` removed); SDK `cloneHubSkill`. Updated Skill API/SDK IT source assertions require a deployed run. Dedicated Admin controller tests verify each fixed resource route and presence of Hub import and absence of direct clone/copy for non-Skill resources.
+
+2026-10-29 MCP Hub import revision: source-owned Direct creates target-owned Naming state; ordinary REF retains its original service and STDIO has no Naming writes. Imports remain PRIVATE drafts with pinned Hub authorization. HTTP/SDK shapes are unchanged. See HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md and HubMcpAutomaticTransferOpenApiITCase; deployed acceptance remains pending.
+
+2026-10-30 shared-detail parity: ordinary MCP detail/model/query are restored (no added instance table/field). MCP source and Hub reuse the detail body; Agent Hub reads the pinned source runtime snapshot and original Naming link. Prompt retains native template debugging and variable input. Prompt/MCP/Agent/AgentSpec preserve pinned-version review results and actual labels; unrelated source versions remain excluded. Regression tests cover runtime refresh, Prompt debug payload, label filtering and review fidelity. Live deployed API acceptance is pending.
+
+Pinned source navigation parity: non-Skill HubResourceDiscoveryInfo adds sourceReadable and permission-gated sourceNamespaceId/sourceName, following Skill. Cover independent source auth READ + visibility, anonymous/denied/plugin failure hiding coordinates without blocking Hub reads, large opaque entry identity preservation, and exact-version source navigation for each type. HTTP/SDK method signatures are unchanged; API JSON model/permission unit tests and frontend mapping tests cover the added contract. Deployed multi-identity acceptance remains pending.
+
 PR #15913 review regression: `PromptAdminApiOpenApiITCase.testPromptDraftRejectsReservedHubNamespace`
 checks HTTP 400 / `ILLEGAL_NAMESPACE` for ordinary Prompt draft writes to the Hub
 namespace. All ordinary resource mutation boundaries are also exercised by
 `HubReservedNamespaceWriteTest` in `ai`. Source metadata/version backend failures
 and rollback file-deletion failures require deterministic fault injection and are
 covered by AI module tests; standalone HTTP IT does not inject database outages.
+
+Typed identity-only Hub read bindings reject conflicting repeated `namespaceId` parameters
+before business delegation. `HubTypedManagementOpenApiITCase.conflictingNamespacesNeverReachIdentityOnlySharedReads`
+covers both parameter orders across Admin/Client and all four extension types. AI/Console binding
+tests exercise every typed wrapper's bound-namespace guard. This does not change Skill or the common auth filter.
+
+
+Native Hub regression alignment (2026-11-12): Skill transfer tests use the current `/clone` route; removed `/copy` remains absent. Console Skill and Prompt fixtures resolve relative Console
+paths through their local test-class URL override; the shared OpenApiBaseITCase is unchanged.
+MCP Direct/REF drafts supply the required top-level `version`; revocation sends hubEntryId and CAS revision.
+Skill numeric bounds retain strict 400/20002 assertions and missing entries retain 404/20004.
+The two nonnumeric pageNo executions are outside this PR's Hub regression scope.
+Reproduction is retained: stock develop 7f71d44f880535dcf0ba14829df4a98329fc4e06 and
+4a8c0cd3f both return 500/30000 for ordinary Admin Skill list `pageNo=abc`
+(normal page: 200; `pageNo=0`: 400/20002). Their unmapped Console GET/POST paths
+also return 500 instead of 404. Historical request/response evidence is retained
+in the test report; these defects are neither fixed nor counted as passes here.
+No public exception handler or common test base is changed.

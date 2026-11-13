@@ -3090,4 +3090,31 @@ class AgentPersistenceServiceTest {
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals(ErrorCode.SERVER_ERROR.getCode(), exception.getDetailErrCode());
     }
+    
+    @Test
+    void presentationUpdatePreservesServerOwnedTransferOrigin() throws Exception {
+        AiResource current = storedResource();
+        AgentResourceExt ext = AgentResourceExtSerializer.deserialize(current.getExt());
+        Map<String, Object> origin = new LinkedHashMap<>();
+        origin.put("schemaVersion", 1);
+        origin.put("sourceNamespaceId", "source");
+        origin.put("sourceResourceId", 101L);
+        origin.put("sourceName", "same-name");
+        origin.put("sourceVersionId", 201L);
+        origin.put("sourceVersion", "1.0.0");
+        origin.put("importedAt", "2026-10-23T01:00:00Z");
+        ext.setOrigin(origin);
+        current.setExt(AgentResourceExtSerializer.serialize(ext));
+        when(resourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(Constants.Agent.RESOURCE_TYPE_AGENT), eq(3L), any(AiResource.class)))
+            .thenReturn(false);
+        service.tryUpdateAgent(newAgent(), current);
+        ArgumentCaptor<AiResource> captured = ArgumentCaptor.forClass(AiResource.class);
+        verify(resourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq(AGENT_NAME),
+            eq(Constants.Agent.RESOURCE_TYPE_AGENT), eq(3L), captured.capture());
+        assertEquals("same-name",
+            AgentResourceExtSerializer.deserialize(captured.getValue().getExt())
+                .getOrigin().get("sourceName"));
+    }
+    
 }

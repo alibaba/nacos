@@ -264,4 +264,27 @@ class McpCompatibilityOperationServiceTest {
         assertEquals(McpCompatibilityMode.SYNCING,
             new McpCompatibilityModeResolver(stateService).resolve());
     }
+    
+    @Test
+    void hubReadsUseOpaqueAdapterWithoutLegacyFallbackAndWritesFailBeforeAuthority()
+        throws Exception {
+        com.alibaba.nacos.ai.service.hub.HubMcpReadAdapter hub =
+            org.mockito.Mockito.mock(com.alibaba.nacos.ai.service.hub.HubMcpReadAdapter.class);
+        service.setHubReader(hub);
+        when(hub.resolveId(null, "501")).thenReturn("501");
+        service.getMcpServerDetail("__nacos_ai_hub__", null, "501", "1.0.0");
+        verify(hub).serving("501", "1.0.0");
+        service.listMcpServerWithPage("__nacos_ai_hub__", "same", "accurate", 1, 10);
+        verify(hub).list("same", "accurate", 1, 10);
+        service.getMcpServerVersion("__nacos_ai_hub__", "501", "1.0.0");
+        verify(hub).version("501", "1.0.0");
+        assertThrows(com.alibaba.nacos.api.exception.NacosException.class,
+            () -> service.createMcpServer("__nacos_ai_hub__", null, null, null, null));
+        assertThrows(com.alibaba.nacos.api.exception.NacosException.class,
+            () -> service.deleteMcpServer("__nacos_ai_hub__", "501", null, null));
+        assertThrows(com.alibaba.nacos.api.exception.NacosException.class,
+            () -> service.updateMcpServerScope("__nacos_ai_hub__", "501", "PUBLIC"));
+        verifyNoInteractions(modeResolver, legacyService, lifecycleService);
+    }
+    
 }

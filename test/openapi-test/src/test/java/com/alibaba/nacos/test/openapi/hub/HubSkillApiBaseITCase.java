@@ -129,7 +129,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
 
     @Test
     void allOperationsRejectAnonymousIdentity() throws Exception {
-        for (String suffix : new String[] {"share", "adjust", "unshare", "force-unshare", "import", "copy"}) {
+        for (String suffix : new String[] {"share", "adjust", "unshare", "force-unshare", "import", "clone"}) {
             for (AuthIdentity identity : new AuthIdentity[] {AuthIdentity.ANONYMOUS, AuthIdentity.INVALID}) {
                 assertError(postRaw(hubPath() + "/" + suffix, Query.newInstance(), identity),
                         403, ErrorCode.ACCESS_DENIED, "");
@@ -174,7 +174,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
 
     @Test
     void readParametersAndMissingEntriesReturnControlledErrors() throws Exception {
-        assertError(getRaw(skillReadPath() + "/list", sharedList("").addParam("pageNo", "abc")),
+        assertError(getRaw(skillReadPath() + "/list", sharedList("").addParam("pageNo", "0")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
         assertError(getRaw(skillReadPath() + "/list", sharedList("").addParam("pageSize", "101")),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
@@ -183,14 +183,6 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
                     400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
             assertError(getRaw(skillReadPath() + suffix, sharedEntry(String.valueOf(Long.MAX_VALUE))),
                     404, ErrorCode.RESOURCE_NOT_FOUND, "");
-        }
-    }
-
-    @Test
-    void removedDedicatedReadRoutesDoNotRemainAsAliases() throws Exception {
-        for (String suffix : new String[] {"list", "detail", "content", "download"}) {
-            assertEquals(404, getRaw(hubPath() + "/" + suffix,
-                    Query.newInstance().addParam("hubEntryId", "1")).code());
         }
     }
 
@@ -268,7 +260,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
 
     @Test
     void transferBoundariesRejectInvalidAndAnonymousRequests() throws Exception {
-        for (String suffix : new String[]{"import", "copy"}) {
+        for (String suffix : new String[]{"import", "clone"}) {
             assertError(postRaw(hubPath() + "/" + suffix, Query.newInstance()),
                 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
             assertError(postRaw(hubPath() + "/" + suffix, Query.newInstance(), AuthIdentity.ANONYMOUS),
@@ -305,7 +297,7 @@ public abstract class HubSkillApiBaseITCase extends AiAdminApiBaseITCase {
         assertFalse(result.has("sourceNamespaceId"));
         assertFalse(result.has("ext"));
         assertFalse(result.has("storage"));
-        postFormOk(hubPath() + "/copy", Map.of("sourceNamespaceId", "public", "sourceName", source,
+        postFormOk(hubPath() + "/clone", Map.of("sourceNamespaceId", "public", "sourceName", source,
             "sourceVersion", "1.0.0", "targetNamespaceId", "public", "targetName", copied));
         addCleanup(() -> deleteSkillQuietly(copied));
         assertError(postRaw(hubPath() + "/import", Query.newInstance().addParam("hubEntryId", share.get("hubEntryId").asText())

@@ -48,9 +48,9 @@ public class HubSkillTransferRemoteHandler implements HubSkillTransferHandler {
     }
     
     @Override
-    public HubSkillTransferResult copyDirect(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneDirect(HubSkillTransferRequest request)
         throws NacosException {
         caller.requireForwardableUser();
-        return holder.getAiMaintainerService().skill().copyHubSkill(request);
+        return holder.getAiMaintainerService().skill().cloneHubSkill(request);
     }
 }

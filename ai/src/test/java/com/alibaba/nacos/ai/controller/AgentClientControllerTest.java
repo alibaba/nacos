@@ -204,4 +204,15 @@ class AgentClientControllerTest {
         org.junit.jupiter.api.Assertions.assertArrayEquals(new String[] {"/watch"},
             mapping.value());
     }
+    
+    @Test
+    void sharedDiscoveryDoesNotRenewAPublisherInTheReservedNamespace() throws Exception {
+        AgentDiscoveryForm form = new AgentDiscoveryForm();
+        form.setNamespaceId("__nacos_ai_hub__");
+        form.setAgentName("501");
+        controller.discover(form, "existing-client");
+        org.mockito.Mockito.verifyNoInteractions(lifecycleService, publishService, watchService);
+        org.mockito.Mockito.verify(discoveryService).discover(org.mockito.ArgumentMatchers.any());
+    }
+    
 }

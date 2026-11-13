@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.agent;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.AiResourceChangeOperation;
@@ -1593,4 +1595,35 @@ class AgentOperationServiceTest {
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals(ErrorCode.ILLEGAL_STATE.getCode(), exception.getDetailErrCode());
     }
+    
+    @Test
+    void hubNamespaceRejectsOrdinaryDefinitionMutationsBeforePersistence() {
+        String hub = "__nacos_ai_hub__";
+        assertThrows(NacosException.class, () -> service.deleteAgent(hub, "501"));
+        assertThrows(NacosException.class, () -> service.createDraft(hub, draftRequest()));
+        assertThrows(NacosException.class, () -> service.offline(hub, "501", "1.0.0"));
+        assertThrows(NacosException.class,
+            () -> service.updateLabels(hub, "501", Collections.emptyMap()));
+        org.mockito.Mockito.verifyNoInteractions(persistenceService, resourceManager,
+            publishPipelineExecutor);
+    }
+    
+    @Test
+    void hubPreFenceFailurePreventsOrdinaryAndLegacyAgentDeletion() throws Exception {
+        AiResource source = meta(null, null);
+        when(resourceManager.requireMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(source);
+        when(resourceManager.findMeta(NAMESPACE_ID, AGENT_NAME,
+            Constants.Agent.RESOURCE_TYPE_AGENT)).thenReturn(source);
+        HubResourceLifecycleRevoker revoker =
+            org.mockito.Mockito.mock(HubResourceLifecycleRevoker.class);
+        service.setHubResourceLifecycleRevoker(revoker);
+        when(revoker.around(any(), any(), any())).thenThrow(
+            new NacosException(NacosException.CONFLICT, "publication changed"));
+        assertThrows(NacosException.class, () -> service.deleteAgent(NAMESPACE_ID, AGENT_NAME));
+        assertThrows(NacosException.class,
+            () -> service.deleteLegacyAgentIfPresent(NAMESPACE_ID, AGENT_NAME));
+        verify(persistenceService, never()).deleteAgent(NAMESPACE_ID, AGENT_NAME);
+    }
+    
 }

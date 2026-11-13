@@ -60,4 +60,10 @@ describe('shared source detail management card', () => {
     expect(button(html, 'hubResource.share')).toContain('disabled=""');
     expect(button(html, 'hubResource.copy')).not.toContain('disabled=""');
   });
+  it('omits clone actions and eligibility hints for the other resource types', () => {
+    const html = renderToStaticMarkup(<ResourceSharingPanel {...props} showClone={false} copyable={false} />);
+    expect(html).not.toContain('hubResource.copy');
+    expect(html).not.toContain('select published version');
+    expect(html).toContain('hubResource.share');
+  });
 });

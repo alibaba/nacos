@@ -327,3 +327,6 @@ The class does not start a server. These deployed-server scenarios must be run
 after rebuilding and starting the changed server; compilation alone does not
 establish HTTP or persistence success. Service-level tests additionally cover
 failed archive reads, post-read revocation fences, and no event on 304.
+
+
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/governance only; Hub import only; no direct source clone API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.

@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.ai.service.mcp;
 
+import com.alibaba.nacos.ai.service.hub.HubMcpReadAdapter;
 import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
@@ -55,15 +57,35 @@ public class McpCompatibilityOperationService implements McpOperationService {
         this.lifecycleService = lifecycleService;
     }
     
+    private HubMcpReadAdapter hubReader;
+    
+    @Autowired
+    public void setHubReader(HubMcpReadAdapter hubReader) {
+        this.hubReader = hubReader;
+    }
+    
+    private HubMcpReadAdapter shared() throws NacosApiException {
+        if (hubReader == null) {
+            throw new NacosApiException(500, ErrorCode.SERVER_ERROR, "MCP Hub reader unavailable");
+        }
+        return hubReader;
+    }
+    
     @Override
     public Page<McpServerBasicInfo> listMcpServerWithPage(String namespaceId, String mcpName,
         String search, int pageNo, int pageSize) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return shared().list(mcpName, search, pageNo, pageSize);
+        }
         return current().listMcpServerWithPage(namespaceId, mcpName, search, pageNo, pageSize);
     }
     
     @Override
     public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpServerId,
         String mcpServerName, String version) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return shared().serving(shared().resolveId(mcpServerId, mcpServerName), version);
+        }
         return current().getMcpServerDetail(namespaceId, mcpServerId, mcpServerName, version);
     }
     
@@ -82,6 +104,9 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerDetailInfo getServingMcpServerDetail(String namespaceId,
         String mcpServerName, String version) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return shared().serving(mcpServerName, version);
+        }
         McpCompatibilityMode mode = modeResolver.resolve();
         if (McpCompatibilityMode.LIFECYCLE_MANAGED != mode) {
             return legacyService.getMcpServerDetail(namespaceId, null, mcpServerName, version);
@@ -121,6 +146,9 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public Page<McpServerVersionSummary> listMcpServerVersions(String namespaceId,
         String mcpName, String status, int pageNo, int pageSize) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return shared().versions(mcpName, status, pageNo, pageSize);
+        }
         return managed().listMcpServerVersions(namespaceId, mcpName, status, pageNo, pageSize);
     }
     
@@ -129,6 +157,9 @@ public class McpCompatibilityOperationService implements McpOperationService {
      */
     public McpServerVersionDetail getMcpServerVersion(String namespaceId, String mcpName,
         String version) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return shared().version(mcpName, version);
+        }
         return managed().getMcpServerVersion(namespaceId, mcpName, version);
     }
     

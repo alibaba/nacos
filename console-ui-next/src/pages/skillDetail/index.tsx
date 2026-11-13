@@ -141,7 +141,7 @@ export default function SkillDetailPage() {
   const hubEnabled = useServerStore((s) => s.hubEnabled);
 
   const {
-    currentDetail,
+    currentDetail: storedDetail,
     detailLoading,
     error,
     fetchDetail,
@@ -149,9 +149,20 @@ export default function SkillDetailPage() {
     clearError,
   } = useSkillStore();
 
+  // Route changes render before effects clear the previous resource's store data.
+  const currentDetail = storedDetail?.namespaceId === namespaceId && storedDetail.name === skillName
+    ? storedDetail : null;
+  // Resolve the URL pin during render so effects cannot pair a new resource with an old version.
+  const selectedVersion = currentDetail && !detailLoading
+    ? activeSourceVersion(
+      requestedVersion,
+      sortVersionsDescending(currentDetail.versions || []),
+      currentDetail.labels?.latest,
+    )
+    : '';
+
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [hubActiveVersion, setHubActiveVersion] = useState<string | null>(null);
   const [hubLifecycleConfirmation, setHubLifecycleConfirmation] = useState<HubLifecycleConfirmation | null>(null);
   useEffect(() => {
@@ -161,7 +172,6 @@ export default function SkillDetailPage() {
     }
   }, [hubEnabled]);
   const selectVersion = useCallback((version: string) => {
-    setSelectedVersion(version);
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       if (version) next.set('version', version);
@@ -241,7 +251,6 @@ export default function SkillDetailPage() {
   useEffect(() => {
     setVersionDoc(null);
     setHubLifecycleConfirmation(null);
-    setSelectedVersion('');
     setIsEditingDraft(false);
     setIsCreatingNewDraft(false);
     loadDetail();
@@ -251,17 +260,6 @@ export default function SkillDetailPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skillName, namespaceId]);
-
-  // URL ?version is an exact pin. Missing versions must not silently switch to latest.
-  useEffect(() => {
-    if (!currentDetail || detailLoading) return;
-    const versions = sortVersionsDescending(currentDetail.versions || []);
-    const preferred = activeSourceVersion(requestedVersion, versions, currentDetail.labels?.latest);
-    setSelectedVersion(previous => {
-      if (requestedVersion) return preferred;
-      return previous && versions.some(v => v.version === previous) ? previous : preferred;
-    });
-  }, [currentDetail, detailLoading, requestedVersion]);
 
   useEffect(() => {
     setBizTags(parseBizTags(currentDetail?.bizTags));

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.ai.utils.HubSharedReadValidator;
+import com.alibaba.nacos.auth.parser.http.HubAwareAiReadHttpResourceParser;
+
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
@@ -59,6 +62,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
 
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * Console AgentSpec Controller.
  *
@@ -85,7 +93,8 @@ public class ConsoleAgentSpecController {
      */
     @Since("3.2.0")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<AgentSpecMeta> getAgentSpec(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(agentSpecProxy.getAgentSpec(form));
@@ -100,7 +109,8 @@ public class ConsoleAgentSpecController {
      */
     @Since("3.2.0")
     @GetMapping("/version")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(agentSpecProxy.getAgentSpecVersion(form));
@@ -132,7 +142,8 @@ public class ConsoleAgentSpecController {
      */
     @Since("3.2.1")
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
         AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         agentSpecListForm.validate();
@@ -351,5 +362,45 @@ public class ConsoleAgentSpecController {
         form.validate();
         agentSpecProxy.offline(form);
         return Result.success("ok");
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.CONSOLE_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<AgentSpecMeta> getAgentSpecShared(AgentSpecForm form) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getAgentSpec(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.CONSOLE_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<AgentSpec> getAgentSpecVersionShared(AgentSpecForm form) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getAgentSpecVersion(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/list", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.CONSOLE_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<AgentSpecSummary>> listAgentSpecsShared(AgentSpecListForm agentSpecListForm,
+        AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(agentSpecListForm.getNamespaceId());
+        return listAgentSpecs(agentSpecListForm, filterableForm, pageForm);
     }
 }

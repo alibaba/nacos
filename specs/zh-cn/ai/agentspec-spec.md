@@ -113,3 +113,6 @@ AgentSpec HTTP API 使用复数形式的 `/ai/agentspecs` 路径段。解析鉴�
 
 AgentSpec 预计会随 agent framework 包格式演进。未来版本可能增加 schema 校验、签名、
 依赖 manifest 或兼容性元数据。这些变化必须保留版本化获取能力，或提供迁移规则。
+
+
+Hub 范围、克隆限制和服务实例语义见 [Agentic Resource Hub](agentic-resource-hub-spec.md).

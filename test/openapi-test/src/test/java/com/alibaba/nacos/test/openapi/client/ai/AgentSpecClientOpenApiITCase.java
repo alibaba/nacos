@@ -21,6 +21,9 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 /**
  * Integration tests for the AI AgentSpec client Open API {@code GET /nacos/v3/client/ai/agentspecs}.
  *
@@ -95,5 +98,30 @@ public class AgentSpecClientOpenApiITCase extends AgentSpecOpenApiBaseITCase {
     
     private JsonNode getAgentSpec(Query query) throws Exception {
         return getJsonOk(AGENT_SPEC_CLIENT_PATH, query);
+    }
+
+    @Test
+    public void testSharedAgentSpecRejectsAmbiguousIdentityOnExistingGetRoute() throws Exception {
+        assumeTrue(AUTH_ENABLED, "Hub read admission requires the auth-enabled baseline");
+        for (String id : new String[] {"0", "-1", "01", "same-name", "9223372036854775808"}) {
+            assertError(getRaw(AGENT_SPEC_CLIENT_PATH, Query.newInstance()
+                    .addParam("namespaceId", "__nacos_ai_hub__").addParam("name", id),
+                AuthIdentity.CLIENT_NO_PERMISSION), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+        }
+    }
+
+    @Test
+    public void testSharedAgentSpecSearchHasItsOwnEmptyPageOnExistingRoute() throws Exception {
+        assumeTrue(AUTH_ENABLED, "Hub read admission requires the auth-enabled baseline");
+        JsonNode page = getJsonOk(AGENT_SPEC_CLIENT_PATH + "/search", Query.newInstance()
+                .addParam("namespaceId", "__nacos_ai_hub__")
+                .addParam("keyword", randomAgentSpecName("absent-shared"))
+                .addParam("pageNo", "1").addParam("pageSize", "7"),
+            AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals(0, page.get("totalCount").asInt());
+        assertEquals(0, page.get("pageItems").size());
+        assertError(getRaw(AGENT_SPEC_CLIENT_PATH + "/search", Query.newInstance()
+                .addParam("namespaceId", "__nacos_ai_hub__").addParam("pageNo", "0"),
+            AuthIdentity.CLIENT_NO_PERMISSION), 400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
     }
 }

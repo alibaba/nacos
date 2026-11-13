@@ -654,3 +654,6 @@ Implementation PR 至少覆盖：
 
 上游 MCP Tool、Resource、Transport、Auth 和 Registry 格式可能继续演进。相关变更必须
 保持 Nacos 身份和所有权边界，或发布明确的 Schema 与迁移修订。
+
+
+Hub 范围、克隆限制和服务实例语义见 [Agentic Resource Hub](agentic-resource-hub-spec.md).

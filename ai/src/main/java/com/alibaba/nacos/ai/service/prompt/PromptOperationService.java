@@ -336,4 +336,5 @@ public interface PromptOperationService {
     boolean updatePromptMetadata(String namespaceId, String promptKey, String description,
         String bizTags)
         throws NacosException;
+    
 }

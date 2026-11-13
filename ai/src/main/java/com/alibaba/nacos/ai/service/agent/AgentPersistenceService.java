@@ -316,6 +316,10 @@ public class AgentPersistenceService {
         AgentSummary normalized = normalizeAgentUpdate(replacement, currentAgent);
         AgentModelValidator.validateAgent(normalized);
         AiResource updateValue = toResourceRow(normalized);
+        AgentResourceExt currentExt = AgentResourceExtSerializer.deserialize(current.getExt());
+        AgentResourceExt updatedExt = AgentResourceExtSerializer.deserialize(updateValue.getExt());
+        updatedExt.setOrigin(currentExt.getOrigin());
+        updateValue.setExt(AgentResourceExtSerializer.serialize(updatedExt));
         if (!resourcePersistService.updateMetaCas(replacement.getNamespaceId(),
             replacement.getAgentName(), Constants.Agent.RESOURCE_TYPE_AGENT,
             current.getMetaVersion(), updateValue)) {
@@ -1536,6 +1540,7 @@ public class AgentPersistenceService {
         return Objects.equals(actual.getSchemaVersion(), expected.getSchemaVersion())
             && Objects.equals(actual.getDisplayName(), expected.getDisplayName())
             && Objects.equals(actual.getIconUrl(), expected.getIconUrl())
+            && Objects.equals(actual.getOrigin(), expected.getOrigin())
             && sameProvider(actual.getProvider(), expected.getProvider())
             && Objects.equals(actual.getExtensions(), expected.getExtensions())
             && sameVersionCatalog(actual.getVersionCatalog(), expected.getVersionCatalog());

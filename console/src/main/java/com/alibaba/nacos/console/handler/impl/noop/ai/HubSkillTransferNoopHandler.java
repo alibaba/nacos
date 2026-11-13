@@ -38,7 +38,7 @@ public class HubSkillTransferNoopHandler implements HubSkillTransferHandler {
     }
     
     @Override
-    public HubSkillTransferResult copyDirect(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneDirect(HubSkillTransferRequest request)
         throws NacosException {
         throw disabled();
     }

@@ -17,6 +17,9 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 
 /**
  * Utility for generating internal resource names in Nacos AI Resource Hub.
@@ -29,6 +32,20 @@ public final class HubResourceNameUtils {
     static final int MAX_RESOURCE_NAME_LENGTH = 256;
     
     private HubResourceNameUtils() {
+    }
+    
+    /** Resolve an opaque positive decimal Hub entry coordinate without accepting display names. */
+    public static long parseEntryId(String value) throws NacosApiException {
+        try {
+            long id = Long.parseLong(value);
+            if (id > 0 && Long.toString(id).equals(value)) {
+                return id;
+            }
+        } catch (NumberFormatException invalid) {
+            // Names, padded numbers and source IDs are not interchangeable Hub identities.
+        }
+        throw new NacosApiException(NacosException.INVALID_PARAM,
+            ErrorCode.PARAMETER_VALIDATE_ERROR, "A unique positive Hub entry ID is required");
     }
     
     /**

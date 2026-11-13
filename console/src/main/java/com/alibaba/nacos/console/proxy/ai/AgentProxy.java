@@ -90,9 +90,13 @@ public class AgentProxy {
         String protocol, String version) throws NacosException {
         RuntimeEndpointSnapshot snapshot =
             agentHandler.getRuntimeEndpoints(namespaceId, agentName, protocol, version);
-        NamingServiceRef serviceRef = new NamingServiceRef(namespaceId,
-            Constants.Agent.AGENT_ENDPOINT_GROUP,
-            RadServiceNameComposer.compose(agentName, protocol));
+        NamingServiceRef serviceRef =
+            com.alibaba.nacos.ai.utils.HubNamespaceUtils.isHubNamespace(namespaceId)
+                ? new NamingServiceRef(snapshot.getNamespaceId(),
+                    Constants.Agent.AGENT_ENDPOINT_GROUP,
+                    RadServiceNameComposer.compose(snapshot.getAgentName(), protocol))
+                : new NamingServiceRef(namespaceId, Constants.Agent.AGENT_ENDPOINT_GROUP,
+                    RadServiceNameComposer.compose(agentName, protocol));
         return new ConsoleRuntimeEndpointView(snapshot, serviceRef);
     }
     
@@ -145,4 +149,5 @@ public class AgentProxy {
         throws NacosException {
         return agentHandler.updateLabels(namespaceId, request);
     }
+    
 }

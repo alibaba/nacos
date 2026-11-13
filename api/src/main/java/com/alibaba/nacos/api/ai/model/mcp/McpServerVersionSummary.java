@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.io.Serializable;
 
 /**
@@ -32,6 +35,9 @@ import java.io.Serializable;
 public class McpServerVersionSummary implements Serializable {
     
     private static final long serialVersionUID = 1L;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HubResourceDiscoveryInfo hub;
     
     private String version;
     
@@ -112,4 +118,13 @@ public class McpServerVersionSummary implements Serializable {
     public void setUpdateTime(Long updateTime) {
         this.updateTime = updateTime;
     }
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
+    
 }

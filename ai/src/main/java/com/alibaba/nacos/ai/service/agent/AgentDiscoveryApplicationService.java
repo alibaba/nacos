@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.service.agent;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.hub.HubAgentReadAdapter;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.agent.AgentVersionStorageDescriptor;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchResult;
@@ -115,6 +117,22 @@ public class AgentDiscoveryApplicationService {
     
     private final Cache<String, AgentVersionDetail> versionCache;
     
+    private HubAgentReadAdapter sharedAgents;
+    
+    /** Reuse ordinary exact-version projection inside the validated shared-publication grant. */
+    @Autowired
+    public void setSharedAgentReadAdapter(HubAgentReadAdapter adapter) {
+        this.sharedAgents = adapter;
+    }
+    
+    private HubAgentReadAdapter sharedReads() throws NacosException {
+        if (sharedAgents == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Shared Agent discovery is unavailable");
+        }
+        return sharedAgents;
+    }
+    
     @Autowired
     public AgentDiscoveryApplicationService(AgentOperationService operationService,
         AgentPersistenceService persistenceService, AiResourceManager resourceManager,
@@ -149,6 +167,9 @@ public class AgentDiscoveryApplicationService {
     public Page<AgentSummary> search(String namespaceId, AgentSearchRequest request)
         throws NacosException {
         RadModelValidator.validate(namespaceId, request);
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().search(request);
+        }
         int pageNo = request.getPageNo() == null ? DEFAULT_PAGE_NO : request.getPageNo();
         int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
         if (AgentSearchMode.INDEX == searchModeResolver.resolve()) {
@@ -301,6 +322,12 @@ public class AgentDiscoveryApplicationService {
      */
     public AgentDiscoveryResult discover(AgentDiscoveryRequest request) throws NacosException {
         RadModelValidator.validate(request);
+        if (HubNamespaceUtils.isHubNamespace(request.getNamespaceId())) {
+            return sharedReads().discover(request, pinned -> buildDiscoveryResult(pinned,
+                persistenceService.getAgent(pinned.getNamespaceId(),
+                    pinned.getReference().getAgentName()),
+                false));
+        }
         String namespaceId = request.getNamespaceId();
         AgentReference reference = request.getReference();
         AgentSummary agent = operationService.getAgent(namespaceId, reference.getAgentName());
@@ -323,6 +350,7 @@ public class AgentDiscoveryApplicationService {
     public AgentDiscoveryResult projectCurrentFact(AgentDiscoveryRequest request)
         throws NacosException {
         RadModelValidator.validate(request);
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         AgentReference reference = request.getReference();
         AgentSummary agent = persistenceService.getAgent(request.getNamespaceId(),
             reference.getAgentName());

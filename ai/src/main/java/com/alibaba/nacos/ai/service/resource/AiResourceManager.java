@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionResult;
 import com.alibaba.nacos.api.ai.model.pipeline.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
@@ -89,6 +91,20 @@ public class AiResourceManager {
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
         this.visibilityAdvisorConverter = new DefaultVisibilityAdvisorConverter();
+    }
+    
+    private HubResourceLifecycleRevoker hubResourceLifecycleRevoker;
+    
+    /** Install resource-specific sharing fences without changing standalone test construction. */
+    @Autowired(required = false)
+    public void setHubResourceLifecycleRevoker(HubResourceLifecycleRevoker revoker) {
+        this.hubResourceLifecycleRevoker = revoker;
+    }
+    
+    private <T> T withHubRevocation(AiResource source, String version,
+        HubResourceLifecycleRevoker.SourceMutation<T> mutation) throws NacosException {
+        return hubResourceLifecycleRevoker == null ? mutation.run()
+            : hubResourceLifecycleRevoker.around(source, version, mutation);
     }
     
     // ---- 2.1 CAS update methods ----
@@ -260,6 +276,15 @@ public class AiResourceManager {
      * CAS-update the meta status to enable or disable.
      */
     public void metaEnableDisable(String namespaceId, AiResource meta, boolean enable)
+        throws NacosException {
+        requireVersionInfo(meta);
+        withHubRevocation(enable ? null : meta, null, () -> {
+            changeMetaStatus(namespaceId, meta, enable);
+            return null;
+        });
+    }
+    
+    private void changeMetaStatus(String namespaceId, AiResource meta, boolean enable)
         throws NacosException {
         ResourceVersionInfo info = requireVersionInfo(meta);
         AiResource newValue = new AiResource();
@@ -1152,6 +1177,14 @@ public class AiResourceManager {
         throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
         VisibilityHelper.checkWritableResource(meta);
+        withHubRevocation("PRIVATE".equalsIgnoreCase(scope) ? meta : null, null, () -> {
+            persistScope(namespaceId, name, type, scope);
+            return null;
+        });
+    }
+    
+    private void persistScope(String namespaceId, String name, String type, String scope)
+        throws NacosException {
         boolean ok =
             aiResourcePersistService.updateScope(namespaceId, name, type, scope.toUpperCase());
         if (!ok) {
@@ -1173,14 +1206,21 @@ public class AiResourceManager {
      */
     public AiResourceVersion toggleVersionOnlineStatus(String namespaceId, AiResource meta,
         ResourceVersionInfo info, String version, boolean online) throws NacosException {
+        AiResourceVersion selected = aiResourceVersionPersistService.find(namespaceId,
+            meta.getName(), meta.getType(), version);
+        if (selected == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                meta.getType() + " version not found: " + meta.getName() + "@" + version);
+        }
+        return withHubRevocation(online ? null : meta, version,
+            () -> changeVersionOnlineStatus(namespaceId, meta, info, version, online, selected));
+    }
+    
+    private AiResourceVersion changeVersionOnlineStatus(String namespaceId, AiResource meta,
+        ResourceVersionInfo info, String version, boolean online, AiResourceVersion v)
+        throws NacosException {
         String name = meta.getName();
         String type = meta.getType();
-        AiResourceVersion v =
-            aiResourceVersionPersistService.find(namespaceId, name, type, version);
-        if (v == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                type + " version not found: " + name + "@" + version);
-        }
         String targetStatus = online ? AiResourceConstants.VERSION_STATUS_ONLINE
             : AiResourceConstants.VERSION_STATUS_OFFLINE;
         if (targetStatus.equalsIgnoreCase(v.getStatus())) {
@@ -1415,6 +1455,19 @@ public class AiResourceManager {
      * Delete meta and all version rows for a resource, invoking the given deleter for each version's storage.
      */
     public void deleteResourceWithVersions(String namespaceId, String name, String type,
+        VersionStorageDeleter storageDeleter) throws NacosException {
+        if (hubResourceLifecycleRevoker == null || "skill".equals(type)) {
+            deleteResourceContentsAndRows(namespaceId, name, type, storageDeleter);
+            return;
+        }
+        AiResource source = aiResourcePersistService.find(namespaceId, name, type);
+        withHubRevocation(source, null, () -> {
+            deleteResourceContentsAndRows(namespaceId, name, type, storageDeleter);
+            return null;
+        });
+    }
+    
+    private void deleteResourceContentsAndRows(String namespaceId, String name, String type,
         VersionStorageDeleter storageDeleter) throws NacosException {
         List<AiResourceVersion> versions = listAllVersions(namespaceId, name, type);
         NacosException firstFailure = null;

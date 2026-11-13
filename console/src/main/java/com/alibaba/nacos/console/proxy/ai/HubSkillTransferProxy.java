@@ -35,8 +35,8 @@ public class HubSkillTransferProxy {
         return handler.importFromHub(request);
     }
     
-    public HubSkillTransferResult copyDirect(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneDirect(HubSkillTransferRequest request)
         throws NacosException {
-        return handler.copyDirect(request);
+        return handler.cloneDirect(request);
     }
 }

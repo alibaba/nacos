@@ -55,6 +55,30 @@ class HubDisabledApiOpenApiITCase extends AiAdminApiBaseITCase {
         verifyDisabled("/v3/console/ai/hub/skills");
     }
 
+    @Test
+    void fourTypedResourceManagementOperationsHonorDisabledHub() throws Exception {
+        for (String api : new String[] {"admin", "console"}) {
+            for (String type : new String[] {"mcp", "agent", "prompt", "agentspec"}) {
+                String path = "/v3/" + api + "/ai/hub/" + type;
+                if ("admin".equals(api)) {
+                    path = nacosPath(path);
+                }
+                for (String operation : new String[] {"unshare", "force-unshare"}) {
+                    assertError(postRaw(path + "/" + operation, Query.newInstance()
+                        .addParam("hubEntryId", "1").addParam("expectedMetaVersion", "1")
+                        .addParam("reason", "disabled Hub IT")),
+                        501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
+                }
+                assertError(getRaw(path + "/source-share", Query.newInstance()
+                    .addParam("sourceNamespaceId", "public").addParam("sourceName", "hub-disabled-it")),
+                    501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
+                assertError(getRaw(path + "/governance-state", Query.newInstance()
+                    .addParam("hubEntryId", "1")),
+                    501, ErrorCode.API_FUNCTION_DISABLED, "Hub is disabled");
+            }
+        }
+    }
+
     @Override
     protected String requestUrl(String path) {
         if (path.startsWith("/v3/console/")) {

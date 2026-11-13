@@ -174,7 +174,6 @@ export default function HubSkillDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2.5 mb-1">
                 <h1 className="break-words text-xl font-bold tracking-tight">{detail.displayName}</h1>
-                <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">{detail.sharedVersion}</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">{detail.description || t('skill.noDescription')}</p>
               <p className="mt-2 text-xs text-muted-foreground leading-normal">

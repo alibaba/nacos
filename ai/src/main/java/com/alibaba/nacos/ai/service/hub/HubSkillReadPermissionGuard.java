@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
-import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.common.ApiType;
@@ -92,8 +92,13 @@ public class HubSkillReadPermissionGuard {
      * @throws NacosException if the caller is not authenticated
      */
     public boolean canReadSource(AiResource source) throws NacosException {
+        return canReadSource(HubResourceType.SKILL, source);
+    }
+    
+    /** Check ordinary READ for the exact source type, independently of Hub admission. */
+    public boolean canReadSource(HubResourceType type, AiResource source) throws NacosException {
         Caller caller = requireCaller();
-        if ("anonymous".equals(caller.principal) || !isRealSource(source)) {
+        if ("anonymous".equals(caller.principal) || type == null || !isRealSource(source, type)) {
             return false;
         }
         try {
@@ -107,7 +112,8 @@ public class HubSkillReadPermissionGuard {
                 return false;
             }
             Properties properties = new Properties();
-            properties.setProperty(Constants.Resource.AI_TYPE, Constants.Resource.AI_TYPE_SKILL);
+            properties.setProperty(Constants.Resource.AI_TYPE, type == HubResourceType.AGENTSPEC
+                ? Constants.Resource.AI_TYPE_AGENT_SPEC : type.resourceType());
             properties.setProperty(Constants.Resource.ACTION, ActionTypes.READ.toString());
             Resource resource = new Resource(source.getNamespaceId(),
                 com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP, source.getName(),
@@ -126,12 +132,12 @@ public class HubSkillReadPermissionGuard {
         }
     }
     
-    private boolean isRealSource(AiResource source) {
+    private boolean isRealSource(AiResource source, HubResourceType type) {
         return source != null && source.getId() != null && source.getId() > 0
             && StringUtils.isNotBlank(source.getNamespaceId())
             && !HubNamespaceUtils.isHubNamespace(source.getNamespaceId())
             && StringUtils.isNotBlank(source.getName())
-            && AiResourceConstants.RESOURCE_TYPE_SKILL.equals(source.getType());
+            && type.resourceType().equals(source.getType());
     }
     
     private Caller requireCaller() throws NacosException {

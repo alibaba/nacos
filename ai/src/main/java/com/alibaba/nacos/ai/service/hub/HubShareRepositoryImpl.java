@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.HubEntryStorage;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +54,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
     
     private static final String HUB_NAMESPACE = AiConstants.Hub.NAMESPACE_ID;
     
-    private static final String SKILL = AiResourceConstants.RESOURCE_TYPE_SKILL;
+    private final HubResourceType resourceType;
     
     private static final String HUB_SOURCE = "hub";
     
@@ -64,12 +66,44 @@ public class HubShareRepositoryImpl implements HubShareRepository {
     
     private final AiResourceVersionPersistService versionPersistService;
     
+    @Autowired
     public HubShareRepositoryImpl(HubEntryStorage hubStorage,
         AiResourcePersistService resourcePersistService,
         AiResourceVersionPersistService versionPersistService) {
+        this(hubStorage, resourcePersistService, versionPersistService, HubResourceType.SKILL);
+    }
+    
+    private HubShareRepositoryImpl(HubEntryStorage hubStorage,
+        AiResourcePersistService resourcePersistService,
+        AiResourceVersionPersistService versionPersistService, HubResourceType resourceType) {
+        this.resourceType = Objects.requireNonNull(resourceType, "resourceType");
         this.hubStorage = hubStorage;
         this.resourcePersistService = resourcePersistService;
         this.versionPersistService = versionPersistService;
+    }
+    
+    /**
+     * Bind an internal repository to exactly one resource type. Existing Skill callers retain
+     * the original Skill-only bean. This does not grant source or Hub permissions.
+     *
+     * @param type resource identity boundary
+     * @return repository with an immutable type binding
+     */
+    public HubShareRepository forResourceType(HubResourceType type) {
+        return type == resourceType ? this
+            : new HubShareRepositoryImpl(hubStorage, resourcePersistService, versionPersistService,
+                type);
+    }
+    
+    private AiResource findByInternalName(String name) {
+        return resourceType == HubResourceType.SKILL ? hubStorage.findByInternalName(name)
+            : hubStorage.findByInternalName(resourceType, name);
+    }
+    
+    private boolean updateMetaCas(AiResource entry, long expectedMetaVersion, AiResource next) {
+        return resourceType == HubResourceType.SKILL
+            ? hubStorage.updateMetaCas(entry, expectedMetaVersion, next)
+            : hubStorage.updateMetaCas(resourceType, entry, expectedMetaVersion, next);
     }
     
     @Override
@@ -78,7 +112,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         verifySource(reference);
         String name = HubResourceNameUtils.buildInternalName(reference.getSourceName(),
             reference.getSourceResourceId());
-        AiResource existing = hubStorage.findByInternalName(name);
+        AiResource existing = findByInternalName(name);
         if (existing != null) {
             verifyEntrySource(existing, reference);
             return existing;
@@ -86,7 +120,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         AiResource pending = new AiResource();
         pending.setName(name);
         pending.setNamespaceId(HUB_NAMESPACE);
-        pending.setType(SKILL);
+        pending.setType(resourceType.resourceType());
         pending.setFrom(HUB_SOURCE);
         pending.setOwner(SYSTEM_OWNER);
         pending.setScope(VisibilityConstants.SCOPE_PUBLIC);
@@ -104,14 +138,14 @@ public class HubShareRepositoryImpl implements HubShareRepository {
             // The embedded store can wrap duplicate writes in IllegalStateException.
             // Recover only if the exact same entry now exists. Otherwise preserve
             // the original failure; never steal a colliding entry.
-            AiResource concurrent = hubStorage.findByInternalName(name);
+            AiResource concurrent = findByInternalName(name);
             if (concurrent == null) {
                 throw failure;
             }
             verifyEntrySource(concurrent, reference);
             return concurrent;
         }
-        AiResource result = hubStorage.findByInternalName(name);
+        AiResource result = findByInternalName(name);
         if (result == null) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                 "Hub entry not readable after reservation");
@@ -122,7 +156,11 @@ public class HubShareRepositoryImpl implements HubShareRepository {
     
     @Override
     public AiResource findByEntryId(long hubEntryId) {
-        return hubEntryId > 0 ? hubStorage.findByEntryId(hubEntryId) : null;
+        if (hubEntryId <= 0) {
+            return null;
+        }
+        return resourceType == HubResourceType.SKILL ? hubStorage.findByEntryId(hubEntryId)
+            : hubStorage.findByEntryId(resourceType, hubEntryId);
     }
     
     @Override
@@ -130,7 +168,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         verifySource(source);
         String name = HubResourceNameUtils.buildInternalName(source.getSourceName(),
             source.getSourceResourceId());
-        AiResource result = hubStorage.findByInternalName(name);
+        AiResource result = findByInternalName(name);
         if (result != null) {
             verifyEntrySource(result, source);
         }
@@ -144,7 +182,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         String name = entry.getName();
         String version = reference.getSourceVersion();
         AiResourceVersion existing =
-            versionPersistService.find(HUB_NAMESPACE, name, SKILL, version);
+            versionPersistService.find(HUB_NAMESPACE, name, resourceType.resourceType(), version);
         if (existing != null) {
             verifyVersion(existing, reference);
             return existing;
@@ -152,7 +190,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         AiResourceVersion pending = new AiResourceVersion();
         pending.setNamespaceId(HUB_NAMESPACE);
         pending.setName(name);
-        pending.setType(SKILL);
+        pending.setType(resourceType.resourceType());
         pending.setVersion(version);
         pending.setAuthor(SYSTEM_OWNER);
         pending.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
@@ -160,8 +198,9 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         try {
             versionPersistService.insert(pending);
         } catch (RuntimeException failure) {
-            AiResourceVersion concurrent = versionPersistService.find(HUB_NAMESPACE, name, SKILL,
-                version);
+            AiResourceVersion concurrent =
+                versionPersistService.find(HUB_NAMESPACE, name, resourceType.resourceType(),
+                    version);
             if (concurrent == null) {
                 throw failure;
             }
@@ -169,7 +208,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
             return concurrent;
         }
         AiResourceVersion persisted =
-            versionPersistService.find(HUB_NAMESPACE, name, SKILL, version);
+            versionPersistService.find(HUB_NAMESPACE, name, resourceType.resourceType(), version);
         if (persisted == null) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                 "Hub reference version not readable after insertion");
@@ -203,7 +242,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         next.setStatus(AiResourceConstants.META_STATUS_ENABLE);
         next.setExt(HubResourceReferenceJsonUtil.toJson(reference));
         next.setVersionInfo(JacksonUtils.toJson(info));
-        return hubStorage.updateMetaCas(entry, expectedMetaVersion, next);
+        return updateMetaCas(entry, expectedMetaVersion, next);
     }
     
     @Override
@@ -216,13 +255,13 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         // publication gate is meta.status plus a valid pinned version pointer.
         AiResource next = copyMutableMeta(entry);
         next.setStatus(AiResourceConstants.META_STATUS_DISABLE);
-        return hubStorage.updateMetaCas(entry, expectedMetaVersion, next);
+        return updateMetaCas(entry, expectedMetaVersion, next);
     }
     
     private AiResourceVersion requirePreparedVersion(AiResource entry,
         HubResourceReference reference) throws NacosException {
         AiResourceVersion version = versionPersistService.find(HUB_NAMESPACE, entry.getName(),
-            SKILL, reference.getSourceVersion());
+            resourceType.resourceType(), reference.getSourceVersion());
         if (version == null) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "Hub reference version has not been prepared");
@@ -243,11 +282,11 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         AiResource entry = findByEntryId(id);
         if (entry == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                "Hub Skill entry not found: " + id);
+                "Hub resource entry not found: " + id);
         }
         if (entry.getMetaVersion() == null) {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "Hub Skill metaVersion is missing");
+                "Hub resource metaVersion is missing");
         }
         HubResourceReferenceJsonUtil.parse(entry.getExt());
         return entry;
@@ -258,13 +297,14 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         String expectedName = HubResourceNameUtils.buildInternalName(expected.getSourceName(),
             expected.getSourceResourceId());
         HubResourceReference current = HubResourceReferenceJsonUtil.parse(entry.getExt());
-        if (!HUB_NAMESPACE.equals(entry.getNamespaceId()) || !SKILL.equals(entry.getType())
+        if (!HUB_NAMESPACE.equals(entry.getNamespaceId())
+            || !resourceType.resourceType().equals(entry.getType())
             || !HUB_SOURCE.equals(entry.getFrom()) || !expectedName.equals(entry.getName())
             || !SYSTEM_OWNER.equals(entry.getOwner())
             || !VisibilityConstants.SCOPE_PUBLIC.equals(entry.getScope())
             || !sameSource(current, expected)) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
-                "Hub entry is bound to a different source Skill");
+                "Hub entry is bound to a different source resource");
         }
     }
     
@@ -274,7 +314,7 @@ public class HubShareRepositoryImpl implements HubShareRepository {
         if (!AiResourceConstants.VERSION_STATUS_ONLINE.equals(version.getStatus())
             || !SYSTEM_OWNER.equals(version.getAuthor())
             || !HUB_NAMESPACE.equals(version.getNamespaceId())
-            || !SKILL.equals(version.getType())
+            || !resourceType.resourceType().equals(version.getType())
             || !Objects.equals(version.getName(), HubResourceNameUtils.buildInternalName(
                 reference.getSourceName(), reference.getSourceResourceId()))
             || !Objects.equals(version.getVersion(), reference.getSourceVersion())

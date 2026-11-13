@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { hubResourceApi, ordinaryResourcePath, resourceErrorMessage, type HubResourceType } from '@/api/hub-resource';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { HUB_SYSTEM_NAMESPACE } from '@/lib/hub-skill-utils';
 import { hubSkillApi } from '@/api/hub-skill';
@@ -28,11 +29,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Source = { hubEntryId: string; name: string; version: string } | { namespaceId: string; name: string; version: string };
-interface Props { type: 'skill'; source: Source; open: boolean; onOpenChange: (open: boolean) => void }
+interface Props { type: HubResourceType | 'skill'; source: Source; open: boolean; onOpenChange: (open: boolean) => void }
 export function ResourceTransferDialog(props: Props) {
   return props.open ? <TransferForm {...props} key={`${props.type}:${'hubEntryId' in props.source ? props.source.hubEntryId : props.source.namespaceId}:${props.source.name}:${props.source.version}`} /> : null;
 }
-function TransferForm({ source, open, onOpenChange }: Props) {
+function TransferForm({ type, source, open, onOpenChange }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentNamespace, namespaces, fetchNamespaces } = useNamespaceStore();
@@ -51,21 +52,22 @@ function TransferForm({ source, open, onOpenChange }: Props) {
     }
     setError(''); setBusy(true);
     try {
+      if (type !== 'skill' && !('hubEntryId' in source)) throw new Error('Only Hub import is supported');
       const request = {
         ...('hubEntryId' in source ? { hubEntryId: source.hubEntryId } : {
           sourceNamespaceId: source.namespaceId, sourceName: source.name, sourceVersion: source.version,
         }), targetNamespaceId: namespace, targetName: name.trim(), targetVersion: version.trim(),
       };
-      const created = ('hubEntryId' in source
-        ? await hubSkillApi.import({ ...request, hubEntryId: source.hubEntryId })
-        : await hubSkillApi.copy({ sourceNamespaceId: source.namespaceId, sourceName: source.name,
-          sourceVersion: source.version, targetNamespaceId: namespace,
-          targetName: name.trim(), targetVersion: version.trim() })).data;
+      const created = type === 'skill'
+        ? ('hubEntryId' in source ? await hubSkillApi.import({ ...request, hubEntryId: source.hubEntryId })
+          : await hubSkillApi.clone({ sourceNamespaceId: source.namespaceId, sourceName: source.name, sourceVersion: source.version,
+            targetNamespaceId: namespace, targetName: name.trim(), targetVersion: version.trim() })).data
+        : await hubResourceApi.import(type, { ...request, hubEntryId: 'hubEntryId' in source ? source.hubEntryId : '' });
       onOpenChange(false);
       toast.success(t('hub.importSuccess'));
-      navigate(`/skill/${encodeURIComponent(created.targetName)}?${new URLSearchParams({
+      navigate(type === 'skill' ? `/skill/${encodeURIComponent(created.targetName)}?${new URLSearchParams({
         namespaceId: created.targetNamespaceId, version: created.draftVersion,
-      })}`);
+      })}` : ordinaryResourcePath(type, created.targetNamespaceId, created.targetName, created.draftVersion));
     } catch (failure) { setError(resourceErrorMessage(failure, t('hubEntryId' in source ? 'hub.importFailed' : 'hubResource.copyFailure'))); }
     finally { setBusy(false); }
   };
@@ -85,11 +87,4 @@ function TransferForm({ source, open, onOpenChange }: Props) {
         <Button disabled={busy} onClick={submit}>{busy ? t('common.loading') : t('hubEntryId' in source ? 'hub.import' : 'hubResource.copy')}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
-}
-
-function resourceErrorMessage(error: unknown, fallback: string): string {
-  const response = (error as { response?: { data?: { message?: unknown; data?: unknown } } })?.response?.data;
-  if (typeof response?.data === 'string' && response.data.trim()) return response.data;
-  if (typeof response?.message === 'string' && response.message.trim()) return response.message;
-  return error instanceof Error && error.message ? error.message : fallback;
 }

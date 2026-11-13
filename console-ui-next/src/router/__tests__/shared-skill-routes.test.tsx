@@ -41,10 +41,10 @@ describe('shared Skill routes', () => {
     expect(matchedPath('/skill/shared/detail/901')).toBe('skill/shared/detail/:hubEntryId');
   });
 
-  it('does not enable shared routes for the four deferred resource types', () => {
+  it('enables shared list and detail routes for all four additional resource types', () => {
     for (const path of ['mcpServerManagement', 'agentManagement', 'promptManagement', 'agentspec']) {
-      expect(matchedPath(`/${path}/shared/list`)).not.toBe(`${path}/shared/list`);
-      expect(matchedPath(`/${path}/shared/detail/901`)).not.toBe(`${path}/shared/detail/:hubEntryId`);
+      expect(matchedPath(`/${path}/shared/list`)).toBe(`${path}/shared/list`);
+      expect(matchedPath(`/${path}/shared/detail/901`)).toBe(`${path}/shared/detail/:hubEntryId`);
     }
   });
 
