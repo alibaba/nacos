@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.agentspecs;
 
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -300,6 +301,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void deleteAgentSpec(String namespaceId, String agentSpecName) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta =
             resourceManager.findMeta(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {
@@ -391,6 +393,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         List<AgentSpec> agentSpecs =
             AgentSpecZipParser.parseMultipleAgentSpecsFromZip(zipBytes, namespaceId);
         if (agentSpecs.size() == 1) {
@@ -453,6 +456,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         bootstrapAgentSpecFromZip(namespaceId, zipBytes, null);
     }
     
@@ -464,6 +468,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes, String from)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Parse ZIP and validate
         AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
         if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
@@ -765,6 +770,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public String createDraft(String namespaceId, String name, String basedOnVersion,
         String targetVersion)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         // ---- Case A: Brand-new agentspec ----
         if (meta == null) {
@@ -835,6 +841,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void updateDraft(String namespaceId, AgentSpec draftAgentSpec) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (draftAgentSpec == null || StringUtils.isBlank(draftAgentSpec.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "AgentSpec name is required");
@@ -881,6 +888,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doDeleteDraft(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
             v -> deleteAgentSpecStorageForVersion(namespaceId, name, v.getVersion(),
                 v.getStorage()));
@@ -896,6 +904,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public String submit(String namespaceId, String name, String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         // Step 1: Verify meta exists and has write permission
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         VisibilityHelper.checkWritableResource(meta);
@@ -957,6 +966,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void publish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doPublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
         scheduleAgentSpecIndexMaintenance(namespaceId, name);
@@ -968,6 +978,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void forcePublish(String namespaceId, String name, String version,
         boolean updateLatestLabel) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doForcePublish(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version, true);
         computeAndStoreContentMd5(namespaceId, name, version);
         scheduleAgentSpecIndexMaintenance(namespaceId, name);
@@ -991,6 +1002,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     @Override
     public void redraft(String namespaceId, String name, String version) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doRedraft(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version);
         scheduleAgentSpecIndexMaintenance(namespaceId, name);
     }
@@ -1001,6 +1013,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.validateAndUpdateLabels(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, labels);
         scheduleAgentSpecIndexMaintenance(namespaceId, name);
     }
@@ -1011,6 +1024,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateBizTags(String namespaceId, String name, String bizTags)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         VisibilityHelper.checkWritableResource(meta);
         resourceManager.updateBizTagsCas(namespaceId, meta, bizTags);
@@ -1028,6 +1042,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public void changeOnlineStatus(String namespaceId, String name, String scope, String version,
         boolean online)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         VisibilityHelper.checkWritableResource(meta);
         ResourceVersionInfo info = AiResourceManager.requireVersionInfo(meta);
@@ -1052,6 +1067,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         resourceManager.doUpdateScope(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, scope);
         scheduleAgentSpecIndexMaintenance(namespaceId, name);
     }

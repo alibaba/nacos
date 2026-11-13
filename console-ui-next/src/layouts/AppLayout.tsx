@@ -8,6 +8,8 @@ import { useServerStore } from '@/stores/server-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useEffect, useLayoutEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getToken } from '@/lib/storage';
+import { isPublicHubPath } from '@/lib/hub-access';
 
 export default function AppLayout() {
   const { sidebarCollapsed } = useAppStore();
@@ -15,12 +17,19 @@ export default function AppLayout() {
   const { fetchState } = useServerStore();
   const { fetchNamespaces } = useNamespaceStore();
   const location = useLocation();
+  const anonymousHub = !getToken() && isPublicHubPath(location.pathname);
 
   useEffect(() => {
     loadFromStorage();
     fetchState();
-    fetchNamespaces();
-  }, [loadFromStorage, fetchState, fetchNamespaces]);
+    if (!anonymousHub) fetchNamespaces();
+  }, [loadFromStorage, fetchState, fetchNamespaces, anonymousHub]);
+
+  useEffect(() => {
+    const refreshState = () => { void fetchState(); };
+    window.addEventListener('focus', refreshState);
+    return () => window.removeEventListener('focus', refreshState);
+  }, [fetchState]);
 
   // Clear stale scroll locks from react-remove-scroll on route change.
   //

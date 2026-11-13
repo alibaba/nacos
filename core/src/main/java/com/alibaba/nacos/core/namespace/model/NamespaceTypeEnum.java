@@ -38,7 +38,12 @@ public enum NamespaceTypeEnum {
     /**
      * Nacos AI module MCP type namespace.
      */
-    AI_MCP(2, "Default private namespace");
+    AI_MCP(2, "Default private namespace"),
+    
+    /**
+     * Nacos AI Agentic Resource Hub system namespace.
+     */
+    AI_HUB(3, "Nacos AI Resource Hub namespace");
     
     /**
      * the namespace type.

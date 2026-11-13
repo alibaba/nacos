@@ -20,3 +20,4 @@ com.alibaba.nacos.ai.param.AgentAdminHttpParamExtractor
 com.alibaba.nacos.ai.param.AgentClientHttpParamExtractor
 com.alibaba.nacos.ai.param.SkillHttpParamExtractor
 com.alibaba.nacos.ai.param.SkillListHttpParamExtractor
+com.alibaba.nacos.ai.param.HubSkillHttpParamExtractor

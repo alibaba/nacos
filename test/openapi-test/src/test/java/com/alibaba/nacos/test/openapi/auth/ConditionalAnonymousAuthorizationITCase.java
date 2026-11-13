@@ -69,7 +69,7 @@ public class ConditionalAnonymousAuthorizationITCase extends AuthITCase {
 
     private static Stream<AnonymousScenario> anonymousScenarios() {
         String missing = "auth-anonymous-missing";
-        return Stream.of(
+        Stream<AnonymousScenario> standard = Stream.of(
                 server("AgentSpecAdminController#listAgentSpecs", RequestMethod.GET,
                         "/nacos/v3/admin/ai/agentspecs/list?namespaceId=public&pageNo=1&pageSize=1"),
                 server("AgentSpecClientController#get", RequestMethod.GET,
@@ -78,6 +78,10 @@ public class ConditionalAnonymousAuthorizationITCase extends AuthITCase {
                         "/nacos/v3/admin/ai/skills/list?namespaceId=public&pageNo=1&pageSize=1"),
                 server("SkillClientController#get", RequestMethod.GET,
                         "/nacos/v3/client/ai/skills?namespaceId=public&name=" + missing),
+                server("SkillClientController#searchShared", RequestMethod.GET,
+                        "/nacos/v3/client/ai/skills/search?namespaceId=__nacos_ai_hub__&pageSize=1"),
+                server("SkillClientController#getShared", RequestMethod.GET,
+                        "/nacos/v3/client/ai/skills?namespaceId=__nacos_ai_hub__&name=9223372036854775807"),
                 ard("ArdWellKnownController#catalog", RequestMethod.GET,
                         "/.well-known/ai-catalog.json"),
                 ard("ArdSearchController#search", RequestMethod.POST,
@@ -91,6 +95,22 @@ public class ConditionalAnonymousAuthorizationITCase extends AuthITCase {
                 ard("ArdSearchController#artifact", RequestMethod.GET,
                         "/v3/ai/ard/artifacts?namespaceId=public&resourceType=skill"
                                 + "&resourceName=" + missing + "&version=1.0.0"));
+        Stream<AnonymousScenario> management = Stream.of("admin", "console").flatMap(audience -> {
+            String controller = "admin".equals(audience) ? "SkillAdminController" : "ConsoleSkillController";
+            String base = "admin".equals(audience) ? SERVER_BASE_URL
+                    : "http://" + NACOS_HOST + ':' + System.getProperty("nacos.console.port", "8080");
+            String path = ("admin".equals(audience) ? "/nacos" : "") + "/v3/" + audience + "/ai/skills";
+            String entry = "?namespaceId=__nacos_ai_hub__&skillName=9223372036854775807&version=1.0.0";
+            return Stream.of(
+                    new AnonymousScenario(controller + "#listSharedSkills", RequestMethod.GET, base,
+                            path + "/list?namespaceId=__nacos_ai_hub__&pageSize=1", 403),
+                    new AnonymousScenario(controller + "#getSharedSkill", RequestMethod.GET, base, path + entry, 403),
+                    new AnonymousScenario(controller + "#getSharedSkillVersion", RequestMethod.GET, base,
+                            path + "/version" + entry, 403),
+                    new AnonymousScenario(controller + "#downloadSharedSkillVersion", RequestMethod.GET, base,
+                            path + "/version/download" + entry, 403));
+        });
+        return Stream.concat(standard, management);
     }
 
     private static AnonymousScenario server(String name, RequestMethod method, String path) {

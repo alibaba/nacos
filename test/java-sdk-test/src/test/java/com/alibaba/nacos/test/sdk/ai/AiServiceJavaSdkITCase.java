@@ -50,6 +50,8 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -151,6 +153,24 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         service.shutdown();
         assertEquals(NacosException.CLIENT_DISCONNECT, assertThrows(NacosException.class,
             service::getAgentDiscoveryCapability).getErrCode());
+    }
+
+    @Test
+    public void testSkillDiscoveryValidationAndDefaultLocalOnly() throws Exception {
+        Properties properties = sdkProperties();
+        properties.remove(AiConstants.AI_ACCESS_HUB);
+        AiService service = createAiService(properties);
+        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+                () -> service.skill().searchSkills(null, null, 0, 10)).getErrCode());
+        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+                () -> service.skill().searchSkills(null, null, 1, 0)).getErrCode());
+        assertEquals(NacosException.INVALID_PARAM, assertThrows(NacosException.class,
+                () -> service.skill().downloadSkillZipBySearchResult(null)).getErrCode());
+        Page<SkillBasicInfo> result = service.skill().searchSkills(
+                randomServiceName("absent-skill-discovery"), Collections.emptyList(), 1, 5);
+        assertNotNull(result);
+        assertEquals(0, result.getTotalCount());
+        assertTrue(result.getPageItems().isEmpty());
     }
 
     @Test

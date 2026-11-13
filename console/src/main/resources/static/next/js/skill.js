@@ -1,1 +1,1 @@
-function e(e){if(!e)return[];try{let t=JSON.parse(e);return Array.isArray(t)?t.filter(e=>typeof e==`string`):[]}catch{return[]}}export{e as t};
+typeof Object.hasOwn!=`function`&&Object.defineProperty(Object,"hasOwn",{configurable:!0,writable:!0,value:function(e,t){return Object.prototype.hasOwnProperty.call(Object(e),t)}});function e(e){if(!e)return[];try{let t=JSON.parse(e);return Array.isArray(t)?t.filter(e=>typeof e==`string`):[]}catch{return[]}}export{e as t};

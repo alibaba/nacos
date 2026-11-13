@@ -32,6 +32,7 @@ import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.param.SkillListHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
+import com.alibaba.nacos.ai.service.hub.HubSkillManagementAdapter;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -53,6 +54,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,6 +69,9 @@ import java.util.Map;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills.ADMIN_PATH;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
 
 /**
  * Skill admin controller.
@@ -81,8 +86,59 @@ public class SkillAdminController {
     
     private final SkillOperationService skillOperationService;
     
+    private HubSkillManagementAdapter sharedSkills;
+    
+    @Autowired
+    public void setSharedSkills(HubSkillManagementAdapter sharedSkills) {
+        this.sharedSkills = sharedSkills;
+    }
+    
     public SkillAdminController(SkillOperationService skillOperationService) {
         this.skillOperationService = skillOperationService;
+    }
+    
+    /** The existing detail API selects shared resources by the reserved namespace. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public Result<SkillMeta> getSharedSkill(SkillForm form) throws NacosException {
+        return getSkill(form);
+    }
+    
+    /** The existing version API previews only the fixed shared version. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public Result<Skill> getSharedSkillVersion(SkillForm form) throws NacosException {
+        return getSkillVersion(form);
+    }
+    
+    /** Return source ZIP bytes through the existing download URI. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version/download", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public ResponseEntity<byte[]> downloadSharedSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        return SkillRequestUtil.buildSkillZipResponse(
+            sharedSkills.download(form.getSkillName(), form.getVersion()));
+    }
+    
+    /** List eligible shared Skills using the ordinary management response shape. */
+    @Since("3.3.0")
+    @GetMapping(value = "/list", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    @ExtractorManager.Extractor(httpExtractor = SkillListHttpParamExtractor.class)
+    public Result<Page<SkillSummary>> listSharedSkills(SkillListForm form,
+        AiResourceFilterableForm filters, PageForm page) throws NacosException {
+        return listSkills(form, filters, page);
     }
     
     /**

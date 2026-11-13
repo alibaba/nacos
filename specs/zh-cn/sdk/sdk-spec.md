@@ -147,6 +147,27 @@ MCP Client HTTP Input 使用 Canonical `mcpName`，不增加顶层 `mcpId`。Que
 
 ## 6. 安全规则
 
+### 共享 Skill 发现
+
+运行时 Skill Search 默认只访问当前命名空间（省略时为 `public`）。客户端配置
+`nacosAiAccessHub` 默认 `false`；显式设置为 `true` 时，合并当前命名空间与保留共享
+命名空间 `__nacos_ai_hub__`。这是只读发现对命名空间绑定的例外，不增加跨命名空间
+管理能力。该配置独立于服务端能力总开关
+`nacos.ai.hub.enabled`。开启后分别调用既有 Skill Search 接口查询当前与共享命名空间，
+再按“当前命名空间在前、共享资源在后”的稳定序列分页。当前结果保留服务端顺序；共享结果
+按独立下载量降序及服务端稳定规则排序。不同来源的同名资源分别保留。共享结果携带
+`discoverySource=HUB`、`hubEntryId`、值为该 ID 的下载 `name` 和固定 `version`；普通结果携带
+`discoverySource=NAMESPACE`。下载共享结果时通过同一 Skill 接口传入保留命名空间与不透明名称。
+任一请求来源失败均向调用者抛出错误，不能静默返回不完整合并页。不增加 `source` 选择器
+或独立 Client Hub API。本次实现范围为 Skill。
+
+Maintainer 共享查询同样复用 `listSkills`、`getSkillMeta`、`getSkillVersionDetail`
+和 `downloadSkillVersion`，传入保留命名空间；单资源读取的 `skillName` 为不透明的
+共享条目 ID。列表、元数据和版本内容继续返回 `Page<SkillSummary>`、`SkillMeta`
+和 `Skill`；`SkillDownload` 保留原始 ZIP、显示名称、解析版本及可选的共享条目 ID。
+不暴露独立的 Hub 列表、详情、内容、下载 SDK 方法或 HTTP 路径。分享、调整分享、
+取消分享、治理、状态查询、导入和复制继续保留专用的 Admin 管理操作。
+
 SDK 能力设计必须遵循最小权限原则：
 
 - Client SDK 凭据应限制在运行时资源范围内，不应要求大范围读写权限。

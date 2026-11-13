@@ -21,6 +21,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 /**
  * Direct authentication matrix for Console operations tagged {@code ONLY_IDENTITY}.
  *
@@ -56,6 +59,68 @@ public class IdentityOnlyAuthorizationITCase extends AuthITCase {
                         "/v3/console/core/namespace/exist?customNamespaceId=auth-missing"),
                 new IdentityOnlyScenario("ConsoleServiceController#getSelectorTypeList",
                         "/v3/console/ns/service/selector/types"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("sharedClientScenarios")
+    void testSharedClientIdentityOnlyOperation(IdentityOnlyScenario scenario) throws Exception {
+        assertDenied(get(SERVER_BASE_URL, scenario.path(), "invalid-token"));
+        assertDenied(getWithAuthorization(SERVER_BASE_URL, scenario.path(), ""));
+        Response authenticated = get(SERVER_BASE_URL, scenario.path(), noPermissionToken());
+        assertNotEquals(403, authenticated.status(), authenticated.body());
+        Response anonymous = get(SERVER_BASE_URL, scenario.path(), null);
+        if (Boolean.parseBoolean(System.getProperty("nacos.test.auth.anonymous-ai.enabled", "false"))) {
+            assertNotEquals(403, anonymous.status(), anonymous.body());
+        } else {
+            assertEquals(403, anonymous.status(), anonymous.body());
+        }
+    }
+
+    private static Stream<IdentityOnlyScenario> sharedClientScenarios() {
+        return Stream.of(
+                new IdentityOnlyScenario("SkillClientController#searchShared",
+                        "/nacos/v3/client/ai/skills/search?namespaceId=__nacos_ai_hub__&pageSize=1"),
+                new IdentityOnlyScenario("SkillClientController#getShared",
+                        "/nacos/v3/client/ai/skills?namespaceId=__nacos_ai_hub__&name=9223372036854775807"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("sharedManagementScenarios")
+    void testSharedManagementIdentityOnlyOperation(SharedScenario scenario) throws Exception {
+        assertDenied(get(scenario.baseUrl(), scenario.path(), "invalid-token"));
+        assertDenied(getWithAuthorization(scenario.baseUrl(), scenario.path(), ""));
+        Response authenticated = get(scenario.baseUrl(), scenario.path(), noPermissionToken());
+        assertNotEquals(403, authenticated.status(), authenticated.body());
+        Response anonymous = get(scenario.baseUrl(), scenario.path(), null);
+        if (Boolean.parseBoolean(System.getProperty("nacos.test.auth.anonymous-ai.enabled", "false"))) {
+            assertNotEquals(403, anonymous.status(), anonymous.body());
+        } else {
+            assertEquals(403, anonymous.status(), anonymous.body());
+        }
+    }
+
+    private static Stream<SharedScenario> sharedManagementScenarios() {
+        return Stream.of("admin", "console").flatMap(audience -> {
+            String controller = "admin".equals(audience) ? "SkillAdminController" : "ConsoleSkillController";
+            String base = "admin".equals(audience) ? SERVER_BASE_URL : CONSOLE_BASE;
+            String path = ("admin".equals(audience) ? "/nacos" : "") + "/v3/" + audience + "/ai/skills";
+            String entry = "?namespaceId=__nacos_ai_hub__&skillName=9223372036854775807&version=1.0.0";
+            return Stream.of(
+                    new SharedScenario(controller + "#listSharedSkills", base,
+                            path + "/list?namespaceId=__nacos_ai_hub__&pageSize=1"),
+                    new SharedScenario(controller + "#getSharedSkill", base, path + entry),
+                    new SharedScenario(controller + "#getSharedSkillVersion", base, path + "/version" + entry),
+                    new SharedScenario(controller + "#downloadSharedSkillVersion", base,
+                            path + "/version/download" + entry));
+        });
+    }
+
+    private record SharedScenario(String name, String baseUrl, String path) {
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     private record IdentityOnlyScenario(String name, String path) {

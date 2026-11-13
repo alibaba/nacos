@@ -1,7 +1,8 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getToken } from '@/lib/storage';
+import { isPublicHubPath } from '@/lib/hub-access';
 import { useAuthStore } from '@/stores';
 import { useServerStore } from '@/stores/server-store';
 import { AlertTriangle } from 'lucide-react';
@@ -53,6 +54,7 @@ function ConsoleDisabledPage() {
  */
 export function AuthGuard() {
   const token = getToken();
+  const location = useLocation();
   const { consoleUiEnable, authEnabled, loginPageEnabled, stateLoaded, fetchState, fetchGuide } = useServerStore();
 
   // Fetch server state once on mount
@@ -77,7 +79,7 @@ export function AuthGuard() {
     return <Outlet />;
   }
 
-  if (!token) {
+  if (!token && !isPublicHubPath(location.pathname)) {
     return <Navigate to="/login" replace />;
   }
 
@@ -104,6 +106,19 @@ export function AiGuard() {
     return <Navigate to={getDefaultRoute(false, functionMode)} replace />;
   }
 
+  return <Outlet />;
+}
+
+/**
+ * HubGuard - Only mount Hub pages when the server advertises Hub support.
+ */
+export function HubGuard() {
+  const { hubEnabled, aiEnabled, functionMode, stateLoaded } = useServerStore();
+
+  if (!stateLoaded) return null;
+  if (!hubEnabled) {
+    return <Navigate to={getDefaultRoute(aiEnabled, functionMode)} replace />;
+  }
   return <Outlet />;
 }
 

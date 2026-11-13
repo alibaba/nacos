@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -74,6 +75,7 @@ public class SkillClientOperationServiceImpl implements SkillClientOperationServ
     @Override
     public SkillQueryResult querySkill(String namespaceId, String name, String version,
         String label, String clientMd5) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(namespaceId);
         if (StringUtils.isBlank(name)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                 "Required parameter `name` not present");

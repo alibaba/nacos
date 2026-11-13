@@ -83,11 +83,21 @@ Properties -> JVM system properties -> environment variables -> defaults
 | `accessKey`, `secretKey`, `ramRoleName`, `signatureRegionId` | 通用 | RAM 风格鉴权参数。 |
 | `configRequestTimeout` | config | Config RPC 请求超时覆盖值。 |
 | `namingRequestTimeout` | naming | Naming RPC 请求超时覆盖值。 |
+| `nacosAiAccessHub` | AI Skill 发现 | 是否同时发现共享命名空间资源，默认 `false`；独立于服务端能力总开关。 |
 | `nacos.server.grpc.port.offset` | 连接 | Java 客户端使用的 gRPC 端口偏移。 |
 
 已废弃的历史配置项应继续兼容，但新增代码不应依赖这些配置引入新行为。
 
 ## 4. Java Client SDK 扩展点
+
+`AiConstants.AI_ACCESS_HUB` 对应配置 `nacosAiAccessHub`（默认 `false`，只发现当前命名
+空间；显式 `true` 开启组合发现）。
+`AiService.skill().searchSkills(query, tagsAll, pageNo, pageSize)` 通过
+`/v3/client/ai/skills/search` 返回 `Page<SkillBasicInfo>`。合并分页只读取有界的来源页，
+不加载完整目录。`downloadSkillZipBySearchResult(SkillBasicInfo)` 保留所选结果的来源和共享固定版本。
+两个新增方法均为接口 Default Method；第三方 SDK 未实现的发现操作返回
+`SERVER_NOT_IMPLEMENTED`，普通下载继续委托既有名称方法。既有 String 下载与订阅方法
+仍绑定配置命名空间，不自动回退到共享资源。
 
 Java Client SDK 扩展点运行在应用进程内。它们从客户端 classpath 加载，或通过 SDK API
 注册，并随所属 SDK 实例关闭。它们不受服务端插件 Admin API 控制。

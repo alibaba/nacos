@@ -17,8 +17,17 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubSkillTransferResult;
+import com.alibaba.nacos.api.ai.model.hub.HubShareSkillRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -49,7 +58,7 @@ public interface SkillMaintainerService {
      * Get skill metadata.
      *
      * @param namespaceId namespace ID
-     * @param skillName   skill name
+     * @param skillName   skill name; opaque entry ID in the reserved shared namespace
      * @return skill metadata
      * @throws NacosException if fail to get skill metadata
      */
@@ -73,7 +82,7 @@ public interface SkillMaintainerService {
      * Get specific skill version detail.
      *
      * @param namespaceId namespace ID
-     * @param skillName   skill name
+     * @param skillName   skill name; opaque entry ID in the reserved shared namespace
      * @param version     skill version
      * @return skill version detail
      * @throws NacosException if fail to get skill version detail
@@ -81,6 +90,23 @@ public interface SkillMaintainerService {
     @Since("3.2.0")
     Skill getSkillVersionDetail(String namespaceId, String skillName, String version)
         throws NacosException;
+    
+    /**
+     * Download a Skill version through the existing namespace-aware package endpoint.
+     * For the reserved shared namespace, skillName is the opaque Hub Entry ID.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name or opaque shared entry ID
+     * @param version requested version; shared reads must match the pinned version
+     * @return original ZIP bytes with the resolved name and version
+     * @throws NacosException if the request is invalid or the download fails
+     */
+    @Since("3.3.0")
+    default SkillDownload downloadSkillVersion(String namespaceId, String skillName, String version)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Skill downloads");
+    }
     
     /**
      * Delete skill with default namespace.
@@ -145,7 +171,8 @@ public interface SkillMaintainerService {
      * @param namespaceId namespace ID
      * @param skillName   skill name pattern for filtering
      * @param search      search mode: "accurate" or "blur"
-     * @param orderBy     optional sort field (e.g. "download_count"); null defaults to gmt_modified
+     * @param orderBy     optional sort field (e.g. "download_count"); shared namespace defaults to
+     *                    independent download count, ordinary namespaces default to gmt_modified
      * @param owner       optional filter by resource owner; null or empty means no owner filter
      * @param scope       optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
      * @param pageNo      page number
@@ -171,7 +198,8 @@ public interface SkillMaintainerService {
      * @param namespaceId namespace ID
      * @param skillName   skill name pattern for filtering
      * @param search      search mode: "accurate" or "blur"
-     * @param orderBy     optional sort field (e.g. "download_count"); null defaults to gmt_modified
+     * @param orderBy     optional sort field (e.g. "download_count"); shared namespace defaults to
+     *                    independent download count, ordinary namespaces default to gmt_modified
      * @param owner       optional filter by resource owner; null or empty means no owner filter
      * @param scope       optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
      * @param bizTag      optional filter by business tag (fuzzy match); null or empty means no bizTag filter
@@ -560,4 +588,65 @@ public interface SkillMaintainerService {
      */
     @Since("3.2.0")
     boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException;
+    
+    /** Share an exact source Skill version in the Hub. */
+    @Since("3.3.0")
+    default HubShareResult shareHubSkill(HubShareSkillRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Change one active Hub share using strict metadata CAS. */
+    @Since("3.3.0")
+    default HubShareResult adjustHubShare(HubAdjustShareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Disable a Hub share with source WRITE permission. */
+    @Since("3.3.0")
+    default HubShareResult unshareHubSkill(HubUnshareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Governance-only Hub takedown; does not grant source WRITE. */
+    @Since("3.3.0")
+    default HubShareResult forceUnshareHubSkill(HubForceUnshareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill operations");
+    }
+    
+    /** Import the active Hub version into an independent target draft. */
+    @Since("3.3.0")
+    default HubSkillTransferResult importHubSkill(HubSkillTransferRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill import");
+    }
+    
+    /** Copy an explicit source version with source READ and target WRITE. */
+    @Since("3.3.0")
+    default HubSkillTransferResult copyHubSkill(HubSkillTransferRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "This Maintainer implementation does not support Hub Skill copy");
+    }
+    
+    /** Source WRITE required; returns null if never shared. */
+    @Since("3.3.0")
+    default HubSkillShareState getHubSkillSourceShare(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub Skill source share lookup is unavailable");
+    }
+    
+    /** Console administrator authority required; never use for ordinary users. */
+    @Since("3.3.0")
+    default HubSkillShareState getHubSkillGovernanceState(Long entryId) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub Skill governance lookup is unavailable");
+    }
+    
 }

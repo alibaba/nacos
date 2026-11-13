@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ModuleAuthorizationITCase extends AuthITCase {
 
-    private static final int EXPECTED_SECURED_OPERATION_COUNT = 393;
+    private static final int EXPECTED_SECURED_OPERATION_COUNT = 419;
 
     private static final String OPERATION_COVERAGE_MANIFEST =
             "test/openapi-test/AUTHORIZATION_OPERATION_COVERAGE.md";
@@ -94,7 +94,13 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("ConsolePluginController", 5),
             Map.entry("ConsolePromptController", 18),
             Map.entry("ConsoleServiceController", 8),
-            Map.entry("ConsoleSkillController", 20),
+            Map.entry("ConsoleSkillController", 24),
+            Map.entry("ConsoleHubSkillController", 4),
+            Map.entry("ConsoleHubSkillStateController", 2),
+            Map.entry("ConsoleHubSkillTransferController", 2),
+            Map.entry("HubSkillAdminController", 4),
+            Map.entry("HubSkillStateAdminController", 2),
+            Map.entry("HubSkillTransferAdminController", 2),
             Map.entry("CoreOpsControllerV3", 3),
             Map.entry("HealthControllerV3", 2),
             Map.entry("HistoryControllerV3", 4),
@@ -115,14 +121,20 @@ public class ModuleAuthorizationITCase extends AuthITCase {
             Map.entry("RoleControllerV3", 4),
             Map.entry("ServerLoaderControllerV3", 5),
             Map.entry("ServiceControllerV3", 7),
-            Map.entry("SkillAdminController", 20),
-            Map.entry("SkillClientController", 2),
+            Map.entry("SkillAdminController", 24),
+            // Two namespace-qualified shared handlers reuse the existing URLs.
+            Map.entry("SkillClientController", 4),
             Map.entry("UserControllerV3", 5),
             Map.entry("VisibilityGrantControllerV3", 2));
 
     private static final Set<String> AUTH_PLUGIN_CONTROLLERS = Set.of(
             "PermissionControllerV3", "RoleControllerV3", "UserControllerV3",
             "VisibilityGrantControllerV3");
+
+    // Direct source/governance authorization matrix lives in HubSkillApiBaseITCase.
+    private static final Set<String> HUB_MANAGEMENT_CONTROLLERS = Set.of(
+            "HubSkillAdminController", "HubSkillStateAdminController", "HubSkillTransferAdminController",
+            "ConsoleHubSkillController", "ConsoleHubSkillStateController", "ConsoleHubSkillTransferController");
 
     private static final Set<String> ANONYMOUS_ONLY_CONTROLLERS = Set.of(
             "ArdSearchController", "ArdWellKnownController");
@@ -149,6 +161,7 @@ public class ModuleAuthorizationITCase extends AuthITCase {
         expected.addAll(AUTH_PLUGIN_CONTROLLERS);
         expected.addAll(ANONYMOUS_ONLY_CONTROLLERS);
         expected.add("AiCapabilityClientController");
+        expected.addAll(HUB_MANAGEMENT_CONTROLLERS);
 
         Path repositoryRoot = findRepositoryRoot();
         Map<String, Integer> actual = new TreeMap<>();
@@ -222,7 +235,8 @@ public class ModuleAuthorizationITCase extends AuthITCase {
                 assertTrue(coverage.contains("IdentityOnlyAuthorizationITCase")
                                 || coverage.contains("DefaultAuthApiITCase")
                                 || coverage.contains("ResourceAuthorizationITCase")
-                                || coverage.contains("AiCapabilitiesClientOpenApiITCase"),
+                                || coverage.contains("AiCapabilitiesClientOpenApiITCase")
+                                || coverage.contains("HubSkillApiBaseITCase"),
                         "Identity-only operation needs direct coverage: " + operation);
             }
             assertNull(result.put(operation, tuple),

@@ -156,6 +156,16 @@ The complete implemented scenario matrix is maintained in
 
 ## Recommended Next Test Batches
 
+### Shared Skill discovery (3.3 meeting change)
+
+| Scenario | Coverage | Notes |
+| --- | --- | --- |
+| Default local-only discovery, missing literal query, invalid page number/size, null selected download | `AiServiceJavaSdkITCase.testSkillDiscoveryValidationAndDefaultLocalOnly` | External standalone Client API, no new server bootstrapping. |
+| `nacosAiAccessHub=false` default does not request Hub; explicit true queries both namespaces | `NacosAiServiceTest.skillDiscoveryDefaultsOffAndExplicitOptInMergesSharedNamespace` | Deterministic transport assertions. |
+| Namespace-first paging, boundary-spanning shared pages, equal display names, source provenance, direct shared binding | `SkillDiscoveryClientTest` | Unit tests preserve server shared popularity order and bound each page read. |
+| Shared query denial and pinned shared downloads | `SkillDiscoveryClientTest` | Errors propagate without partial pages; no fallback to mutable source/latest. |
+| Shared publish then search/download through public Java SDK | Pending standalone fixture | Requires enabled Hub and authenticated share-management setup; API IT covers shared publication/download/counter contract. |
+
 1. Confirm the intended contracts for Naming fuzzy-watch delete events and MCP
    latest-listener unsubscribe behavior, then add stable IT or file follow-up
    issues as needed.

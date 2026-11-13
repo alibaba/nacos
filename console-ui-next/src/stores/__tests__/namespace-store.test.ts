@@ -59,3 +59,36 @@ describe('namespace change guard', () => {
     expect(useNamespaceStore.getState().getNamespaceChangeGuard()).toBeNull();
   });
 });
+
+
+describe('Hub namespace isolation', () => {
+  it('rejects a reserved namespace supplied by a legacy or detail deep link', () => {
+    expect(getDefaultNamespaceFromHash('#/skill/demo?namespaceId=__nacos_ai_hub__')).toBe('');
+    expect(getDefaultNamespaceFromHash('#/skill?namespace=__nacos_ai_hub__')).toBe('');
+  });
+  it('does not allow the ordinary namespace picker to select Hub', () => {
+    useNamespaceStore.getState().setNamespace('tenant-a', 'Tenant A');
+    useNamespaceStore.getState().setNamespace('__nacos_ai_hub__', 'Hub');
+    expect(useNamespaceStore.getState().currentNamespace).toBe('tenant-a');
+  });
+  it('filters Hub from server namespace lists and retains the normal default', async () => {
+    const { namespaceApi } = await import('@/api');
+    vi.mocked(namespaceApi.list).mockResolvedValue({ code: 0, data: [
+      { namespace: '__nacos_ai_hub__', namespaceShowName: 'Hub' },
+      { namespace: 'public', namespaceShowName: 'Public' },
+    ] } as unknown as Awaited<ReturnType<typeof namespaceApi.list>>);
+    useNamespaceStore.setState({ currentNamespace: '' });
+    await useNamespaceStore.getState().fetchNamespaces();
+    expect(useNamespaceStore.getState().namespaces.map(ns => ns.namespace)).toEqual(['public']);
+    expect(useNamespaceStore.getState().currentNamespace).toBe('public');
+  });
+  it('clears a stale reserved selection even when the server returns no ordinary namespaces', async () => {
+    const { namespaceApi } = await import('@/api');
+    vi.mocked(namespaceApi.list).mockResolvedValue({ code: 0, data: [] } as unknown as Awaited<ReturnType<typeof namespaceApi.list>>);
+    useNamespaceStore.setState({ currentNamespace: '__nacos_ai_hub__', namespaceShowName: 'Hub' });
+    await useNamespaceStore.getState().fetchNamespaces();
+    expect(useNamespaceStore.getState().currentNamespace).toBe('');
+    expect(useNamespaceStore.getState().namespaceShowName).toBe('');
+  });
+
+});

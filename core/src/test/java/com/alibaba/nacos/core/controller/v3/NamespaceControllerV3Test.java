@@ -211,7 +211,7 @@ class NamespaceControllerV3Test {
     }
     
     @Test
-    void testDeleteNamespace() {
+    void testDeleteNamespace() throws NacosApiException {
         when(namespaceOperationService.removeNamespace(TEST_NAMESPACE_ID)).thenReturn(true);
         
         Result<Boolean> result = namespaceControllerV3.deleteNamespace(TEST_NAMESPACE_ID);

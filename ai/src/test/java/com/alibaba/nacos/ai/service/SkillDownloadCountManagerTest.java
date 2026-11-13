@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.common.notify.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Unit tests for {@link SkillDownloadCountManager}.
@@ -96,6 +98,20 @@ class SkillDownloadCountManagerTest {
             2L);
         verify(aiResourcePersistService).incrementDownloadCount("public", "skill-a", "skill",
             1L);
+    }
+    
+    @Test
+    void hubDownloadFlushesOnlyItsOwnEntryAndVersionCounters() throws Exception {
+        manager.onEvent(new SkillDownloadEvent(AiConstants.Hub.NAMESPACE_ID,
+            "skill-a-101", "skill", "1.0.0"));
+        manager.onEvent(new SkillDownloadEvent(AiConstants.Hub.NAMESPACE_ID,
+            "skill-a-101", "skill", "1.0.0"));
+        invokeFlush();
+        verify(aiResourceVersionPersistService).incrementDownloadCount(AiConstants.Hub.NAMESPACE_ID,
+            "skill-a-101", "skill", "1.0.0", 2L);
+        verify(aiResourcePersistService).incrementDownloadCount(AiConstants.Hub.NAMESPACE_ID,
+            "skill-a-101", "skill", 2L);
+        verifyNoMoreInteractions(aiResourcePersistService, aiResourceVersionPersistService);
     }
     
     @Test

@@ -64,6 +64,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
 
 /**
  * Console skill controller.
@@ -80,6 +84,46 @@ public class ConsoleSkillController {
     
     public ConsoleSkillController(SkillProxy skillProxy) {
         this.skillProxy = skillProxy;
+    }
+    
+    /** Select shared resources through the existing Skill detail API. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public Result<SkillMeta> getSharedSkill(SkillForm form) throws NacosException {
+        return getSkill(form);
+    }
+    
+    @Since("3.3.0")
+    @GetMapping(value = "/version", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public Result<Skill> getSharedSkillVersion(SkillForm form) throws NacosException {
+        return getSkillVersion(form);
+    }
+    
+    @Since("3.3.0")
+    @GetMapping(value = "/version/download", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    public ResponseEntity<byte[]> downloadSharedSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        return SkillRequestUtil.buildSkillZipResponse(skillProxy.downloadSkillPackage(form));
+    }
+    
+    @Since("3.3.0")
+    @GetMapping(value = "/list", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API,
+        tags = {ONLY_IDENTITY, ALLOW_ANONYMOUS})
+    @ExtractorManager.Extractor(httpExtractor = SkillListHttpParamExtractor.class)
+    public Result<Page<SkillSummary>> listSharedSkills(SkillListForm form,
+        AiResourceFilterableForm filters, PageForm page) throws NacosException {
+        return listSkills(form, filters, page);
     }
     
     /**

@@ -55,6 +55,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PromptAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
 
     @Test
+    public void testPromptDraftRejectsReservedHubNamespace() throws Exception {
+        Map<String, String> form = promptDraftForm(randomPromptKey("hub-reserved"), "1.0.0",
+                "Hello {{name}}", "reserved namespace boundary", "hub");
+        form.put("namespaceId", "__nacos_ai_hub__");
+        assertError(postRaw(ADMIN_PROMPT_PATH + "/draft", queryFrom(form)),
+                400, ErrorCode.ILLEGAL_NAMESPACE, "reserved for Nacos AI Resource Hub");
+    }
+
+    @Test
     public void testPromptLifecycleGovernanceListDownloadAndDelete() throws Exception {
         String promptKey = randomPromptKey("prompt");
         String draftTemplate = "Hello {{name}} from draft";

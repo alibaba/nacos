@@ -31,6 +31,7 @@ import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -65,6 +66,10 @@ public class SkillProxy {
     
     public Skill downloadSkillVersion(SkillForm form) throws NacosException {
         return skillHandler.downloadSkillVersion(form);
+    }
+    
+    public SkillDownload downloadSkillPackage(SkillForm form) throws NacosException {
+        return skillHandler.downloadSkillPackage(form);
     }
     
     public void deleteSkill(SkillForm form) throws NacosException {

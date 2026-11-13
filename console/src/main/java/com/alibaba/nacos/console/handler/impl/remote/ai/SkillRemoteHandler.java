@@ -30,6 +30,9 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -58,12 +61,20 @@ public class SkillRemoteHandler implements SkillHandler {
     
     private final NacosMaintainerClientHolder clientHolder;
     
+    private HubRemoteCallerGuard sharedReadGuard;
+    
+    @Autowired
+    public void setSharedReadGuard(HubRemoteCallerGuard sharedReadGuard) {
+        this.sharedReadGuard = sharedReadGuard;
+    }
+    
     public SkillRemoteHandler(NacosMaintainerClientHolder clientHolder) {
         this.clientHolder = clientHolder;
     }
     
     @Override
     public SkillMeta getSkill(SkillForm form) throws NacosException {
+        requireForwardableSharedRead(form);
         return clientHolder.getAiMaintainerService().skill().getSkillMeta(
             form.getNamespaceId(),
             form.getSkillName());
@@ -71,6 +82,7 @@ public class SkillRemoteHandler implements SkillHandler {
     
     @Override
     public Skill getSkillVersion(SkillForm form) throws NacosException {
+        requireForwardableSharedRead(form);
         return clientHolder.getAiMaintainerService().skill().getSkillVersionDetail(
             form.getNamespaceId(),
             form.getSkillName(),
@@ -80,6 +92,19 @@ public class SkillRemoteHandler implements SkillHandler {
     @Override
     public Skill downloadSkillVersion(SkillForm form) throws NacosException {
         return getSkillVersion(form);
+    }
+    
+    @Override
+    public SkillDownload downloadSkillPackage(SkillForm form) throws NacosException {
+        requireForwardableSharedRead(form);
+        return clientHolder.getAiMaintainerService().skill().downloadSkillVersion(
+            form.getNamespaceId(), form.getSkillName(), form.getVersion());
+    }
+    
+    private void requireForwardableSharedRead(SkillForm form) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(form.getNamespaceId())) {
+            sharedReadGuard.requireForwardableRead();
+        }
     }
     
     @Override
@@ -93,6 +118,7 @@ public class SkillRemoteHandler implements SkillHandler {
     public Page<SkillSummary> listSkills(SkillListForm skillListForm,
         AiResourceFilterableForm filterableForm,
         PageForm pageForm) throws NacosException {
+        requireForwardableSharedRead(skillListForm);
         Page<SkillSummary> result = clientHolder.getAiMaintainerService().skill().listSkills(
             skillListForm.getNamespaceId(),
             skillListForm.getSkillName(),

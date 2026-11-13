@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchService.NumberedPage;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Predicate;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.PredicateOperator;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchService.Query;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
@@ -90,6 +91,7 @@ public class AiResourceSearchApplicationService {
      * @throws NacosException when validation, recall, or canonical lookup fails
      */
     public AiResourceSearchResponse search(AiResourceSearchForm form) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         AiResourceSearchService core = requireSearchService();
         Query query = new Query();
         query.setNamespaceId(form.getNamespaceId());
@@ -111,6 +113,7 @@ public class AiResourceSearchApplicationService {
      */
     public Page<AgentSpecBasicInfo> searchAgentSpecs(AgentSpecSearchForm form, int pageNo,
         int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         AiResourceSearchService core = requireSearchService();
         Query query = numberedQuery(form.getNamespaceId(),
             Constants.AgentSpecs.RESOURCE_TYPE_AGENTSPEC, pageNo, pageSize);
@@ -126,6 +129,7 @@ public class AiResourceSearchApplicationService {
      */
     public Page<SkillBasicInfo> searchSkills(AiResourcePageSearchForm form, int pageNo,
         int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         Query query = contentQuery(form, AiResourceConstants.RESOURCE_TYPE_SKILL, pageNo,
             pageSize);
         return mapPage(numbered(query), this::toSkillBasicInfo);
@@ -136,6 +140,7 @@ public class AiResourceSearchApplicationService {
      */
     public Page<PromptMetaSummary> searchPrompts(AiResourcePageSearchForm form, int pageNo,
         int pageSize) throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         Query query = contentQuery(form, AiResourceConstants.RESOURCE_TYPE_PROMPT, pageNo,
             pageSize);
         return mapPage(numbered(query), this::toPromptMetaSummary);
@@ -146,6 +151,7 @@ public class AiResourceSearchApplicationService {
      */
     public Page<McpServerBasicInfo> searchMcpServers(McpSearchForm form, int pageNo, int pageSize)
         throws NacosException {
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         Query query = contentQuery(form, AiResourceConstants.RESOURCE_TYPE_MCP, pageNo,
             pageSize);
         List<Predicate> predicates = new ArrayList<>(query.getPredicates());

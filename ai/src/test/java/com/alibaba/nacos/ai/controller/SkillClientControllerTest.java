@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchApplicationService;
+import com.alibaba.nacos.ai.service.hub.HubSkillClientService;
 import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -77,12 +78,15 @@ class SkillClientControllerTest {
     @MockitoBean
     private AiResourceSearchApplicationService searchService;
     
+    @MockitoBean
+    private HubSkillClientService sharedSkills;
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
         skillClientController = new SkillClientController(skillClientOperationService,
-            searchService);
+            searchService, sharedSkills);
         mockMvc = MockMvcBuilders.standaloneSetup(skillClientController).build();
     }
     
@@ -170,6 +174,38 @@ class SkillClientControllerTest {
         
         assertEquals(200, response.getStatus());
         assertTrue(response.getContentAsString().contains("test-skill"));
+    }
+    
+    @Test
+    void testExplicitSharedNamespaceUsesSharedSearchOnExistingRoute() throws Exception {
+        Page<SkillBasicInfo> page = new Page<>();
+        SkillBasicInfo item = new SkillBasicInfo();
+        item.setName("42");
+        item.setDiscoverySource("HUB");
+        item.setHubEntryId(42L);
+        page.setPageItems(java.util.Collections.singletonList(item));
+        when(sharedSkills.search(any(), eq(2), eq(10))).thenReturn(page);
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(SKILL_CLIENT_PATH + "/search")
+                .param("namespaceId", "__nacos_ai_hub__").param("pageNo", "2")
+                .param("pageSize", "10"))
+            .andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getContentAsString().contains("\"discoverySource\":\"HUB\""));
+        org.mockito.Mockito.verifyNoInteractions(searchService, skillClientOperationService);
+    }
+    
+    @Test
+    void testExplicitSharedNamespaceUsesExistingDownloadRoute() throws Exception {
+        when(sharedSkills.download(any())).thenReturn(org.springframework.http.ResponseEntity.ok()
+            .header("Content-Type", "application/zip").body(new byte[] {1, 2, 3}));
+        MockHttpServletResponse response = mockMvc.perform(
+            MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
+                .param("namespaceId", "__nacos_ai_hub__").param("name", "42"))
+            .andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        assertEquals("application/zip", response.getContentType());
+        org.mockito.Mockito.verifyNoInteractions(searchService, skillClientOperationService);
     }
     
     private static Skill newSkill() {

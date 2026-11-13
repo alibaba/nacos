@@ -62,6 +62,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
 import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -119,6 +120,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
@@ -216,6 +218,34 @@ class NacosAiServiceTest {
             }
         } finally {
             closeMockedConstructions();
+        }
+    }
+    
+    @Test
+    void skillDiscoveryDefaultsOffAndExplicitOptInMergesSharedNamespace() throws Exception {
+        AiHttpClientProxy defaultProxy = httpProxyConstruction.constructed().get(0);
+        when(defaultProxy.searchSkills(Constants.DEFAULT_NAMESPACE_ID, "text", null, 1, 10))
+            .thenReturn(new Page<SkillBasicInfo>());
+        nacosAiService.skill().searchSkills("text", null, 1, 10);
+        verify(defaultProxy).searchSkills(Constants.DEFAULT_NAMESPACE_ID, "text", null, 1, 10);
+        verify(defaultProxy, never()).searchSkills(eq(AiConstants.Hub.NAMESPACE_ID),
+            any(), any(), anyInt(), anyInt());
+        
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        properties.setProperty(AiConstants.AI_ACCESS_HUB, "true");
+        NacosAiService sharedDiscovery = new NacosAiService(properties);
+        try {
+            AiHttpClientProxy sharedProxy = httpProxyConstruction.constructed().get(1);
+            when(sharedProxy.searchSkills(Constants.DEFAULT_NAMESPACE_ID, "text", null, 1, 10))
+                .thenReturn(new Page<SkillBasicInfo>());
+            when(sharedProxy.searchSkills(AiConstants.Hub.NAMESPACE_ID, "text", null, 1, 1))
+                .thenReturn(new Page<SkillBasicInfo>());
+            sharedDiscovery.skill().searchSkills("text", null, 1, 10);
+            verify(sharedProxy).searchSkills(Constants.DEFAULT_NAMESPACE_ID, "text", null, 1, 10);
+            verify(sharedProxy).searchSkills(AiConstants.Hub.NAMESPACE_ID, "text", null, 1, 1);
+        } finally {
+            sharedDiscovery.shutdown();
         }
     }
     

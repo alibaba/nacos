@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -73,6 +74,9 @@ public interface SkillHandler {
      * @throws NacosException nacos exception
      */
     Skill downloadSkillVersion(SkillForm form) throws NacosException;
+    
+    /** Return the original package and its transport metadata. */
+    SkillDownload downloadSkillPackage(SkillForm form) throws NacosException;
     
     /**
      * Delete skill.

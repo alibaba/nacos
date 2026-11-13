@@ -126,6 +126,12 @@ public class ClientHttpProxy implements Closeable {
      */
     public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request)
         throws NacosException {
+        return executeSyncHttpRequest(request, String.class);
+    }
+    
+    /** Execute an HTTP request without decoding binary response bodies as text. */
+    public <T> HttpRestResult<T> executeSyncHttpRequest(HttpRequest request, Class<T> responseType)
+        throws NacosException {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
@@ -133,7 +139,7 @@ public class ClientHttpProxy implements Closeable {
         NacosException requestException = null;
         while (System.currentTimeMillis() <= endTime && retryCount >= 0) {
             try {
-                HttpRestResult<String> result = executeSync(request, currentServerAddr);
+                HttpRestResult<T> result = executeSync(request, currentServerAddr, responseType);
                 if (result.isNoRight()) {
                     reLogin();
                 }
@@ -176,9 +182,14 @@ public class ClientHttpProxy implements Closeable {
                 + currentServerAddr);
     }
     
-    private NacosException resolveRequestException(HttpRestResult<String> result) {
-        String responseBody = StringUtils.isNotBlank(result.getData())
-            ? result.getData() : result.getMessage();
+    private NacosException resolveRequestException(HttpRestResult<?> result) {
+        Object dataBody = result.getData();
+        String responseBody = dataBody instanceof byte[]
+            ? new String((byte[]) dataBody, StandardCharsets.UTF_8)
+            : dataBody == null ? null : dataBody.toString();
+        if (StringUtils.isBlank(responseBody)) {
+            responseBody = result.getMessage();
+        }
         if (StringUtils.isNotBlank(responseBody)) {
             try {
                 Result<Object> response =
@@ -210,7 +221,9 @@ public class ClientHttpProxy implements Closeable {
         return new NacosException(result.getCode(), result.getMessage());
     }
     
-    private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr)
+    @SuppressWarnings("unchecked")
+    private <T> HttpRestResult<T> executeSync(HttpRequest request, String serverAddr,
+        Class<T> responseType)
         throws Exception {
         long readTimeoutMs = ParamUtil.getReadTimeout();
         long connectTimeoutMs = ParamUtil.getConnectTimeout();
@@ -229,25 +242,29 @@ public class ClientHttpProxy implements Closeable {
         String url = buildUrl(serverAddr, request.getPath());
         
         if (request.isFileUpload()) {
-            return executeMultipartPost(url, httpConfig, httpHeaders, query, request);
+            if (responseType != String.class) {
+                throw new IllegalArgumentException("Multipart upload requires a text response");
+            }
+            return (HttpRestResult<T>) executeMultipartPost(url, httpConfig, httpHeaders, query,
+                request);
         }
         
         switch (request.getHttpMethod()) {
             case HttpMethod.GET:
-                return nacosRestTemplate.get(url, httpConfig, httpHeaders, query, String.class);
+                return nacosRestTemplate.get(url, httpConfig, httpHeaders, query, responseType);
             case HttpMethod.POST:
                 if (StringUtils.isNotBlank(request.getBody())) {
                     return nacosRestTemplate.postJson(url, httpHeaders, query, request.getBody(),
-                        String.class);
+                        responseType);
                 } else {
                     return nacosRestTemplate.postForm(url, httpConfig, httpHeaders, paramValues,
-                        String.class);
+                        responseType);
                 }
             case HttpMethod.PUT:
                 return nacosRestTemplate.putForm(url, httpConfig, httpHeaders, paramValues,
-                    String.class);
+                    responseType);
             case HttpMethod.DELETE:
-                return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, String.class);
+                return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, responseType);
             default:
                 throw new IllegalArgumentException(
                     "Unsupported HTTP method: " + request.getHttpMethod());
@@ -379,4 +396,36 @@ public class ClientHttpProxy implements Closeable {
         }
         LOGGER.info("{} do shutdown stop", className);
     }
+    
+    private String resolveErrorMessage(HttpRestResult<?> result) {
+        Object dataBody = result.getData();
+        String responseBody = dataBody instanceof byte[]
+            ? new String((byte[]) dataBody, StandardCharsets.UTF_8)
+            : dataBody == null ? null : dataBody.toString();
+        if (StringUtils.isNotBlank(responseBody)) {
+            try {
+                Result<Object> response =
+                    JsonUtils.toObj(responseBody, new NacosTypeReference<Result<Object>>() {
+                    });
+                if (response != null) {
+                    String message = response.getMessage();
+                    Object data = response.getData();
+                    if (data instanceof String && StringUtils.isNotBlank((String) data)) {
+                        if (StringUtils.isNotBlank(message) && !data.equals(message)) {
+                            return message + ": " + data;
+                        }
+                        return (String) data;
+                    }
+                    if (StringUtils.isNotBlank(message)) {
+                        return message;
+                    }
+                }
+            } catch (Exception ignored) {
+                // Fall back to the raw response body for non-Result payloads.
+            }
+            return responseBody;
+        }
+        return result.getMessage();
+    }
+    
 }

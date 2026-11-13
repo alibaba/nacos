@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -30,12 +31,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 /**
@@ -49,6 +52,23 @@ public class SkillRequestUtil {
     
     private static final Pattern FRONTMATTER_PATTERN =
         Pattern.compile("^---\\r?\\n([\\s\\S]*?)\\r?\\n---");
+    
+    /** Relay original package bytes without serializing the Skill or changing its directory name. */
+    public static ResponseEntity<byte[]> buildSkillZipResponse(SkillDownload download) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/zip"));
+        headers.setContentDisposition(ContentDisposition.attachment()
+            .filename(download.getDisplayName() + ".zip", StandardCharsets.UTF_8).build());
+        if (StringUtils.isNotBlank(download.getResolvedVersion())) {
+            headers.set(Constants.Skills.HEADER_SKILL_RESOLVED_VERSION,
+                download.getResolvedVersion());
+        }
+        if (download.getHubEntryId() != null) {
+            headers.set("X-Nacos-Hub-Entry-Id", Long.toString(download.getHubEntryId()));
+            headers.setCacheControl("no-store");
+        }
+        return ResponseEntity.ok().headers(headers).body(download.getZipBytes());
+    }
     
     /**
      * Build a ZIP download {@link ResponseEntity} from a {@link Skill} object.

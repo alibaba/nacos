@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { namespaceApi, type Namespace } from '@/api';
+import { HUB_SYSTEM_NAMESPACE } from '@/lib/hub-skill-utils';
 
 export type NamespaceChangeGuard = (namespaceId: string, namespaceShowName: string) => boolean;
 
@@ -14,6 +15,7 @@ interface NamespaceState {
 
 interface NamespaceActions {
   setNamespace: (id: string, showName: string) => void;
+  syncNamespaceFromSearch: (search: string) => void;
   setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => void;
   getNamespaceChangeGuard: () => NamespaceChangeGuard | null;
   fetchNamespaces: () => Promise<void>;
@@ -28,7 +30,8 @@ export const getDefaultNamespaceFromHash = (hash: string): string => {
     return '';
   }
   const params = new URLSearchParams(queryString);
-  return params.get('namespace') || params.get('namespaceId') || '';
+  const namespace = params.get('namespace') || params.get('namespaceId') || '';
+  return namespace === HUB_SYSTEM_NAMESPACE ? '' : namespace;
 };
 
 export const getNamespaceSearchAfterSwitch = (
@@ -73,10 +76,24 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
 
   // Actions
   setNamespace: (id: string, showName: string) => {
+    if (id === HUB_SYSTEM_NAMESPACE) return;
     set({
       currentNamespace: id,
       namespaceShowName: showName,
     });
+  },
+
+  // Ordinary detail routes own their explicit namespace; shared routes do not call this.
+  syncNamespaceFromSearch: (search: string) => {
+    const params = new URLSearchParams(search);
+    const namespaceId = params.get('namespaceId') || params.get('namespace');
+    if (!namespaceId || namespaceId === HUB_SYSTEM_NAMESPACE) return;
+    const state = get();
+    const showName = state.namespaces.find(ns => ns.namespace === namespaceId)?.namespaceShowName
+      || namespaceId;
+    if (state.currentNamespace !== namespaceId || state.namespaceShowName !== showName) {
+      state.setNamespace(namespaceId, showName);
+    }
   },
 
   setNamespaceChangeGuard: (guard: NamespaceChangeGuard | null) => {
@@ -96,10 +113,10 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       // Response interceptor already unwraps response.data (returns HTTP body)
       // Body structure: { code: 0, data: [...namespaces] }
       const body = response as unknown as { code: number; data: Namespace[] };
-      const namespaces = body.data || [];
+      const namespaces = (body.data || []).filter(ns => ns.namespace !== HUB_SYSTEM_NAMESPACE);
       
       // If no current namespace set, use the first one or empty
-      const currentNamespace = get().currentNamespace;
+      const currentNamespace = get().currentNamespace === HUB_SYSTEM_NAMESPACE ? '' : get().currentNamespace;
       if (!currentNamespace && namespaces.length > 0) {
         const defaultNs = namespaces.find(ns => ns.namespace === 'public') || namespaces[0];
         set({
@@ -111,6 +128,8 @@ export const useNamespaceStore = create<NamespaceStore>((set, get) => ({
       } else {
         set({
           namespaces,
+          currentNamespace,
+          namespaceShowName: currentNamespace ? get().namespaceShowName : '',
           loading: false,
         });
       }

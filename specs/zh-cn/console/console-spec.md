@@ -125,6 +125,53 @@ Console guide 和 announcement 内容属于 UI 展示数据，不是标准 Core 
 从选中的 Online Version 创建新 Draft；只有保留的 MCP Resource 在唯一首个 Draft 删除后不存在任何
 Version 时，才展示通用“新建版本”入口。
 
+### 5.1 共享 AI 资源
+
+共享 Skill 管理页提供“默认排序”和“按下载量排序”，复用现有 Skill 列表 `orderBy` 参数。
+默认按共享条目更新时间倒序，下载量模式按共享条目自身下载量倒序；切换排序回到第一页。
+前端保留服务端顺序，不对当前页单独排序。
+
+共享资源入口应位于对应资源类型的管理页面内。Console 不再提供跨资源类型的独立 Agentic Resource
+Hub 菜单。Skill 管理通过明确的导航区分“当前命名空间”和“共享 Skill”。共享列表路径为
+`/skill/shared/list`，详情路径为 `/skill/shared/detail/{hubEntryId}`，旧 `/hub/skills` 链接跳转到
+新路径。这些路径保留 `/skill/shared` 对名称为 `shared` 的普通 Skill 的访问。
+仅共享列表和只读详情保留匿名浏览，源资源管理和修改操作仍执行原有鉴权。共享页签由服务端
+`ai_hub_enabled` 能力控制。
+
+共享列表与当前命名空间列表使用一致的搜索框尺寸、筛选栏间距、卡片网格断点、图标、描述行数和底栏样式。
+标题下显示总数，卡片时间按 `YYYY-MM-DD HH:mm` 展示；列表不再展示来源范围及下载量排序的两行说明。
+共享卡片保留来源命名空间、固定版本和独立下载量等信息。分享、调整共享版本、取消分享、导入独立草稿、下载和管理员下架操作保留原有权限
+边界。尚未实现共享能力的资源类型不得展示无法使用的共享页签。
+
+共享 Skill 详情沿用普通 Skill 详情的字体层级：标题字号、字重与字距一致，版本使用等宽字体，
+描述沿用相同行距和宽度，侧栏标签与值的字号一致。Markdown 复用 `app-markdown` 样式，
+业务标签和版本标签复用 `DetailTagChip`；共享 Markdown 仍禁用原始 HTML。
+
+共享详情不展示“只读共享”标签。安装卡片同时提供手动下载和可复制的 CLI 命令：
+`nacos-cli skill-get <displayName> <hubEntryId> --version <sharedVersion>`。
+命令使用支持 Hub 的 CLI，携带条目 ID 区分同名资源，并固定当前页面版本；无需切换内部命名空间。
+ID 必须无损保留为字符串；无效标识、缺失版本或不安全的命令行参数不生成安装命令。
+
+共享 Skill 卡片和详情仅展示共享条目的独立下载量，不展示源 Skill 或源版本的下载量。
+UI 保留服务端按所选排序模式提供的分页和顺序。
+
+共享 Skill 的读取复用普通 Skill Console API：`GET /v3/console/ai/skills/list`、
+`GET /v3/console/ai/skills`、`GET /v3/console/ai/skills/version` 和
+`GET /v3/console/ai/skills/version/download`。UI 选择
+`namespaceId=__nacos_ai_hub__`，以共享条目的不透明 ID 作为 `skillName`，正文与下载请求
+固定使用详情响应给出的版本。列表沿用 `skillName`/`search` 和单个 `bizTag` 过滤条件，在分页前
+完成筛选。共享读取沿用普通 Skill 响应模型及来源字段，不再暴露 `/hub/skills/list`、`/detail`、
+`/content`、`/download` 专用路由。仅分享、撤销分享、转存和治理等特殊管理操作保留专用路由。
+
+
+当前变更仅启用 Skill 的 Hub 能力；MCP Server、Agent、Prompt 和 AgentSpec 保持原有管理与运行时行为。
+Skill Hub 详情只展示固定共享版本，保留 SKILL.md、资源文件、ZIP 下载和 CLI 安装命令。
+右侧基本信息不展示生命周期状态及源资源或源版本下载量，下载量采用共享条目独立计数。
+导入或跨 Namespace 复制成功后，使用返回的目标命名空间、名称和新草稿版本跳转到普通 Skill 草稿详情；
+不自动发布、不与源资源同步，也不因目标详情加载失败而自动重复导入。
+
+普通 Skill 详情 URL 显式携带 `namespaceId`（或旧参数 `namespace`）时，顶部命名空间选择器须同步到该业务空间，覆盖页面内查看固定源版本、导入或复制草稿以及浏览器前进后退；URL 固定版本保持不变。浏览共享 Skill 列表或共享详情时，不因资源来源切换业务命名空间，也不切换到内部 Hub 命名空间。
+
 ## 6. Handler 与 Proxy 边界
 
 Console Controller 必须通过 proxy 和 handler interface 进行委托，不应把 UI Controller 直接耦合到

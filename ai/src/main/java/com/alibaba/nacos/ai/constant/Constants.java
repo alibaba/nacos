@@ -440,4 +440,16 @@ public class Constants {
          */
         public static final String FIELD_COMMIT_MSG = "commitMsg";
     }
+    
+    /**
+     * Hub Skill HTTP API constants.
+     */
+    public static class Hub {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/hub/skills";
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/hub/skills";
+        
+        public static final String ENTRY_RESOURCE = AiConstants.Hub.ENTRY_RESOURCE;
+    }
 }

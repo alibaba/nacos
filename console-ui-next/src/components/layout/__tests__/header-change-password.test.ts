@@ -1,6 +1,55 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import fs from 'fs';
 import path from 'path';
+import { Header } from '../header';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
+const identity = vi.hoisted(() => ({
+  authEnabled: true,
+  username: 'alice' as string | null,
+  oidc: false,
+}));
+
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/mcpManagement', search: '', hash: '' }),
+}));
+vi.mock('@/stores/app-store', () => ({
+  useAppStore: () => ({
+    theme: 'light', language: 'en-US', sidebarCollapsed: false,
+    setTheme: vi.fn(), setLanguage: vi.fn(), toggleSidebar: vi.fn(),
+  }),
+}));
+vi.mock('@/stores/auth-store', () => ({
+  useAuthStore: () => ({
+    username: identity.username, logout: vi.fn(), isOidcUser: () => identity.oidc,
+  }),
+}));
+vi.mock('@/stores/namespace-store', () => ({
+  useNamespaceStore: () => ({
+    currentNamespace: 'public', namespaces: [], setNamespace: vi.fn(),
+    getNamespaceChangeGuard: () => undefined,
+  }),
+  getNamespaceSearchAfterSwitch: vi.fn(),
+}));
+vi.mock('@/stores/server-store', () => ({
+  useServerStore: () => ({ authEnabled: identity.authEnabled }),
+}));
+vi.mock('@/lib/storage', () => ({ getToken: () => identity.username ? 'test-token' : null }));
+vi.mock('@/components/layout/change-password-dialog', () => ({
+  ChangePasswordDialog: ({ open }: { open: boolean }) => createElement('div', {
+    'data-testid': 'change-password-dialog', 'data-open': String(open),
+  }),
+}));
+
+beforeEach(() => {
+  identity.authEnabled = true;
+  identity.username = 'alice';
+  identity.oidc = false;
+});
 
 const HEADER_SOURCE = fs.readFileSync(
   path.resolve(__dirname, '../header.tsx'),
@@ -30,11 +79,20 @@ describe('Header change-password wiring', () => {
     expect(menuItemBlock).toContain('event.preventDefault()');
   });
 
-  it('renders the dialog only when auth is enabled and the user is not OIDC', () => {
-    expect(HEADER_SOURCE).toContain('{authEnabled && !isOidcUser() && (');
-    expect(HEADER_SOURCE).toContain(
-      '<ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />',
-    );
+  it.each([
+    { label: 'signed-in local user', authEnabled: true, username: 'alice', oidc: false, mounted: true },
+    { label: 'anonymous user', authEnabled: true, username: null, oidc: false, mounted: false },
+    { label: 'empty username', authEnabled: true, username: '', oidc: false, mounted: false },
+    { label: 'OIDC user', authEnabled: true, username: 'alice', oidc: true, mounted: false },
+    { label: 'authentication disabled', authEnabled: false, username: 'alice', oidc: false, mounted: false },
+  ])('mounts the password dialog only for an authenticated non-OIDC user: $label', (scenario) => {
+    Object.assign(identity, scenario);
+    const html = renderToStaticMarkup(createElement(TooltipProvider, null, createElement(Header)));
+
+    expect(html.includes('data-testid="change-password-dialog"')).toBe(scenario.mounted);
+    if (scenario.mounted) {
+      expect(html).toContain('data-open="false"');
+    }
   });
 });
 

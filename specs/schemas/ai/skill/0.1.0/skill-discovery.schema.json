@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nacos.io/schemas/ai/skill/0.1.0/skill-discovery.schema.json",
+  "title": "Skill discovery provenance",
+  "x-status": "experimental",
+  "x-entrypoints": {
+    "SkillBasicInfo": "#/$defs/SkillBasicInfo",
+    "SkillSummary": "#/$defs/SkillSummary",
+    "SkillMeta": "#/$defs/SkillMeta"
+  },
+  "$defs": {
+    "SkillBasicInfo": {
+      "type": "object",
+      "required": [
+        "namespaceId",
+        "name",
+        "discoverySource"
+      ],
+      "properties": {
+        "namespaceId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "discoverySource": {
+          "enum": [
+            "NAMESPACE",
+            "HUB"
+          ]
+        },
+        "hubEntryId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "displayName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceDisplayName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updateTime": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "downloadCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "discoverySource": {
+                "const": "HUB"
+              }
+            },
+            "required": [
+              "discoverySource"
+            ]
+          },
+          "then": {
+            "required": [
+              "hubEntryId",
+              "displayName",
+              "version",
+              "downloadCount"
+            ],
+            "properties": {
+              "namespaceId": {
+                "const": "__nacos_ai_hub__"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "hubEntryId": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "downloadCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SkillSummary": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/SkillBasicInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "scope": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "enable": {
+              "type": "boolean"
+            },
+            "writable": {
+              "type": "boolean"
+            },
+            "bizTags": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "labels": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SkillMeta": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/SkillSummary"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "versions": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "downloadCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "sourceReadable": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the caller may navigate to the source resource."
+            },
+            "sourceNamespaceId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Present only after source READ authorization."
+            },
+            "sourceName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Present only after source READ authorization."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

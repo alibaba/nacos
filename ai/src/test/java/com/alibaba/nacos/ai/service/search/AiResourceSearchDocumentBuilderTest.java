@@ -19,14 +19,21 @@ package com.alibaba.nacos.ai.service.search;
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.hub.HubResourceReference;
 import com.alibaba.nacos.ai.model.search.AiResourceSearchDocument;
+import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for {@link AiResourceSearchDocumentBuilder}.
@@ -38,10 +45,88 @@ class AiResourceSearchDocumentBuilderTest {
     private final AiResourceSearchDocumentBuilder builder = new AiResourceSearchDocumentBuilder();
     
     @Test
+    void fromHubResourceShouldRejectInvalidReference() {
+        AiResource resource = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "find-skills-101");
+        
+        resource.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        
+        resource.setExt("{\"entryKind\":\"HUB_REFERENCE\"}");
+        
+        assertThrows(NacosException.class,
+            () -> builder.fromHubResource(resource, version("1.0.0")));
+    }
+    
+    @Test
+    void sameSourceNameShouldKeepDifferentInternalNames() throws NacosException {
+        
+        AiResource first = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "find-skills-101");
+        
+        first.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        
+        first.setExt(HubResourceReferenceJsonUtil.toJson(
+            HubResourceReferenceJsonUtil.build("namespace-a", 101L, "find-skills", 501L, "1.0.0")));
+        
+        AiResource second = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "find-skills-201");
+        
+        second.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        
+        second.setExt(HubResourceReferenceJsonUtil.toJson(
+            HubResourceReferenceJsonUtil.build("namespace-b", 201L, "find-skills", 601L, "1.0.0")));
+        
+        AiResourceSearchDocument firstDocument = builder.fromHubResource(first, version("1.0.0"));
+        
+        AiResourceSearchDocument secondDocument = builder.fromHubResource(second, version("1.0.0"));
+        
+        assertNotEquals(firstDocument.getResourceName(), secondDocument.getResourceName());
+        
+        assertEquals("find-skills", firstDocument.getDisplayName());
+        
+        assertEquals("find-skills", secondDocument.getDisplayName());
+    }
+    
+    @Test
+    void fromHubResourceShouldKeepInternalNameAndProjectSourceDisplayName() throws NacosException {
+        
+        AiResource resource = resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "find-skills-101");
+        
+        resource.setId(305L);
+        resource.setNamespaceId(AiConstants.Hub.NAMESPACE_ID);
+        
+        HubResourceReference reference =
+            HubResourceReferenceJsonUtil.build("222", 101L, "find-skills", 501L, "1.0.0");
+        
+        resource.setExt(HubResourceReferenceJsonUtil.toJson(reference));
+        
+        AiResourceSearchDocument entry = builder.fromHubResource(resource, version("1.0.0"));
+        
+        assertEquals("find-skills-101", entry.getResourceName());
+        
+        assertEquals("find-skills", entry.getDisplayName());
+        
+        assertEquals("1.0.0", entry.getResourceVersion());
+        
+        Map<?, ?> metadata = JacksonUtils.toObj(entry.getMetadata(), Map.class);
+        
+        assertEquals("305", metadata.get("hubEntryId"));
+        
+        assertEquals("HUB_REFERENCE", metadata.get("entryKind"));
+        
+        assertEquals("HUB", metadata.get("origin"));
+        assertNull(metadata.get("sourceNamespaceId"));
+        
+        assertNull(metadata.get("sourceResourceId"));
+        
+        assertNull(metadata.get("sourceName"));
+        
+        assertNull(metadata.get("sourceVersionId"));
+        
+        assertNull(metadata.get("sourceVersion"));
+    }
+    
+    @Test
     void fromAiResourceShouldBuildSkillSearchEntry() {
-        AiResourceSearchDocument entry =
-            builder.fromAiResource(resource(AiResourceConstants.RESOURCE_TYPE_SKILL,
-                "avatar skill"), version("1.0.0"));
+        AiResourceSearchDocument entry = builder.fromAiResource(
+            resource(AiResourceConstants.RESOURCE_TYPE_SKILL, "avatar skill"), version("1.0.0"));
         
         assertEquals(AiResourceConstants.RESOURCE_TYPE_SKILL, entry.getResourceType());
         assertEquals("avatar skill", entry.getResourceName());
@@ -53,8 +138,7 @@ class AiResourceSearchDocumentBuilderTest {
     @Test
     void fromAiResourceShouldBuildPromptSearchEntry() {
         AiResourceSearchDocument entry = builder.fromAiResource(
-            resource(AiResourceConstants.RESOURCE_TYPE_PROMPT, "avatar prompt"),
-            version("2.0.0"));
+            resource(AiResourceConstants.RESOURCE_TYPE_PROMPT, "avatar prompt"), version("2.0.0"));
         
         assertEquals(AiResourceConstants.RESOURCE_TYPE_PROMPT, entry.getResourceType());
         assertEquals("avatar prompt", entry.getResourceName());

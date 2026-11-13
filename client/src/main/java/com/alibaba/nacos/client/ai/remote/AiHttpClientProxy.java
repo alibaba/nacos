@@ -40,6 +40,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -501,6 +502,41 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     }
     
     /**
+     * Search online skills through the existing resource endpoint.
+     *
+     * @param targetNamespace bound or reserved shared namespace
+     * @param query search text
+     * @param tagsAll tags which must all match
+     * @param pageNo one-based page number
+     * @param pageSize page size
+     * @return matching skills
+     * @throws NacosException if the request fails
+     */
+    public Page<SkillBasicInfo> searchSkills(String targetNamespace, String query,
+        List<String> tagsAll, int pageNo, int pageSize) throws NacosException {
+        List<QueryParameter> parameters = new ArrayList<>();
+        addParameter(parameters, "namespaceId", targetNamespace);
+        addParameter(parameters, "query", query);
+        addParameters(parameters, "tagsAll", tagsAll);
+        addParameter(parameters, "pageNo", pageNo);
+        addParameter(parameters, "pageSize", pageSize);
+        RequestResource resource = RequestResource.aiBuilder().setNamespace(targetNamespace)
+            .setGroup(Constants.DEFAULT_GROUP).setResource(StringUtils.EMPTY).build();
+        String response = requestAgentApi(SKILL_DOWNLOAD_PATH + "/search", AgentHttpMethod.GET,
+            parameters, Collections.<String, String>emptyMap(), resource);
+        Result<Page<SkillBasicInfo>> result = JsonUtils.toObj(response,
+            new NacosTypeReference<Result<Page<SkillBasicInfo>>>() {
+            });
+        Page<SkillBasicInfo> page = requireSuccess(result);
+        if (page == null || page.getPageItems() == null || page.getTotalCount() < 0
+            || page.getPageItems().contains(null)) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Skill search returned an invalid page.");
+        }
+        return page;
+    }
+    
+    /**
      * Download skill as ZIP byte array via HTTP REST API.
      *
      * @param skillName skill name
@@ -511,8 +547,23 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
      */
     public byte[] downloadSkillZip(String skillName, String version, String label)
         throws NacosException {
+        return downloadSkillZip(namespaceId, skillName, version, label);
+    }
+    
+    /**
+     * Download a selected Skill using its bound or shared namespace.
+     *
+     * @param targetNamespace namespace selected by discovery
+     * @param skillName ordinary name or shared entry ID
+     * @param version explicit version
+     * @param label optional label
+     * @return ZIP bytes
+     * @throws NacosException if the request fails
+     */
+    public byte[] downloadSkillZip(String targetNamespace, String skillName, String version,
+        String label) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
+        params.put("namespaceId", targetNamespace);
         params.put("name", skillName);
         if (StringUtils.isNotBlank(version)) {
             params.put("version", version);
@@ -521,7 +572,7 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
             params.put("label", label);
         }
         
-        RequestResource resource = RequestResource.aiBuilder().setNamespace(namespaceId)
+        RequestResource resource = RequestResource.aiBuilder().setNamespace(targetNamespace)
             .setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP)
             .setResource(null == skillName ? StringUtils.EMPTY : skillName).build();
         

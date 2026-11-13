@@ -29,10 +29,14 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.service.hub.HubSkillManagementAdapter;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.service.skills.SkillUploadRequest;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillDownload;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -43,6 +47,7 @@ import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -58,6 +63,13 @@ import java.util.Map;
 public class SkillInnerHandler implements SkillHandler {
     
     private final SkillOperationService skillOperationService;
+    
+    private HubSkillManagementAdapter sharedSkills;
+    
+    @Autowired
+    public void setSharedSkills(HubSkillManagementAdapter sharedSkills) {
+        this.sharedSkills = sharedSkills;
+    }
     
     public SkillInnerHandler(SkillOperationService skillOperationService) {
         this.skillOperationService = skillOperationService;
@@ -78,6 +90,24 @@ public class SkillInnerHandler implements SkillHandler {
     public Skill downloadSkillVersion(SkillForm form) throws NacosException {
         return skillOperationService.downloadSkillVersion(form.getNamespaceId(),
             form.getSkillName(), form.getVersion());
+    }
+    
+    @Override
+    public SkillDownload downloadSkillPackage(SkillForm form) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(form.getNamespaceId())) {
+            return sharedSkills.download(form.getSkillName(), form.getVersion());
+        }
+        Skill skill = downloadSkillVersion(form);
+        SkillDownload result = new SkillDownload();
+        result.setDisplayName(skill.getName());
+        result.setResolvedVersion(form.getVersion());
+        try {
+            result.setZipBytes(SkillUtils.toZipBytes(skill));
+        } catch (Exception failure) {
+            throw new NacosException(NacosException.SERVER_ERROR, "Failed to create Skill ZIP",
+                failure);
+        }
+        return result;
     }
     
     @Override

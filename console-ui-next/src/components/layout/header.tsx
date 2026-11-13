@@ -17,6 +17,8 @@ import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { getNamespaceSearchAfterSwitch, useNamespaceStore } from '@/stores/namespace-store';
 import { useServerStore } from '@/stores/server-store';
+import { isPublicHubPath } from '@/lib/hub-access';
+import { getToken } from '@/lib/storage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +71,7 @@ export function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const anonymousHub = !getToken() && isPublicHubPath(location.pathname);
   const { theme, setTheme, language, setLanguage, sidebarCollapsed, toggleSidebar } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace, getNamespaceChangeGuard } = useNamespaceStore();
@@ -119,6 +122,7 @@ export function Header() {
           </TooltipTrigger>
           <TooltipContent>{sidebarToggleLabel}</TooltipContent>
         </Tooltip>
+        {!anonymousHub && <>
         <Layers size={16} className="text-primary shrink-0" />
         <span className="text-xs font-medium text-foreground/70 shrink-0 hidden lg:inline">{t('common.selectNamespace')}</span>
         <Select value={currentNamespace} onValueChange={handleNamespaceChange}>
@@ -136,6 +140,7 @@ export function Header() {
             ))}
           </SelectContent>
         </Select>
+        </>}
       </div>
 
       {/* Center - Navigation links */}
@@ -199,10 +204,11 @@ export function Header() {
         </Tooltip>
 
         {/* User menu */}
-        {authEnabled && !isOidcUser() && (
+        {authEnabled && username && !isOidcUser() && (
           <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
         )}
-        {authEnabled && (
+        {authEnabled && !username && <Button variant="outline" size="sm" onClick={() => navigate('/login')}>{t('login.login')}</Button>}
+        {authEnabled && username && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground">
