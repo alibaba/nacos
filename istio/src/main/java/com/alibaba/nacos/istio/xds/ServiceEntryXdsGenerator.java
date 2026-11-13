@@ -43,8 +43,6 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
     
     private static volatile ServiceEntryXdsGenerator singleton = null;
     
-    private List<ServiceEntryWrapper> serviceEntries;
-    
     public static ServiceEntryXdsGenerator getInstance() {
         if (singleton == null) {
             synchronized (ServiceEntryXdsGenerator.class) {
@@ -59,7 +57,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
     @Override
     public List<Any> generate(PushRequest pushRequest) {
         List<Resource> resources = new ArrayList<>();
-        serviceEntries = new ArrayList<>(16);
+        List<ServiceEntryWrapper> serviceEntries = new ArrayList<>(16);
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> serviceInfoMap =
             pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
@@ -100,7 +98,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         }
         
         List<io.envoyproxy.envoy.service.discovery.v3.Resource> result = new ArrayList<>();
-        serviceEntries = new ArrayList<>();
+        List<ServiceEntryWrapper> serviceEntries = new ArrayList<>();
         Set<String> reason = pushRequest.getReason();
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> istioServiceMap =
