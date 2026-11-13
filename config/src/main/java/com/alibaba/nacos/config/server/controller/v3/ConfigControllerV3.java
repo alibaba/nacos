@@ -32,6 +32,9 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.config.server.auth.ConfigCloneHttpResourceParser;
+import com.alibaba.nacos.config.server.auth.ConfigExportHttpResourceParser;
+import com.alibaba.nacos.config.server.auth.ConfigNamespaceHttpResourceParser;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
@@ -290,7 +293,8 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @DeleteMapping("/batch")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API,
+        parser = ConfigNamespaceHttpResourceParser.class)
     public Result<Boolean> deleteConfigs(HttpServletRequest request,
         @RequestParam(value = "ids") List<Long> ids,
         @RequestParam(value = "namespaceId", required = false) String namespaceId) {
@@ -572,7 +576,8 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @PostMapping("/import")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API,
+        parser = ConfigNamespaceHttpResourceParser.class)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
         @RequestParam(value = "src_user", required = false) String srcUser,
         @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -733,7 +738,8 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @GetMapping("/export")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API,
+        parser = ConfigExportHttpResourceParser.class)
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
         @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
@@ -782,7 +788,8 @@ public class ConfigControllerV3 {
      */
     @Since("3.0.0")
     @PostMapping("/clone")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API,
+        parser = ConfigCloneHttpResourceParser.class)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
         @RequestParam(value = "src_user", required = false) String srcUser,
         @RequestParam(value = "namespaceId") String namespaceId,

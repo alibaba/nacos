@@ -59,6 +59,36 @@ pending removal after the compatibility window and should be replaced by
 selection models based on `namespaceId`, `groupName`, and `dataId`, or explicit
 lists of that identity tuple.
 
+### HTTP namespace resolution
+
+Config v3 HTTP authorization and controller execution use the same namespace
+field. Ordinary v3 resource parsers use `namespaceId`; `tenant` is ignored during
+resource parsing, including when `namespaceId` is omitted or blank. Blank values
+normalize to `public`. Parameter-check extractors retain their existing alias
+validation behavior; that separate validation stage is outside this refactor.
+
+Admin clone uses target `namespaceId` and source `sourceNamespaceId`. Console
+clone uses target `targetNamespaceId` and source `namespaceId`. An explicitly
+blank target means `public` and never falls back to the source. The existing
+same-namespace source default is retained: omitted or blank source uses the
+target. Target WRITE and source READ remain independent authorization decisions.
+
+Clone, import, export, and batch delete opt into dedicated resource parsers.
+They accept one explicit value per namespace field and reject repeated values,
+including identical repetitions, and `field[]` when the explicit field is absent.
+Export binds a form and additionally rejects `!namespaceId` when the explicit
+field is absent. An explicit field takes precedence over these fallback fields;
+scalar request parameters do not interpret `!field`. Multipart file parts that
+would bind as namespace fields are rejected. Multipart validation inspects Part
+metadata only, without reading file contents or the request input stream.
+
+These checks run through the existing authorization pipeline and preserve its
+disabled-auth and server-identity bypasses. They do not change ordinary v3 MVC
+binding, add protected endpoints, or introduce legacy `tenant` alias rules.
+Clients of these management operations must send a single text namespace field;
+binding substitutes and repeated values are no longer accepted when resource
+authorization is active. Storage-ID ownership checks remain mandatory.
+
 ## 2. Content And Version Fields
 
 | Field | Meaning |

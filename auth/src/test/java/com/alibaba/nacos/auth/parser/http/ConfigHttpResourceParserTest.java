@@ -55,7 +55,7 @@ class ConfigHttpResourceParserTest {
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     void testParseWithFullContext() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
-        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
         Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
@@ -111,7 +111,7 @@ class ConfigHttpResourceParserTest {
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     void testParseWithoutGroup() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
-        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
@@ -124,13 +124,26 @@ class ConfigHttpResourceParserTest {
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     void testParseWithoutDataId() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
-        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+    
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testTenantIsNeverReadForDefaultNamespace() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        for (String namespace : new String[] {null, "", " ", "public", "selected"}) {
+            when(request.getParameter(Constants.NAMESPACE_ID)).thenReturn(namespace);
+            assertEquals("selected".equals(namespace) ? "selected" : "public",
+                resourceParser.parse(request, secured).getNamespaceId());
+        }
+        Mockito.verify(request, Mockito.never()).getParameter(Constants.TENANT);
+        Mockito.verify(request, Mockito.never()).getParameterValues(Mockito.anyString());
     }
     
     private Secured getMethodSecure() throws NoSuchMethodException {
