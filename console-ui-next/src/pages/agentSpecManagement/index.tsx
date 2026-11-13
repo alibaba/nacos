@@ -1,3 +1,4 @@
+import { ResourceDeleteWarning } from '@/components/ai/hub/ResourceDeleteWarning';
 import { ResourceManagementTabs } from '@/components/ai/hub/ResourceManagementTabs';
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -407,6 +408,7 @@ export default function AgentSpecManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('agentSpec.deleteConfirm', { name: deleteTarget })}
+              <ResourceDeleteWarning type="agentspec" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -427,6 +429,7 @@ export default function AgentSpecManagementPage() {
             <DialogTitle>{t('agentSpec.batchDelete')}</DialogTitle>
             <DialogDescription>
               {t('agentSpec.batchDeleteConfirm', { count: selectedNames.size })}
+              <ResourceDeleteWarning type="agentspec" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

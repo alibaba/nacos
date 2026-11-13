@@ -1,5 +1,10 @@
 {
   "hubResource": {
+    "lifecycleConfirm": "This may immediately revoke the {{resource}} share. Continue?",
+    "offlineTitle": "Take version {{version}} offline",
+    "disableTitle": "Disable {{resource}}",
+    "privateTitle": "Make {{resource}} private",
+    "deleteWarning": "Deleting an actively shared {{resource}} also revokes its share.",
     "skillCopyOnlineOnly": "Select an online version of an enabled Skill to copy. Direct copy does not require making it public or sharing it first.",
     "copyFailure": "Copy failed. Check source READ, target WRITE and target name conflicts.",
     "copy": "Clone",

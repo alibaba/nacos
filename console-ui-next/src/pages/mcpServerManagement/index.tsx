@@ -1,3 +1,4 @@
+import { ResourceDeleteWarning } from '@/components/ai/hub/ResourceDeleteWarning';
 import { ResourceManagementTabs } from '@/components/ai/hub/ResourceManagementTabs';
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -311,6 +312,7 @@ export default function McpServerManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('mcp.deleteConfirm', { name: deleteTarget })}
+              <ResourceDeleteWarning type="mcp" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -331,6 +333,7 @@ export default function McpServerManagementPage() {
             <DialogTitle>{t('mcp.batchDelete')}</DialogTitle>
             <DialogDescription>
               {t('mcp.batchDeleteConfirm', { count: selectedNames.size })}
+              <ResourceDeleteWarning type="mcp" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

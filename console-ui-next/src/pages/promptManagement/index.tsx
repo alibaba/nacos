@@ -1,3 +1,4 @@
+import { ResourceDeleteWarning } from '@/components/ai/hub/ResourceDeleteWarning';
 import { ResourceManagementTabs } from '@/components/ai/hub/ResourceManagementTabs';
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -293,6 +294,7 @@ export default function PromptManagementPage() {
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>
               {t('prompt.deleteConfirm', { name: deleteTarget })}
+              <ResourceDeleteWarning type="prompt" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -313,6 +315,7 @@ export default function PromptManagementPage() {
             <DialogTitle>{t('prompt.batchDelete')}</DialogTitle>
             <DialogDescription>
               {t('prompt.batchDeleteConfirm', { count: selectedKeys.size })}
+              <ResourceDeleteWarning type="prompt" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

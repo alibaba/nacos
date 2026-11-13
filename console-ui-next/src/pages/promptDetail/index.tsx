@@ -1,3 +1,5 @@
+import { useResourceLifecycleConfirmation } from '@/components/ai/hub/ResourceLifecycleConfirmation';
+import { ResourceDeleteWarning } from '@/components/ai/hub/ResourceDeleteWarning';
 import { PromptVariables } from '@/components/ai/PromptVariables';
 import { PromptDebugPanel } from '@/components/ai/PromptDebugPanel';
 import { ResourceHubActions } from '@/components/ai/hub/ResourceHubActions';
@@ -141,6 +143,7 @@ export default function PromptDetailPage() {
   const [loading, setLoading] = useState(true);
   const [template, setTemplate] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const hubLifecycle = useResourceLifecycleConfirmation('prompt', namespaceId, promptKey, selectedVersion);
   const [isEditingDraft, setIsEditingDraft] = useState(false);
   const [activeTab, setActiveTab] = useState('template');
   const [savingDraft, setSavingDraft] = useState(false);
@@ -362,6 +365,7 @@ export default function PromptDetailPage() {
   };
 
   const handleOffline = async (version: string) => {
+    if (!await hubLifecycle.confirmLifecycle('offline', version)) return;
     setActionLoading(true);
     try {
       const ok = await offlineVersion({ promptKey, version, namespaceId });
@@ -886,7 +890,8 @@ export default function PromptDetailPage() {
         </div>
       </div>
 
-      <ResourceHubActions type="prompt" namespaceId={namespaceId} name={promptKey} version={selectedVersion} status={currentVersionStatus} />
+      <ResourceHubActions type="prompt" namespaceId={namespaceId} name={promptKey} version={selectedVersion} status={currentVersionStatus} onShareStateChange={hubLifecycle.onShareStateChange} />
+      {hubLifecycle.lifecycleDialog}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="w-fit">
@@ -1311,7 +1316,7 @@ export default function PromptDetailPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('common.delete')}</DialogTitle>
-            <DialogDescription>{t('prompt.deleteConfirm', { name: promptKey })}</DialogDescription>
+            <DialogDescription>{t('prompt.deleteConfirm', { name: promptKey })}<ResourceDeleteWarning type="prompt" /></DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteLoading}>{t('common.cancel')}</Button>

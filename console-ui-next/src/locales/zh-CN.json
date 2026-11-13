@@ -1,5 +1,10 @@
 {
   "hubResource": {
+    "lifecycleConfirm": "此操作可能立即撤销当前 {{resource}} 共享，是否继续？",
+    "offlineTitle": "版本下线 {{version}}",
+    "disableTitle": "禁用 {{resource}}",
+    "privateTitle": "将 {{resource}} 设为私有",
+    "deleteWarning": "删除正在共享的 {{resource}} 也会撤销其共享。",
     "skillCopyOnlineOnly": "请选择已启用 Skill 的上线版本进行复制；直接复制不要求先公开或共享。",
     "copyFailure": "复制失败，请检查源读取权限、目标写入权限和名称冲突。",
     "copy": "克隆",

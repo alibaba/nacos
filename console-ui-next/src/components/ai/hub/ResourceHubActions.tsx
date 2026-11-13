@@ -26,14 +26,14 @@ import { ResourceSharingPanel } from './ResourceSharingPanel';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface Props { type: HubResourceType; namespaceId: string; name: string; version?: string | null; status?: string | null; scope?: string | null; enabled?: boolean | null; canWrite?: boolean }
+interface Props { type: HubResourceType; namespaceId: string; name: string; version?: string | null; status?: string | null; scope?: string | null; enabled?: boolean | null; canWrite?: boolean; onShareStateChange?: (share: HubShareState | null) => void }
 export function ResourceHubActions(props: Props) {
   const hubEnabled = useServerStore(state => state.hubEnabled);
   const authenticated = useAuthStore(state => state.isAuthenticated);
   return hubEnabled && authenticated
     ? <SourceSharing key={`${props.type}:${props.namespaceId}:${props.name}`} {...props} /> : null;
 }
-function SourceSharing({ type, namespaceId, name, version, status, scope, enabled = true, canWrite = true }: Props) {
+function SourceSharing({ type, namespaceId, name, version, status, scope, enabled = true, canWrite = true, onShareStateChange }: Props) {
   const { t } = useTranslation();
   const generation = useRef({ request: 0 });
   const [confirm, setConfirm] = useState<'share' | 'unshare' | null>(null);
@@ -41,6 +41,9 @@ function SourceSharing({ type, namespaceId, name, version, status, scope, enable
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    onShareStateChange?.(canWrite ? share : null);
+  }, [share, canWrite, onShareStateChange]);
   const eligible = canShareResource(type, version, status, scope, enabled === true);
   const loadShare = useCallback(async () => {
     if (!canWrite) return;

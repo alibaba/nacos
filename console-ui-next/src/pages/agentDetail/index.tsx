@@ -1,3 +1,4 @@
+import { useResourceLifecycleConfirmation } from '@/components/ai/hub/ResourceLifecycleConfirmation';
 import { AgentDetailHeaderFrame, AgentDetailLayout, AgentDetailSidebar, AgentCallInterfaces } from '@/components/ai/AgentDetailContent';
 import { AgentRuntimeEndpoints } from '@/components/ai/AgentRuntimeEndpoints';
 import { ResourceHubActions } from '@/components/ai/hub/ResourceHubActions';
@@ -149,6 +150,7 @@ export default function AgentDetailPage() {
     clearDetail,
   } = useAgentStore();
   const [selectedVersion, setSelectedVersion] = useState(requestedVersion);
+  const hubLifecycle = useResourceLifecycleConfirmation('agent', namespaceId, agentName, selectedVersion);
   const [selectedProtocol, setSelectedProtocol] = useState('');
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
   const [versionStatus, setVersionStatus] = useState<AgentVersionStatus | 'ALL'>('ALL');
@@ -240,6 +242,7 @@ export default function AgentDetailPage() {
     if (!currentVersion) {
       return;
     }
+    if (action === 'offline' && !await hubLifecycle.confirmLifecycle('offline', currentVersion.version)) return;
     const identity: AgentVersionActionData = {
       namespaceId,
       agentName,
@@ -328,6 +331,7 @@ export default function AgentDetailPage() {
     const agent = currentOverview?.agent;
     const scope = isPublic ? 'PUBLIC' : 'PRIVATE';
     if (!agent || agent.scope === scope) return;
+    if (!isPublic && !await hubLifecycle.confirmLifecycle('private')) return;
     setScopeToggling(true);
     try {
       await agentApi.updateScope({ namespaceId, agentName, scope });
@@ -343,6 +347,7 @@ export default function AgentDetailPage() {
     if (!agent || agent.status === (enabled ? 'enable' : 'disable')) {
       return;
     }
+    if (!enabled && !await hubLifecycle.confirmLifecycle('disable')) return;
     setEnableToggling(true);
     try {
       await agentApi.updateAgent(buildAgentStatusUpdateData(namespaceId, agent, enabled));
@@ -576,7 +581,8 @@ export default function AgentDetailPage() {
           </div>
       </AgentDetailHeaderFrame>
 
-      <ResourceHubActions type="agent" namespaceId={namespaceId} name={agentName} version={currentVersion?.version} status={currentVersion?.status} scope={agent.scope} enabled={agent.status === 'enable'} />
+      <ResourceHubActions type="agent" namespaceId={namespaceId} name={agentName} version={currentVersion?.version} status={currentVersion?.status} scope={agent.scope} enabled={agent.status === 'enable'} onShareStateChange={hubLifecycle.onShareStateChange} />
+      {hubLifecycle.lifecycleDialog}
 
       <AgentDetailLayout sidebar={<AgentDetailSidebar agent={agent} labelsText={labelsText}
         onLabelsChange={setLabelsText} onSave={updateLabels} />}>

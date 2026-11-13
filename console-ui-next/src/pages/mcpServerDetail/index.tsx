@@ -1,3 +1,4 @@
+import { useResourceLifecycleConfirmation } from '@/components/ai/hub/ResourceLifecycleConfirmation';
 import { McpGovernanceInfo } from '@/components/ai/mcp/McpGovernanceInfo';
 import { ResourceHubActions } from '@/components/ai/hub/ResourceHubActions';
 import { Fragment, useEffect, useCallback, useState } from 'react';
@@ -118,6 +119,7 @@ export default function McpServerDetailPage() {
   } = useMcpStore();
 
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
+  const hubLifecycle = useResourceLifecycleConfirmation('mcp', namespaceId, mcpName, selectedVersion);
   const [versionSummaries, setVersionSummaries] = useState<McpServerVersionSummary[]>([]);
   const [lifecycleDetail, setLifecycleDetail] = useState<McpServerVersionDetail | null>(null);
   const [lifecycleAvailable, setLifecycleAvailable] = useState<boolean | null>(null);
@@ -314,6 +316,7 @@ export default function McpServerDetailPage() {
   };
 
   const handleToggleEnable = async (enabled: boolean) => {
+    if (!enabled && !await hubLifecycle.confirmLifecycle('disable')) return;
     setEnableToggling(true);
     try {
       await mcpApi.updateStatus({ namespaceId, mcpName, enabled });
@@ -325,6 +328,7 @@ export default function McpServerDetailPage() {
   };
 
   const handleToggleScope = async (isPublic: boolean) => {
+    if (!isPublic && !await hubLifecycle.confirmLifecycle('private')) return;
     setScopeToggling(true);
     try {
       await mcpApi.updateScope({
@@ -640,7 +644,8 @@ export default function McpServerDetailPage() {
         </div>
       )}
 
-      <ResourceHubActions type="mcp" namespaceId={namespaceId} name={mcpName} version={selectedVersion || lifecycleDetail?.version} status={currentStatus} scope={lifecycleDetail?.scope} enabled={resourceEnabled} canWrite={canWriteResource} />
+      <ResourceHubActions type="mcp" namespaceId={namespaceId} name={mcpName} version={selectedVersion || lifecycleDetail?.version} status={currentStatus} scope={lifecycleDetail?.scope} enabled={resourceEnabled} canWrite={canWriteResource} onShareStateChange={hubLifecycle.onShareStateChange} />
+      {hubLifecycle.lifecycleDialog}
 
       <McpDetailContent mcp={mcp} namespaceId={namespaceId} loading={detailLoading} management={<>
           {lifecycleAvailable && lifecycleDetail && (
@@ -755,6 +760,8 @@ export default function McpServerDetailPage() {
                 action: confirmAction ? actionLabel(confirmAction) : '',
                 version: selectedVersion,
               })}
+              {confirmAction === 'offline' && hubLifecycle.warns(selectedVersion || undefined) &&
+                <span className="mt-2 block text-amber-600">{hubLifecycle.warningText}</span>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
