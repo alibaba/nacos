@@ -24,6 +24,9 @@ import com.alibaba.nacos.api.ai.model.agent.AgentEndpointRegistrationBatch;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.lock.LockService;
+import com.alibaba.nacos.api.lock.common.LockConstants;
+import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
@@ -49,6 +52,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <ul>
  *     <li>Config and Naming use a non-admin read-write identity for normal work, allow a
  *     read-only identity to query existing state, and reject its writes without side effects.</li>
+ *     <li>Lock follows the same action boundary: the read-write identity acquires and releases
+ *     distributed locks while every restricted identity is rejected without touching held state.</li>
  *     <li>Anonymous, invalid, and authenticated-no-permission clients receive controlled
  *     {@link NacosException#NO_RIGHT} failures or the documented {@code false} Config write
  *     result instead of cache hits, timeouts, or uncontrolled runtime exceptions.</li>
@@ -56,12 +61,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *     anonymous reads follow the configured public-AI policy while anonymous writes stay
  *     protected, and invalid credentials never downgrade to anonymous access.</li>
  * </ul>
- *
- * <p>Lock remains an experimental SDK whose server handler does not yet apply its documented
- * {@code SignType.LOCK} authorization contract. Its complete functional lifecycle still runs
- * with the standard authenticated client in {@code LockServiceJavaSdkITCase}; the missing server
- * guard is recorded as a precise coverage gap instead of being represented by a false denial
- * assertion here.
  *
  * @author Nacos
  */
@@ -134,6 +133,31 @@ public class AuthEnabledJavaSdkITCase extends JavaSdkBaseITCase {
     }
 
     @Test
+    void shouldEnforceLockIdentityAndActionBoundariesWithoutCacheFallback() throws Exception {
+        assumeAuthEnabled();
+
+        LockService readWrite = createLockService();
+        LockInstance lock = newLockInstance("auth-matrix");
+        addCleanup(() -> readWrite.remoteReleaseLock(lock));
+
+        assertTrue(readWrite.remoteTryLock(lock));
+        assertFalse(readWrite.remoteTryLock(lock));
+
+        LockService readOnly = createLockService(sdkProperties(AuthIdentity.CLIENT_READ_ONLY));
+        assertNoRight(() -> readOnly.remoteTryLock(lock));
+        assertNoRight(() -> readOnly.remoteReleaseLock(lock));
+        assertFalse(readWrite.remoteTryLock(lock),
+                "denied release must not free the lock held by the authorized identity");
+
+        verifyLockDenied(sdkProperties(AuthIdentity.CLIENT_NO_PERMISSION), "no-permission");
+        verifyLockDenied(sdkProperties(AuthIdentity.ANONYMOUS), "anonymous");
+        verifyLockDenied(invalidCredentialProperties(), "invalid");
+
+        assertTrue(readWrite.remoteReleaseLock(lock));
+        assertTrue(readWrite.remoteTryLock(lock));
+    }
+
+    @Test
     void shouldPropagateAiAuthorizationInGrpcMode() throws Exception {
         verifyAiAuthorization(AgentTransportMode.GRPC);
     }
@@ -186,6 +210,18 @@ public class AuthEnabledJavaSdkITCase extends JavaSdkBaseITCase {
         assertNoRight(() -> service.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
         assertFalse(service.publishConfig(dataId, group, "unauthorized-overwrite"));
         assertEquals(expectedContent, readWrite.getConfig(dataId, group, DEFAULT_TIMEOUT_MS));
+    }
+
+    private void verifyLockDenied(Properties properties, String scenario) throws Exception {
+        LockService denied = createLockService(properties);
+        LockInstance lock = newLockInstance("auth-matrix-" + scenario);
+        assertNoRight(() -> denied.remoteTryLock(lock));
+        assertNoRight(() -> denied.remoteReleaseLock(lock));
+    }
+
+    private LockInstance newLockInstance(String scenario) {
+        return new LockInstance("java-sdk-it-lock-" + scenario + "-" + randomServiceName("lock"),
+                30000L, LockConstants.NACOS_LOCK_TYPE);
     }
 
     private void verifyNamingDenied(NamingService readWrite, NamingService service,
