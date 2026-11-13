@@ -53,7 +53,6 @@ public class NamingChangeEventTest {
         assertNull(event.getGroupName());
         assertNull(event.getClusters());
         assertTrue(event.getInstances().isEmpty());
-        assertFalse(event.isInitial());
         assertTrue(event.isAdded());
         assertEquals(3, event.getAddedInstances().size());
         assertTrue(event.isRemoved());
@@ -82,7 +81,6 @@ public class NamingChangeEventTest {
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());
         assertTrue(event.getInstances().isEmpty());
-        assertFalse(event.isInitial());
         assertTrue(event.isAdded());
         assertEquals(3, event.getAddedInstances().size());
         assertTrue(event.isRemoved());
@@ -123,13 +121,6 @@ public class NamingChangeEventTest {
         event.getModifiedInstances().clear();
         assertFalse(event.isModified());
         assertEquals(0, event.getRemovedInstances().size());
-    }
-    
-    @Test
-    public void testInitialEvent() {
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", "group", "clusters",
-            Collections.emptyList(), instancesDiff, true);
-        assertTrue(event.isInitial());
     }
     
     private static class MockNamingEventListener extends AbstractNamingChangeListener {

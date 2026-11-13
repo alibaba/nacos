@@ -121,8 +121,7 @@ public class NamingSelectorWrapper
             newDiff.setModifiedInstances(doSelect(diff.getModifiedInstances()));
         }
         
-        return new NamingChangeEvent(serviceName, groupName, clusters, currentIns, newDiff,
-            event.isInitial());
+        return new NamingChangeEvent(serviceName, groupName, clusters, currentIns, newDiff);
     }
     
     private List<Instance> doSelect(List<Instance> instances) {

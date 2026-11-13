@@ -148,7 +148,7 @@ context，而不是修改请求 payload 或让无关 SDK 调用失败。默认 N
 | 注册 | `registerInstance`, `batchRegisterInstance` | 在 service 和 group 下注册一个或多个实例。 |
 | 注销 | `deregisterInstance`, `batchDeregisterInstance` | 移除一个或多个实例。 |
 | 查询实例 | `getAllInstances`, `selectInstances`, `selectOneHealthyInstance` | 按 cluster、health、subscribe 等选项查询缓存或远端服务信息。 |
-| 订阅 | `subscribe`, `unsubscribe` | 接收服务实例变化事件；`NamingEvent#isInitial()` 标记新本地 listener 的初始视图通知，不改变现有投递行为。取消订阅需要使用同一个 listener 实例。 |
+| 订阅 | `subscribe`, `unsubscribe` | 接收服务实例变化事件。取消订阅需要使用同一个 listener 实例。 |
 | 模糊订阅 | `fuzzyWatch`, `fuzzyWatchWithServiceKeys`, `cancelFuzzyWatch` | 按 group 或 service pattern 订阅服务 key，接收服务级事件。 |
 | 列举服务 | `getServicesOfServer` | 兼容性大范围查询面。新的大范围列举应使用 Maintainer SDK。 |
 | 本地状态 | `getSubscribeServices`, `getServerStatus`, `shutDown` | 查询已订阅服务、状态并释放资源。 |

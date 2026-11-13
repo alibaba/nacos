@@ -169,21 +169,6 @@ public interface NamingClientProxy extends Closeable {
         throws NacosException;
     
     /**
-     * Subscribe service for a newly registered local listener.
-     *
-     * @param serviceName service name
-     * @param groupName group name
-     * @param clusters clusters
-     * @param initialListenerSubscription whether this call initializes a local listener
-     * @return current service info of subscribe service
-     * @throws NacosException if subscription fails
-     */
-    default ServiceInfo subscribe(String serviceName, String groupName, String clusters,
-        boolean initialListenerSubscription) throws NacosException {
-        return subscribe(serviceName, groupName, clusters);
-    }
-    
-    /**
      * Unsubscribe service.
      *
      * @param serviceName service name

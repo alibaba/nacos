@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InstancesChangeEventTest {
@@ -43,7 +42,6 @@ class InstancesChangeEventTest {
             new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts,
                 diff);
         assertEquals(eventScope, event.scope());
-        assertFalse(event.isInitial());
         assertEquals(serviceName, event.getServiceName());
         assertEquals(clusters, event.getClusters());
         assertEquals(groupName, event.getGroupName());
@@ -56,12 +54,5 @@ class InstancesChangeEventTest {
         assertEquals(diff.getAddedInstances().get(0), diff.getAddedInstances().get(0));
         assertEquals(diff.getRemovedInstances().size(), diff1.getRemovedInstances().size());
         assertEquals(diff.getModifiedInstances().size(), diff1.getModifiedInstances().size());
-    }
-    
-    @Test
-    void testInitialSubscriptionEvent() {
-        InstancesChangeEvent event = new InstancesChangeEvent("scope", "service", "group",
-            "cluster", new ArrayList<>(), new InstancesDiff(), true);
-        assertTrue(event.isInitial());
     }
 }

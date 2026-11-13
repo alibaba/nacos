@@ -543,7 +543,7 @@ public class NacosNamingService implements NamingService {
             new NamingSelectorWrapper(serviceName, groupName, clusters, selector, listener);
         changeNotifier.registerListener(groupName, serviceName, wrapper);
         notifyIfSubscribed(serviceName, groupName, wrapper);
-        clientProxy.subscribe(serviceName, groupName, Constants.NULL, true);
+        clientProxy.subscribe(serviceName, groupName, Constants.NULL);
     }
     
     @Override
@@ -741,12 +741,12 @@ public class NacosNamingService implements NamingService {
                 "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
                 groupName, serviceName);
             ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
-            InstancesChangeEvent event = transferToEvent(serviceInfo, true);
+            InstancesChangeEvent event = transferToEvent(serviceInfo);
             wrapper.notifyListener(event);
         }
     }
     
-    private InstancesChangeEvent transferToEvent(ServiceInfo serviceInfo, boolean initial) {
+    private InstancesChangeEvent transferToEvent(ServiceInfo serviceInfo) {
         if (serviceInfo == null) {
             return null;
         }
@@ -754,6 +754,6 @@ public class NacosNamingService implements NamingService {
         diff.setAddedInstances(serviceInfo.getHosts());
         return new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
             serviceInfo.getGroupName(),
-            serviceInfo.getClusters(), serviceInfo.getHosts(), diff, initial);
+            serviceInfo.getClusters(), serviceInfo.getHosts(), diff);
     }
 }

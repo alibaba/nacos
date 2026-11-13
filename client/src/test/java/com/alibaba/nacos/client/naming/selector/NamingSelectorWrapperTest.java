@@ -123,12 +123,11 @@ public class NamingSelectorWrapperTest {
         diff.setModifiedInstances(Collections.singletonList(new Instance()));
         InstancesChangeEvent event =
             new InstancesChangeEvent(null, "svc", "grp", "cl",
-                Collections.singletonList(new Instance()), diff, true);
+                Collections.singletonList(new Instance()), diff);
         selectorWrapper.notifyListener(event);
         verify(listener).onEvent(argThat(e -> {
             NamingChangeEvent ce = (NamingChangeEvent) e;
-            return ce.isInitial() && ce.getModifiedInstances() != null
-                && !ce.getModifiedInstances().isEmpty();
+            return ce.getModifiedInstances() != null && !ce.getModifiedInstances().isEmpty();
         }));
     }
     

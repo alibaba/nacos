@@ -127,17 +127,6 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
-        return processServiceInfo(serviceInfo, false);
-    }
-    
-    /**
-     * Process service info and optionally mark the resulting event as an initial subscription view.
-     *
-     * @param serviceInfo new service info
-     * @param initial whether this is the initial subscription view
-     * @return processed service info
-     */
-    public ServiceInfo processServiceInfo(ServiceInfo serviceInfo, boolean initial) {
         String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
@@ -176,7 +165,7 @@ public class ServiceInfoHolder implements Closeable {
                 NotifyCenter.publishEvent(
                     new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
                         serviceInfo.getGroupName(),
-                        serviceInfo.getClusters(), serviceInfo.getHosts(), diff, initial));
+                        serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
             publishDiskCacheRefreshEvent(serviceKey, serviceInfo);
         }
