@@ -70,8 +70,10 @@ class DeploymentConfigProviderReaderTest {
         assertEquals(Boolean.TRUE, prod.getOptions().get("enableSearch"));
         assertEquals(ConnectionSource.DEPLOYMENT, prod.getSource());
         assertEquals(DeploymentConfigProviderReader.ORDER, prod.getPriority());
+        assertEquals(CredentialSource.DEPLOYMENT, prod.getCredentialSource());
         assertTrue(prod.isEnabled());
         assertEquals("local-ollama", connections.get("local-ollama").getName());
+        assertNull(connections.get("local-ollama").getCredentialSource());
     }
     
     @Test

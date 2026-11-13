@@ -18,11 +18,15 @@ package com.alibaba.nacos.copilot.config;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.connection.ConnectionTable;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
+import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
 import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
+import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.ProviderReadContext;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
+import com.alibaba.nacos.copilot.connection.SelectionSource;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.Model;
 import io.agentscope.core.studio.StudioManager;
@@ -36,6 +40,8 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -139,6 +145,31 @@ public class CopilotAgentManager {
     }
     
     /**
+     * Get the sanitized connection metadata for the console.
+     *
+     * <p>The returned view never carries a credential, so it can be published through the
+     * console API.
+     *
+     * @return connections in selection order and the one serving requests
+     */
+    public CopilotConnectionStatus getConnectionStatus() {
+        RuntimeSnapshot current = snapshot;
+        CopilotProperties config = current.getConfig();
+        String selectedConnection = config == null ? null : config.getSelectedConnection();
+        ConnectionTable connectionTable = current.getConnectionTable();
+        List<CopilotConnectionInfo> connections = new ArrayList<>();
+        for (CopilotModelConnection connection : connectionTable.getAll()) {
+            connections.add(CopilotConnectionInfo.from(connection));
+        }
+        CopilotModelConnection active =
+            config != null && config.isEnabled() ? modelRouter.route(connectionTable,
+                selectedConnection) : null;
+        return new CopilotConnectionStatus(connections,
+            active == null ? null : active.getName(), selectedConnection,
+            current.getSelectionSource());
+    }
+    
+    /**
      * Reload the effective configuration and rebuild the connection table.
      */
     public void refreshConfig() {
@@ -146,13 +177,17 @@ public class CopilotAgentManager {
         ConnectionTable connectionTable;
         lock.writeLock().lock();
         try {
-            config = getEffectiveConfig();
-            connectionTable = providerReaders.readAll(new ProviderReadContext(config));
-            snapshot = new RuntimeSnapshot(config, connectionTable);
+            EffectiveConfig effective = resolveEffectiveConfig();
+            config = effective.properties;
+            connectionTable = providerReaders.readAll(
+                new ProviderReadContext(config, effective.overrides.apiKey));
+            snapshot = new RuntimeSnapshot(config, connectionTable,
+                resolveSelectionSource(config, effective.overrides.selectedConnection));
         } finally {
             lock.writeLock().unlock();
         }
         warnOnIgnoredSelection(config, connectionTable);
+        warnOnLegacyConnection(connectionTable);
         LOGGER.info("Copilot configuration refreshed");
         // Re-initialize Studio if URL changed (outside lock to avoid blocking)
         initStudio();
@@ -176,6 +211,18 @@ public class CopilotAgentManager {
                 + "back to the default selection order", selected,
                 connection.getUnavailableReason());
         }
+    }
+    
+    private void warnOnLegacyConnection(ConnectionTable connectionTable) {
+        CopilotModelConnection legacy =
+            connectionTable.get(LegacyConfigProviderReader.CONNECTION_NAME);
+        if (legacy == null) {
+            return;
+        }
+        LOGGER.warn("Copilot is using the deprecated legacy connection [{}]. Define connections "
+            + "with nacos.copilot.connections.* and remove the legacy apiKey/model settings; "
+            + "the legacy connection keeps working during the deprecation window.",
+            legacy.getName());
     }
     
     /**
@@ -237,24 +284,40 @@ public class CopilotAgentManager {
     }
     
     /**
+     * Report where the effective selection comes from.
+     *
+     * @param config             effective configuration
+     * @param deploymentDeclared whether the deployment configuration declared a non-blank
+     *                           selection
+     * @return selection origin
+     */
+    private SelectionSource resolveSelectionSource(CopilotProperties config,
+        boolean deploymentDeclared) {
+        if (config == null || StringUtils.isBlank(config.getSelectedConnection())) {
+            return SelectionSource.NONE;
+        }
+        return deploymentDeclared ? SelectionSource.DEPLOYMENT : SelectionSource.STORED;
+    }
+    
+    /**
      * Get the effective configuration: deployment configuration overrides the stored
      * configuration for the fields it declares, and the stored configuration overrides the
      * defaults. The stored configuration is read once per refresh.
      *
-     * @return effective CopilotProperties
+     * @return effective configuration with the deployment fields that were applied
      */
-    private CopilotProperties getEffectiveConfig() {
+    private EffectiveConfig resolveEffectiveConfig() {
         CopilotProperties stored = null;
         if (configStorage != null && configStorage.isAvailable()) {
             stored = configStorage.getConfig();
         }
         CopilotProperties effective =
             stored == null ? new CopilotProperties() : copyOf(stored);
-        boolean deploymentApplied = applyDeploymentConfig(effective);
-        if (stored == null && !deploymentApplied) {
-            return defaultProperties;
+        DeploymentOverrides overrides = applyDeploymentConfig(effective);
+        if (stored == null && !overrides.applied) {
+            return new EffectiveConfig(defaultProperties, overrides);
         }
-        return effective;
+        return new EffectiveConfig(effective, overrides);
     }
     
     /**
@@ -264,7 +327,7 @@ public class CopilotAgentManager {
      * @param target configuration to update
      * @return whether the deployment configuration declares at least one field
      */
-    private boolean applyDeploymentConfig(CopilotProperties target) {
+    private DeploymentOverrides applyDeploymentConfig(CopilotProperties target) {
         Binder binder = Binder.get(environment);
         BindResult<Boolean> enabled =
             binder.bind(CONFIG_PREFIX + ".enabled", Boolean.class);
@@ -283,10 +346,22 @@ public class CopilotAgentManager {
         studioProject.ifBound(target::setStudioProject);
         BindResult<String> selectedConnection =
             binder.bind(CONFIG_PREFIX + ".selected-connection", String.class);
-        selectedConnection.ifBound(target::setSelectedConnection);
-        return enabled.isBound() || defaultNamespace.isBound() || apiKey.isBound()
-            || model.isBound() || studioUrl.isBound() || studioProject.isBound()
-            || selectedConnection.isBound();
+        // A blank deployment selection means "not declared" for this field, so it neither
+        // clears the stored selection nor counts as a deployment override. Explicit clears
+        // remain specific to the credential fields.
+        String deploymentSelection =
+            selectedConnection.isBound() ? selectedConnection.get().trim() : null;
+        boolean deploymentSelectionApplied = StringUtils.isNotBlank(deploymentSelection);
+        if (deploymentSelectionApplied) {
+            target.setSelectedConnection(deploymentSelection);
+        }
+        DeploymentOverrides overrides = new DeploymentOverrides();
+        overrides.apiKey = apiKey.isBound();
+        overrides.selectedConnection = deploymentSelectionApplied;
+        overrides.applied = enabled.isBound() || defaultNamespace.isBound()
+            || apiKey.isBound() || model.isBound() || studioUrl.isBound()
+            || studioProject.isBound() || deploymentSelectionApplied;
+        return overrides;
     }
     
     private CopilotProperties copyOf(CopilotProperties source) {
@@ -294,6 +369,7 @@ public class CopilotAgentManager {
         copy.setEnabled(source.isEnabled());
         copy.setDefaultNamespace(source.getDefaultNamespace());
         copy.setApiKey(source.getApiKey());
+        copy.setApiKeyCleared(source.getApiKeyCleared());
         copy.setModel(source.getModel());
         copy.setStudioUrl(source.getStudioUrl());
         copy.setStudioProject(source.getStudioProject());
@@ -318,15 +394,19 @@ public class CopilotAgentManager {
     private static final class RuntimeSnapshot {
         
         private static final RuntimeSnapshot EMPTY =
-            new RuntimeSnapshot(null, ConnectionTable.empty());
+            new RuntimeSnapshot(null, ConnectionTable.empty(), SelectionSource.NONE);
         
         private final CopilotProperties config;
         
         private final ConnectionTable connectionTable;
         
-        private RuntimeSnapshot(CopilotProperties config, ConnectionTable connectionTable) {
+        private final SelectionSource selectionSource;
+        
+        private RuntimeSnapshot(CopilotProperties config, ConnectionTable connectionTable,
+            SelectionSource selectionSource) {
             this.config = config;
             this.connectionTable = connectionTable;
+            this.selectionSource = selectionSource;
         }
         
         private static RuntimeSnapshot empty() {
@@ -340,5 +420,36 @@ public class CopilotAgentManager {
         private ConnectionTable getConnectionTable() {
             return connectionTable;
         }
+        
+        private SelectionSource getSelectionSource() {
+            return selectionSource;
+        }
+    }
+    
+    /**
+     * Effective configuration plus the fields the deployment configuration declared.
+     */
+    private static final class EffectiveConfig {
+        
+        private final CopilotProperties properties;
+        
+        private final DeploymentOverrides overrides;
+        
+        private EffectiveConfig(CopilotProperties properties, DeploymentOverrides overrides) {
+            this.properties = properties;
+            this.overrides = overrides;
+        }
+    }
+    
+    /**
+     * Deployment fields that were explicitly bound during this refresh.
+     */
+    private static final class DeploymentOverrides {
+        
+        private boolean applied;
+        
+        private boolean apiKey;
+        
+        private boolean selectedConnection;
     }
 }
