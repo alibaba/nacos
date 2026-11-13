@@ -24,6 +24,7 @@ import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -386,7 +387,7 @@ public class A2aServerOperationService implements A2aOperationService {
         String agentName,
         String version, String storedType) throws NacosApiException {
         try {
-            AgentCard card = JsonUtils.toObj(JsonUtils.toJson(
+            AgentCard card = A2aSecurityUtils.readCard(JsonUtils.toJson(
                 callInterface.getNativeDescriptor()), AgentCard.class);
             AgentRequestUtil.validateAgentCard(card);
             if (!agentName.equals(card.getName()) || !version.equals(card.getVersion())) {

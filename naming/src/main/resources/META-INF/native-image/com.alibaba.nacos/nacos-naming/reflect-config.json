@@ -1,0 +1,63 @@
+[
+  {
+    "unsafeAllocated": true,
+    "fields": [
+      {
+        "name": "group"
+      },
+      {
+        "name": "metadata"
+      },
+      {
+        "name": "namespace"
+      },
+      {
+        "name": "serviceName"
+      },
+      {
+        "name": "tag"
+      }
+    ],
+    "name": "com.alibaba.nacos.naming.core.v2.metadata.MetadataOperation"
+  },
+  {
+    "unsafeAllocated": true,
+    "fields": [
+      {
+        "name": "clusters"
+      },
+      {
+        "name": "ephemeral"
+      },
+      {
+        "name": "extendData"
+      },
+      {
+        "name": "protectThreshold"
+      },
+      {
+        "name": "selector"
+      }
+    ],
+    "name": "com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata"
+  },
+  {
+    "unsafeAllocated": true,
+    "methods": [
+      {
+        "name": "getContextType",
+        "parameterTypes": []
+      },
+      {
+        "name": "getType",
+        "parameterTypes": []
+      }
+    ],
+    "name": "com.alibaba.nacos.naming.selector.NoneSelector"
+  },
+  {
+    "name": "com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView",
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  }
+]

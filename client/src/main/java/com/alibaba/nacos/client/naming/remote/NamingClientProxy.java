@@ -191,6 +191,18 @@ public interface NamingClientProxy extends Closeable {
         throws NacosException;
     
     /**
+     * Check for an active local subscription intent, independently of connection state.
+     *
+     * @param serviceName service name
+     * @param groupName group name
+     * @param clusters clusters
+     * @return whether a local subscription intent exists and is not being cancelled
+     */
+    default boolean hasSubscriptionIntent(String serviceName, String groupName, String clusters) {
+        return false;
+    }
+    
+    /**
      * Check Server healthy.
      *
      * @return true if server is healthy

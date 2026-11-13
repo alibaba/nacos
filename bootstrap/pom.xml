@@ -105,5 +105,122 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>native</id>
+            <properties>
+                <nacos.native.config>${project.basedir}/../distribution/conf/application.properties</nacos.native.config>
+                <nacos.native.plugins>${project.build.directory}/native-plugins</nacos.native.plugins>
+                <nacos.native.metadata>${project.build.directory}/native-metadata</nacos.native.metadata>
+                <nacos.native.deployment>merged</nacos.native.deployment>
+                <nacos.native.standalone>false</nacos.native.standalone>
+                <nacos.native.embedded-storage>false</nacos.native.embedded-storage>
+                <nacos.native.derby.experimental>false</nacos.native.derby.experimental>
+                <nacos.native.build.heap>8g</nacos.native.build.heap>
+                <nacos.native.build.parallelism>2</nacos.native.build.parallelism>
+            </properties>
+            <dependencies>
+                <!-- Default SPI implementations and drivers must participate in AOT and compilation. -->
+                <dependency>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>nacos-default-plugin-all</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-multi-context-native</id>
+                                <phase>prepare-package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <exportAntProperties>true</exportAntProperties>
+                                    <target>
+                                        <!-- Build tools are isolated from both application and test output. -->
+                                        <delete file="${project.build.directory}/native/nacos-server"/>
+                                        <delete file="${project.build.directory}/native/nacos-server.exe"/>
+                                        <delete dir="${project.build.directory}/native/aot"/>
+                                        <delete dir="${project.build.directory}/native/classes"/>
+                                        <delete dir="${project.build.directory}/native/tool-classes"/>
+                                        <mkdir dir="${project.build.directory}/native/tool-classes"/>
+                                        <mkdir dir="${project.build.directory}/native/classes"/>
+                                        <mkdir dir="${project.build.directory}/native/home/conf"/>
+                                        <mkdir dir="${nacos.native.plugins}"/>
+                                        <mkdir dir="${nacos.native.metadata}"/>
+                                        <copy file="${nacos.native.config}"
+                                              tofile="${project.build.directory}/native/home/conf/application.properties" overwrite="true"/>
+                                        <path id="nacos.native.runtime.path">
+                                            <pathelement location="${project.build.directory}/native/classes"/>
+                                            <path refid="maven.runtime.classpath"/>
+                                            <fileset dir="${nacos.native.plugins}" includes="**/*.jar"/>
+                                        </path>
+                                        <pathconvert property="nacos.native.classpath" refid="nacos.native.runtime.path"/>
+                                        <javac srcdir="${project.basedir}/src/test/java"
+                                               destdir="${project.build.directory}/native/tool-classes"
+                                               includes="**/NacosApplicationAotProcessor.java,**/NacosNativeBuild.java"
+                                               includeantruntime="false" release="17" encoding="UTF-8">
+                                            <classpath refid="nacos.native.runtime.path"/>
+                                        </javac>
+                                        <java classname="com.alibaba.nacos.bootstrap.NacosNativeBuild"
+                                              fork="true" failonerror="true">
+                                            <classpath>
+                                                <pathelement location="${project.build.directory}/native/tool-classes"/>
+                                                <path refid="nacos.native.runtime.path"/>
+                                            </classpath>
+                                            <sysproperty key="nacos.native.classpath" value="${nacos.native.classpath}"/>
+                                            <sysproperty key="nacos.home" value="${project.build.directory}/native/home"/>
+                                            <sysproperty key="spring.config.additional-location"
+                                                         value="file:${project.build.directory}/native/home/conf/"/>
+                                            <sysproperty key="nacos.deployment.type" value="${nacos.native.deployment}"/>
+                                            <sysproperty key="nacos.standalone" value="${nacos.native.standalone}"/>
+                                            <sysproperty key="embeddedStorage" value="${nacos.native.embedded-storage}"/>
+                                            <sysproperty key="nacos.native.derby.experimental" value="${nacos.native.derby.experimental}"/>
+                                            <arg value="${project.build.directory}/native"/>
+                                            <arg value="${project.build.outputDirectory}"/>
+                                            <arg value="${project.basedir}/src/test/resources/aot/derby-experimental.args"/>
+                                        </java>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${native-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <phase>package</phase>
+                                <goals><goal>compile-no-fork</goal></goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.alibaba.nacos.bootstrap.NacosBootstrap</mainClass>
+                            <imageName>nacos-server</imageName>
+                            <outputDirectory>${project.build.directory}/native</outputDirectory>
+                            <!-- The exact runtime classpath is supplied by classpath.args below. -->
+                            <classpath><entry>${project.build.directory}/native/classes</entry></classpath>
+                            <!-- Native Image does not expand nested argument files. -->
+                            <useArgFile>false</useArgFile>
+                            <buildArgs>
+                                <buildArg>@${project.basedir}/src/test/resources/aot/native-image.args</buildArg>
+                                <buildArg>@${project.build.directory}/native/options.args</buildArg>
+                                <buildArg>@${project.build.directory}/native/classpath.args</buildArg>
+                                <buildArg>-H:ConfigurationFileDirectories=${nacos.native.metadata}</buildArg>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>-J-Xmx${nacos.native.build.heap}</buildArg>
+                                <buildArg>--parallelism=${nacos.native.build.parallelism}</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

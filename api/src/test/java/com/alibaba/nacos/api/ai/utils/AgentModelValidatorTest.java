@@ -29,18 +29,28 @@ import com.alibaba.nacos.api.ai.model.agent.Endpoint;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeEndpointSnapshot;
 import com.alibaba.nacos.api.ai.model.agent.RuntimeVersionBinding;
+import com.alibaba.nacos.api.ai.spi.AgentScopeProvider;
 import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentModelValidatorTest {
     
@@ -681,4 +691,91 @@ class AgentModelValidatorTest {
         Arrays.fill(result, value);
         return new String(result);
     }
+    
+    @Test
+    void unregisteredScopesRemainInvalidWithoutProvider() {
+        AgentSummary agent = newValidAgent();
+        AgentSummary summary = newValidAgentSummary();
+        AgentOverview overview = new AgentOverview();
+        overview.setAgent(agent);
+        overview.setVersionPage(newValidVersionSummaryPage());
+        for (String scope : Arrays.asList("TEAM_EDIT", "public", "", null)) {
+            agent.setScope(scope);
+            summary.setScope(scope);
+            assertThrows(IllegalArgumentException.class,
+                () -> AgentModelValidator.validateAgent(agent));
+            assertThrows(IllegalArgumentException.class,
+                () -> AgentModelValidator.validateAgentSummary(summary));
+            assertThrows(IllegalArgumentException.class,
+                () -> AgentModelValidator.validateOverview(overview));
+        }
+    }
+    
+    @Test
+    void testScopeProviderDiscoveryAndRuntimeChanges(@TempDir Path directory) throws Exception {
+        Path descriptor =
+            directory.resolve("META-INF/services/" + AgentScopeProvider.class.getName());
+        Files.createDirectories(descriptor.getParent());
+        Files.write(descriptor,
+            MutableScopeProvider.class.getName().getBytes(StandardCharsets.UTF_8));
+        URL classes = AgentModelValidator.class.getProtectionDomain().getCodeSource().getLocation();
+        String validatorName = AgentModelValidator.class.getName();
+        // Isolate the cached SPI instances so the remaining tests still exercise the no-provider API.
+        try (URLClassLoader loader =
+            new URLClassLoader(new URL[] {directory.toUri().toURL(), classes},
+                AgentModelValidator.class.getClassLoader()) {
+                
+                @Override
+                protected Class<?> loadClass(String name, boolean resolve)
+                    throws ClassNotFoundException {
+                    if (!name.equals(validatorName) && !name.startsWith(validatorName + "$")
+                        && !name.equals(AgentVersion.class.getName())) {
+                        return super.loadClass(name, resolve);
+                    }
+                    Class<?> result = findLoadedClass(name);
+                    if (result == null) {
+                        result = findClass(name);
+                    }
+                    if (resolve) {
+                        resolveClass(result);
+                    }
+                    return result;
+                }
+            }) {
+            Class<?> validator = loader.loadClass(validatorName);
+            AgentSummary agent = newValidAgent();
+            agent.setScope("TEAM_EDIT");
+            AgentSummary summary = newValidAgentSummary();
+            summary.setScope("TEAM_EDIT");
+            AgentOverview overview = new AgentOverview();
+            overview.setAgent(agent);
+            overview.setVersionPage(newValidVersionSummaryPage());
+            MutableScopeProvider.scopes = Collections.singleton("TEAM_EDIT");
+            validator.getMethod("validateAgent", AgentSummary.class).invoke(null, agent);
+            validator.getMethod("validateAgentSummary", AgentSummary.class).invoke(null, summary);
+            validator.getMethod("validateOverview", AgentOverview.class).invoke(null, overview);
+            
+            MutableScopeProvider.scopes = Collections.emptySet();
+            InvocationTargetException failure = assertThrows(InvocationTargetException.class,
+                () -> validator.getMethod("validateAgent", AgentSummary.class).invoke(null, agent));
+            assertTrue(failure.getCause() instanceof IllegalArgumentException);
+            for (String scope : Arrays.asList("PUBLIC", "PRIVATE")) {
+                agent.setScope(scope);
+                validator.getMethod("validateAgent", AgentSummary.class).invoke(null, agent);
+            }
+        } finally {
+            MutableScopeProvider.scopes = Collections.emptySet();
+        }
+    }
+    
+    public static class MutableScopeProvider implements AgentScopeProvider {
+        
+        private static Set<String> scopes = Collections.emptySet();
+        
+        @Override
+        public Set<String> getScopeNames() {
+            return scopes;
+        }
+    }
+    
 }

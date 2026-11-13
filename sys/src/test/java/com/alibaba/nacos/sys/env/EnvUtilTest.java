@@ -42,6 +42,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -252,13 +253,15 @@ class EnvUtilTest {
     
     @Test
     void testGetNacosTmpDir() {
-        assertEquals(EnvUtil.getNacosHome() + "/data/tmp", EnvUtil.getNacosTmpDir());
+        assertEquals(Paths.get(EnvUtil.getNacosHome(), "data", "tmp").toString(),
+            EnvUtil.getNacosTmpDir());
     }
     
     @Test
     void testGetNacosHome() {
         try {
-            assertEquals(System.getProperty("user.home") + "/nacos", EnvUtil.getNacosHome());
+            assertEquals(Paths.get(System.getProperty("user.home"), "nacos").toString(),
+                EnvUtil.getNacosHome());
             EnvUtil.setNacosHomePath(null);
             System.setProperty(EnvUtil.NACOS_HOME_KEY, "/home/admin/nacos");
             assertEquals("/home/admin/nacos", EnvUtil.getNacosHome());
@@ -305,7 +308,8 @@ class EnvUtilTest {
     @Test
     void testGetConfPath() {
         try {
-            assertEquals(EnvUtil.getNacosHome() + "/conf", EnvUtil.getConfPath());
+            assertEquals(Paths.get(EnvUtil.getNacosHome(), "conf").toString(),
+                EnvUtil.getConfPath());
             EnvUtil.setConfPath("/tmp/nacos/conf");
             assertEquals("/tmp/nacos/conf", EnvUtil.getConfPath());
         } finally {
@@ -315,7 +319,7 @@ class EnvUtilTest {
     
     @Test
     void testGetClusterConfFilePath() {
-        assertEquals(EnvUtil.getNacosHome() + "/conf/cluster.conf",
+        assertEquals(Paths.get(EnvUtil.getNacosHome(), "conf", "cluster.conf").toString(),
             EnvUtil.getClusterConfFilePath());
     }
     

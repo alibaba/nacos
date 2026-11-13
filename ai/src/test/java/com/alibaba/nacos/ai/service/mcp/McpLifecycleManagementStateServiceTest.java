@@ -20,7 +20,9 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService.CutoverStatus;
 import com.alibaba.nacos.ai.service.mcp.McpLifecycleManagementStateService.Marker;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.search.AiResourceSearchReadinessService;
+import com.alibaba.nacos.ai.service.search.McpAiResourceSearchTypeHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -47,6 +49,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,8 +60,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -175,7 +182,8 @@ class McpLifecycleManagementStateServiceTest {
             .thenReturn(notFound());
         when(serverMemberManager.allMembers()).thenReturn(Arrays.asList(supportedMember(),
             supportedMember()));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenReturn(true);
         when(configOperationService.publishConfig(any(ConfigForm.class),
             any(ConfigRequestInfo.class), isNull())).thenReturn(true);
@@ -211,6 +219,32 @@ class McpLifecycleManagementStateServiceTest {
     }
     
     @Test
+    void tryCompleteCutoverShouldFollowCurrentSearchProjectionGeneration() throws Exception {
+        int currentProjection = new McpAiResourceSearchTypeHandler(
+            mock(McpLifecycleOperationService.class), mock(AiResourceManager.class))
+            .projectionVersion();
+        Set<Integer> readyProjections = new HashSet<>();
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+            .thenReturn(notFound());
+        when(serverMemberManager.allMembers())
+            .thenReturn(Collections.singletonList(supportedMember()));
+        when(searchReadinessService.isReady(eq(AiResourceConstants.RESOURCE_TYPE_MCP), anyInt()))
+            .thenAnswer(invocation -> readyProjections.contains(invocation.getArgument(1)));
+        
+        assertFalse(service.tryCompleteCutover(true).isManaged());
+        readyProjections.add(currentProjection - 1);
+        assertFalse(service.tryCompleteCutover(true).isManaged());
+        verifyNoInteractions(configOperationService);
+        
+        readyProjections.clear();
+        readyProjections.add(currentProjection);
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+            any(ConfigRequestInfo.class), isNull())).thenReturn(true);
+        assertTrue(service.tryCompleteCutover(true).isManaged());
+        assertEquals(McpCompatibilityMode.LIFECYCLE_MANAGED, service.resolveMode());
+    }
+    
+    @Test
     void tryCompleteCutoverShouldKeepSyncingWhenAnyGateIsClosed() {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
             .thenReturn(notFound());
@@ -218,7 +252,8 @@ class McpLifecycleManagementStateServiceTest {
         when(serverMemberManager.allMembers()).thenReturn(Collections.singletonList(unsupported),
             Collections.singletonList(supportedMember()),
             Collections.singletonList(supportedMember()));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenReturn(false, false, true);
         
         CutoverStatus unsupportedMember = service.tryCompleteCutover(true);
@@ -239,7 +274,8 @@ class McpLifecycleManagementStateServiceTest {
             .thenReturn(notFound());
         when(serverMemberManager.allMembers()).thenReturn(null, Collections.emptyList(),
             Collections.singletonList(null));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenReturn(true);
         
         CutoverStatus nullMembers = service.tryCompleteCutover(true);
@@ -278,7 +314,8 @@ class McpLifecycleManagementStateServiceTest {
             .thenReturn(notFound(), found(validMarkerJson()));
         when(serverMemberManager.allMembers())
             .thenReturn(Collections.singletonList(supportedMember()));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenReturn(true);
         doThrow(new ConfigAlreadyExistsException("marker exists"))
             .when(configOperationService).publishConfig(any(ConfigForm.class),
@@ -294,7 +331,8 @@ class McpLifecycleManagementStateServiceTest {
             .thenReturn(notFound());
         when(serverMemberManager.allMembers())
             .thenReturn(Collections.singletonList(supportedMember()));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenReturn(true);
         when(configOperationService.publishConfig(any(ConfigForm.class),
             any(ConfigRequestInfo.class), isNull())).thenReturn(false);
@@ -312,7 +350,8 @@ class McpLifecycleManagementStateServiceTest {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
             .thenReturn(notFound());
         when(serverMemberManager.allMembers()).thenThrow(new IllegalStateException("members"));
-        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP, 2))
+        when(searchReadinessService.isReady(AiResourceConstants.RESOURCE_TYPE_MCP,
+            AiResourceConstants.MCP_SEARCH_PROJECTION_VERSION))
             .thenThrow(new IllegalStateException("search"));
         
         CutoverStatus status = service.tryCompleteCutover(true);

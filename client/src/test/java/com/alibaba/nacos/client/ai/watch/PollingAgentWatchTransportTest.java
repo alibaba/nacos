@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -40,6 +43,52 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PollingAgentWatchTransportTest {
+    
+    @Test
+    void shutdownInsideInvalidationDoesNotScheduleAnotherPoll() throws Exception {
+        ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        AtomicReference<Runnable> task = new AtomicReference<Runnable>();
+        when(executor.schedule(any(Runnable.class), anyLong(), any())).thenAnswer(invocation -> {
+            task.set(invocation.getArgument(0));
+            return mock(ScheduledFuture.class);
+        });
+        PollingAgentWatchTransport transport = new PollingAgentWatchTransport(executor, 10L);
+        TestCallback callback = new TestCallback();
+        callback.onInvalidate = transport::shutdown;
+        transport.start(registration("watch-a", null), callback);
+        task.get().run();
+        verify(executor).schedule(any(Runnable.class), anyLong(), any());
+        assertEquals(1, callback.invalidations);
+    }
+    
+    @Test
+    void callbackFailureStillSchedulesNextPollAndCancellationStopsIt() throws Exception {
+        java.lang.reflect.Field limiterField = PollingAgentWatchTransport.class
+            .getDeclaredField("WARN_LOG_LIMITER");
+        limiterField.setAccessible(true);
+        Object limiter = limiterField.get(null);
+        java.lang.reflect.Field next = limiter.getClass().getDeclaredField("nextAllowedNanos");
+        next.setAccessible(true);
+        ((AtomicLong) next.get(limiter)).set(Long.MIN_VALUE);
+        ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        List<Runnable> tasks = new ArrayList<Runnable>();
+        when(executor.schedule(any(Runnable.class), anyLong(), any())).thenAnswer(invocation -> {
+            tasks.add(invocation.getArgument(0));
+            return mock(ScheduledFuture.class);
+        });
+        AgentWatchTransportCallback callback = mock(AgentWatchTransportCallback.class);
+        when(callback.invalidate(null, true)).thenThrow(new IllegalStateException("first"),
+            new IllegalStateException("second")).thenReturn(true);
+        PollingAgentWatchTransport transport = new PollingAgentWatchTransport(executor, 10L);
+        transport.start(registration("watch-a", null), callback);
+        tasks.get(0).run();
+        tasks.get(1).run();
+        tasks.get(2).run();
+        verify(callback, times(3)).invalidate(null, true);
+        transport.shutdown();
+        tasks.get(3).run();
+        assertEquals(4, tasks.size());
+    }
     
     @Test
     void registrationIsDefensiveAndPollingLifecycleIsIdempotent() throws Exception {
@@ -82,18 +131,36 @@ class PollingAgentWatchTransportTest {
     }
     
     @Test
-    void rejectedScheduleDoesNotRetainPollingTask() throws Exception {
+    void rejectedScheduleRetainsTaskAndResumesWithoutNewRegistration() throws Exception {
         ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        ScheduledExecutorService driver = mock(ScheduledExecutorService.class);
+        AtomicLong clock = new AtomicLong();
+        AtomicReference<Runnable> retry = new AtomicReference<Runnable>();
+        AtomicReference<Runnable> poll = new AtomicReference<Runnable>();
+        when(driver.scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any()))
+            .thenAnswer(invocation -> {
+                retry.set(invocation.getArgument(0));
+                return mock(ScheduledFuture.class);
+            });
         when(executor.schedule(any(Runnable.class), anyLong(), any()))
-            .thenThrow(new RejectedExecutionException("closed"));
-        PollingAgentWatchTransport transport = new PollingAgentWatchTransport(executor, 10L);
+            .thenThrow(new RejectedExecutionException("busy"))
+            .thenAnswer(invocation -> {
+                poll.set(invocation.getArgument(0));
+                return mock(ScheduledFuture.class);
+            });
+        AgentWatchTaskScheduler scheduler = new AgentWatchTaskScheduler(driver, clock::get,
+            (count, key) -> 1L);
+        PollingAgentWatchTransport transport =
+            new PollingAgentWatchTransport(executor, 10L, scheduler);
+        TestCallback callback = new TestCallback();
         AgentWatchRegistration registration = registration("watch-a", null);
-        
-        assertThrows(NacosException.class,
-            () -> transport.start(registration, new TestCallback()));
-        assertThrows(NacosException.class,
-            () -> transport.start(registration, new TestCallback()));
-        verify(executor, times(2)).schedule(any(Runnable.class), eq(10L), any());
+        transport.start(registration, callback);
+        transport.start(registration, callback);
+        clock.set(TimeUnit.SECONDS.toNanos(1));
+        retry.get().run();
+        poll.get().run();
+        assertEquals(1, callback.invalidations);
+        assertEquals(0, callback.unavailable);
         transport.shutdown();
     }
     
@@ -114,9 +181,9 @@ class PollingAgentWatchTransportTest {
         tasks.get(0).run();
         
         assertEquals(1, callback.invalidations);
-        assertEquals(1, callback.unavailable);
-        assertTrue(callback.terminal);
+        assertEquals(0, callback.unavailable);
         transport.stop("watch-a");
+        transport.shutdown();
         
         PollingAgentWatchTransport stopped = new PollingAgentWatchTransport(executor, 10L);
         TestCallback stoppingCallback = new TestCallback();

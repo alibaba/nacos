@@ -20,17 +20,30 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 /**
- * Wire lifecycle owned by one Agent Watch transport.
+ * Observation lifecycle owned by one Agent Watch transport.
  *
- * <p>The transport owns no business snapshot or user Listener. It receives immutable Watch
- * registrations and reports only invalidation or unavailable signals.</p>
+ * <p>The three implementations obtain change signals differently:</p>
+ * <ul>
+ * <li>{@link GrpcAgentWatchTransport} subscribes on the shared gRPC connection and receives
+ * server hints that trigger Discover when a refresh is needed.</li>
+ * <li>{@link HttpAgentWatchTransport} sends batch long-poll requests; the server returns
+ * changed Watch identifiers or an unchanged timeout, rather than complete snapshots.</li>
+ * <li>{@link PollingAgentWatchTransport} periodically triggers ordinary Discover as a
+ * fallback, without establishing a server-side Watch.</li>
+ * </ul>
+ *
+ * <p>None owns a business snapshot or user Listener. Each receives immutable Watch
+ * registrations and reports internal transport signals to {@link AgentWatchManager}.
+ * {@link AgentWatchTransportRouter} selects one owner per Watch in steady state. During a
+ * handover, the new binding may start before the previous one stops; already-triggered
+ * refreshes may finish through the same manager and fingerprint comparison.</p>
  *
  * @author Nacos
  */
 public interface AgentWatchTransport extends Closeable {
     
     /**
-     * Activate one canonical Wire Intent.
+     * Start observing one canonical Watch.
      *
      * @param registration materialized Watch state
      * @param callback transport-neutral signal callback
@@ -40,21 +53,21 @@ public interface AgentWatchTransport extends Closeable {
         throws NacosException;
     
     /**
-     * Update the materialized fingerprint of an active Wire Intent.
+     * Update the materialized fingerprint of an active Watch.
      *
      * @param registration current materialized state
      */
     void update(AgentWatchRegistration registration);
     
     /**
-     * Stop one Wire Intent.
+     * Stop observing one Watch.
      *
      * @param clientWatchId client Watch identifier
      */
     void stop(String clientWatchId);
     
     /**
-     * Stop all Wire coordination owned by this transport.
+     * Stop all observation work owned by this transport.
      */
     @Override
     void shutdown();

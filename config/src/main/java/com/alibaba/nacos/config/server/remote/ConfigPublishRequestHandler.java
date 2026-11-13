@@ -99,6 +99,7 @@ public class ConfigPublishRequestHandler
             configForm.setAppName(appName);
             configForm.setSrcUser(srcUser);
             configForm.setConfigTags(request.getAdditionParam("config_tags"));
+            configForm.setChangeMessage(request.getAdditionParam("changeMessage"));
             configForm.setDesc(request.getAdditionParam("desc"));
             configForm.setUse(request.getAdditionParam("use"));
             configForm.setEffect(request.getAdditionParam("effect"));

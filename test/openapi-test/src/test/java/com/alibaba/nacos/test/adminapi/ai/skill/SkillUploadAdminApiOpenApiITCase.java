@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.test.adminapi.ai.skill;
 
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,6 +56,49 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author xiweng.yy
  */
 public class SkillUploadAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testCreateAndUploadPreserveEmptyFilesAndMultilineDescription(boolean upload) throws Exception {
+        String name = randomAiName("multiline");
+        String description = "RDS Copilot assistant.\nTriggers: RDS Copilot, SQL optimization\n";
+        Skill skill = new Skill();
+        skill.setName(name);
+        skill.setDescription("Initial description");
+        skill.setSkillMd("---\nname: " + name + "\nversion: 0.0.1\ndescription: |\n"
+                + "  RDS Copilot assistant.\n  Triggers: RDS Copilot, SQL optimization\n---\nInstructions\n");
+        SkillResource resource = new SkillResource();
+        resource.setName("empty.txt");
+        resource.setType("references");
+        resource.setContent("");
+        String resourceId = SkillUtils.generateResourceId("references", "empty.txt");
+        skill.setResource(Map.of(resourceId, resource));
+        addCleanup(() -> deleteSkillQuietly(name));
+        if (upload) {
+            assertUploadSuccess(postMultipartRaw(ADMIN_SKILL_PATH + "/upload", uploadQuery(false, null, null),
+                    "file", name + ".zip", "application/zip", SkillUtils.toZipBytes(skill)), name);
+        } else {
+            Map<String, String> form = skillQueryForm(name);
+            form.put("targetVersion", "0.0.1");
+            form.put("skillCard", JacksonUtils.toJson(skill));
+            postFormOk(ADMIN_SKILL_PATH + "/draft", form);
+        }
+
+        JsonNode detail = getJsonOk(ADMIN_SKILL_PATH, skillQuery(name)).get("data");
+        JsonNode page = getJsonOk(ADMIN_SKILL_LIST_PATH,
+                Query.newInstance().addParam("skillName", name).addParam("search", "accurate")).get("data");
+        JsonNode listed = findByName(page, "name", name);
+        assertEquals(description, detail.path("description").asText());
+        assertEquals(description, listed.path("description").asText());
+        assertEquals(description, detail.path("frontMatter").path("description").asText());
+        assertEquals(detail.get("frontMatter"), listed.get("frontMatter"));
+        assertFalse(detail.path("frontMatter").has("description.Triggers"));
+        JsonNode content = getJsonOk(ADMIN_SKILL_VERSION_PATH, skillVersionQuery(name, "0.0.1")).get("data");
+        assertEquals("", content.path("resource").path(resourceId).path("content").asText(null));
+        ByteResponse downloaded = getRawBytes(ADMIN_SKILL_VERSION_DOWNLOAD_PATH, skillVersionQuery(name, "0.0.1"));
+        assertEquals(200, downloaded.code());
+        assertEquals("", unzipTextEntries(downloaded.body()).get(name + "/references/empty.txt"));
+    }
 
     @Test
     public void testSingleSkillUploadOverwriteAndVersionBump() throws Exception {

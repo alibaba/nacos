@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.ai.form;
 
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -75,11 +75,11 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isNotBlank(scope)
-            && !VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
-            && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
+            && !VisibilityHelper.scopeRegistry().contains(scope)) {
             throw new NacosApiException(NacosException.INVALID_PARAM,
                 ErrorCode.PARAMETER_VALIDATE_ERROR,
-                "Request parameter `scope` must be PUBLIC or PRIVATE.");
+                "Request parameter `scope` must be "
+                    + String.join(" or ", VisibilityHelper.scopeRegistry().getScopeNames()) + ".");
         }
     }
     

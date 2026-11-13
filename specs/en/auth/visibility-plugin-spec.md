@@ -48,7 +48,7 @@ A visibility-aware resource must follow the
 | `namespaceId` | Namespace that owns the resource. |
 | `resourceType` | Resource category inside the namespace. |
 | `resourceName` | Stable resource name inside the type. |
-| `scope` | Visibility scope, currently `PUBLIC` or `PRIVATE`. |
+| `scope` | Visibility scope; the default catalog contains `PUBLIC` and `PRIVATE`. |
 | `owner` | Identity that owns the resource. |
 
 This follows the Nacos resource hierarchy:
@@ -63,6 +63,7 @@ A visibility plugin implements `VisibilityService`.
 
 | Method | Requirement |
 |--------|-------------|
+| `getAdditionalScopes()` | Optionally declare additional scopes; defaults to an empty collection. |
 | `getVisibilityServiceName()` | Return the stable plugin name. |
 | `init(properties)` | Deprecated legacy initialization callback for implementations that do not use unified plugin configuration. |
 | `resolveDefaultScopeForCreate(identity, apiType, resourceType)` | Decide the default scope when a resource is created without an explicit scope. |
@@ -89,7 +90,7 @@ Visibility uses the same read/write vocabulary as auth:
 | `r` | Read or list visible resources. |
 | `w` | Create, update, delete, or change visibility-sensitive resource state. |
 
-Write visibility must be stricter than read visibility. Public read access does
+Write visibility must not exceed read visibility. Public read access does
 not imply public write access.
 
 ## Query Advisory
@@ -100,6 +101,7 @@ storage layer can apply visibility predicates. `QueryAdvisor` carries:
 | Field | Purpose |
 |-------|---------|
 | `BaseVisibilityPredicate` | Base predicate such as all resources, public only, owner only, or public plus owner. |
+| `publicScopes` | Public branch scope names; defaults to the singleton `PUBLIC`. |
 | `AuthorizedResources` | Explicitly authorized resource names that should be included. |
 
 The API or storage adapter that lists resources must combine both parts without
@@ -121,9 +123,9 @@ satisfied, or a set of OR branches. The base predicate resolves as follows:
 | Predicate | `B` resolution |
 |-----------|----------------|
 | `ALL` | Always satisfied; adds no visibility condition. |
-| `PUBLIC` | Satisfied when `scope=PUBLIC`; never satisfied when the caller's business filter conflicts with a public scope. |
+| `PUBLIC` | Satisfied when `scope IN publicScopes`; never satisfied when the caller's business filter conflicts with a public scope. |
 | `OWNER` | Satisfied when `owner=identity`; never satisfied when identity is absent, or when the caller's business filter conflicts with the identity as owner. |
-| `PUBLIC_AND_OWNER` | Satisfied when `scope=PUBLIC OR owner=identity`; anonymous callers degrade to the `PUBLIC` resolution. Never satisfied only when the caller's business filter fixes both scope and owner to values that conflict with both branches. |
+| `PUBLIC_AND_OWNER` | Satisfied when `scope IN publicScopes OR owner=identity`; anonymous callers degrade to the `PUBLIC` resolution. Never satisfied only when the caller's business filter fixes both scope and owner to values that conflict with both branches. |
 
 Only after `B` is resolved is it unioned with `G`: an always-satisfied `B` makes `G`
 irrelevant (`B OR G` is still always satisfied), a never-satisfied `B` collapses `B OR G`
@@ -263,3 +265,37 @@ Any API that returns visibility-aware resources must:
 - Return not found for denied single-resource reads when the API needs to hide
   resource existence.
 - Return access denied for denied writes.
+
+## Extensible scope declarations
+
+VisibilityService.getAdditionalScopes() defaults to an empty collection. Each declaration
+contains only scopeName and publicScope. The selected, enabled service adds declarations
+to the reserved PUBLIC (public) and PRIVATE (non-public) defaults. Names are normalized
+with Locale.ROOT, contain 1–16 ASCII letters/digits/underscores and start with a letter.
+Null/duplicate declarations and replacement of built-ins are rejected. There is no action
+list or action validation in the scope registry. A public flag classifies a scope; it does
+not authorize any operation. Read/write decisions remain owned by the visibility plugin.
+
+Forms validate names against the selected catalog. AgentModelValidator keeps its existing
+single-argument Agent, summary and overview methods and discovers AgentScopeProvider
+internally through Java SPI. The AI module provides the bridge to the same selected catalog;
+no provider means PUBLIC/PRIVATE only. Provider instances are cached, while names are read
+on each validation so plugin state changes do not leave stale allowed values. The API module
+does not depend on server or visibility classes. Other model validation remains unchanged.
+
+QueryAdvisor.publicScopes supplies the public branch of PUBLIC and PUBLIC_AND_OWNER for
+the current request. A plugin chooses which public scopes to include for the requested
+action; a scope's public flag alone does not imply public write. Leaving the field unset
+retains the legacy singleton PUBLIC; an explicit empty list makes this branch false.
+The setter rejects null lists and invalid names (including null, blank and noncanonical
+names). It snapshots and validates the list before assignment so malformed extension
+input cannot become an absent SQL restriction. Names must use the registry's canonical
+uppercase format. OWNER and ALL
+are unchanged. The converter preserves F AND (B OR G), including business filters,
+anonymous identities and grants. Multiple scope values remain parameterized IN values.
+No database migration is required. Keep declarations available for stored resources;
+removing or disabling them does not migrate existing data. Front-door authentication,
+request authorization and namespace boundaries remain unchanged. A scope declaration
+does not change any query advisor or grant access by itself. Plugins are trusted policy
+implementations: they must choose an action-appropriate public branch only after existing
+request authorization. The converter is not an authentication or anonymous-login bypass.

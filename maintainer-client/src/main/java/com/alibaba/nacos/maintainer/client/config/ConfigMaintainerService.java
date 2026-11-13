@@ -185,6 +185,34 @@ public interface ConfigMaintainerService
         String srcUser, String configTags, String desc, String type) throws NacosException;
     
     /**
+     * Publish with an optional message attached to this operation's history record.
+     *
+     * @param dataId configuration data ID
+     * @param groupName configuration group
+     * @param namespaceId namespace ID
+     * @param content configuration content
+     * @param appName application name
+     * @param srcUser source user
+     * @param configTags configuration tags
+     * @param desc configuration description
+     * @param type configuration type
+     * @param changeMessage optional operation message, at most 512 Unicode code points
+     * @return whether the publish succeeded
+     * @throws NacosException if publishing fails or this implementation cannot carry a message
+     */
+    default boolean publishConfig(String dataId, String groupName, String namespaceId,
+        String content,
+        String appName, String srcUser, String configTags, String desc, String type,
+        String changeMessage) throws NacosException {
+        if (changeMessage != null && !changeMessage.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "This maintainer implementation does not support changeMessage");
+        }
+        return publishConfig(dataId, groupName, namespaceId, content, appName, srcUser, configTags,
+            desc, type);
+    }
+    
+    /**
      * Update config metadata boolean.
      *
      * @param dataId      the data id
@@ -610,4 +638,5 @@ public interface ConfigMaintainerService
         }
         return result;
     }
+    
 }

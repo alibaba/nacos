@@ -17,6 +17,7 @@
 package com.alibaba.nacos.airegistry.service.ard;
 
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreRequest;
 import com.alibaba.nacos.airegistry.model.ard.ArdExploreResponse;
 import com.alibaba.nacos.airegistry.model.ard.ArdListResponse;
@@ -69,6 +70,13 @@ public interface ArdSearchService {
      * @return host-level ARD catalog manifest
      */
     ArdCatalog hostCatalog();
+    
+    /**
+     * Build the current host-level manifest containing only this registry.
+     *
+     * @return host manifest
+     */
+    ArdManifest hostManifest();
     
     /**
      * Build local ARD catalog manifest.

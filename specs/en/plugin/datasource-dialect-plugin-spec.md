@@ -273,3 +273,21 @@ Implementations must:
 - preserve generated primary key behavior expected by repositories;
 - keep SQL function names behind `getFunction(functionName)`;
 - document database version requirements and migration requirements.
+
+### Optional config publish message compatibility (#10978 target design)
+
+Publish messages reuse the `change_message` property in history `ext_info` JSON
+without a new message column or index. Operation scope and data semantics follow
+the [Config Persistence And History Spec](../config/config-persistence-history-spec.md#publish-operation-messages).
+
+This capability adds no Mapper SPI or datasource plugin interface. Adapters
+preserve and return history extension properties, including unknown properties,
+under the existing contract. A plugin that filters or does not recognize the
+optional JSON property may omit it from history detail; config and history writes
+continue through the existing path. Validate `ext_info` preservation in built-in
+and third-party adapters.
+
+Degradation applies only to optional message data and does not change existing
+handling of missing mappers or SQL, connection, and transaction errors. Do not
+catch arbitrary persistence errors and republish config as a fallback. These are
+targets and acceptance requirements, not evidence of third-party plugin testing.

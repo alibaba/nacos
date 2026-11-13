@@ -80,6 +80,8 @@ public class ConditionalAnonymousAuthorizationITCase extends AuthITCase {
                         "/nacos/v3/client/ai/skills?namespaceId=public&name=" + missing),
                 ard("ArdWellKnownController#catalog", RequestMethod.GET,
                         "/.well-known/ai-catalog.json"),
+                ard("ArdWellKnownController#manifest", RequestMethod.GET,
+                        "/.well-known/ard.json"),
                 ard("ArdSearchController#search", RequestMethod.POST,
                         "/v3/ai/ard/search?namespaceId=public"),
                 ard("ArdSearchController#explore", RequestMethod.POST,

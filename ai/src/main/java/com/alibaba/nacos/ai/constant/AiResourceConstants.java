@@ -32,6 +32,11 @@ public final class AiResourceConstants {
     
     public static final String RESOURCE_TYPE_MCP = "mcp";
     
+    /**
+     * Current MCP search projection generation used by indexing and managed cutover.
+     */
+    public static final int MCP_SEARCH_PROJECTION_VERSION = 3;
+    
     private AiResourceConstants() {
     }
     

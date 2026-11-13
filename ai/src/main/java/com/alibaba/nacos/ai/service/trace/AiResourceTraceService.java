@@ -40,6 +40,11 @@ public class AiResourceTraceService {
     // ==================== Operation Constants ====================
     
     /**
+     * Discover an Agent from a client request.
+     */
+    public static final String OP_DISCOVER = "DISCOVER";
+    
+    /**
      * Create a new draft version.
      */
     public static final String OP_CREATE_DRAFT = "CREATE_DRAFT";

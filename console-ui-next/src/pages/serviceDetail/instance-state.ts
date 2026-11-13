@@ -1,4 +1,5 @@
 import type { Instance } from '@/types/service';
+import { hasOwn } from '@/utils/has-own';
 
 /** Page-local state shape backing the per-cluster instance tables. */
 export interface ClusterInstancesState {
@@ -29,7 +30,7 @@ export function patchInstance(
   port: number,
   patch: InstancePatch,
 ): InstancesByCluster {
-  if (!Object.hasOwn(prev, clusterName)) {
+  if (!hasOwn(prev, clusterName)) {
     return prev;
   }
   const cluster = prev[clusterName];
@@ -56,7 +57,7 @@ export function removeInstance(
   ip: string,
   port: number,
 ): InstancesByCluster {
-  if (!Object.hasOwn(prev, clusterName)) {
+  if (!hasOwn(prev, clusterName)) {
     return prev;
   }
   const cluster = prev[clusterName];

@@ -173,14 +173,48 @@ Health、readiness、metrics 和 diagnostics 的可观测形态由
 - 新组件需要启动钩子时，应优先使用 `NacosStartUp`、Spring lifecycle callback 或模块级 lifecycle
   抽象，而不是临时静态初始化。
 
-## 10. 待处理问题
+## 10. 实验性多 Context AOT
+
+Maven `native` 是显式启用的 Bootstrap 构建 profile：独立构建 JVM 准备所有选定 Context，
+编译生成的 Java，并纳入直接生成的字节码与资源。构建工具和测试依赖不得进入应用运行时。
+`release-native` 需要同时启用 `native`，打包适用于构建平台的 Bootstrap 可执行程序；普通
+构建和 JVM 启动脚本保持不变。插件实现、驱动及其 Native 元数据必须进入构建 classpath。
+内嵌 Derby 必须显式选择实验性运行时类加载，不能在默认构建中静默开启。
+
+AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须保持原有启动、条件 Bean、
+数据源插件和扩展协议装载行为，不得依赖 AOT 产物或执行其一致性校验。
+
+- 构建器按部署类型准备 core、web、console，并按配置准备独立 ai-registry context；子 context
+  必须保留原有 parent 关系。构建期不得 refresh 启动业务服务或将服务标记为 ready。
+- 每个阶段生成独立初始化代码，通过带版本的阶段索引选取。缺失或过期的索引必须明确失败。
+- 不得将 Derby 或关闭扩展协议硬编码为 AOT 的永久限制。数据源选择遵循
+  `nacos.plugin.datasource-dialect.type` 优先、`spring.sql.init.platform` 兼容的既有语义。
+  外部方言、Mapper 和 JDBC 驱动必须进入构建 classpath；扩展协议的 context 必须一起生成。
+- 索引记录部署、单机/嵌入式存储、function mode、profiles、数据源及扩展协议等结构性选择，
+  并记录数据源和启动扩展 SPI provider 集合。运行期在前置环境插件处理后、refresh 前校验。
+  端口、数据库地址、账号、密码和日志目录不得固化在此索引中。
+- 此结构性索引不等同于所有条件 Bean 的完整指纹。其他影响 Bean 选择的配置或插件实现发生变化
+  时仍需重新生成；验证报告必须说明实际覆盖范围。
+- JVM AOT 与 Native Image 分开验收。Native 的插件和驱动在镜像构建时纳入，增加实现后需要重建；
+  不能承诺加载镜像构建时不存在的任意 jar。普通 JVM 的插件扩展契约保持不变。
+- HTTP Controller 的隐式 `NacosForm` 参数在 AOT 构建期注册绑定元数据，包括父类属性和可选
+  字段的访问器；不得只依赖采集请求中出现的字段。该处理不得实例化 Controller 或改变普通
+  JVM 的请求绑定逻辑，独立 Console 到 Native Server 的代理请求必须使用相同契约。
+- 内嵌 Derby 在运行时将 SQL 编译为新类；JVM AOT 可用不代表其能在不支持运行时类定义的传统
+  Native Image 中使用。必须分别记录实测 GraalVM 版本及实验参数，不得为绕过该限制改变普通
+  JVM 的存储行为。详见 [AOT 实验说明](../../../bootstrap/README-AOT.md)。
+- 回归覆盖普通 JVM（含默认 merged）、JVM AOT、外部数据源插件和独立扩展协议端口。
+  Native 编译成功、进程启动成功和接口成功是三个独立检查点，不得相互替代。嵌入式存储还必须
+  保留数据重启，验证检查点/日志恢复及持久化认证，不得仅以空数据库首次启动作为验收依据。
+
+## 11. 待处理问题
 
 - 代码中存在部署类型名 `serverWithMcp`，但 `NacosBootstrap` 尚未将其作为可接受分支接入。正式
   暴露为支持的部署类型前，应先定义它的进程行为。
 - 部分模块仍因历史兼容直接读取少量 system property。新的服务端代码应优先使用 `EnvUtil`，除非
   底层 JVM 集成明确需要直接访问。
 
-## 11. 相关规范
+## 12. 相关规范
 
 - [Nacos 设计规范](nacos-design-spec.md)
 - [基础能力规范](foundation-capabilities-spec.md)

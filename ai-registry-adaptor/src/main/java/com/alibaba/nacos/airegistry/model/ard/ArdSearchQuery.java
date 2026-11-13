@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.airegistry.model.ard;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,6 +33,27 @@ import java.util.Map;
 public class ArdSearchQuery {
     
     private String text;
+    
+    private Object context;
+    
+    private boolean contextPresent;
+    
+    @JsonProperty("@context")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Object getContext() {
+        return context;
+    }
+    
+    @JsonProperty("@context")
+    public void setContext(Object context) {
+        this.context = context;
+        this.contextPresent = true;
+    }
+    
+    @JsonIgnore
+    public boolean isContextPresent() {
+        return contextPresent;
+    }
     
     private Map<String, Object> filter = new LinkedHashMap<>();
     

@@ -51,7 +51,10 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         try {
             redoForInstances();
             redoForSubscribes();
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // Catch Throwable rather than Exception: an Error escaping run() would permanently
+            // and silently cancel the periodic task scheduled with scheduleWithFixedDelay,
+            // leaving instances and subscriptions unredone after gRPC reconnects (issue #15930).
             LogUtils.NAMING_LOGGER.warn("Redo task run with unexpected exception: ", e);
         }
     }

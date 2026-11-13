@@ -337,6 +337,24 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     /**
+     * Check for an active local subscription intent, independently of connection state.
+     *
+     * @param serviceName service name
+     * @param groupName group name
+     * @param cluster cluster
+     * @return whether a local subscription intent exists and is not being cancelled
+     */
+    public boolean hasSubscriptionIntent(String serviceName, String groupName, String cluster) {
+        String key =
+            ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+        synchronized (subscribes) {
+            SubscriberRedoData redoData = subscribes.get(key);
+            return redoData != null && redoData.isExpectedRegistered()
+                && !redoData.isUnregistering();
+        }
+    }
+    
+    /**
      * Remove subscriber for redo.
      *
      * @param serviceName service name

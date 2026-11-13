@@ -74,8 +74,9 @@ retain their normal authentication/ownership checks. SDK partial deregistration 
 remaining snapshot receives 50105 without altering confirmed intent or broadening removal to the
 whole publication. Rejected Register/Watch requests cannot create owners or redo registration.
 Pending HTTP Watch completion rechecks admission; a later gRPC Watch delivery terminates with
-50105, and subsequent Discover is also fenced. Callers explicitly invoke or subscribe again after
-cutover.
+50105, and subsequent Discover is also fenced. Initially rejected calls must be retried after
+cutover. Already accepted Java SDK subscriptions retain local state and retry automatically;
+50105 is never a discovery data event.
 
 Apply this guard only to external RAD bindings, never to shared domain services. Old A2A wire,
 Admin/Console, migration, indexing and internal projection retain their existing rules so migration
@@ -539,3 +540,11 @@ boundaries, and all unrelated resource regressions.
 This iteration does not change the migration state machine or historical A2A public models, but consolidates address models used by converters, storage read-back, runtime comparison, and Search gates. Validate normal SYNCING/QUIESCING/terminal flows and both shadow policies with the new structure. Excluding BETA upgrades does not waive historical A2A migration regression; failure recovery and cluster injection remain deferred for this iteration.
 
 The shared models and schemas follow the agreed endpoint contract. See the [endpoint test plan](../../../Codex/design/nacos-3.3-client-ai-api/MODEL_ENDPOINT_TEST_PLAN.md) for field policies, fixtures, 16 acceptance groups, and known gaps. The acceptance ledger distinguishes planned scenarios from executed tests.
+
+### Java SDK Watch lifetime
+
+A wire termination (including migration rejection 50105) ends that remote binding,
+not the accepted Java SDK subscription. The SDK retains intent and confirmed data
+and retries under normal authorization and quota. Only authorized Discover target
+absence produces SDK UNAVAILABLE; other failures stay internal. Legacy A2A retains
+its complete-card callbacks and empty-push protection, without lifecycle callbacks.

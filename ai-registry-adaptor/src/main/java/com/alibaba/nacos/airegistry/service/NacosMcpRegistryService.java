@@ -284,7 +284,9 @@ public class NacosMcpRegistryService {
      * Default ports: 80 for http, 443 for https
      */
     private String buildUrl(McpEndpointInfo endpoint) {
-        String protocol = endpoint.getProtocol();
+        String protocol = StringUtils.defaultIfBlank(endpoint.getProtocol(),
+            Constants.PROTOCOL_TYPE_HTTP);
+        String path = endpoint.getPath() == null ? "" : endpoint.getPath();
         int port = endpoint.getPort();
         boolean isDefaultHttpPort =
             Constants.PROTOCOL_TYPE_HTTP.equalsIgnoreCase(protocol) && port == DEFAULT_HTTP_PORT;
@@ -292,10 +294,9 @@ public class NacosMcpRegistryService {
             Constants.PROTOCOL_TYPE_HTTPS.equalsIgnoreCase(protocol) && port == DEFAULT_HTTPS_PORT;
         
         if (isDefaultHttpPort || isDefaultHttpsPort) {
-            return String.format("%s://%s%s", protocol, endpoint.getAddress(), endpoint.getPath());
+            return String.format("%s://%s%s", protocol, endpoint.getAddress(), path);
         }
-        return String.format("%s://%s:%d%s", protocol, endpoint.getAddress(), port,
-            endpoint.getPath());
+        return String.format("%s://%s:%d%s", protocol, endpoint.getAddress(), port, path);
     }
     
     private List<Remote> buildRemotes(McpServerDetailInfo mcpServerDetail) {
@@ -304,9 +305,10 @@ public class NacosMcpRegistryService {
         if (CollectionUtils.isEmpty(endpoints)) {
             return null;
         }
-        if (mcpServerDetail.getFrontProtocol().equals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE)) {
+        String frontProtocol = mcpServerDetail.getFrontProtocol();
+        if (AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equals(frontProtocol)) {
             return toRemotes(endpoints, AiConstants.Mcp.OFFICIAL_TRANSPORT_STREAMABLE);
-        } else if (mcpServerDetail.getFrontProtocol().equals(AiConstants.Mcp.MCP_PROTOCOL_SSE)) {
+        } else if (AiConstants.Mcp.MCP_PROTOCOL_SSE.equals(frontProtocol)) {
             return toRemotes(endpoints, AiConstants.Mcp.OFFICIAL_TRANSPORT_SSE);
         }
         return null;
@@ -343,6 +345,7 @@ public class NacosMcpRegistryService {
     private ServerResponse.Meta buildMeta(McpServerDetailInfo mcpServerDetail) {
         ServerResponse.Meta meta = new ServerResponse.Meta();
         OfficialMeta official = new OfficialMeta();
+        official.setStatus(mcpServerDetail.getStatus());
         ServerVersionDetail versionDetail = mcpServerDetail.getVersionDetail();
         List<ServerVersionDetail> allVersions = mcpServerDetail.getAllVersions();
         if (CollectionUtils.isNotEmpty(allVersions)) {

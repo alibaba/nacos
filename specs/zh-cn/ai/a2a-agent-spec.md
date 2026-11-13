@@ -76,6 +76,59 @@ A2A Binding 是一个 `AgentCallInterface`：
 当前 descriptor 基线支持 A2A 1.0 字段和现有 0.x 兼容字段。Adapter 规范化时不得
 用拼装出的通用 Agent 对象替换保存的 native descriptor。
 
+Card 级 `securityRequirements` 遵循 A2A 1.0 的 `SecurityRequirement` 和
+`StringList` 定义：`[{"schemes":{"oauth2":{"list":["read"]}}}]`。
+Java 模型直接使用 `List<SecurityRequirement>`，每项的 `schemes` 为
+`Map<String,StringList>`，`StringList.list` 为 `List<String>`。普通 JSON mapper 即可读写
+标准结构，不需要 Jackson 注解、Module 或特殊 Map。历史读取先标准解析，失败后兼容
+历史扁平格式 `[{"oauth2":["read"]}]`；正常序列化不执行格式转换。
+这是对历史错误模型的修正：原 `securityRequirements` Java getter/setter 的元素类型改变，
+调用方需重新编译并使用标准 POJO，不能把 List 类型擦除视作已有调用代码的兼容保证。
+
+`security` 与 `securityRequirements` 同时保留。`security` 保持 0.3 扁平 wire 格式，
+标记为已废弃、待移除；替代字段为 `securityRequirements`，移除条件是 Nacos 不再支持
+0.3 `protocolVersion`，本次不提前移除。现有 Card adapter 在规范化时同步两个字段：
+`securityRequirements` 非 null 时以其为准（包括显式空列表），否则从 `security` 补齐；
+随后将等价内容投影到 `security`。两者均缺失/null 时不生成空要求。两字段冲突时采用新
+字段，不拼接候选要求，以免改变鉴权语义。同步发生在现有 adapter 规范化边界，普通模型
+setter 和 JSON 解析本身不隐式修改另一个字段。投影复制列表、map 和 scope 列表，避免可变
+集合共享。该规则与现有接口字段、扩展 Card 能力的新字段优先规则一致。
+Card 注册、查询和订阅必须保留各候选要求、同一候选内全部 scheme、scope 顺序及空 scope。
+省略 `StringList.list` 表示空 scope 列表；非法要求必须解析失败，不能丢弃鉴权声明。
+缺失/null 要求和空要求列表保持区分。历史扁平输入仍可读取，但标准输出需要支持该格式的
+解码器；同时提供旧 `security` 字段不保证修复前的 Nacos 解码器能解析新字段。
+
+查询先按标准 POJO 反序列化。解析异常，或结构校验发现要求项缺少 `schemes` 时，才尝试
+历史扁平格式兼容解析；只修正本次返回对象，不重写存储、不提交异步任务、不更改摘要或版本。
+标准解析器可能忽略未知字段，因此缺少 `schemes` 不得被当作空鉴权要求接受。兼容重试仍须
+验证旧格式为 scheme 到字符串数组的映射；无法解释的数据继续报错，不降级为空权限。
+发布/更新使用标准模型正常写入；不执行存量数据修复或扫描。历史扁平兼容仅限 Card 级字段。
+兼容解析需要原始 Card JSON，放在 A2A 读取边界；通用 gRPC 解析不识别 A2A 请求或响应类型。
+旧对端若在强类型 gRPC Payload 中发送扁平 `securityRequirements`，A2A 发布/查询边界拒绝
+结构不完整的解析结果，不能把丢失的 scope 当作空鉴权要求，也不能恢复解析器已丢弃的字段。
+该路径继续支持标准要求项和 0.3 `security`。
+混合版本节点和旧 Nacos SDK 不保证能读取已修正的标准字段；上线应先升级读取方并保留
+升级前备份，回滚不能假定旧程序可读取新格式。保留 `security` 不消除这一限制。
+
+参考：[A2A 规范](https://a2a-protocol.org/latest/specification/) 和
+[v1.0.1 protobuf 定义](https://github.com/a2aproject/A2A/blob/v1.0.1/specification/a2a.proto)。
+官方 Python SDK 1.3.0 的 [0.3 转换层](https://github.com/a2aproject/a2a-python/blob/v1.3.0/src/a2a/compat/v0_3/conversions.py)
+在 `to_core_agent_card` / `to_compat_agent_card` 中进行这两个鉴权字段的双向语义转换；
+这属于版本 adapter 行为，并非普通 JSON 解析器自动识别别名。
+
+`AgentCard.skills[].securityRequirements` 使用同一套 A2A 1.0 标准 POJO
+`List<SecurityRequirement>` 和 `schemes/list` JSON 结构，不使用 Jackson 注解或 Module。
+Skill 要求独立于 Card 要求和其他 Skill；Nacos 保留声明，不提升、合并或填充有效权限。
+缺失/null 与显式空列表保持区分；保留候选要求、scheme 和 scope，省略 `list` 表示空 scope。
+A2A 发布和读取边界验证要求项、`schemes`、scope 容器及字符串列表；结构不完整或非法时
+返回受控错误，不能静默丢弃声明。此新增字段没有历史扁平回退，也不增加 0.3 Skill `security`
+字段或转换。旧数据缺少此字段时正常读取，不改写存量；旧模型已经丢弃的声明须由发布方重新提交。
+
+完整 Skill 声明随 Card 保存在 `nativeDescriptor`，并在查询、转换和 RAD 订阅中保留。
+复用现有内容摘要和 RAD 指纹算法；仅 Skill 要求变化也属于 descriptor 内容变化，相同快照不应
+重复通知。本次不修改旧轮询订阅机制。旧 SDK 或旧服务端仍可能忽略新增字段，端到端保留需升级
+相关类型化读取/写入方和下游适配器；不承诺旧版本新增此能力。
+
 common latest 精确 Version 中的 A2A CallInterface 只有通过该版本基线的完整 AgentCard 校验时，
 才声明 ARD 表示 `application/a2a-agent-card+json`。Artifact 直接返回保存的 native descriptor，
 不得把多协议 Nacos Agent 外层对象伪装成 AgentCard。旧 online Version 支持 A2A 只影响 RAD
@@ -257,7 +310,7 @@ RAD 模式的旧 Card 订阅复用原生发现的 Watch manager、transport、�
 
 Agent 或有效 A2A descriptor 暂时不存在时不虚构 Card，保留既有待观察意图。不可用事件清空
 Card 比较状态，不发送旧快照；恢复后的 Card 即使与原值相同也可再次通知。旧 listener 没有
-不可用事件类型；原生鉴权/容量等终止错误仍结束观察，需要显式重新订阅。鉴权失败不触发
+不可用事件类型；后台鉴权/容量等错误保留已接受订阅并内部重试。鉴权失败不触发
 轮询 fallback。绑定缺少 Watch 时复用 RAD Discover 轮询，RAD 模式不回到旧 A2A 轮询。
 
 同一 listener 重复订阅复用 bridge，取消时先移除本地意图再清理 wire；迟到回调不能复活订阅。
@@ -267,6 +320,11 @@ Card 比较状态，不发送旧快照；恢复后的 Card 即使与原值相同
 C09 只准备此组件，C10 一次接通全部旧 facade 方法。
 
 ### Client 实例路由启用
+
+`AiService.getAgentDiscoveryCapability()` 独立查询当前有效 Agent 传输的 RAD 三态证据，
+不触发首次 A2A 选路，也不改变已固定的模式；返回值不是旧 A2A facade 当前模式查询。
+能力缓存刷新、查询失败与迁移门禁均不能隐式切换已选模式。完整契约见
+[Agent API 规范](agent-api-spec.md#21-java-sdk-契约)。
 
 3.3 Java SDK 的所有继承 A2A 重载共享同一 Agent facade，首次可靠选择在 AiService
 生命周期内固定。初始首选 gRPC 协商可确定模式；HTTP-only 初始化不为 A2A 选路启动
@@ -291,3 +349,19 @@ API 来源，同一存活 publication 的混用在写前拒绝。Card 查询/事
 缺失或否定。该证据不代表 HTTP 支持或可达；经 RAD 适配的旧业务操作仍校验所配置
 transport。HTTP 明确不支持时返回 unsupported，不静默发送旧 gRPC。取消及完整
 清理仍保留本地状态和既有 owner 的路径。
+
+## SDK 显式转换
+
+公共 `AgentConverters.a2a()`／`AgentService.a2aConverter()` 遵循
+[Agent API 规范](agent-api-spec.md#公共发现快照转换器)，由用户显式离线调用。
+它尊重过滤后的 EndpointSet 及返回顺序，以首个地址填充旧首选字段，与旧 facade 通过
+A2aEndpointUtils 共享逐端点映射。它不改变旧 facade 的 registrationType 覆盖、
+preferredTransport 选择、空 Runtime 描述回退、latestVersion 或 NOT_FOUND 映射，
+不插入原生 Discover／Listener 分发。
+
+### Java SDK Watch 生命周期
+
+Wire 终止（包含迁移拒绝 50105）仅结束远程绑定，不结束已接受的 Java SDK 订阅。
+SDK 保留订阅及确认数据，在正常鉴权和配额下持续重试。只有合法 Discover 确认目标不存在
+产生 SDK UNAVAILABLE，其他错误内部处理。旧 A2A 保留完整 Card 回调与默认推空保护，
+不增加生命周期回调。

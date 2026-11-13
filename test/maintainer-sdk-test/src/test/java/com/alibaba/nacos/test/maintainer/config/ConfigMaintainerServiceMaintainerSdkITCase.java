@@ -324,7 +324,8 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         addCleanup(() -> maintainerService.deleteConfig(dataId, group, namespaceId));
 
         assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, firstContent));
-        assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, secondContent));
+        assertTrue(maintainerService.publishConfig(dataId, group, namespaceId, secondContent,
+                null, null, null, "configuration description", "text", "current operation"));
         ConfigDetailInfo currentConfig = maintainerService.getConfig(dataId, group, namespaceId);
         assertConfigDetail(currentConfig, dataId, group, namespaceId, secondContent);
         assertNotNull(currentConfig.getId());
@@ -358,12 +359,14 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
                 maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
                         newestHistory.getId());
         assertEquals(firstContent, historyDetail.getContent());
+        assertEquals("current operation", historyDetail.getChangeMessage());
         assertNull(historyDetail.getSchema());
 
         ConfigHistoryDetailInfo previousDetail =
                 maintainerService.getPreviousConfigHistoryInfo(dataId, group, namespaceId,
                         currentConfig.getId());
         assertEquals(firstContent, previousDetail.getContent());
+        assertEquals("current operation", previousDetail.getChangeMessage());
         assertNull(previousDetail.getSchema());
         assertEquals(newestHistory.getId(), previousDetail.getId());
     }
@@ -387,6 +390,10 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertTrue(maintainerService.publishBetaConfig(dataId, group, namespaceId, content,
                 "maintainer-sdk-it", "maintainer", "beta", "beta config",
                 ConfigType.TEXT.getType(), betaIps));
+        ConfigHistoryBasicInfo betaHistory = maintainerService.listConfigHistory(dataId, group,
+                namespaceId, 1, 10).getPageItems().get(0);
+        assertNull(maintainerService.getConfigHistoryInfo(dataId, group, namespaceId,
+                betaHistory.getId()).getChangeMessage());
         ConfigGrayInfo beta = maintainerService.queryBeta(dataId, group, namespaceId);
         assertConfigDetail(beta, dataId, group, namespaceId, content);
         assertEquals("beta", beta.getGrayName());

@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ards-project/ard-spec/main/spec/schemas/ard-entry.schema.json",
+  "title": "ArdEntry",
+  "description": "JSON Schema for an ARD entry — the description of a single agentic resource in a form that can be found by search. An ARD entry is defined by the ARD specification. It adopts the core descriptive terms of the default namespace and additionally requires the terms discovery depends on. Every ARD entry is a well-formed catalog entry; not every catalog entry is an ARD entry.",
+  "$ref": "#/$defs/ArdEntry",
+  "$defs": {
+    "EntryFields": {
+      "type": "object",
+      "description": "The terms an ARD entry may carry. This definition imposes no required terms; ArdEntry layers its own requirements on top.",
+      "properties": {
+        "@context": {
+          "description": "Optional JSON-LD context. Absent, the entry's unprefixed terms resolve to the default namespace. Present, it MAY declare additional namespaces whose prefixed terms describe the resource and become available as filter dimensions.",
+          "oneOf": [
+            { "type": "string", "format": "uri" },
+            { "type": "object" },
+            { "type": "array" }
+          ]
+        },
+        "@id": {
+          "type": "string",
+          "description": "Optional JSON-LD node identifier. When present alongside `identifier`, both MUST denote the same resource."
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^urn:air:[a-zA-Z0-9.-]+(:[a-zA-Z0-9._-]+)+$",
+          "description": "Globally unique discovery handle. Domain-anchored URN: urn:air:<publisher>:<namespace>:<agent-name>. The <publisher> segment is the authority anchor used for publisher-authority binding."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable name."
+        },
+        "type": {
+          "type": "string",
+          "description": "Artifact type as an IANA Media Type (e.g. application/mcp-server-card+json). Names what the artifact is without constraining its internal schema."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Reference to the full artifact document. Mutually exclusive with `data`."
+        },
+        "data": {
+          "type": "object",
+          "description": "The complete artifact document, inline. Mutually exclusive with `url`."
+        },
+        "representativeQueries": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Sample natural-language queries this resource can serve — the signal a registry builds its semantic index from. RECOMMENDED on every entry; SHOULD contain 2-5 examples. Neither presence nor count is enforced here so that emitted entries validate; the conformance tester flags absence, or a count outside 2-5, as a warning (§D.2)."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Short skill or tool tokens (e.g. [\"WeatherTool\"]) enabling structured filtering without fetching the full artifact."
+        },
+        "description": {
+          "type": "string",
+          "description": "Short natural-language description. Contributes to the semantic index."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords for filtering and faceting."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the artifact."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of the last modification."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Custom key-value pairs, available as metadata.* filter keys.",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          }
+        },
+        "TrustManifest": {
+          "$ref": "#/$defs/TrustManifest"
+        }
+      },
+      "additionalProperties": true,
+      "$comment": "additionalProperties is intentionally true. Terms drawn from namespaces declared in the entry's @context (e.g. okf:taxonomy) are valid and become filter dimensions. Constraining this to false would defeat the namespace extension mechanism."
+    },
+    "ArdEntry": {
+      "description": "A complete ARD entry, as published. Requires the discovery-critical terms and exactly one of url/data.",
+      "allOf": [{ "$ref": "#/$defs/EntryFields" }],
+      "required": ["identifier", "displayName", "type"],
+      "oneOf": [
+        {
+          "required": ["url"],
+          "not": { "required": ["data"] }
+        },
+        {
+          "required": ["data"],
+          "not": { "required": ["url"] }
+        }
+      ]
+    },
+    "ArdManifest": {
+      "type": "object",
+      "description": "The document published at /.well-known/ard.json (or any entry source). ARD requires only an `entries` array of ARD entries; any other top-level members are transport-defined and ignored by ARD, so additionalProperties is open.",
+      "required": ["entries"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ArdEntry" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "TrustManifest": {
+      "type": "object",
+      "description": "Identity, compliance, and provenance envelope. ARD requires only `identity` (for publisher-authority binding) and does not constrain the internal schema; validation is intentionally permissive (additionalProperties: true) so a trust manifest defined by any framework is structurally valid, including members ARD does not enumerate such as trustSchema. This does not mean consumers ignore it: a federated registry is expected to inspect the manifest and verify it per the framework named in trustSchema (attestations, provenance, signature). Signing and verification procedures are defined by that framework, not by ARD.",
+      "required": ["identity"],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "description": "Globally unique cryptographic workload identifier (SPIFFE ID, DID, or HTTPS FQDN URI). Its trust domain MUST align with the <publisher> segment of the entry's identifier."
+        },
+        "identityType": {
+          "type": "string",
+          "description": "Hint for the cryptographic format of the identity (e.g. spiffe, did, https)."
+        },
+        "trustSchema": {
+          "type": "object",
+          "description": "The trust framework the manifest conforms to, and the source of its verification procedure.",
+          "properties": {
+            "identifier": { "type": "string" },
+            "version": { "type": "string" },
+            "governanceUri": { "type": "string", "format": "uri" },
+            "verificationMethods": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": true
+        },
+        "attestations": {
+          "type": "array",
+          "description": "Verifiable claims (e.g., organizational compliance audits, artifact security scans, build provenance, transparency-log receipts, or runtime evaluations).",
+          "items": {
+            "type": "object",
+            "required": ["type", "uri"],
+            "properties": {
+              "type": { "type": "string" },
+              "uri": { "type": "string", "format": "uri" },
+              "mediaType": { "type": "string" },
+              "digest": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "provenance": {
+          "type": "array",
+          "description": "Lineage trail of the artifact.",
+          "items": {
+            "type": "object",
+            "required": ["relation", "sourceId"],
+            "properties": {
+              "relation": { "type": "string" },
+              "sourceId": { "type": "string" },
+              "sourceDigest": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "signature": {
+          "type": "string",
+          "description": "Detached signature over the trust manifest content, per the framework named in trustSchema."
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
@@ -129,6 +130,17 @@ class ConsoleWebConfigTest {
         JsonMapper.Builder builder = Mockito.mock(JsonMapper.Builder.class);
         consoleWebConfig.jacksonJsonMapperCustomization().customize(builder);
         verify(builder).defaultTimeZone(TimeZone.getDefault());
+    }
+    
+    @Test
+    void jacksonJsonMapperPreservesAgentCardRequirements() {
+        JsonMapper.Builder builder = JsonMapper.builder();
+        consoleWebConfig.jacksonJsonMapperCustomization().customize(builder);
+        JsonMapper mapper = builder.build();
+        String json = "{\"securityRequirements\":[{\"schemes\":{\"apiKey\":{\"list\":[]}}}]}";
+        AgentCardDetailInfo card = mapper.readValue(json, AgentCardDetailInfo.class);
+        assertEquals(mapper.readTree(json).get("securityRequirements"),
+            mapper.readTree(mapper.writeValueAsString(card)).get("securityRequirements"));
     }
     
     @Test

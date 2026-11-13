@@ -21,14 +21,12 @@ import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
 import com.alibaba.nacos.plugin.auth.impl.persistence.ExternalPermissionPersistServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.persistence.ExternalRolePersistServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.persistence.ExternalUserPersistServiceImpl;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 
 /**
- * Nacos auth plugin embedded storage configuration.
+ * Nacos auth plugin external storage configuration.
+ * Concrete factory return types expose lifecycle callbacks to Spring AOT.
  *
  * @author xiweng.yy
  */
@@ -36,17 +34,17 @@ import org.springframework.context.annotation.Conditional;
 public class NacosAuthPluginExternalStorageConfig {
     
     @Bean
-    public PermissionPersistService permissionPersistService() {
+    public ExternalPermissionPersistServiceImpl permissionPersistService() {
         return new ExternalPermissionPersistServiceImpl();
     }
     
     @Bean
-    public RolePersistService rolePersistService() {
+    public ExternalRolePersistServiceImpl rolePersistService() {
         return new ExternalRolePersistServiceImpl();
     }
     
     @Bean
-    public UserPersistService userPersistService() {
+    public ExternalUserPersistServiceImpl userPersistService() {
         return new ExternalUserPersistServiceImpl();
     }
 }

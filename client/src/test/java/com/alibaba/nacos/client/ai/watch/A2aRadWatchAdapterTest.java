@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosAgentDiscoveryEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.utils.AgentDiscoveryCanonicalizer;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.agent.AgentCallInterface;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryResult;
@@ -30,14 +32,16 @@ import com.alibaba.nacos.api.ai.model.agent.EndpointSet;
 import com.alibaba.nacos.api.ai.model.agent.EndpointSource;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.client.ai.remote.AgentClientProxy;
 import com.alibaba.nacos.client.ai.utils.A2aRadConverter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
@@ -45,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,6 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -86,7 +92,11 @@ class A2aRadWatchAdapterTest {
         ExecutorService delivery = mock(ExecutorService.class);
         when(refresh.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class)))
             .thenAnswer(call -> {
-                scheduled.add(call.getArgument(0));
+                if ((long) call
+                    .getArgument(
+                        1) != AgentWatchListenerDispatcher.LISTENER_CHECK_INTERVAL_MILLIS) {
+                    scheduled.add(call.getArgument(0));
+                }
                 return mock(ScheduledFuture.class);
             });
         doAnswer(call -> {
@@ -156,7 +166,8 @@ class A2aRadWatchAdapterTest {
     @Test
     void initialMissingTargetRecoversWithoutFabricatingCard() throws Exception {
         when(proxy.discoverAgent(any()))
-            .thenThrow(new NacosException(NacosException.NOT_FOUND, "missing"))
+            .thenThrow(new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "missing"))
             .thenReturn(snapshot("URL"));
         CardListener listener = new CardListener();
         assertNull(adapter.subscribe("demo", null, listener));
@@ -230,6 +241,52 @@ class A2aRadWatchAdapterTest {
         assertEquals("SERVICE", listener.cards.get(1).getRegistrationType());
     }
     
+    @ParameterizedTest
+    @ValueSource(strings = {"changed", "empty", "removed"})
+    void skillRequirementsChangeFingerprintAndNotifyOnce(String change) throws Exception {
+        AgentDiscoveryResult first = skillSnapshot("read");
+        AgentDiscoveryResult second = skillSnapshot("write");
+        AgentCard changed = JsonUtils.toObj(JsonUtils.toJson(second.getCallInterfaces().get(0)
+            .getNativeDescriptor()), AgentCard.class);
+        if ("empty".equals(change)) {
+            changed.getSkills().get(0).setSecurityRequirements(Collections.emptyList());
+        } else if ("removed".equals(change)) {
+            changed.getSkills().get(0).setSecurityRequirements(null);
+        }
+        second.getCallInterfaces().get(0).setNativeDescriptor(
+            JsonUtils.toObj(JsonUtils.toJson(changed), Map.class));
+        assertEquals(first.getVersion(), second.getVersion());
+        assertEquals(first.getContentDigest(), second.getContentDigest());
+        assertNotEquals(AgentDiscoveryCanonicalizer.fingerprint(first),
+            AgentDiscoveryCanonicalizer.fingerprint(second));
+        when(proxy.discoverAgent(any())).thenReturn(first, second, second);
+        CardListener listener = new CardListener();
+        adapter.subscribe("demo", null, listener);
+        drain();
+        assertEquals(Collections.singletonList("read"), listener.cards.get(0).getSkills().get(0)
+            .getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+        refresh();
+        assertEquals(2, listener.cards.size());
+        assertEquals(changed.getSkills(), listener.cards.get(1).getSkills());
+        assertEquals(listener.cards.get(0).getSecurityRequirements(),
+            listener.cards.get(1).getSecurityRequirements());
+        refresh();
+        assertEquals(2, listener.cards.size(),
+            "identical Skill declarations must not notify again");
+    }
+    
+    private AgentDiscoveryResult skillSnapshot(String scope) throws Exception {
+        AgentDiscoveryResult snapshot = snapshot("URL");
+        AgentCard card = JsonUtils.toObj(JsonUtils.toJson(snapshot.getCallInterfaces().get(0)
+            .getNativeDescriptor()), AgentCard.class);
+        card.getSkills().get(0).setSecurityRequirements(A2aSecurityUtils.fromLegacy(
+            Collections.singletonList(
+                Collections.singletonMap("oauth2", Collections.singletonList(scope)))));
+        snapshot.getCallInterfaces().get(0)
+            .setNativeDescriptor(JsonUtils.toObj(JsonUtils.toJson(card), Map.class));
+        return snapshot;
+    }
+    
     @Test
     void runtimeHealthWeightAndRevisionWithoutCardChangeDoNotNotify() throws Exception {
         AgentDiscoveryResult first = snapshot("SERVICE");
@@ -252,7 +309,8 @@ class A2aRadWatchAdapterTest {
     @Test
     void unavailableClearsDedupeAndRecoveryReemitsIdenticalCard() throws Exception {
         when(proxy.discoverAgent(any())).thenReturn(snapshot("URL"))
-            .thenThrow(new NacosException(NacosException.NOT_FOUND, "removed"))
+            .thenThrow(new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "removed"))
             .thenReturn(snapshot("URL"));
         CardListener listener = new CardListener();
         adapter.subscribe("demo", null, listener);
@@ -359,20 +417,31 @@ class A2aRadWatchAdapterTest {
         verify(proxy, never()).discoverAgent(any());
     }
     
-    @Test
-    void terminalUnavailableReleasesBridgeUntilExplicitResubscribe() throws Exception {
-        when(proxy.discoverAgent(any())).thenReturn(snapshot("URL"));
+    @ParameterizedTest
+    @ValueSource(ints = {403, 409, 50105})
+    void remoteRejectionRetainsBridgeAndRecoversWithoutResubscribe(int code) throws Exception {
+        AgentDiscoveryResult changed = snapshot("URL");
+        String revision = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+        changed.setContentDigest(revision);
+        changed.getCallInterfaces().get(0).getEndpointSets().get(0).setSourceRevision(revision);
+        changed.getCallInterfaces().get(0).getEndpointSets().get(0).getEndpoints().get(0)
+            .setUri("https://changed.example/rpc");
+        AgentCard updatedCard = card();
+        updatedCard.setUrl("https://changed.example/rpc");
+        changed.getCallInterfaces().get(0).setNativeDescriptor(
+            JsonUtils.toObj(JsonUtils.toJson(updatedCard), Map.class));
+        when(proxy.discoverAgent(any())).thenReturn(snapshot("URL"), changed);
         CardListener listener = new CardListener();
         adapter.subscribe("demo", null, listener);
         drain();
-        manager.markUnavailable(registrations.get(0).getClientWatchId(), NacosException.NO_RIGHT,
-            "revoked", true);
+        manager.markUnavailable(registrations.get(0).getClientWatchId(), code, "rejected", true);
         drain();
-        assertTrue(scheduled.isEmpty());
+        assertEquals(1, scheduled.size());
         assertEquals(1, listener.cards.size());
-        adapter.subscribe("demo", null, listener);
+        scheduled.remove(0).run();
         drain();
         assertEquals(2, listener.cards.size());
+        assertEquals("https://changed.example/rpc", listener.cards.get(1).getUrl());
         assertEquals(2, registrations.size());
     }
     
@@ -533,7 +602,8 @@ class A2aRadWatchAdapterTest {
             + "\"skills\":[{\"id\":\"s\",\"name\":\"skill\",\"tags\":[\"tag\"]}],"
             + "\"provider\":{\"organization\":\"Nacos\",\"url\":\"https://nacos.io\"},"
             + "\"securitySchemes\":{\"token\":{\"type\":\"http\",\"scheme\":\"bearer\"}},"
-            + "\"security\":[{\"token\":[]}],\"securityRequirements\":[{\"token\":[]}],"
+            + "\"security\":[{\"token\":[]}],"
+            + "\"securityRequirements\":[{\"schemes\":{\"token\":{\"list\":[]}}}],"
             + "\"signatures\":[{\"protected\":\"header\",\"signature\":\"signature\"}],"
             + "\"documentationUrl\":\"https://docs.example\","
             + "\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"application/json\"]}",

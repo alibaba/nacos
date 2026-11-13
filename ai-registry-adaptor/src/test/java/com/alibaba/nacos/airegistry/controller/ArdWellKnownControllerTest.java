@@ -17,6 +17,7 @@
 package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.airegistry.model.ard.ArdCatalog;
+import com.alibaba.nacos.airegistry.model.ard.ArdManifest;
 import com.alibaba.nacos.airegistry.service.ard.ArdSearchService;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -49,6 +50,13 @@ class ArdWellKnownControllerTest {
     private ArdSearchService ardSearchService;
     
     @Test
+    void manifestShouldReturnHostManifest() {
+        ArdManifest manifest = new ArdManifest();
+        when(ardSearchService.hostManifest()).thenReturn(manifest);
+        assertSame(manifest, controller().manifest());
+    }
+    
+    @Test
     void catalogShouldReturnHostCatalog() throws NacosException {
         ArdCatalog catalog = new ArdCatalog();
         when(ardSearchService.hostCatalog()).thenReturn(catalog);
@@ -58,7 +66,12 @@ class ArdWellKnownControllerTest {
     
     @Test
     void catalogShouldUseAiReadAuthentication() throws NoSuchMethodException {
-        Method method = ArdWellKnownController.class.getMethod("catalog");
+        assertAuthentication("catalog");
+        assertAuthentication("manifest");
+    }
+    
+    private void assertAuthentication(String name) throws NoSuchMethodException {
+        Method method = ArdWellKnownController.class.getMethod(name);
         Secured secured = method.getAnnotation(Secured.class);
         
         assertNotNull(secured);

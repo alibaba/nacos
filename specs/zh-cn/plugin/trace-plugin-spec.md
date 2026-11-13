@@ -92,6 +92,11 @@ Trace 事件携带事件类型、事件时间、命名空间、分组和资源�
 `AiResourceTraceEvent` 携带操作者、资源类型、资源标识、可选版本、操作、状态、
 客户端 IP 和可选扩展文本。
 
+Agent Discover 也复用该事件，以 `resourceType=agent`、`operation=DISCOVER`
+记录尽力而为的访问诊断；资源标识和版本保留在标准字段，命名空间、访问类型、来源应用、
+Client/连接标识及订阅触发标记放入 JSON `ext`。详细字段及边界见
+[Agent API 规范](../ai/agent-api-spec.md#discover-业务诊断事件)。
+
 ## 执行
 
 `NacosCombinedTraceSubscriber` 注册领域事件 publisher，并只把匹配的事件类分发给插件

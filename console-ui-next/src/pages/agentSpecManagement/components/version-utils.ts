@@ -14,6 +14,8 @@
  * Additionally, draft versions can be deleted.
  */
 
+import { hasOwn } from '@/utils/has-own';
+
 const STATE_ACTIONS: Record<string, string[]> = {
   draft: ['submit', 'deleteDraft'],
   reviewing: ['publish'],
@@ -31,5 +33,5 @@ export function sortVersionsDescending<T extends { updateTime: number }>(version
  * Unknown statuses return an empty array.
  */
 export function getValidActions(status: string): string[] {
-  return Object.hasOwn(STATE_ACTIONS, status) ? STATE_ACTIONS[status] : [];
+  return hasOwn(STATE_ACTIONS, status) ? STATE_ACTIONS[status] : [];
 }

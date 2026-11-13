@@ -79,16 +79,24 @@ public class AgentTransportRouter implements AgentClientProxy {
     @Override
     public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request)
         throws NacosException {
+        return discoverAgent(request, false);
+    }
+    
+    @Override
+    public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
         AgentTransport transport = select();
         AgentDiscoveryResult result;
         try {
-            result = transport.discoverAgent(request);
+            result = watchNotify ? transport.discoverAgent(request, true)
+                : transport.discoverAgent(request);
         } catch (NacosException | NacosRuntimeException e) {
             if (transport.getType() != AgentTransportType.GRPC || !canFallbackRead(e)) {
                 throw e;
             }
             transport = httpTransport;
-            result = transport.discoverAgent(request);
+            result = watchNotify ? transport.discoverAgent(request, true)
+                : transport.discoverAgent(request);
         }
         recordHttpSuccess(transport);
         return result;

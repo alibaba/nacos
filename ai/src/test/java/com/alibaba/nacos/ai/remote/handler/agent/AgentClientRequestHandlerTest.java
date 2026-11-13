@@ -17,6 +17,18 @@
 package com.alibaba.nacos.ai.remote.handler.agent;
 
 import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.agent.AgentReference;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.ai.AiResourceTraceEvent;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.mockito.MockedStatic;
+import static org.mockito.Mockito.mockStatic;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -172,6 +184,76 @@ class AgentClientRequestHandlerTest {
         assertEquals("public", discovery.getNamespaceId());
         assertInvalid(new AgentDiscoveryRpcRequestHandler(discoveryService, migrationGuard)
             .handle(new AgentDiscoveryRpcRequest(), meta));
+    }
+    
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"watch-notify", "future-trigger"})
+    void testDiscoveryPublishesTrace(String trigger) throws Exception {
+        AgentDiscoveryRpcRequest request = discoveryRequest(trigger);
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setVersion("1.0.0");
+        when(discoveryService.discover(request.getDiscoveryRequest())).thenReturn(result);
+        try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
+            AgentDiscoveryResponse response =
+                new AgentDiscoveryRpcRequestHandler(discoveryService, migrationGuard)
+                    .handle(request, meta);
+            assertSame(result, response.getDiscoveryResult());
+            ArgumentCaptor<AiResourceTraceEvent> event =
+                ArgumentCaptor.forClass(AiResourceTraceEvent.class);
+            notifyCenter.verify(() -> NotifyCenter.publishEvent(event.capture()));
+            assertEquals("demo", event.getValue().getResourceId());
+            assertEquals("SUCCESS", event.getValue().getStatus());
+            JsonNode ext =
+                JacksonUtils.toObj(event.getValue().getExt());
+            assertEquals("public", ext.get("namespaceId").asText());
+            assertEquals("GRPC", ext.get("protocol").asText());
+            assertEquals("connection", ext.get("connectionId").asText());
+            assertEquals(AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY.equals(trigger),
+                ext.get("subscriptionTriggered").asBoolean());
+        }
+    }
+    
+    @Test
+    void testDiscoveryTraceFailurePreservesResponseAndErrorMapping() throws Exception {
+        AgentDiscoveryRpcRequest request = discoveryRequest("watch-notify");
+        AgentDiscoveryResult result = new AgentDiscoveryResult();
+        result.setVersion("1.0.0");
+        when(discoveryService.discover(request.getDiscoveryRequest())).thenReturn(result);
+        AgentDiscoveryRpcRequestHandler handler =
+            new AgentDiscoveryRpcRequestHandler(discoveryService, migrationGuard);
+        try (MockedStatic<NotifyCenter> notifyCenter = mockStatic(NotifyCenter.class)) {
+            notifyCenter.when(() -> NotifyCenter.publishEvent(any(AiResourceTraceEvent.class)))
+                .thenThrow(new IllegalStateException("trace unavailable"));
+            assertSame(result, handler.handle(request, meta).getDiscoveryResult());
+            when(discoveryService.discover(request.getDiscoveryRequest()))
+                .thenThrow(new NacosApiException(NacosException.NOT_FOUND,
+                    ErrorCode.RESOURCE_NOT_FOUND, "absent"));
+            assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                handler.handle(request, meta).getErrorCode());
+            notifyCenter.reset();
+            assertEquals(ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                handler.handle(request, meta).getErrorCode());
+            ArgumentCaptor<AiResourceTraceEvent> event =
+                ArgumentCaptor.forClass(AiResourceTraceEvent.class);
+            notifyCenter.verify(() -> NotifyCenter.publishEvent(event.capture()));
+            assertEquals("FAILURE", event.getValue().getStatus());
+            assertEquals("1.0.0", event.getValue().getVersion());
+        }
+    }
+    
+    private AgentDiscoveryRpcRequest discoveryRequest(String trigger) {
+        AgentReference reference = new AgentReference();
+        reference.setAgentName("demo");
+        reference.setVersion("1.0.0");
+        AgentDiscoveryRequest discovery = new AgentDiscoveryRequest();
+        discovery.setReference(reference);
+        AgentDiscoveryRpcRequest request = new AgentDiscoveryRpcRequest();
+        request.setDiscoveryRequest(discovery);
+        if (trigger != null) {
+            request.putHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER, trigger);
+        }
+        return request;
     }
     
     @Test

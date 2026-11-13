@@ -25,9 +25,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -161,17 +159,9 @@ public class OpenAiCompatibleResourceIndexEnhancementService
         request.put("model", configuration.model);
         request.put("temperature", 0.2D);
         request.put("messages", messages(entry, existingChunks, contents));
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(configuration.endpoint))
-            .timeout(Duration.ofMillis(configuration.timeoutMs))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(JacksonUtils.toJson(request),
-                StandardCharsets.UTF_8));
-        String apiKey = configuration.apiKey;
-        if (StringUtils.isNotBlank(apiKey)) {
-            builder.header("Authorization", "Bearer " + apiKey);
-        }
-        HttpResponse<String> response =
-            httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = AiResourceModelHttpClient.post(httpClient,
+            configuration.endpoint, configuration.apiKey, request,
+            Duration.ofMillis(configuration.timeoutMs));
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new IllegalStateException(
                 errorMessage(response.statusCode(), response.body()));

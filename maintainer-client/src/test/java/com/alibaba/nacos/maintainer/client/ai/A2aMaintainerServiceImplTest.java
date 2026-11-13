@@ -187,6 +187,18 @@ class A2aMaintainerServiceImplTest {
     }
     
     @Test
+    void testGetHistoricalFlatRequirementsBeforeBindingStandardPojo() throws NacosException {
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setData("{\"code\":0,\"data\":{\"name\":\"demo\",\"securityRequirements\":["
+            + "{\"oauth2\":[\"read\"]}]}}");
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(response);
+        AgentCardDetailInfo card = a2aService.getAgentCard("demo", "public", "URL", "1.0.0");
+        assertEquals(Collections.singletonList("read"),
+            card.getSecurityRequirements().get(0).getSchemes().get("oauth2").getList());
+        assertEquals(Collections.singletonList("read"), card.getSecurity().get(0).get("oauth2"));
+    }
+    
+    @Test
     void testDeleteAgentSuccess() throws NacosException {
         HttpRestResult<String> mockResult = buildSuccessResult();
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);

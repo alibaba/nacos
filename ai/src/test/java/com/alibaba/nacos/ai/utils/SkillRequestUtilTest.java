@@ -32,6 +32,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SkillRequestUtilTest {
     
+    @Test
+    void testNormalizePreservesMultilineDescription() {
+        String markdown = "---\nname: my-skill\ndescription: |\n  First line.\n"
+            + "  Triggers: RDS Copilot\nversion: 0.0.1\n---\nInstructions\n";
+        Skill skill = buildSkill("my-skill", "old description", markdown);
+        
+        SkillRequestUtil.normalizeSkillFrontmatter(skill, "my-skill", "0.0.2", true);
+        
+        assertEquals("First line.\nTriggers: RDS Copilot\n", skill.getDescription());
+        assertEquals(markdown.replace("version: 0.0.1", "version: 0.0.2"), skill.getSkillMd());
+    }
+    
     // ========== parseFrontmatterField ==========
     
     @Test

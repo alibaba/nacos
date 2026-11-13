@@ -73,6 +73,9 @@ entry/cache lock
 7. 否则返回正式配置内容、md5、`encryptedDataKey`、最后修改时间和配置类型。
 8. 根据配置类型解析响应 content type，默认使用 text。
 
+已存在的正式配置内容允许为空字符串或仅含空白，查询必须原样返回内容和元数据。
+读取结果为 `null` 时才表示正式配置内容缺失，不得使用空白判断代替存在性判断。
+
 运行时查询必须使用缓存和 dump 内容，而不是大范围持久化查询。共享 dump 与 cache 边界由
 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md)定义。
 
@@ -124,3 +127,13 @@ Executor 和队列边界由[任务执行规范](../design/foundation-task-execut
 | HTTP Console API | Console 克隆中 `namespaceId` 表示源 namespace，`targetNamespaceId` 表示目标 namespace；缺省 `namespaceId` 时源 namespace 默认等于目标 namespace。 |
 | gRPC API | 查询、兼容发布、兼容删除、监听、模糊订阅和推送消息必须保持同一套 Config 身份和 md5 语义。 |
 | Client SDK | 应用应优先使用运行时查询和监听 API；大范围管理 API 属于 Maintainer SDK。 |
+
+### 发布操作说明
+
+普通发布及 CAS 发布 API 可选接收 `changeMessage`，对插入和更新采用相同处理，不判断配置
+是否首次创建。控制台新建和删除流程不提供说明入口；删除、Beta、Tag/灰度和回滚 API 不在
+首期支持范围。说明属于本次成功发布，不属于配置描述或正文；省略参数保持原行为，CAS
+失败不得记录说明。
+输入细则（最多 512 个 Unicode 码点）、JSON 存储、历史详情展示、插件降级和验收场景见
+[Config 持久化与历史规范](config-persistence-history-spec.md#发布操作说明)。
+本节描述待审阅的目标，不代表当前 API 已按该范围完成实现和验证。

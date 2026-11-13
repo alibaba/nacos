@@ -59,12 +59,34 @@ public final class A2aEndpointUtils {
         result.setUri(scheme.toLowerCase(Locale.ROOT) + "://" + host + ':'
             + source.getPort() + path + query);
         result.setTransport(source.getTransport());
-        Map<String, String> metadata = new LinkedHashMap<String, String>();
-        if (source.getProtocolVersion() != null && !source.getProtocolVersion().isEmpty()) {
-            metadata.put(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION, source.getProtocolVersion());
+        return withMetadata(result, source.getProtocolVersion(), source.getTenant());
+    }
+    
+    /**
+     * Convert a native A2A interface, preserving its protocol version and opaque tenant.
+     * The URL must be an absolute RAD URI; no TLS scheme is inferred for bare gRPC addresses.
+     * @param source complete native interface
+     * @return independent canonical Endpoint without a business version binding
+     * @throws IllegalArgumentException when required fields or the URI are invalid
+     */
+    public static Endpoint fromAgentInterface(AgentInterface source) {
+        if (source == null || blank(source.getUrl()) || blank(source.getProtocolBinding())) {
+            throw new IllegalArgumentException("A2A interface requires url and protocolBinding");
         }
-        if (source.getTenant() != null) {
-            metadata.put(AiConstants.A2a.ENDPOINT_TENANT, source.getTenant());
+        AgentValidationUtils.validateProtocolVersion(source.getProtocolVersion());
+        Endpoint result = new Endpoint();
+        result.setUri(source.getUrl());
+        result.setTransport(source.getProtocolBinding());
+        return withMetadata(result, source.getProtocolVersion(), source.getTenant());
+    }
+    
+    private static Endpoint withMetadata(Endpoint result, String version, String tenant) {
+        Map<String, String> metadata = new LinkedHashMap<String, String>();
+        if (version != null && !version.isEmpty()) {
+            metadata.put(AiConstants.A2a.ENDPOINT_PROTOCOL_VERSION, version);
+        }
+        if (tenant != null) {
+            metadata.put(AiConstants.A2a.ENDPOINT_TENANT, tenant);
         }
         result.setMetadata(metadata);
         return EndpointCanonicalizer.canonicalize(result);

@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -81,8 +81,6 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
     
     private static final long SEARCH_RETRY_INTERVAL_MILLIS = 250L;
     
-    @Disabled("DAUTH-F03: private AI Search projection fails with auth enabled; "
-            + "see UNEXPECTED_PRODUCT_FINDINGS.md")
     @Test
     public void testCrossTypeSearchSpecificFacadesFiltersAndCursor() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
@@ -137,6 +135,85 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
         assertEquals(expectedKeys, traversed);
     }
     
+    @Test
+    @EnabledIfSystemProperty(named = "nacos.test.auth.enabled", matches = "true")
+    public void testPrivateMcpIndexPreservesQueryVisibilityAndLifecycle() throws Exception {
+        String name = randomAiName("search-private-mcp");
+        addCleanup(() -> deleteMcpServerQuietly(name, null));
+        // Client publication makes the ordinary read/write client the actual owner.
+        postFormOk(nacosPath(Constants.MCP_CLIENT_PATH), mcpServerForm(name, "1.0.0",
+                name, "private_tool", "private_resource"));
+        Query identity = mcpIdentityQuery(name, null, null);
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+                "mcpName", name, "scope", "PRIVATE"));
+        JsonNode metadata = getJsonOk(ADMIN_MCP_PATH + "/version",
+                mcpLifecycleVersionQuery(name, "1.0.0")).get("data");
+        assertEquals("PRIVATE", metadata.get("scope").asText(), metadata.toString());
+        assertEquals(identityUsername(AuthIdentity.CLIENT_READ_WRITE),
+                metadata.get("owner").asText(), metadata.toString());
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, true);
+        awaitMcpVisibility(name, AuthIdentity.ADMIN, true);
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        for (String path : new String[] {GENERIC_SEARCH_PATH, MCP_SEARCH_PATH}) {
+            HttpResponse response = getRaw(path, Query.newInstance().addParam("query", name),
+                    AuthIdentity.ANONYMOUS);
+            assertEquals(403, response.code(), response.body());
+        }
+        String grantPath = nacosPath("/v3/auth/visibility");
+        Query grant = Query.newInstance().addParam("namespaceId", DEFAULT_NAMESPACE)
+                .addParam("resourceType", "mcp").addParam("resourceName", name)
+                .addParam("username", identityUsername(AuthIdentity.CLIENT_READ_ONLY))
+                .addParam("action", "r");
+        addCleanup(() -> deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE));
+        assertEquals(200, postRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_ONLY, true);
+        assertEquals(200, deleteRaw(grantPath, grant, AuthIdentity.CLIENT_READ_WRITE).code());
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_ONLY, false);
+        for (String scope : new String[] {"PUBLIC", "PRIVATE"}) {
+            putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+                    "mcpName", name, "scope", scope));
+            awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, true);
+            awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_ONLY, "PUBLIC".equals(scope));
+        }
+        putFormOk(ADMIN_MCP_PATH + "/status", Map.of("namespaceId", DEFAULT_NAMESPACE,
+                "mcpName", name, "enabled", "false"));
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, false);
+        putFormOk(ADMIN_MCP_PATH + "/status", Map.of("namespaceId", DEFAULT_NAMESPACE,
+                "mcpName", name, "enabled", "true"));
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, true);
+        postFormOk(ADMIN_MCP_PATH + "/offline", mcpLifecycleVersionQuery(name, "1.0.0"));
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, false);
+        postFormOk(ADMIN_MCP_PATH + "/online", mcpLifecycleVersionQuery(name, "1.0.0"));
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, true);
+        deleteJsonOk(ADMIN_MCP_PATH, identity);
+        awaitMcpVisibility(name, AuthIdentity.CLIENT_READ_WRITE, false);
+    }
+
+    private void awaitMcpVisibility(String name, AuthIdentity identity, boolean visible)
+            throws Exception {
+        JsonNode generic = null;
+        JsonNode dedicated = null;
+        for (int retry = 0; retry <= SEARCH_MAX_RETRIES; retry++) {
+            generic = getJsonOk(GENERIC_SEARCH_PATH, genericQuery(name)
+                    .addParam("resourceTypes", "mcp"), identity);
+            dedicated = getJsonOk(MCP_SEARCH_PATH, Query.newInstance().addParam("query", name)
+                    .addParam("pageNo", "1").addParam("pageSize", "1"), identity);
+            Set<String> expected = visible ? Set.of("mcp:" + name) : Set.of();
+            JsonNode page = dedicated.get("data");
+            if (expected.equals(genericKeys(generic))
+                    && page.get("totalCount").asInt() == (visible ? 1 : 0)
+                    && page.get("pageItems").size() == (visible ? 1 : 0)) {
+                if (visible) {
+                    assertEquals(name, page.get("pageItems").get(0).get("name").asText());
+                }
+                return;
+            }
+            Thread.sleep(SEARCH_RETRY_INTERVAL_MILLIS);
+        }
+        fail("MCP query visibility did not converge for " + identity + ": "
+                + generic + " / " + dedicated);
+    }
+
     @Test
     public void testPublicAgentIndexTracksUnifiedVersionCatalog() throws Exception {
         String agentName = randomAiName("search-public-model");
@@ -292,6 +369,8 @@ public class AiResourceSearchClientOpenApiITCase extends AiAdminApiBaseITCase {
                 "1.0.0", "MCP " + suffix, "tool_" + suffix,
                 "resource_" + suffix));
         assertEquals("ok", publishedMcp.get("data").asText(), publishedMcp.toString());
+        putFormOk(ADMIN_MCP_PATH + "/scope", Map.of("namespaceId", DEFAULT_NAMESPACE,
+                "mcpName", fixture.mcpName, "scope", "PRIVATE"));
         grantClientReadVisibility("mcp", fixture.mcpName);
         return fixture;
     }

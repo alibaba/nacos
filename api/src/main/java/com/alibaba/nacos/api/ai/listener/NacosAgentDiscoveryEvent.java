@@ -53,7 +53,8 @@ public class NacosAgentDiscoveryEvent implements NacosAiEvent {
     }
     
     /**
-     * Create an unavailable transition without exposing a stale discovery result.
+     * Create a confirmed Agent-reference absence transition, without a stale result.
+     * Transport, authorization and task execution failures are not discovery data events.
      *
      * @param errorCode Nacos error code
      * @param errorMessage error description
@@ -82,7 +83,7 @@ public class NacosAgentDiscoveryEvent implements NacosAiEvent {
     }
     
     /**
-     * Get the Nacos error code for an unavailable event.
+     * Get the target-not-found code for an unavailable event.
      *
      * @return error code, or {@code null} for a snapshot
      */

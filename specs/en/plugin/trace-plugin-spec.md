@@ -102,6 +102,13 @@ Current AI resource trace event types include:
 `AiResourceTraceEvent` carries the operator, resource type, resource id,
 optional version, operation, status, client IP, and optional extension text.
 
+Agent Discover reuses this event with `resourceType=agent` and `operation=DISCOVER`
+for best-effort access diagnostics. Resource identity and version use the standard
+fields; namespace, access protocol, source application, Client/connection identity
+and subscription attribution use JSON `ext`. See the
+[Agent API spec](../ai/agent-api-spec.md#discover-diagnostic-business-events)
+for fields and scope.
+
 ## Execution
 
 `NacosCombinedTraceSubscriber` registers a domain event publisher and dispatches

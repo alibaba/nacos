@@ -41,6 +41,12 @@ public class AgentSkill {
     
     private List<String> outputModes;
     
+    /**
+     * A2A 1.0 security requirements for this skill, independent of Card-level requirements.
+     * Missing requirements remain null; an explicit empty list is preserved.
+     */
+    private List<SecurityRequirement> securityRequirements;
+    
     public String getId() {
         return id;
     }
@@ -97,6 +103,22 @@ public class AgentSkill {
         this.outputModes = outputModes;
     }
     
+    /**
+     * Get this skill's A2A 1.0 security requirements.
+     * @return requirements, or null when absent
+     */
+    public List<SecurityRequirement> getSecurityRequirements() {
+        return securityRequirements;
+    }
+    
+    /**
+     * Set this skill's A2A 1.0 security requirements without changing Card-level declarations.
+     * @param securityRequirements requirements, or null when absent
+     */
+    public void setSecurityRequirements(List<SecurityRequirement> securityRequirements) {
+        this.securityRequirements = securityRequirements;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -108,11 +130,13 @@ public class AgentSkill {
                 that.description)
             && Objects.equals(tags, that.tags) && Objects.equals(examples, that.examples)
             && Objects.equals(inputModes, that.inputModes)
-            && Objects.equals(outputModes, that.outputModes);
+            && Objects.equals(outputModes, that.outputModes)
+            && Objects.equals(securityRequirements, that.securityRequirements);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, tags, examples, inputModes, outputModes);
+        return Objects.hash(id, name, description, tags, examples, inputModes, outputModes,
+            securityRequirements);
     }
 }

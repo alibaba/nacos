@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
+import com.alibaba.nacos.api.ai.utils.A2aSecurityUtils;
 import com.alibaba.nacos.api.ai.model.ClientLivenessInfo;
 import com.alibaba.nacos.api.ai.model.agent.client.AgentPublishRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentVersionDetail;
@@ -367,11 +368,25 @@ public class AiGrpcClient implements AiClientProxy {
     @Override
     public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request)
         throws NacosException {
+        return discoverAgent(request, false);
+    }
+    
+    @Override
+    public AgentDiscoveryResult discoverAgent(AgentDiscoveryRequest request, boolean watchNotify)
+        throws NacosException {
         checkServerAbilityStrict(AbilityKey.SERVER_RAD_V1, "RAD v1");
         AgentDiscoveryRpcRequest rpcRequest = new AgentDiscoveryRpcRequest();
         rpcRequest.setDiscoveryRequest(request);
+        if (watchNotify) {
+            rpcRequest.putHeader(AiConstants.Agent.DISCOVERY_TRIGGER_HEADER,
+                AiConstants.Agent.DISCOVERY_TRIGGER_WATCH_NOTIFY);
+        }
         AgentDiscoveryResponse response =
             requestToServer(rpcRequest, AgentDiscoveryResponse.class);
+        if (response.getDiscoveryResult() == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "Invalid Agent Discover response: successful response contains no discoveryResult.");
+        }
         return response.getDiscoveryResult();
     }
     
@@ -730,7 +745,16 @@ public class AiGrpcClient implements AiClientProxy {
         request.setVersion(version);
         request.setRegistrationType(registrationType);
         QueryAgentCardResponse response = requestToServer(request, QueryAgentCardResponse.class);
-        return response.getAgentCardDetailInfo();
+        AgentCardDetailInfo result = response.getAgentCardDetailInfo();
+        if (result != null) {
+            try {
+                A2aSecurityUtils.normalize(result);
+            } catch (IllegalArgumentException e) {
+                throw new NacosException(NacosException.SERVER_ERROR,
+                    "Invalid AgentCard securityRequirements in response", e);
+            }
+        }
+        return result;
     }
     
     /**
@@ -1160,6 +1184,11 @@ public class AiGrpcClient implements AiClientProxy {
                     : response.getErrorCode();
                 if (NacosException.NO_RIGHT == errorCode) {
                     securityProxy.reLogin();
+                }
+                if (request instanceof AgentDiscoveryRpcRequest
+                    && response.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND.getCode()) {
+                    throw new NacosApiException(NacosException.NOT_FOUND,
+                        ErrorCode.RESOURCE_NOT_FOUND, response.getMessage());
                 }
                 if (response.getErrorCode() == ErrorCode.AGENT_ENDPOINT_PUBLICATION_OVER_LIMIT
                     .getCode()) {

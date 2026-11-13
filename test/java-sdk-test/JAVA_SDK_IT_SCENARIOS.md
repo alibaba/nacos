@@ -29,6 +29,24 @@ Destructive process-restart and multi-node variants are orchestrated by
 [`../DEFAULT_AUTH_RELIABILITY_IT.md`](../DEFAULT_AUTH_RELIABILITY_IT.md) rather
 than stopping the server shared by the required standalone suite.
 
+## Card-level A2A security requirements (#15975, item 1)
+
+This matrix extends the existing A2A/RAD surface without adding a new
+coverage-count row:
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| AgentCard security requirements | Decode standard and historical JSON; release/query; facade and native RAD subscriptions synchronize new and old fields across version changes | Covered | `A2aRadRoutingJavaSdkITCase.cardSecurityRequirementsSurviveQueryAndSubscription`, gRPC and HTTP; standard POJO, 0.3 old-field-only, explicit empty new field, and caller isolation. Standard requirements output needs upgraded decoders; Java accessors now use List<SecurityRequirement>, with schemes/StringList POJOs. Historical raw input is covered by HTTP IT and boundary unit tests. Malformed/absent input, inherited DTOs, mutable Java accessors, conflict precedence and Jackson 2/3 are unit-tested. Skill-level requirements are outside this item. |
+
+## Scope extension API boundary coverage
+
+AgentModelValidationJavaSdkITCase verifies the unchanged public Agent/summary/overview
+validator methods without a server or scope provider: PUBLIC/PRIVATE remain accepted,
+unregistered or malformed values fail, and other required fields remain validated.
+AI module tests exercise SPI discovery and dynamic catalog lookup on stored Agent/summary/
+overview projections. No caller passes a scope set. This is local public API boundary
+coverage, not a new remote SDK surface; classifications/counts remain unchanged.
+
 ## Status Legend
 
 | Status | Meaning |
@@ -91,10 +109,10 @@ main interface coverage denominators.
 | `registerInstance` overloads | Default group, explicit group, cluster, `Instance` metadata, string overloads, duplicate registration, invalid IP/port/cluster/service, and persistent/ephemeral behavior where exposed. | Covered | Explicit group, default group, string overload, cluster string overload, metadata, duplicate registration, blank service, null instance, blank instance IP, invalid port/cluster, invalid heartbeat metadata, persistent batch member, single persistent instance lifecycle, and mismatched group prefix are covered. Hostname-style instance addresses remain accepted, so malformed-address format validation is not treated as a Java SDK IT requirement. |
 | `batchRegisterInstance` / `batchDeregisterInstance` | Batch success, partial or invalid member validation, empty list, and cleanup after batch deregister. | Covered | Batch success, empty batch register no-op behavior, partial batch deregister, cleanup, invalid persistent batch member, empty batch deregister validation, and current null-list pre-remote failure behavior are covered. |
 | `deregisterInstance` overloads | Existing instance removal, missing instance/idempotent behavior, default group, cluster overload, and invalid identity. | Covered | Existing removal through `Instance` overload, default string overload removal, cluster string overload removal, missing-instance no-op behavior, and repeated removal idempotency are covered. |
-| `getAllInstances` overloads | Existing, missing service empty result, default group, explicit group, cluster filters, subscribe flag, and empty cluster list behavior. | Covered | Existing query, missing service, default group, explicit group, cluster filter, subscribe=false, subscribe=true cached refresh through server push, and empty cluster list behavior are covered. |
+| `getAllInstances` overloads | Existing, missing service empty result, default group, explicit group, cluster filters, subscribe flag, empty cluster list behavior, disk-cache initialization, resubscription after unsubscribe, and cached reads while DOWN. | Covered | Existing query, missing service, default group, explicit group, cluster filter, subscribe=false, subscribe=true cached refresh through server push, and empty cluster list behavior are covered. Queries returning current instances after disk-cache initialization or unsubscribe are covered; the opt-in real-restart case covers cached reads while DOWN. |
 | `selectInstances` overloads | Healthy-only filtering, unhealthy/disabled boundaries, cluster filters, subscribe flag, and missing-service empty result. | Covered | Healthy selection, explicit unhealthy selection, disabled filtering, zero-weight filtering, cluster filters, subscribe flag variants, and missing-service empty result are covered. |
-| `selectOneHealthyInstance` overloads | Success, cluster selection, default group, subscribe flag, and controlled failure when no healthy instance exists. | Covered | Success, cluster/default-group/subscribe overloads, and missing/no-healthy `IllegalStateException` behavior are covered. |
-| `subscribe` / `unsubscribe` overloads | Initial and update event, cluster/selector filtering, removal stops callbacks, invalid listener, and `getSubscribeServices` state. | Covered | Basic grouped subscribe event, `getSubscribeServices`, cluster filtering, public selector filtering, null listener no-op, unsubscribe-stop behavior, and cleanup are covered. |
+| `selectOneHealthyInstance` overloads | Success, cluster selection, default group, subscribe flag, cached selection while DOWN, and controlled failure when no healthy instance exists. | Covered | Success, cluster/default-group/subscribe overloads, and missing/no-healthy `IllegalStateException` behavior are covered. Cached selection while DOWN is covered by the opt-in real-restart test. |
+| `subscribe` / `unsubscribe` overloads | Initial and update event, cluster/selector filtering, removal stops callbacks, invalid listener, `getSubscribeServices` state, and listener recovery after restart. | Covered | Basic grouped subscribe event, `getSubscribeServices`, cluster filtering, public selector filtering, null listener no-op, unsubscribe-stop behavior, and cleanup are covered. The opt-in real-restart test verifies that the original listener receives subsequent updates without discovery queries driving subscription recovery. |
 | Fuzzy watch APIs | Fixed group pattern, service+group pattern, matched service keys, event callback, cancel behavior, invalid pattern/listener. | Partial | Service+group pattern matching, matched service-key return, add event callback, and cancel-stop behavior are covered. Delete-service event callback remains because public instance deregistration does not reliably produce a `DELETE_SERVICE` fuzzy-watch event and the Java SDK has no public service delete API. Null watcher is already a no-op in the Naming SDK path and invalid pattern is covered by SDK-side pattern generation. |
 | `getServicesOfServer` overloads | Pagination, default group, explicit group, selector overload, empty pages, and invalid page boundary. | Covered | Default and explicit group pages containing registered services, deprecated selector overloads, empty second page, and current `pageNo=0` first-page normalization are covered. |
 
@@ -411,3 +429,45 @@ passing migration coverage. See C11_PROGRESS.md for all 66 report groups and ski
 ### A2A metadata reserved-key regression
 
 A2A conversion and RAD metadata use the same `__nacos.agent.endpoint.protocolVersion__` / `__nacos.agent.endpoint.tenant__` keys as legacy Naming Instances. AgentDiscoveryService and A2aRadRouting SDK ITs verify HTTP/gRPC/AUTO Discover/Watch and legacy projection under default/Jackson 3 profiles; migration comparator UTs verify identical old/new meaning and changed tenant/protocol detection. Invalid control metadata remains rejected.
+
+
+## Agent SDK functional regressions
+
+Execution ownership and method-level assertions are maintained in the
+[Agent functional matrix](AGENT_DISCOVERY_SDK_IT_SCENARIOS.md#agent-sdk-functional-regression).
+The ordinary functional job is [`it-new.yml`](../../.github/workflows/it-new.yml);
+directed restart/cluster cases use the existing
+[reliability workflow](../../.github/workflows/default-auth-reliability-it.yml).
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| Agent discovery capability | Selected transport, query before/after business use, shutdown and unchanged A2A routing | Covered | `AiServiceJavaSdkITCase`, `A2aRadRoutingJavaSdkITCase`; default-method compatibility, unsupported/unknown evidence and resolver failure branches additionally have UT coverage. |
+| Explicit A2A snapshot conversion | Descriptor preservation, visible endpoint sources, disabled filtering, input isolation, application-owned conversion failures and subsequent updates | Covered | Three Converter workflows in `AgentDiscoveryServiceJavaSdkITCase`; malformed input and identity mismatch additionally have deterministic UT coverage. |
+| Native initial and changed state | Void subscription, initial state, duplicate/new Listener behavior, missing selectors, deletion/recreation and old A2A empty-Card suppression | Covered | Named initial/missing/deletion methods in the Agent matrix; exact initialization races remain UT assertions. |
+| Accepted Watch recovery | Permission revoke/restore, HTTP quota growth rollback and retained additions, cancellation freeing a slot | Covered | Auth/capacity fixtures in `it-new.yml`; internal binding failures and 50105 recovery are UT evidence, not real migration fault injection. |
+| Latest-state Listener delivery | Slow Listener coalescing, rejected Executor recovery without a new change, later notification after callback throws | Covered | Public gRPC/HTTP functional cases use application Executor hooks; bounded internal memory and getExecutor failure races are additionally tested in UT. |
+| Restart and multi-node lifecycle | Original subscriptions and endpoint redo recover across restart, pinned-node changes and rolling peer restart | Covered | Four methods selected by the fixed reliability workflow; its environment is separate from the normal functional job. |
+
+Coverage is scoped to these behavior groups and does not promote unrelated SDK
+registry rows. Local upgrade experiments and one-off coverage/run summaries are
+kept outside the committed scenario matrix.
+
+## A2A Skill security requirements (#15975, item 2)
+
+Status: Covered = important contract verified; Partial = representative scenarios; Pending = no IT.
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| A2A facade and native RAD / `A2aRadRoutingJavaSdkITCase` | Publish, query, converter, initial and updated RAD callbacks, removal, invalid POJO | Covered | HTTP/gRPC preserve independent Card and Skill declarations, multiple Skills, OR/AND schemes, scopes, absent/empty fields; newer Versions change/clear/remove Skill requirements, and incomplete typed requirements fail with INVALID_PARAM. Source Card remains unchanged. Same-Version descriptor-only fingerprint changes and unchanged snapshot suppression use deterministic RAD Watch UT; canonical online definitions remain immutable. |
+
+Legacy polling behavior and 0.3 Skill adaptation are unchanged and outside this increment.
+Old peers that discard unknown Skill fields do not gain support; end-to-end preservation requires upgraded typed paths.
+
+## Agent request builders
+
+| Public SDK surface | Required scenarios | Current status | Current/missing coverage |
+| --- | --- | --- | --- |
+| AgentRequestBuilder | Generic and A2A publish/register; Card defaults and interface replacement; tenant/protocolVersion and ordering round trip; exact/range bindings; invalid input; independent results | Covered | `AgentRequestBuilderJavaSdkITCase`: nine external-client cases across HTTP/gRPC/AUTO, included in both JSON adapter CI profiles. Pure aliasing and malformed inputs are covered by API unit tests; four pre-refactor storage digests pin legacy and current Card migration under URL/SERVICE. |
+
+Builder scenario coverage: 1 Covered / 1 surface; strict 100%, effective 100%.
+This local helper surface does not add a service interface to the registry denominator.

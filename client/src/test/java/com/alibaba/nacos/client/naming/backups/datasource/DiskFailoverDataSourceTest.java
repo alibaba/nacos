@@ -22,7 +22,9 @@ import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,9 +47,10 @@ class DiskFailoverDataSourceTest {
     }
     
     @Test
-    void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-            .getResource("failover_test/disabled").getPath();
+    void testGetSwitchForFailoverDisabled()
+        throws NoSuchFieldException, IllegalAccessException, URISyntaxException {
+        String dir = new File(DiskFailoverDataSourceTest.class.getClassLoader()
+            .getResource("failover_test/disabled").toURI()).getAbsolutePath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -55,9 +58,10 @@ class DiskFailoverDataSourceTest {
     }
     
     @Test
-    void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-            .getResource("failover_test/enabled").getPath();
+    void testGetSwitchForFailoverEnabled()
+        throws NoSuchFieldException, IllegalAccessException, URISyntaxException {
+        String dir = new File(DiskFailoverDataSourceTest.class.getClassLoader()
+            .getResource("failover_test/enabled").toURI()).getAbsolutePath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -84,9 +88,10 @@ class DiskFailoverDataSourceTest {
     }
     
     @Test
-    void testGetSwitchForFailoverEnabledKeep() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-            .getResource("failover_test/enabled").getPath();
+    void testGetSwitchForFailoverEnabledKeep()
+        throws NoSuchFieldException, IllegalAccessException, URISyntaxException {
+        String dir = new File(DiskFailoverDataSourceTest.class.getClassLoader()
+            .getResource("failover_test/enabled").toURI()).getAbsolutePath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         assertTrue(dataSource.getSwitch().getEnabled());
@@ -94,9 +99,9 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverDisabledKeep()
-        throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-            .getResource("failover_test/disabled").getPath();
+        throws NoSuchFieldException, IllegalAccessException, URISyntaxException {
+        String dir = new File(DiskFailoverDataSourceTest.class.getClassLoader()
+            .getResource("failover_test/disabled").toURI()).getAbsolutePath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         assertFalse(dataSource.getSwitch().getEnabled());

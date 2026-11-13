@@ -162,6 +162,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
             String name = randomServiceName("agent-scope-watch");
             addCleanup(() -> maintainer.deleteAgent(name));
             publisher.agent().publishAgent(initialRequest(name, VERSION_ONE, "scope", true));
+            java.util.concurrent.atomic.AtomicInteger snapshots = new java.util.concurrent.atomic.AtomicInteger();
             CountDownLatch snapshotReceived = new CountDownLatch(1);
             CountDownLatch unavailableReceived = new CountDownLatch(1);
             AtomicReference<NacosAgentDiscoveryEvent> unavailable = new AtomicReference<>();
@@ -170,6 +171,7 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
                         @Override
                         public void onEvent(NacosAgentDiscoveryEvent event) {
                             if (event.getType() == NacosAgentDiscoveryEventType.SNAPSHOT) {
+                                snapshots.incrementAndGet();
                                 snapshotReceived.countDown();
                             } else {
                                 unavailable.set(event);
@@ -177,20 +179,19 @@ class AgentPublishJavaSdkITCase extends JavaSdkBaseITCase {
                             }
                         }
                     };
-            AgentDiscoveryResult initial = reader.agent().subscribeAgent(reference(name, null), listener);
-            if (initial != null) {
-                snapshotReceived.countDown();
-            }
+            reader.agent().subscribeAgent(reference(name, null), listener);
             addCleanup(() -> reader.agent().unsubscribeAgent(reference(name, null), listener));
             assertTrue(snapshotReceived.await(25, TimeUnit.SECONDS),
                     transport + " initial Watch snapshot");
             assertTrue(maintainer.updateScope(name, "PRIVATE"));
             assertTrue(unavailableReceived.await(25, TimeUnit.SECONDS),
                     transport + " private scope Watch invalidation");
-            assertEquals(Integer.valueOf("GRPC".equals(transport)
-                            ? NacosException.RESOURCE_NOT_FOUND : NacosException.NOT_FOUND),
+            assertEquals(Integer.valueOf(NacosException.NOT_FOUND),
                     unavailable.get().getErrorCode());
             assertNull(unavailable.get().getAgentDiscoveryResult());
+            assertTrue(maintainer.updateScope(name, "PUBLIC"));
+            waitUntil(transport + " same subscription observes restored visibility", 25000L,
+                    () -> snapshots.get() >= 2);
             reader.agent().unsubscribeAgent(reference(name, null), listener);
         }
     }

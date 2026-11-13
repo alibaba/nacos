@@ -46,6 +46,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -139,6 +140,7 @@ class ConfigOperationServiceTest {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         String expectedCasMd5 = "test-cas-md5-value";
+        configForm.setChangeMessage("CAS operation");
         configRequestInfo.setBetaIps("test-betaIps");
         configRequestInfo.setCasMd5(expectedCasMd5);
         configForm.setTag("");
@@ -155,8 +157,9 @@ class ConfigOperationServiceTest {
         
         assertTrue(result);
         
-        // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
+        // Gray publish does not record change messages; formal CAS publish does.
         ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertNull(capturedConfigInfo.getChangeMessage());
         assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(),
             "ConfigInfo's md5 should be set to casMd5 value");
         assertEquals("test", capturedConfigInfo.getDataId());
@@ -216,6 +219,7 @@ class ConfigOperationServiceTest {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         String expectedCasMd5 = "test-cas-md5-value";
+        configForm.setChangeMessage("CAS operation");
         String tag = "testTag";
         configRequestInfo.setCasMd5(expectedCasMd5);
         configForm.setTag(tag);
@@ -232,8 +236,9 @@ class ConfigOperationServiceTest {
         
         assertTrue(result);
         
-        // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
+        // Gray publish does not record change messages; formal CAS publish does.
         ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertNull(capturedConfigInfo.getChangeMessage());
         assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(),
             "ConfigInfo's md5 should be set to casMd5 value");
         assertEquals("test", capturedConfigInfo.getDataId());
@@ -624,6 +629,7 @@ class ConfigOperationServiceTest {
         configForm.setGroup("test");
         configForm.setContent("test content");
         configForm.setTag("");
+        configForm.setChangeMessage("x".repeat(513));
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setBetaIps("1.1.1.1");
@@ -640,4 +646,14 @@ class ConfigOperationServiceTest {
             configForm, configRequestInfo, "");
         assertTrue(result);
     }
+    
+    @Test
+    void testOversizedMessageDoesNotReachPersistence() {
+        ConfigForm form = new ConfigForm();
+        form.setChangeMessage("x".repeat(513));
+        assertThrows(NacosApiException.class,
+            () -> configOperationService.publishConfig(form, new ConfigRequestInfo(), ""));
+        Mockito.verifyNoInteractions(configInfoPersistService, configInfoGrayPersistService);
+    }
+    
 }

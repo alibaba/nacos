@@ -256,6 +256,10 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         postFormOk(ADMIN_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
         putFormOk(ADMIN_SKILL_PATH + "/draft", frontMatterForm(name, "Draft"));
         assertFrontMatter(name, "Published", "1.0.0");
+        postFormOk(ADMIN_SKILL_PATH + "/offline", skillOnlineForm(name, "1.0.0", null));
+        assertFrontMatter(name, "Draft", "2.0.0");
+        postFormOk(ADMIN_SKILL_PATH + "/online", skillOnlineForm(name, "1.0.0", null));
+        assertFrontMatter(name, "Published", "1.0.0");
         deleteJsonOk(ADMIN_SKILL_PATH + "/draft", skillQuery(name));
         assertFrontMatter(name, "Published", "1.0.0");
         postFormOk(ADMIN_SKILL_PATH + "/draft", skillForkForm(name, "2.0.0", "1.0.0"));
@@ -274,12 +278,20 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertTrue(!item.has("frontMatter") || item.get("frontMatter").isNull(), item.toString());
         assertTrue(!item.has("frontMatterTruncated")
                 || item.get("frontMatterTruncated").isNull(), item.toString());
+        assertEquals("Published", item.path("description").asText(), item.toString());
+        assertEquals(0, item.path("onlineCnt").asInt(-1), item.toString());
+        assertFalse(item.path("labels").has("latest"), item.toString());
+        postFormOk(ADMIN_SKILL_PATH + "/offline", skillOnlineForm(name, "2.0.0", null));
+        JsonNode offline = getJsonOk(ADMIN_SKILL_PATH, skillQuery(name)).get("data");
+        assertEquals("Published", offline.path("description").asText(), offline.toString());
+        postFormOk(ADMIN_SKILL_PATH + "/online", skillOnlineForm(name, "1.0.0", null));
+        assertFrontMatter(name, "Published", "1.0.0");
     }
 
     private Map<String, String> frontMatterForm(String name, String alias) {
         Map<String, String> form = skillQueryForm(name);
-        form.put("skillCard", JacksonUtils.toJson(Map.of("name", name, "description", "Display test",
-                "skillMd", "---\nname: " + name + "\ndescription: Display test\nalias: " + alias
+        form.put("skillCard", JacksonUtils.toJson(Map.of("name", name, "description", alias,
+                "skillMd", "---\nname: " + name + "\ndescription: " + alias + "\nalias: " + alias
                         + "\nmetadata:\n  custom: custom-value\n---\nUse these instructions.\n")));
         return form;
     }
@@ -293,6 +305,7 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertNotNull(frontMatter, item.toString());
         assertTrue(frontMatter.isObject(), item.toString());
         assertEquals(alias, frontMatter.path("alias").asText(), item.toString());
+        assertEquals(alias, item.path("description").asText(), item.toString());
         assertEquals(name, frontMatter.path("name").asText(), item.toString());
         assertEquals(item.path("description").asText(),
                 frontMatter.path("description").asText(), item.toString());
@@ -301,6 +314,7 @@ public class SkillAdminApiOpenApiITCase extends AiAdminApiBaseITCase {
         assertFalse(item.path("frontMatterTruncated").asBoolean(true), item.toString());
         JsonNode detail = getJsonOk(ADMIN_SKILL_PATH, skillQuery(name)).get("data");
         assertEquals(frontMatter, detail.get("frontMatter"), detail.toString());
+        assertEquals(alias, detail.path("description").asText(), detail.toString());
         assertFalse(detail.path("frontMatterTruncated").asBoolean(true), detail.toString());
     }
 

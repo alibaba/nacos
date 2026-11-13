@@ -42,7 +42,7 @@
 | `namespaceId` | 资源所属命名空间。 |
 | `resourceType` | 命名空间内的资源类别。 |
 | `resourceName` | 资源类型内稳定的资源名。 |
-| `scope` | 可见性范围，目前为 `PUBLIC` 或 `PRIVATE`。 |
+| `scope` | 可见性范围，默认目录包含 `PUBLIC` 和 `PRIVATE`。 |
 | `owner` | 资源所有者身份。 |
 
 这遵循 Nacos 资源层次：
@@ -57,6 +57,7 @@ NamespaceId -> resourceType -> resourceName
 
 | 方法 | 要求 |
 |------|------|
+| `getAdditionalScopes()` | 可选声明扩展 scope，默认返回空集合。 |
 | `getVisibilityServiceName()` | 返回稳定的插件名称。 |
 | `init(properties)` | 已废弃的历史初始化回调，仅供未接入统一插件配置的实现兼容使用。 |
 | `resolveDefaultScopeForCreate(identity, apiType, resourceType)` | 当创建资源未显式指定 scope 时，决定默认 scope。 |
@@ -82,7 +83,7 @@ nacos.plugin.visibility.type=nacos
 | `r` | 读取或列出可见资源。 |
 | `w` | 创建、更新、删除或改变可见性敏感的资源状态。 |
 
-写可见性必须严于读可见性。公开读权限不意味着公开写权限。
+写可见性的范围不得超过读可见性。公开读权限不意味着公开写权限。
 
 ## 查询建议
 
@@ -92,6 +93,7 @@ nacos.plugin.visibility.type=nacos
 | 字段 | 目的 |
 |------|------|
 | `BaseVisibilityPredicate` | 基础谓词，例如所有资源、仅公开资源、仅 owner 资源，或公开加 owner 资源。 |
+| `publicScopes` | 公开分支的 scope 名称，默认仅包含 `PUBLIC`。 |
 | `AuthorizedResources` | 需要额外包含的显式授权资源名。 |
 
 列出资源的 API 或存储适配层必须组合这两部分，且不得泄漏私有资源。
@@ -111,9 +113,9 @@ nacos.plugin.visibility.type=nacos
 | 谓词 | `B` 的求解结果 |
 |------|----------------|
 | `ALL` | 恒成立；不追加可见性条件。 |
-| `PUBLIC` | 当 `scope=PUBLIC` 时成立；当调用方的业务筛选与公开 scope 冲突时恒不成立。 |
+| `PUBLIC` | 当 `scope IN publicScopes` 时成立；当调用方的业务筛选与公开 scope 冲突时恒不成立。 |
 | `OWNER` | 当 `owner=identity` 时成立；当身份为空，或调用方的业务筛选与该身份作为 owner 冲突时恒不成立。 |
-| `PUBLIC_AND_OWNER` | 当 `scope=PUBLIC OR owner=identity` 时成立；匿名调用方退化为 `PUBLIC` 的求解规则。仅当调用方的业务筛选同时将 scope 和 owner 固定为与两个分支都冲突的值时才恒不成立。 |
+| `PUBLIC_AND_OWNER` | 当 `scope IN publicScopes OR owner=identity` 时成立；匿名调用方退化为 `PUBLIC` 的求解规则。仅当调用方的业务筛选同时将 scope 和 owner 固定为与两个分支都冲突的值时才恒不成立。 |
 
 只有在 `B` 求解完成后，才能与 `G` 取并集：`B` 恒成立时 `G` 不再重要（`B OR G` 仍然恒
 成立）；`B` 恒不成立时 `B OR G` 会退化为只剩 `G`；`B` 为 OR 分支时，`G` 会作为额外的一
@@ -222,3 +224,27 @@ DELETE /v3/auth/visibility
 - 避免通过数量、错误信息或部分列表响应暴露私有资源名。
 - 当 API 需要隐藏资源存在性时，单资源读拒绝应返回 not found。
 - 写拒绝应返回 access denied。
+
+## 可扩展 scope 声明
+
+VisibilityService.getAdditionalScopes() 默认返回空集合。每个声明仅包含 scopeName 和
+publicScope。所选且启用的插件在内置 PUBLIC（公开）、PRIVATE（非公开）之外声明额外值。
+名称使用 Locale.ROOT 转为大写，长度 1–16，首字符为 ASCII 字母，其余为字母、数字或下划线。
+拒绝空声明、重复名称和覆盖内置值。注册表不声明或校验动作集合；publicScope 仅分类 scope，
+不直接授予任何操作权限。读写权限继续由可见性插件判断。
+
+Form 使用所选声明集合校验名称。AgentModelValidator 保留 Agent、Summary、Overview 原有
+单参数方法，内部通过 Java SPI 发现 AgentScopeProvider；AI 模块桥接到同一份所选插件目录。
+没有 Provider 时仅支持 PUBLIC/PRIVATE。Provider 实例缓存，允许值每次校验时获取，避免
+插件状态变化后继续使用旧值。API 模块不依赖服务端或可见性模块，其他模型字段校验保持不变。
+
+QueryAdvisor.publicScopes 表示本次请求中 PUBLIC、PUBLIC_AND_OWNER 的公开分支。
+插件根据当前动作选择参与该分支的公开 scope；publicScope=true 本身不代表允许公开写。
+未设置保留 PUBLIC 单值语义，显式空集合使该分支恒假。setter 拒绝 null 集合和非法名称
+（含 null、空白和非规范名称），先复制并校验再赋值，避免异常扩展输入变成缺失的 SQL 限制。
+名称必须使用注册表中的规范大写格式；OWNER、ALL 不变。
+转换器保持 F AND (B OR G)，覆盖业务筛选、匿名身份及显式授权，多个 scope 保留参数化 IN。
+无需数据库迁移。存量资源应保留对应声明；移除或禁用声明不会自动迁移数据。
+前置身份校验、请求级授权及命名空间边界保持不变。仅注册 scope 不会改变 QueryAdvisor，
+也不会自动授予权限。插件是可信的策略实现，必须在既有请求授权通过后，为当前动作选择
+适当的公开分支；转换器不是身份校验或匿名登录的绕过入口。

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { getLanguage, setLanguage as saveLanguage, getTheme, setTheme as saveTheme, getSidebarCollapsed, setSidebarCollapsed as saveSidebarCollapsed } from '@/lib/storage';
+import { DEFAULT_LANGUAGE, type Language } from '@/locales/languages';
 
 type Theme = 'light' | 'dark';
-type Language = 'zh-CN' | 'en-US';
 
 interface AppState {
   sidebarCollapsed: boolean;
@@ -24,7 +24,7 @@ export const useAppStore = create<AppStore>((set) => ({
   // State with defaults
   sidebarCollapsed: false,
   theme: 'light',
-  language: 'zh-CN',
+  language: DEFAULT_LANGUAGE,
 
   // Actions
   toggleSidebar: () => {

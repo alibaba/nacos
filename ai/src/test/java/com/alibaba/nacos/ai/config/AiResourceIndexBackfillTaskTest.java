@@ -35,9 +35,8 @@ import com.alibaba.nacos.ai.service.search.AiResourceSearchTypeHandlerRegistry;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -138,8 +137,6 @@ class AiResourceIndexBackfillTaskTest {
             .thenReturn(List.of(new Namespace(PUBLIC_NAMESPACE, "public")));
         lenient().when(resourceManager.listMetaByType(anyString(), anyString(), isNull(), isNull(),
             anyInt(), eq(100))).thenReturn(emptyPage());
-        lenient().when(mcpServerOperationService.listMcpServerWithPage(anyString(), isNull(),
-            eq(Constants.MCP_LIST_SEARCH_ACCURATE), anyInt(), eq(100))).thenReturn(emptyPage());
         lenient().when(
             indexMaintenanceService.scheduleReconciliation(anyString(), anyString(), anyString()))
             .thenReturn(true);
@@ -357,9 +354,6 @@ class AiResourceIndexBackfillTaskTest {
                 return resourceTypes.contains(AiResourceConstants.RESOURCE_TYPE_MCP)
                     ? List.of(legacyIdEntry) : Collections.emptyList();
             });
-        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, null,
-            "legacy-mcp-id", null)).thenThrow(new NacosException(NacosException.NOT_FOUND,
-                "MCP server not found"));
         
         task.onApplicationEvent(rootContextEvent());
         
@@ -395,9 +389,8 @@ class AiResourceIndexBackfillTaskTest {
             Constants.Skills.RESOURCE_TYPE_SKILL))
             .thenReturn(resource(PUBLIC_NAMESPACE, Constants.Skills.RESOURCE_TYPE_SKILL,
                 "stored-skill", "1.0.0"));
-        when(mcpServerOperationService.getMcpServerDetail(PUBLIC_NAMESPACE, null,
-            "uncertain-mcp", null)).thenThrow(new NacosException(NacosException.SERVER_ERROR,
-                "temporary failure"));
+        when(resourceManager.findMeta(PUBLIC_NAMESPACE, "uncertain-mcp", "mcp"))
+            .thenThrow(new IllegalStateException("temporary failure"));
         
         task.onApplicationEvent(rootContextEvent());
         
@@ -429,10 +422,14 @@ class AiResourceIndexBackfillTaskTest {
     }
     
     @Test
-    void shouldScheduleMcpReconciliation() throws Exception {
-        McpServerBasicInfo basic = mcpServer("avatar-mcp", "1.0.0");
-        when(mcpServerOperationService.listMcpServerWithPage(PUBLIC_NAMESPACE, null,
-            Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(page(List.of(basic)));
+    void shouldScheduleMissingPrivateMcpReconciliationWithoutBusinessWrites() throws Exception {
+        McpServerDetailInfo basic = mcpServer("avatar-mcp", "1.0.0");
+        AiResource privateResource = resource(PUBLIC_NAMESPACE, "mcp", "Avatar MCP", "1.0.0");
+        privateResource.setScope("PRIVATE");
+        when(resourceManager.listMetaByType(PUBLIC_NAMESPACE, "mcp", null, null, 1, 100))
+            .thenReturn(page(List.of(privateResource)));
+        when(mcpServerOperationService.getMcpServerIndexSource(privateResource, null))
+            .thenReturn(basic);
         
         task.onApplicationEvent(rootContextEvent());
         
@@ -623,11 +620,11 @@ class AiResourceIndexBackfillTaskTest {
         return result;
     }
     
-    private McpServerBasicInfo mcpServer(String id, String version) {
+    private McpServerDetailInfo mcpServer(String id, String version) {
         ServerVersionDetail versionDetail = new ServerVersionDetail();
         versionDetail.setVersion(version);
         versionDetail.setIs_latest(true);
-        McpServerBasicInfo server = new McpServerBasicInfo();
+        McpServerDetailInfo server = new McpServerDetailInfo();
         server.setId(id);
         server.setName("Avatar MCP");
         server.setVersion(version);
