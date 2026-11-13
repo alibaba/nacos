@@ -127,7 +127,7 @@ export function Header() {
         <Layers size={16} className="text-primary shrink-0" />
         <span className="text-xs font-medium text-foreground/70 shrink-0 hidden lg:inline">{t('common.selectNamespace')}</span>
         <Select value={currentNamespace} onValueChange={handleNamespaceChange}>
-          <SelectTrigger className="h-8 w-[180px] text-xs">
+          <SelectTrigger className="h-8 w-[100px] text-xs lg:w-[180px]">
             <SelectValue placeholder={t('common.selectNamespace')} />
           </SelectTrigger>
           <SelectContent>
@@ -144,7 +144,7 @@ export function Header() {
       </div>
 
       {/* Center - Navigation links */}
-      <nav className="hidden md:flex items-center gap-0.5">
+      <nav className="hidden min-w-0 items-center gap-0.5 overflow-x-auto md:flex">
         {NAV_LINKS.map((link) => {
           const href = typeof link.href === 'function' ? link.href(baseUrl) : link.href;
           return (
@@ -153,7 +153,7 @@ export function Header() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent"
             >
               {t(`header.${link.key}`)}
               {link.hot && (
@@ -172,16 +172,16 @@ export function Header() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" asChild>
-              <a href="../legacy/">
+              <a href="../legacy/" aria-label={t('common.legacyConsole')}>
                 <ArrowLeftRight size={14} />
-                {t('common.legacyConsole')}
+                <span className="hidden lg:inline">{t('common.legacyConsole')}</span>
               </a>
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('common.switchToLegacy')}</TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 hidden h-5 md:block" />
 
         {/* Language selector */}
         <DropdownMenu>
@@ -227,13 +227,13 @@ export function Header() {
         {authEnabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground">
+            <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground" aria-label={username || t('login.username')}>
               <Avatar className="h-6 w-6">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[10px]">
                   {(username || 'U')[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs max-w-[80px] truncate hidden sm:inline">{username}</span>
+              <span className="text-xs max-w-[80px] truncate hidden md:inline">{username}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
