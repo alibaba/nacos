@@ -147,6 +147,10 @@ Console owns the browser entry and static asset serving behavior:
 Console guide and announcement content are UI presentation data. They are not
 canonical Core server state and must not be used as domain configuration.
 
+In the Next UI, entering a sidebar group must expand it automatically. Users must
+still be able to collapse the active group, including the platform section,
+without changing the current page.
+
 Lifecycle-managed AI Resource detail pages should share the same status and
 Version presentation primitives. MCP, Skill, and Prompt must not independently
 reimplement enabled/disabled, public/private, latest, draft, reviewing, pending,
