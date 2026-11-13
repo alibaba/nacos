@@ -1,0 +1,9 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.core.simple.DefaultJdbcClient"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.datasource.DelegatingDataSource"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.support.JdbcAccessor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.jdbc.support.JdbcTransactionManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.jdbc.datasource.ConnectionProxy"]}}
+  ]
+}

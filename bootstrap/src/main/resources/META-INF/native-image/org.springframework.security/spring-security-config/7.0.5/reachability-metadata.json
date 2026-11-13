@@ -1,0 +1,15 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.AbstractConfiguredSecurityBuilder"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.AbstractSecurityBuilder"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$EnableGlobalAuthenticationAutowiredConfigurer"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.web.builders.WebSecurity"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.web.configuration.EnableWebSecurity"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.web.configuration.ObservationConfiguration$1"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.web.configuration.ObservationConfiguration$2"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.config.annotation.web.configuration.ObservationConfiguration$3"}
+  ]
+}

@@ -168,7 +168,12 @@
         <micrometer.version>1.15.11</micrometer.version>
         
         <!-- native -->
-        <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
+        <!-- The index.json files of the metadata repository 1.0.x have no "module" field, which 0.10.x
+             filters on, so only 1.1.x finds the configurations of the repository. -->
+        <native-maven-plugin.version>1.1.18</native-maven-plugin.version>
+        <!-- Release of the GraalVM reachability metadata repository that the native profile always
+             adds to the build, see bootstrap/README-AOT.md. -->
+        <graalvm-reachability-metadata.version>1.0.22</graalvm-reachability-metadata.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -371,6 +376,7 @@
                         <exclude>**/jni-config.json</exclude>
                         <exclude>**/predefined-classes-config.json</exclude>
                         <exclude>**/serialization-config.json</exclude>
+                        <exclude>**/reachability-metadata.json</exclude>
                         <exclude>**/filter-config.json</exclude>
                         <!-- Strict JSON Schema cannot carry a source-code comment header. -->
                         <exclude>specs/schemas/**/*.schema.json</exclude>

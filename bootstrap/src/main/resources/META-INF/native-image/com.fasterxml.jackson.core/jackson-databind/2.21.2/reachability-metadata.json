@@ -1,0 +1,11 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.deser.BeanDeserializerModifier[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.deser.Deserializers[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.deser.KeyDeserializers[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.deser.ValueInstantiators[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.ser.BeanSerializerModifier[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "com.fasterxml.jackson.databind.ser.Serializers[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.fasterxml.jackson.databind.ser.std.StdJdkSerializers$AtomicLongSerializer"}
+  ]
+}

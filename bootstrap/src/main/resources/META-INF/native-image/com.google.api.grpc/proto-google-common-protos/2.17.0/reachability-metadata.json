@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.alibaba.nacos.istio.server.IstioServer"}, "type": "com.google.api.FieldBehavior"}
+  ]
+}

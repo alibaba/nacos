@@ -1,0 +1,7 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.PostConstruct"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.PreDestroy"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "jakarta.annotation.Resource"}
+  ]
+}

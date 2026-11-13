@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "com.zaxxer.hikari.HikariConfig"}, "type": "org.apache.derby.shared.common.stream.InfoStreams"}
+  ]
+}

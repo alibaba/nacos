@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "io.grpc.internal.GrpcUtil"}, "type": "io.grpc.internal.SerializingExecutor"},
+    {"condition": {"typeReached": "io.grpc.internal.GrpcUtil"}, "fields": [{"name": "stream"}], "type": "io.grpc.internal.ServerCallImpl"}
+  ]
+}

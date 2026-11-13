@@ -1,0 +1,26 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.SpringBootConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.ansi.AnsiOutput$Enabled"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.config.ConfigDataLocation[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.config.ConfigDataNotFoundAction"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.properties.ConfigurationProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.properties.ConfigurationPropertiesSource"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.properties.EnableConfigurationProperties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.context.properties.bind.Name"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.logging.logback.ColorConverter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.logging.logback.EnclosedInSquareBracketsConverter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.logging.logback.RootLogLevelConfigurator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.origin.OriginProvider[]"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.servlet.AbstractFilterRegistrationBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.servlet.DelegatingFilterProxyRegistrationBean$1"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.servlet.DynamicRegistrationBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.servlet.RegistrationBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.web.servlet.ServletRegistrationBean"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": {"proxy": ["org.springframework.boot.context.properties.ConfigurationProperties"]}}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"}
+  ]
+}

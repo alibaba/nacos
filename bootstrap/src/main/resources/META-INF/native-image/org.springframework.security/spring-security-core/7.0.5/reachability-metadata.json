@@ -1,0 +1,10 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authentication.AnonymousAuthenticationProvider"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authentication.AuthenticationProvider"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authentication.ProviderManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authentication.dao.DaoAuthenticationProvider"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.security.authorization.AuthorizationManager"}
+  ]
+}

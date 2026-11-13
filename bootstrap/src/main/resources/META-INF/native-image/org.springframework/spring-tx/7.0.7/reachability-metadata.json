@@ -1,0 +1,11 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.dao.DataAccessException"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.annotation.EnableTransactionManagement"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.interceptor.TransactionAspectSupport"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.support.AbstractPlatformTransactionManager"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.transaction.support.DefaultTransactionDefinition"}
+  ]
+}

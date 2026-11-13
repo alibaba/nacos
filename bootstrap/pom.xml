@@ -111,6 +111,8 @@
                 <nacos.native.config>${project.basedir}/../distribution/conf/application.properties</nacos.native.config>
                 <nacos.native.plugins>${project.build.directory}/native-plugins</nacos.native.plugins>
                 <nacos.native.metadata>${project.build.directory}/native-metadata</nacos.native.metadata>
+                <!-- The GraalVM reachability metadata repository is always part of the Native classpath. -->
+                <nacos.native.repository.directory>${project.build.directory}/native-reachability</nacos.native.repository.directory>
                 <nacos.native.deployment>merged</nacos.native.deployment>
                 <nacos.native.standalone>false</nacos.native.standalone>
                 <nacos.native.embedded-storage>false</nacos.native.embedded-storage>
@@ -135,6 +137,18 @@
                         <version>3.1.0</version>
                         <executions>
                             <execution>
+                                <id>clear-native-reachability</id>
+                                <phase>generate-resources</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <!-- This plugin is declared before the native plugin, so the
+                                             directory is cleared before add-reachability-metadata runs. -->
+                                        <delete dir="${nacos.native.repository.directory}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>prepare-multi-context-native</id>
                                 <phase>prepare-package</phase>
                                 <goals><goal>run</goal></goals>
@@ -152,10 +166,12 @@
                                         <mkdir dir="${project.build.directory}/native/home/conf"/>
                                         <mkdir dir="${nacos.native.plugins}"/>
                                         <mkdir dir="${nacos.native.metadata}"/>
+                                        <mkdir dir="${nacos.native.repository.directory}"/>
                                         <copy file="${nacos.native.config}"
                                               tofile="${project.build.directory}/native/home/conf/application.properties" overwrite="true"/>
                                         <path id="nacos.native.runtime.path">
                                             <pathelement location="${project.build.directory}/native/classes"/>
+                                            <pathelement location="${nacos.native.repository.directory}"/>
                                             <path refid="maven.runtime.classpath"/>
                                             <fileset dir="${nacos.native.plugins}" includes="**/*.jar"/>
                                         </path>
@@ -194,6 +210,24 @@
                         <artifactId>native-maven-plugin</artifactId>
                         <version>${native-maven-plugin.version}</version>
                         <executions>
+                            <!-- The plugin adds the metadata of the repository only when it builds the classpath
+                                 of the image itself. This build passes the exact classpath in classpath.args, so
+                                 the goal copies the metadata of the artifacts of this module into a directory that
+                                 the classpath of the image contains. The directory is not target/classes: the files
+                                 of an artifact must not meet the bundled ones, which have the same names.
+                                 clear-native-reachability deletes the directory before this goal runs. -->
+                            <execution>
+                                <id>add-reachability-metadata</id>
+                                <phase>generate-resources</phase>
+                                <goals><goal>add-reachability-metadata</goal></goals>
+                                <configuration>
+                                    <outputDirectory>${nacos.native.repository.directory}</outputDirectory>
+                                    <metadataRepository>
+                                        <enabled>true</enabled>
+                                        <version>${graalvm-reachability-metadata.version}</version>
+                                    </metadataRepository>
+                                </configuration>
+                            </execution>
                             <execution>
                                 <id>build-native</id>
                                 <phase>package</phase>

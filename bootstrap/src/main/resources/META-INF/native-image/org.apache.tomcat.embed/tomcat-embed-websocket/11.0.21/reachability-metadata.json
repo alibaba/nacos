@@ -1,0 +1,6 @@
+{
+  "resources": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/LocalStrings.properties"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "glob": "org/apache/tomcat/websocket/server/LocalStrings.properties"}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule"}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jdbc.health.DataSourceHealthIndicator"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.jdbc.init.DataSourceScriptDatabaseInitializer"}
+  ]
+}

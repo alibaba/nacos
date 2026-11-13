@@ -1,0 +1,7 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueue"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueColdProducerFields"},
+    {"condition": {"typeReached": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueue"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueConsumerFields"},
+    {"condition": {"typeReached": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueue"}, "type": "org.jctools.queues.atomic.BaseMpscLinkedAtomicArrayQueueProducerFields"}
+  ]
+}

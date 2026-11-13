@@ -245,6 +245,14 @@ loading behavior, without requiring AOT artifacts or validating their manifest.
   processing must not refresh business services or mark the server ready.
 - Generate separate initialization code per phase and select it through a
   versioned phase index. Missing or outdated indexes must fail explicitly.
+- The generated initializers are selected by class name, so their reflection hints must be
+  registered without a condition. Spring's own hints for them only apply once the application
+  class is initialized, and the multi-context startup creates contexts from class literals and
+  never initializes those classes.
+- Classes that the AOT run generates directly as bytecode (CGLIB subclasses, class-based AOP
+  proxies and their FastClass helpers) must be registered for reflection with their constructors,
+  methods, fields and unsafe allocation. Spring's own hints cover only part of what its runtime
+  uses on them: callback fields, callback setters and constructor-less proxy instantiation.
 - Derby and disabled protocol adaptors must not be permanent AOT restrictions.
   Datasource selection retains the precedence of `nacos.plugin.datasource-dialect.type`
   over the legacy `spring.sql.init.platform`. External dialects, Mappers and JDBC
@@ -274,6 +282,100 @@ Implicit `NacosForm` parameters on HTTP Controllers must receive binding metadat
 processing, including inherited and optional property accessors. Registration must not depend only
 on fields observed by tracing requests, instantiate Controllers, or change ordinary JVM request
 binding. Independent Console requests to Native Servers follow the same binding contract.
+
+### 10.1 Bundled Reachability Metadata
+
+Bootstrap ships GraalVM reachability metadata for the default Server combination, so a Native
+build does not require the operator to trace the Server first.
+
+- Location and format. The metadata is a set of `reachability-metadata.json` files in the GraalVM
+  unified format below `META-INF/native-image/` in Bootstrap's resources, one file per owner:
+  `com.alibaba.nacos/nacos-bootstrap` holds what Nacos builds itself, each third-party
+  artifact holds its own folder below `<groupId>/<artifactId>/<version>/`, and `jdk/runtime`
+  holds classes of the JDK. The owner of an entry is the artifact whose jar on the Native
+  classpath holds the class or the resource. The version on the folder is the version of that
+  jar, so a version bump cannot silently reuse the entries of another version. The `native`
+  profile reads the files
+  as part of Bootstrap's classes. An ordinary JVM must not read them, and the JVM artifact
+  contract must not depend on them.
+- Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
+  bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
+  classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
+  Java SDK and Maintainer SDK integration suites, and, as exercised on builds of their own, the
+  three AI registry contexts, the Kubernetes sync, the Istio adaptor, the DNS adaptor and a
+  cluster of three nodes (Distro, Raft and the requests between the nodes), which those suites do
+  not reach. Other plugins and drivers, embedded Derby and Oracle are outside the bundled scope.
+  Their metadata comes from the extension itself, from the GraalVM reachability metadata
+  repository, which applies to the Maven dependencies of the module and not to the jars of the
+  plugin directory, or from `nacos.native.metadata`, and their support must be validated and
+  reported separately. An Oracle driver needs more: a Native build with it is not supported until
+  the redistribution terms of the driver and the database versions that it supports, which are
+  fewer than the Oracle 12c and later that the datasource plugin supports, are settled.
+- Content rules. Entries derive from tracing representative runs on the exact classpath of the
+  Native build. What no trace contains comes from the reports of an exact-mode build or, for
+  lookups that the tracing agent does not record (for example the accessors that protobuf looks up
+  on a generated message and on its Builder), from the code that makes them; an exact-mode build
+  and a restart of the Native Server on the same data must confirm such entries. The classes that
+  only a cluster serializes (the requests between the nodes, what Distro carries, the commands of
+  the `plugin_state` group) are registered in full, together with the classes of their properties:
+  Jackson drops a property that it cannot see without a word, and a getter or a setter that is not
+  registered fails at its first call, so the exact-mode build would find them one at a time. Each
+  file must be deterministic: sorted, one
+  entry per line. No file may contain classes that Spring AOT generates in the same build, agent
+  or JVM-internal classes, test or tooling classes, or machine- or run-specific data such as
+  absolute paths, host names, addresses or credentials. Lookups of classes and resources that do
+  not exist on the Native classpath, and entries for lambda-proxy classes, to which GraalVM 25
+  cannot apply metadata, are not recorded; the metadata targets the default reachability mode and
+  does not promise compatibility with `--exact-reachability-metadata`.
+- Other sources. The files hold only what the Native build does not get elsewhere, so that no
+  registration is kept twice and none outlives its source. The build also reads the
+  `META-INF/native-image` files in the jars of the Native classpath, except those that
+  `native-image.args` excludes, and the files that the AOT generator writes in the same build. An
+  entry that these sources provide in full is not kept, and of an entry that they provide in part
+  only the rest is kept. Only an entry without a condition counts as provided: an entry with a
+  `typeReached` condition is available once its type is reached, and the access that the bundled
+  entry serves may come before.
+- Reachability metadata repository. The `native` profile always adds the GraalVM reachability
+  metadata repository, in the release that `graalvm-reachability-metadata.version` of the root POM
+  names, to the Native classpath. The `native-maven-plugin` adds it only to a classpath that it
+  builds itself, so the profile runs its `add-reachability-metadata` goal and puts the output on
+  the Native classpath. The output directory is deleted before the goal runs, so stale metadata
+  cannot survive a dependency or repository-version change. The files do not rely on it and do not
+  count it as a source, because it guards nearly all of its entries with a condition: a new release
+  of the repository needs no change of the files.
+- Conditions. Every entry carries a `typeReached` condition that depends on its owner. The entries
+  of Nacos and of the JDK carry `com.alibaba.nacos.bootstrap.NacosBootstrap`, the Server entry
+  point, which is initialized before any other Server code runs. The entries of a third-party
+  artifact carry the type that makes the Server use the artifact, for example
+  `org.springframework.boot.SpringApplication` for the Spring family and for the libraries whose
+  classes Spring Boot looks up, and `com.zaxxer.hikari.HikariConfig` for the JDBC drivers. An entry
+  is available at run time only once the initialization of its condition type has started, so a
+  condition type must be initialized before the first dynamic access that the entry serves, which
+  is often earlier than the first use of a class of the artifact itself; a type that is only named
+  by a class literal never is. For an artifact that a client and a server both use, the type must
+  be one that both initialize: a node of a cluster creates its RPC clients while the core context
+  is built, before any gRPC server starts. A condition type is accepted after a comparison with the
+  order in which a run of the Server loads and initializes classes. Every entry of an owner carries
+  the same condition.
+- Maintenance. A change to the dependency set, the plugin SPI providers, reflectively serialized
+  model classes or reflective code paths requires refreshing the metadata and validating the
+  Native executable again. A refresh is a reviewed source change, and each entry goes into the
+  file of its owner.
+- Acceptance. The metadata is accepted by running the standalone integration suites against the
+  Native executable. What an executable contains is fixed when it is built (the datasource, the
+  switches of the AI registries, the adaptors, the plugin jars, standalone or cluster mode), so
+  each configuration that is accepted is a validation scenario and runs on a build of its own, and
+  what the suites cannot reach (the AI registries, the Kubernetes sync, the DNS adaptor, a cluster)
+  needs tests of its own. Tests that also fail against the ordinary JVM Server in the same setup
+  are not Native regressions. The suites never restart the Server, so the run must also create
+  data that no suite creates, wait until the Raft snapshots of the naming service hold that data,
+  restart the Native Server on the same data, confirm from the logs that the groups loaded those
+  snapshots, and read that data again. A snapshot that was taken before the data does not hold it,
+  and a restart then replays the log and does not reach the code that loads a snapshot. Dynamic
+  accesses without metadata can be listed by building with `--exact-reachability-metadata` and
+  running with `-XX:MissingRegistrationReportingMode=Warn`. A validation report must name the
+  GraalVM version, the scenario, the datasource, the suites and tests that ran and whether the
+  Server was restarted on the same data.
 
 ## 11. Pending Issues
 

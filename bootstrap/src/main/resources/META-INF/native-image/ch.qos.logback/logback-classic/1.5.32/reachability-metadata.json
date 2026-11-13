@@ -1,0 +1,11 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.classic.BasicConfigurator"},
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "type": "ch.qos.logback.classic.spi.LogbackServiceProvider"},
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "methods": [{"name": "<init>", "parameterTypes": []}], "type": "ch.qos.logback.classic.util.DefaultJoranConfigurator"}
+  ],
+  "resources": [
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"},
+    {"condition": {"typeReached": "org.slf4j.LoggerFactory"}, "glob": "ch/qos/logback/classic/logback-classic-version.properties"}
+  ]
+}

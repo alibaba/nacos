@@ -1,0 +1,7 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.core.instrument.Clock$1"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.core.instrument.distribution.TimeWindowMax"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "io.micrometer.core.instrument.distribution.TimeWindowSum"}
+  ]
+}

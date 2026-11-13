@@ -187,6 +187,11 @@ AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须�
 - 构建器按部署类型准备 core、web、console，并按配置准备独立 ai-registry context；子 context
   必须保留原有 parent 关系。构建期不得 refresh 启动业务服务或将服务标记为 ready。
 - 每个阶段生成独立初始化代码，通过带版本的阶段索引选取。缺失或过期的索引必须明确失败。
+- 生成的初始化类按类名选取，因此它们的反射提示必须无条件注册。Spring 自带的提示只有在应用类被
+  初始化之后才生效，而多 Context 启动用类字面量创建 Context，从不初始化这些应用类。
+- AOT 运行直接生成字节码的类（CGLIB 子类、基于类的 AOP 代理及其 FastClass 辅助类）必须以构造器、
+  方法、字段和 unsafe 分配的完整成员类别注册反射。Spring 自带的提示只覆盖其运行时对这些类所用
+  的一部分：回调字段、回调 setter 以及不经构造器的代理实例化。
 - 不得将 Derby 或关闭扩展协议硬编码为 AOT 的永久限制。数据源选择遵循
   `nacos.plugin.datasource-dialect.type` 优先、`spring.sql.init.platform` 兼容的既有语义。
   外部方言、Mapper 和 JDBC 驱动必须进入构建 classpath；扩展协议的 context 必须一起生成。
@@ -206,6 +211,68 @@ AOT 是显式开启的构建/运行模式。普通 JVM 未开启 AOT 时必须�
 - 回归覆盖普通 JVM（含默认 merged）、JVM AOT、外部数据源插件和独立扩展协议端口。
   Native 编译成功、进程启动成功和接口成功是三个独立检查点，不得相互替代。嵌入式存储还必须
   保留数据重启，验证检查点/日志恢复及持久化认证，不得仅以空数据库首次启动作为验收依据。
+
+### 10.1 内置可达性元数据
+
+Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构建无需操作者先对 Server 做追踪。
+
+- 位置与格式。元数据是 Bootstrap 资源中 `META-INF/native-image/` 下一组 GraalVM 统一格式的
+  `reachability-metadata.json`，每个归属方一个文件：
+  `com.alibaba.nacos/nacos-bootstrap` 存放 Nacos 自身构建的内容，每个第三方构件使用它自己的
+  `<groupId>/<artifactId>/<version>/` 目录，`jdk/runtime` 存放 JDK 的类。条目的归属方是 Native
+  classpath 上包含该类或资源的 jar 所属的构件。目录上的版本号即该 jar 的版本，因此版本升级不可能
+  静默复用另一个版本的条目。`native` profile
+  将这些文件作为 Bootstrap 类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
+- 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
+  PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
+  OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及这些测试覆盖不到、在各自独立
+  构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、Istio 适配器、DNS 适配器和由
+  三个节点组成的集群（Distro、Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby 以及 Oracle
+  不在内置范围内；它们的元数据来自扩展自身、GraalVM 可达性元数据仓库（只适用于模块的 Maven 依赖，
+  不适用于插件目录中的 jar）或 `nacos.native.metadata`，其支持情况必须单独验证和报告。Oracle 驱动还有
+  额外要求：在驱动的再分发条款，以及驱动所支持的数据库版本（少于数据源插件支持的 Oracle 12c 及以后
+  版本）明确之前，不支持带该驱动的 Native 构建。
+- 内容规则。条目来自在 Native 构建的同一 classpath 上追踪具有代表性的运行。追踪记录不到的条目来自
+  exact 模式构建的缺失报告；对 tracing agent 不记录的查找（例如 protobuf 对生成消息及其 Builder 的
+  访问器查找），则按产生这些查找的代码推导，并必须由 exact 模式构建和在同一份数据上重启 Native Server 来确认。只在集群中才会被
+  序列化的类（节点之间的请求、Distro 携带的数据、`plugin_state` 组的命令）连同其属性的类一并完整
+  登记：Jackson 对看不到的属性会不声不响地丢弃，而未登记的 getter 或 setter 在第一次调用时失败，
+  exact 模式构建只能一次发现一个。每个文件必须
+  确定性：排序，每个条目一行。任何文件都不得包含同一构建中由 Spring AOT 生成的类、agent 或 JVM
+  内部类、测试或工具类，
+  也不得包含与机器或运行相关的数据，例如绝对路径、主机名、地址或凭据。对 Native classpath 上不存在的
+  类和资源的探测，以及 lambda 代理类的条目（GraalVM 25 无法对其应用元数据）都不记录；该元数据面向
+  默认可达性模式，不承诺兼容 `--exact-reachability-metadata`。
+- 其他来源。这些文件只保存 Native 构建不会从别处得到的内容，避免同一登记保留两份，也避免来源
+  变化后遗留过期条目。构建还会读取 Native classpath 上各 jar 内的 `META-INF/native-image`
+  文件（`native-image.args` 排除的除外），以及同一构建中 AOT 生成器写出的文件。这些来源已完整提供的
+  条目不保留，只提供一部分的条目只保留其余部分。只有不带条件的条目才算已提供：带 `typeReached` 条件的
+  条目要等其条件类型被触达后才可用，而内置条目所服务的访问可能发生得更早。
+- 可达性元数据仓库。`native` profile 始终会把根 POM 的 `graalvm-reachability-metadata.version`
+  所指定版本的 GraalVM 可达性元数据仓库加入 Native classpath。`native-maven-plugin` 只会把仓库加入
+  它自己构建的 classpath，因此 profile 运行其 `add-reachability-metadata` 目标，并把输出放到
+  Native classpath 上。该输出目录会在目标运行前删除，避免依赖或仓库版本变化后残留过期元数据。
+  这些文件不依赖它，也不把它当作来源，因为它给几乎所有条目都加了条件：仓库发布新版本无需改动这些文件。
+- 条件。每个条目都带有取决于其归属方的 `typeReached` 条件。Nacos 自身与 JDK 的条目使用
+  `com.alibaba.nacos.bootstrap.NacosBootstrap`，即 Server 入口类，它先于其他 Server 代码完成初始化。
+  第三方构件的条目使用“让 Server 用到该构件”的类型，例如 Spring 家族以及由 Spring Boot 查找其类的库
+  使用 `org.springframework.boot.SpringApplication`，JDBC 驱动使用 `com.zaxxer.hikari.HikariConfig`。
+  条目在运行时只有在其条件类开始初始化之后才可用，因此条件类必须先于该条目所服务的第一次动态访问
+  完成初始化，这常常早于该构件自身类的首次使用；仅以类字面量出现的类永远不会被初始化。对于客户端和服务端都会使用的
+  构件，条件类必须是两者都会初始化的类型：集群中的节点在构建核心 context 时就创建 RPC 客户端，早于任何
+  gRPC 服务端启动。条件类须经与 Server 一次运行的类加载与初始化顺序比对后才能采用。
+  同一归属方的所有条目带有相同的条件。
+- 维护。依赖集合、插件 SPI provider、被反射序列化的模型类或反射代码路径发生变化时，必须刷新元数据并
+  重新验证 Native 可执行程序。刷新属于需要评审的源码变更，每个条目放进其归属方的文件。
+- 验收。通过对 Native 可执行程序运行独立 Server 集成测试来验收。可执行程序包含什么在构建时就已
+  固定（数据源、AI 注册表开关、适配器、插件 jar、单机或集群模式），因此每个被验收的配置都是一个
+  验证场景，在独立的构建上运行；套件无法覆盖的部分（AI 注册表、Kubernetes 同步、DNS 适配器、
+  集群）需要单独的测试。在相同环境下普通 JVM Server 同样失败的用例不属于 Native 回归。套件不会
+  重启 Server，因此验收还必须创建套件不会创建的数据，等待命名服务的 Raft 快照包含这些数据，在同一份
+  数据上重启 Native Server，从日志确认各 Raft 组加载了这些快照，并再次读取这些数据。早于这些数据的
+  快照不包含它们，此时重启只会回放日志，不会执行加载快照的代码。可使用 `--exact-reachability-metadata`
+  构建并以 `-XX:MissingRegistrationReportingMode=Warn` 运行，以列出缺少元数据的动态访问。验证报告
+  必须写明 GraalVM 版本、场景、数据源、实际运行的套件和测试以及是否在同一份数据上重启过 Server。
 
 ## 11. 待处理问题
 

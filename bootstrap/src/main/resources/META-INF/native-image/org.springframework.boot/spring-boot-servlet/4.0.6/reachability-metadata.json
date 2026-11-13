@@ -1,0 +1,6 @@
+{
+  "reflection": [
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedCharacterEncodingFilter"},
+    {"condition": {"typeReached": "org.springframework.boot.SpringApplication"}, "type": "org.springframework.boot.servlet.filter.OrderedRequestContextFilter"}
+  ]
+}
