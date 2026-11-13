@@ -138,7 +138,7 @@ class DeploymentConnectionDefinition {
             .priority(DeploymentConfigProviderReader.ORDER)
             .model(model)
             .apiKey(apiKey)
-            .credentialSource(StringUtils.isBlank(apiKey) ? null : CredentialSource.CONFIGURATION)
+            .credentialSource(StringUtils.isBlank(apiKey) ? null : CredentialSource.DEPLOYMENT)
             .baseUrl(baseUrl)
             .endpointPath(endpointPath)
             .stream(stream)

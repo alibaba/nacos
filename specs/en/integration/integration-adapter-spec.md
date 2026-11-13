@@ -266,15 +266,26 @@ Configuration refresh rules:
 Console configuration API rules:
 
 - `GET /v3/console/copilot/config` returns the editable stored fields (`model`,
-  `studioUrl`, `studioProject`, `selectedConnection`), the sanitized connection
-  list, and the routed `activeConnection`. Each connection exposes `name`,
-  `providerId`, `displayName`, `model`, `source`, `enabled`, `available`,
-  `unavailableReason`, `apiKeyConfigured`, and `actualSource`; the stored api key
-  is returned masked, and neither the credential nor the value behind
-  `actualSource` appears in the connection metadata. `actualSource` is
+  `studioUrl`, `studioProject`, `selectedConnection`), the effective
+  `effectiveSelectedConnection` with its `selectedConnectionSource`, the
+  sanitized connection list, and the routed `activeConnection`. Each connection
+  exposes `name`, `providerId`, `displayName`, `model`, `source`, `enabled`,
+  `available`, `unavailableReason`, `apiKeyConfigured`, and `actualSource`; the
+  stored api key is returned masked, and neither the credential nor the value
+  behind `actualSource` appears in the connection metadata. `actualSource` is
   `ENVIRONMENT` when the `legacy` connection resolved its key from
-  `COPILOT_API_KEY`, `CONFIGURATION` when the key comes from the effective
-  configuration value, and `null` when the connection has no credential.
+  `COPILOT_API_KEY`, `DEPLOYMENT` when the key is declared in the deployment
+  configuration, `CONSOLE` when it comes from the stored console value, and
+  `null` when the connection has no credential.
+- `selectedConnectionSource` is `DEPLOYMENT` when the deployment configuration
+  declares `nacos.copilot.selectedConnection`, `STORED` when the effective
+  selection is the stored console value, and `NONE` when no selection is
+  configured. Deployment configuration wins over the stored value, so a
+  selection saved through the console remains stored but does not take effect
+  while the deployment declares one; the same applies to `Automatic`, which
+  clears the stored selection but cannot override the deployment value. The
+  API reports the effective selection and its origin so the console can explain
+  this state instead of presenting a saved value as if it were in use.
 - `POST /v3/console/copilot/config` accepts only `apiKey`, `model`, `studioUrl`,
   `studioProject`, and `selectedConnection`; other fields are ignored. A field
   absent from the request keeps its stored value.

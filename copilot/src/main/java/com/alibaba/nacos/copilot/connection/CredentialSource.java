@@ -33,7 +33,12 @@ public enum CredentialSource {
     ENVIRONMENT,
     
     /**
-     * The credential comes from the effective configuration value.
+     * The credential comes from the deployment configuration.
      */
-    CONFIGURATION
+    DEPLOYMENT,
+    
+    /**
+     * The credential comes from the stored console configuration.
+     */
+    CONSOLE
 }

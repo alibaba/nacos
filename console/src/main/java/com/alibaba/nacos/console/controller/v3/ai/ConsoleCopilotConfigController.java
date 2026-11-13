@@ -125,6 +125,8 @@ public class ConsoleCopilotConfigController {
         
         CopilotConnectionStatus status = agentManager.getConnectionStatus();
         view.setConnections(status.getConnections());
+        view.setEffectiveSelectedConnection(status.getEffectiveSelectedConnection());
+        view.setSelectedConnectionSource(status.getSelectionSource());
         view.setActiveConnection(status.getActiveConnection());
         
         return Result.success(view);

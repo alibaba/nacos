@@ -203,13 +203,19 @@ nacos.copilot.selectedConnection=prod-qwen
 控制台配置 API 规则：
 
 - `GET /v3/console/copilot/config` 返回可编辑的已存字段（`model`、`studioUrl`、
-  `studioProject`、`selectedConnection`）、脱敏后的连接列表，以及路由得到的
+  `studioProject`、`selectedConnection`）、生效选择 `effectiveSelectedConnection` 及其
+  来源 `selectedConnectionSource`、脱敏后的连接列表，以及路由得到的
   `activeConnection`。每个连接只暴露 `name`、`providerId`、`displayName`、`model`、
   `source`、`enabled`、`available`、`unavailableReason`、`apiKeyConfigured` 和
   `actualSource`；已保存的 apiKey 以掩码返回，连接元数据中既不包含凭据，也不包含
   `actualSource` 背后的值。`legacy` 连接从 `COPILOT_API_KEY` 解析到密钥时
-  `actualSource` 为 `ENVIRONMENT`，密钥来自生效配置值时为 `CONFIGURATION`，连接没有
-  凭据时为 `null`。
+  `actualSource` 为 `ENVIRONMENT`，密钥由部署配置声明时为 `DEPLOYMENT`，来自控制台
+  已存值时为 `CONSOLE`，连接没有凭据时为 `null`。
+- `selectedConnectionSource` 在部署配置声明了 `nacos.copilot.selectedConnection` 时为
+  `DEPLOYMENT`，生效选择来自控制台已存值时为 `STORED`，没有配置任何选择时为 `NONE`。
+  部署配置优先于已存值，因此控制台保存的选择会保留，但在部署声明存在期间不生效；
+  `Automatic` 同理，它会清除已存选择，但不能覆盖部署值。API 同时返回生效选择和来源，
+  让控制台可以解释该状态，而不是把已存值当作正在使用的值展示。
 - `POST /v3/console/copilot/config` 只接受 `apiKey`、`model`、`studioUrl`、
   `studioProject` 和 `selectedConnection`，其他字段被忽略；请求中缺失的字段保留已存值。
 - apiKey 为三态：缺失或掩码值保留已存密钥；非空值替换密钥；空值清除已存密钥，并标记

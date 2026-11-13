@@ -32,17 +32,38 @@ public final class CopilotConnectionStatus {
     
     private final String activeConnection;
     
+    private final String effectiveSelectedConnection;
+    
+    private final SelectionSource selectionSource;
+    
     /**
-     * Create a status snapshot.
+     * Create a status snapshot without selection origin metadata.
      *
      * @param connections      sanitized connections in selection order
      * @param activeConnection name of the connection serving requests, or {@code null}
      */
     public CopilotConnectionStatus(List<CopilotConnectionInfo> connections,
         String activeConnection) {
+        this(connections, activeConnection, null, SelectionSource.NONE);
+    }
+    
+    /**
+     * Create a status snapshot.
+     *
+     * @param connections                 sanitized connections in selection order
+     * @param activeConnection            name of the connection serving requests, or
+     *                                    {@code null}
+     * @param effectiveSelectedConnection effective selection, or {@code null}
+     * @param selectionSource             where the effective selection comes from
+     */
+    public CopilotConnectionStatus(List<CopilotConnectionInfo> connections,
+        String activeConnection, String effectiveSelectedConnection,
+        SelectionSource selectionSource) {
         this.connections = connections == null ? Collections.emptyList()
             : Collections.unmodifiableList(new ArrayList<>(connections));
         this.activeConnection = activeConnection;
+        this.effectiveSelectedConnection = effectiveSelectedConnection;
+        this.selectionSource = selectionSource == null ? SelectionSource.NONE : selectionSource;
     }
     
     /**
@@ -62,5 +83,24 @@ public final class CopilotConnectionStatus {
      */
     public String getActiveConnection() {
         return activeConnection;
+    }
+    
+    /**
+     * Effective connection selection after deployment configuration is applied.
+     *
+     * @return effective selected connection name, or {@code null} when no selection is
+     *     configured
+     */
+    public String getEffectiveSelectedConnection() {
+        return effectiveSelectedConnection;
+    }
+    
+    /**
+     * Where the effective selection comes from.
+     *
+     * @return selection origin
+     */
+    public SelectionSource getSelectionSource() {
+        return selectionSource;
     }
 }

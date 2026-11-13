@@ -4,6 +4,7 @@ import {
   buildCopilotConfigPayload,
   hasLegacyConnection,
   isConnectionUsable,
+  isSelectionOverriddenByDeployment,
   type CopilotConnectionInfo,
   type CopilotConnectionSource,
 } from '../copilot-config';
@@ -88,5 +89,30 @@ describe('copilot config payload', () => {
     expect(isConnectionUsable(deploymentConnection)).toBe(true);
     expect(isConnectionUsable({ ...deploymentConnection, enabled: false })).toBe(false);
     expect(isConnectionUsable({ ...deploymentConnection, available: false })).toBe(false);
+  });
+
+  it('reports a deployment-owned selection regardless of the stored value', () => {
+    expect(
+      isSelectionOverriddenByDeployment({
+        selectedConnection: 'alpha',
+        effectiveSelectedConnection: 'beta',
+        selectedConnectionSource: 'DEPLOYMENT',
+      })
+    ).toBe(true);
+    expect(
+      isSelectionOverriddenByDeployment({
+        selectedConnection: '',
+        effectiveSelectedConnection: 'beta',
+        selectedConnectionSource: 'DEPLOYMENT',
+      })
+    ).toBe(true);
+    expect(
+      isSelectionOverriddenByDeployment({
+        selectedConnection: 'alpha',
+        effectiveSelectedConnection: 'alpha',
+        selectedConnectionSource: 'STORED',
+      })
+    ).toBe(false);
+    expect(isSelectionOverriddenByDeployment({})).toBe(false);
   });
 });

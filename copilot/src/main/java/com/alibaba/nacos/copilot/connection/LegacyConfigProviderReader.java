@@ -72,7 +72,8 @@ public class LegacyConfigProviderReader implements ProviderReader {
             ? null : environment.getProperty(ENV_API_KEY);
         boolean useEnvironment = StringUtils.isNotBlank(environmentApiKey);
         String apiKey = useEnvironment ? environmentApiKey : config.getApiKey();
-        CredentialSource credentialSource = resolveCredentialSource(apiKey, useEnvironment);
+        CredentialSource credentialSource = resolveCredentialSource(apiKey, useEnvironment,
+            context.isLegacyApiKeyFromDeployment());
         CopilotModelConnection connection = CopilotModelConnection.builder()
             .name(CONNECTION_NAME)
             .providerId(PROVIDER_ID)
@@ -89,10 +90,14 @@ public class LegacyConfigProviderReader implements ProviderReader {
         return Collections.singletonList(connection);
     }
     
-    private CredentialSource resolveCredentialSource(String apiKey, boolean useEnvironment) {
+    private CredentialSource resolveCredentialSource(String apiKey, boolean useEnvironment,
+        boolean fromDeployment) {
         if (StringUtils.isBlank(apiKey)) {
             return null;
         }
-        return useEnvironment ? CredentialSource.ENVIRONMENT : CredentialSource.CONFIGURATION;
+        if (useEnvironment) {
+            return CredentialSource.ENVIRONMENT;
+        }
+        return fromDeployment ? CredentialSource.DEPLOYMENT : CredentialSource.CONSOLE;
     }
 }

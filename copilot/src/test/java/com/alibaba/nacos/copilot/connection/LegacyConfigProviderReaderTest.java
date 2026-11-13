@@ -130,7 +130,7 @@ class LegacyConfigProviderReaderTest {
     }
     
     @Test
-    void testReadReportsConfigurationCredentialSource() {
+    void testReadReportsConsoleCredentialSourceForStoredKey() {
         CopilotProperties config = new CopilotProperties();
         config.setModel("qwen-turbo");
         config.setApiKey("config-key");
@@ -138,20 +138,35 @@ class LegacyConfigProviderReaderTest {
         
         CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
         
-        assertEquals(CredentialSource.CONFIGURATION, connection.getCredentialSource());
+        assertEquals(CredentialSource.CONSOLE, connection.getCredentialSource());
     }
     
     @Test
-    void testReadReportsConfigurationCredentialSourceForDeploymentKeyWhenConsoleCleared() {
+    void testReadReportsDeploymentCredentialSourceForDeploymentKeyWhenConsoleCleared() {
         CopilotProperties config = new CopilotProperties();
         config.setModel("qwen-turbo");
         config.setApiKey("deploy-key");
         config.setApiKeyCleared(Boolean.TRUE);
         lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
         
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        CopilotModelConnection connection =
+            reader.read(new ProviderReadContext(config, true)).get(0);
         
-        assertEquals(CredentialSource.CONFIGURATION, connection.getCredentialSource());
+        assertEquals(CredentialSource.DEPLOYMENT, connection.getCredentialSource());
+    }
+    
+    @Test
+    void testReadReportsEnvironmentCredentialSourceBeforeDeploymentKey() {
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey("deploy-key");
+        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
+        
+        CopilotModelConnection connection =
+            reader.read(new ProviderReadContext(config, true)).get(0);
+        
+        assertEquals("env-key", connection.getApiKey());
+        assertEquals(CredentialSource.ENVIRONMENT, connection.getCredentialSource());
     }
     
     @Test

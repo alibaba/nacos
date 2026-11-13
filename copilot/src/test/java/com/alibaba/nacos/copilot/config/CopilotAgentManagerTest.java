@@ -29,6 +29,8 @@ import com.alibaba.nacos.copilot.connection.DefaultCopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.DeploymentConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.ProviderReaderAggregator;
+import com.alibaba.nacos.copilot.connection.ProviderReadContext;
+import com.alibaba.nacos.copilot.connection.SelectionSource;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -39,6 +41,7 @@ import io.agentscope.core.studio.StudioManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -316,6 +319,76 @@ class CopilotAgentManagerTest {
         // Then
         assertTrue(status.getConnections().isEmpty());
         assertNull(status.getActiveConnection());
+    }
+    
+    @Test
+    void testGetConnectionStatusReportsDeploymentSelection() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("alpha");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "beta");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertEquals("beta", status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.DEPLOYMENT, status.getSelectionSource());
+    }
+    
+    @Test
+    void testRefreshPassesDeploymentApiKeyOriginToReaders() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("console-key");
+        stored.setApiKeyCleared(Boolean.TRUE);
+        MockEnvironment environment =
+            new MockEnvironment().withProperty("nacos.copilot.apiKey", "deploy-key");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        ArgumentCaptor<ProviderReadContext> captor =
+            ArgumentCaptor.forClass(ProviderReadContext.class);
+        
+        manager.refreshConfig();
+        
+        verify(providerReaders).readAll(captor.capture());
+        assertTrue(captor.getValue().isLegacyApiKeyFromDeployment());
+        assertEquals("deploy-key", captor.getValue().getLegacyConfig().getApiKey());
+    }
+    
+    @Test
+    void testGetConnectionStatusReportsStoredSelection() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("alpha");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, new MockEnvironment());
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertEquals("alpha", status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.STORED, status.getSelectionSource());
+    }
+    
+    @Test
+    void testGetConnectionStatusReportsNoSelection() {
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        copilotAgentManager.refreshConfig();
+        
+        CopilotConnectionStatus status = copilotAgentManager.getConnectionStatus();
+        
+        assertNull(status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.NONE, status.getSelectionSource());
     }
     
     @Test

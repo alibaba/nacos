@@ -74,10 +74,13 @@ public class CopilotConsoleApiOpenApiITCase extends AiConsoleApiBaseITCase {
         assertEquals("openapi-it-project", data.get("studioProject").asText(), data.toString());
         assertTrue(data.get("connections").isArray(), data.toString());
         assertFalse(data.get("connections").isEmpty(), data.toString());
+        String selectionSource = data.get("selectedConnectionSource").asText();
+        assertTrue("DEPLOYMENT".equals(selectionSource) || "STORED".equals(selectionSource)
+            || "NONE".equals(selectionSource), data.toString());
         JsonNode connection = data.get("connections").get(0);
         if (connection.get("apiKeyConfigured").asBoolean()) {
             String actualSource = connection.get("actualSource").asText();
-            assertTrue("CONFIGURATION".equals(actualSource)
+            assertTrue("DEPLOYMENT".equals(actualSource) || "CONSOLE".equals(actualSource)
                 || "ENVIRONMENT".equals(actualSource), data.toString());
         }
     }

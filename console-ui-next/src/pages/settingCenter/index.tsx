@@ -12,6 +12,7 @@ import {
   buildCopilotConfigPayload,
   hasLegacyConnection,
   isConnectionUsable,
+  isSelectionOverriddenByDeployment,
   type CopilotConfigView,
   type CopilotConnectionInfo,
 } from '@/lib/copilot-config';
@@ -68,6 +69,7 @@ function ConnectionOption({
     deployment: string;
     legacy: string;
     environment: string;
+    deploymentCredential: string;
   };
 }) {
   const usable = isConnectionUsable(connection);
@@ -100,6 +102,9 @@ function ConnectionOption({
           )}
           {connection.actualSource === 'ENVIRONMENT' && (
             <Badge variant="secondary">{labels.environment}</Badge>
+          )}
+          {connection.source === 'LEGACY' && connection.actualSource === 'DEPLOYMENT' && (
+            <Badge variant="secondary">{labels.deploymentCredential}</Badge>
           )}
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -204,6 +209,7 @@ export default function SettingCenterPage() {
     unavailable: t('settings.connectionUnavailable'),
     disabled: t('settings.connectionDisabled'),
     environment: t('settings.credentialEnvironment'),
+    deploymentCredential: t('settings.credentialDeployment'),
   };
 
   return (
@@ -286,6 +292,16 @@ export default function SettingCenterPage() {
                       </div>
                     )}
                   </RadioGroup>
+                  {isSelectionOverriddenByDeployment(config) && (
+                    <div className="flex items-start gap-3 rounded-lg border border-yellow-600/40 bg-yellow-50/50 p-3 dark:bg-yellow-950/20">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-xs text-muted-foreground">
+                        {t('settings.selectionOverriddenByDeployment', {
+                          name: config.effectiveSelectedConnection || '',
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">{t('settings.connectionDesc')}</p>
 
                   {/* Active connection */}

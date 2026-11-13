@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.model.ai;
 
 import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
+import com.alibaba.nacos.copilot.connection.SelectionSource;
 
 import java.util.List;
 
@@ -39,6 +40,10 @@ public class ConsoleCopilotConfig {
     private String studioProject;
     
     private String selectedConnection;
+    
+    private String effectiveSelectedConnection;
+    
+    private SelectionSource selectedConnectionSource;
     
     private String activeConnection;
     
@@ -87,6 +92,33 @@ public class ConsoleCopilotConfig {
     
     public void setSelectedConnection(String selectedConnection) {
         this.selectedConnection = selectedConnection;
+    }
+    
+    /**
+     * Get the selection that is effective after deployment configuration is applied.
+     *
+     * @return effective selected connection name, or {@code null} when none is configured
+     */
+    public String getEffectiveSelectedConnection() {
+        return effectiveSelectedConnection;
+    }
+    
+    public void setEffectiveSelectedConnection(String effectiveSelectedConnection) {
+        this.effectiveSelectedConnection = effectiveSelectedConnection;
+    }
+    
+    /**
+     * Get where the effective selection comes from, so the console can explain why a stored
+     * value may not be the one in use.
+     *
+     * @return selection origin
+     */
+    public SelectionSource getSelectedConnectionSource() {
+        return selectedConnectionSource;
+    }
+    
+    public void setSelectedConnectionSource(SelectionSource selectedConnectionSource) {
+        this.selectedConnectionSource = selectedConnectionSource;
     }
     
     /**

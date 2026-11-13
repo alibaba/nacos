@@ -1,6 +1,8 @@
 export type CopilotConnectionSource = 'DEPLOYMENT' | 'LEGACY';
 
-export type CopilotCredentialSource = 'ENVIRONMENT' | 'CONFIGURATION';
+export type CopilotCredentialSource = 'ENVIRONMENT' | 'DEPLOYMENT' | 'CONSOLE';
+
+export type CopilotSelectionSource = 'DEPLOYMENT' | 'STORED' | 'NONE';
 
 export interface CopilotConnectionInfo {
   name: string;
@@ -21,6 +23,8 @@ export interface CopilotConfigView {
   studioUrl?: string;
   studioProject?: string;
   selectedConnection?: string;
+  effectiveSelectedConnection?: string;
+  selectedConnectionSource?: CopilotSelectionSource;
   activeConnection?: string;
   connections?: CopilotConnectionInfo[];
 }
@@ -46,6 +50,10 @@ export function hasLegacyConnection(connections?: CopilotConnectionInfo[]): bool
 
 export function isConnectionUsable(connection: CopilotConnectionInfo): boolean {
   return connection.enabled !== false && connection.available !== false;
+}
+
+export function isSelectionOverriddenByDeployment(config: CopilotConfigView): boolean {
+  return (config.selectedConnectionSource ?? 'NONE').toUpperCase() === 'DEPLOYMENT';
 }
 
 export function buildCopilotConfigPayload({

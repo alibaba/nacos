@@ -30,6 +30,7 @@ import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CredentialSource;
+import com.alibaba.nacos.copilot.connection.SelectionSource;
 import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,6 +114,26 @@ class ConsoleCopilotConfigControllerTest {
         assertEquals("legacy", result.getActiveConnection());
         assertEquals(1, result.getConnections().size());
         assertEquals("legacy", result.getConnections().get(0).getName());
+    }
+    
+    @Test
+    void testGetConfigReportsDeploymentOverriddenSelection() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("alpha");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        CopilotModelConnection alpha = deploymentConnection("alpha", true, true, null);
+        CopilotModelConnection beta = deploymentConnection("beta", true, true, null);
+        when(agentManager.getConnectionStatus()).thenReturn(new CopilotConnectionStatus(
+            Arrays.asList(CopilotConnectionInfo.from(alpha), CopilotConnectionInfo.from(beta)),
+            "beta", "beta", SelectionSource.DEPLOYMENT));
+        
+        ConsoleCopilotConfig result = getConfig();
+        
+        assertEquals("alpha", result.getSelectedConnection());
+        assertEquals("beta", result.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.DEPLOYMENT, result.getSelectedConnectionSource());
+        assertEquals("beta", result.getActiveConnection());
     }
     
     @Test
