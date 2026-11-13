@@ -310,15 +310,20 @@ Console configuration API rules:
   an existing, enabled, and available connection: the declared connection name is
   stored, and a selection that does not exist, is disabled, or is unavailable is
   rejected with HTTP 400 instead of being saved.
-- Selection validation reads the connection table of the last applied refresh;
-  the save request performs no provider probe or DNS lookup of its own. A
-  request that both adds a credential and selects the `legacy` connection is
-  therefore rejected until the credential is saved and a refresh marks that
-  connection usable, so the console submits these as two requests. Clearing a
-  credential together with the same selection remains a valid configuration
-  update and takes effect on the following refresh. A save returns after the
-  refresh triggered by the published configuration, so `GET` reports the
-  resulting table; there is no pending-validation state.
+- Selection validation reads the connection table of the last applied refresh, so
+  the check itself performs no provider probe or DNS lookup. The refresh
+  triggered by the published configuration still runs synchronously on the
+  request thread before the response, and connection validation during that
+  refresh can resolve an explicit `baseUrl`; the save request as a whole is
+  therefore not free of availability-check I/O. A request that both adds a
+  credential and selects the `legacy` connection is rejected until the
+  credential is saved and a refresh marks that connection usable, so the
+  console submits these as two requests. Clearing a credential together with
+  the same selection remains a valid configuration update and takes effect on
+  the following refresh. A save returns after the refresh triggered by the
+  published configuration, so `GET` reports the resulting table; there is no
+  pending-validation state, and moving the refresh off the request thread is
+  deferred to the asynchronous validation design.
 - The stored api key and model remain editable only as a deprecation path for
   the `legacy` connection: new deployments declare
   `nacos.copilot.connections.*`, and the console presents these fields as
