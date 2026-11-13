@@ -16,6 +16,13 @@
 
 # Maintainer SDK IT Coverage Registry
 
+Config no-tag blur regression (#16037) uses three ordinary configs to verify
+default search and explicit second/out-of-range pages, raw returned sequence,
+identity, namespace/group, md5 consistency, wildcard content search, literal
+SQL metacharacters in content filters, and detail content. Run against MySQL
+to exercise its datasource mapper. Performance fixtures are excluded. The
+existing Config contract and coverage classification remain unchanged.
+
 This registry records which public maintainer SDK interfaces are covered by
 `test/maintainer-sdk-test` integration tests and the scenario groups each class
 verifies.

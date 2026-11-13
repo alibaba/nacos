@@ -16,6 +16,12 @@
 
 # Maintainer SDK IT Scenarios
 
+The existing Config lifecycle row also covers no-tag blur search with three
+ordinary configs: default search, explicit second/out-of-range pages, raw
+returned sequence, identity, namespace/group, md5 consistency, content filtering
+including literal SQL metacharacters, and detail content. Run against MySQL
+to exercise its datasource mapper (#16037); performance fixtures are excluded.
+
 Status legend: `Covered` means the important public contract is verified,
 `Partial` means representative behavior is verified but important scenarios
 remain, and `Pending` means no IT verifies that surface yet.

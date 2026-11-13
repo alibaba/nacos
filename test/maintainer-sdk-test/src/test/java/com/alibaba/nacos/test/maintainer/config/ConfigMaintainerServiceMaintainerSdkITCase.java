@@ -61,6 +61,50 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase {
 
     @Test
+    void shouldPreserveBlurSearchPageBoundariesAndFields() throws Exception {
+        ConfigMaintainerService service = createConfigMaintainerService();
+        String prefix = randomDataId("sample-routing");
+        String group = randomGroup("page-fields");
+        String namespace = Constants.DEFAULT_NAMESPACE_ID;
+        String expectedContent = "sample-routing=true\nlast-line=true";
+        for (int index = 0; index < 3; index++) {
+            String dataId = prefix + "-" + index;
+            addCleanup(() -> service.deleteConfig(dataId, group, namespace));
+            assertTrue(service.publishConfig(dataId, group, namespace,
+                    index == 2 ? expectedContent : "sample=" + index));
+        }
+        Page<ConfigBasicInfo> first = service.searchConfigs(prefix, group, namespace, null, null);
+        assertEquals(3, first.getTotalCount());
+        assertEquals(1, first.getPagesAvailable());
+        assertEquals(3, first.getPageItems().size());
+        for (int index = 0; index < 3; index++) {
+            assertEquals(prefix + "-" + index, first.getPageItems().get(index).getDataId());
+            assertEquals(group, first.getPageItems().get(index).getGroupName());
+            assertEquals(namespace, first.getPageItems().get(index).getNamespaceId());
+        }
+        Page<ConfigBasicInfo> second = service.searchConfigByDetails(prefix + "*", group, namespace,
+                "blur", null, null, null, null, 2, 2);
+        assertEquals(3, second.getTotalCount());
+        assertEquals(2, second.getPageNumber());
+        assertEquals(1, second.getPageItems().size());
+        assertEquals(prefix + "-2", second.getPageItems().get(0).getDataId());
+        assertEquals(first.getPageItems().get(2).getId(), second.getPageItems().get(0).getId());
+        assertEquals(first.getPageItems().get(2).getMd5(), second.getPageItems().get(0).getMd5());
+        Page<ConfigBasicInfo> empty = service.searchConfigByDetails(prefix + "*", group, namespace,
+                "blur", null, null, null, null, 3, 2);
+        assertEquals(3, empty.getTotalCount());
+        assertTrue(empty.getPageItems().isEmpty());
+        Page<ConfigBasicInfo> content = service.searchConfigs(prefix, group, namespace, "last-line=true", null);
+        assertEquals(1, content.getTotalCount());
+        assertEquals(prefix + "-2", content.getPageItems().get(0).getDataId());
+        assertEquals(expectedContent, service.getConfig(prefix + "-2", group, namespace).getContent());
+        Page<ConfigBasicInfo> noMatch = service.searchConfigs(prefix, group, namespace,
+                "missing' OR 1=1 --", null);
+        assertEquals(0, noMatch.getTotalCount());
+        assertTrue(noMatch.getPageItems().isEmpty());
+    }
+
+    @Test
     void shouldManageConfigLifecycle() throws Exception {
         ConfigMaintainerService maintainerService = createConfigMaintainerService();
         String dataId = randomDataId("config-lifecycle");

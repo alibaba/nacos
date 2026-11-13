@@ -63,6 +63,19 @@ missing parameters and pagination remain covered by existing scenarios. Plugin s
 is covered by registry/Form/query tests. Extended-plugin deployments are outside the
 default standalone HTTP suite. Surface counts and classifications remain unchanged.
 
+## MySQL config list result regression (#16037)
+
+The existing Admin and Console config list surfaces additionally cover no-tag
+blur pagination with three ordinary configurations. Admin list and both Console
+list/searchDetail paths verify raw returned sequence, full/tail/out-of-range
+pages, namespace/group, md5, type, description, tags, and detail content.
+Admin list and Console searchDetail also verify content filtering, including
+SQL metacharacters that remain literal search data and return an empty page.
+Console list has no content-filter parameter. These list APIs return ConfigBasicInfo.
+Run the tests against MySQL to exercise its optimized datasource mapper;
+Derby-only success does not verify MySQL SQL. Performance fixtures are excluded.
+No API contract, surface classification, or coverage total changes.
+
 ## Maintenance Rules
 
 - Update the matching scenario document whenever an OpenAPI/AdminAPI/ConsoleAPI

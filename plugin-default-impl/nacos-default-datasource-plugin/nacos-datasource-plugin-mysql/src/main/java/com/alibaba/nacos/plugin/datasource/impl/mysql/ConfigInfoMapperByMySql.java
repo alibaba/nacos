@@ -256,10 +256,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        // 性能优化：先 LIMIT 再 JOIN，减少 JOIN 和 GROUP BY 的数据量
+        // Page IDs before reading full content or aggregating tags.
         StringBuilder innerSql =
-            new StringBuilder("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "encrypted_data_key,type,c_desc,gmt_modified FROM config_info WHERE tenant_id LIKE ?");
+            new StringBuilder("SELECT id FROM config_info WHERE tenant_id LIKE ?");
         paramList.add(tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
@@ -290,18 +289,17 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
             innerSql.append(")");
         }
         
-        // 先分页，减少后续 JOIN 的数据量
+        // Keep the pagination order before joining tags.
         innerSql.append(" ORDER BY id LIMIT ").append(context.getStartRow()).append(",")
             .append(context.getPageSize());
         
-        // 外层查询：对分页后的结果进行标签关联
+        // Keep large content out of GROUP BY, then fetch all original fields in the same statement.
         final String sql =
-            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
-                + "a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
-                + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+            "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,"
+                + "c.encrypted_data_key,c.type,c.c_desc,c.gmt_modified,p.config_tags "
+                + "FROM (SELECT a.id,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + innerSql + ") a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
-                + "a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
+                + "GROUP BY a.id) p JOIN config_info c ON c.id=p.id";
         
         return new MapperResult(sql, paramList);
     }
