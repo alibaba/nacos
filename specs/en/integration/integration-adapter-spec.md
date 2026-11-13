@@ -134,6 +134,8 @@ Rules:
   first connection before any later Naming change event.
 - An instance registration or deregistration must refresh
   the Istio view after the corresponding Naming publisher index is updated.
+- Service change events also refresh the Istio view for client release, health,
+  and instance metadata changes; service metadata changes remain subscribed.
 - The adapter must tolerate Naming changes through debounce and push behavior
   without becoming the authoritative Naming store.
 - Port exposure, auth, and network placement must be documented by deployment

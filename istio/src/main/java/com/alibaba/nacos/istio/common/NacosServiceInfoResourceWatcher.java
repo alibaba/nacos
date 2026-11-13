@@ -24,9 +24,9 @@ import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.util.IstioCrdUtil;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
+import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +77,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     @Override
     public List<Class<? extends com.alibaba.nacos.common.notify.Event>> subscribeTypes() {
         List<Class<? extends com.alibaba.nacos.common.notify.Event>> result = new LinkedList<>();
-        result.add(ClientOperationEvent.ClientServiceIndexChangedEvent.class);
+        result.add(ServiceEvent.ServiceChangedEvent.class);
         result.add(InfoChangeEvent.ServiceInfoChangeEvent.class);
         result.add(InfoChangeEvent.InstanceInfoChangeEvent.class);
         return result;
@@ -90,10 +90,10 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             cycleDebounce(new ToNotify());
         }
         
-        if (event instanceof ClientOperationEvent.ClientServiceIndexChangedEvent) {
-            ClientOperationEvent.ClientServiceIndexChangedEvent indexChangedEvent =
-                (ClientOperationEvent.ClientServiceIndexChangedEvent) event;
-            Service service = indexChangedEvent.getService();
+        if (event instanceof ServiceEvent.ServiceChangedEvent) {
+            ServiceEvent.ServiceChangedEvent serviceChangedEvent =
+                (ServiceEvent.ServiceChangedEvent) event;
+            Service service = serviceChangedEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             IstioService old = serviceInfoMap.get(serviceName);
             boolean full = update(serviceName, service);
