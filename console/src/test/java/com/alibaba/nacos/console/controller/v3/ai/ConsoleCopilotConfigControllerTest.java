@@ -354,6 +354,43 @@ class ConsoleCopilotConfigControllerTest {
     }
     
     @Test
+    void testSaveConfigRejectsSelectingLegacyBeforeItsNewKeyIsApplied() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(agentManager.getConnectionStatus()).thenReturn(
+            statusOfConnections(legacyConnection(false, "legacy connection has no api key")));
+        
+        mockMvc.perform(post("/v3/console/copilot/config")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"apiKey\":\"new-key-1234\",\"selectedConnection\":\"legacy\"}"))
+            .andExpect(status().isBadRequest());
+        
+        // The table from the previous refresh has no credential yet, so the key has to be
+        // saved in one request before the selection can be saved in the next.
+        verify(configProxy, never()).publishConfig(any(), any());
+        verify(agentManager, never()).refreshConfig();
+    }
+    
+    @Test
+    void testSaveConfigClearsApiKeyWhileKeepingSelectedLegacy() throws Exception {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setApiKey("stored-key-1234");
+        stored.setSelectedConnection("legacy");
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetail(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        when(agentManager.getConnectionStatus())
+            .thenReturn(statusOfConnections(legacyConnection(true, null)));
+        
+        saveConfig("{\"apiKey\":\"\",\"selectedConnection\":\"legacy\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertEquals("", saved.get("apiKey"));
+        assertEquals(Boolean.TRUE, saved.get("apiKeyCleared"));
+        assertEquals("legacy", saved.get("selectedConnection"));
+        verify(agentManager).refreshConfig();
+    }
+    
+    @Test
     void testGetConfigExposesActualCredentialSource() throws Exception {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         CopilotModelConnection connection = CopilotModelConnection.builder()
@@ -486,6 +523,21 @@ class ConsoleCopilotConfigControllerTest {
             .priority(10)
             .apiKey("configured-key")
             .enabled(enabled)
+            .available(available)
+            .unavailableReason(unavailableReason)
+            .build();
+    }
+    
+    private CopilotModelConnection legacyConnection(boolean available, String unavailableReason) {
+        return CopilotModelConnection.builder()
+            .name("legacy")
+            .providerId("dashscope")
+            .displayName("Legacy DashScope")
+            .model("qwen-plus")
+            .source(ConnectionSource.LEGACY)
+            .priority(100)
+            .apiKey("configured-key")
+            .credentialSource(CredentialSource.CONSOLE)
             .available(available)
             .unavailableReason(unavailableReason)
             .build();

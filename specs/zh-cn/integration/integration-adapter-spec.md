@@ -151,7 +151,9 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 `copilot-config.json` 中的值覆盖内置默认值；部署配置未设置的字段回退到 `copilot-config.json`，
 两者都没有时使用默认值。`selectedConnection`、`enabled`、`studioUrl` 等字段遵循同一优先级，
 因此升级时已存在的旧 `copilot-config.json` 不会掩盖新部署配置中显式设置的值。连接表按连接
-来源规则独立合并（部署侧连接替换同名 `legacy` 连接）。
+来源规则独立合并（部署侧连接替换同名 `legacy` 连接）。`nacos.copilot.selectedConnection`
+的值为空或仅含空白时，视为该字段未声明：已存选择继续生效，也不按部署覆盖上报。该空值规则
+仅针对选择字段，不改变凭据字段"空值即清除"的既有语义。
 
 模型连接规则：
 
@@ -177,6 +179,8 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
   到公网地址，除非其 host 命中 `nacos.copilot.base-url.allowlist`。
 - 校验失败的连接只标记为不可用并保留诊断原因，不影响其他连接继续服务；上游 provider
   的诊断信息按原样保留，不得替换为通用错误。
+- 生效的 `enabled` 为 false 时 Copilot 拒绝新请求，因此路由不返回活动连接，但连接表
+  仍保留供管理查看。
 - 连接字段只在运行时从部署配置读取；通过通用配置接口写入 `copilot-config.json` 的同名字段
   不会覆盖部署连接。
 - Copilot 不做跨节点连接同步：连接表随部署配置分发，各节点的连接配置与 classpath 上的
@@ -205,7 +209,7 @@ nacos.copilot.selectedConnection=prod-qwen
 - `GET /v3/console/copilot/config` 返回可编辑的已存字段（`model`、`studioUrl`、
   `studioProject`、`selectedConnection`）、生效选择 `effectiveSelectedConnection` 及其
   来源 `selectedConnectionSource`、脱敏后的连接列表，以及路由得到的
-  `activeConnection`。每个连接只暴露 `name`、`providerId`、`displayName`、`model`、
+  `activeConnection`（Copilot 被禁用或没有可用连接时为 `null`）。每个连接只暴露 `name`、`providerId`、`displayName`、`model`、
   `source`、`enabled`、`available`、`unavailableReason`、`apiKeyConfigured` 和
   `actualSource`；已保存的 apiKey 以掩码返回，连接元数据中既不包含凭据，也不包含
   `actualSource` 背后的值。`legacy` 连接从 `COPILOT_API_KEY` 解析到密钥时
@@ -215,7 +219,8 @@ nacos.copilot.selectedConnection=prod-qwen
   `DEPLOYMENT`，生效选择来自控制台已存值时为 `STORED`，没有配置任何选择时为 `NONE`。
   部署配置优先于已存值，因此控制台保存的选择会保留，但在部署声明存在期间不生效；
   `Automatic` 同理，它会清除已存选择，但不能覆盖部署值。API 同时返回生效选择和来源，
-  让控制台可以解释该状态，而不是把已存值当作正在使用的值展示。
+  让控制台可以解释该状态，而不是把已存值当作正在使用的值展示。部署值为空或仅含空白时
+  视为未声明，已存选择继续生效，来源为 `STORED`。
 - `POST /v3/console/copilot/config` 只接受 `apiKey`、`model`、`studioUrl`、
   `studioProject` 和 `selectedConnection`，其他字段被忽略；请求中缺失的字段保留已存值。
 - apiKey 为三态：缺失或掩码值保留已存密钥；非空值替换密钥；空值清除已存密钥，并标记
@@ -225,6 +230,11 @@ nacos.copilot.selectedConnection=prod-qwen
 - `selectedConnection` 写入前会去除首尾空白；空值清除已存选择，路由回到默认顺序。非空值必须
   指向存在、已启用且可用的连接：保存的是连接的声明名；选择不存在、被禁用或不可用时返回
   HTTP 400，而不是保存该值。
+- 选择校验读取最近一次刷新得到的连接表，保存请求自身不做 provider 探测或 DNS 查询。因此
+  "提交新凭据并同时选择 `legacy`" 会被拒绝，需要先保存凭据、待刷新把该连接标记为可用后再
+  选择；控制台按两次请求提交。清空凭据并同时提交同一选择仍是合法的配置更新，在随后一次刷新
+  后生效。保存请求返回时已经完成由发布触发的刷新，`GET` 直接反映结果表，不存在"校验中"的
+  中间状态。
 - 已存的 apiKey 与 model 仅作为 `legacy` 连接的废弃路径保留可编辑：新部署应声明
   `nacos.copilot.connections.*`，控制台只在 `legacy` 连接存在时以废弃样式展示这些字段。
 - 加载到 `legacy` 连接时，每次刷新都会输出带 `nacos.copilot.connections.*` 迁移提示的废弃

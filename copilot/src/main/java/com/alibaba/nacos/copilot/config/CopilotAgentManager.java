@@ -162,7 +162,8 @@ public class CopilotAgentManager {
             connections.add(CopilotConnectionInfo.from(connection));
         }
         CopilotModelConnection active =
-            modelRouter.route(connectionTable, selectedConnection);
+            config != null && config.isEnabled() ? modelRouter.route(connectionTable,
+                selectedConnection) : null;
         return new CopilotConnectionStatus(connections,
             active == null ? null : active.getName(), selectedConnection,
             current.getSelectionSource());
@@ -283,11 +284,12 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Get the effective configuration: deployment configuration overrides the stored
-     * configuration for the fields it declares, and the stored configuration overrides the
-     * defaults. The stored configuration is read once per refresh.
+     * Report where the effective selection comes from.
      *
-     * @return effective CopilotProperties
+     * @param config             effective configuration
+     * @param deploymentDeclared whether the deployment configuration declared a non-blank
+     *                           selection
+     * @return selection origin
      */
     private SelectionSource resolveSelectionSource(CopilotProperties config,
         boolean deploymentDeclared) {
@@ -297,6 +299,13 @@ public class CopilotAgentManager {
         return deploymentDeclared ? SelectionSource.DEPLOYMENT : SelectionSource.STORED;
     }
     
+    /**
+     * Get the effective configuration: deployment configuration overrides the stored
+     * configuration for the fields it declares, and the stored configuration overrides the
+     * defaults. The stored configuration is read once per refresh.
+     *
+     * @return effective configuration with the deployment fields that were applied
+     */
     private EffectiveConfig resolveEffectiveConfig() {
         CopilotProperties stored = null;
         if (configStorage != null && configStorage.isAvailable()) {
@@ -337,13 +346,21 @@ public class CopilotAgentManager {
         studioProject.ifBound(target::setStudioProject);
         BindResult<String> selectedConnection =
             binder.bind(CONFIG_PREFIX + ".selected-connection", String.class);
-        selectedConnection.ifBound(target::setSelectedConnection);
+        // A blank deployment selection means "not declared" for this field, so it neither
+        // clears the stored selection nor counts as a deployment override. Explicit clears
+        // remain specific to the credential fields.
+        String deploymentSelection =
+            selectedConnection.isBound() ? selectedConnection.get().trim() : null;
+        boolean deploymentSelectionApplied = StringUtils.isNotBlank(deploymentSelection);
+        if (deploymentSelectionApplied) {
+            target.setSelectedConnection(deploymentSelection);
+        }
         DeploymentOverrides overrides = new DeploymentOverrides();
         overrides.apiKey = apiKey.isBound();
-        overrides.selectedConnection = selectedConnection.isBound();
+        overrides.selectedConnection = deploymentSelectionApplied;
         overrides.applied = enabled.isBound() || defaultNamespace.isBound()
             || apiKey.isBound() || model.isBound() || studioUrl.isBound()
-            || studioProject.isBound() || selectedConnection.isBound();
+            || studioProject.isBound() || deploymentSelectionApplied;
         return overrides;
     }
     

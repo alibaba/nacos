@@ -284,6 +284,7 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         when(defaultProperties.getSelectedConnection()).thenReturn("legacy");
+        when(defaultProperties.isEnabled()).thenReturn(true);
         when(modelRouter.route(any(), eq("legacy"))).thenReturn(connection);
         copilotAgentManager.refreshConfig();
         
@@ -310,7 +311,6 @@ class CopilotAgentManagerTest {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(modelRouter.route(any(), any())).thenReturn(null);
         copilotAgentManager.refreshConfig();
         
         // When
@@ -389,6 +389,87 @@ class CopilotAgentManagerTest {
         
         assertNull(status.getEffectiveSelectedConnection());
         assertEquals(SelectionSource.NONE, status.getSelectionSource());
+    }
+    
+    @Test
+    void testGetConnectionStatusKeepsStoredSelectionWhenDeploymentSelectionIsEmpty() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("beta");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertEquals("beta", status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.STORED, status.getSelectionSource());
+    }
+    
+    @Test
+    void testGetConnectionStatusKeepsStoredSelectionWhenDeploymentSelectionIsWhitespace() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setSelectedConnection("beta");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "   ");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertEquals("beta", status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.STORED, status.getSelectionSource());
+    }
+    
+    @Test
+    void testGetConnectionStatusReturnsNoActiveConnectionWhenDisabled() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setEnabled(false);
+        stored.setSelectedConnection("prod-qwen");
+        CopilotModelConnection connection = buildConnection("test-api-key",
+            ConnectionSource.DEPLOYMENT);
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, new DefaultCopilotModelRouter(),
+            new MockEnvironment());
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertNull(status.getActiveConnection());
+        assertEquals("prod-qwen", status.getEffectiveSelectedConnection());
+        assertEquals(1, status.getConnections().size());
+    }
+    
+    @Test
+    void testGetConnectionStatusRoutesWhenEnabled() {
+        CopilotProperties stored = new CopilotProperties();
+        stored.setEnabled(true);
+        stored.setSelectedConnection("prod-qwen");
+        CopilotModelConnection connection = buildConnection("test-api-key",
+            ConnectionSource.DEPLOYMENT);
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, new DefaultCopilotModelRouter(),
+            new MockEnvironment());
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getConfig()).thenReturn(stored);
+        when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
+        
+        manager.refreshConfig();
+        CopilotConnectionStatus status = manager.getConnectionStatus();
+        
+        assertEquals("prod-qwen", status.getActiveConnection());
+        assertEquals("prod-qwen", status.getEffectiveSelectedConnection());
     }
     
     @Test
