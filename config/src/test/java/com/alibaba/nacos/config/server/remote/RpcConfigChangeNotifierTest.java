@@ -34,6 +34,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -41,14 +44,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -246,6 +252,49 @@ class RpcConfigChangeNotifierTest {
             .pushWithCallback(eq("con1"), any(ConfigChangeNotifyRequest.class),
                 any(RpcConfigChangeNotifier.RpcPushCallback.class),
                 any(Executor.class));
+    }
+    
+    @ParameterizedTest
+    @CsvSource({"legacy, public1, public2", "public1, legacy, public2", "public1, public2, legacy"})
+    void testConfigDataChangedWithMixedNamespaceListeners(String firstClient, String secondClient,
+        String thirdClient) {
+        String dataId = "dataId1";
+        String group = "group1";
+        String tenant = "public";
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        Set<String> connectionIds =
+            new LinkedHashSet<>(Arrays.asList(firstClient, secondClient, thirdClient));
+        Mockito.when(configChangeListenContext.getListeners(groupKey)).thenReturn(connectionIds);
+        for (String connectionId : connectionIds) {
+            GrpcConnection connection = Mockito.mock(GrpcConnection.class);
+            Mockito.when(connectionManager.getConnection(connectionId)).thenReturn(connection);
+            Mockito.when(connection.getMetaInfo())
+                .thenReturn(new ConnectionMeta(connectionId, "192.168.0.1", "192.168.0.2", 34567,
+                    9848, "GRPC", "2.2.0", null, new HashMap<>()));
+            ConfigListenState state = new ConfigListenState("md5");
+            state.setNamespaceTransfer("legacy".equals(connectionId));
+            Mockito.when(configChangeListenContext.getConfigListenState(connectionId, groupKey))
+                .thenReturn(state);
+        }
+        try (MockedStatic<ConfigExecutor> configExecutor =
+            Mockito.mockStatic(ConfigExecutor.class)) {
+            rpcConfigChangeNotifier.configDataChanged(groupKey, dataId, group, tenant);
+            
+            ArgumentCaptor<RpcConfigChangeNotifier.RpcPushTask> taskCaptor =
+                ArgumentCaptor.forClass(RpcConfigChangeNotifier.RpcPushTask.class);
+            configExecutor.verify(() -> ConfigExecutor.scheduleClientConfigNotifier(
+                taskCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS)), times(3));
+            for (RpcConfigChangeNotifier.RpcPushTask task : taskCaptor.getAllValues()) {
+                ConfigChangeNotifyRequest request = task.getNotifyRequest();
+                assertEquals(dataId, request.getDataId());
+                assertEquals(group, request.getGroup());
+                if ("legacy".equals(task.getConnectionId())) {
+                    assertNull(request.getTenant());
+                } else {
+                    assertEquals(tenant, request.getTenant(), task.getConnectionId());
+                }
+            }
+        }
     }
     
     @Test

@@ -98,14 +98,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             }
             boolean ifNamespaceTransfer = configChangeListenContext
                 .getConfigListenState(client, groupKey).isNamespaceTransfer();
-            if (ifNamespaceTransfer) {
-                tenant = null;
-            }
             ConnectionMeta metaInfo = connection.getMetaInfo();
             String clientIp = metaInfo.getClientIp();
             
             ConfigChangeNotifyRequest notifyRequest =
-                ConfigChangeNotifyRequest.build(dataId, group, tenant);
+                ConfigChangeNotifyRequest.build(dataId, group, ifNamespaceTransfer ? null : tenant);
             
             RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest,
                 ConfigCommonConfig.getInstance().getMaxPushRetryTimes(), client, clientIp,
