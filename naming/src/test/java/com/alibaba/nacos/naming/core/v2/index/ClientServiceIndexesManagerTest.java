@@ -211,7 +211,7 @@ class ClientServiceIndexesManagerTest {
     }
     
     @Test
-    void testClientReleasePublishesAfterPublisherIndexRemoval() {
+    void testClientReleasePublishesAfterRemovingPublisher() {
         Mockito.when(client.getClientId()).thenReturn(NACOS);
         Mockito.when(client.getAllSubscribeService()).thenReturn(Collections.emptySet());
         Mockito.when(client.getAllPublishedService()).thenReturn(Collections.singleton(service));
@@ -236,7 +236,7 @@ class ClientServiceIndexesManagerTest {
     }
     
     @Test
-    void testPublisherIndexIsUpdatedBeforeServiceChangeNotification()
+    void testPublisherMembershipIsUpdatedBeforeServiceChangeNotification()
         throws NoSuchFieldException, IllegalAccessException {
         Service newService = Mockito.mock(Service.class);
         List<Set<String>> indexes = new ArrayList<>();
@@ -270,11 +270,12 @@ class ClientServiceIndexesManagerTest {
             
             assertEquals(List.of(Set.of("client-1"), Set.of("client-1", "client-2"),
                 Set.of("client-2"), Set.of()), indexes);
-            assertEquals(List.of(true, true, true, false), entries);
+            assertEquals(List.of(true, true, true, true), entries);
             assertEquals(List.of(Constants.ServiceChangedType.ADD_SERVICE,
                 Constants.ServiceChangedType.INSTANCE_CHANGED,
                 Constants.ServiceChangedType.INSTANCE_CHANGED,
                 Constants.ServiceChangedType.DELETE_SERVICE), changes);
+            assertFalse(publisherIndexes.containsKey(newService));
         }
     }
     

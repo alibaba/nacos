@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Client and service index manager.
@@ -146,17 +145,14 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
-        AtomicReference<String> changedType = new AtomicReference<>();
         publisherIndexes.computeIfPresent(service, (s, ids) -> {
             ids.remove(clientId);
-            changedType.set(ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
-                : Constants.ServiceChangedType.INSTANCE_CHANGED);
+            String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
+                : Constants.ServiceChangedType.INSTANCE_CHANGED;
+            NotifyCenter.publishEvent(
+                new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });
-        if (changedType.get() != null) {
-            NotifyCenter.publishEvent(
-                new ServiceEvent.ServiceChangedEvent(service, changedType.get(), true));
-        }
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
