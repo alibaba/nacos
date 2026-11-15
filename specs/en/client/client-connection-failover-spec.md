@@ -126,6 +126,10 @@ HTTP fallback must be explicit in the domain client. A failed gRPC request must
 not automatically mutate resource state through HTTP unless the domain client
 has defined that fallback.
 
+The shared synchronous Apache HTTP adapter must expose response entity bytes
+without an intermediate string conversion. A missing charset in a response
+content type must not corrupt UTF-8 JSON or binary data.
+
 ### 5.1 HTTP Request ID
 
 The Java Client SDK's shared, Config, and Naming HTTP clients, including AI
