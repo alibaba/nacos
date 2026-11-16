@@ -126,6 +126,15 @@ HTTP fallback must be explicit in the domain client. A failed gRPC request must
 not automatically mutate resource state through HTTP unless the domain client
 has defined that fallback.
 
+The shared synchronous Apache HTTP adapter must buffer response entity bytes
+without an intermediate string conversion. These are the entity bytes supplied
+by Apache after its existing content decoding, not HTTP framing or compressed
+wire bytes. Missing charset declarations must not corrupt UTF-8 JSON or binary
+data. Content consumers retain their existing parsing and charset policies.
+The adapter must preserve the existing status and header representation and
+consume and close the network response within the response-handler lifecycle,
+including when response processing fails.
+
 ### 5.1 HTTP Request ID
 
 The Java Client SDK's shared, Config, and Naming HTTP clients, including AI
