@@ -44,6 +44,124 @@ class LogRecordCodecTest {
     
     private final LogRecordCodec codec = new LogRecordCodec(LogEntryV2CodecFactory.getInstance());
     
+    @ParameterizedTest
+    @ValueSource(strings = {"heap", "readonly", "direct", "slice", "sliceReadonly",
+        "directReadonly"})
+    void decodesBufferViewsWithoutChangingTheirEnvelope(String kind) throws Exception {
+        LogEntry expected = entry(19, 7, EntryType.ENTRY_TYPE_DATA);
+        expected.setData(ByteBuffer.wrap(new byte[] {1, 5, 9}));
+        ByteBuffer encoded = codec.encode(expected);
+        int size = encoded.remaining();
+        ByteBuffer input = view(encoded, kind);
+        int start = input.position();
+        int limit = input.limit();
+        assertEquals(size, codec.recordSize(input));
+        assertEquals(start, input.position());
+        assertEquals(limit, input.limit());
+        assertEquals(ByteOrder.LITTLE_ENDIAN, input.order());
+        assertEntry(expected, codec.decode(input, size));
+        assertEquals(start + size, input.position());
+        assertEquals(limit, input.limit());
+        assertEquals(ByteOrder.LITTLE_ENDIAN, input.order());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 1, Integer.MAX_VALUE})
+    void rejectsIndexSizeMismatchBeforeCallingPayloadDecoder(int difference) throws Exception {
+        LogEntryCodecFactory factory = mock(LogEntryCodecFactory.class);
+        LogEntryDecoder decoder = mock(LogEntryDecoder.class);
+        when(factory.encoder()).thenReturn(LogEntryV2CodecFactory.getInstance().encoder());
+        when(factory.decoder()).thenReturn(decoder);
+        LogRecordCodec checked = new LogRecordCodec(factory);
+        ByteBuffer record = view(codec.encode(entry(1, 1, EntryType.ENTRY_TYPE_NO_OP)), "heap");
+        int start = record.position();
+        int expected =
+            difference == Integer.MAX_VALUE ? difference : record.remaining() + difference;
+        assertThrows(IOException.class, () -> checked.decode(record, expected));
+        assertEquals(start, record.position());
+        verifyNoInteractions(decoder);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"header", "payload", "truncated", "headerLimit"})
+    void rejectedRecordsPreserveInputState(String failure) throws Exception {
+        LogEntry expected = entry(1, 1, EntryType.ENTRY_TYPE_DATA);
+        expected.setData(ByteBuffer.wrap(new byte[] {8, 3, 2}));
+        ByteBuffer record = view(codec.encode(expected), "directReadonly");
+        byte[] bytes = new byte[record.remaining()];
+        record.duplicate().get(bytes);
+        if ("header".equals(failure)) {
+            bytes[8] ^= 1;
+        } else if ("payload".equals(failure)) {
+            bytes[FileLogFormat.RECORD_HEADER_SIZE] ^= 1;
+        }
+        ByteBuffer input = view(ByteBuffer.wrap(bytes), "directReadonly");
+        if ("truncated".equals(failure)) {
+            input.limit(input.limit() - 1);
+        } else if ("headerLimit".equals(failure)) {
+            input.limit(input.position() + FileLogFormat.RECORD_HEADER_SIZE - 1);
+        }
+        int start = input.position();
+        int limit = input.limit();
+        assertThrows(IOException.class, () -> codec.decode(input, bytes.length));
+        assertEquals(start, input.position());
+        assertEquals(limit, input.limit());
+        assertEquals(ByteOrder.LITTLE_ENDIAN, input.order());
+    }
+    
+    @Test
+    void advancesByOnlyOneRecordWhenMoreBytesFollow() throws Exception {
+        LogEntry expected = entry(5, 2, EntryType.ENTRY_TYPE_NO_OP);
+        ByteBuffer record = codec.encode(expected);
+        int size = record.remaining();
+        ByteBuffer input = ByteBuffer.allocate(size * 2 + 7);
+        input.position(7).put(record.duplicate()).put(record.duplicate()).flip().position(7);
+        assertEntry(expected, codec.decode(input, size));
+        assertEquals(7 + size, input.position());
+        assertEntry(expected, codec.decode(input, size));
+        assertEquals(input.limit(), input.position());
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"throws", "null", "identity"})
+    void payloadDecoderFailureDoesNotConsumeRecord(String failure) throws Exception {
+        LogEntryCodecFactory factory = mock(LogEntryCodecFactory.class);
+        LogEntryDecoder decoder = mock(LogEntryDecoder.class);
+        when(factory.encoder()).thenReturn(LogEntryV2CodecFactory.getInstance().encoder());
+        when(factory.decoder()).thenReturn(decoder);
+        if ("throws".equals(failure)) {
+            when(decoder.decode(org.mockito.ArgumentMatchers.any(byte[].class)))
+                .thenThrow(new IllegalArgumentException("decoder"));
+        } else if ("identity".equals(failure)) {
+            when(decoder.decode(org.mockito.ArgumentMatchers.any(byte[].class)))
+                .thenReturn(entry(0, 1, EntryType.ENTRY_TYPE_DATA));
+        }
+        LogRecordCodec checked = new LogRecordCodec(factory);
+        ByteBuffer input = view(codec.encode(entry(1, 1, EntryType.ENTRY_TYPE_NO_OP)), "heap");
+        int start = input.position();
+        int length = input.remaining();
+        assertThrows(IOException.class, () -> checked.decode(input, length));
+        assertEquals(start, input.position());
+    }
+    
+    private static ByteBuffer view(ByteBuffer encoded, String kind) {
+        int size = encoded.remaining();
+        ByteBuffer buffer = kind.startsWith("direct")
+            ? ByteBuffer.allocateDirect(size + 23) : ByteBuffer.allocate(size + 23);
+        buffer.position(12).put(encoded.duplicate());
+        buffer.limit(12 + size).position(5);
+        if (kind.startsWith("slice")) {
+            buffer = buffer.slice();
+            buffer.position(7);
+        } else {
+            buffer.position(12);
+        }
+        if ("readonly".equals(kind) || kind.endsWith("Readonly")) {
+            buffer = buffer.asReadOnlyBuffer();
+        }
+        return buffer.order(ByteOrder.LITTLE_ENDIAN);
+    }
+    
     @Test
     void roundTripsAllPersistedEntryTypes() throws Exception {
         LogEntry data = entry(1, 2, EntryType.ENTRY_TYPE_DATA);
@@ -55,9 +173,13 @@ class LogRecordCodecTest {
         configuration.setLearners(List.of(new PeerId("127.0.0.1", 7850)));
         configuration.setOldLearners(List.of(new PeerId("127.0.0.1", 7851)));
         
-        assertEntry(data, codec.decode(codec.encode(data)));
-        assertEntry(noOp, codec.decode(codec.encode(noOp)));
-        LogEntry decodedConfiguration = codec.decode(codec.encode(configuration));
+        ByteBuffer dataRecord = codec.encode(data);
+        assertEntry(data, codec.decode(dataRecord, dataRecord.remaining()));
+        ByteBuffer noOpRecord = codec.encode(noOp);
+        assertEntry(noOp, codec.decode(noOpRecord, noOpRecord.remaining()));
+        ByteBuffer configurationRecord = codec.encode(configuration);
+        LogEntry decodedConfiguration =
+            codec.decode(configurationRecord, configurationRecord.remaining());
         assertEntry(configuration, decodedConfiguration);
         assertEquals(configuration.getPeers(), decodedConfiguration.getPeers());
         assertEquals(configuration.getOldPeers(), decodedConfiguration.getOldPeers());
@@ -86,7 +208,8 @@ class LogRecordCodecTest {
         
         byte[] payloadCorruption = encoded.array().clone();
         payloadCorruption[FileLogFormat.RECORD_HEADER_SIZE] ^= 1;
-        assertThrows(IOException.class, () -> codec.decode(ByteBuffer.wrap(payloadCorruption)));
+        assertThrows(IOException.class,
+            () -> codec.decode(ByteBuffer.wrap(payloadCorruption), payloadCorruption.length));
     }
     
     @Test
@@ -127,7 +250,8 @@ class LogRecordCodecTest {
         }
         record.flip();
         
-        IOException failure = assertThrows(IOException.class, () -> bounded.decode(record));
+        IOException failure =
+            assertThrows(IOException.class, () -> bounded.decode(record, record.remaining()));
         
         assertTrue(failure.getMessage().contains("length exceeds bounds"));
         assertEquals(0, record.position());
@@ -142,10 +266,11 @@ class LogRecordCodecTest {
         LogRecordCodec bounded = new LogRecordCodec(LogEntryV2CodecFactory.getInstance(),
             record.remaining());
         
-        assertEntry(expected, bounded.decode(record.duplicate()));
+        assertEntry(expected, bounded.decode(record.duplicate(), record.remaining()));
         ByteBuffer truncated = record.duplicate();
         truncated.limit(truncated.limit() - 1);
-        IOException failure = assertThrows(IOException.class, () -> bounded.decode(truncated));
+        IOException failure =
+            assertThrows(IOException.class, () -> bounded.decode(truncated, record.remaining()));
         assertTrue(failure.getMessage().contains("Truncated file log record"));
         assertEquals(0, truncated.position());
     }
@@ -181,7 +306,7 @@ class LogRecordCodecTest {
             .putShort((short) FileLogFormat.RECORD_HEADER_SIZE).putInt(payload.length);
         record.putInt(FileLogFormat.crc32(record.array(), 0, 12)).put(payload)
             .putLong(FileLogFormat.crc64(payload, 0, payload.length)).flip();
-        assertThrows(IOException.class, () -> codec.decode(record));
+        assertThrows(IOException.class, () -> codec.decode(record, record.remaining()));
     }
     
     private static LogEntry entry(long index, long term, EntryType type) {

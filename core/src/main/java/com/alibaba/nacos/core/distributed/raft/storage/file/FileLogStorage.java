@@ -71,6 +71,10 @@ public final class FileLogStorage implements LogStorage {
     
     private static final int APPEND_BUFFER_BYTES = 256 * 1024;
     
+    private static final int INDEX_REBUILD_BATCH_ENTRIES = 4096;
+    
+    private static final int SEGMENT_SCAN_BUFFER_BYTES = 256 * 1024;
+    
     private static final int MAX_SEGMENT_READERS = 16;
     
     private final Path configuredLogUri;
@@ -372,10 +376,7 @@ public final class FileLogStorage implements LogStorage {
         Index.Entry location) throws IOException {
         ByteBuffer bytes = segment.read(location.getOffset(), location.getRecordSize(),
             metadata.getPublishedEndOffset());
-        if (recordCodec.recordSize(bytes) != location.getRecordSize()) {
-            throw new IOException("Index record size disagrees with record header");
-        }
-        return recordCodec.decode(bytes);
+        return recordCodec.decode(bytes, location.getRecordSize());
     }
     
     private Index.Entry locate(Manifest.SegmentMeta metadata, long index, Index file)
@@ -1211,19 +1212,22 @@ public final class FileLogStorage implements LogStorage {
         Path path = segmentPath(metadata.getSegmentId());
         long offset = metadata.getFirstRecordOffset();
         long expectedIndex = metadata.getFirstIndex();
+        long recordCount = Math.addExact(Math.subtractExact(metadata.getLastIndex(),
+            expectedIndex), 1);
+        int[] recordSizes = recordCount == 1 ? null
+            : new int[(int) Math.min(INDEX_REBUILD_BATCH_ENTRIES, recordCount)];
+        long batchFirstIndex = expectedIndex;
+        long batchFirstOffset = offset;
+        int batchCount = 0;
         try (Segment segment = Segment.open(path, metadata.getPublishedEndOffset())) {
             validateSegmentIdentity(segment, metadata);
-            while (offset < metadata.getPublishedEndOffset()) {
-                ByteBuffer recordHeader = segment.read(offset, FileLogFormat.RECORD_HEADER_SIZE,
-                    metadata.getPublishedEndOffset());
-                int recordSize = recordCodec.recordSize(recordHeader);
+            SegmentScanner scanner = new SegmentScanner(segment, offset,
+                metadata.getPublishedEndOffset(), SEGMENT_SCAN_BUFFER_BYTES);
+            while (scanner.hasNext()) {
+                ByteBuffer record = scanner.nextRecord(recordCodec);
+                int recordSize = record.remaining();
                 long nextOffset = Math.addExact(offset, recordSize);
-                if (nextOffset > metadata.getPublishedEndOffset()) {
-                    throw new IOException("Published record is incomplete at " + path + " offset "
-                        + offset);
-                }
-                LogEntry entry = recordCodec.decode(segment.read(offset, recordSize,
-                    metadata.getPublishedEndOffset()));
+                LogEntry entry = recordCodec.decode(record, recordSize);
                 if (entry.getId().getIndex() != expectedIndex
                     || expectedIndex > metadata.getLastIndex()) {
                     throw new IOException(
@@ -1237,7 +1241,20 @@ public final class FileLogStorage implements LogStorage {
                         : new Configuration(entry.getOldPeers(), entry.getOldLearners());
                     configurations.add(new ConfigurationEntry(entry.getId(), current, old));
                 }
-                index.append(expectedIndex, offset, recordSize);
+                if (recordSizes == null) {
+                    index.append(expectedIndex, offset, recordSize);
+                } else {
+                    if (batchCount == 0) {
+                        batchFirstIndex = expectedIndex;
+                        batchFirstOffset = offset;
+                    }
+                    recordSizes[batchCount++] = recordSize;
+                    if (batchCount == recordSizes.length) {
+                        index.appendBatch(batchFirstIndex, batchFirstOffset, recordSizes, 0,
+                            batchCount);
+                        batchCount = 0;
+                    }
+                }
                 offset = nextOffset;
                 expectedIndex = Math.addExact(expectedIndex, 1);
             }
@@ -1245,6 +1262,11 @@ public final class FileLogStorage implements LogStorage {
         if (offset != metadata.getPublishedEndOffset()
             || expectedIndex != Math.addExact(metadata.getLastIndex(), 1)) {
             throw new IOException("Segment range does not match manifest: " + path);
+        }
+        if (batchCount == 1) {
+            index.append(batchFirstIndex, batchFirstOffset, recordSizes[0]);
+        } else if (batchCount > 1) {
+            index.appendBatch(batchFirstIndex, batchFirstOffset, recordSizes, 0, batchCount);
         }
         return expectedIndex;
     }

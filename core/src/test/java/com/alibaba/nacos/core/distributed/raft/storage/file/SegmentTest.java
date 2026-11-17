@@ -54,6 +54,76 @@ class SegmentTest {
     
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
+    void readsIntoCallerBufferWithShortReadsAndPreservesItsEnvelope(boolean direct)
+        throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        when(channel.read(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer target = invocation.getArgument(0);
+            long offset = invocation.getArgument(1);
+            int count = Math.min(3, target.remaining());
+            for (int i = 0; i < count; i++) {
+                target.put((byte) (offset + i));
+            }
+            return count;
+        });
+        try (Segment segment = new Segment(Path.of("read-into.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 100, 100)) {
+            ByteBuffer target = direct ? ByteBuffer.allocateDirect(20) : ByteBuffer.allocate(20);
+            target.order(java.nio.ByteOrder.LITTLE_ENDIAN).position(5).limit(17);
+            segment.readInto(40, target, 52);
+            assertEquals(17, target.position());
+            assertEquals(17, target.limit());
+            assertEquals(java.nio.ByteOrder.LITTLE_ENDIAN, target.order());
+            for (int i = 0; i < 12; i++) {
+                assertEquals((byte) (40 + i), target.get(5 + i));
+            }
+            verify(channel, times(4)).read(any(ByteBuffer.class), anyLong());
+            verify(channel, times(0)).force(true);
+        }
+    }
+    
+    @Test
+    void rejectsInvalidReadIntoRequestsBeforeIo() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        try (Segment segment = new Segment(Path.of("read-into.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 100, Long.MAX_VALUE)) {
+            ByteBuffer target = ByteBuffer.allocate(20).position(3).limit(13);
+            assertThrows(IOException.class, () -> segment.readInto(39, target, 100));
+            assertThrows(IOException.class, () -> segment.readInto(95, target, 100));
+            assertThrows(IOException.class, () -> segment.readInto(40, target, 101));
+            assertThrows(IOException.class, () -> segment.readInto(Long.MAX_VALUE, target, 100));
+            assertThrows(IOException.class, () -> segment.readInto(40,
+                target.asReadOnlyBuffer(), 100));
+            assertThrows(IOException.class, () -> segment.readInto(40, null, 100));
+            assertEquals(3, target.position());
+            assertEquals(13, target.limit());
+            verify(channel, times(0)).read(any(ByteBuffer.class), anyLong());
+        }
+    }
+    
+    @Test
+    void readIntoReportsPartialProgressOnIoFailure() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        AtomicInteger calls = new AtomicInteger();
+        when(channel.read(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            if (calls.incrementAndGet() > 1) {
+                throw new IOException("injected partial read");
+            }
+            ByteBuffer target = invocation.getArgument(0);
+            target.put(new byte[3]);
+            return 3;
+        });
+        try (Segment segment = new Segment(Path.of("read-into.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 100, 100)) {
+            ByteBuffer target = ByteBuffer.allocate(20).position(2).limit(12);
+            assertThrows(IOException.class, () -> segment.readInto(40, target, 100));
+            assertEquals(5, target.position());
+            assertEquals(12, target.limit());
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     void combinesRecordsIntoOneWriteAndPreservesInputPositions(boolean direct) throws Exception {
         FileChannel channel = mock(FileChannel.class);
         AtomicInteger calls = new AtomicInteger();
