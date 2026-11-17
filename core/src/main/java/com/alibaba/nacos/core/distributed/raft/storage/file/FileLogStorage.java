@@ -69,6 +69,8 @@ public final class FileLogStorage implements LogStorage {
     
     private static final String MANIFEST_TEMP_NAME = "manifest.tmp";
     
+    private static final int APPEND_BUFFER_BYTES = 256 * 1024;
+    
     private final Path configuredLogUri;
     
     private Path root;
@@ -94,6 +96,8 @@ public final class FileLogStorage implements LogStorage {
     private WriteRuntime writeRuntime;
     
     private long nextSegmentId;
+    
+    private ByteBuffer appendScratch;
     
     /**
      * Creates a file log foundation under {@code logUri/file-log}.
@@ -151,7 +155,7 @@ public final class FileLogStorage implements LogStorage {
                     checkEmptyInitialization();
                     Files.deleteIfExists(root.resolve(MANIFEST_TEMP_NAME));
                     manifest = Manifest.empty(UUID.randomUUID(), options.getGroupId(), 1);
-                    writeManifest(manifest);
+                    writeManifest(manifest, encodeManifest(manifest));
                 }
                 nextSegmentId = findNextSegmentId();
                 List<ConfigurationEntry> configurations = recover();
@@ -403,28 +407,16 @@ public final class FileLogStorage implements LogStorage {
             if (!isOpen() || writeRuntime == null || entries == null || entries.isEmpty()) {
                 return 0;
             }
-            List<ByteBuffer> records = new ArrayList<>(entries.size());
-            Manifest next;
-            long first = manifest.getFirstLogIndex();
+            AppendPlan plan;
             try {
-                first = Math.addExact(manifest.getLastLogIndex(), 1);
-                long expected = first;
-                for (LogEntry entry : entries) {
-                    ByteBuffer record = recordCodec.encode(entry);
-                    if (entry.getId().getIndex() != expected) {
-                        throw new IOException("Non-contiguous append at index " + expected);
-                    }
-                    expected = Math.addExact(expected, 1);
-                    records.add(record);
-                }
-                next = planAppend(manifest, first, records);
+                plan = prepareAppend(entries);
             } catch (IOException | RuntimeException e) {
                 Loggers.RAFT.warn("Rejected file log append at " + root, e);
                 return 0;
             }
             try {
-                writeBatch(next, first, records);
-                return records.size();
+                writeBatch(plan);
+                return plan.records.size();
             } catch (IOException | RuntimeException e) {
                 failMutation("append", e);
                 return 0;
@@ -434,64 +426,183 @@ public final class FileLogStorage implements LogStorage {
         }
     }
     
-    private Manifest planAppend(Manifest base, long first, List<ByteBuffer> records)
-        throws IOException {
-        List<Manifest.SegmentMeta> segments = new ArrayList<>(base.getSegments());
-        long candidateId = nextSegmentId;
-        long index = first;
-        for (ByteBuffer record : records) {
+    private AppendPlan prepareAppend(List<LogEntry> entries) throws IOException {
+        List<ByteBuffer> records = new ArrayList<>(entries.size());
+        int[] recordSizes = new int[entries.size()];
+        long first = Math.addExact(manifest.getLastLogIndex(), 1);
+        long expected = first;
+        for (LogEntry entry : entries) {
+            ByteBuffer record = recordCodec.encode(entry);
+            if (entry.getId().getIndex() != expected) {
+                throw new IOException("Non-contiguous append at index " + expected);
+            }
+            expected = Math.addExact(expected, 1);
             int size = record.remaining();
             if (size > maxSegmentBytes - FileLogFormat.SEGMENT_HEADER_SIZE) {
                 throw new IOException("Record does not fit an empty segment");
             }
+            recordSizes[records.size()] = size;
+            records.add(record.asReadOnlyBuffer());
+        }
+        return planAppend(manifest, first, records, recordSizes);
+    }
+    
+    private AppendPlan planAppend(Manifest base, long first, List<ByteBuffer> records,
+        int[] recordSizes)
+        throws IOException {
+        List<Manifest.SegmentMeta> segments = new ArrayList<>(base.getSegments());
+        List<SegmentWrite> writes = new ArrayList<>();
+        long candidateId = nextSegmentId;
+        long index = first;
+        int from = 0;
+        boolean addsSegment = false;
+        while (from < records.size()) {
             Manifest.SegmentMeta previous =
                 segments.isEmpty() ? null : segments.get(segments.size() - 1);
-            if (previous == null
-                || Math.addExact(previous.getPublishedEndOffset(), size) > maxSegmentBytes) {
-                long id = candidateId;
+            boolean createsSegment = previous == null
+                || Math.addExact(previous.getPublishedEndOffset(),
+                    recordSizes[from]) > maxSegmentBytes;
+            long segmentId;
+            long startOffset;
+            long firstIndex;
+            long firstRecordOffset;
+            if (createsSegment) {
+                segmentId = candidateId;
                 candidateId = Math.addExact(candidateId, 1);
-                segments.add(new Manifest.SegmentMeta(id, index, index,
-                    FileLogFormat.SEGMENT_HEADER_SIZE,
-                    Math.addExact(FileLogFormat.SEGMENT_HEADER_SIZE, size)));
+                startOffset = FileLogFormat.SEGMENT_HEADER_SIZE;
+                firstIndex = index;
+                firstRecordOffset = startOffset;
+                addsSegment = true;
             } else {
-                segments.set(segments.size() - 1, new Manifest.SegmentMeta(previous.getSegmentId(),
-                    previous.getFirstIndex(), index, previous.getFirstRecordOffset(),
-                    Math.addExact(previous.getPublishedEndOffset(), size)));
+                segmentId = previous.getSegmentId();
+                startOffset = previous.getPublishedEndOffset();
+                firstIndex = previous.getFirstIndex();
+                firstRecordOffset = previous.getFirstRecordOffset();
             }
-            index = Math.addExact(index, 1);
+            long endOffset = startOffset;
+            long writeFirstIndex = index;
+            int to = from;
+            while (to < records.size()
+                && Math.addExact(endOffset, recordSizes[to]) <= maxSegmentBytes) {
+                endOffset = Math.addExact(endOffset, recordSizes[to]);
+                index = Math.addExact(index, 1);
+                to++;
+            }
+            Manifest.SegmentMeta metadata = new Manifest.SegmentMeta(segmentId, firstIndex,
+                Math.subtractExact(index, 1), firstRecordOffset, endOffset);
+            if (createsSegment) {
+                segments.add(metadata);
+            } else {
+                segments.set(segments.size() - 1, metadata);
+            }
+            writes.add(new SegmentWrite(segmentId, writeFirstIndex, startOffset, endOffset,
+                from, to, createsSegment));
+            from = to;
         }
         Manifest next = new Manifest(FileLogFormat.VERSION, base.getStoreId(), base.getGroupId(),
             base.getFirstLogIndex(), Math.subtractExact(index, 1), segments);
-        // Validate the entire publication, including its size, before touching files.
-        encodeManifest(next);
-        return next;
+        // Retain the fully validated publication before touching any storage files.
+        return new AppendPlan(base, next, encodeManifest(next).asReadOnlyBuffer(),
+            records, recordSizes, writes, addsSegment);
     }
     
-    private void writeBatch(Manifest next, long first, List<ByteBuffer> records)
-        throws IOException {
-        long index = first;
-        for (ByteBuffer record : records) {
-            Manifest.SegmentMeta target = findSegment(next, index);
-            if (writeRuntime.segment == null
-                || writeRuntime.segment.getHeader().getSegmentId() != target.getSegmentId()) {
-                // Every rolled segment is durable before the batch Manifest is published.
+    private void writeBatch(AppendPlan plan) throws IOException {
+        if (manifest != plan.base) {
+            throw new IOException("Stale file log append plan");
+        }
+        for (int i = 0; i < plan.records.size(); i++) {
+            if (plan.records.get(i).remaining() != plan.recordSizes[i]) {
+                throw new IOException("File log append plan record size changed");
+            }
+        }
+        for (SegmentWrite write : plan.writes) {
+            if (write.createsSegment) {
                 if (writeRuntime.segment != null) {
-                    writeRuntime.segment.force();
+                    writeRuntime.segment.syncIfRequired();
                 }
                 closeActive();
-                nextSegmentId = Math.addExact(target.getSegmentId(), 1);
+                nextSegmentId = Math.addExact(write.segmentId, 1);
                 writeRuntime.segment = Segment.create(root.resolve("segments"),
-                    manifest.getStoreId(), target.getSegmentId());
+                    manifest.getStoreId(), write.segmentId);
                 writeRuntime.index =
-                    Index.create(indexPath(target.getSegmentId()), target.getFirstIndex());
+                    Index.create(indexPath(write.segmentId), write.firstIndex);
             }
-            int size = record.remaining();
-            long offset = writeRuntime.segment.append(record);
-            writeRuntime.index.append(index, offset, size);
-            index = Math.addExact(index, 1);
+            if (writeRuntime.segment == null
+                || writeRuntime.segment.getHeader().getSegmentId() != write.segmentId
+                || writeRuntime.segment.getLogicalEnd() != write.startOffset) {
+                throw new IOException("File log append plan does not match active segment");
+            }
+            int count = write.toExclusive - write.fromInclusive;
+            long offset;
+            if (count == 1) {
+                offset = writeRuntime.segment.append(
+                    plan.records.get(write.fromInclusive).duplicate());
+            } else {
+                if (appendScratch == null) {
+                    appendScratch = ByteBuffer.allocateDirect(APPEND_BUFFER_BYTES);
+                }
+                offset = writeRuntime.segment.appendBatch(plan.records, write.fromInclusive,
+                    write.toExclusive, appendScratch);
+            }
+            if (offset != write.startOffset
+                || writeRuntime.segment.getLogicalEnd() != write.endOffset) {
+                throw new IOException("Unexpected file log append plan boundaries");
+            }
+            if (count == 1) {
+                writeRuntime.index.append(write.firstIndex, offset,
+                    plan.recordSizes[write.fromInclusive]);
+            } else {
+                writeRuntime.index.appendBatch(write.firstIndex, offset, plan.recordSizes,
+                    write.fromInclusive, count);
+            }
         }
         writeRuntime.segment.force();
-        publishManifest(next);
+        publishPrepared(plan);
+    }
+    
+    private static final class AppendPlan {
+        
+        private final Manifest base;
+        private final Manifest next;
+        private final ByteBuffer encodedManifest;
+        private final List<ByteBuffer> records;
+        private final int[] recordSizes;
+        private final List<SegmentWrite> writes;
+        private final boolean addsSegment;
+        
+        private AppendPlan(Manifest base, Manifest next, ByteBuffer encodedManifest,
+            List<ByteBuffer> records, int[] recordSizes, List<SegmentWrite> writes,
+            boolean addsSegment) {
+            this.base = base;
+            this.next = next;
+            this.encodedManifest = encodedManifest;
+            this.records = List.copyOf(records);
+            this.recordSizes = recordSizes;
+            this.writes = List.copyOf(writes);
+            this.addsSegment = addsSegment;
+        }
+    }
+    
+    private static final class SegmentWrite {
+        
+        private final long segmentId;
+        private final long firstIndex;
+        private final long startOffset;
+        private final long endOffset;
+        private final int fromInclusive;
+        private final int toExclusive;
+        private final boolean createsSegment;
+        
+        private SegmentWrite(long segmentId, long firstIndex, long startOffset, long endOffset,
+            int fromInclusive, int toExclusive, boolean createsSegment) {
+            this.segmentId = segmentId;
+            this.firstIndex = firstIndex;
+            this.startOffset = startOffset;
+            this.endOffset = endOffset;
+            this.fromInclusive = fromInclusive;
+            this.toExclusive = toExclusive;
+            this.createsSegment = createsSegment;
+        }
     }
     
     @Override
@@ -937,7 +1048,7 @@ public final class FileLogStorage implements LogStorage {
             if (!isOpen()) {
                 throw new IllegalStateException("File log store is not open");
             }
-            validateManifest(next);
+            ByteBuffer encoded = encodeManifest(next);
             if (!manifest.getStoreId().equals(next.getStoreId())
                 || !manifest.getGroupId().equals(next.getGroupId())) {
                 throw new IOException("Manifest identity cannot change");
@@ -948,13 +1059,25 @@ public final class FileLogStorage implements LogStorage {
             }
             boolean addsSegment = next.getSegments().stream()
                 .anyMatch(segment -> !currentSegments.contains(segment.getSegmentId()));
-            if (addsSegment) {
-                forceDirectory(root.resolve("segments"));
-            }
-            writeManifest(next);
+            publishEncoded(next, encoded, addsSegment);
         } finally {
             writeLock.unlock();
         }
+    }
+    
+    private void publishPrepared(AppendPlan plan) throws IOException {
+        if (!isOpen() || manifest != plan.base) {
+            throw new IOException("Stale file log publication plan");
+        }
+        publishEncoded(plan.next, plan.encodedManifest, plan.addsSegment);
+    }
+    
+    private void publishEncoded(Manifest next, ByteBuffer encoded, boolean addsSegment)
+        throws IOException {
+        if (addsSegment) {
+            forceDirectory(root.resolve("segments"));
+        }
+        writeManifest(next, encoded);
     }
     
     private Manifest readManifest(Path path) throws IOException {
@@ -971,8 +1094,8 @@ public final class FileLogStorage implements LogStorage {
         return decodeManifest(content);
     }
     
-    private void writeManifest(Manifest next) throws IOException {
-        ByteBuffer content = encodeManifest(next);
+    private void writeManifest(Manifest next, ByteBuffer encoded) throws IOException {
+        ByteBuffer content = encoded.duplicate();
         Path temporary = root.resolve(MANIFEST_TEMP_NAME);
         try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.CREATE,
             StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.READ,
@@ -1215,6 +1338,7 @@ public final class FileLogStorage implements LogStorage {
             Loggers.RAFT.warn("Failed to close active file log at " + root, e);
         }
         writeRuntime = null;
+        appendScratch = null;
         nextSegmentId = 0;
         if (directoryLock != null) {
             try {

@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.distributed.raft.storage.file;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,11 +39,133 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class IndexTest {
     
     @TempDir
     Path directory;
+    
+    @Test
+    void batchMatchesIndividualSlotsAcrossBufferBoundaries() throws Exception {
+        int count = 10000;
+        int[] sizes = new int[count + 2];
+        Path batchPath = directory.resolve("batch.idx");
+        Path singlePath = directory.resolve("single.idx");
+        long end = 48;
+        try (Index batch = Index.create(batchPath, 101);
+            Index single = Index.create(singlePath, 101)) {
+            for (int i = 1; i <= count; i++) {
+                sizes[i] = 24 + i % 71;
+                single.append(100L + i, end, sizes[i]);
+                end += sizes[i];
+            }
+            batch.appendBatch(101, 48, sizes, 1, count);
+            assertArrayEquals(Files.readAllBytes(singlePath), Files.readAllBytes(batchPath));
+            assertEquals(end - sizes[count], batch.read(100L + count, 48, end).getOffset());
+            batch.append(101L + count, end, 24);
+            assertEquals(end, batch.read(101L + count, 48, end + 24).getOffset());
+        }
+    }
+    
+    @Test
+    void combinesSmallSlotsIntoOneBoundedWrite() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        AtomicInteger calls = new AtomicInteger();
+        int[] sizes = new int[128];
+        java.util.Arrays.fill(sizes, 24);
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer buffer = invocation.getArgument(0);
+            assertEquals(0L, (long) invocation.getArgument(1));
+            assertEquals(128 * 12, buffer.remaining());
+            int length = buffer.remaining();
+            for (int i = 0; i < 128; i++) {
+                assertEquals(40L + i * 24L, buffer.getLong());
+                assertEquals(24, buffer.getInt());
+            }
+            calls.incrementAndGet();
+            return length;
+        });
+        try (Index index = new Index(Path.of("combined.idx"), channel, 1, 1)) {
+            index.appendBatch(1, 40, sizes, 0, sizes.length);
+            assertEquals(1, calls.get());
+        }
+    }
+    
+    @Test
+    void rejectsInvalidBatchBeforeAnyFileIo() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        try (Index index = new Index(Path.of("invalid.idx"), channel, 1, 1)) {
+            assertThrows(IOException.class, () -> index.appendBatch(1, 40, null, 0, 1));
+            assertThrows(IOException.class, () -> index.appendBatch(1, 40, new int[] {24}, 0, 0));
+            assertThrows(IOException.class, () -> index.appendBatch(1, 40, new int[] {24}, -1, 1));
+            assertThrows(IOException.class,
+                () -> index.appendBatch(1, 40, new int[] {24}, 1, Integer.MAX_VALUE));
+            assertThrows(IOException.class, () -> index.appendBatch(2, 40, new int[] {24}, 0, 1));
+            assertThrows(IOException.class, () -> index.appendBatch(1, 39, new int[] {24}, 0, 1));
+            assertThrows(IOException.class,
+                () -> index.appendBatch(1, 40, new int[] {24, 23}, 0, 2));
+            assertThrows(IOException.class,
+                () -> index.appendBatch(1, 40, new int[] {24, Integer.MAX_VALUE}, 0, 2));
+            assertThrows(IOException.class,
+                () -> index.appendBatch(1, Long.MAX_VALUE - 24, new int[] {24, 24}, 0, 2));
+            verifyNoInteractions(channel);
+        }
+        FileChannel overflow = mock(FileChannel.class);
+        try (Index index = new Index(Path.of("overflow-batch.idx"), overflow,
+            Long.MAX_VALUE, Long.MAX_VALUE)) {
+            assertThrows(IOException.class,
+                () -> index.appendBatch(Long.MAX_VALUE, 40, new int[] {24}, 0, 1));
+            verifyNoInteractions(overflow);
+        }
+        FileChannel slots = mock(FileChannel.class);
+        try (Index index = new Index(Path.of("overflow-slots.idx"), slots, 1, Long.MAX_VALUE - 1)) {
+            assertThrows(IOException.class,
+                () -> index.appendBatch(Long.MAX_VALUE - 1, 40, new int[] {24}, 0, 1));
+            verifyNoInteractions(slots);
+        }
+    }
+    
+    @Test
+    void batchLoopsOnPositiveShortWrites() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        byte[] bytes = new byte[36];
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer source = invocation.getArgument(0);
+            int offset = Math.toIntExact(invocation.getArgument(1));
+            int length = Math.min(5, source.remaining());
+            source.get(bytes, offset, length);
+            return length;
+        });
+        try (Index index = new Index(Path.of("short-batch.idx"), channel, 10, 10)) {
+            index.appendBatch(10, 40, new int[] {24, 25, 26}, 0, 3);
+        }
+        assertArrayEquals(ByteBuffer.allocate(36).putLong(40).putInt(24)
+            .putLong(64).putInt(25).putLong(89).putInt(26).array(), bytes);
+    }
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void partialBatchFailureDoesNotAdvanceNextIndex(boolean zeroProgress) throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        AtomicInteger calls = new AtomicInteger();
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            if (calls.incrementAndGet() == 1) {
+                ByteBuffer source = invocation.getArgument(0);
+                source.position(source.position() + 5);
+                return 5;
+            }
+            if (zeroProgress) {
+                return 0;
+            }
+            throw new IOException("partial index batch");
+        });
+        try (Index index = new Index(Path.of("failed-batch.idx"), channel, 10, 10)) {
+            assertThrows(IOException.class,
+                () -> index.appendBatch(10, 40, new int[] {24, 24}, 0, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> index.read(10, 40, 88));
+        }
+    }
     
     @Test
     void readsOnlySuccessfullyAppendedSlots() throws Exception {

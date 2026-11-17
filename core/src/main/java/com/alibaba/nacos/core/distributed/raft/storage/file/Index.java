@@ -26,6 +26,8 @@ import java.nio.file.StandardOpenOption;
 
 final class Index implements AutoCloseable {
     
+    private static final int MAX_BATCH_BUFFER_BYTES = 64 * 1024;
+    
     private final Path path;
     
     private final FileChannel channel;
@@ -110,6 +112,52 @@ final class Index implements AutoCloseable {
             .order(ByteOrder.BIG_ENDIAN);
         entry.putLong(offset).putInt(recordSize).flip();
         writeFully(entry, entryPosition);
+        nextIndex = followingIndex;
+    }
+    
+    void appendBatch(long firstIndex, long firstOffset, int[] recordSizes, int from, int count)
+        throws IOException {
+        if (recordSizes == null || from < 0 || count <= 0 || from > recordSizes.length
+            || count > recordSizes.length - from || firstIndex != nextIndex
+            || firstOffset < FileLogFormat.SEGMENT_HEADER_SIZE) {
+            throw new IOException("Invalid index batch for " + path);
+        }
+        final long followingIndex;
+        final long byteCount;
+        try {
+            followingIndex = Math.addExact(firstIndex, (long) count);
+            byteCount = Math.multiplyExact((long) count, FileLogFormat.INDEX_ENTRY_SIZE);
+            long end = firstOffset;
+            for (int i = from; i < from + count; i++) {
+                if (recordSizes[i] < FileLogFormat.RECORD_OVERHEAD
+                    || recordSizes[i] > LogRecordCodec.MAX_RECORD_BYTES) {
+                    throw new IOException("Invalid index batch record size for " + path);
+                }
+                end = Math.addExact(end, recordSizes[i]);
+            }
+        } catch (ArithmeticException e) {
+            throw new IOException("Index batch range overflow in " + path, e);
+        }
+        long entryPosition = position(baseIndex, firstIndex);
+        position(baseIndex, followingIndex);
+        int capacity = (int) Math.min(byteCount,
+            MAX_BATCH_BUFFER_BYTES / FileLogFormat.INDEX_ENTRY_SIZE
+                * FileLogFormat.INDEX_ENTRY_SIZE);
+        ByteBuffer buffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
+        long offset = firstOffset;
+        for (int i = from; i < from + count; i++) {
+            if (buffer.remaining() < FileLogFormat.INDEX_ENTRY_SIZE) {
+                buffer.flip();
+                int length = buffer.remaining();
+                writeFully(buffer, entryPosition);
+                entryPosition = Math.addExact(entryPosition, length);
+                buffer.clear();
+            }
+            buffer.putLong(offset).putInt(recordSizes[i]);
+            offset = Math.addExact(offset, recordSizes[i]);
+        }
+        buffer.flip();
+        writeFully(buffer, entryPosition);
         nextIndex = followingIndex;
     }
     

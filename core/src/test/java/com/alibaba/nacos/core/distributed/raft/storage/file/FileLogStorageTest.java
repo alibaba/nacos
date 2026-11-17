@@ -59,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -81,6 +82,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 class FileLogStorageTest {
     
@@ -101,6 +105,159 @@ class FileLogStorageTest {
     @AfterEach
     void closeStores() {
         stores.forEach(FileLogStorage::shutdown);
+    }
+    
+    @Test
+    void encodesManifestOnceForBatchAndPreservesPreparedBytes() throws Exception {
+        FileLogStorage store = spy(create());
+        stores.add(store);
+        assertTrue(store.init(context(new ConfigurationManager())));
+        AtomicReference<ByteBuffer> encoded = new AtomicReference<>();
+        doAnswer(invocation -> {
+            ByteBuffer bytes = ((ByteBuffer) invocation.callRealMethod()).asReadOnlyBuffer();
+            encoded.set(bytes);
+            return bytes;
+        }).when(store).encodeManifest(any(Manifest.class));
+        clearInvocations(store);
+        List<LogEntry> batch = new ArrayList<>();
+        for (long index = 1; index <= 20; index++) {
+            batch.add(entry(index));
+        }
+        assertEquals(batch.size(), store.appendEntries(batch));
+        verify(store, times(1)).encodeManifest(any(Manifest.class));
+        assertEquals(0, encoded.get().position());
+        assertEquals(encoded.get().capacity(), encoded.get().remaining());
+        assertEquals(store.getManifest(), store.decodeManifest(encoded.get()));
+        for (LogEntry entry : batch) {
+            assertEquals(entry, store.getEntry(entry.getId().getIndex()));
+        }
+        store.shutdown();
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertEquals(entry(20), store.getEntry(20));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"clean", "modified", "reopened"})
+    void rolloverOnlySkipsForceForConfirmedUnmodifiedSegment(String scenario) throws Exception {
+        LogRecordCodec codec = new LogRecordCodec(LogEntryV2CodecFactory.getInstance());
+        int size = codec.encode(entry(1)).remaining();
+        FileLogStorage store = new FileLogStorage(directory, new RaftOptions(), 40L + size * 2L);
+        stores.add(store);
+        AtomicReference<Segment> first = new AtomicReference<>();
+        AtomicReference<Segment> second = new AtomicReference<>();
+        try (MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+            Object result = invocation.callRealMethod();
+            if ("create".equals(invocation.getMethod().getName())
+                || "open".equals(invocation.getMethod().getName())) {
+                Segment segment = spy((Segment) result);
+                if (segment.getHeader().getSegmentId() == 1) {
+                    first.set(segment);
+                } else {
+                    second.set(segment);
+                }
+                return segment;
+            }
+            return result;
+        })) {
+            assertTrue(store.init(context(new ConfigurationManager())));
+            if ("modified".equals(scenario)) {
+                assertTrue(store.appendEntry(entry(1)));
+                assertEquals(2, store.appendEntries(List.of(entry(2), entry(3))));
+                verify(first.get(), times(2)).force();
+            } else {
+                assertEquals(2, store.appendEntries(List.of(entry(1), entry(2))));
+                if ("reopened".equals(scenario)) {
+                    store.shutdown();
+                    assertTrue(store.init(context(new ConfigurationManager())));
+                }
+                assertTrue(store.appendEntry(entry(3)));
+                verify(first.get(), times(1)).force();
+            }
+            verify(second.get(), times(1)).force();
+            assertEquals(entry(3), store.getEntry(3));
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"segment", "index"})
+    void batchIoFailureDisablesMutationAndRecoversOnlyPublishedRange(String failure)
+        throws Exception {
+        FileLogStorage store = new FileLogStorage(directory, new RaftOptions(), 4096);
+        stores.add(store);
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertTrue(store.appendEntry(entry(1)));
+        byte[] before = Files.readAllBytes(root().resolve("manifest"));
+        // Reopen so the active Segment/Index can be intercepted after real recovery.
+        store.shutdown();
+        try (MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+            Object result = invocation.callRealMethod();
+            if ("segment".equals(failure)
+                && "open".equals(invocation.getMethod().getName())) {
+                Segment segment = spy((Segment) result);
+                doAnswer(write -> {
+                    List<ByteBuffer> records = write.getArgument(0);
+                    int from = write.getArgument(1);
+                    segment.append(records.get(from).duplicate());
+                    throw new IOException("partial segment batch");
+                }).when(segment).appendBatch(org.mockito.ArgumentMatchers.anyList(),
+                    anyInt(), anyInt(), any(ByteBuffer.class));
+                return segment;
+            }
+            return result;
+        }); MockedStatic<Index> indexes = mockStatic(Index.class, invocation -> {
+            Object result = invocation.callRealMethod();
+            if ("index".equals(failure)
+                && "openWritable".equals(invocation.getMethod().getName())) {
+                Index index = spy((Index) result);
+                doAnswer(write -> {
+                    int[] sizes = write.getArgument(2);
+                    int from = write.getArgument(3);
+                    index.append(write.getArgument(0), write.getArgument(1), sizes[from]);
+                    throw new IOException("partial index batch");
+                }).when(index).appendBatch(anyLong(), anyLong(), any(int[].class),
+                    anyInt(), anyInt());
+                return index;
+            }
+            return result;
+        })) {
+            assertTrue(store.init(context(new ConfigurationManager())));
+            assertEquals(0, store.appendEntries(List.of(entry(2), entry(3))));
+            assertArrayEquals(before, Files.readAllBytes(root().resolve("manifest")));
+            assertMutationDisabled(store);
+            store.shutdown();
+        }
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertRange(store, 1, 1);
+        assertNull(store.getEntry(2));
+        assertEquals(2, store.appendEntries(List.of(entry(2), entry(3))));
+        assertEquals(entry(3), store.getEntry(3));
+    }
+    
+    @Test
+    void appendPlanPreservesTruncatedSegmentOriginAndScratchLifecycle() throws Exception {
+        FileLogStorage store = new FileLogStorage(directory, new RaftOptions(), 4096);
+        stores.add(store);
+        assertTrue(store.init(context(new ConfigurationManager())));
+        assertTrue(store.appendEntry(entry(1)));
+        java.lang.reflect.Field scratch = FileLogStorage.class.getDeclaredField("appendScratch");
+        scratch.setAccessible(true);
+        assertNull(scratch.get(store));
+        assertEquals(3, store.appendEntries(List.of(entry(2), entry(3), entry(4))));
+        Object buffer = scratch.get(store);
+        assertEquals(256 * 1024, ((ByteBuffer) buffer).capacity());
+        assertTrue(((ByteBuffer) buffer).isDirect());
+        assertTrue(store.truncatePrefix(3));
+        long firstOffset = store.getManifest().getSegments().get(0).getFirstRecordOffset();
+        assertEquals(2, store.appendEntries(List.of(entry(5), entry(6))));
+        assertSame(buffer, scratch.get(store));
+        assertEquals(3, store.getManifest().getSegments().get(0).getFirstIndex());
+        assertEquals(firstOffset, store.getManifest().getSegments().get(0).getFirstRecordOffset());
+        store.shutdown();
+        assertNull(scratch.get(store));
+        assertTrue(store.init(context(new ConfigurationManager())));
+        for (long index = 3; index <= 6; index++) {
+            assertEquals(entry(index), store.getEntry(index));
+        }
     }
     
     @Test

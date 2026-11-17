@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.storage.file;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
@@ -27,8 +28,10 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,11 +42,256 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.spy;
 
 class SegmentTest {
     
     @TempDir
     Path directory;
+    
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void combinesRecordsIntoOneWriteAndPreservesInputPositions(boolean direct) throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        AtomicInteger calls = new AtomicInteger();
+        List<ByteBuffer> records = new ArrayList<>();
+        for (int i = 0; i < 128; i++) {
+            records.add(ByteBuffer.wrap(new byte[24]).asReadOnlyBuffer());
+        }
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer buffer = invocation.getArgument(0);
+            assertEquals(direct, buffer.isDirect());
+            int length = buffer.remaining();
+            assertEquals(128 * 24, length);
+            assertEquals(40L, (long) invocation.getArgument(1));
+            buffer.position(buffer.limit());
+            calls.incrementAndGet();
+            return length;
+        });
+        try (Segment segment = new Segment(Path.of("combined.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 40, 4096)) {
+            assertEquals(40, segment.appendBatch(records, 0, records.size(),
+                direct ? ByteBuffer.allocateDirect(4096) : ByteBuffer.allocate(4096)));
+            assertEquals(40 + 128 * 24, segment.getLogicalEnd());
+            assertEquals(1, calls.get());
+            for (ByteBuffer record : records) {
+                assertEquals(0, record.position());
+                assertEquals(24, record.limit());
+            }
+        }
+    }
+    
+    @ParameterizedTest
+    @CsvSource({"24,false", "24,true", "48,false", "48,true", "64,false", "64,true",
+        "262144,false", "262144,true", "1048576,true"})
+    void mergedWritesMatchSingleRecordsIncludingLargeRecords(int capacity, boolean direct)
+        throws Exception {
+        List<ByteBuffer> records = new ArrayList<>();
+        records.add(null);
+        for (int size : new int[] {24, 24, 25, 64, 90, 32}) {
+            byte[] bytes = new byte[size + 5];
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) (size + i);
+            }
+            ByteBuffer record = ByteBuffer.wrap(bytes);
+            record.position(3).limit(3 + size);
+            records.add(record.asReadOnlyBuffer());
+        }
+        UUID store = UUID.randomUUID();
+        try (Segment single = Segment.create(directory, store, 1);
+            Segment batch = Segment.create(directory, store, 2)) {
+            for (int i = 1; i < records.size(); i++) {
+                single.append(records.get(i).duplicate());
+            }
+            batch.appendBatch(records, 1, records.size(),
+                direct ? ByteBuffer.allocateDirect(capacity) : ByteBuffer.allocate(capacity));
+            assertEquals(single.getLogicalEnd(), batch.getLogicalEnd());
+            byte[] expected = Files.readAllBytes(single.getPath());
+            byte[] actual = Files.readAllBytes(batch.getPath());
+            assertArrayEquals(Arrays.copyOfRange(expected, 40, expected.length),
+                Arrays.copyOfRange(actual, 40, actual.length));
+            for (int i = 1; i < records.size(); i++) {
+                assertEquals(3, records.get(i).position());
+            }
+        }
+    }
+    
+    @Test
+    void rejectedBatchDoesNotWriteOrInvalidateSuccessfulSync() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        ByteBuffer record = ByteBuffer.allocate(24);
+        List<ByteBuffer> records = List.of(record, record);
+        try (Segment segment = new Segment(Path.of("invalid-batch.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 40, 80)) {
+            segment.force();
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(null, 0, 1, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, -1, 1, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 0, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 3, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 1, null));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 1, ByteBuffer.allocate(23)));
+            assertThrows(IOException.class, () -> segment.appendBatch(records, 0, 1,
+                ByteBuffer.allocate(24).asReadOnlyBuffer()));
+            assertThrows(IOException.class, () -> segment.appendBatch(
+                Arrays.asList(record, null), 0, 2, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class, () -> segment.appendBatch(
+                List.of(record, ByteBuffer.allocate(23)), 0, 2, ByteBuffer.allocate(24)));
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 2, ByteBuffer.allocate(48)));
+            assertThrows(IOException.class, () -> segment.append(ByteBuffer.allocate(41)));
+            assertThrows(IOException.class, () -> segment.truncate(39));
+            segment.syncIfRequired();
+            verify(channel, times(1)).force(true);
+            verify(channel, times(0)).write(any(ByteBuffer.class), anyLong());
+            assertEquals(40, segment.getLogicalEnd());
+        }
+        try (Segment segment = new Segment(Path.of("overflow-batch.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel,
+            Long.MAX_VALUE - 24, Long.MAX_VALUE)) {
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 2, ByteBuffer.allocate(48)));
+        }
+    }
+    
+    @Test
+    void syncTracksMutationsAndExplicitForceIsUnconditional() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer source = invocation.getArgument(0);
+            int size = source.remaining();
+            source.position(source.limit());
+            return size;
+        });
+        try (Segment segment = new Segment(Path.of("sync.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 40, 4096)) {
+            segment.syncIfRequired();
+            segment.syncIfRequired();
+            verify(channel, times(1)).force(true);
+            segment.append(ByteBuffer.allocate(24));
+            segment.syncIfRequired();
+            segment.syncIfRequired();
+            verify(channel, times(2)).force(true);
+            segment.appendBatch(List.of(ByteBuffer.allocate(24), ByteBuffer.allocate(24)),
+                0, 2, ByteBuffer.allocate(48));
+            segment.syncIfRequired();
+            verify(channel, times(3)).force(true);
+            segment.truncate(64);
+            segment.syncIfRequired();
+            verify(channel, times(4)).force(true);
+            segment.truncateToLogicalEnd();
+            segment.syncIfRequired();
+            segment.force();
+            segment.force();
+            verify(channel, times(7)).force(true);
+        }
+        verify(channel, times(7)).force(true);
+    }
+    
+    @Test
+    void createdAndReopenedSegmentsRequireTheirOwnSyncConfirmation() throws Exception {
+        UUID store = UUID.randomUUID();
+        Path path;
+        try (Segment segment = spy(Segment.create(directory, store, 1))) {
+            segment.syncIfRequired();
+            verify(segment, times(1)).force();
+            segment.append(ByteBuffer.allocate(24));
+            segment.force();
+            path = segment.getPath();
+        }
+        try (Segment segment = spy(Segment.open(path, 64))) {
+            segment.syncIfRequired();
+            segment.syncIfRequired();
+            verify(segment, times(1)).force();
+        }
+    }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {"batch", "append", "truncate", "tail", "force"})
+    void failedMutationOrForceRetainsPendingSync(String operation) throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        AtomicInteger writes = new AtomicInteger();
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            if (writes.incrementAndGet() == 1) {
+                ByteBuffer source = invocation.getArgument(0);
+                source.position(source.position() + 5);
+                return 5;
+            }
+            throw new IOException("partial write");
+        });
+        when(channel.truncate(anyLong())).thenThrow(new IOException("truncate"));
+        AtomicInteger forces = new AtomicInteger();
+        doAnswer(invocation -> {
+            if (forces.incrementAndGet() == 2) {
+                throw new IOException("force");
+            }
+            return null;
+        }).when(channel).force(true);
+        try (Segment segment = new Segment(Path.of("failed-sync.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 40, 4096)) {
+            segment.force();
+            switch (operation) {
+                case "batch":
+                    assertThrows(IOException.class, () -> segment.appendBatch(
+                        List.of(ByteBuffer.allocate(24), ByteBuffer.allocate(24)),
+                        0, 2, ByteBuffer.allocate(48)));
+                    break;
+                case "append":
+                    assertThrows(IOException.class, () -> segment.append(ByteBuffer.allocate(24)));
+                    break;
+                case "truncate":
+                    assertThrows(IOException.class, () -> segment.truncate(40));
+                    break;
+                case "tail":
+                    assertThrows(IOException.class, segment::truncateToLogicalEnd);
+                    break;
+                default:
+                    assertThrows(IOException.class, segment::force);
+            }
+            if (!"force".equals(operation)) {
+                assertThrows(IOException.class, segment::syncIfRequired);
+            }
+            segment.syncIfRequired();
+            segment.syncIfRequired();
+            verify(channel, times(3)).force(true);
+            assertEquals(40, segment.getLogicalEnd());
+        }
+    }
+    
+    @Test
+    void batchLoopsOnShortWritesAndRetainsEndOnZeroProgress() throws Exception {
+        FileChannel channel = mock(FileChannel.class);
+        byte[] bytes = new byte[48];
+        when(channel.write(any(ByteBuffer.class), anyLong())).thenAnswer(invocation -> {
+            ByteBuffer source = invocation.getArgument(0);
+            int offset = Math.toIntExact((long) invocation.getArgument(1) - 40);
+            int length = Math.min(7, source.remaining());
+            source.get(bytes, offset, length);
+            return length;
+        });
+        byte[] record = new byte[24];
+        Arrays.fill(record, (byte) 7);
+        List<ByteBuffer> records = List.of(ByteBuffer.wrap(record), ByteBuffer.wrap(record));
+        try (Segment segment = new Segment(Path.of("short-batch.seg"),
+            new Segment.SegmentHeader(UUID.randomUUID(), 1), channel, 40, 4096)) {
+            segment.appendBatch(records, 0, 2, ByteBuffer.allocate(48));
+            byte[] expected = new byte[48];
+            Arrays.fill(expected, (byte) 7);
+            assertArrayEquals(expected, bytes);
+            when(channel.write(any(ByteBuffer.class), anyLong())).thenReturn(0);
+            assertThrows(IOException.class,
+                () -> segment.appendBatch(records, 0, 2, ByteBuffer.allocate(48)));
+            assertEquals(88, segment.getLogicalEnd());
+        }
+    }
     
     @Test
     void neverReplacesAnExistingSegment() throws Exception {
