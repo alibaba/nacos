@@ -151,6 +151,8 @@ Index 由 Segment 扫描重建。初始化对所有已发布 Segment 重建索�
 
 `FileLogStorage` 使用读写锁串行化变更。`getEntry()` 在读锁内定位 Segment、读取 Index、校验记录并解码，追加、截断、reset 和 shutdown 在写锁内执行。
 
+允许有界复用非活动段的读取句柄；命中仍受当前 Manifest 范围及完整记录校验约束。读取借用和释放句柄均须在存储读锁内完成，生命周期清理由存储写锁保护。范围变更、Index 重建、文件回收和关闭必须使受影响句柄失效；仍被读取借用的句柄在释放前不得关闭。
+
 ### 5.1 批量追加
 
 `appendEntries()` 先编码并校验整批条目：index 从 `lastLogIndex + 1` 连续递增，每条记录能放入空 Segment，计划中的 Manifest 满足格式及大小限制。校验失败返回 0，此时尚未写入批次文件。

@@ -71,6 +71,8 @@ public final class FileLogStorage implements LogStorage {
     
     private static final int APPEND_BUFFER_BYTES = 256 * 1024;
     
+    private static final int MAX_SEGMENT_READERS = 16;
+    
     private final Path configuredLogUri;
     
     private Path root;
@@ -94,6 +96,8 @@ public final class FileLogStorage implements LogStorage {
     private final long maxSegmentBytes;
     
     private WriteRuntime writeRuntime;
+    
+    private SegmentReaderCache readerCache;
     
     private long nextSegmentId;
     
@@ -159,6 +163,7 @@ public final class FileLogStorage implements LogStorage {
                 }
                 nextSegmentId = findNextSegmentId();
                 List<ConfigurationEntry> configurations = recover();
+                readerCache = new SegmentReaderCache(MAX_SEGMENT_READERS);
                 openActive();
                 ConfigurationManager manager = options.getConfigurationManager();
                 for (ConfigurationEntry configuration : configurations) {
@@ -330,23 +335,33 @@ public final class FileLogStorage implements LogStorage {
             return null;
         }
         Manifest.SegmentMeta metadata = findSegment(manifest, index);
-        Index.Entry location = locate(metadata, index);
-        return readLocatedEntry(metadata, index, location);
+        if (isActiveSegment(metadata)) {
+            return readLocatedEntry(metadata, index, locate(metadata, index, writeRuntime.index),
+                writeRuntime.segment);
+        }
+        SegmentReader reader = readerCache.borrow(root, manifest.getStoreId(), metadata);
+        Exception failure = null;
+        try {
+            Index.Entry location = locate(metadata, index, reader.getIndex());
+            return readLocatedEntry(metadata, index, location, reader.getSegment());
+        } catch (IOException | RuntimeException error) {
+            failure = error;
+            discardReader(reader, error);
+            throw error;
+        } finally {
+            releaseReader(reader, failure);
+        }
+    }
+    
+    private boolean isActiveSegment(Manifest.SegmentMeta metadata) {
+        return writeRuntime != null && writeRuntime.segment != null
+            && writeRuntime.segment.getHeader().getSegmentId() == metadata.getSegmentId();
     }
     
     private LogEntry readLocatedEntry(Manifest.SegmentMeta metadata, long index,
-        Index.Entry location) throws IOException {
-        LogEntry result;
-        if (writeRuntime != null && writeRuntime.segment != null
-            && writeRuntime.segment.getHeader().getSegmentId() == metadata.getSegmentId()) {
-            result = decodeEntry(writeRuntime.segment, metadata, location);
-        } else {
-            try (Segment segment = Segment.open(segmentPath(metadata.getSegmentId()),
-                metadata.getPublishedEndOffset())) {
-                validateSegmentIdentity(segment, metadata);
-                result = decodeEntry(segment, metadata, location);
-            }
-        }
+        Index.Entry location, Segment segment) throws IOException {
+        validateSegmentIdentity(segment, metadata);
+        LogEntry result = decodeEntry(segment, metadata, location);
         if (result.getId().getIndex() != index) {
             throw new IOException("Decoded log index does not match requested index " + index);
         }
@@ -363,17 +378,49 @@ public final class FileLogStorage implements LogStorage {
         return recordCodec.decode(bytes);
     }
     
-    private Index.Entry locate(Manifest.SegmentMeta metadata, long index) throws IOException {
-        if (writeRuntime != null && writeRuntime.segment != null
-            && writeRuntime.segment.getHeader().getSegmentId() == metadata.getSegmentId()) {
-            return writeRuntime.index.read(index, metadata.getFirstRecordOffset(),
-                metadata.getPublishedEndOffset());
+    private Index.Entry locate(Manifest.SegmentMeta metadata, long index, Index file)
+        throws IOException {
+        return file.read(index, metadata.getFirstRecordOffset(), metadata.getPublishedEndOffset());
+    }
+    
+    private Index.Entry locateValidatedBoundary(Manifest.SegmentMeta metadata, long index)
+        throws IOException {
+        if (isActiveSegment(metadata)) {
+            Index.Entry location = locate(metadata, index, writeRuntime.index);
+            readLocatedEntry(metadata, index, location, writeRuntime.segment);
+            return location;
         }
-        try (Index file =
-            Index.open(indexPath(metadata.getSegmentId()), metadata.getFirstIndex(),
-                metadata.getLastIndex())) {
-            return file.read(index, metadata.getFirstRecordOffset(),
-                metadata.getPublishedEndOffset());
+        SegmentReader reader = readerCache.borrow(root, manifest.getStoreId(), metadata);
+        Exception failure = null;
+        try {
+            Index.Entry location = locate(metadata, index, reader.getIndex());
+            readLocatedEntry(metadata, index, location, reader.getSegment());
+            return location;
+        } catch (IOException | RuntimeException error) {
+            failure = error;
+            discardReader(reader, error);
+            throw error;
+        } finally {
+            releaseReader(reader, failure);
+        }
+    }
+    
+    private void discardReader(SegmentReader reader, Exception failure) {
+        try {
+            readerCache.discard(reader);
+        } catch (IOException closeError) {
+            failure.addSuppressed(closeError);
+        }
+    }
+    
+    private void releaseReader(SegmentReader reader, Exception failure) throws IOException {
+        try {
+            readerCache.release(reader);
+        } catch (IOException closeError) {
+            if (failure == null) {
+                throw closeError;
+            }
+            failure.addSuppressed(closeError);
         }
     }
     
@@ -624,8 +671,7 @@ public final class FileLogStorage implements LogStorage {
                         firstIndexKept);
                 } else {
                     Manifest.SegmentMeta old = findSegment(previous, firstIndexKept);
-                    Index.Entry location = locate(old, firstIndexKept);
-                    readLocatedEntry(old, firstIndexKept, location);
+                    Index.Entry location = locateValidatedBoundary(old, firstIndexKept);
                     long offset = location.getOffset();
                     boundary = new Manifest.SegmentMeta(old.getSegmentId(), firstIndexKept,
                         old.getLastIndex(), offset, old.getPublishedEndOffset());
@@ -677,8 +723,7 @@ public final class FileLogStorage implements LogStorage {
                         previous.getFirstLogIndex());
                 } else {
                     old = findSegment(previous, lastIndexKept);
-                    Index.Entry location = locate(old, lastIndexKept);
-                    readLocatedEntry(old, lastIndexKept, location);
+                    Index.Entry location = locateValidatedBoundary(old, lastIndexKept);
                     end = Math.addExact(location.getOffset(), location.getRecordSize());
                     List<Manifest.SegmentMeta> segments = new ArrayList<>();
                     for (Manifest.SegmentMeta segment : previous.getSegments()) {
@@ -695,6 +740,7 @@ public final class FileLogStorage implements LogStorage {
                 publishManifest(next);
                 closeActive();
                 if (old != null) {
+                    readerCache.invalidate(old.getSegmentId());
                     try (Segment segment = Segment.open(segmentPath(old.getSegmentId()),
                         old.getPublishedEndOffset());
                         Index index = Index.openWritable(indexPath(old.getSegmentId()),
@@ -748,19 +794,21 @@ public final class FileLogStorage implements LogStorage {
     }
     
     private void rebuildIndex(Manifest.SegmentMeta metadata) throws IOException {
+        readerCache.invalidate(metadata.getSegmentId());
         try (Index index = Index.create(indexPath(metadata.getSegmentId()),
             metadata.getFirstIndex())) {
             scanSegment(metadata, index, null);
         }
     }
     
-    private void retireSegments(Manifest previous) {
+    private void retireSegments(Manifest previous) throws IOException {
         Set<Long> retained = new HashSet<>();
         for (Manifest.SegmentMeta segment : manifest.getSegments()) {
             retained.add(segment.getSegmentId());
         }
         for (Manifest.SegmentMeta segment : previous.getSegments()) {
             if (!retained.contains(segment.getSegmentId())) {
+                readerCache.invalidate(segment.getSegmentId());
                 deleteGarbage(segmentPath(segment.getSegmentId()));
                 deleteGarbage(indexPath(segment.getSegmentId()));
             }
@@ -793,6 +841,7 @@ public final class FileLogStorage implements LogStorage {
         try {
             if (!manifest.getSegments().isEmpty()) {
                 Manifest.SegmentMeta last = lastSegment(manifest);
+                readerCache.invalidate(last.getSegmentId());
                 opened.segment = Segment.open(segmentPath(last.getSegmentId()),
                     last.getPublishedEndOffset());
                 validateSegmentIdentity(opened.segment, last);
@@ -817,6 +866,11 @@ public final class FileLogStorage implements LogStorage {
     }
     
     private void failMutation(String operation, Exception cause) {
+        try {
+            readerCache.invalidateAll();
+        } catch (IOException closeError) {
+            cause.addSuppressed(closeError);
+        }
         try {
             closeActive();
         } catch (IOException closeError) {
@@ -1057,11 +1111,24 @@ public final class FileLogStorage implements LogStorage {
             for (Manifest.SegmentMeta segment : manifest.getSegments()) {
                 currentSegments.add(segment.getSegmentId());
             }
+            invalidateReadersForPublication(next);
             boolean addsSegment = next.getSegments().stream()
                 .anyMatch(segment -> !currentSegments.contains(segment.getSegmentId()));
             publishEncoded(next, encoded, addsSegment);
         } finally {
             writeLock.unlock();
+        }
+    }
+    
+    private void invalidateReadersForPublication(Manifest next) throws IOException {
+        Set<Manifest.SegmentMeta> retained = new HashSet<>(next.getSegments());
+        for (Manifest.SegmentMeta metadata : manifest.getSegments()) {
+            if (!retained.contains(metadata)) {
+                readerCache.invalidate(metadata.getSegmentId());
+            }
+        }
+        if (!next.getSegments().isEmpty()) {
+            readerCache.invalidate(lastSegment(next).getSegmentId());
         }
     }
     
@@ -1332,6 +1399,15 @@ public final class FileLogStorage implements LogStorage {
     }
     
     private void clearRuntimeResources() {
+        if (readerCache != null) {
+            try {
+                readerCache.close();
+            } catch (IOException error) {
+                Loggers.RAFT.warn("Failed to close file log readers at " + root, error);
+            } finally {
+                readerCache = null;
+            }
+        }
         try {
             closeActive();
         } catch (IOException e) {
