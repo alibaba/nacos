@@ -30,13 +30,27 @@ public final class ProviderReadContext {
     
     private final CopilotProperties legacyConfig;
     
+    private final boolean legacyApiKeyFromDeployment;
+    
     /**
-     * Create a read context.
+     * Create a read context for configuration that does not track the deployment origin.
      *
      * @param legacyConfig effective Copilot configuration for this refresh
      */
     public ProviderReadContext(CopilotProperties legacyConfig) {
+        this(legacyConfig, false);
+    }
+    
+    /**
+     * Create a read context.
+     *
+     * @param legacyConfig            effective Copilot configuration for this refresh
+     * @param legacyApiKeyFromDeployment whether the effective api key is declared in the
+     *                                 deployment configuration
+     */
+    public ProviderReadContext(CopilotProperties legacyConfig, boolean legacyApiKeyFromDeployment) {
         this.legacyConfig = legacyConfig;
+        this.legacyApiKeyFromDeployment = legacyApiKeyFromDeployment;
     }
     
     /**
@@ -46,5 +60,15 @@ public final class ProviderReadContext {
      */
     public CopilotProperties getLegacyConfig() {
         return legacyConfig;
+    }
+    
+    /**
+     * Whether the effective api key is declared in the deployment configuration rather than
+     * stored by the console.
+     *
+     * @return {@code true} when the deployment configuration supplies the api key
+     */
+    public boolean isLegacyApiKeyFromDeployment() {
+        return legacyApiKeyFromDeployment;
     }
 }

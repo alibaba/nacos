@@ -68,6 +68,12 @@ public class LegacyConfigProviderReader implements ProviderReader {
     @Override
     public List<CopilotModelConnection> read(ProviderReadContext context) {
         CopilotProperties config = context.getLegacyConfig();
+        String environmentApiKey = Boolean.TRUE.equals(config.getApiKeyCleared())
+            ? null : environment.getProperty(ENV_API_KEY);
+        boolean useEnvironment = StringUtils.isNotBlank(environmentApiKey);
+        String apiKey = useEnvironment ? environmentApiKey : config.getApiKey();
+        CredentialSource credentialSource = resolveCredentialSource(apiKey, useEnvironment,
+            context.isLegacyApiKeyFromDeployment());
         CopilotModelConnection connection = CopilotModelConnection.builder()
             .name(CONNECTION_NAME)
             .providerId(PROVIDER_ID)
@@ -76,18 +82,22 @@ public class LegacyConfigProviderReader implements ProviderReader {
             .source(ConnectionSource.LEGACY)
             .priority(100)
             .model(config.getModel())
-            .apiKey(resolveApiKey(config))
+            .apiKey(apiKey)
+            .credentialSource(credentialSource)
             .stream(Boolean.TRUE)
             .enableThinking(Boolean.TRUE)
             .build();
         return Collections.singletonList(connection);
     }
     
-    private String resolveApiKey(CopilotProperties config) {
-        String apiKey = environment.getProperty(ENV_API_KEY);
-        if (StringUtils.isNotBlank(apiKey)) {
-            return apiKey;
+    private CredentialSource resolveCredentialSource(String apiKey, boolean useEnvironment,
+        boolean fromDeployment) {
+        if (StringUtils.isBlank(apiKey)) {
+            return null;
         }
-        return config.getApiKey();
+        if (useEnvironment) {
+            return CredentialSource.ENVIRONMENT;
+        }
+        return fromDeployment ? CredentialSource.DEPLOYMENT : CredentialSource.CONSOLE;
     }
 }

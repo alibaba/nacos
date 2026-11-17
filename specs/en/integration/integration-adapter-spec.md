@@ -192,7 +192,11 @@ configuration does not set falls back to the stored value, then to the default.
 existing `copilot-config.json` from an older installation does not hide values
 explicitly set in the new deployment configuration. The connection table is merged
 independently by connection source (a deployment connection replaces the `legacy`
-connection with the same name).
+connection with the same name). A blank (empty or whitespace-only)
+`nacos.copilot.selectedConnection` counts as not declared for this field: the
+stored selection stays in effect and the field is not reported as a deployment
+override. This blank-value rule is specific to the selection field and does not
+change the explicit-clear semantics of the credential fields.
 
 Model connection rules:
 
@@ -233,6 +237,9 @@ Model connection rules:
 - A connection that fails validation is only marked unavailable with its
   diagnostic reason; other connections keep serving. Upstream provider
   diagnostics are preserved verbatim rather than replaced by a generic error.
+- When the effective `enabled` flag is false, Copilot rejects new requests, so
+  routing reports no active connection while the connection table stays
+  available for management.
 - Connection fields are read from the deployment configuration at runtime only;
   writing the same fields into `copilot-config.json` through the generic
   configuration API does not override a deployment connection.
@@ -262,6 +269,68 @@ Configuration refresh rules:
   a restart.
 - Keys removed while the process runs are not visible to a refresh and require a
   restart; environment variables do not trigger a refresh.
+
+Console configuration API rules:
+
+- `GET /v3/console/copilot/config` returns the editable stored fields (`model`,
+  `studioUrl`, `studioProject`, `selectedConnection`), the effective
+  `effectiveSelectedConnection` with its `selectedConnectionSource`, the
+  sanitized connection list, and the routed `activeConnection`, which is `null`
+  when Copilot is disabled or no usable connection exists. Each connection
+  exposes `name`, `providerId`, `displayName`, `model`, `source`, `enabled`,
+  `available`, `unavailableReason`, `apiKeyConfigured`, and `actualSource`; the
+  stored api key is returned masked, and neither the credential nor the value
+  behind `actualSource` appears in the connection metadata. `actualSource` is
+  `ENVIRONMENT` when the `legacy` connection resolved its key from
+  `COPILOT_API_KEY`, `DEPLOYMENT` when the key is declared in the deployment
+  configuration, `CONSOLE` when it comes from the stored console value, and
+  `null` when the connection has no credential.
+- `selectedConnectionSource` is `DEPLOYMENT` when the deployment configuration
+  declares `nacos.copilot.selectedConnection`, `STORED` when the effective
+  selection is the stored console value, and `NONE` when no selection is
+  configured. Deployment configuration wins over the stored value, so a
+  selection saved through the console remains stored but does not take effect
+  while the deployment declares one; the same applies to `Automatic`, which
+  clears the stored selection but cannot override the deployment value. The
+  API reports the effective selection and its origin so the console can explain
+  this state instead of presenting a saved value as if it were in use. A blank
+  or whitespace-only deployment value counts as not declared, so the stored
+  selection stays effective and the source is `STORED`.
+- `POST /v3/console/copilot/config` accepts only `apiKey`, `model`, `studioUrl`,
+  `studioProject`, and `selectedConnection`; other fields are ignored. A field
+  absent from the request keeps its stored value.
+- The api key is three-state: absent or masked keeps the stored key, a non-blank
+  value replaces it, and a blank value clears a stored key and marks the
+  `legacy` connection so it no longer falls back to `COPILOT_API_KEY`. A blank
+  value without a stored key is a no-op, so an untouched legacy console form
+  does not start blocking the environment. An explicit deployment
+  `nacos.copilot.apiKey` still applies through the regular precedence.
+- `selectedConnection` is trimmed before it is stored; an empty value clears the
+  stored selection so routing uses the default order. A non-empty value must name
+  an existing, enabled, and available connection: the declared connection name is
+  stored, and a selection that does not exist, is disabled, or is unavailable is
+  rejected with HTTP 400 instead of being saved.
+- Selection validation reads the connection table of the last applied refresh, so
+  the check itself performs no provider probe or DNS lookup. The refresh
+  triggered by the published configuration still runs synchronously on the
+  request thread before the response, and connection validation during that
+  refresh can resolve an explicit `baseUrl`; the save request as a whole is
+  therefore not free of availability-check I/O. A request that both adds a
+  credential and selects the `legacy` connection is rejected until the
+  credential is saved and a refresh marks that connection usable, so the
+  console submits these as two requests. Clearing a credential together with
+  the same selection remains a valid configuration update and takes effect on
+  the following refresh. A save returns after the refresh triggered by the
+  published configuration, so `GET` reports the resulting table; there is no
+  pending-validation state, and moving the refresh off the request thread is
+  deferred to the asynchronous validation design.
+- The stored api key and model remain editable only as a deprecation path for
+  the `legacy` connection: new deployments declare
+  `nacos.copilot.connections.*`, and the console presents these fields as
+  deprecated, only when the `legacy` connection exists.
+- Loading a `legacy` connection logs a deprecation warning with the
+  `nacos.copilot.connections.*` migration hint on every refresh; the connection
+  keeps serving during the deprecation window.
 
 Rules:
 

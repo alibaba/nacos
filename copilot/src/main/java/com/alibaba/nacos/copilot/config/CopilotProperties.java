@@ -44,6 +44,12 @@ public class CopilotProperties {
     private String apiKey;
     
     /**
+     * Whether the console cleared the api key. When set, the legacy connection stops
+     * falling back to the process environment, so the credential is really gone.
+     */
+    private Boolean apiKeyCleared;
+    
+    /**
      * Model name.
      */
     private String model = "qwen-turbo";
@@ -95,6 +101,24 @@ public class CopilotProperties {
      */
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
+    }
+    
+    /**
+     * Get whether the console cleared the api key.
+     *
+     * @return {@code true} when the api key was cleared from the console, otherwise {@code null}
+     */
+    public Boolean getApiKeyCleared() {
+        return apiKeyCleared;
+    }
+    
+    /**
+     * Set whether the console cleared the api key.
+     *
+     * @param apiKeyCleared {@code true} when the api key was cleared from the console
+     */
+    public void setApiKeyCleared(Boolean apiKeyCleared) {
+        this.apiKeyCleared = apiKeyCleared;
     }
     
     /**
