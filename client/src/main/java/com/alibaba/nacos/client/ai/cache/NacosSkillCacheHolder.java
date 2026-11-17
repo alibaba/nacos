@@ -90,20 +90,34 @@ public class NacosSkillCacheHolder implements Closeable {
      */
     public byte[] subscribeSkill(String skillName, String version, String label)
         throws NacosException {
+        SkillQueryResponse response = subscribeSkillWithResponse(skillName, version, label);
+        return response == null ? null : response.getZipBytes();
+    }
+    
+    /**
+     * Subscribe skill and return the initial query response, including its metadata.
+     *
+     * @param skillName skill name
+     * @param version   skill version, optional
+     * @param label     skill label, optional
+     * @return initial query response, or {@code null} when the skill is not found
+     * @throws NacosException if error occurs
+     */
+    public SkillQueryResponse subscribeSkillWithResponse(String skillName, String version,
+        String label) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "Required parameter `skillName` not present");
         }
         String cacheKey = CacheKeyUtils.buildSkillKey(skillName, version, label);
         
-        byte[] zipBytes = null;
+        SkillQueryResponse queryResponse = null;
         try {
-            SkillQueryResponse response = aiClientProxy.querySkill(skillName, version, label, null);
-            zipBytes = response.getZipBytes();
+            queryResponse = aiClientProxy.querySkill(skillName, version, label, null);
             // Only update cache during initial subscribe; do NOT publish event here.
             // The caller (NacosAiService) handles the first listener notification to avoid
             // duplicate callbacks racing with the async NotifyCenter dispatch.
-            String newMd5 = response.getMd5();
+            String newMd5 = queryResponse.getMd5();
             if (StringUtils.isNotBlank(newMd5)) {
                 skillMd5Cache.put(cacheKey, newMd5);
             }
@@ -115,7 +129,7 @@ public class NacosSkillCacheHolder implements Closeable {
         }
         addSkillUpdateTask(skillName, version, label);
         LOGGER.info("Subscribed skill: {}, version: {}, label: {}", skillName, version, label);
-        return zipBytes;
+        return queryResponse;
     }
     
     /**

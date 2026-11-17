@@ -444,13 +444,18 @@ class AiTransportResourceMatrixJavaSdkITCase extends JavaSdkBaseITCase {
         grantClientReadVisibility(Constants.DEFAULT_NAMESPACE_ID, "skill", skillName);
 
         assertTrue(service.skill().downloadSkillZipByVersion(skillName, VERSION).length > 0);
+        AtomicReference<NacosSkillEvent> initialEvent = new AtomicReference<>();
         AbstractNacosSkillListener listener = new AbstractNacosSkillListener() {
             @Override
             public void onEvent(NacosSkillEvent event) {
+                initialEvent.set(event);
             }
         };
         addCleanup(() -> service.unsubscribeSkill(skillName, VERSION, null, listener));
         assertTrue(service.skill().subscribeSkill(skillName, VERSION, null, listener).length > 0);
+        assertNotNull(initialEvent.get());
+        assertNotNull(initialEvent.get().getMd5());
+        assertEquals(VERSION, initialEvent.get().getResolvedVersion());
         assertTrue(service.downloadSkillZipByVersion(skillName, VERSION).length > 0);
     }
 

@@ -275,6 +275,8 @@ Nacos 不为 Skill 提供推送通道，客户端 SDK 通过周期性条件查�
   Skill，与 Prompt、MCP Server、AgentCard 等其他资源的轮询配置相互独立。
 - **取消语义**：`unsubscribeSkill` 必须取消对应任务并移除 md5 缓存项，且不得继续向服务
   端发起轮询请求。
+- **首次事件元数据**：初次订阅查询返回 ZIP 时，首个 `NacosSkillEvent` 必须携带该查询返回的
+  ZIP、发布内容 md5 和实际解析版本。`subscribeSkill` 的返回值仍为 ZIP 字节。
 
 ## 7. 待对齐问题
 

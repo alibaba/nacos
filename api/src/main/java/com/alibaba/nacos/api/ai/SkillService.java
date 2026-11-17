@@ -71,6 +71,8 @@ public interface SkillService {
      * @param label         target skill label, optional
      * @param skillListener listener for skill changes
      * @return current skill ZIP bytes, may be {@code null} when the skill is not found
+     *         The initial listener event also carries the published md5 and resolved version
+     *         when the server provides them.
      * @throws NacosException if request parameter is invalid or handle error
      */
     @Since("3.2.2")

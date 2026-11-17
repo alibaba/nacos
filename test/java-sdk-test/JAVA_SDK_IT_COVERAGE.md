@@ -256,6 +256,8 @@ Runtime `SkillService` downloads and subscribes to ZIP bytes, so its return valu
 listener, lifecycle and exception contracts are unchanged. External SDK coverage for the new
 field is in `test/maintainer-sdk-test` (`AiMaintainerServiceMaintainerSdkITCase`);
 legacy JSON deserialization is covered by `SkillSummaryTest` in `api`.
+The initial `NacosSkillEvent` callback is covered by `AiTransportResourceMatrixJavaSdkITCase`,
+including the ZIP bytes, published md5, and resolved version.
 
 ## Config detail schema impact (#15853)
 
