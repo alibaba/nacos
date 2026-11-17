@@ -39,8 +39,6 @@ import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntry;
  */
 public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     
-    private List<ServiceEntryWrapper> serviceEntries;
-    
     private static volatile ServiceEntryMcpGenerator singleton = null;
     
     public static ServiceEntryMcpGenerator getInstance() {
@@ -57,7 +55,7 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     @Override
     public List<Resource> generate(PushRequest pushRequest) {
         List<Resource> result = new ArrayList<>();
-        serviceEntries = new ArrayList<>(16);
+        List<ServiceEntryWrapper> serviceEntries = new ArrayList<>(16);
         ResourceSnapshot resourceSnapshot = pushRequest.getResourceSnapshot();
         
         IstioConfig istioConfig = resourceSnapshot.getIstioConfig();
