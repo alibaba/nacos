@@ -71,7 +71,15 @@ export function Sidebar() {
   ];
   const platformActive = platformPaths.some((p) => location.pathname === p);
   const [platformOpen, setPlatformOpen] = useState(platformActive);
-  const platformExpanded = platformOpen || platformActive;
+  const [previousPlatformActive, setPreviousPlatformActive] = useState(platformActive);
+
+  // Auto-open on navigation while allowing manual collapse on the active page.
+  if (platformActive !== previousPlatformActive) {
+    setPreviousPlatformActive(platformActive);
+    if (platformActive) {
+      setPlatformOpen(true);
+    }
+  }
 
   const coreItems: NavItem[] = [];
 
@@ -286,9 +294,9 @@ export function Sidebar() {
               )
             )
           ) : (
-            <Collapsible open={platformExpanded} onOpenChange={setPlatformOpen}>
+            <Collapsible open={platformOpen} onOpenChange={setPlatformOpen}>
               <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                {platformExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {platformOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 {t('menu.platformManagement')}
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1">
@@ -397,9 +405,17 @@ function NavGroup({
   iconForChild: (key: string) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(isGroupActive || !!item.defaultOpen);
+  const [previousGroupActive, setPreviousGroupActive] = useState(isGroupActive);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const expanded = open || isGroupActive;
+
+  // Auto-open on navigation while allowing manual collapse on the active page.
+  if (isGroupActive !== previousGroupActive) {
+    setPreviousGroupActive(isGroupActive);
+    if (isGroupActive) {
+      setOpen(true);
+    }
+  }
 
   useEffect(() => {
     return () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
@@ -486,7 +502,7 @@ function NavGroup({
   }
 
   return (
-    <Collapsible open={expanded} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-200">
         <span className="shrink-0">{item.icon}</span>
         <span className="truncate flex-1 text-left">{item.label}</span>
@@ -495,7 +511,7 @@ function NavGroup({
             {item.badge}
           </Badge>
         )}
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </CollapsibleTrigger>
       <CollapsibleContent className="ml-4 space-y-0.5 border-l border-sidebar-border pl-3 mt-0.5">
         {item.children?.map((child) => (

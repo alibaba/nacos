@@ -121,6 +121,9 @@ Console 负责浏览器入口和静态资源服务行为：
 
 Console guide 和 announcement 内容属于 UI 展示数据，不是标准 Core 服务端状态，也不得作为领域配置使用。
 
+Next UI 进入侧栏分组对应页面时必须自动展开该分组；用户仍必须能够手动折叠当前激活的分组，
+包括平台管理区域，且不得因此切换当前页面。
+
 生命周期托管的 AI Resource Detail Page 应共享相同的状态和 Version 展示组件。MCP、Skill 和 Prompt
 不得分别重复实现启用/禁用、公开/私有、最新、草稿、审核中、待发布或审核拒绝等视觉状态。MCP Detail
 从选中的 Online Version 创建新 Draft；只有保留的 MCP Resource 在唯一首个 Draft 删除后不存在任何
