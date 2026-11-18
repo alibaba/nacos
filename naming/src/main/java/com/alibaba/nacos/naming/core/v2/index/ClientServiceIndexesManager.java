@@ -139,9 +139,9 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             // The only time the index needs to be updated is when the service is first created
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
+        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
         NotifyCenter
             .publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
-        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
