@@ -107,6 +107,12 @@ HTTP 仍是兼容和部分操作的客户端传输方式。领域客户端可以
 HTTP fallback 必须由领域客户端显式定义。gRPC 请求失败后，不应自动通过 HTTP 修改资源状态，
 除非领域客户端已经定义该 fallback。
 
+共享的同步 Apache HTTP adapter 必须缓冲响应 entity 字节，不得经由字符串中转。
+这些字节是 Apache 完成既有内容解码后提供的 entity 字节，不是 HTTP 帧或压缩后的网络字节。
+未声明 charset 不得导致 UTF-8 JSON 或二进制数据损坏。内容消费者继续使用既有的解析和
+字符集策略。adapter 必须保留既有状态码和 header 表示，并在 response-handler 生命周期内
+完成网络响应的消费与关闭，包括响应处理失败的情况。
+
 ### 5.1 HTTP 请求 ID
 
 Java Client SDK 的公共、Config 和 Naming HTTP client（包括复用它们的 AI 请求）在每次
