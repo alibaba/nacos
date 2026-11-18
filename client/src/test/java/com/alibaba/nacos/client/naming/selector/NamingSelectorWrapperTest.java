@@ -23,7 +23,10 @@ import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -128,6 +131,33 @@ public class NamingSelectorWrapperTest {
         verify(listener).onEvent(argThat(e -> {
             NamingChangeEvent ce = (NamingChangeEvent) e;
             return ce.getModifiedInstances() != null && !ce.getModifiedInstances().isEmpty();
+        }));
+    }
+    
+    /**
+     * Verify that selector filtering preserves the notification origin.
+     *
+     * @param fromPush notification origin flag
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testOriginSurvivesSelectorFiltering(boolean fromPush) {
+        EventListener listener = mock(EventListener.class);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper("svc", "grp", "",
+            new DefaultNamingSelector(instance -> instance.getPort() == 8080), listener);
+        Instance selected = new Instance();
+        selected.setPort(8080);
+        Instance excluded = new Instance();
+        excluded.setPort(9090);
+        InstancesDiff diff = new InstancesDiff();
+        diff.setAddedInstances(Arrays.asList(selected, excluded));
+        wrapper.notifyListener(new InstancesChangeEvent(null, "svc", "grp", "",
+            Arrays.asList(selected, excluded), diff, fromPush));
+        verify(listener).onEvent(argThat(event -> {
+            NamingChangeEvent change = (NamingChangeEvent) event;
+            return change.isFromPush() == fromPush
+                && change.getInstances().equals(Collections.singletonList(selected))
+                && change.getAddedInstances().equals(Collections.singletonList(selected));
         }));
     }
     

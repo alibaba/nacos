@@ -203,7 +203,7 @@ public class ServiceInfoUpdateService implements Closeable {
                 if (serviceObj == null) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName,
                         clusters, false);
-                    serviceInfoHolder.processServiceInfo(serviceObj);
+                    serviceInfoHolder.processServiceInfo(serviceObj, true);
                     // TODO multiple time can be configured.
                     delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                     lastRefTime = serviceObj.getLastRefTime();
@@ -213,7 +213,7 @@ public class ServiceInfoUpdateService implements Closeable {
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName,
                         clusters, false);
-                    serviceInfoHolder.processServiceInfo(serviceObj);
+                    serviceInfoHolder.processServiceInfo(serviceObj, true);
                 }
                 lastRefTime = serviceObj.getLastRefTime();
                 if (CollectionUtils.isEmpty(serviceObj.getHosts())) {

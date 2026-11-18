@@ -49,6 +49,7 @@ public class NamingChangeEventTest {
     public void testNamingChangeEventWithSimpleConstructor() {
         NamingChangeEvent event =
             new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
+        assertFalse(event.isFromPush());
         assertEquals("serviceName", event.getServiceName());
         assertNull(event.getGroupName());
         assertNull(event.getClusters());
@@ -77,6 +78,7 @@ public class NamingChangeEventTest {
         NamingChangeEvent event =
             new NamingChangeEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST,
                 instancesDiff);
+        assertFalse(event.isFromPush());
         assertEquals("serviceName", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());

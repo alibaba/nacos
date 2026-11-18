@@ -22,14 +22,22 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
+import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
+import com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler;
+import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -53,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -280,6 +289,59 @@ class ServiceInfoHolderTest {
         }
     }
     
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testPushFlagPreservesDiffAndDuplicateSuppression(boolean pushFirst) {
+        NamingPushRequestHandler pushHandler = new NamingPushRequestHandler(holder);
+        InstancesChangeNotifier notifier = new InstancesChangeNotifier("scope-001");
+        List<NamingChangeEvent> events = new ArrayList<>();
+        notifier.registerListener("a", "b", new NamingSelectorWrapper("b", "a", "",
+            new DefaultNamingSelector(instance -> true),
+            event -> events.add((NamingChangeEvent) event)));
+        ServiceInfo first = new ServiceInfo("a@@b");
+        first.setHosts(Collections.singletonList(createInstance("1.1.1.1", 1)));
+        ServiceInfo equivalent = new ServiceInfo("a@@b");
+        equivalent.setHosts(Collections.singletonList(createInstance("1.1.1.1", 1)));
+        
+        try (MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+            notifications.when(() -> NotifyCenter.publishEvent(any(InstancesChangeEvent.class)))
+                .thenAnswer(invocation -> {
+                    notifier.onEvent(invocation.getArgument(0));
+                    return true;
+                });
+            if (pushFirst) {
+                pushHandler.requestReply(
+                    NotifySubscriberRequest.buildNotifySubscriberRequest(first), null);
+                holder.processServiceInfo(equivalent);
+            } else {
+                holder.processServiceInfo(first);
+                pushHandler.requestReply(
+                    NotifySubscriberRequest.buildNotifySubscriberRequest(equivalent), null);
+            }
+            assertEquals(1, events.size());
+            assertEquals(pushFirst, events.get(0).isFromPush());
+            assertEquals(first.getHosts(), events.get(0).getAddedInstances());
+            
+            ServiceInfo updated = new ServiceInfo("a@@b");
+            Instance changed = createInstance("1.1.1.1", 1);
+            changed.setWeight(2.0);
+            updated.setHosts(Collections.singletonList(changed));
+            pushHandler.requestReply(
+                NotifySubscriberRequest.buildNotifySubscriberRequest(updated), null);
+            assertEquals(2, events.size());
+            assertTrue(events.get(1).isFromPush());
+            assertEquals(updated.getHosts(), events.get(1).getModifiedInstances());
+            
+            ServiceInfo removed = new ServiceInfo("a@@b");
+            removed.setHosts(Collections.emptyList());
+            holder.processServiceInfo(removed);
+            assertEquals(3, events.size());
+            assertFalse(events.get(2).isFromPush());
+            assertEquals(updated.getHosts(), events.get(2).getRemovedInstances());
+            assertEquals(pushFirst, events.get(0).isFromPush());
+        }
+    }
+    
     private ServiceInfoHolder createServiceInfoHolder(Boolean enableClientMetrics) {
         Properties properties = new Properties();
         if (enableClientMetrics != null) {
@@ -309,15 +371,16 @@ class ServiceInfoHolderTest {
         assertEquals(expect.getKey(), actual.getKey());
     }
     
-    @Test
-    void testProcessServiceInfoWithPushEmpty() throws NacosException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testProcessServiceInfoWithPushEmpty(boolean fromPush) throws NacosException {
         ServiceInfo oldInfo = new ServiceInfo("a@@b@@c");
         Instance instance1 = createInstance("1.1.1.1", 1);
         Instance instance2 = createInstance("1.1.1.2", 2);
         List<Instance> hosts = new ArrayList<>();
         hosts.add(instance1);
         hosts.add(instance2);
-        oldInfo.setHosts(hosts);
+        oldInfo.setHosts(new ArrayList<>(hosts));
         
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION, "true");
         holder.shutdown();
@@ -326,10 +389,14 @@ class ServiceInfoHolderTest {
         
         ServiceInfo newInfo = new ServiceInfo("a@@b@@c");
         
-        final ServiceInfo actual = holder.processServiceInfo(newInfo);
-        
-        assertEquals(oldInfo.getKey(), actual.getKey());
-        assertEquals(2, actual.getHosts().size());
+        try (MockedStatic<NotifyCenter> notifications = Mockito.mockStatic(NotifyCenter.class)) {
+            final ServiceInfo actual = holder.processServiceInfo(newInfo, fromPush);
+            assertSame(oldInfo, actual);
+            assertSame(oldInfo, holder.getServiceInfoMap().get(oldInfo.getKeyWithoutClusters()));
+            assertEquals(hosts, actual.getHosts());
+            notifications.verify(() -> NotifyCenter.publishEvent(any(InstancesChangeEvent.class)),
+                never());
+        }
     }
     
     @Test

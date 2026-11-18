@@ -45,8 +45,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +57,8 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -412,6 +416,64 @@ public class NamingServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS), "listener should receive registered instance event");
         assertTrue(containsSubscribedService(namingService.getSubscribeServices(), serviceName,
                 groupName), namingService.getSubscribeServices().toString());
+    }
+
+    @Test
+    public void testCacheReplayAndPushNotificationFlags() throws Exception {
+        NamingService publisher = createNamingService();
+        Properties properties = sdkProperties();
+        properties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "false");
+        properties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "false");
+        NamingService subscriber = createNamingService(properties);
+        String serviceName = randomServiceName("notification-origin");
+        String groupName = randomGroup("naming");
+        int port = randomPort();
+        Instance instance = buildInstance(port, Constants.DEFAULT_CLUSTER_NAME);
+        BlockingQueue<NamingEvent> firstEvents = new LinkedBlockingQueue<>();
+        BlockingQueue<NamingEvent> secondEvents = new LinkedBlockingQueue<>();
+        EventListener first = event -> firstEvents.add((NamingEvent) event);
+        EventListener second = event -> secondEvents.add((NamingEvent) event);
+        addCleanup(() -> publisher.deregisterInstance(serviceName, groupName, instance));
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, first));
+        addCleanup(() -> subscriber.unsubscribe(serviceName, groupName, second));
+
+        instance.setWeight(1.0);
+        publisher.registerInstance(serviceName, groupName, instance);
+        waitUntil("instance should be visible before subscribing",
+                () -> containsInstance(publisher.getAllInstances(serviceName, groupName, false), port));
+        subscriber.subscribe(serviceName, groupName, first);
+        NamingEvent initial = firstEvents.poll(10, TimeUnit.SECONDS);
+        assertNotNull(initial, "cold subscription should deliver the current view");
+        assertTrue(containsInstance(initial.getInstances(), port));
+        assertEquals(1.0, findInstance(initial.getInstances(), port).getWeight());
+        // The subscription response and subscription-triggered push may race for the first diff.
+
+        subscriber.subscribe(serviceName, groupName, second);
+        NamingEvent replay = secondEvents.poll(10, TimeUnit.SECONDS);
+        assertNotNull(replay, "new listener should receive the cached view");
+        assertFalse(replay.isFromPush());
+        assertEquals(initial.getInstances(), replay.getInstances());
+        assertNull(firstEvents.poll(300, TimeUnit.MILLISECONDS),
+                "adding a listener must not replay the cache to existing listeners");
+
+        instance.setWeight(2.0);
+        publisher.registerInstance(serviceName, groupName, instance);
+        NamingEvent firstUpdate = firstEvents.poll(10, TimeUnit.SECONDS);
+        NamingEvent secondUpdate = secondEvents.poll(10, TimeUnit.SECONDS);
+        assertNotNull(firstUpdate, "existing listener should receive the update");
+        assertNotNull(secondUpdate, "new listener should receive the update");
+        assertTrue(firstUpdate.isFromPush());
+        assertTrue(secondUpdate.isFromPush());
+        assertEquals(2.0, findInstance(firstUpdate.getInstances(), port).getWeight());
+        assertEquals(firstUpdate.getInstances(), secondUpdate.getInstances());
+
+        subscriber.unsubscribe(serviceName, groupName, second);
+        subscriber.subscribe(serviceName, groupName, second);
+        NamingEvent resubscribed = secondEvents.poll(10, TimeUnit.SECONDS);
+        assertNotNull(resubscribed, "resubscribing listener should receive the current cached view");
+        assertFalse(resubscribed.isFromPush());
+        assertEquals(2.0, findInstance(resubscribed.getInstances(), port).getWeight());
+        assertNull(firstEvents.poll(300, TimeUnit.MILLISECONDS));
     }
 
     @Test

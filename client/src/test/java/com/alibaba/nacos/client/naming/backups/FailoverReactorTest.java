@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -30,12 +32,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -151,6 +157,44 @@ class FailoverReactorTest {
         refreshFailoverSwitch();
         ServiceInfo actual = failoverReactor.getService("a@@b");
         assertEquals(serviceInfo, actual);
+    }
+    
+    @Test
+    void testFailoverAndRecoveryNotificationsHavePushFlag() {
+        ServiceInfo failover = new ServiceInfo("a@@b");
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        failover.addHost(instance);
+        ServiceInfo changed = new ServiceInfo("a@@b");
+        Instance changedInstance = new Instance();
+        changedInstance.setIp("127.0.0.1");
+        changedInstance.setPort(8080);
+        changedInstance.setWeight(2.0);
+        changed.addHost(changedInstance);
+        when(failoverDataSource.getSwitch()).thenReturn(new FailoverSwitch(true),
+            new FailoverSwitch(true), new FailoverSwitch(false));
+        when(failoverDataSource.getFailoverData()).thenReturn(Collections.singletonMap("a@@b",
+            NamingFailoverData.newNamingFailoverData(failover)),
+            Collections.singletonMap("a@@b",
+                NamingFailoverData.newNamingFailoverData(changed)));
+        ServiceInfo recovered = new ServiceInfo("a@@b");
+        when(holder.getServiceInfoMap()).thenReturn(Collections.singletonMap("a@@b", recovered));
+        List<InstancesChangeEvent> events = new ArrayList<>();
+        try (MockedStatic<NotifyCenter> notifications = mockStatic(NotifyCenter.class)) {
+            notifications.when(() -> NotifyCenter.publishEvent(any(InstancesChangeEvent.class)))
+                .thenAnswer(invocation -> events.add(invocation.getArgument(0)));
+            refreshFailoverSwitch();
+            refreshFailoverSwitch();
+            refreshFailoverSwitch();
+        }
+        assertEquals(3, events.size());
+        assertTrue(events.get(0).isFromPush());
+        assertTrue(events.get(1).isFromPush());
+        assertTrue(events.get(2).isFromPush());
+        assertEquals(failover.getHosts(), events.get(0).getInstancesDiff().getAddedInstances());
+        assertEquals(changed.getHosts(), events.get(1).getInstancesDiff().getModifiedInstances());
+        assertEquals(changed.getHosts(), events.get(2).getInstancesDiff().getRemovedInstances());
     }
     
     @Test
