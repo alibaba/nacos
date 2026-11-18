@@ -31,7 +31,8 @@ class OracleVisibilityPermissionSchemaResourceTest {
     @Test
     void testPermissionResourceColumnSupportsCanonicalVisibilityResource() throws IOException {
         String schema = readResource("META-INF/oracle-schema.sql");
-        assertTrue(schema.contains("resource VARCHAR2(512 CHAR) NOT NULL"));
+        // The column is named `resources` because `resource` is an Oracle reserved word.
+        assertTrue(schema.contains("resources VARCHAR2(512 CHAR) NOT NULL"));
         assertFalse(schema.contains("idx_permission_resource"));
         assertFalse(schema.contains("idx_role_user"));
     }
@@ -40,7 +41,7 @@ class OracleVisibilityPermissionSchemaResourceTest {
     void testPermissionResourceUpgradeScriptExpandsResourceColumn() throws IOException {
         String sql = readResource("META-INF/oracle-upgrade-visibility-permission-resource.sql");
         assertTrue(sql.contains(
-            "ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL)"));
+            "ALTER TABLE permissions MODIFY (resources VARCHAR2(512 CHAR) NOT NULL)"));
         assertFalse(sql.contains("idx_permission_resource"));
     }
     

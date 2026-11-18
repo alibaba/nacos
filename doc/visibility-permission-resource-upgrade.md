@@ -82,8 +82,11 @@ ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);
 ## Oracle
 
 ```sql
-ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);
+ALTER TABLE permissions MODIFY (resources VARCHAR2(512 CHAR) NOT NULL);
 ```
+
+The column is named `resources` because `resource` is a reserved word in Oracle
+and cannot be used as an unquoted identifier.
 
 The upgrade only expands the raw canonical resource column. Grant-list-only
 reverse indexes such as `permissions(resource, action, role)` and
