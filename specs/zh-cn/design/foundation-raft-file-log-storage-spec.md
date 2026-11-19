@@ -157,7 +157,7 @@ Index 由 Segment 扫描重建。初始化对所有已发布 Segment 重建索�
 
 写入与发布顺序为：
 
-1. 向活动 Segment 追加记录，同时写入 Index；容量不足时刷盘旧段、关闭并创建新段。
+1. 向活动 Segment 追加记录，同时写入 Index；容量不足时确保旧段数据已同步，关闭并创建新段。
 2. 完成整批写入后刷盘最后一个 Segment。
 3. 若新 Manifest 引用了新增 Segment，同步 `segments` 目录。
 4. 写入 `manifest.tmp` 并执行 `force(true)`。

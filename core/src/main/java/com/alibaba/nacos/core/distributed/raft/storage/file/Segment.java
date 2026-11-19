@@ -23,6 +23,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -39,6 +40,9 @@ final class Segment implements AutoCloseable {
     private final long maxBytes;
     
     private long logicalEnd;
+    
+    // A reopened file has no synchronization confirmation from this instance.
+    private boolean hasUnsyncedChanges = true;
     
     Segment(Path path, SegmentHeader header, FileChannel channel, long logicalEnd, long maxBytes)
         throws IOException {
@@ -155,9 +159,69 @@ final class Segment implements AutoCloseable {
             throw new IOException("Record does not fit segment: " + path);
         }
         long offset = logicalEnd;
+        hasUnsyncedChanges = true;
         writeFully(channel, record, offset, path);
         logicalEnd = following;
         return offset;
+    }
+    
+    long appendBatch(List<ByteBuffer> records, int fromInclusive, int toExclusive,
+        ByteBuffer scratch) throws IOException {
+        if (records == null || fromInclusive < 0 || toExclusive <= fromInclusive
+            || toExclusive > records.size() || scratch == null || scratch.isReadOnly()
+            || scratch.capacity() < FileLogFormat.RECORD_OVERHEAD) {
+            throw new IOException("Invalid segment batch for " + path);
+        }
+        long newEnd = logicalEnd;
+        try {
+            for (int i = fromInclusive; i < toExclusive; i++) {
+                ByteBuffer record = records.get(i);
+                if (record == null || record.remaining() < FileLogFormat.RECORD_OVERHEAD
+                    || record.remaining() > LogRecordCodec.MAX_RECORD_BYTES) {
+                    throw new IOException("Invalid segment batch record for " + path);
+                }
+                newEnd = Math.addExact(newEnd, record.remaining());
+            }
+        } catch (ArithmeticException e) {
+            throw new IOException("Segment batch boundary overflow in " + path, e);
+        }
+        if (newEnd > maxBytes) {
+            throw new IOException("Batch does not fit segment: " + path);
+        }
+        long start = logicalEnd;
+        long position = start;
+        scratch.clear();
+        hasUnsyncedChanges = true;
+        for (int i = fromInclusive; i < toExclusive; i++) {
+            ByteBuffer record = records.get(i).duplicate();
+            int size = record.remaining();
+            if (size > scratch.capacity()) {
+                position = flushScratch(scratch, position);
+                writeFully(channel, record, position, path);
+                position = Math.addExact(position, size);
+            } else {
+                if (scratch.remaining() < size) {
+                    position = flushScratch(scratch, position);
+                }
+                scratch.put(record);
+            }
+        }
+        position = flushScratch(scratch, position);
+        if (position != newEnd) {
+            throw new IOException("Unexpected segment batch end in " + path);
+        }
+        logicalEnd = newEnd;
+        return start;
+    }
+    
+    private long flushScratch(ByteBuffer scratch, long position) throws IOException {
+        scratch.flip();
+        int length = scratch.remaining();
+        if (length > 0) {
+            writeFully(channel, scratch, position, path);
+        }
+        scratch.clear();
+        return Math.addExact(position, length);
     }
     
     ByteBuffer read(long offset, int length, long publishedEnd) throws IOException {
@@ -197,6 +261,7 @@ final class Segment implements AutoCloseable {
     }
     
     void truncateToLogicalEnd() throws IOException {
+        hasUnsyncedChanges = true;
         channel.truncate(logicalEnd);
     }
     
@@ -204,12 +269,21 @@ final class Segment implements AutoCloseable {
         if (end < FileLogFormat.SEGMENT_HEADER_SIZE || end > logicalEnd) {
             throw new IOException("Invalid segment truncation boundary: " + end);
         }
+        hasUnsyncedChanges = true;
         channel.truncate(end);
         logicalEnd = end;
     }
     
     void force() throws IOException {
+        hasUnsyncedChanges = true;
         channel.force(true);
+        hasUnsyncedChanges = false;
+    }
+    
+    void syncIfRequired() throws IOException {
+        if (hasUnsyncedChanges) {
+            force();
+        }
     }
     
     @Override

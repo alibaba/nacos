@@ -76,6 +76,42 @@ public class FileLogProcessRecoveryTest {
     Path directory;
     
     @ParameterizedTest
+    @ValueSource(strings = {"partial", "synced"})
+    void unpublishedBatchSurvivesProcessDeathWithoutPublishingItsTail(String scenario)
+        throws Exception {
+        createFixture(directory);
+        Manifest before = readManifest(directory);
+        killAtCheckpoint("batch", scenario, "BATCH_" + scenario);
+        for (int attempt = 0; attempt < 2; attempt++) {
+            FileLogStorage recovered = store(directory);
+            try {
+                assertTrue(recovered.init(context()));
+                assertEquals(before, recovered.getManifest());
+                for (long index = 1; index <= 6; index++) {
+                    assertEquals(entry(index), recovered.getEntry(index));
+                }
+                assertNull(recovered.getEntry(7));
+            } finally {
+                recovered.shutdown();
+            }
+        }
+        FileLogStorage recovered = store(directory);
+        try {
+            assertTrue(recovered.init(context()));
+            assertEquals(3, recovered.appendEntries(List.of(entry(7), entry(8), entry(9))));
+        } finally {
+            recovered.shutdown();
+        }
+        try {
+            assertTrue(recovered.init(context()));
+            assertEquals(entry(9), recovered.getEntry(9));
+            assertTrue(recovered.appendEntry(entry(10)));
+        } finally {
+            recovered.shutdown();
+        }
+    }
+    
+    @ParameterizedTest
     @ValueSource(strings = {"suffix-tail", "suffix-orphan", "reset-orphan"})
     void recoversAfterPublicationAndReclamationProcessesAreKilled(String scenario)
         throws Exception {
@@ -217,6 +253,9 @@ public class FileLogProcessRecoveryTest {
         String scenario = args[2];
         int port = Integer.parseInt(args[3]);
         switch (phase) {
+            case "batch":
+                crashBatchAppend(directory, scenario, port);
+                break;
             case "create":
                 crashSegmentCreation(directory, scenario, port);
                 break;
@@ -234,6 +273,55 @@ public class FileLogProcessRecoveryTest {
                 throw new IllegalArgumentException("Unknown process phase: " + phase);
         }
         System.out.println("FILE_LOG_PROCESS_OK");
+    }
+    
+    private static void crashBatchAppend(Path directory, String scenario, int port)
+        throws Exception {
+        FileLogStorage store = store(directory);
+        assertTrue(store.init(context()));
+        Path target = segmentPath(directory, 3);
+        try (MockedStatic<FileChannel> channels = mockStatic(FileChannel.class, invocation -> {
+            FileChannel channel = (FileChannel) invocation.callRealMethod();
+            if (!"partial".equals(scenario)
+                || !"open".equals(invocation.getMethod().getName())
+                || !target.equals(invocation.getArgument(0))) {
+                return channel;
+            }
+            FileChannel observed = spy(channel);
+            doAnswer(write -> {
+                ByteBuffer buffer = write.getArgument(0);
+                long offset = write.getArgument(1);
+                if (offset >= FileLogFormat.SEGMENT_HEADER_SIZE) {
+                    ByteBuffer prefix = buffer.duplicate();
+                    prefix.limit(prefix.position() + 8);
+                    while (prefix.hasRemaining()) {
+                        offset += channel.write(prefix, offset);
+                    }
+                    checkpoint(port, "BATCH_partial");
+                    throw new AssertionError("Crash checkpoint returned");
+                }
+                return write.callRealMethod();
+            }).when(observed).write(any(ByteBuffer.class), anyLong());
+            return observed;
+        }); MockedStatic<Segment> segments = mockStatic(Segment.class, invocation -> {
+            Object result = invocation.callRealMethod();
+            if ("synced".equals(scenario)
+                && "create".equals(invocation.getMethod().getName())) {
+                Segment segment = spy((Segment) result);
+                doAnswer(force -> {
+                    force.callRealMethod();
+                    checkpoint(port, "BATCH_synced");
+                    throw new AssertionError("Crash checkpoint returned");
+                }).when(segment).force();
+                return segment;
+            }
+            return result;
+        })) {
+            store.appendEntries(List.of(entry(7), entry(8), entry(9)));
+            throw new AssertionError("Batch checkpoint was not reached");
+        } finally {
+            store.shutdown();
+        }
     }
     
     private static void crashSegmentCreation(Path directory, String scenario, int port)

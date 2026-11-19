@@ -228,7 +228,7 @@ returns 0 before writing batch files.
 Write and publication ordering:
 
 1. Append records to the active segment and update its index. On insufficient
-   space, force the old segment, close it, and create another.
+   space, ensure the old segment's data is synchronized, close it, and create another.
 2. Force the final segment after writing the whole batch.
 3. Synchronize the `segments` directory if the new Manifest references new segments.
 4. Write `manifest.tmp` and call `force(true)`.
