@@ -8,8 +8,6 @@ Nacos的编码规范遵从于《阿里巴巴JAVA开发规约》和社区制定�
 ### Guidelines
 [Alibaba-Java-Coding-Guidelines](https://alibaba.github.io/Alibaba-Java-Coding-Guidelines/) 
 
-[阿里巴巴JAVA开发规约](https://github.com/alibaba/p3c/blob/master/Java%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C%28%E9%BB%84%E5%B1%B1%E7%89%88%29.pdf)
-
 [community issue](https://github.com/alibaba/nacos/issues/2992)
 
 ## Nacos Code Style File
