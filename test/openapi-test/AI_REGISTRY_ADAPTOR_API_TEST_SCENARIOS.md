@@ -204,3 +204,12 @@ pending. These cases do not establish complete ARD Registry compatibility.
 This expands the existing Artifact surface row; it does not add a row to the
 coverage denominator. Standard MCP Artifact URLs identify a canonical name, even
 when it looks like a UUID. Legacy MCP management ID selectors are unchanged.
+
+## MCP Registry front-protocol fallback
+
+| API surface / IT class | Covered API operations | Current status | Current / missing coverage |
+| --- | --- | --- | --- |
+| `NacosMcpRegistryServiceTest`, `McpRegistryAdaptorOpenApiITCase` | `GET /v0/servers`, `GET /v0/servers/{name}/versions`, `GET /v0/servers/{name}/versions/{version}` | Partial | Module tests cover missing/empty front protocol with `mcp-sse` and `mcp-streamable`, explicit front-protocol precedence, and omission of remotes for a plain HTTP or unknown backend. Standalone IT registers native MCP servers without frontProtocol through the admin API and checks transport type in all three registry reads, alongside the existing explicit HTTP-backend case. Persisted null/empty combinations that an authoring API normalizes are pinned by the module tests. |
+
+These cases extend existing MCP registry operations; they do not add HTTP endpoints
+or change the coverage denominator.
