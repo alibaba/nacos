@@ -23,7 +23,9 @@ import com.alipay.sofa.jraft.entity.LogId;
 import com.alipay.sofa.jraft.entity.codec.v2.LogEntryV2CodecFactory;
 import com.alipay.sofa.jraft.option.LogStorageOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
+import com.alipay.sofa.jraft.util.Platform;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +34,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,8 +53,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
@@ -64,9 +69,18 @@ import static org.mockito.Mockito.verify;
 class FileLogReaderCacheTest {
     
     @TempDir
-    Path directory;
+    Path temporaryDirectory;
+    
+    private Path directory;
+    
+    private Path realDirectory;
     
     private final List<FileLogStorage> stores = new ArrayList<>();
+    
+    @BeforeEach
+    void configureTemporaryDirectory() throws IOException {
+        configureDirectory(temporaryDirectory);
+    }
     
     @AfterEach
     void shutdown() {
@@ -134,8 +148,13 @@ class FileLogReaderCacheTest {
         }
     }
     
-    @Test
-    void cacheHitsReadAndDecodeWithoutReopeningEitherFile() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void cacheHitsReadAndDecodeWithoutReopeningEitherFile(boolean linkedDirectory)
+        throws Exception {
+        if (linkedDirectory) {
+            useLinkedTemporaryDirectory();
+        }
         FileLogStorage store = seed();
         Manifest.SegmentMeta first = store.getManifest().getSegments().get(0);
         List<Segment> openedSegments = new ArrayList<>();
@@ -350,9 +369,15 @@ class FileLogReaderCacheTest {
         assertTrue(store.appendEntry(entry(13)));
     }
     
-    @Test
-    void mutationFailureClearsCacheButPublishedReadsCanBorrowAgain() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void mutationFailureClearsCacheButPublishedReadsCanBorrowAgain(boolean linkedDirectory)
+        throws Exception {
+        if (linkedDirectory) {
+            useLinkedTemporaryDirectory();
+        }
         FileLogStorage store = seed();
+        AtomicInteger failures = new AtomicInteger();
         List<Segment> cached = new ArrayList<>();
         try (var segments = mockStatic(Segment.class, invocation -> {
             Object result = invocation.callRealMethod();
@@ -368,11 +393,13 @@ class FileLogReaderCacheTest {
             try (var forces = mockStatic(FileLogStorage.class, invocation -> {
                 if ("forceDirectory".equals(invocation.getMethod().getName())
                     && root().equals(invocation.getArgument(0))) {
+                    failures.incrementAndGet();
                     throw new IOException("published root force failure");
                 }
                 return invocation.callRealMethod();
             })) {
                 assertFalse(store.appendEntry(entry(13)));
+                assertEquals(1, failures.get(), "The published Manifest directory must be forced");
             }
             verify(old).close();
             assertFalse(store.appendEntry(entry(14)));
@@ -465,8 +492,30 @@ class FileLogReaderCacheTest {
         return store;
     }
     
+    private static Path directoryLink(Path link, Path target) throws IOException {
+        try {
+            return Files.createSymbolicLink(link, target);
+        } catch (FileSystemException | UnsupportedOperationException e) {
+            assumeTrue(!Platform.isWindows(), "Windows cannot create symbolic links: " + e);
+            throw e;
+        }
+    }
+    
+    private void configureDirectory(Path configuredDirectory) throws IOException {
+        directory = configuredDirectory;
+        realDirectory = configuredDirectory.toRealPath();
+    }
+    
+    private void useLinkedTemporaryDirectory() throws IOException {
+        Path target = Files.createDirectory(temporaryDirectory.resolve("real-directory"));
+        Path link = directoryLink(temporaryDirectory.resolve("temp-entry"), target);
+        configureDirectory(Files.createDirectory(link.resolve("storage")));
+        assertNotEquals(directory.toAbsolutePath(), realDirectory);
+        assertTrue(Files.isSameFile(directory, realDirectory));
+    }
+    
     private Path root() {
-        return directory.resolve("file-log");
+        return realDirectory.resolve("file-log");
     }
     
     private Path segmentPath(long id) {
