@@ -102,7 +102,12 @@ Nacos 鉴权信息。
 metadata、version、packages、icons、website、repository、tools 和 endpoints 映射到
 registry 响应形态。当 frontend endpoint 和 backend endpoint 同时存在时，优先使用
 frontend endpoint。Endpoint 数据会根据 MCP front protocol 转换为 registry `remotes`，
-例如 streamable HTTP 或 SSE。未携带 `protocol` 或 `path` 的 endpoint（例如只提供
+例如 streamable HTTP 或 SSE。
+当 front protocol 缺失或为空白时，若 server 的 backend protocol 为 `mcp-streamable`
+或 `mcp-sse`，适配器使用该 backend protocol。
+普通 `http` 后端不是 MCP 传输，仍需显式指定 MCP front protocol 才能导出 `remotes`。
+显式 front protocol 优先；不支持或缺失的协议只省略 `remotes`，不会丢弃 server 或导致版本查询失败。
+未携带 `protocol` 或 `path` 的 endpoint（例如只提供
 address 与 port 的 `DIRECT` endpoint 规格）会将 URL 协议默认为 `http`、路径默认为空，
 从而保证每个 remote URL 都是合法的绝对 URL。`_meta` 中的 `official` 对象通过
 `status` 字段反映 Nacos MCP server 的生命周期状态（`active`、`deprecated` 或

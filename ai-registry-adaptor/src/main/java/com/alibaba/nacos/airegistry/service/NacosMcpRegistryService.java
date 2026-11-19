@@ -306,6 +306,9 @@ public class NacosMcpRegistryService {
             return null;
         }
         String frontProtocol = mcpServerDetail.getFrontProtocol();
+        if (StringUtils.isBlank(frontProtocol)) {
+            frontProtocol = mcpServerDetail.getProtocol();
+        }
         if (AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equals(frontProtocol)) {
             return toRemotes(endpoints, AiConstants.Mcp.OFFICIAL_TRANSPORT_STREAMABLE);
         } else if (AiConstants.Mcp.MCP_PROTOCOL_SSE.equals(frontProtocol)) {
