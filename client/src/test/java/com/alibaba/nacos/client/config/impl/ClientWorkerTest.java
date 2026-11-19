@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
@@ -634,6 +635,21 @@ class ClientWorkerTest {
                 configChangeNotifyRequest, "testname");
         Mockito.verify(cacheDataMocked, times(1)).setConsistentWithServer(false);
         Mockito.verify(atomicBoolean, times(1)).set(true);
+    }
+    
+    @Test
+    void testHandleConfigChangeRequestWithoutMatchingCache() {
+        ClientWorker.ConfigRpcTransportClient transportClient =
+            Mockito.spy((ClientWorker.ConfigRpcTransportClient) clientWorker.getAgent());
+        ConfigChangeNotifyRequest request =
+            ConfigChangeNotifyRequest.build("missingDataId", "testGroup", TEST_NAMESPACE);
+        
+        ConfigChangeNotifyResponse response =
+            transportClient.handleConfigChangeNotifyRequest(request, "testname");
+        
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        Mockito.verify(transportClient, never()).notifyListenConfig();
     }
     
     @Test

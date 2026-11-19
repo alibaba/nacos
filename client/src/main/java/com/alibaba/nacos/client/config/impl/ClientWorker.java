@@ -921,7 +921,11 @@ public class ClientWorker implements Closeable {
                     cacheData.setConsistentWithServer(false);
                     notifyListenConfig();
                 }
-                
+            } else {
+                LOGGER.warn(
+                    "[{}] [server-push] config refresh skipped, no matching cache. dataId={}, group={}, tenant={}",
+                    clientName, configChangeNotifyRequest.getDataId(),
+                    configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
             }
             return new ConfigChangeNotifyResponse();
         }
