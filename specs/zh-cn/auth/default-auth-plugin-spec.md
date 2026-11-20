@@ -110,6 +110,29 @@ LDAP 插件持有不可变的 effective 配置快照。Spring LDAP context 和 t
 token 签名和有效期、Nacos 用户与角色存储及授权仍使用 `auth:nacos` 配置的基础设施，相关
 共享字段不复制到 `auth:ldap` definitions。
 
+## Oracle 存储适配插件
+
+`nacos-oracle-auth-plugin` 模块将默认鉴权插件的外部存储持久化适配到 Oracle 数据库，
+不修改任何默认鉴权插件类。它按存储方言激活，而不是按鉴权类型激活：当
+`nacos.plugin.datasource-dialect.type=oracle` 且部署形态为外部存储的 server/merged 时，
+插件注册 primary 的用户、角色、权限持久化 Bean，使所有按类型注入默认持久化接口的
+位置解析到 Oracle 适配实现；默认持久化 Bean 仍会注册但不再被使用。
+
+要求与行为：
+
+- 鉴权类型保持 `nacos`：身份模型、登录、管理员初始化、token、缓存、可见性授权继续
+  使用默认鉴权插件，行为不变；
+- 权限表列名为 `resources`（`resource` 是 Oracle 保留字），查询时以带引号的
+  `"resource"` 别名返回，共享的权限 RowMapper 按相同列标签读取；
+- 列表查询通过插件自带的分页实现使用 Oracle `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`
+  语法，因为默认分页工厂没有 Oracle 适配器，其兜底会执行不带分页子句的 SQL；
+- `LIKE` 查询显式追加 `ESCAPE '\'` 子句，与默认插件对嵌入式 Derby 存储的做法一致；
+- 部署要求 Oracle Database 12c 及以上版本：列表分页使用 12c 引入的 ANSI
+  `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY` 语法；
+- 实际数据源方言不是 Oracle 时，插件在启动时快速失败；
+- 非 Oracle 方言、嵌入式存储或独立 console 下，本装配完全退避，行为与默认鉴权插件
+  完全一致。
+
 ## 身份
 
 插件接受以下身份输入：
@@ -271,7 +294,8 @@ LIKE 的默认转义字符，因此嵌入式存储显式声明 `ESCAPE '\'`。�
 @@visibility/{namespaceId}/{resourceType}/{resourceName}
 ```
 
-默认 RBAC `permissions.resource` 列必须保存完整、精确的 canonical 资源字符串。
+默认 RBAC `permissions.resource` 列必须保存完整、精确的 canonical 资源字符串
+（Oracle 上该列名为 `permissions.resources`，因为 `resource` 是 Oracle 保留字）。
 该列至少需要支持 512 个字符，以避免命名空间资源持久化时被截断。资源匹配语义是精确且
 大小写敏感的；因此默认 MySQL schema 对该列使用 `utf8mb4_bin`，并为
 `permissions` 表使用 `ROW_FORMAT=DYNAMIC`，以保证现有 `(role, resource, action)`
@@ -289,7 +313,7 @@ MySQL 迁移，以确保现有 `UNIQUE(role, resource, action)` 索引能够接�
 | MySQL | `mysql-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ROW_FORMAT=DYNAMIC, MODIFY COLUMN resource VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;` |
 | Derby | `derby-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource SET DATA TYPE VARCHAR(512);` |
 | PostgreSQL | `pg-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions ALTER COLUMN resource TYPE VARCHAR(512);` |
-| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resource VARCHAR2(512 CHAR) NOT NULL);` |
+| Oracle | `oracle-upgrade-visibility-permission-resource.sql` | `ALTER TABLE permissions MODIFY (resources VARCHAR2(512 CHAR) NOT NULL);` —— 该列名为 `resources`，因为 `resource` 是 Oracle 保留字。 |
 
 MySQL 脚本包含以下预检查：
 
