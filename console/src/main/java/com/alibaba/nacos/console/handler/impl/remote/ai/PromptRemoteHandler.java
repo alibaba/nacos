@@ -187,4 +187,5 @@ public class PromptRemoteHandler implements PromptHandler {
         clientHolder.getAiMaintainerService().prompt().updateBizTags(namespaceId, promptKey,
             bizTags);
     }
+    
 }

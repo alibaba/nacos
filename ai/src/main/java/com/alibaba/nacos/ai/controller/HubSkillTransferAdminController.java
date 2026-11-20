@@ -64,15 +64,15 @@ public class HubSkillTransferAdminController {
         return Result.success(service.importFromHub(request));
     }
     
-    /** Direct source READ + target WRITE copy into a new draft. */
+    /** Direct source READ + target WRITE clone into a new draft. */
     @Since("3.3.0")
-    @PostMapping("/copy")
+    @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.SPECIFIED,
         resource = ENTRY_RESOURCE, apiType = ApiType.ADMIN_API, tags = {ONLY_IDENTITY})
-    public Result<HubSkillTransferResult> copySkill(HubSkillTransferForm form)
+    public Result<HubSkillTransferResult> cloneSkill(HubSkillTransferForm form)
         throws NacosException {
         HubSkillTransferRequest request = form.prepareRequest();
         request.setTargetVersion(HubSkillTransferRequestValidator.validate(request, false));
-        return Result.success(service.copyDirect(request));
+        return Result.success(service.cloneDirect(request));
     }
 }

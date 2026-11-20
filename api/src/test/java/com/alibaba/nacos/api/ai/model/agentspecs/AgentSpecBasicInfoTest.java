@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,30 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentSpecBasicInfoTest extends BasicRequestTest {
+    
+    @Test
+    void optionalHubCoordinatesPreserveOrdinaryJsonAndLargeEntryIds() throws Exception {
+        AgentSpecBasicInfo ordinary = new AgentSpecBasicInfo();
+        ordinary.setName("ordinary");
+        assertFalse(mapper.readTree(mapper.writeValueAsString(ordinary)).has("hub"));
+        HubResourceDiscoveryInfo hub = new HubResourceDiscoveryInfo();
+        hub.setHubEntryId(9007199254740993L);
+        hub.setResourceType("agentspec");
+        hub.setResourceName("ordinary");
+        hub.setVersion("1.0.0");
+        ordinary.setName("9007199254740993");
+        ordinary.setHub(hub);
+        String json = mapper.writeValueAsString(ordinary);
+        assertEquals("9007199254740993",
+            mapper.readTree(json).get("hub").get("hubEntryId").asText());
+        assertTrue(mapper.readTree(json).get("hub").get("hubEntryId").isTextual());
+        assertFalse(json.contains("sourceNamespaceId"));
+        assertFalse(json.contains("sourceResourceId"));
+        assertFalse(json.contains("storage"));
+        AgentSpecBasicInfo decoded = mapper.readValue(json, AgentSpecBasicInfo.class);
+        assertEquals(hub.getHubEntryId(), decoded.getHub().getHubEntryId());
+        assertEquals("1.0.0", decoded.getHub().getVersion());
+    }
     
     @Test
     @DisplayName("test default constructor")

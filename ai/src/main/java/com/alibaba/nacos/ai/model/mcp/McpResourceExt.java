@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.ai.model.mcp;
 
+import com.alibaba.nacos.ai.utils.AiResourceOriginUtils;
+import java.util.Map;
+
 /**
  * Typed schema-versioned content stored in {@code ai_resource.ext} for MCP.
  *
@@ -28,6 +31,36 @@ public class McpResourceExt {
     private Integer schemaVersion;
     
     private String mcpId;
+    
+    private Map<String, Object> origin;
+    
+    private Boolean importPending;
+    
+    private Map<String, Object> importRecovery;
+    
+    public Boolean getImportPending() {
+        return importPending;
+    }
+    
+    public void setImportPending(Boolean importPending) {
+        this.importPending = importPending;
+    }
+    
+    public Map<String, Object> getImportRecovery() {
+        return importRecovery;
+    }
+    
+    public void setImportRecovery(Map<String, Object> importRecovery) {
+        this.importRecovery = importRecovery;
+    }
+    
+    public Map<String, Object> getOrigin() {
+        return AiResourceOriginUtils.copy(origin);
+    }
+    
+    public void setOrigin(Map<String, Object> origin) {
+        this.origin = AiResourceOriginUtils.copy(origin);
+    }
     
     public Integer getSchemaVersion() {
         return schemaVersion;

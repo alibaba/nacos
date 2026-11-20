@@ -69,6 +69,19 @@ class AgentProxyTest {
     }
     
     @Test
+    void hubRuntimeViewLinksToTheOriginalService() throws Exception {
+        RuntimeEndpointSnapshot snapshot = new RuntimeEndpointSnapshot();
+        snapshot.setNamespaceId("source-ns");
+        snapshot.setAgentName("source-agent");
+        when(agentHandler.getRuntimeEndpoints("__nacos_ai_hub__", "501", "a2a", VERSION))
+            .thenReturn(snapshot);
+        ConsoleRuntimeEndpointView result =
+            agentProxy.getRuntimeEndpoints("__nacos_ai_hub__", "501", "a2a", VERSION);
+        assertEquals("source-ns", result.getNamingServiceRef().getNamespaceId());
+        assertSame(snapshot, result.getRuntimeEndpointSnapshot());
+    }
+    
+    @Test
     void testScopeForwarding() throws Exception {
         agentProxy.updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");
         verify(agentHandler).updateScope(NAMESPACE_ID, AGENT_NAME, "PRIVATE");

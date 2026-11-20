@@ -68,8 +68,8 @@ describe('MCP lifecycle actions', () => {
   });
 
   it('keeps governance and version labels in the detail sidebar', () => {
-    const sidebarStart = DETAIL_SOURCE.indexOf('{/* Right column - 1/3 */}');
-    const governance = DETAIL_SOURCE.indexOf("{t('mcp.governance')}");
+    const sidebarStart = DETAIL_SOURCE.indexOf('<McpDetailContent');
+    const governance = DETAIL_SOURCE.indexOf('<McpGovernanceInfo');
     const versionHistory = DETAIL_SOURCE.indexOf('{/* ===== Version History Sheet ===== */}');
 
     expect(sidebarStart).toBeGreaterThan(-1);

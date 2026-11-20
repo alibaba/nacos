@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Icon;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Package;
@@ -31,6 +34,9 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpServerBasicInfo {
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HubResourceDiscoveryInfo hub;
     
     private String namespaceId;
     
@@ -222,4 +228,13 @@ public class McpServerBasicInfo {
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
+    
 }

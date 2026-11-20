@@ -170,4 +170,19 @@ public class PromptClientOpenApiITCase extends AiOpenApiBaseITCase {
         assertEquals(version, actual.get("version").asText());
         assertEquals(template, actual.get("template").asText());
     }
+    @Test
+    public void testSharedPromptIdentityAndSearchBoundariesOnExistingRoutes() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED, "Hub requires the auth-enabled baseline");
+        for (String id : new String[] {"0", "-1", "01", "same-name", "9223372036854775808"}) {
+            assertError(getRaw(PROMPT_CLIENT_PATH, Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__")
+                    .addParam("promptKey", id), AuthIdentity.CLIENT_NO_PERMISSION),
+                400, ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+        }
+        JsonNode page = getJsonOk(PROMPT_CLIENT_PATH + "/search", Query.newInstance()
+            .addParam("namespaceId", "__nacos_ai_hub__").addParam("query", randomPromptKey("absent-shared")),
+            AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals(0, page.get("totalCount").asInt());
+        assertEquals(0, page.get("pageItems").size());
+    }
+
 }

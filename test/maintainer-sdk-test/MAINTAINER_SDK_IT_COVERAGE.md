@@ -163,3 +163,15 @@ Successful pinned downloads, independent counters, and durable share lifecycle
 remain in the HTTP Hub IT fixture. Unit tests cover ordinary and shared binary
 transport, exact large entry IDs, response pin validation, raw bytes, and
 legacy SDK controlled 501 defaults.
+
+
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/import/governance; Hub import only; no direct source clone API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.
+
+
+Fixed per-resource Hub controllers: MCP, Agent, Prompt, AgentSpec each expose their own literal route and deployment chain. Skill cross-namespace clone now uses `/hub/skills/clone` (old `/copy` removed); SDK `cloneHubSkill`. Updated Skill API/SDK IT source assertions require a deployed run. Dedicated Admin controller tests verify each fixed resource route and presence of Hub import and absence of direct clone/copy for non-Skill resources.
+
+2026-10-29 MCP Hub import revision: source-owned Direct creates target-owned Naming state; ordinary REF retains its original service and STDIO has no Naming writes. Imports remain PRIVATE drafts with pinned Hub authorization. HTTP/SDK shapes are unchanged. See HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md and HubMcpAutomaticTransferOpenApiITCase; deployed acceptance remains pending.
+
+2026-10-30 shared-detail parity: ordinary MCP detail/model/query are restored (no added instance table/field). MCP source and Hub reuse the detail body; Agent Hub reads the pinned source runtime snapshot and original Naming link. Prompt retains native template debugging and variable input. Prompt/MCP/Agent/AgentSpec preserve pinned-version review results and actual labels; unrelated source versions remain excluded. Regression tests cover runtime refresh, Prompt debug payload, label filtering and review fidelity. Live deployed API acceptance is pending.
+
+Pinned source navigation parity: non-Skill HubResourceDiscoveryInfo adds sourceReadable and permission-gated sourceNamespaceId/sourceName, following Skill. Cover independent source auth READ + visibility, anonymous/denied/plugin failure hiding coordinates without blocking Hub reads, large opaque entry identity preservation, and exact-version source navigation for each type. HTTP/SDK method signatures are unchanged; API JSON model/permission unit tests and frontend mapping tests cover the added contract. Deployed multi-identity acceptance remains pending.

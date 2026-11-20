@@ -102,3 +102,6 @@ Prompt formats, variable schemas, tool-call conventions, and model-provider
 requirements may change quickly. Prompt spec revisions may introduce new
 content fields or validation rules, but they must keep versioned migration
 paths for existing prompts.
+
+
+Hub scope, clone restrictions and service instance behavior follow [Agentic Resource Hub](agentic-resource-hub-spec.md).

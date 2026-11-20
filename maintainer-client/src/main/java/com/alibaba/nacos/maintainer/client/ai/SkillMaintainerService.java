@@ -628,7 +628,7 @@ public interface SkillMaintainerService {
     
     /** Copy an explicit source version with source READ and target WRITE. */
     @Since("3.3.0")
-    default HubSkillTransferResult copyHubSkill(HubSkillTransferRequest request)
+    default HubSkillTransferResult cloneHubSkill(HubSkillTransferRequest request)
         throws NacosException {
         throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
             "This Maintainer implementation does not support Hub Skill copy");

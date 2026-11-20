@@ -92,6 +92,24 @@ class HubSkillTransferFileServiceTest {
     }
     
     @Test
+    void recoveryContainsAllTargetProviderKeysBeforeAnyWriteAndRejectsOrphans() throws Exception {
+        HubSkillTransferFileService.Files files = service.load(source, version, "target", "0.0.1");
+        Map<String, Object> recovery = service.recovery("target-ns", "target", "0.0.1", files);
+        List<?> keys = (List<?>) recovery.get("files");
+        org.junit.jupiter.api.Assertions.assertEquals(3, keys.size());
+        for (Object key : keys) {
+            Map<?, ?> coordinate = (Map<?, ?>) key;
+            org.junit.jupiter.api.Assertions.assertEquals("nacos_config",
+                coordinate.get("provider"));
+            assertTrue(((String) coordinate.get("key")).startsWith("target-ns:target:0.0.1:"));
+        }
+        store.put("target-ns:target:0.0.1:SKILL.md", new byte[] {1});
+        assertThrows(NacosException.class,
+            () -> service.recovery("target-ns", "target", "0.0.1", files));
+        assertArrayEquals(new byte[] {1}, store.get("target-ns:target:0.0.1:SKILL.md"));
+    }
+    
+    @Test
     void targetFrontmatterNameAndVersionChangeButBinaryBytesRemainExact() throws Exception {
         HubSkillTransferFileService.Files files = service.load(source, version,
             "renamed-skill", "0.0.1");

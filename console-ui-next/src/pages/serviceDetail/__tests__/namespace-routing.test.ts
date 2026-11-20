@@ -1,6 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import fs from 'fs';
 import path from 'path';
+import { McpDetailContent } from '@/components/ai/mcp/McpDetailContent';
+import type { McpServerDetailInfo, McpServiceRef } from '@/types/mcp';
+
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+
+function renderMcpDetail(serviceRef?: McpServiceRef, namespaceId = 'resource-ns') {
+  const mcp: McpServerDetailInfo = {
+    name: 'namespace-routing-test',
+    protocol: 'mcp-sse',
+    frontProtocol: 'mcp-sse',
+    enabled: true,
+    remoteServerConfig: serviceRef ? { serviceRef } : undefined,
+  };
+  return renderToStaticMarkup(createElement(McpDetailContent, { mcp, namespaceId }));
+}
 
 const DETAIL_SOURCE = fs.readFileSync(path.resolve(__dirname, '../index.tsx'), 'utf-8');
 const MANAGEMENT_SOURCE = fs.readFileSync(
@@ -49,9 +66,32 @@ describe('Naming namespace routing', () => {
     expect(SUBSCRIBER_SOURCE).toContain('}, [activeNamespace, pageNo, pageSize]);');
   });
 
-  it('passes namespace when service detail is opened from MCP service references', () => {
-    expect(MCP_DETAIL_SOURCE).toContain('namespace: namespaceId');
-    expect(MCP_DETAIL_SOURCE).toContain('navigate(`/serviceDetail?${params.toString()}`);');
+  it('passes the resource namespace to the shared MCP detail component', () => {
+    expect(MCP_DETAIL_SOURCE).toContain('<McpDetailContent mcp={mcp} namespaceId={namespaceId}');
+  });
+
+  it.each([
+    { label: 'cross-namespace reference', namespaceId: 'service-ns', groupName: 'DEFAULT_GROUP', serviceName: 'backend', expectedNamespace: 'service-ns' },
+    { label: 'legacy reference without namespace', namespaceId: '', groupName: 'DEFAULT_GROUP', serviceName: 'backend', expectedNamespace: 'resource-ns' },
+    { label: 'encoded service identity', namespaceId: 'team /研发', groupName: 'group & blue', serviceName: 'backend/name?x=1', expectedNamespace: 'team /研发' },
+  ])('links to the exact Naming service identity: $label', (scenario) => {
+    const html = renderMcpDetail({
+      namespaceId: scenario.namespaceId,
+      groupName: scenario.groupName,
+      serviceName: scenario.serviceName,
+    });
+    const href = html.match(/href="(#\/serviceDetail\?[^"]+)"/)?.[1];
+    expect(href).toBeDefined();
+    const url = new URL(href!.replaceAll('&amp;', '&'), 'http://localhost');
+    const query = new URLSearchParams(url.hash.slice(url.hash.indexOf('?') + 1));
+
+    expect(query.get('namespace')).toBe(scenario.expectedNamespace);
+    expect(query.get('groupName')).toBe(scenario.groupName);
+    expect(query.get('serviceName')).toBe(scenario.serviceName);
+  });
+
+  it('does not invent a Naming service link without a service reference', () => {
+    expect(renderMcpDetail()).not.toContain('#/serviceDetail?');
   });
 
   it('clears stale service detail while loading a different namespace', () => {

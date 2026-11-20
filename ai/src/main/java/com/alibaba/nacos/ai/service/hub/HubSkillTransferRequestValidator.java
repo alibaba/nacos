@@ -74,7 +74,7 @@ public final class HubSkillTransferRequestValidator {
             }
         } else {
             if (request.getHubEntryId() != null) {
-                throw invalid("Direct copy must not contain hubEntryId");
+                throw invalid("Direct clone must not contain hubEntryId");
             }
             required(request.getSourceNamespaceId(), "sourceNamespaceId");
             required(request.getSourceName(), "sourceName");
@@ -87,7 +87,7 @@ public final class HubSkillTransferRequestValidator {
                 || HubNamespaceUtils.isHubNamespace(request.getSourceNamespaceId())
                 || "latest".equalsIgnoreCase(request.getSourceVersion())
                 || !request.getSourceVersion().equals(request.getSourceVersion().trim())) {
-                throw invalid("Direct copy requires a concrete source version outside Hub");
+                throw invalid("Direct clone requires a concrete source version outside Hub");
             }
         }
         String version = StringUtils.isBlank(request.getTargetVersion())

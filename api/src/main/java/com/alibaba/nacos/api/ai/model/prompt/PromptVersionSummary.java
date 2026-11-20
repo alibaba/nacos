@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.prompt;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 
 /**
@@ -42,6 +44,17 @@ public class PromptVersionSummary implements Serializable {
     private String publishPipelineInfo;
     
     private Long downloadCount;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HubResourceDiscoveryInfo hub;
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
     
     public String getPromptKey() {
         return promptKey;

@@ -38,12 +38,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Component
 public class AiHubNamespaceInitializer
-        implements ApplicationListener<ApplicationReadyEvent> {
+    implements ApplicationListener<ApplicationReadyEvent> {
     
     private static final String HUB_NAMESPACE_NAME = "Nacos AI Resource Hub";
     
     private static final String HUB_NAMESPACE_DESCRIPTION =
-            "System namespace for Nacos AI Resource Hub";
+        "System namespace for Nacos AI Resource Hub";
     
     private final NamespacePersistService namespacePersistService;
     
@@ -52,7 +52,7 @@ public class AiHubNamespaceInitializer
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
     public AiHubNamespaceInitializer(NamespacePersistService namespacePersistService,
-            NamespaceOperationService namespaceOperationService) {
+        NamespaceOperationService namespaceOperationService) {
         this.namespacePersistService = namespacePersistService;
         this.namespaceOperationService = namespaceOperationService;
     }
@@ -80,68 +80,68 @@ public class AiHubNamespaceInitializer
         String hubKp = String.valueOf(NamespaceTypeEnum.AI_HUB.getType());
         
         TenantInfo existingHub =
-                namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
+            namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
         
         if (existingHub != null) {
             Loggers.CORE.info(
-                    "Nacos AI Resource Hub namespace [{}] already exists",
-                    hubNamespaceId);
+                "Nacos AI Resource Hub namespace [{}] already exists",
+                hubNamespaceId);
             return;
         }
         
         if (namespacePersistService.tenantInfoCountByTenantId(hubNamespaceId) > 0) {
             throw new IllegalStateException(
-                    "Reserved Nacos AI Resource Hub namespaceId ["
-                            + hubNamespaceId
-                            + "] is already occupied by another namespace type");
+                "Reserved Nacos AI Resource Hub namespaceId ["
+                    + hubNamespaceId
+                    + "] is already occupied by another namespace type");
         }
         
         try {
             namespaceOperationService.createNamespace(
-                    hubNamespaceId,
-                    HUB_NAMESPACE_NAME,
-                    HUB_NAMESPACE_DESCRIPTION,
-                    NamespaceTypeEnum.AI_HUB);
+                hubNamespaceId,
+                HUB_NAMESPACE_NAME,
+                HUB_NAMESPACE_DESCRIPTION,
+                NamespaceTypeEnum.AI_HUB);
         } catch (NacosException | RuntimeException e) {
             /*
              * Another Nacos node may have inserted the same Hub namespace
              * between our existence check and insert.
              */
             TenantInfo concurrentHub =
-                    namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
+                namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
             
             if (concurrentHub != null) {
                 Loggers.CORE.info(
-                        "Nacos AI Resource Hub namespace [{}] was initialized concurrently",
-                        hubNamespaceId);
+                    "Nacos AI Resource Hub namespace [{}] was initialized concurrently",
+                    hubNamespaceId);
                 return;
             }
             
             if (namespacePersistService.tenantInfoCountByTenantId(hubNamespaceId) > 0) {
                 throw new IllegalStateException(
-                        "Reserved Nacos AI Resource Hub namespaceId ["
-                                + hubNamespaceId
-                                + "] is occupied by another namespace type",
-                        e);
+                    "Reserved Nacos AI Resource Hub namespaceId ["
+                        + hubNamespaceId
+                        + "] is occupied by another namespace type",
+                    e);
             }
             
             throw new IllegalStateException(
-                    "Failed to initialize Nacos AI Resource Hub namespace ["
-                            + hubNamespaceId + "]",
-                    e);
+                "Failed to initialize Nacos AI Resource Hub namespace ["
+                    + hubNamespaceId + "]",
+                e);
         }
         
         TenantInfo created =
-                namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
+            namespacePersistService.findTenantByKp(hubKp, hubNamespaceId);
         
         if (created == null) {
             throw new IllegalStateException(
-                    "Nacos AI Resource Hub namespace initialization finished "
-                            + "but namespace record was not found");
+                "Nacos AI Resource Hub namespace initialization finished "
+                    + "but namespace record was not found");
         }
         
         Loggers.CORE.info(
-                "Initialized Nacos AI Resource Hub namespace [{}]",
-                hubNamespaceId);
+            "Initialized Nacos AI Resource Hub namespace [{}]",
+            hubNamespaceId);
     }
 }

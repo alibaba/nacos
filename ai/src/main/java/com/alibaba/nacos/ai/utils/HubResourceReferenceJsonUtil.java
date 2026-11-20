@@ -57,14 +57,14 @@ public final class HubResourceReferenceJsonUtil {
         
         try {
             HubResourceReference reference =
-                    JacksonUtils.toObj(json, HubResourceReference.class);
+                JacksonUtils.toObj(json, HubResourceReference.class);
             validate(reference);
             return reference;
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "Hub resource reference descriptor is invalid", e);
+                "Hub resource reference descriptor is invalid", e);
         }
     }
     
@@ -80,7 +80,7 @@ public final class HubResourceReferenceJsonUtil {
         }
         
         if (!Integer.valueOf(HubResourceReference.CURRENT_SCHEMA_VERSION)
-                .equals(reference.getSchemaVersion())) {
+            .equals(reference.getSchemaVersion())) {
             throw invalidDescriptor("unsupported schemaVersion");
         }
         
@@ -93,7 +93,7 @@ public final class HubResourceReferenceJsonUtil {
         }
         
         if (reference.getSourceResourceId() == null
-                || reference.getSourceResourceId() <= 0) {
+            || reference.getSourceResourceId() <= 0) {
             throw invalidDescriptor("sourceResourceId is invalid");
         }
         
@@ -102,7 +102,7 @@ public final class HubResourceReferenceJsonUtil {
         }
         
         if (reference.getSourceVersionId() == null
-                || reference.getSourceVersionId() <= 0) {
+            || reference.getSourceVersionId() <= 0) {
             throw invalidDescriptor("sourceVersionId is invalid");
         }
         
@@ -113,7 +113,7 @@ public final class HubResourceReferenceJsonUtil {
     
     private static NacosException invalidDescriptor(String reason) {
         return new NacosException(NacosException.SERVER_ERROR,
-                "Hub resource reference descriptor is invalid: " + reason);
+            "Hub resource reference descriptor is invalid: " + reason);
     }
     
     /**
@@ -128,8 +128,8 @@ public final class HubResourceReferenceJsonUtil {
      * @throws NacosException if any field is invalid
      */
     public static HubResourceReference build(String sourceNamespaceId,
-            Long sourceResourceId, String sourceName,
-            Long sourceVersionId, String sourceVersion) throws NacosException {
+        Long sourceResourceId, String sourceName,
+        Long sourceVersionId, String sourceVersion) throws NacosException {
         
         HubResourceReference reference = new HubResourceReference();
         reference.setSchemaVersion(HubResourceReference.CURRENT_SCHEMA_VERSION);
@@ -144,4 +144,3 @@ public final class HubResourceReferenceJsonUtil {
         return reference;
     }
 }
-

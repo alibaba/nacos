@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.utils.HubSharedReadValidator;
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.prompt.PromptBizTagsUpdateForm;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.http.HubAwareAiReadHttpResourceParser;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -65,6 +67,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /**
  * Prompt admin controller.
@@ -106,7 +113,8 @@ public class PromptAdminController {
      */
     @Since("3.2.0")
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<PromptMetaSummary>> listPrompts(PromptListForm form) throws NacosException {
         form.validate();
         Page<PromptMetaSummary> result = promptOperationService.listPrompts(form.getNamespaceId(),
@@ -120,7 +128,8 @@ public class PromptAdminController {
      */
     @Since("3.2.0")
     @GetMapping("/versions")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form)
         throws NacosException {
         form.validate();
@@ -137,7 +146,8 @@ public class PromptAdminController {
      */
     @Since("3.2.1")
     @GetMapping("/governance")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<PromptMetaInfo> getPromptGovernanceDetail(PromptForm form) throws NacosException {
         form.validate();
         return Result.success(
@@ -149,7 +159,8 @@ public class PromptAdminController {
      */
     @Since("3.2.1")
     @GetMapping("/version")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<PromptVersionInfo> getVersionDetail(PromptQueryForm form) throws NacosException {
         form.validate();
         return Result.success(promptOperationService.getPromptVersionDetail(form.getNamespaceId(),
@@ -167,7 +178,8 @@ public class PromptAdminController {
      */
     @Since("3.2.2")
     @GetMapping("/version/download")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public ResponseEntity<byte[]> downloadPromptVersion(PromptQueryForm form)
         throws NacosException {
         form.validate();
@@ -378,7 +390,8 @@ public class PromptAdminController {
     @Since("3.2.0")
     @Deprecated
     @GetMapping("/metadata")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<PromptMetaInfo> getPromptMetadata(PromptForm form) throws NacosException {
         form.validate();
         PromptMetaInfo detail =
@@ -394,7 +407,8 @@ public class PromptAdminController {
     @Since("3.2.0")
     @Deprecated
     @GetMapping("/detail")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<PromptVersionInfo> queryPromptDetail(PromptQueryForm form) throws NacosException {
         form.validate();
         PromptVersionInfo detail = promptOperationService.queryPromptDetail(form.getNamespaceId(),
@@ -454,5 +468,102 @@ public class PromptAdminController {
             promptOperationService.updatePromptMetadata(form.getNamespaceId(), form.getPromptKey(),
                 form.getDescription(), form.getBizTags());
         return Result.success(success);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/list", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<PromptMetaSummary>> listPromptsShared(PromptListForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return listPrompts(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/versions", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<PromptVersionSummary>> listPromptVersionsShared(PromptHistoryForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return listPromptVersions(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/governance", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<PromptMetaInfo> getPromptGovernanceDetailShared(PromptForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getPromptGovernanceDetail(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<PromptVersionInfo> getVersionDetailShared(PromptQueryForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getVersionDetail(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/version/download", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public ResponseEntity<byte[]> downloadPromptVersionShared(PromptQueryForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return downloadPromptVersion(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/metadata", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<PromptMetaInfo> getPromptMetadataShared(PromptForm form) throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return getPromptMetadata(form);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/detail", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.ADMIN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<PromptVersionInfo> queryPromptDetailShared(PromptQueryForm form)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return queryPromptDetail(form);
     }
 }

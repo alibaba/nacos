@@ -62,7 +62,8 @@ public final class AgentResourceExtSerializer {
         .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     
     private static final Set<String> ROOT_FIELDS = unmodifiableSet("schemaVersion",
-        "displayName", "iconUrl", "provider", "extensions", "versionCatalog");
+        "displayName", "iconUrl", "provider", "extensions", "versionCatalog", "origin",
+        "importPending", "importRecovery");
     
     private static final Set<String> PROVIDER_FIELDS = unmodifiableSet("name", "url");
     
@@ -134,6 +135,8 @@ public final class AgentResourceExtSerializer {
         if (resourceExt == null) {
             throw new IllegalArgumentException("AgentResourceExt must not be null");
         }
+        com.alibaba.nacos.ai.utils.AiResourceImportUtils.validateState(
+            resourceExt.getImportPending(), resourceExt.getImportRecovery());
         if (!Integer.valueOf(AgentResourceExt.SCHEMA_VERSION)
             .equals(resourceExt.getSchemaVersion())) {
             throw new IllegalArgumentException("AgentResourceExt schemaVersion must be "
@@ -145,6 +148,7 @@ public final class AgentResourceExtSerializer {
         validateProvider(resourceExt.getProvider());
         validateExtensions(resourceExt.getExtensions());
         validateCatalog(resourceExt.getVersionCatalog());
+        resourceExt.getOrigin();
     }
     
     private static void validateProvider(AgentProvider provider) {
@@ -283,6 +287,9 @@ public final class AgentResourceExtSerializer {
             result.put("provider", provider);
         }
         putIfPresent(result, "extensions", resourceExt.getExtensions());
+        putIfPresent(result, "origin", resourceExt.getOrigin());
+        putIfPresent(result, "importPending", resourceExt.getImportPending());
+        putIfPresent(result, "importRecovery", resourceExt.getImportRecovery());
         result.put("versionCatalog", toStorageProjection(resourceExt.getVersionCatalog()));
         return result;
     }
@@ -323,12 +330,18 @@ public final class AgentResourceExtSerializer {
             throw new IllegalArgumentException("AgentResourceExt must be a JSON object");
         }
         rejectUnknownFields(root, ROOT_FIELDS, "AgentResourceExt");
+        com.alibaba.nacos.ai.utils.AiResourceImportUtils.validateState(
+            root.get("importPending"), root.get("importRecovery"));
         validateJsonInteger(root, "schemaVersion");
         validateOptionalJsonText(root, "displayName");
         validateOptionalJsonText(root, "iconUrl");
         validateProviderShape(root);
         validateExtensionsShape(root);
         validateCatalogShape(root);
+        if (root.containsKey("origin")) {
+            com.alibaba.nacos.ai.utils.AiResourceOriginUtils.copy(
+                requireJsonObject(root.get("origin"), "origin"));
+        }
     }
     
     private static void validateProviderShape(Map<?, ?> root) {

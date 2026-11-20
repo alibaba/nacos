@@ -139,4 +139,5 @@ public interface AgentHandler {
      */
     AgentSummary updateLabels(String namespaceId, AgentLabelsUpdateRequest request)
         throws NacosException;
+    
 }

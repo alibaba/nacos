@@ -143,22 +143,22 @@ class NamespaceOperationServiceTest {
         tenantInfo.setTenantDesc("System namespace for Nacos AI Resource Hub");
         
         when(namespacePersistService.findTenantByKp(
-                eq(String.valueOf(NamespaceTypeEnum.AI_HUB.getType())),
-                eq(hubNamespaceId)))
-                .thenReturn(tenantInfo);
+            eq(String.valueOf(NamespaceTypeEnum.AI_HUB.getType())),
+            eq(hubNamespaceId)))
+            .thenReturn(tenantInfo);
         
         Namespace namespace =
-                namespaceOperationService.getNamespace(hubNamespaceId, NamespaceTypeEnum.AI_HUB);
+            namespaceOperationService.getNamespace(hubNamespaceId, NamespaceTypeEnum.AI_HUB);
         
         assertEquals(hubNamespaceId, namespace.getNamespace());
         assertEquals("Nacos AI Resource Hub", namespace.getNamespaceShowName());
         assertEquals(
-                "System namespace for Nacos AI Resource Hub",
-                namespace.getNamespaceDesc());
+            "System namespace for Nacos AI Resource Hub",
+            namespace.getNamespaceDesc());
         
         assertEquals(
-                NamespaceTypeEnum.AI_HUB.getType(),
-                namespace.getType());
+            NamespaceTypeEnum.AI_HUB.getType(),
+            namespace.getType());
     }
     
     @Test
@@ -272,46 +272,46 @@ class NamespaceOperationServiceTest {
     @Test
     void testCreateReservedHubNamespaceShouldFail() {
         assertThrows(NacosApiException.class,
-                () -> namespaceOperationService.createNamespace(
-                        AiConstants.Hub.NAMESPACE_ID,
-                        TEST_NAMESPACE_NAME,
-                        TEST_NAMESPACE_DESC));
+            () -> namespaceOperationService.createNamespace(
+                AiConstants.Hub.NAMESPACE_ID,
+                TEST_NAMESPACE_NAME,
+                TEST_NAMESPACE_DESC));
     }
     
     @Test
     void testEditReservedHubNamespaceShouldFail() {
         assertThrows(NacosApiException.class,
-                () -> namespaceOperationService.editNamespace(
-                        AiConstants.Hub.NAMESPACE_ID,
-                        TEST_NAMESPACE_NAME,
-                        TEST_NAMESPACE_DESC));
+            () -> namespaceOperationService.editNamespace(
+                AiConstants.Hub.NAMESPACE_ID,
+                TEST_NAMESPACE_NAME,
+                TEST_NAMESPACE_DESC));
     }
     
     @Test
     void testRemoveReservedHubNamespaceShouldFail() {
         assertThrows(NacosApiException.class,
-                () -> namespaceOperationService.removeNamespace(
-                        AiConstants.Hub.NAMESPACE_ID));
+            () -> namespaceOperationService.removeNamespace(
+                AiConstants.Hub.NAMESPACE_ID));
     }
     
     @Test
     void testCreateAiHubNamespace() throws NacosException {
         when(namespacePersistService.tenantInfoCountByTenantId(
-                AiConstants.Hub.NAMESPACE_ID)).thenReturn(0);
+            AiConstants.Hub.NAMESPACE_ID)).thenReturn(0);
         
         namespaceOperationService.createNamespace(
-                AiConstants.Hub.NAMESPACE_ID,
-                "Nacos AI Resource Hub",
-                "System namespace for Nacos AI Resource Hub",
-                NamespaceTypeEnum.AI_HUB);
+            AiConstants.Hub.NAMESPACE_ID,
+            "Nacos AI Resource Hub",
+            "System namespace for Nacos AI Resource Hub",
+            NamespaceTypeEnum.AI_HUB);
         
         verify(namespacePersistService).insertTenantInfoAtomic(
-                eq(String.valueOf(NamespaceTypeEnum.AI_HUB.getType())),
-                eq(AiConstants.Hub.NAMESPACE_ID),
-                eq("Nacos AI Resource Hub"),
-                eq("System namespace for Nacos AI Resource Hub"),
-                any(),
-                anyLong());
+            eq(String.valueOf(NamespaceTypeEnum.AI_HUB.getType())),
+            eq(AiConstants.Hub.NAMESPACE_ID),
+            eq("Nacos AI Resource Hub"),
+            eq("System namespace for Nacos AI Resource Hub"),
+            any(),
+            anyLong());
     }
     
     private static class MockNamespaceInjector extends AbstractNamespaceDetailInjector {

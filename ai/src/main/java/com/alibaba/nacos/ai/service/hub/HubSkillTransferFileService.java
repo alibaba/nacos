@@ -194,6 +194,7 @@ public class HubSkillTransferFileService {
     /** Save sequentially so rollback knows every key that may have been touched. */
     public void save(String namespaceId, String name, String version, Files files,
         List<String> attempted) throws NacosException {
+        recovery(namespaceId, name, version, files);
         for (Map.Entry<String, byte[]> entry : files.getContents().entrySet()) {
             String path = entry.getKey();
             StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(files.getProvider(),
@@ -201,6 +202,27 @@ public class HubSkillTransferFileService {
             attempted.add(path); // include the failing key: provider may write-then-throw.
             AiResourceStorageRouter.getInstance().route(key).save(key, entry.getValue());
         }
+    }
+    
+    /** Prepare complete recovery coordinates and reject orphan files before claiming ownership. */
+    public Map<String, Object> recovery(String namespaceId, String name, String version,
+        Files files)
+        throws NacosException {
+        List<Map<String, String>> keys = new java.util.ArrayList<>();
+        for (String path : files.getContents().keySet()) {
+            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(files.getProvider(),
+                namespaceId, name, version, path);
+            if (AiResourceStorageRouter.getInstance().route(key).get(key) != null) {
+                throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    "Target Skill content already exists");
+            }
+            keys.add(Map.of("provider", key.getProvider(), "key", key.getKey()));
+        }
+        Map<String, Object> storage = new LinkedHashMap<>();
+        storage.put("provider", files.getProvider());
+        storage.put("scope", namespaceId + ":" + name + ":" + version);
+        storage.put("files", new java.util.ArrayList<>(files.getContents().keySet()));
+        return Map.of("storage", JacksonUtils.toJson(storage), "files", keys);
     }
     
     /** Best effort: all failures are aggregated and surfaced, never silently ignored. */

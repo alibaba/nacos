@@ -66,13 +66,13 @@ public class ConsoleHubSkillTransferController {
     
     /** Copy a concrete source version after source READ and target WRITE authorization. */
     @Since("3.3.0")
-    @PostMapping("/copy")
+    @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.SPECIFIED,
         resource = ENTRY_RESOURCE, apiType = ApiType.CONSOLE_API, tags = {ONLY_IDENTITY})
-    public Result<HubSkillTransferResult> copySkill(HubSkillTransferForm form)
+    public Result<HubSkillTransferResult> cloneSkill(HubSkillTransferForm form)
         throws NacosException {
         HubSkillTransferRequest request = form.prepareRequest();
         request.setTargetVersion(HubSkillTransferRequestValidator.validate(request, false));
-        return Result.success(proxy.copyDirect(request));
+        return Result.success(proxy.cloneDirect(request));
     }
 }

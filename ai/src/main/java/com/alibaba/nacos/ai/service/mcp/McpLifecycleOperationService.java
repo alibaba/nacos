@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.ai.service.mcp;
 
+import com.alibaba.nacos.ai.service.hub.HubResourceLifecycleRevoker;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.hub.HubResourceReference;
 import com.alibaba.nacos.ai.model.mcp.McpResourceExt;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.model.mcp.McpVersionStorageDescriptor;
@@ -159,6 +162,20 @@ public class McpLifecycleOperationService implements McpOperationService {
         this.endpointOperationService = endpointOperationService;
         this.canonicalAuthorizationService = canonicalAuthorizationService;
         this.publishPipelineExecutor = publishPipelineExecutor;
+    }
+    
+    private HubResourceLifecycleRevoker hubResourceLifecycleRevoker;
+    
+    /** Install cross-namespace publication revocation around authorized destructive operations. */
+    @Autowired(required = false)
+    public void setHubResourceLifecycleRevoker(HubResourceLifecycleRevoker revoker) {
+        this.hubResourceLifecycleRevoker = revoker;
+    }
+    
+    private <T> T withHubRevocation(AiResource source, String version,
+        HubResourceLifecycleRevoker.SourceMutation<T> mutation) throws NacosException {
+        return hubResourceLifecycleRevoker == null ? mutation.run()
+            : hubResourceLifecycleRevoker.around(source, version, mutation);
     }
     
     @Autowired(required = false)
@@ -679,41 +696,48 @@ public class McpLifecycleOperationService implements McpOperationService {
             throw conflict("Cannot retain the published MCP presentation because its serving "
                 + "Manifest is missing: " + identity.name, null);
         }
-        if (isPublish) {
-            requireVersionDetail(serverSpecification).setRelease_date(now());
-        } else if (existingVersion != null
-            && StringUtils.isBlank(requireVersionDetail(serverSpecification).getRelease_date())) {
-            LoadedVersion existing = loadVersion(lifecycle, existingVersion);
-            if (existing.server.getVersionDetail() != null) {
-                requireVersionDetail(serverSpecification).setRelease_date(
-                    existing.server.getVersionDetail().getRelease_date());
-            }
-        }
-        PreparedVersion prepared = prepareVersion(normalizedNamespace, lifecycle.mcpId,
-            serverSpecification, toolSpecification, resourceSpecification, endpointSpecification,
-            overrideExisting);
-        if (existingVersion == null) {
-            versionStorageService.save(prepared.descriptor, prepared.contents);
-            claimVersion(normalizedNamespace, identity.name, identity.version,
-                AiResourceConstants.VERSION_STATUS_ONLINE, prepared);
-        } else {
-            McpVersionStorageDescriptor previousDescriptor = descriptor(existingVersion);
-            versionStorageService.save(prepared.descriptor, prepared.contents);
-            versionStorageService.deleteObsolete(previousDescriptor, prepared.descriptor);
-            String retainedStatus = isPublish ? AiResourceConstants.VERSION_STATUS_ONLINE
-                : existingVersion.getStatus();
-            claimVersion(normalizedNamespace, identity.name, identity.version, retainedStatus,
-                prepared);
-        }
-        AiResource refreshed = refreshResource(resource,
-            isPublish ? identity.version : null,
-            isPublish ? prepared.server : null,
-            isPublish ? prepared.server.isEnabled() : null);
-        convergeServing(refreshed, retainedServingPresentation);
-        scheduleIndex(normalizedNamespace, identity.name);
-        traceSuccess(identity.name, identity.version,
-            isPublish ? AiResourceTraceService.OP_PUBLISH
-                : AiResourceTraceService.OP_UPDATE_DRAFT);
+        withHubRevocation(resource, isPublish && !serverSpecification.isEnabled()
+            ? null : identity.version, () -> {
+                if (isPublish) {
+                    requireVersionDetail(serverSpecification).setRelease_date(now());
+                } else if (existingVersion != null
+                    && StringUtils
+                        .isBlank(requireVersionDetail(serverSpecification).getRelease_date())) {
+                    LoadedVersion existing = loadVersion(lifecycle, existingVersion);
+                    if (existing.server.getVersionDetail() != null) {
+                        requireVersionDetail(serverSpecification).setRelease_date(
+                            existing.server.getVersionDetail().getRelease_date());
+                    }
+                }
+                PreparedVersion prepared = prepareVersion(normalizedNamespace, lifecycle.mcpId,
+                    serverSpecification, toolSpecification, resourceSpecification,
+                    endpointSpecification,
+                    overrideExisting);
+                if (existingVersion == null) {
+                    versionStorageService.save(prepared.descriptor, prepared.contents);
+                    claimVersion(normalizedNamespace, identity.name, identity.version,
+                        AiResourceConstants.VERSION_STATUS_ONLINE, prepared);
+                } else {
+                    McpVersionStorageDescriptor previousDescriptor = descriptor(existingVersion);
+                    versionStorageService.save(prepared.descriptor, prepared.contents);
+                    versionStorageService.deleteObsolete(previousDescriptor, prepared.descriptor);
+                    String retainedStatus = isPublish ? AiResourceConstants.VERSION_STATUS_ONLINE
+                        : existingVersion.getStatus();
+                    claimVersion(normalizedNamespace, identity.name, identity.version,
+                        retainedStatus,
+                        prepared);
+                }
+                AiResource refreshed = refreshResource(resource,
+                    isPublish ? identity.version : null,
+                    isPublish ? prepared.server : null,
+                    isPublish ? prepared.server.isEnabled() : null);
+                convergeServing(refreshed, retainedServingPresentation);
+                scheduleIndex(normalizedNamespace, identity.name);
+                traceSuccess(identity.name, identity.version,
+                    isPublish ? AiResourceTraceService.OP_PUBLISH
+                        : AiResourceTraceService.OP_UPDATE_DRAFT);
+                return null;
+            });
     }
     
     @Override
@@ -725,12 +749,15 @@ public class McpLifecycleOperationService implements McpOperationService {
             resource.getName(), mcpName, mcpServerId, ActionTypes.WRITE);
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
-        if (StringUtils.isBlank(version)) {
-            deleteResource(lifecycle);
-        } else {
-            deleteVersion(lifecycle, version);
-            traceSuccess(resource.getName(), version, AiResourceTraceService.OP_DELETE_VERSION);
-        }
+        withHubRevocation(resource, StringUtils.isBlank(version) ? null : version, () -> {
+            if (StringUtils.isBlank(version)) {
+                deleteResource(lifecycle);
+            } else {
+                deleteVersion(lifecycle, version);
+                traceSuccess(resource.getName(), version, AiResourceTraceService.OP_DELETE_VERSION);
+            }
+            return null;
+        });
         scheduleIndex(normalizedNamespace, resource.getName());
     }
     
@@ -772,10 +799,13 @@ public class McpLifecycleOperationService implements McpOperationService {
         VisibilityHelper.checkWritableResource(resource);
         LifecycleResource lifecycle = requireLifecycleResource(resource);
         requireVersion(lifecycle, version);
-        versionPersistService.updateStatus(resource.getNamespaceId(), resource.getName(),
-            RESOURCE_TYPE, version, AiResourceConstants.VERSION_STATUS_OFFLINE);
-        AiResource refreshed = refreshResource(resource, null, null, null);
-        convergeServing(refreshed);
+        withHubRevocation(resource, version, () -> {
+            versionPersistService.updateStatus(resource.getNamespaceId(), resource.getName(),
+                RESOURCE_TYPE, version, AiResourceConstants.VERSION_STATUS_OFFLINE);
+            AiResource refreshed = refreshResource(resource, null, null, null);
+            convergeServing(refreshed);
+            return null;
+        });
         scheduleIndex(resource.getNamespaceId(), resource.getName());
         traceSuccess(resource.getName(), version, AiResourceTraceService.OP_OFFLINE_VERSION);
     }
@@ -1279,6 +1309,38 @@ public class McpLifecycleOperationService implements McpOperationService {
         result.setLatest(row.getVersion().equals(latest));
         result.setCreateTime(row.getGmtCreate() == null ? null : row.getGmtCreate().getTime());
         result.setUpdateTime(row.getGmtModified() == null ? null : row.getGmtModified().getTime());
+        return result;
+    }
+    
+    /**
+     * Internal exact-version projection for an already admitted Hub publication callback.
+     * This method does not authorize a caller and must not be exposed as an independent read API.
+     */
+    public McpServerVersionDetail projectSharedVersion(AiResource source,
+        HubResourceReference reference)
+        throws NacosException {
+        if (source == null || !RESOURCE_TYPE.equals(source.getType())
+            || !Objects.equals(source.getId(), reference.getSourceResourceId())
+            || !Objects.equals(source.getNamespaceId(), reference.getSourceNamespaceId())
+            || !Objects.equals(source.getName(), reference.getSourceName())) {
+            throw conflict("Shared MCP source identity changed", null);
+        }
+        LifecycleResource lifecycle = requireLifecycleResource(source);
+        AiResourceVersion selected = requireVersion(lifecycle, reference.getSourceVersion());
+        if (!Objects.equals(selected.getId(), reference.getSourceVersionId())
+            || !AiResourceConstants.VERSION_STATUS_ONLINE.equals(selected.getStatus())) {
+            throw conflict("Shared MCP Version identity changed", null);
+        }
+        String storage = selected.getStorage();
+        McpServerVersionDetail result = toLifecycleDetail(lifecycle, selected);
+        AiResourceVersion current =
+            resourceManager.findVersion(source.getNamespaceId(), source.getName(),
+                RESOURCE_TYPE, reference.getSourceVersion());
+        if (current == null || !Objects.equals(current.getId(), reference.getSourceVersionId())
+            || !AiResourceConstants.VERSION_STATUS_ONLINE.equals(current.getStatus())
+            || !Objects.equals(storage, current.getStorage())) {
+            throw conflict("Shared MCP storage changed during content IO", null);
+        }
         return result;
     }
     

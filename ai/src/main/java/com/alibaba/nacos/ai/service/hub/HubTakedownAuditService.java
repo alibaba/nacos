@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.hub;
 
-import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -55,6 +55,13 @@ public class HubTakedownAuditService {
      */
     public void recordUnshare(long hubEntryId, HubResourceReference reference,
         long committedMetaVersion, boolean administrative, String reason) {
+        recordUnshare(HubResourceType.SKILL, hubEntryId, reference, committedMetaVersion,
+            administrative, reason);
+    }
+    
+    /** Record a takedown under its actual resource type without changing existing Skill callers. */
+    public void recordUnshare(HubResourceType type, long hubEntryId, HubResourceReference reference,
+        long committedMetaVersion, boolean administrative, String reason) {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("hubEntryId", hubEntryId);
         details.put("metaVersion", committedMetaVersion);
@@ -65,7 +72,7 @@ public class HubTakedownAuditService {
             details.put("reason", reason);
         }
         try {
-            AiResourceTraceService.logSuccess(AiResourceConstants.RESOURCE_TYPE_SKILL,
+            AiResourceTraceService.logSuccess(type.resourceType(),
                 "hub-entry-" + hubEntryId, reference.getSourceVersion(),
                 administrative ? OP_HUB_FORCE_UNSHARE : OP_HUB_UNSHARE,
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp(),

@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { McpServerBasicInfo } from '@/types/mcp';
+import { McpProtocolBadge } from './McpProtocolBadge';
 
 interface McpCardProps {
   server: McpServerBasicInfo;
@@ -16,14 +17,6 @@ interface McpCardProps {
   onEdit?: (name: string) => void;
   onDelete?: (name: string) => void;
 }
-
-const PROTOCOL_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  stdio: { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' },
-  'mcp-sse': { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
-  'mcp-streamable': { bg: 'bg-cyan-50 dark:bg-cyan-950/40', text: 'text-cyan-700 dark:text-cyan-300', dot: 'bg-cyan-500' },
-  http: { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
-  dubbo: { bg: 'bg-green-50 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-};
 
 const CAPABILITY_ICON: Record<string, { icon: typeof Wrench; color: string }> = {
   TOOL: { icon: Wrench, color: 'text-amber-500' },
@@ -42,7 +35,6 @@ export function McpCard({
   const { t } = useTranslation();
   const version = server.versionDetail?.version || server.version || '';
   const protocolLabel = server.frontProtocol || server.protocol || 'unknown';
-  const protocolStyle = PROTOCOL_STYLES[protocolLabel];
   const isRestToMcp = server.protocol === 'http' || server.protocol === 'https';
   const tools = (server as { toolSpec?: { tools?: { name: string }[] } }).toolSpec?.tools || [];
   const capabilities = server.capabilities || [];
@@ -92,14 +84,7 @@ export function McpCard({
           <h3 className="font-semibold text-sm truncate leading-tight">{server.name}</h3>
           <div className="flex items-center gap-1.5 mt-1">
             {/* Protocol pill */}
-            <span className={cn(
-              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
-              protocolStyle?.bg || 'bg-gray-100 dark:bg-gray-800',
-              protocolStyle?.text || 'text-gray-600 dark:text-gray-400'
-            )}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', protocolStyle?.dot || 'bg-gray-400')} />
-              {protocolLabel}
-            </span>
+            <McpProtocolBadge protocol={protocolLabel} />
             {isRestToMcp && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-medium">
                 <RefreshCw className="h-2.5 w-2.5" />

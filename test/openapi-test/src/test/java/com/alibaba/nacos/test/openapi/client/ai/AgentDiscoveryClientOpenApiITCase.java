@@ -571,4 +571,19 @@ public class AgentDiscoveryClientOpenApiITCase extends AgentClientOpenApiBaseITC
         }
         return false;
     }
+    @Test
+    public void testHubDiscoveryIdentityAndSearchBoundariesOnOriginalRoutes() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(AUTH_ENABLED, "Hub read requires the auth-enabled baseline");
+        for (String id : new String[] {"0", "-1", "01", "same-name", "9223372036854775808"}) {
+            assertError(getRaw(AGENT_CLIENT_PATH, Query.newInstance().addParam("namespaceId", "__nacos_ai_hub__")
+                    .addParam("agentName", id), AuthIdentity.CLIENT_NO_PERMISSION),
+                400, com.alibaba.nacos.api.model.v2.ErrorCode.PARAMETER_VALIDATE_ERROR, "");
+        }
+        JsonNode page = getJsonOk(AGENT_SEARCH_PATH, Query.newInstance()
+                .addParam("namespaceId", "__nacos_ai_hub__").addParam("agentNameContains", randomAiName("absent-hub")),
+            AuthIdentity.CLIENT_NO_PERMISSION).get("data");
+        assertEquals(0, page.get("totalCount").asInt());
+        assertEquals(0, page.get("pageItems").size());
+    }
+
 }

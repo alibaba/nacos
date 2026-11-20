@@ -16,7 +16,14 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.utils.HubSharedReadValidator;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.hub.HubMcpReadAdapter;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+import com.alibaba.nacos.auth.parser.http.HubAwareAiReadHttpResourceParser;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.nacos.ai.form.mcp.client.McpEndpointForm;
 import com.alibaba.nacos.ai.form.mcp.client.McpQueryForm;
 import com.alibaba.nacos.ai.form.mcp.client.McpReleaseForm;
@@ -55,6 +62,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * MCP Client HTTP API.
  *
@@ -80,18 +92,28 @@ public class McpClientController {
         this.clientLifecycleService = clientLifecycleService;
     }
     
+    private HubMcpReadAdapter hubReader;
+    
+    @Autowired
+    public void setHubReader(HubMcpReadAdapter hubReader) {
+        this.hubReader = hubReader;
+    }
+    
     /**
      * Query one exact or latest serving MCP Version.
      */
     @Since("3.3.0")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<McpServerDetailInfo> query(McpQueryForm form,
         @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
             required = false) String clientId)
         throws NacosException {
         QueryMcpServerRequest request = form.toRequest();
-        clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
+        if (!HubNamespaceUtils.isHubNamespace(request.getNamespaceId())) {
+            clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
+        }
         return Result.success(applicationService.query(request.getNamespaceId(),
             request.getMcpName(), request.getVersion()));
     }
@@ -121,6 +143,7 @@ public class McpClientController {
         HttpServletRequest httpRequest)
         throws NacosException {
         McpServerEndpointRequest request = form.toRequest(AiRemoteConstants.REGISTER_ENDPOINT);
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         String sourceIp = NamingRequestUtil.getSourceIpForHttpRequest(httpRequest);
         return Result.success(clientLifecycleService.register(clientId, requestModule,
             request.getNamespaceId(), internalClientId -> applicationService.operateEndpoint(
@@ -141,6 +164,7 @@ public class McpClientController {
         HttpServletRequest httpRequest)
         throws NacosException {
         McpServerEndpointRequest request = form.toRequest(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         String sourceIp = NamingRequestUtil.getSourceIpForHttpRequest(httpRequest);
         clientLifecycleService.deregister(clientId, requestModule, request.getNamespaceId(),
             internalClientId -> applicationService.operateEndpoint(request, internalClientId,
@@ -168,12 +192,52 @@ public class McpClientController {
      */
     @Since("3.3.0")
     @GetMapping("/search")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<McpServerBasicInfo>> search(McpSearchForm form, PageForm pageForm)
         throws NacosException {
         form.validate();
         pageForm.validate();
+        if (HubNamespaceUtils.isHubNamespace(form.getNamespaceId())) {
+            if (hubReader == null) {
+                throw new NacosApiException(500, ErrorCode.SERVER_ERROR,
+                    "MCP Hub reader unavailable");
+            }
+            return Result.success(hubReader.search(form.getQuery(), form.getTagsAll(),
+                form.getProtocolsAny(), form.getCapabilitiesAny(), pageForm.getPageNo(),
+                pageForm.getPageSize()));
+        }
         return Result.success(searchService.searchMcpServers(form, pageForm.getPageNo(),
             pageForm.getPageSize()));
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.OPEN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<McpServerDetailInfo> queryShared(McpQueryForm form,
+        @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
+            required = false) String clientId)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return query(form, clientId);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/search", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.OPEN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<McpServerBasicInfo>> searchShared(McpSearchForm form, PageForm pageForm)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return search(form, pageForm);
     }
 }

@@ -16,6 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubMcpImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubShareMcpRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDraftRequest;
@@ -26,7 +37,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -50,8 +60,11 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
     
     private static final String ROOT_PATH = Constants.AdminApiPath.AI_MCP_ADMIN_PATH;
     
+    private final HubResourceMaintainerServiceImpl hubPublications;
+    
     McpMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
+        this.hubPublications = new HubResourceMaintainerServiceImpl(context);
     }
     
     @Override
@@ -400,5 +413,49 @@ final class McpMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
             return AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
         return namespaceId;
+    }
+    
+    /** Execute Mcp Hub share. */
+    @Override
+    public HubShareResult shareHubMcp(HubShareMcpRequest request) throws NacosException {
+        return hubPublications.share("mcp", request);
+    }
+    
+    /** Execute Mcp Hub adjust. */
+    @Override
+    public HubShareResult adjustHubMcpShare(HubAdjustShareRequest request) throws NacosException {
+        return hubPublications.adjust("mcp", request);
+    }
+    
+    /** Execute Mcp Hub unshare. */
+    @Override
+    public HubShareResult unshareHubMcp(HubUnshareRequest request) throws NacosException {
+        return hubPublications.unshare("mcp", request);
+    }
+    
+    /** Execute Mcp Hub forceUnshare. */
+    @Override
+    public HubShareResult forceUnshareHubMcp(HubForceUnshareRequest request) throws NacosException {
+        return hubPublications.forceUnshare("mcp", request);
+    }
+    
+    /** Execute Mcp Hub sourceState. */
+    @Override
+    public HubResourceShareState getHubMcpSourceState(String namespaceId, String name)
+        throws NacosException {
+        return hubPublications.sourceState("mcp", namespaceId, name);
+    }
+    
+    /** Execute Mcp Hub governanceState. */
+    @Override
+    public HubResourceShareState getHubMcpGovernanceState(Long entryId) throws NacosException {
+        return hubPublications.governanceState("mcp", entryId);
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    @Override
+    public HubResourceTransferResult importHubMcp(HubMcpImportRequest request)
+        throws NacosException {
+        return hubPublications.importFromHub("mcp", request);
     }
 }
