@@ -147,7 +147,7 @@ engine.
 
 | Rule | Requirement |
 | --- | --- |
-| Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle places it under `plugins/`. |
+| Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle does not include it. An H2 deployment places it under `plugins/` together with `nacos-datasource-plugin-h2`; the Native Image adds both through the `native-h2` profile of `bootstrap`. |
 | Mode | Standalone only. Selecting `h2` in cluster mode fails at startup and names the selector property. Cluster embedded storage keeps Derby. |
 | Location | `${nacos.home}/data/h2-data/nacos.mv.db`, opened as `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0`. |
 | Durability | `WRITE_DELAY=0` is required. In a crash probe, a committed row survived a process halt with `WRITE_DELAY=0` and was lost with H2's default 500 ms write delay. A standalone server killed with SIGKILL right after a publish returned kept that publish after restart. Power-loss durability is not covered by these checks. |

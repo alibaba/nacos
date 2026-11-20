@@ -23,6 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -79,5 +82,24 @@ class DatasourceConfigurationH2Test {
         assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformSupported("", false));
         assertThrows(IllegalStateException.class,
             () -> DatasourceConfiguration.checkEmbeddedPlatformSupported("H2", false));
+    }
+    
+    @Test
+    void testCheckEmbeddedDriverAvailableOnlyForH2() throws Exception {
+        try (URLClassLoader withoutDriver = new URLClassLoader(new URL[0], null)) {
+            assertDoesNotThrow(
+                () -> DatasourceConfiguration.checkEmbeddedDriverAvailable(null, withoutDriver));
+            assertDoesNotThrow(
+                () -> DatasourceConfiguration.checkEmbeddedDriverAvailable("derby", withoutDriver));
+            IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> DatasourceConfiguration.checkEmbeddedDriverAvailable("h2", withoutDriver));
+            assertTrue(error.getMessage().contains("plugins directory"), error.getMessage());
+        }
+    }
+    
+    @Test
+    void testCheckEmbeddedDriverAvailablePassesWhenDriverIsPresent() {
+        assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedDriverAvailable("h2",
+            DatasourceConfiguration.class.getClassLoader()));
     }
 }

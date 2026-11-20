@@ -123,7 +123,7 @@ Nacos 支持两类存储模式：
 
 | 规则 | 要求 |
 | --- | --- |
-| 制品 | `com.h2database:h2` 2.2.224，由根 POM 的 `h2.version` 统一管理；默认插件包将其放入 `plugins/`。 |
+| 制品 | `com.h2database:h2` 2.2.224，由根 POM 的 `h2.version` 统一管理；默认插件包不包含它。H2 部署需要把它与 `nacos-datasource-plugin-h2` 一起放入 `plugins/`；Native Image 通过 `bootstrap` 的 `native-h2` profile 同时加入两者。 |
 | 模式 | 仅支持单机模式。集群模式选择 `h2` 时启动失败，并指出选择器属性；集群嵌入式存储继续使用 Derby。 |
 | 位置 | `${nacos.home}/data/h2-data/nacos.mv.db`，以 `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0` 打开。 |
 | 持久性 | 必须使用 `WRITE_DELAY=0`。崩溃探针中，已提交的行在 `WRITE_DELAY=0` 下于进程 halt 后保留，在 H2 默认 500 ms 写延迟下丢失。单机服务在 publish 返回后被 SIGKILL，重启后该次 publish 仍然保留。这些检查不覆盖掉电场景的持久性。 |
