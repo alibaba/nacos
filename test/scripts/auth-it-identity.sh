@@ -35,6 +35,7 @@ readonly CLIENT_RESOURCES=(
     '*:*:config/*'
     '*:*:naming/*'
     '*:*:ai/*'
+    '*:*:lock/*'
 )
 
 readonly TEMP_DIR="$(mktemp -d)"
