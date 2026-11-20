@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -65,8 +66,6 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
     private static final String NACOS_MODE_CLUSTER = "cluster";
     
     private static final String DEFAULT_FUNCTION_MODE = "All";
-    
-    private static final String DERBY_DATABASE = "derby";
     
     private static final String DEFAULT_DATASOURCE_PLATFORM = "";
     
@@ -213,7 +212,7 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
         String platform = this.getDatasourcePlatform(env);
         boolean useExternalStorage =
             !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
-                && !DERBY_DATABASE.equalsIgnoreCase(platform);
+                && !DatasourcePlatformUtil.isEmbeddedPlatform(platform);
         
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode

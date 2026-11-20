@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     requires {@code sql}; Derby import is invoked with a multipart file but its success path is intentionally not
  *     exercised because it mutates the embedded database from an uploaded external dump.</li>
  *     <li>Exception/error handling: missing required operation parameters return HTTP 400 with the v3 {@code Result}
- *     error envelope instead of HTTP 500, and disabled or non-embedded Derby import returns a controlled
+ *     error envelope instead of HTTP 500, and disabled, non-embedded or non-Derby (H2) import returns a controlled
  *     {@code Result} failure body instead of importing data.</li>
  * </ul>
  *
@@ -67,6 +67,7 @@ public class ConfigOpsAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
         JsonNode importResult = JacksonUtils.toObj(importResponse.body());
         assertTrue(importResult.get("code").asInt() != ErrorCode.SUCCESS.getCode(), importResult.toString());
         assertTrue(importResult.get("message").asText().contains("Derby ops is disabled")
-                || importResult.get("message").asText().contains("embedded storage mode"), importResult.toString());
+                || importResult.get("message").asText().contains("embedded storage mode")
+                || importResult.get("message").asText().contains("not Derby"), importResult.toString());
     }
 }

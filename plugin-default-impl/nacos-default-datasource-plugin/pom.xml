@@ -33,6 +33,7 @@
         <module>nacos-datasource-plugin-base</module>
         <module>nacos-datasource-plugin-mysql</module>
         <module>nacos-datasource-plugin-derby</module>
+        <module>nacos-datasource-plugin-h2</module>
         <module>nacos-datasource-plugin-postgresql</module>
         <module>nacos-datasource-plugin-oracle</module>
     </modules>

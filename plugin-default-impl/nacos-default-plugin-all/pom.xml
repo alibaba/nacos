@@ -144,6 +144,8 @@
                                       tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-upgrade-visibility-permission-resource.sql"
                                       tofile="${project.basedir}/../../distribution/conf/derby-upgrade-visibility-permission-resource.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-h2/src/main/resources/META-INF/h2-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/h2-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-upgrade-visibility-permission-resource.sql"
@@ -195,6 +197,9 @@
                                            property="schema.source.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
                                 <fail unless="schema.source.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in datasource plugin."/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-h2/src/main/resources/META-INF/h2-schema.sql"
+                                           property="schema.source.h2.exists"/>
+                                <fail unless="schema.source.h2.exists" message="Missing h2 schema source in datasource plugin."/>
                                 <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
                                 <fail unless="schema.source.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in datasource plugin."/>
                                 <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
@@ -226,6 +231,9 @@
                                            property="schema.output.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in distribution/conf after packaging."/>
+                                <available file="${project.basedir}/../../distribution/conf/h2-schema.sql"
+                                           property="schema.output.h2.exists"/>
+                                <fail unless="schema.output.h2.exists" message="Missing h2 schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>

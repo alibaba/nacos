@@ -45,7 +45,7 @@ Nacos 支持两类存储模式：
 
 | 模式 | 当前实现 | 持久事实来源 |
 | --- | --- | --- |
-| 嵌入式存储 | 通过 `LocalDataSourceServiceImpl` 使用 Derby；集群模式下写入通过 CP 协议排序。 | 单机 Derby，或 `nacos_config` CP group 加本地 Derby state machine。 |
+| 嵌入式存储 | 通过 `LocalDataSourceServiceImpl` 使用 Derby；选择 `h2` 时在单机模式下使用 H2；集群模式下写入通过 CP 协议排序。 | 单机 Derby 或单机 H2，或 `nacos_config` CP group 加本地 Derby state machine。 |
 | 外部存储 | 通过 `ExternalDataSourceServiceImpl` 使用 Hikari 管理的 JDBC datasource。 | 配置的数据源属性和方言规则选出的外部数据库。 |
 
 选择规则：
@@ -79,6 +79,7 @@ Nacos 支持两类存储模式：
 嵌入式存储规则：
 
 - 本地 Derby 通过 `derby-schema.sql` 初始化；
+- 选择 `h2` 时，本地 H2 通过 `h2-schema.sql` 初始化，且只支持单机模式；
 - 单机嵌入式存储直接访问本地 Derby；
 - 分布式嵌入式存储启动时会清理并重新打开本地 Derby，因为有效状态必须来自 CP log replay 和
   snapshot recovery；
@@ -113,6 +114,24 @@ Nacos 支持两类存储模式：
 上游运行要求和制品职责参见
 [Derby 10.16.1.1 发布说明](https://db.apache.org/derby/releases/release-10_16_1_1.cgi)和
 [Derby 模块概览](https://db.apache.org/derby/docs/10.16/publishedapi/)。
+
+### 3.2 嵌入式 H2 运行时契约
+
+`h2` 是 standalone 服务器可显式选择的嵌入式存储引擎。只有
+`nacos.plugin.datasource-dialect.type=h2` 会选择它；standalone 和
+`embeddedStorage=true` 的集群仍默认使用 Derby 作为嵌入式引擎。
+
+| 规则 | 要求 |
+| --- | --- |
+| 制品 | `com.h2database:h2` 2.2.224，由根 POM 的 `h2.version` 统一管理；默认插件包不包含它。H2 部署需要把它与 `nacos-datasource-plugin-h2` 一起放入 `plugins/`；Native Image 通过 `bootstrap` 的 `native-h2` profile 同时加入两者。 |
+| 模式 | 仅支持单机模式。集群模式选择 `h2` 时启动失败，并指出选择器属性；集群嵌入式存储继续使用 Derby。 |
+| 位置 | `${nacos.home}/data/h2-data/nacos.mv.db`，以 `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0` 打开。 |
+| 持久性 | 必须使用 `WRITE_DELAY=0`，因为 H2 默认 500 ms 的写延迟会让已提交的变更最多等待这么久才刷盘。单机服务在 publish 返回后被 SIGKILL，重启后该次 publish 仍然保留。这些检查不覆盖掉电场景的持久性。 |
+| Schema | 来自 H2 dialect 插件的 `h2-schema.sql`。所有语句都是幂等的（`IF NOT EXISTS`），每次启动执行且不改变已有行。 |
+| 仅 Derby 的操作 | Derby ops 的查询与导入，以及 CP 快照的 reopen 路径（`cleanAndReopenDerby`、`restoreDerby`），在 `h2` 下会被拒绝。 |
+| 迁移 | 不提供 Derby 到 H2 的自动迁移。切换引擎的服务器从新的 H2 数据库开始，其中只有 schema 和服务器自身启动时写入的记录，Derby 数据保持不动。 |
+| 备份 | 停止服务器后，将 `data/h2-data` 作为一个目录整体复制。 |
+| Native Image | 本契约不声明 Native Image 支持。H2 只有在嵌入式存储验证 harness 通过后才会进入 Native 支持范围。 |
 
 ## 4. Repository 契约
 

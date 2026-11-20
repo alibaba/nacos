@@ -102,7 +102,7 @@ Config 运维 API 是管理修复或诊断接口：
 | 监听诊断 | 按 IP 或 Config 身份查询监听状态。 |
 | 指标 | 在本节点或跨[集群成员](../design/foundation-cluster-membership-spec.md)查询客户端缓存和快照指标，并遵循[可观测钩子规范](../design/foundation-observability-hooks-spec.md)。 |
 
-Derby ops 属于 maintainer-only 行为。它必须要求 Admin 权限，并默认保持关闭。
+Derby ops 属于 maintainer-only 行为。它必须要求 Admin 权限，并默认保持关闭。仅在嵌入式引擎为 Derby 时生效；选择 `h2` 时，这些接口返回非 Derby 错误。
 
 ## 7. 相关规范
 

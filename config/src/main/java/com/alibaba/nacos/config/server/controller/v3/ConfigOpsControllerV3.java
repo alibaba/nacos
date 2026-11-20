@@ -34,10 +34,12 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -74,6 +76,15 @@ public class ConfigOpsControllerV3 {
     
     public ConfigOpsControllerV3(DumpService dumpService) {
         this.dumpService = dumpService;
+    }
+    
+    /**
+     * Derby ops only target the embedded Derby engine. The H2 engine is also embedded, but it has its own file layout
+     * and SQL dialect, so the Derby ops endpoints reject it.
+     */
+    private static boolean isEmbeddedDerbyStorage() {
+        return DatasourceConfiguration.isEmbeddedStorage() && !PersistenceConstant.H2
+            .equalsIgnoreCase(DatasourcePlatformUtil.getDatasourcePlatform(""));
     }
     
     /**
@@ -135,7 +146,7 @@ public class ConfigOpsControllerV3 {
         String limitSign = "ROWS FETCH NEXT";
         String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
         try {
-            if (!DatasourceConfiguration.isEmbeddedStorage()) {
+            if (!isEmbeddedDerbyStorage()) {
                 return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
                     "The current storage mode is not Derby", null);
             }
@@ -189,6 +200,10 @@ public class ConfigOpsControllerV3 {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
             response.setResult(RestResultUtils.failed("Limited to embedded storage mode"));
+            return convertToResult(response);
+        }
+        if (!isEmbeddedDerbyStorage()) {
+            response.setResult(RestResultUtils.failed("The current storage mode is not Derby"));
             return convertToResult(response);
         }
         if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
