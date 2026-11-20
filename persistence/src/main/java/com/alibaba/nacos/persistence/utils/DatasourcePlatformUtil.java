@@ -41,4 +41,15 @@ public class DatasourcePlatformUtil {
         result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
         return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
     }
+    
+    /**
+     * Check whether the datasource platform selects a local embedded database engine.
+     *
+     * @param platform datasource platform as returned by {@link #getDatasourcePlatform(String)}
+     * @return {@code true} for {@code derby} and {@code h2}; {@code false} for any other platform
+     */
+    public static boolean isEmbeddedPlatform(String platform) {
+        return PersistenceConstant.DERBY.equalsIgnoreCase(platform)
+            || PersistenceConstant.H2.equalsIgnoreCase(platform);
+    }
 }

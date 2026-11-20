@@ -41,6 +41,11 @@ public class PersistenceConstant {
     
     public static final String DERBY = "derby";
     
+    /**
+     * Embedded H2 storage, selected by {@link #DATASOURCE_DIALECT_TYPE_PROPERTY}. Supported in standalone mode only.
+     */
+    public static final String H2 = "h2";
+    
     public static final String EMPTY_DATASOURCE_PLATFORM = "";
     
     public static final String EMBEDDED_STORAGE = "embeddedStorage";
@@ -49,6 +54,11 @@ public class PersistenceConstant {
      * The derby base dir.
      */
     public static final String DERBY_BASE_DIR = "derby-data";
+    
+    /**
+     * The H2 base dir, resolved under {@code ${nacos.home}/data}.
+     */
+    public static final String H2_BASE_DIR = "h2-data";
     
     /**
      * Specifies that reads wait without timeout.

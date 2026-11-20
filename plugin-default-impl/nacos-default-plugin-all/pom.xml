@@ -79,6 +79,11 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-h2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin-postgresql</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -98,6 +103,10 @@
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derbytools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -144,6 +153,8 @@
                                       tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-upgrade-visibility-permission-resource.sql"
                                       tofile="${project.basedir}/../../distribution/conf/derby-upgrade-visibility-permission-resource.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-h2/src/main/resources/META-INF/h2-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/h2-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
                                       tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
                                 <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-upgrade-visibility-permission-resource.sql"
@@ -195,6 +206,9 @@
                                            property="schema.source.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
                                 <fail unless="schema.source.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in datasource plugin."/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-h2/src/main/resources/META-INF/h2-schema.sql"
+                                           property="schema.source.h2.exists"/>
+                                <fail unless="schema.source.h2.exists" message="Missing h2 schema source in datasource plugin."/>
                                 <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
                                 <fail unless="schema.source.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in datasource plugin."/>
                                 <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
@@ -226,6 +240,9 @@
                                            property="schema.output.oracle.visibility.upgrade.exists"/>
                                 <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.derby.visibility.upgrade.exists" message="Missing derby visibility permission upgrade script in distribution/conf after packaging."/>
+                                <available file="${project.basedir}/../../distribution/conf/h2-schema.sql"
+                                           property="schema.output.h2.exists"/>
+                                <fail unless="schema.output.h2.exists" message="Missing h2 schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
                                 <fail unless="schema.output.mysql.visibility.upgrade.exists" message="Missing mysql visibility permission upgrade script in distribution/conf after packaging."/>
                                 <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
@@ -273,7 +290,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-default-ai-vector-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,derbyshared,derbytools,postgresql</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-ldap-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-default-ai-pipeline-plugin,nacos-default-ai-importer-plugin,nacos-default-ai-trace-plugin,nacos-default-ai-vector-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,nacos-datasource-plugin-h2,mysql-connector-j,derby,derbyshared,derbytools,h2,postgresql</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

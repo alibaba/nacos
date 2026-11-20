@@ -51,7 +51,7 @@ Nacos supports two storage mode families:
 
 | Mode | Current implementation | Source of durable truth |
 | --- | --- | --- |
-| Embedded storage | Derby through `LocalDataSourceServiceImpl`; in cluster mode writes are ordered through the CP protocol. | Standalone Derby, or the `nacos_config` CP group plus local Derby state machine. |
+| Embedded storage | Derby through `LocalDataSourceServiceImpl`, or H2 when `h2` is selected in standalone mode; in cluster mode writes are ordered through the CP protocol. | Standalone Derby or standalone H2, or the `nacos_config` CP group plus local Derby state machine. |
 | External storage | Hikari-backed JDBC datasource through `ExternalDataSourceServiceImpl`. | The configured external database selected by datasource properties and dialect rules. |
 
 Selection rules:
@@ -91,6 +91,7 @@ External storage rules:
 Embedded storage rules:
 
 - local Derby initializes from `derby-schema.sql`;
+- local H2 initializes from `h2-schema.sql` when `h2` is selected; H2 is standalone only;
 - standalone embedded storage executes directly against local Derby;
 - distributed embedded storage cleans and reopens local Derby on startup because
   the effective state must come from CP log replay and snapshot recovery;
@@ -136,6 +137,25 @@ follow the corresponding domain specs.
 See the [Derby 10.16.1.1 release notes](https://db.apache.org/derby/releases/release-10_16_1_1.cgi)
 and [Derby module overview](https://db.apache.org/derby/docs/10.16/publishedapi/)
 for upstream runtime requirements and artifact responsibilities.
+
+### 3.2 Embedded H2 Runtime Contract
+
+`h2` is an opt-in embedded engine for standalone servers. Only
+`nacos.plugin.datasource-dialect.type=h2` selects it. Standalone and
+`embeddedStorage=true` cluster deployments keep Derby as their default embedded
+engine.
+
+| Rule | Requirement |
+| --- | --- |
+| Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle places it under `plugins/`. |
+| Mode | Standalone only. Selecting `h2` in cluster mode fails at startup and names the selector property. Cluster embedded storage keeps Derby. |
+| Location | `${nacos.home}/data/h2-data/nacos.mv.db`, opened as `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0`. |
+| Durability | `WRITE_DELAY=0` is required. In a crash probe, a committed row survived a process halt with `WRITE_DELAY=0` and was lost with H2's default 500 ms write delay. A standalone server killed with SIGKILL right after a publish returned kept that publish after restart. Power-loss durability is not covered by these checks. |
+| Schema | `h2-schema.sql` from the H2 dialect plugin. Every statement is idempotent (`IF NOT EXISTS`), so the schema runs on each start without changing existing rows. |
+| Derby-only operations | Derby ops query and import, and the CP snapshot reopen path (`cleanAndReopenDerby`, `restoreDerby`), are rejected for `h2`. |
+| Migration | No automatic Derby-to-H2 migration. A server that switches engines starts from a new H2 database that holds only the schema and the server's own startup records. Derby data is left untouched. |
+| Backup | Stop the server, then copy `data/h2-data` as one directory. |
+| Native Image | This contract makes no Native Image claim. H2 joins the Native scope only after the embedded storage validation harness passes. |
 
 ## 4. Repository Contract
 

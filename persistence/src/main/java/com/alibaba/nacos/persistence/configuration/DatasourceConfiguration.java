@@ -59,10 +59,10 @@ public class DatasourceConfiguration
     private void loadDatasourceConfiguration() {
         // External data sources are used by default in cluster mode
         String platform = DatasourcePlatformUtil.getDatasourcePlatform("");
+        checkEmbeddedPlatformSupported(platform, EnvUtil.getStandaloneMode());
         boolean useExternalStorage =
             !PersistenceConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
-                && !PersistenceConstant.DERBY
-                    .equalsIgnoreCase(platform);
+                && !DatasourcePlatformUtil.isEmbeddedPlatform(platform);
         setUseExternalDb(useExternalStorage);
         
         // must initialize after setUseExternalDb
@@ -82,6 +82,23 @@ public class DatasourceConfiguration
             if (!embeddedStorage) {
                 setUseExternalDb(true);
             }
+        }
+    }
+    
+    /**
+     * H2 embedded storage is standalone-only: cluster embedded storage replicates through the CP state machine and
+     * reopens the local database from Derby-specific snapshot code, which H2 does not implement.
+     *
+     * @param platform   selected datasource platform, blank when the default embedded platform is used
+     * @param standalone whether the server runs in standalone mode
+     * @throws IllegalStateException when {@code h2} is selected outside standalone mode
+     */
+    static void checkEmbeddedPlatformSupported(String platform, boolean standalone) {
+        if (PersistenceConstant.H2.equalsIgnoreCase(platform) && !standalone) {
+            throw new IllegalStateException("Datasource dialect '" + PersistenceConstant.H2
+                + "' embedded storage supports standalone mode only. Set nacos.standalone=true, or"
+                + " select mysql or postgresql for cluster deployments. Check property "
+                + PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY + ".");
         }
     }
     

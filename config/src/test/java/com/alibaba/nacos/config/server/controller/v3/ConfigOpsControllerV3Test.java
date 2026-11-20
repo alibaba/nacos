@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -25,9 +26,11 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.AfterEach;
@@ -56,6 +59,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -76,6 +80,8 @@ class ConfigOpsControllerV3Test {
     
     MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
     
+    MockedStatic<DatasourcePlatformUtil> datasourcePlatformUtilMockedStatic;
+    
     private MockMvc mockMvc;
     
     @MockitoBean
@@ -86,6 +92,7 @@ class ConfigOpsControllerV3Test {
         datasourceConfigurationMockedStatic.close();
         dynamicDataSourceMockedStatic.close();
         applicationUtilsMockedStatic.close();
+        datasourcePlatformUtilMockedStatic.close();
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(false);
     }
     
@@ -98,6 +105,10 @@ class ConfigOpsControllerV3Test {
         datasourceConfigurationMockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
+        datasourcePlatformUtilMockedStatic = Mockito.mockStatic(DatasourcePlatformUtil.class);
+        datasourcePlatformUtilMockedStatic
+            .when(() -> DatasourcePlatformUtil.getDatasourcePlatform(""))
+            .thenReturn(PersistenceConstant.DERBY);
     }
     
     @Test
@@ -186,6 +197,36 @@ class ConfigOpsControllerV3Test {
         String actualValue =
             mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("30000", JacksonUtils.toObj(actualValue).get("code").toString());
+    }
+    
+    @Test
+    void testDerbyOpsRejectsH2EmbeddedEngine() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        datasourcePlatformUtilMockedStatic
+            .when(() -> DatasourcePlatformUtil.getDatasourcePlatform(""))
+            .thenReturn(PersistenceConstant.H2);
+        Result<Object> result = configOpsControllerV3.derbyOps("SELECT * FROM TEST");
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
+    }
+    
+    @Test
+    void testImportDerbyRejectsH2EmbeddedEngine() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        datasourcePlatformUtilMockedStatic
+            .when(() -> DatasourcePlatformUtil.getDatasourcePlatform(""))
+            .thenReturn(PersistenceConstant.H2);
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.sql", "text/plain", "test".getBytes());
+        DeferredResult<Result<String>> deferred = configOpsControllerV3.importDerby(file);
+        Object body = deferred.getResult();
+        assertTrue(body instanceof Result, String.valueOf(body));
+        Result<?> result = (Result<?>) body;
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
     }
     
     @Test
