@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Objects;
+import java.util.zip.CRC32;
 
 final class LogRecordCodec {
     
@@ -78,8 +79,11 @@ final class LogRecordCodec {
         return record.flip();
     }
     
-    LogEntry decode(ByteBuffer source) throws IOException {
+    LogEntry decode(ByteBuffer source, int expectedRecordSize) throws IOException {
         int size = recordSize(source);
+        if (size != expectedRecordSize) {
+            throw new IOException("Index record size disagrees with record header");
+        }
         if (source.remaining() < size) {
             throw new IOException("Truncated file log record");
         }
@@ -109,15 +113,24 @@ final class LogRecordCodec {
         if (header.remaining() < FileLogFormat.RECORD_HEADER_SIZE) {
             throw new IOException("Truncated file log record header");
         }
-        byte[] bytes = new byte[FileLogFormat.RECORD_HEADER_SIZE];
-        header.get(bytes);
-        ByteBuffer fields = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
-        int magic = fields.getInt();
-        short version = fields.getShort();
-        int headerSize = Short.toUnsignedInt(fields.getShort());
-        int payloadLength = fields.getInt();
-        int checksum = fields.getInt();
-        if (checksum != FileLogFormat.crc32(bytes, 0, 12)) {
+        int start = header.position();
+        int magic = header.getInt();
+        short version = header.getShort();
+        int headerSize = Short.toUnsignedInt(header.getShort());
+        int payloadLength = header.getInt();
+        int checksum = header.getInt();
+        int checksumLength = FileLogFormat.RECORD_HEADER_SIZE - Integer.BYTES;
+        final int actualChecksum;
+        if (header.hasArray()) {
+            actualChecksum = FileLogFormat.crc32(header.array(), header.arrayOffset() + start,
+                checksumLength);
+        } else {
+            header.limit(start + checksumLength).position(start);
+            CRC32 crc32 = new CRC32();
+            crc32.update(header);
+            actualChecksum = (int) crc32.getValue();
+        }
+        if (checksum != actualChecksum) {
             throw new IOException("File log record header checksum mismatch");
         }
         if (magic != FileLogFormat.RECORD_MAGIC || version != FileLogFormat.VERSION

@@ -116,7 +116,7 @@ LogEntry 先通过工厂提供的 JRaft codec 编码为 payload，再包装为 f
 | 16 | L | JRaft LogEntry payload |
 | 16 + L | 8 | payload CRC64 |
 
-读取时先验证 Header、长度和记录边界，再分配并读取 payload。编解码均验证 index 大于 0、term 非负、条目类型有效；配置条目还需验证 peers、learners 及旧配置的成员关系。扫描恢复要求解码后的 index 与预期 index 连续一致。
+允许在已发布范围内使用固定上限缓冲区预读原始字节；依据记录头长度分配专用缓冲区及解码 payload 前，必须完成 Header、长度与记录边界校验。编解码均验证 index 大于 0、term 非负、条目类型有效；配置条目还需验证 peers、learners 及旧配置的成员关系。扫描恢复要求解码后的 index 与预期 index 连续一致。
 
 ### 4.3 Manifest
 
@@ -159,7 +159,7 @@ Index 由 Segment 扫描重建。初始化对所有已发布 Segment 重建索�
 
 写入与发布顺序为：
 
-1. 向活动 Segment 追加记录，同时写入 Index；容量不足时确保旧段数据已同步，关闭并创建新段。
+1. 向活动 Segment 追加记录并更新 Index；容量不足时确保旧段数据已同步，关闭并创建新段。
 2. 完成整批写入后刷盘最后一个 Segment。
 3. 若新 Manifest 引用了新增 Segment，同步 `segments` 目录。
 4. 写入 `manifest.tmp` 并执行 `force(true)`。
