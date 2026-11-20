@@ -48,7 +48,7 @@ public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
         
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
-        // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（与 Derby 嵌入式映射保持一致）
+        // The SELECT list adds c_desc but not configTags, matching the Derby embedded mapping
         final String baseSql =
             "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
                 + "FROM config_info  a LEFT JOIN "
@@ -136,7 +136,7 @@ public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（与 Derby 嵌入式映射保持一致）
+        // The SELECT list adds c_desc but not configTags, matching the Derby embedded mapping
         WhereBuilder where = new WhereBuilder(
             "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
                 + "FROM config_info a LEFT JOIN "

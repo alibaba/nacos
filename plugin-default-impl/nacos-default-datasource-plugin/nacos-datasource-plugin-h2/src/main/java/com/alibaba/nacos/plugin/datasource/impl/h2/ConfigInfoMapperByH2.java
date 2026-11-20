@@ -218,7 +218,7 @@ public class ConfigInfoMapperByH2 extends AbstractMapperByH2 implements ConfigIn
         
         List<Object> paramList = new ArrayList<>();
         
-        // H2 版本：简单查询，不使用聚合函数
+        // H2 variant: a simple query without aggregate functions
         final String sql =
             "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info";
         
@@ -243,7 +243,7 @@ public class ConfigInfoMapperByH2 extends AbstractMapperByH2 implements ConfigIn
             paramList.add(content);
         }
         
-        // H2 分页语法
+        // H2 paging syntax
         return new MapperResult(
             sql + where + " ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
                 + context.getPageSize()

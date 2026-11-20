@@ -72,7 +72,7 @@ class ConfigInfoTagsRelationMapperByH2Test {
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfo4PageFetchRows(context);
-        // 验证增强后的 SQL，包含新字段但不包含 configTags（H2 不支持 GROUP_CONCAT）
+        // The SQL selects the new columns but not configTags, because H2 has no GROUP_CONCAT here
         String expectedSql =
             "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
                 + " FROM config_info  a LEFT JOIN "
@@ -113,10 +113,10 @@ class ConfigInfoTagsRelationMapperByH2Test {
     }
     
     @Test
-    void tsetFindConfigInfoLike4PageFetchRows() {
+    void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfoLike4PageFetchRows(context);
-        // 验证增强后的 SQL，包含新字段但不包含 configTags（H2 不支持 GROUP_CONCAT），并验证 LIKE ESCAPE
+        // The SQL selects the new columns but not configTags (no GROUP_CONCAT in H2), and checks LIKE ESCAPE
         String expectedSql =
             "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
                 + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "

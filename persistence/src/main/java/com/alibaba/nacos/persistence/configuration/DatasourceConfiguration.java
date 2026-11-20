@@ -98,7 +98,7 @@ public class DatasourceConfiguration
         if (PersistenceConstant.H2.equalsIgnoreCase(platform) && !standalone) {
             throw new IllegalStateException("Datasource dialect '" + PersistenceConstant.H2
                 + "' embedded storage supports standalone mode only. Set nacos.standalone=true, or"
-                + " select mysql or postgresql for cluster deployments. Check property "
+                + " select mysql, postgresql, or oracle for cluster deployments. Check property "
                 + PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY + ".");
         }
     }

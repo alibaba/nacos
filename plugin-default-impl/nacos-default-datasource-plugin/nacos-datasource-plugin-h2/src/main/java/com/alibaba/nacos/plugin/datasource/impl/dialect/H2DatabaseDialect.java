@@ -23,7 +23,8 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.h2.TrustedH2FunctionEnum;
  * H2 database dialect for the embedded standalone storage.
  *
  * <p>H2 accepts the SQL:2008 {@code OFFSET ... ROWS FETCH NEXT ... ROWS ONLY} form used by the mappers. The H2
- * engine jar is packaged with the default plugin distribution, so no extra deployment step is needed.
+ * driver is not in the default plugin distribution. Add {@code com.h2database:h2} and the H2 plugin to
+ * {@code plugins/}, or build the Native Image with the {@code native-h2} profile.
  *
  * @author Nacos
  */

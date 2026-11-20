@@ -150,7 +150,7 @@ engine.
 | Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle does not include it. An H2 deployment places it under `plugins/` together with `nacos-datasource-plugin-h2`; the Native Image adds both through the `native-h2` profile of `bootstrap`. |
 | Mode | Standalone only. Selecting `h2` in cluster mode fails at startup and names the selector property. Cluster embedded storage keeps Derby. |
 | Location | `${nacos.home}/data/h2-data/nacos.mv.db`, opened as `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0`. |
-| Durability | `WRITE_DELAY=0` is required. In a crash probe, a committed row survived a process halt with `WRITE_DELAY=0` and was lost with H2's default 500 ms write delay. A standalone server killed with SIGKILL right after a publish returned kept that publish after restart. Power-loss durability is not covered by these checks. |
+| Durability | `WRITE_DELAY=0` is required, because H2's default write delay of 500 ms lets a committed change wait before it is flushed. A standalone server killed with SIGKILL right after a publish returned kept that publish after restart. Power-loss durability is not covered by these checks. |
 | Schema | `h2-schema.sql` from the H2 dialect plugin. Every statement is idempotent (`IF NOT EXISTS`), so the schema runs on each start without changing existing rows. |
 | Derby-only operations | Derby ops query and import, and the CP snapshot reopen path (`cleanAndReopenDerby`, `restoreDerby`), are rejected for `h2`. |
 | Migration | No automatic Derby-to-H2 migration. A server that switches engines starts from a new H2 database that holds only the schema and the server's own startup records. Derby data is left untouched. |
