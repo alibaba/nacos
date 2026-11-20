@@ -81,13 +81,16 @@ class HubResourceDraftCommitStorageDerbyTest {
         long target = insert(type, "target-ns", "copied");
         long competitor = insert(type, "target-ns", "other");
         HubResourceDraftCommitStorage store = adapter(embedded);
-        assertFalse(store.publish(HubResourceType.SKILL, target, "target-ns", "copied", 1L));
-        assertFalse(store.publish(type, competitor, "target-ns", "copied", 1L));
-        assertFalse(store.publish(type, target, "another-ns", "copied", 1L));
-        assertTrue(store.publish(type, target, "target-ns", "copied", 1L));
-        assertFalse(store.publish(type, target, "target-ns", "copied", 1L));
+        assertFalse(store.publish(HubResourceType.SKILL, target, "target-ns", "copied", 1L,
+            "{\"origin\":{}}"));
+        assertFalse(store.publish(type, competitor, "target-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertFalse(store.publish(type, target, "another-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertTrue(store.publish(type, target, "target-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertFalse(store.publish(type, target, "target-ns", "copied", 1L, "{\"origin\":{}}"));
         assertEquals("enable",
             database.queryString("SELECT status FROM ai_resource WHERE id=?", target));
+        assertEquals("{\"origin\":{}}",
+            database.queryString("SELECT ext FROM ai_resource WHERE id=?", target));
         assertEquals(2L,
             database.queryLong("SELECT meta_version FROM ai_resource WHERE id=?", target));
         assertFalse(store.deleteDisabled(type, target, "target-ns", "copied", 2L));
@@ -114,7 +117,7 @@ class HubResourceDraftCommitStorageDerbyTest {
                 "0.0.1"));
         assertFalse(
             store.deleteDraftVersion(type, metaId, "target-ns", "copied", 2L, versionId, "0.0.1"));
-        assertTrue(store.publish(type, metaId, "target-ns", "copied", 1L));
+        assertTrue(store.publish(type, metaId, "target-ns", "copied", 1L, "{\"origin\":{}}"));
         assertFalse(
             store.deleteDraftVersion(type, metaId, "target-ns", "copied", 2L, versionId, "0.0.1"));
         assertTrue(store.disable(type, metaId, "target-ns", "copied", 2L));
@@ -140,8 +143,12 @@ class HubResourceDraftCommitStorageDerbyTest {
             + "(namespace_id,name,type,c_from,status,scope,owner,meta_version,ext,version_info) "
             + "VALUES (?,?,?,'local','disable','PRIVATE','alice',1,'{}','{}')",
             namespaceId, name, type.resourceType());
-        return database.queryLong("SELECT id FROM ai_resource WHERE namespace_id=? AND name=?",
+        long id = database.queryLong("SELECT id FROM ai_resource WHERE namespace_id=? AND name=?",
             namespaceId, name);
+        database.update("UPDATE ai_resource SET ext=? WHERE id=?",
+            "{\"importPending\":true,\"importRecovery\":{\"storage\":\"target\",\"files\":[]}}",
+            id);
+        return id;
     }
     
     private HubResourceDraftCommitStorage adapter(boolean embedded) {

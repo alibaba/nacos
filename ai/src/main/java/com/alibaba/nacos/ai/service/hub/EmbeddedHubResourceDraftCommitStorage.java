@@ -37,8 +37,14 @@ public class EmbeddedHubResourceDraftCommitStorage implements HubResourceDraftCo
     
     @Override
     public boolean publish(HubResourceType type, long id, String namespaceId, String name,
-        long expectedMetaVersion) {
-        return change(type, id, namespaceId, name, expectedMetaVersion, "disable", "enable");
+        long expectedMetaVersion, String completedExt) {
+        String sql = "UPDATE ai_resource SET status='enable', ext=?, meta_version=meta_version+1 "
+            + "WHERE id=? AND namespace_id=? AND name=? AND type=? AND c_from='local' "
+            + "AND status='disable' AND meta_version=?";
+        EmbeddedStorageContextHolder.addSqlContext(true, sql,
+            new Object[] {completedExt, id, namespaceId, name, type.resourceType(),
+                expectedMetaVersion});
+        return Boolean.TRUE.equals(database.blockUpdate());
     }
     
     @Override

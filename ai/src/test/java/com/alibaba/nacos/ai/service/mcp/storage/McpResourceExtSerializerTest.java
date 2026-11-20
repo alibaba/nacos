@@ -31,6 +31,22 @@ class McpResourceExtSerializerTest {
     private static final String MCP_ID = "4d7939c0-72ea-4ef4-b232-418d1e16b45c";
     
     @Test
+    void pendingRecoveryRoundTripPreservesMarkerAndCoordinates() {
+        McpResourceExt ext = McpResourceExtSerializer
+            .deserialize("{\"schemaVersion\":1,\"mcpId\":\"" + MCP_ID + "\"}");
+        ext.setImportPending(true);
+        ext.setImportRecovery(java.util.Map.of("storage", "target-only descriptor", "files",
+            java.util.List
+                .of(java.util.Map.of("provider", "target-provider", "key", "target-key"))));
+        McpResourceExt restored = McpResourceExtSerializer.deserialize(
+            McpResourceExtSerializer.serialize(ext));
+        assertEquals(Boolean.TRUE, restored.getImportPending());
+        assertEquals(ext.getImportRecovery(), restored.getImportRecovery());
+        ext.setImportRecovery(null);
+        assertThrows(IllegalArgumentException.class, () -> McpResourceExtSerializer.serialize(ext));
+    }
+    
+    @Test
     void testRoundTripUsesCanonicalProjection() {
         McpResourceExt original = new McpResourceExt();
         original.setSchemaVersion(McpResourceExt.SCHEMA_VERSION);

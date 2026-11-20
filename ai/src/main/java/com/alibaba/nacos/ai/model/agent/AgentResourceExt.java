@@ -46,6 +46,26 @@ public class AgentResourceExt {
     
     private Map<String, Object> origin;
     
+    private Boolean importPending;
+    
+    private Map<String, Object> importRecovery;
+    
+    public Boolean getImportPending() {
+        return importPending;
+    }
+    
+    public void setImportPending(Boolean importPending) {
+        this.importPending = importPending;
+    }
+    
+    public Map<String, Object> getImportRecovery() {
+        return importRecovery;
+    }
+    
+    public void setImportRecovery(Map<String, Object> importRecovery) {
+        this.importRecovery = importRecovery;
+    }
+    
     public Map<String, Object> getOrigin() {
         return AiResourceOriginUtils.copy(origin);
     }

@@ -34,8 +34,14 @@ public class EmbeddedHubSkillDraftCommitStorage implements HubSkillDraftCommitSt
     }
     
     @Override
-    public boolean publish(long id, String namespaceId, String name, long expectedMetaVersion) {
-        return change(id, namespaceId, name, expectedMetaVersion, "disable", "enable");
+    public boolean publish(long id, String namespaceId, String name, long expectedMetaVersion,
+        String completedExt) {
+        String sql = "UPDATE ai_resource SET status='enable', ext=?, meta_version=meta_version+1 "
+            + "WHERE id=? AND namespace_id=? AND name=? AND type='skill' AND c_from='local' "
+            + "AND status='disable' AND meta_version=?";
+        EmbeddedStorageContextHolder.addSqlContext(true, sql,
+            new Object[] {completedExt, id, namespaceId, name, expectedMetaVersion});
+        return Boolean.TRUE.equals(database.blockUpdate());
     }
     
     @Override

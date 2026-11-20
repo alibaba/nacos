@@ -38,6 +38,8 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 /** Prepare MCP-owned Direct state or retain references selected by a pinned Hub publication. */
@@ -210,6 +212,18 @@ public class HubMcpTransferDependencyGuard {
                 return content;
             }
             return new HubResourceDraftTransferWriter.PreparedContent() {
+                
+                @Override
+                public Map<String, Object> recovery() throws NacosException {
+                    requireAbsent(target);
+                    Map<String, Object> recovery = new LinkedHashMap<>(content.recovery());
+                    recovery.put("naming", Map.of("namespaceId", target.getNamespace(),
+                        "group", target.getGroup(), "service", target.getName(),
+                        "ownerKey", IMPORT_OWNER, "owner", owner,
+                        "cluster", Constants.MCP_SERVER_ENDPOINT_CLUSTER,
+                        "ip", address.address(), "port", address.port()));
+                    return recovery;
+                }
                 
                 @Override
                 public String write() throws NacosException {

@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.resource;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.utils.AiResourceImportUtils;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
@@ -976,6 +977,7 @@ public class AiResourceManager {
         String version, boolean checkVisibility, String operator, String clientIp)
         throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
+        AiResourceImportUtils.checkNotPending(meta);
         if (checkVisibility) {
             VisibilityHelper.checkWritableResource(meta);
         }
@@ -1757,6 +1759,7 @@ public class AiResourceManager {
     public void onPipelineComplete(String namespaceId, String name, String type, String version,
         PipelineExecutionResult result) {
         try {
+            AiResourceImportUtils.checkNotPending(findMeta(namespaceId, name, type));
             PublishPipelineInfo info = new PublishPipelineInfo();
             info.setExecutionId(result == null ? null : result.getExecutionId());
             info.setStatus(result == null ? PipelineExecutionStatus.REJECTED : result.getStatus());

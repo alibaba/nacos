@@ -55,3 +55,28 @@ stock develop 7f71d44f880535dcf0ba14829df4a98329fc4e06 and 4a8c0cd3f both return
 paths. The previous strict failures and actual request/response evidence remain in the
 test report. Removing these checks from the Hub selection does not fix the develop
 defects or reclassify HTTP 500 as passing; public logic remains unchanged.
+
+## Pending import recovery boundary (2026-11-20)
+
+All five resource imports and Skill `/clone` reserve a pending target. Ordinary
+edit/upload/metadata/scope/label/publish/delete requests against that target must
+return 409 / RESOURCE_CONFLICT, including when visibility is disabled. A successful
+import response means the final CAS has removed pending/recovery state; later
+source revocation cannot roll back the completed target or a user's saved draft.
+
+Fault scenarios: partial file save, version insertion failure (including before
+any version row exists), completion CAS conflict, and cleanup failure must retain
+recoverable provider/keys and pending protection as appropriate. MCP recovery
+also retains only the target Direct service's unique ownership token and fixed
+instance; STDIO/REF never acquire source-service ownership. Existing orphan files
+and Naming services must survive failed imports untouched.
+
+Deterministic interleaving/storage-fault coverage belongs to
+`HubImportPendingWriteBoundaryTest`, `HubResourceDraftTransferWriterTest`,
+`HubSkillDraftTransferWriterTest`, target content/dependency tests, and the two
+`Hub*DraftCommitStorageDerbyTest` classes (external and embedded SQL adapters).
+Standalone HTTP IT cannot pause an import before completion or inject a
+write-then-throw storage failure without a server-side fault hook. These are
+unit/component checks, not claimed deployed fault-injection IT; existing native
+Hub transfer IT still covers completed private drafts and source/target isolation.
+HTTP routes, request/response models and Java SDK interfaces are unchanged.

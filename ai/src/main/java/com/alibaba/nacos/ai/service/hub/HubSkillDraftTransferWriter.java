@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.hub;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.utils.AiResourceImportUtils;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
@@ -102,7 +103,9 @@ public class HubSkillDraftTransferWriter {
         pending.setScope(VisibilityConstants.SCOPE_PRIVATE);
         pending.setOwner(owner);
         pending.setDesc(contents.getDescription());
-        pending.setExt(extJson);
+        String pendingExt = AiResourceImportUtils.pendingExt(extJson,
+            files.recovery(namespaceId, name, targetVersion, withProvider(contents, provider)));
+        pending.setExt(pendingExt);
         pending.setVersionInfo(JacksonUtils.toJson(info));
         pending.setMetaVersion(1L);
         
@@ -126,14 +129,13 @@ public class HubSkillDraftTransferWriter {
         }
         // Nothing may write target files until the insertion succeeded.
         boolean versionInserted = false;
-        boolean published = false;
         long insertedVersionId = 0L;
         String insertedVersionStorage = null;
         List<String> touchedFiles = new ArrayList<>();
         long expectedMetaVersion = 1L;
         try {
             AiResource owned = resources.find(namespaceId, name, TYPE);
-            if (!ownedPending(owned, id, extJson, expectedMetaVersion)) {
+            if (!ownedPending(owned, id, pendingExt, expectedMetaVersion)) {
                 throw conflict(name);
             }
             if (versions.find(namespaceId, name, TYPE, targetVersion) != null) {
@@ -162,21 +164,6 @@ public class HubSkillDraftTransferWriter {
             if (!ownedVersion(savedVersion, insertedVersionId, insertedVersionStorage, owner)) {
                 throw conflict(name);
             }
-            prePublishCheck.run();
-            if (!commit.publish(id, namespaceId, name, expectedMetaVersion)) {
-                throw conflict(name);
-            }
-            published = true;
-            expectedMetaVersion = 2L;
-            AiResource visible = resources.find(namespaceId, name, TYPE);
-            if (visible == null || !Objects.equals(visible.getId(), id)
-                || !Objects.equals(visible.getExt(), extJson)
-                || !AiResourceConstants.META_STATUS_ENABLE.equals(visible.getStatus())
-                || !Objects.equals(visible.getMetaVersion(), expectedMetaVersion)) {
-                throw conflict(name);
-            }
-            // Revalidation after publish catches the common revoke-during-CAS race.
-            prePublishCheck.run();
             HubSkillTransferResult result = new HubSkillTransferResult();
             result.setTargetNamespaceId(namespaceId);
             result.setTargetName(name);
@@ -185,35 +172,20 @@ public class HubSkillDraftTransferWriter {
             result.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
             result.setOrigin(source.getHubEntryId() == null ? "DIRECT_COPY" : "HUB");
             result.setHubEntryId(source.getHubEntryId());
+            prePublishCheck.run();
+            if (!ownedVersion(versions.find(namespaceId, name, TYPE, targetVersion),
+                insertedVersionId, insertedVersionStorage, owner)) {
+                throw conflict(name);
+            }
+            // Opening the draft and removing recovery state is one final CAS.
+            if (!commit.publish(id, namespaceId, name, expectedMetaVersion, extJson)) {
+                throw conflict(name);
+            }
             return result;
         } catch (NacosException | RuntimeException operationFailure) {
-            // If publish succeeded, turn off only our own exact metaVersion. A
-            // concurrent edit wins, and must never be deleted by this rollback.
-            if (published) {
-                try {
-                    AiResourceVersion current =
-                        versions.find(namespaceId, name, TYPE, targetVersion);
-                    if (!ownedVersion(current, insertedVersionId, insertedVersionStorage, owner)) {
-                        throw new IllegalStateException(
-                            "Target draft changed; automatic cleanup skipped");
-                    }
-                    if (commit.disable(id, namespaceId, name, 2L)) {
-                        expectedMetaVersion = 3L;
-                    } else {
-                        operationFailure.addSuppressed(new IllegalStateException(
-                            "Target changed after publish; automatic cleanup skipped"));
-                        throw controlledFailure(operationFailure);
-                    }
-                } catch (RuntimeException rollbackFailure) {
-                    if (rollbackFailure != operationFailure) {
-                        operationFailure.addSuppressed(rollbackFailure);
-                    }
-                    throw controlledFailure(operationFailure);
-                }
-            }
             try {
                 AiResource owned = resources.find(namespaceId, name, TYPE);
-                if (!ownedPending(owned, id, extJson, expectedMetaVersion)) {
+                if (!ownedPending(owned, id, pendingExt, expectedMetaVersion)) {
                     operationFailure.addSuppressed(new IllegalStateException(
                         "Target reservation changed; refuse destructive cleanup"));
                     throw operationFailure;
@@ -291,6 +263,7 @@ public class HubSkillDraftTransferWriter {
     
     private boolean ownedPending(AiResource meta, long id, String ext, long version) {
         return meta != null && Objects.equals(meta.getId(), id)
+            && AiResourceImportUtils.isPending(meta)
             && "local".equals(meta.getFrom())
             && AiResourceConstants.META_STATUS_DISABLE.equals(meta.getStatus())
             && Objects.equals(meta.getMetaVersion(), version)

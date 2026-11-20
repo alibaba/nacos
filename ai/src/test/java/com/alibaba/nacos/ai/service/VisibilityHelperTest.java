@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.plugin.visibility.VisibilityPluginManager;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
@@ -35,6 +37,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -70,6 +73,20 @@ class VisibilityHelperTest {
         }
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
         resetCachedVisibilityServiceName();
+    }
+    
+    @Test
+    void pendingMarkerAloneBlocksWritesEvenWithoutRecoveryOrVisibilityPlugin() {
+        for (String type : RESOURCE_TYPES) {
+            AiResource resource = new AiResource();
+            resource.setType(type);
+            resource.setName("pending");
+            resource.setExt("{\"importPending\":true}");
+            assertFalse(VisibilityHelper.canWriteResource(resource));
+            assertEquals(NacosException.CONFLICT,
+                assertThrows(NacosException.class,
+                    () -> VisibilityHelper.checkWritableResource(resource)).getErrCode());
+        }
     }
     
     @Test

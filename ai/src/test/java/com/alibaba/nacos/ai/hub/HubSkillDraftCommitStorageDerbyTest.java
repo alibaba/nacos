@@ -77,12 +77,14 @@ class HubSkillDraftCommitStorageDerbyTest {
         long target = insert("target-ns", "copied");
         long competitor = insert("target-ns", "other");
         HubSkillDraftCommitStorage store = adapter(embedded);
-        assertFalse(store.publish(competitor, "target-ns", "copied", 1L));
-        assertFalse(store.publish(target, "another-ns", "copied", 1L));
-        assertTrue(store.publish(target, "target-ns", "copied", 1L));
-        assertFalse(store.publish(target, "target-ns", "copied", 1L));
+        assertFalse(store.publish(competitor, "target-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertFalse(store.publish(target, "another-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertTrue(store.publish(target, "target-ns", "copied", 1L, "{\"origin\":{}}"));
+        assertFalse(store.publish(target, "target-ns", "copied", 1L, "{\"origin\":{}}"));
         assertEquals("enable",
             database.queryString("SELECT status FROM ai_resource WHERE id=?", target));
+        assertEquals("{\"origin\":{}}",
+            database.queryString("SELECT ext FROM ai_resource WHERE id=?", target));
         assertEquals(2L,
             database.queryLong("SELECT meta_version FROM ai_resource WHERE id=?", target));
         assertFalse(store.deleteDisabled(target, "target-ns", "copied", 2L));
@@ -107,7 +109,7 @@ class HubSkillDraftCommitStorageDerbyTest {
             store.deleteDraftVersion(metaId, "target-ns", "copied", 1L, versionId + 1, "0.0.1"));
         assertFalse(
             store.deleteDraftVersion(metaId, "target-ns", "copied", 2L, versionId, "0.0.1"));
-        assertTrue(store.publish(metaId, "target-ns", "copied", 1L));
+        assertTrue(store.publish(metaId, "target-ns", "copied", 1L, "{\"origin\":{}}"));
         assertFalse(
             store.deleteDraftVersion(metaId, "target-ns", "copied", 2L, versionId, "0.0.1"));
         assertTrue(store.disable(metaId, "target-ns", "copied", 2L));
@@ -125,8 +127,12 @@ class HubSkillDraftCommitStorageDerbyTest {
             + "(namespace_id,name,type,c_from,status,scope,owner,meta_version,ext,version_info) "
             + "VALUES (?,?,'skill','local','disable','PRIVATE','alice',1,'{}','{}')",
             namespaceId, name);
-        return database.queryLong("SELECT id FROM ai_resource WHERE namespace_id=? AND name=?",
+        long id = database.queryLong("SELECT id FROM ai_resource WHERE namespace_id=? AND name=?",
             namespaceId, name);
+        database.update("UPDATE ai_resource SET ext=? WHERE id=?",
+            "{\"importPending\":true,\"importRecovery\":{\"storage\":\"target\",\"files\":[]}}",
+            id);
+        return id;
     }
     
     private HubSkillDraftCommitStorage adapter(boolean embedded) {

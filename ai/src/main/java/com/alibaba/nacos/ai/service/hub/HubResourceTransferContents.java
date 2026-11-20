@@ -210,14 +210,28 @@ public class HubResourceTransferContents {
             private final List<StorageKey> touched = new ArrayList<>();
             
             @Override
-            public String write() throws NacosException {
-                // Check every key first: orphaned content is a conflict, never an overwrite opportunity.
+            public Map<String, Object> recovery() throws NacosException {
+                requireAbsent();
+                List<Map<String, String>> keys = new ArrayList<>();
+                for (StorageKey key : files.keySet()) {
+                    keys.add(Map.of("provider", key.getProvider(), "key", key.getKey()));
+                }
+                return Map.of("storage", descriptor, "files", keys);
+            }
+            
+            private void requireAbsent() throws NacosException {
                 for (StorageKey key : files.keySet()) {
                     if (router.route(key).get(key) != null) {
                         throw new NacosApiException(409, ErrorCode.RESOURCE_CONFLICT,
                             "Target resource content already exists");
                     }
                 }
+            }
+            
+            @Override
+            public String write() throws NacosException {
+                // Check every key first: orphaned content is a conflict, never an overwrite opportunity.
+                requireAbsent();
                 for (Map.Entry<StorageKey, byte[]> file : files.entrySet()) {
                     touched.add(file.getKey());
                     router.route(file.getKey()).save(file.getKey(), file.getValue());

@@ -37,8 +37,12 @@ public class ExternalHubResourceDraftCommitStorage implements HubResourceDraftCo
     
     @Override
     public boolean publish(HubResourceType type, long id, String namespaceId, String name,
-        long expectedMetaVersion) {
-        return change(type, id, namespaceId, name, expectedMetaVersion, "disable", "enable");
+        long expectedMetaVersion, String completedExt) {
+        return jdbc.update(
+            "UPDATE ai_resource SET status='enable', ext=?, meta_version=meta_version+1 "
+                + "WHERE id=? AND namespace_id=? AND name=? AND type=? AND c_from='local' "
+                + "AND status='disable' AND meta_version=?",
+            completedExt, id, namespaceId, name, type.resourceType(), expectedMetaVersion) == 1;
     }
     
     @Override

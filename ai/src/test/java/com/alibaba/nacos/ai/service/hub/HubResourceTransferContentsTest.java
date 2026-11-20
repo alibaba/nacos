@@ -89,7 +89,11 @@ class HubResourceTransferContentsTest {
         HubResourceDraftTransferWriter.PreparedContent plan = contents.prompt("target-ns",
             "new-name", "0.0.1", source);
         verifyNoInteractions(storage);
+        Map<String, Object> recovery = plan.recovery();
+        assertEquals(0, saved.size());
         String descriptor = plan.write();
+        assertEquals(descriptor, recovery.get("storage"));
+        assertEquals(saved.size(), ((java.util.List<?>) recovery.get("files")).size());
         assertFalse(descriptor.contains("source-name"));
         PromptVersionInfo target =
             JacksonUtils.toObj(saved.values().iterator().next(), PromptVersionInfo.class);
@@ -112,7 +116,10 @@ class HubResourceTransferContentsTest {
         HubResourceDraftTransferWriter.PreparedContent plan =
             contents.agentSpec("target-ns", "new-name", "v1", source);
         verifyNoInteractions(storage);
+        Map<String, Object> recovery = plan.recovery();
+        assertEquals(0, saved.size());
         plan.write();
+        assertEquals(2, ((java.util.List<?>) recovery.get("files")).size());
         assertEquals(2, saved.size());
         Map<?, ?> main = null;
         Map<?, ?> resource = null;
@@ -146,6 +153,7 @@ class HubResourceTransferContentsTest {
         byte[] original = saved.values().iterator().next();
         HubResourceDraftTransferWriter.PreparedContent duplicate =
             contents.prompt("target-ns", "target", "v1", source);
+        assertThrows(NacosException.class, duplicate::recovery);
         assertThrows(NacosException.class, duplicate::write);
         duplicate.cleanup();
         assertEquals(1, saved.size());
@@ -171,6 +179,31 @@ class HubResourceTransferContentsTest {
             contents.agentSpec("target-ns", "target", "v1", agentSpec());
         assertThrows(NacosException.class, plan::write);
         assertEquals(1, saved.size());
+        plan.cleanup();
+        assertEquals(0, saved.size());
+    }
+    
+    @Test
+    void agentRecoveryNamesItsFreshCanonicalKeyBeforeAnyWrite() throws Exception {
+        com.alibaba.nacos.api.ai.model.agent.AgentCallInterface call =
+            new com.alibaba.nacos.api.ai.model.agent.AgentCallInterface();
+        call.setProtocol("a2a");
+        call.setDescriptorMediaType("application/json");
+        call.setNativeDescriptor("descriptor");
+        call.setEndpointSourceOrder(java.util.List.of(
+            com.alibaba.nacos.api.ai.model.agent.EndpointSource.RUNTIME,
+            com.alibaba.nacos.api.ai.model.agent.EndpointSource.DECLARED));
+        HubResourceDraftTransferWriter.PreparedContent plan = contents.agent("target-ns", "target",
+            "0.0.1",
+            new com.alibaba.nacos.ai.model.agent.AgentVersionContent(java.util.List.of(call)));
+        Map<String, Object> recovery = plan.recovery();
+        assertEquals(0, saved.size());
+        assertEquals(plan.write(), recovery.get("storage"));
+        java.util.List<?> files = (java.util.List<?>) recovery.get("files");
+        assertEquals(1, files.size());
+        Map<?, ?> file = (Map<?, ?>) files.get(0);
+        assertEquals("nacos_config", file.get("provider"));
+        assertEquals(saved.keySet().iterator().next(), file.get("key"));
         plan.cleanup();
         assertEquals(0, saved.size());
     }
@@ -209,7 +242,11 @@ class HubResourceTransferContentsTest {
             contents.mcp("target-ns", "target", "0.0.1",
                 freshId, source, null);
         verifyNoInteractions(storage);
+        Map<String, Object> recovery = plan.recovery();
+        assertEquals(0, saved.size());
         String descriptor = plan.write();
+        assertEquals(descriptor, recovery.get("storage"));
+        assertEquals(saved.size(), ((java.util.List<?>) recovery.get("files")).size());
         assertEquals(2, saved.size());
         assertFalse(descriptor.contains("source-ns"));
         byte[] last = null;

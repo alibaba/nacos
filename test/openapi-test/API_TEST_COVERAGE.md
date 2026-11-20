@@ -745,3 +745,9 @@ Reproduction is retained: stock develop 7f71d44f880535dcf0ba14829df4a98329fc4e06
 also return 500 instead of 404. Historical request/response evidence is retained
 in the test report; these defects are neither fixed nor counted as passes here.
 No public exception handler or common test base is changed.
+
+2026-11-20 Hub pending-import review: five-type ordinary-write 409 boundaries,
+pre-version durable recovery, final completion CAS and no post-completion rollback
+are tracked in `HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md`. Deterministic failure
+and interleaving injection is unit/component coverage; no deployed fault-injection
+result is implied. Public HTTP/SDK signatures are unchanged.

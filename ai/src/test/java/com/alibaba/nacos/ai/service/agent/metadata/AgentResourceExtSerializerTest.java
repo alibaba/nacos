@@ -41,6 +41,22 @@ class AgentResourceExtSerializerTest {
         "{\"schemaVersion\":1,\"versionCatalog\":{\"onlineVersions\":[]}}";
     
     @Test
+    void pendingRecoveryRoundTripPreservesMarkerAndCoordinates() {
+        AgentResourceExt ext = createMinimalResourceExt();
+        ext.setImportPending(true);
+        ext.setImportRecovery(java.util.Map.of("storage", "target-only descriptor", "files",
+            java.util.List
+                .of(java.util.Map.of("provider", "target-provider", "key", "target-key"))));
+        AgentResourceExt restored = AgentResourceExtSerializer.deserialize(
+            AgentResourceExtSerializer.serialize(ext));
+        assertEquals(Boolean.TRUE, restored.getImportPending());
+        assertEquals(ext.getImportRecovery(), restored.getImportRecovery());
+        ext.setImportRecovery(null);
+        assertThrows(IllegalArgumentException.class,
+            () -> AgentResourceExtSerializer.serialize(ext));
+    }
+    
+    @Test
     void testFullRoundTripUsesFixedProjection() {
         AgentResourceExt original = createFullResourceExt();
         

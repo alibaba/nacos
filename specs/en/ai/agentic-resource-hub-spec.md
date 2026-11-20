@@ -64,7 +64,7 @@ A backend is source-owned Direct only when its namespace, mcp-endpoints group an
 
 Preserve the rest of remoteServerConfig, protocols, paths, headers and frontend REF/DIRECT/BACKEND definitions. BACKEND resolves the target backend; frontend REF remains unchanged. Tools/Resources have independent storage. Hub sharing and live display continue reading the original service without Naming mutations.
 
-Only materialize target Direct state after reserving the target resource name. Existing Naming coordinates, including orphan services, are conflicts and must never receive new/replacement instances. New services carry the ordinary MCP Direct marker and a unique import ownership token. Rollback removes only this import's owned service, fixed instance and content. Ownership changes or cleanup failures retain the disabled reservation for recovery. Revalidate pinned publication/permissions and the source fixed address around activation. Offline preserves target services; deleting the target removes only its own Direct state, never source/REF services. Revoking the share does not delete completed imports. REF availability still depends on the original service.
+Only materialize target Direct state after reserving the target resource name. Existing Naming coordinates, including orphan services, are conflicts and must never receive new/replacement instances. New services carry the ordinary MCP Direct marker and a unique import ownership token. Rollback removes only this import's owned service, fixed instance and content. Ownership changes or cleanup failures retain the disabled reservation for recovery. Revalidate pinned publication/permissions and the source fixed address before the completion CAS. Offline preserves target services; deleting the target removes only its own Direct state, never source/REF services. Revoking the share does not delete completed imports. REF availability still depends on the original service.
 
 Hub detail preserves all existing read-only source content and interactions of the pinned version. Reuse the MCP detail body and Agent runtime endpoint card. Prompt retains template debug, variables, review results, business tags and pinned-version labels; AgentSpec retains AGENTS.md, resource browsing and version review information. Only Hub-specific provenance, download counts and mutation/governance permissions may differ. Do not expand ordinary source detail for Hub.
 
@@ -79,3 +79,24 @@ MCP Hub must not add generic basic-info, business-tag or version-label sidebar c
 MCP Hub displays custom version labels in the right sidebar below source governance, sharing the Agent read-only custom-label card and styling rather than the header. Read labels from the pinned-version response, showing only those targeting the shared version and excluding latest and other versions. Use the Agent empty state when none match; do not treat missing label fields in serving detail as the absence of version labels.
 
 Hub labels show names only, without appending target version numbers; detail headers omit the separate fixed-version badge. This presentation change preserves pinned-version reads, source navigation, downloads and imports and leaves ordinary source detail content unchanged.
+
+
+All five Hub imports and Skill direct clones reserve their target with
+`ext.importPending=true`. Ordinary writes (including edit, upload/overwrite,
+metadata/scope/label changes, publish and delete) reject pending targets with
+409 / RESOURCE_CONFLICT even when visibility plugins are absent. Keep the marker
+through failed cleanup. Content and source/publication/permission/dependency
+checks finish before one ID/metaVersion-pinned CAS enables the target and removes
+both importPending and importRecovery. This CAS is the completion boundary:
+no source revalidation or destructive failure rollback follows its success.
+
+Before the first external write, persist complete recovery information in the
+first target metadata insert (`ext.importRecovery`): the storage descriptor,
+every target provider/key, and MCP-owned Naming coordinates, fixed instance and
+unique ownership token where applicable. Check target keys/services for orphan
+conflicts before claiming them; never include source or ordinary REF ownership.
+Recovery does not depend on a successfully inserted version row. Partial writes
+or failed version insertion followed by failed cleanup retain the disabled,
+pending reservation and recovery manifest. Cleanup removes only the import's
+owned content/dependencies, then its exact draft version, then its reservation;
+only successful completion or complete cleanup removes the recovery metadata.

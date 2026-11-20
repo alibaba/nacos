@@ -209,9 +209,10 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 导入的 Skill 遵循 upload 和 draft 规则，除非该操作是服务端拥有的显式 bootstrap 流程。
 依赖处理，例如 Skill 引用 MCP tools，应通过统一导入流程 preview，默认不得递归导入依赖。
 
-Hub 导入回滚必须先清理目标文件，再删除草稿版本及 disabled 资源占位记录。
-文件清理失败时，必须保留版本记录、完整 storage 描述符（provider、scope、files）
-及 disabled 占位记录，以便后续清理定位残留文件。
+Hub 导入与跨 Namespace 克隆统一遵循 [Agentic Resource Hub](agentic-resource-hub-spec.md)
+的 pending 占位、持久化恢复信息及最终完成 CAS 规则。回滚先清理目标文件，再删除对应
+草稿版本和 disabled 占位。清理失败时，即使版本记录尚未插入，也必须保留 importPending
+及 importRecovery；恢复完成前不允许普通编辑或删除。
 
 ## 6. 运行时行为
 

@@ -111,6 +111,21 @@ class HubMcpTransferDependencyGuardTest {
     }
     
     @Test
+    void recoveryContainsOnlyTargetNamingOwnershipBeforeMaterialization() throws Exception {
+        when(files.recovery()).thenReturn(Map.of("storage", "target-storage", "files", List.of()));
+        HubResourceDraftTransferWriter.PreparedContent content = prepare().attach(files);
+        Map<String, Object> recovery = content.recovery();
+        Map<?, ?> naming = (Map<?, ?>) recovery.get("naming");
+        assertEquals("target-ns", naming.get("namespaceId"));
+        assertEquals("target::0.0.1", naming.get("service"));
+        assertEquals("mcp-endpoints", naming.get("group"));
+        assertEquals("owner-token", naming.get("owner"));
+        assertEquals(HubMcpTransferDependencyGuard.IMPORT_OWNER, naming.get("ownerKey"));
+        assertEquals("10.0.0.1", naming.get("ip"));
+        verifyNoInteractions(services);
+    }
+    
+    @Test
     void directCreatesIndependentServiceAndPreservesAllFrontendDefinitions() throws Exception {
         FrontEndpointConfig backend = new FrontEndpointConfig();
         backend.setEndpointType("BACKEND");

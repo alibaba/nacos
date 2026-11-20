@@ -22,7 +22,7 @@ import com.alibaba.nacos.ai.model.hub.HubResourceType;
 public interface HubResourceDraftCommitStorage {
     
     boolean publish(HubResourceType type, long id, String namespaceId, String name,
-        long expectedMetaVersion);
+        long expectedMetaVersion, String completedExt);
     
     boolean disable(HubResourceType type, long id, String namespaceId, String name,
         long expectedMetaVersion);

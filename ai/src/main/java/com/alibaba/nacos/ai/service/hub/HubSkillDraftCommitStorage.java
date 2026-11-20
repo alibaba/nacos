@@ -19,7 +19,8 @@ package com.alibaba.nacos.ai.service.hub;
 /** ID- and metaVersion-pinned mutations used only for S3 reserved draft metadata. */
 public interface HubSkillDraftCommitStorage {
     
-    boolean publish(long id, String namespaceId, String name, long expectedMetaVersion);
+    boolean publish(long id, String namespaceId, String name, long expectedMetaVersion,
+        String completedExt);
     
     boolean disable(long id, String namespaceId, String name, long expectedMetaVersion);
     
