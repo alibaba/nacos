@@ -218,6 +218,13 @@ does not depend on forcing index files.
 the segment, reads the index, validates the record, and decodes it under the read
 lock. Appends, truncations, reset, and shutdown execute under the write lock.
 
+A bounded set of inactive-segment read handles may be reused. Cache hits remain subject
+to the current Manifest range and full record validation. Read-handle borrowing and release
+must both occur under the storage read lock; lifecycle cleanup holds the storage write lock.
+Range changes, index rebuilds,
+file reclamation, and shutdown must invalidate affected handles. Handles still borrowed
+by readers must not be closed until released.
+
 ### 5.1 Batch Append
 
 `appendEntries()` first encodes and validates the whole batch: indexes must be
