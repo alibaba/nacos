@@ -117,6 +117,7 @@
                 <nacos.native.standalone>false</nacos.native.standalone>
                 <nacos.native.embedded-storage>false</nacos.native.embedded-storage>
                 <nacos.native.derby.experimental>false</nacos.native.derby.experimental>
+                <nacos.native.datasources></nacos.native.datasources>
                 <nacos.native.build.heap>8g</nacos.native.build.heap>
                 <nacos.native.build.parallelism>2</nacos.native.build.parallelism>
             </properties>
@@ -196,6 +197,7 @@
                                             <sysproperty key="nacos.standalone" value="${nacos.native.standalone}"/>
                                             <sysproperty key="embeddedStorage" value="${nacos.native.embedded-storage}"/>
                                             <sysproperty key="nacos.native.derby.experimental" value="${nacos.native.derby.experimental}"/>
+                                            <sysproperty key="nacos.native.datasources" value="${nacos.native.datasources}"/>
                                             <arg value="${project.build.directory}/native"/>
                                             <arg value="${project.build.outputDirectory}"/>
                                             <arg value="${project.basedir}/src/test/resources/aot/derby-experimental.args"/>
