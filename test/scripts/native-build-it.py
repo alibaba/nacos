@@ -164,6 +164,14 @@ def main():
         assert "sample.CustomDialect" in manifest["spi.com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect"]
         assert str(plugin) in shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)
         assert "RuntimeClassLoading" not in (native / "options.args").read_text()
+        # One archive accepts both MySQL and PostgreSQL; declaring derby still needs the Derby opt-in.
+        run("server-mysql-accepts-postgresql", common + [configuration("mysql", "mysql", False),
+            "-Dnacos.native.deployment=server", "-Dnacos.native.datasources=postgresql"])
+        manifest = properties(native / "aot-manifest.properties")
+        assert manifest["deployment"] == "SERVER" and manifest["datasource"] == "mysql,postgresql"
+        run("server-mysql-declares-derby", common + [configuration("mysql", "mysql", False),
+            "-Dnacos.native.deployment=server", "-Dnacos.native.datasources=derby"],
+            "Embedded Derby Native requires")
         run("console-postgresql", common + [configuration("postgresql", "postgresql", False),
             "-Dnacos.native.deployment=console"])
         manifest = properties(native / "aot-manifest.properties")

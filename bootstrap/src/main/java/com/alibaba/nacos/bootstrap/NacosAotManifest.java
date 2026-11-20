@@ -40,6 +40,8 @@ final class NacosAotManifest {
     
     static final String FORMAT = "2";
     
+    static final String DATASOURCE = "datasource";
+    
     static final String[] SERVICES = {
         "com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect",
         "com.alibaba.nacos.plugin.datasource.mapper.Mapper",
@@ -91,10 +93,21 @@ final class NacosAotManifest {
         }
         Properties actual = snapshot(environment, classLoader);
         for (String key : new TreeSet<>(actual.stringPropertyNames())) {
-            if (!actual.getProperty(key).equals(manifest.getProperty(key))) {
+            if (DATASOURCE.equals(key)) {
+                validateDatasource(manifest, actual.getProperty(key));
+            } else if (!actual.getProperty(key).equals(manifest.getProperty(key))) {
                 throw new IllegalStateException("Nacos AOT artifact mismatch for " + key
                     + "; regenerate AOT artifacts with the runtime configuration and plugins");
             }
+        }
+    }
+    
+    private static void validateDatasource(Properties manifest, String platform) {
+        String accepted = manifest.getProperty(DATASOURCE);
+        if (!supportsDatasource(accepted, platform)) {
+            throw new IllegalStateException("Nacos AOT artifact mismatch for " + DATASOURCE
+                + ": the artifact accepts [" + accepted + "] but the runtime uses " + platform
+                + "; regenerate AOT artifacts with the runtime configuration and plugins");
         }
     }
     
@@ -102,6 +115,53 @@ final class NacosAotManifest {
         return environment.getProperty("nacos.ai.mcp.registry.enabled", Boolean.class, false)
             || environment.getProperty("nacos.ai.skill.registry.enabled", Boolean.class, false)
             || environment.getProperty("nacos.ai.ard.enabled", Boolean.class, false);
+    }
+    
+    /**
+     * Whether an artifact that accepts the comma-separated platforms in {@code accepted} can run with the
+     * datasource {@code platform} of the runtime configuration.
+     *
+     * @param accepted the accepted platforms recorded in the artifact
+     * @param platform the normalized datasource platform of the runtime configuration
+     * @return {@code true} when {@code platform} is one of the accepted platforms
+     */
+    static boolean supportsDatasource(String accepted, String platform) {
+        if (accepted == null || platform == null) {
+            return false;
+        }
+        for (String candidate : accepted.split(",")) {
+            if (candidate.trim().equals(platform)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Returns the platforms that a generated artifact accepts at run time: the platform of the generation
+     * configuration and the platforms declared for the build. Names are trimmed and lower-cased, blank
+     * entries are ignored, and the result is sorted. A build without declared platforms keeps the single
+     * value that it recorded before.
+     *
+     * @param generationPlatform the datasource platform of the configuration used for generation
+     * @param declared           comma-separated platforms declared for the build, or {@code null}
+     * @return the accepted platforms as a comma-separated list
+     */
+    static String acceptedDatasources(String generationPlatform, String declared) {
+        Set<String> platforms = new TreeSet<>();
+        addDatasource(platforms, generationPlatform);
+        if (declared != null) {
+            for (String platform : declared.split(",")) {
+                addDatasource(platforms, platform);
+            }
+        }
+        return String.join(",", platforms);
+    }
+    
+    private static void addDatasource(Set<String> platforms, String platform) {
+        if (StringUtils.hasText(platform)) {
+            platforms.add(platform.trim().toLowerCase(Locale.ROOT));
+        }
     }
     
     private static String providers(ClassLoader classLoader, String service) {
