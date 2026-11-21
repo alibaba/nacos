@@ -37,6 +37,8 @@ import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
@@ -46,10 +48,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -77,9 +83,44 @@ public class AuthorizationCodeHandler {
     private static final long STATE_EXPIRATION_MS = 10 * 60 * 1000L;
     
     /**
+     * Transaction cookie max-age in seconds (10 minutes).
+     */
+    public static final int TRANSACTION_COOKIE_MAX_AGE_SECONDS = 600;
+    
+    /**
      * HMAC algorithm for state signing.
      */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
+    
+    /**
+     * Hash algorithm for key derivation and state fingerprinting.
+     */
+    private static final String SHA256_ALGORITHM = "SHA-256";
+    
+    /**
+     * Symmetric encryption algorithm for browser-bound transaction cookies.
+     */
+    private static final String AES_ALGORITHM = "AES";
+    
+    /**
+     * Authenticated encryption transformation for transaction cookies.
+     */
+    private static final String AES_GCM_TRANSFORMATION = "AES/GCM/NoPadding";
+    
+    /**
+     * AES-GCM initialization vector length in bytes.
+     */
+    private static final int GCM_IV_LENGTH_BYTES = 12;
+    
+    /**
+     * AES-GCM authentication tag length in bits.
+     */
+    private static final int GCM_TAG_LENGTH_BITS = 128;
+    
+    /**
+     * Domain-separation prefix for deriving the transaction cookie encryption key.
+     */
+    private static final String TX_ENCRYPTION_KEY_PREFIX = "nacos-oidc-tx-key-v1:";
     
     public AuthorizationCodeHandler(OidcAuthPluginConfig config,
         OidcProviderMetadataProvider metadataProvider, JwtTokenValidator tokenValidator,
@@ -105,21 +146,36 @@ public class AuthorizationCodeHandler {
      * @throws AccessException if configuration is invalid
      */
     public String buildAuthorizationUrl(String redirectUri) throws AccessException {
+        return createAuthorizationRequest(redirectUri).getAuthorizationUrl();
+    }
+    
+    /**
+     * Create an OIDC authorization request with PKCE (S256) and browser-bound transaction data.
+     *
+     * @param redirectUri callback URI after authentication
+     * @return authorization request data containing URL, state, code verifier, and encrypted cookie
+     * @throws AccessException if configuration is invalid
+     */
+    public AuthorizationRequestData createAuthorizationRequest(String redirectUri)
+        throws AccessException {
         try {
             String authEndpoint = metadataProvider.getMetadata().getAuthorizationEndpoint();
             if (StringUtils.isBlank(authEndpoint)) {
                 throw new AccessException("Authorization endpoint not configured");
             }
             
-            // Generate nonce for security
+            // Generate nonce and PKCE code verifier for security
             String nonce = generateSecureToken();
             long expirationTime = System.currentTimeMillis() + STATE_EXPIRATION_MS;
             
             // Build self-contained signed state: base64(nonce.expTime.signature)
             // This eliminates the need for server-side state storage (cluster-friendly)
             String state = buildSignedState(nonce, expirationTime);
+            CodeVerifier codeVerifier = new CodeVerifier(generateSecureToken());
+            String txCookieValue =
+                encryptTransactionCookie(state, codeVerifier.getValue(), expirationTime);
             
-            // Build OIDC authentication request
+            // Build OIDC authentication request with PKCE S256
             AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
                 new Scope(config.getScope().split(" ")),
@@ -128,11 +184,13 @@ public class AuthorizationCodeHandler {
                 .endpointURI(URI.create(authEndpoint))
                 .state(new State(state))
                 .nonce(new Nonce(nonce))
+                .codeChallenge(codeVerifier, CodeChallengeMethod.S256)
                 .build();
             
             String authUrl = authRequest.toURI().toString();
             LOGGER.debug("Built authorization URL: {}", authUrl);
-            return authUrl;
+            return new AuthorizationRequestData(
+                authUrl, state, codeVerifier.getValue(), txCookieValue);
             
         } catch (AccessException e) {
             throw e;
@@ -153,6 +211,27 @@ public class AuthorizationCodeHandler {
      */
     public OidcUser exchangeCodeForUser(String code, String state, String redirectUri)
         throws AccessException {
+        return exchangeCodeForUserInternal(code, state, redirectUri, null, false);
+    }
+    
+    /**
+     * Exchange authorization code for tokens and authenticate user with browser-bound transaction
+     * verification and PKCE code verifier submission.
+     *
+     * @param code              authorization code from IdP
+     * @param state             state parameter for CSRF verification
+     * @param redirectUri       the redirect URI used in the authorization request
+     * @param transactionCookie encrypted browser-bound transaction cookie from login initiation
+     * @return authenticated OidcUser
+     * @throws AccessException if authentication or transaction verification fails
+     */
+    public OidcUser exchangeCodeForUser(String code, String state, String redirectUri,
+        String transactionCookie) throws AccessException {
+        return exchangeCodeForUserInternal(code, state, redirectUri, transactionCookie, true);
+    }
+    
+    private OidcUser exchangeCodeForUserInternal(String code, String state, String redirectUri,
+        String transactionCookie, boolean requireTransactionCookie) throws AccessException {
         try {
             // Verify and decode state (self-contained, no cache lookup needed)
             StateData stateData = verifyAndDecodeState(state);
@@ -160,8 +239,19 @@ public class AuthorizationCodeHandler {
                 throw new AccessException("Invalid or expired state parameter");
             }
             
+            String codeVerifier = null;
+            if (requireTransactionCookie) {
+                if (StringUtils.isBlank(transactionCookie)) {
+                    throw new AccessException("Missing login transaction cookie");
+                }
+                codeVerifier = verifyAndDecodeTransactionCookie(transactionCookie, state);
+                if (codeVerifier == null) {
+                    throw new AccessException("Invalid or expired login transaction");
+                }
+            }
+            
             // Exchange code for tokens
-            OIDCTokens tokens = exchangeCodeForTokens(code, redirectUri);
+            OIDCTokens tokens = exchangeCodeForTokens(code, redirectUri, codeVerifier);
             
             // Validate ID token
             String idTokenString = tokens.getIDTokenString();
@@ -182,7 +272,9 @@ public class AuthorizationCodeHandler {
                     LOGGER.warn("{} - Strict validation disabled, allowing authentication. "
                         + "This reduces protection against replay attacks.", message);
                 }
-            } else if (!stateData.nonce.equals(tokenNonce)) {
+            } else if (!MessageDigest.isEqual(
+                stateData.nonce.getBytes(StandardCharsets.UTF_8),
+                tokenNonce.getBytes(StandardCharsets.UTF_8))) {
                 String message = String.format("Nonce mismatch: expected %s, got %s",
                     stateData.nonce, tokenNonce);
                 LOGGER.error("{} - Possible token replay attack detected", message);
@@ -192,6 +284,7 @@ public class AuthorizationCodeHandler {
             // Map claims to user
             OidcUser user = userMapper.mapToUser(claims);
             user.setToken(tokens.getAccessToken().getValue());
+            user.setIdToken(idTokenString);
             
             LOGGER.info("User authenticated via authorization code: {}", user.getUsername());
             return user;
@@ -207,12 +300,14 @@ public class AuthorizationCodeHandler {
     /**
      * Exchange authorization code for OIDC tokens.
      *
-     * @param code        authorization code
-     * @param redirectUri redirect URI
+     * @param code         authorization code
+     * @param redirectUri  redirect URI
+     * @param codeVerifier optional PKCE code verifier
      * @return OIDC tokens
      * @throws Exception if exchange fails
      */
-    private OIDCTokens exchangeCodeForTokens(String code, String redirectUri) throws Exception {
+    private OIDCTokens exchangeCodeForTokens(String code, String redirectUri, String codeVerifier)
+        throws Exception {
         String tokenEndpoint = metadataProvider.getMetadata().getTokenEndpoint();
         if (StringUtils.isBlank(tokenEndpoint)) {
             throw new AccessException("Token endpoint not configured");
@@ -220,7 +315,10 @@ public class AuthorizationCodeHandler {
         
         // Build token request
         AuthorizationCode authCode = new AuthorizationCode(code);
-        AuthorizationGrant grant = new AuthorizationCodeGrant(authCode, URI.create(redirectUri));
+        AuthorizationGrant grant = StringUtils.isNotBlank(codeVerifier)
+            ? new AuthorizationCodeGrant(authCode, URI.create(redirectUri),
+                new CodeVerifier(codeVerifier))
+            : new AuthorizationCodeGrant(authCode, URI.create(redirectUri));
         
         // Client authentication
         ClientAuthentication clientAuth = new ClientSecretBasic(
@@ -340,15 +438,116 @@ public class AuthorizationCodeHandler {
     }
     
     /**
-     * Verify HMAC signature.
+     * Verify HMAC signature using constant-time comparison.
      *
      * @param payload   the original payload
      * @param signature the signature to verify
      * @return true if signature is valid
      */
     private boolean hmacVerify(String payload, String signature) {
+        if (signature == null) {
+            return false;
+        }
         String expectedSignature = hmacSign(payload);
-        return expectedSignature.equals(signature);
+        return MessageDigest.isEqual(
+            expectedSignature.getBytes(StandardCharsets.UTF_8),
+            signature.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    /**
+     * Encrypt and bind the state fingerprint, PKCE code verifier, and expiration time into an
+     * opaque browser transaction cookie value using AES-GCM.
+     */
+    private String encryptTransactionCookie(String state, String codeVerifier,
+        long expirationTime) {
+        try {
+            String stateFingerprint = sha256Base64Url(state);
+            String plaintext = stateFingerprint + "." + codeVerifier + "." + expirationTime;
+            byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
+            secureRandom.nextBytes(iv);
+            Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
+            cipher.init(Cipher.ENCRYPT_MODE, deriveTransactionKey(),
+                new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.updateAAD(stateFingerprint.getBytes(StandardCharsets.UTF_8));
+            byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+            byte[] combined = new byte[iv.length + ciphertext.length];
+            System.arraycopy(iv, 0, combined, 0, iv.length);
+            System.arraycopy(ciphertext, 0, combined, iv.length, ciphertext.length);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(combined);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to protect login transaction cookie", e);
+        }
+    }
+    
+    /**
+     * Decrypt and verify the browser-bound transaction cookie against the callback state.
+     *
+     * @param transactionCookie cookie value sent by browser
+     * @param state             callback state parameter
+     * @return PKCE code verifier if valid, null otherwise
+     */
+    private String verifyAndDecodeTransactionCookie(String transactionCookie, String state) {
+        try {
+            if (StringUtils.isBlank(transactionCookie) || StringUtils.isBlank(state)) {
+                return null;
+            }
+            byte[] combined = Base64.getUrlDecoder().decode(transactionCookie);
+            int minLength = GCM_IV_LENGTH_BYTES + (GCM_TAG_LENGTH_BITS / 8);
+            if (combined.length <= minLength) {
+                LOGGER.warn("Invalid login transaction cookie length");
+                return null;
+            }
+            byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
+            System.arraycopy(combined, 0, iv, 0, GCM_IV_LENGTH_BYTES);
+            byte[] ciphertext = new byte[combined.length - GCM_IV_LENGTH_BYTES];
+            System.arraycopy(combined, GCM_IV_LENGTH_BYTES, ciphertext, 0, ciphertext.length);
+            
+            String expectedFingerprint = sha256Base64Url(state);
+            Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, deriveTransactionKey(),
+                new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.updateAAD(expectedFingerprint.getBytes(StandardCharsets.UTF_8));
+            String plaintext =
+                new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+            String[] parts = plaintext.split("\\.");
+            if (parts.length != 3) {
+                LOGGER.warn("Invalid login transaction payload format");
+                return null;
+            }
+            if (!MessageDigest.isEqual(
+                expectedFingerprint.getBytes(StandardCharsets.UTF_8),
+                parts[0].getBytes(StandardCharsets.UTF_8))) {
+                LOGGER.warn("Login transaction state binding mismatch");
+                return null;
+            }
+            String codeVerifier = parts[1];
+            if (StringUtils.isBlank(codeVerifier)) {
+                LOGGER.warn("Missing PKCE code verifier in login transaction");
+                return null;
+            }
+            long expTime = Long.parseLong(parts[2]);
+            if (System.currentTimeMillis() > expTime) {
+                LOGGER.warn("Login transaction cookie has expired");
+                return null;
+            }
+            return codeVerifier;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to verify login transaction cookie: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    private SecretKeySpec deriveTransactionKey() throws Exception {
+        MessageDigest digest = MessageDigest.getInstance(SHA256_ALGORITHM);
+        byte[] keyBytes = digest.digest(
+            (TX_ENCRYPTION_KEY_PREFIX + getSigningKey()).getBytes(StandardCharsets.UTF_8));
+        return new SecretKeySpec(keyBytes, AES_ALGORITHM);
+    }
+    
+    private String sha256Base64Url(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance(SHA256_ALGORITHM);
+        byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
     }
     
     /**
@@ -388,7 +587,8 @@ public class AuthorizationCodeHandler {
         logoutUrl.append(OidcConstants.QUERY_STRING_SEPARATOR);
         
         if (StringUtils.isNotBlank(idToken)) {
-            logoutUrl.append("id_token_hint=").append(idToken);
+            logoutUrl.append("id_token_hint=")
+                .append(URLEncoder.encode(idToken, StandardCharsets.UTF_8));
         }
         
         if (StringUtils.isNotBlank(redirectUri)) {
@@ -402,6 +602,44 @@ public class AuthorizationCodeHandler {
         logoutUrl.append("&client_id=").append(config.getClientId());
         
         return logoutUrl.toString();
+    }
+    
+    /**
+     * Immutable authorization request bundle carrying PKCE and browser transaction cookie data.
+     */
+    public static final class AuthorizationRequestData {
+        
+        private final String authorizationUrl;
+        
+        private final String state;
+        
+        private final String codeVerifier;
+        
+        private final String transactionCookieValue;
+        
+        public AuthorizationRequestData(String authorizationUrl, String state, String codeVerifier,
+            String transactionCookieValue) {
+            this.authorizationUrl = authorizationUrl;
+            this.state = state;
+            this.codeVerifier = codeVerifier;
+            this.transactionCookieValue = transactionCookieValue;
+        }
+        
+        public String getAuthorizationUrl() {
+            return authorizationUrl;
+        }
+        
+        public String getState() {
+            return state;
+        }
+        
+        public String getCodeVerifier() {
+            return codeVerifier;
+        }
+        
+        public String getTransactionCookieValue() {
+            return transactionCookieValue;
+        }
     }
     
     /**

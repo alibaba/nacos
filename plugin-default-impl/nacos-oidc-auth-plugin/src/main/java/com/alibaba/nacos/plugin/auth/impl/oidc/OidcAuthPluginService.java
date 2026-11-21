@@ -203,9 +203,37 @@ public class OidcAuthPluginService implements AuthPluginService, PluginConfigSpe
         return runtime.authorizationCodeHandler.buildAuthorizationUrl(redirectUri);
     }
     
+    /**
+     * Create an OIDC authorization request with PKCE and browser-bound transaction cookie data.
+     *
+     * @param redirectUri callback URI after authentication
+     * @return authorization request data
+     * @throws AccessException if configuration is invalid
+     */
+    public AuthorizationCodeHandler.AuthorizationRequestData createAuthorizationRequest(
+        String redirectUri) throws AccessException {
+        return runtime.authorizationCodeHandler.createAuthorizationRequest(redirectUri);
+    }
+    
     public OidcUser exchangeCodeForUser(String code, String state, String redirectUri)
         throws AccessException {
         return runtime.authorizationCodeHandler.exchangeCodeForUser(code, state, redirectUri);
+    }
+    
+    /**
+     * Exchange authorization code for user with browser-bound transaction cookie verification.
+     *
+     * @param code              authorization code
+     * @param state             callback state parameter
+     * @param redirectUri       callback URI
+     * @param transactionCookie browser transaction cookie
+     * @return authenticated OidcUser
+     * @throws AccessException if authentication or transaction verification fails
+     */
+    public OidcUser exchangeCodeForUser(String code, String state, String redirectUri,
+        String transactionCookie) throws AccessException {
+        return runtime.authorizationCodeHandler.exchangeCodeForUser(
+            code, state, redirectUri, transactionCookie);
     }
     
     public String buildLogoutUrl(String idToken, String redirectUri) {

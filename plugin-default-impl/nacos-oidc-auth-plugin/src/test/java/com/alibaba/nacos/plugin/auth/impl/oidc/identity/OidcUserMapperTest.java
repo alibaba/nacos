@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,7 +67,8 @@ class OidcUserMapperTest {
         user.setIssuer("issuer");
         user.setRoles(Arrays.asList("reader"));
         user.setGlobalAdmin(true);
-        user.setToken("token");
+        user.setToken("access-secret");
+        user.setIdToken("id-token-secret");
         
         assertEquals("nacos", user.getUsername());
         assertEquals("subject", user.getSubject());
@@ -75,7 +77,10 @@ class OidcUserMapperTest {
         assertEquals("issuer", user.getIssuer());
         assertEquals(Arrays.asList("reader"), user.getRoles());
         assertTrue(user.isGlobalAdmin());
-        assertEquals("token", user.getToken());
+        assertEquals("access-secret", user.getToken());
+        assertEquals("id-token-secret", user.getIdToken());
+        assertFalse(user.toString().contains("access-secret"));
+        assertFalse(user.toString().contains("id-token-secret"));
     }
     
     private OidcUserMapper newMapper(JwtTokenValidator tokenValidator) {

@@ -129,9 +129,10 @@ const agentManagementMenu = {
   ],
 };
 
-export default function(model, aiEnabled = true) {
+export default function(model, aiEnabled = true, authSystemType = '') {
   const { token = '{}' } = localStorage;
-  const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
+  const { globalAdmin, oidc } = isJsonString(token) ? JSON.parse(token) || {} : {};
+  const isOidcMode = !!oidc || authSystemType === 'oidc';
   const result = [];
   if (model === 'naming') {
     result.push(serviceDiscoveryMenu);
@@ -148,7 +149,7 @@ export default function(model, aiEnabled = true) {
     }
     result.push(pluginMenu);
   }
-  if (globalAdmin) {
+  if (globalAdmin && !isOidcMode) {
     result.push(authorityControlMenu);
   }
   result.push(namespaceMenu);

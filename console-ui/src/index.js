@@ -237,12 +237,25 @@ class App extends React.Component {
     return null;
   }
 
+  function getConsoleContextPath() {
+    const stripped = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/');
+    if (!stripped) {
+      return '/';
+    }
+    return stripped.endsWith('/') ? stripped : `${stripped}/`;
+  }
+
   function deleteCookie(name) {
-    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    const contextPath = getConsoleContextPath();
+    if (contextPath !== '/') {
+      document.cookie = `${name}=; Path=${contextPath}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    }
+    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
   }
 
   const accessToken = getCookie('accessToken');
   const username = getCookie('username');
+  const globalAdminCookie = getCookie('globalAdmin');
 
   if (accessToken && username) {
     localStorage.setItem(
@@ -250,12 +263,13 @@ class App extends React.Component {
       JSON.stringify({
         accessToken,
         username: decodeURIComponent(username),
-        globalAdmin: false,
+        globalAdmin: globalAdminCookie === 'true',
         oidc: true,
       })
     );
     deleteCookie('accessToken');
     deleteCookie('username');
+    deleteCookie('globalAdmin');
   }
 })();
 

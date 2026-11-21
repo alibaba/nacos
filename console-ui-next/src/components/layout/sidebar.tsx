@@ -57,8 +57,9 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { sidebarCollapsed } = useAppStore();
-  const { globalAdmin } = useAuthStore();
-  const { version, startupMode, functionMode, copilotEnabled, aiEnabled } = useServerStore();
+  const { globalAdmin, oidc } = useAuthStore();
+  const { version, startupMode, functionMode, copilotEnabled, aiEnabled, authSystemType } = useServerStore();
+  const isOidcMode = oidc || authSystemType === 'oidc';
   const { currentNamespace, namespaceShowName } = useNamespaceStore();
   const platformPaths = [
     '/namespace',
@@ -147,7 +148,7 @@ export function Sidebar() {
     });
   }
 
-  if (globalAdmin) {
+  if (globalAdmin && !isOidcMode) {
     platformItems.push({
       key: 'authority',
       label: t('menu.authorityControl'),
