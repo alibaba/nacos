@@ -60,6 +60,8 @@ public class McpRegistryController {
     /**
      * List mcp servers.
      * All server info is related to the latest version of the server.
+     * Available under both the development {@code /v0} prefix and the frozen
+     * {@code /v0.1} stable prefix defined by the official MCP Registry API.
      *
      * @param form list mcp servers request form
      *             Support blur and accurate search
@@ -70,7 +72,7 @@ public class McpRegistryController {
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @Since("3.2.1")
-    @GetMapping(value = "/v0/servers")
+    @GetMapping(value = {"/v0/servers", "/v0.1/servers"})
     public McpRegistryServerList listMcpServers(ListServersNacosForm form)
         throws NacosApiException, NacosException {
         form.validate();
@@ -101,7 +103,9 @@ public class McpRegistryController {
      * Get mcp server details.
      * If version is not provided, this api will return the latest version of the
      * server.
-     * 
+     * Available under both the development {@code /v0} prefix and the frozen
+     * {@code /v0.1} stable prefix defined by the official MCP Registry API.
+     *
      * @param name     server name
      * @param form     get server request form
      * @param response HTTP response
@@ -109,7 +113,7 @@ public class McpRegistryController {
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @Since("3.2.1")
-    @GetMapping(value = "/v0/servers/{name}/versions")
+    @GetMapping(value = {"/v0/servers/{name}/versions", "/v0.1/servers/{name}/versions"})
     public Object getServerVersions(@PathVariable String name, GetServerForm form,
         HttpServletResponse response)
         throws NacosException {
@@ -129,7 +133,9 @@ public class McpRegistryController {
      * Get specific MCP server version.
      * Returns detailed information about a specific version of an MCP server.
      * Use the special version `latest` to get the latest version.
-     * 
+     * Available under both the development {@code /v0} prefix and the frozen
+     * {@code /v0.1} stable prefix defined by the official MCP Registry API.
+     *
      * @param serverName URL-encoded server name (e.g., "com.example%2Fmy-server")
      * @param version    URL-encoded version to retrieve (e.g., "1.0.0" or
      *                   "1.0.0%2B20130313144700")
@@ -140,7 +146,8 @@ public class McpRegistryController {
      * @throws NacosException if handle error
      */
     @Since("3.2.1")
-    @GetMapping(value = "/v0/servers/{serverName}/versions/{version}")
+    @GetMapping(value = {"/v0/servers/{serverName}/versions/{version}",
+        "/v0.1/servers/{serverName}/versions/{version}"})
     public Object getVersionedServer(@PathVariable String serverName, @PathVariable String version,
         GetServerForm form, HttpServletResponse response)
         throws NacosException {

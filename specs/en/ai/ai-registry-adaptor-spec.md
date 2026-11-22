@@ -118,6 +118,15 @@ Registry-compatible read endpoints:
 | `GET` | `/v0/servers/{name}/versions` | Lists versions for a server. |
 | `GET` | `/v0/servers/{serverName}/versions/{version}` | Returns a specific server version. The special version `latest` is resolved by the underlying MCP service when supported. |
 
+Each read endpoint is also exposed under the frozen `/v0.1` stable prefix
+introduced by the official MCP Registry API changelog (2025-10-17): `/v0.1/servers`,
+`/v0.1/servers/{name}/versions`, and `/v0.1/servers/{serverName}/versions/{version}`
+are aliases of the same handlers and return identical responses. `/v0` remains the
+development prefix; production consumers should use `/v0.1`. The upstream single-server
+endpoint (`GET /v0/servers/{serverName}`, removed upstream in favor of
+`/versions/latest`) is intentionally not mapped; `latest` already resolves through the
+version detail endpoint.
+
 The response model follows the MCP Registry-style server list and server
 response objects. Nacos maps MCP metadata, version information, packages,
 icons, website, repository, tools, and endpoints into the registry response

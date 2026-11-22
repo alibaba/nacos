@@ -98,6 +98,13 @@ Nacos 鉴权信息。
 | `GET` | `/v0/servers/{name}/versions` | 列出指定 server 的版本。 |
 | `GET` | `/v0/servers/{serverName}/versions/{version}` | 返回指定 server 版本。特殊版本 `latest` 在底层 MCP service 支持时进行解析。 |
 
+每个只读端点同时暴露在官方 MCP Registry API 变更日志（2025-10-17）引入的冻结
+`/v0.1` 稳定前缀下：`/v0.1/servers`、`/v0.1/servers/{name}/versions` 和
+`/v0.1/servers/{serverName}/versions/{version}` 是同一 handler 的别名，返回完全相同的
+响应。`/v0` 仍是开发前缀，生产消费者应使用 `/v0.1`。上游的单 server 端点
+（`GET /v0/servers/{serverName}`，上游已移除并由 `/versions/latest` 替代）有意不做映射；
+`latest` 已通过版本详情端点解析。
+
 响应模型遵循 MCP Registry 风格的 server list 和 server response 对象。Nacos 将 MCP
 metadata、version、packages、icons、website、repository、tools 和 endpoints 映射到
 registry 响应形态。当 frontend endpoint 和 backend endpoint 同时存在时，优先使用
