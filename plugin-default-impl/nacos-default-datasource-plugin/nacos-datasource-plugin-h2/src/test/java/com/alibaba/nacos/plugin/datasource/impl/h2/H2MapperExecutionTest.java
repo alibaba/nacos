@@ -34,6 +34,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -156,6 +157,45 @@ class H2MapperExecutionTest {
     }
     
     @Test
+    void testTagSearchReturnsEachConfigurationOnceAndCountMatchesRows() throws Exception {
+        insertTaggedConfig("a", "json", "blue", "green");
+        insertTaggedConfig("b", "yaml", "blue");
+        insertTaggedConfig("c", "json", "red");
+        ConfigInfoTagsRelationMapperByH2 mapper = new ConfigInfoTagsRelationMapperByH2();
+        
+        // Exact tags: "a" matches both requested tags and is still listed once.
+        MapperContext exact = tagContext(0, 10, "blue", "green");
+        assertEquals(Arrays.asList("a", "b"),
+            queryStrings(mapper.findConfigInfo4PageFetchRows(exact), "data_id"));
+        assertEquals(2L, count(mapper.findConfigInfo4PageCountRows(exact)));
+        
+        // Fuzzy tags with a type filter: the page and the count apply the same filter.
+        MapperContext json = tagContext(0, 10, "blue", "green");
+        json.putWhereParameter(FieldConstant.TYPE, new String[] {"json"});
+        assertEquals(Collections.singletonList("a"),
+            queryStrings(mapper.findConfigInfoLike4PageFetchRows(json), "data_id"));
+        assertEquals(1L, count(mapper.findConfigInfoLike4PageCountRows(json)));
+        
+        // Fuzzy tags without a type filter: "a" is still listed once.
+        MapperContext anyType = tagContext(0, 10, "blue", "green");
+        assertEquals(Arrays.asList("a", "b"),
+            queryStrings(mapper.findConfigInfoLike4PageFetchRows(anyType), "data_id"));
+        assertEquals(2L, count(mapper.findConfigInfoLike4PageCountRows(anyType)));
+        
+        // Pages hold distinct configurations: the second page of size one is "b", not a repeat of "a".
+        MapperContext secondPage = tagContext(1, 1, "blue", "green");
+        assertEquals(Collections.singletonList("b"),
+            queryStrings(mapper.findConfigInfoLike4PageFetchRows(secondPage), "data_id"));
+    }
+    
+    @Test
+    void testSchemaCanRunAgainstAnExistingDatabase() throws Exception {
+        insertConfig("kept", "content");
+        loadSchema(connection);
+        assertEquals(1L, scalar("SELECT count(*) FROM config_info"));
+    }
+    
+    @Test
     void testGroupCapacityInsertSelectCountsConfigRows() throws Exception {
         insertConfig("g1", "c1");
         insertConfig("g2", "c2");
@@ -202,6 +242,45 @@ class H2MapperExecutionTest {
             statement.setString(5, "md5-" + dataId);
             statement.executeUpdate();
         }
+    }
+    
+    private void insertTaggedConfig(String dataId, String type, String... tags) throws Exception {
+        long id;
+        try (PreparedStatement statement = connection.prepareStatement(
+            "INSERT INTO config_info (data_id, group_id, tenant_id, content, md5, type) "
+                + "VALUES (?, ?, ?, ?, ?, ?)",
+            Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, dataId);
+            statement.setString(2, "DEFAULT_GROUP");
+            statement.setString(3, "public");
+            statement.setString(4, "content-" + dataId);
+            statement.setString(5, "md5-" + dataId);
+            statement.setString(6, type);
+            statement.executeUpdate();
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                assertTrue(keys.next());
+                id = keys.getLong(1);
+            }
+        }
+        for (String tag : tags) {
+            try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO config_tags_relation (id, tag_name, data_id, group_id, tenant_id) "
+                    + "VALUES (?, ?, ?, ?, ?)")) {
+                statement.setLong(1, id);
+                statement.setString(2, tag);
+                statement.setString(3, dataId);
+                statement.setString(4, "DEFAULT_GROUP");
+                statement.setString(5, "public");
+                statement.executeUpdate();
+            }
+        }
+    }
+    
+    private static MapperContext tagContext(int startRow, int pageSize, String... tags) {
+        MapperContext context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.TENANT_ID, "public");
+        context.putWhereParameter(FieldConstant.TAG_ARR, tags);
+        return context;
     }
     
     private PreparedStatement prepare(MapperResult mapperResult) throws Exception {

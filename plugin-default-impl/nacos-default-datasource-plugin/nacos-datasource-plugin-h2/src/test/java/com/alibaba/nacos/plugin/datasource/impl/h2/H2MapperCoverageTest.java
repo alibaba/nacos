@@ -138,7 +138,7 @@ class H2MapperCoverageTest {
         assertResult(mapper.findConfigInfo4PageFetchRows(context),
             tenantId, dataId, groupId, appName, content, "tag");
         assertResult(mapper.findConfigInfoLike4PageCountRows(context),
-            tenantId, dataId, groupId, appName, content, "tag");
+            tenantId, dataId, groupId, appName, content, "tag", "yaml", "properties");
         assertResult(mapper.findConfigInfoLike4PageFetchRows(context),
             tenantId, dataId, groupId, appName, content, "tag", "yaml", "properties");
         assertSqlContains(mapper.findConfigInfoLike4PageFetchRows(context), "a.type IN (?, ?)");

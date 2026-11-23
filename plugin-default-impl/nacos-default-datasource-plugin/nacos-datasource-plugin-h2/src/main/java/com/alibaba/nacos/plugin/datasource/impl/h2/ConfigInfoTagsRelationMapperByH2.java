@@ -25,11 +25,12 @@ import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * The h2 implementation of ConfigTagsRelationMapper.
+ *
+ * <p>A configuration is matched with an {@code EXISTS} sub-query on its tags instead of a join. A join returns one row
+ * for each matching tag, so a configuration that matches two tags would be listed twice and counted twice. The count
+ * and the page use the same conditions, and every page holds distinct configurations.
  *
  * @author hyx
  **/
@@ -37,75 +38,66 @@ import java.util.List;
 public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
     implements ConfigTagsRelationMapper {
     
+    private static final String TAG_SUB_QUERY = "SELECT 1 FROM config_tags_relation b WHERE ";
+    
+    private static final String SELECT_EXACT_PAGE =
+        "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+            + "a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc FROM config_info a";
+    
+    private static final String SELECT_LIKE_PAGE =
+        "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+            + "a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc FROM config_info a";
+    
+    private static final String COUNT_CONFIG = "SELECT count(*) FROM config_info a";
+    
+    @Override
+    public MapperResult findConfigInfo4PageCountRows(MapperContext context) {
+        return exactSearch(COUNT_CONFIG, context).build();
+    }
+    
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
-        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
-        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
-        final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
-        final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
-        List<Object> paramList = new ArrayList<>();
-        StringBuilder where = new StringBuilder(" WHERE ");
-        // The SELECT list adds c_desc but not configTags, matching the Derby embedded mapping
-        final String baseSql =
-            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
-                + "FROM config_info  a LEFT JOIN "
-                + "config_tags_relation b ON a.id=b.id";
-        
-        where.append(" a.tenant_id=? ");
-        paramList.add(tenantId);
-        
-        if (StringUtils.isNotBlank(dataId)) {
-            where.append(" AND a.data_id=? ");
-            paramList.add(dataId);
-        }
-        if (StringUtils.isNotBlank(group)) {
-            where.append(" AND a.group_id=? ");
-            paramList.add(group);
-        }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name=? ");
-            paramList.add(appName);
-        }
-        if (!StringUtils.isBlank(content)) {
-            where.append(" AND a.content LIKE ? ESCAPE '\\' ");
-            paramList.add(content);
-        }
-        where.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagArr.length; i++) {
-            if (i != 0) {
-                where.append(", ");
-            }
-            where.append('?');
-            paramList.add(tagArr[i]);
-        }
-        where.append(") ");
-        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-            + context.getPageSize()
-            + " ROWS ONLY";
-        return new MapperResult(sql, paramList);
+        return exactSearch(SELECT_EXACT_PAGE, context).orderBy("a.id")
+            .offset(context.getStartRow(), context.getPageSize()).build();
     }
     
     @Override
     public MapperResult findConfigInfoLike4PageCountRows(MapperContext context) {
+        return likeSearch(COUNT_CONFIG, context).build();
+    }
+    
+    @Override
+    public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
+        return likeSearch(SELECT_LIKE_PAGE, context).orderBy("a.id")
+            .offset(context.getStartRow(), context.getPageSize()).build();
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.H2;
+    }
+    
+    /**
+     * Exact search: the tenant, the optional exact fields, and a configuration that has one of the requested tags.
+     *
+     * @param select  the select clause and the FROM clause of the query
+     * @param context the query parameters
+     * @return the conditions, without ordering or paging
+     */
+    private WhereBuilder exactSearch(String select, MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
-        WhereBuilder where = new WhereBuilder(
-            "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
-        
-        where.likeWithEscape("a.tenant_id", tenantId);
+        WhereBuilder where = new WhereBuilder(select);
+        where.eq("a.tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().likeWithEscape("a.data_id", dataId);
+            where.and().eq("a.data_id", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().likeWithEscape("a.group_id", group);
+            where.and().eq("a.group_id", group);
         }
         if (StringUtils.isNotBlank(appName)) {
             where.and().eq("a.app_name", appName);
@@ -114,20 +106,21 @@ public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
             where.and().likeWithEscape("a.content", content);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
-            where.and().startParentheses();
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    where.or();
-                }
-                where.likeWithEscape("b.tag_name", tagArr[i]);
-            }
-            where.endParentheses();
+            where.and().exists(TAG_SUB_QUERY,
+                sub -> sub.eqColumn("b.id", "a.id").and().in("b.tag_name", tagArr));
         }
-        return where.build();
+        return where;
     }
     
-    @Override
-    public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
+    /**
+     * Fuzzy search: the optional fuzzy fields, a configuration that has a tag matching one of the requested patterns,
+     * and the requested types.
+     *
+     * @param select  the select clause and the FROM clause of the query
+     * @param context the query parameters
+     * @return the conditions, without ordering or paging
+     */
+    private WhereBuilder likeSearch(String select, MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
@@ -135,15 +128,8 @@ public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
-        
-        // The SELECT list adds c_desc but not configTags, matching the Derby embedded mapping
-        WhereBuilder where = new WhereBuilder(
-            "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
-                + "FROM config_info a LEFT JOIN "
-                + "config_tags_relation b ON a.id=b.id");
-        
+        WhereBuilder where = new WhereBuilder(select);
         where.likeWithEscape("a.tenant_id", tenantId);
-        
         if (StringUtils.isNotBlank(dataId)) {
             where.and().likeWithEscape("a.data_id", dataId);
         }
@@ -157,25 +143,22 @@ public class ConfigInfoTagsRelationMapperByH2 extends AbstractMapperByH2
             where.and().likeWithEscape("a.content", content);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
-            where.and().startParentheses();
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    where.or();
-                }
-                where.likeWithEscape("b.tag_name", tagArr[i]);
-            }
-            where.endParentheses();
+            where.and().exists(TAG_SUB_QUERY, sub -> appendLikeTags(sub, tagArr));
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("a.type", types);
         }
-        
-        where.offset(context.getStartRow(), context.getPageSize());
-        return where.build();
+        return where;
     }
     
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.H2;
+    private static void appendLikeTags(WhereBuilder sub, String[] tagArr) {
+        sub.eqColumn("b.id", "a.id").and().startParentheses();
+        for (int i = 0; i < tagArr.length; i++) {
+            if (i != 0) {
+                sub.or();
+            }
+            sub.likeWithEscape("b.tag_name", tagArr[i]);
+        }
+        sub.endParentheses();
     }
 }

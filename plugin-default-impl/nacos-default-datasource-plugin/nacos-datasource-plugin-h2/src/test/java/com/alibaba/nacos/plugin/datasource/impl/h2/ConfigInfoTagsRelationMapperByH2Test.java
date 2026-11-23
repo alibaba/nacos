@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.h2;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,6 +32,24 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigInfoTagsRelationMapperByH2Test {
+    
+    private static final String EXACT_PAGE_SELECT =
+        "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+            + "a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc FROM config_info a";
+    
+    private static final String LIKE_PAGE_SELECT =
+        "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+            + "a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc FROM config_info a";
+    
+    private static final String EXACT_TAGS = "EXISTS ( SELECT 1 FROM config_tags_relation b "
+        + "WHERE b.id = a.id AND b.tag_name IN (?, ?, ?, ?, ?) )";
+    
+    private static final String LIKE_TAGS = "EXISTS ( SELECT 1 FROM config_tags_relation b "
+        + "WHERE b.id = a.id AND ( b.tag_name LIKE ? ESCAPE '\\' OR b.tag_name LIKE ? ESCAPE '\\' "
+        + "OR b.tag_name LIKE ? ESCAPE '\\' OR b.tag_name LIKE ? ESCAPE '\\' "
+        + "OR b.tag_name LIKE ? ESCAPE '\\' ) )";
+    
+    private static final String PAGE_TAIL = " ORDER BY a.id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
     
     int startRow = 0;
     
@@ -54,98 +72,92 @@ class ConfigInfoTagsRelationMapperByH2Test {
     }
     
     @Test
-    void testFindConfigInfo4PageCountRows() {
+    void testFindConfigInfo4PageCountRowsUsesTheSameConditionsAsThePage() {
         MapperResult mapperResult =
-            configInfoTagsRelationMapperByH2.findConfigInfoLike4PageCountRows(context);
-        // Verify LIKE ESCAPE is used for tenant_id and tag_name
-        assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b "
-            + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
-            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
-            mapperResult.getSql());
-        List<Object> list = CollectionUtils.list(tenantId);
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
+            configInfoTagsRelationMapperByH2.findConfigInfo4PageCountRows(context);
+        assertEquals("SELECT count(*) FROM config_info a WHERE a.tenant_id = ? AND " + EXACT_TAGS,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(params(tenantId, tagArr), mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfo4PageFetchRows(context);
-        // The SQL selects the new columns but not configTags, because H2 has no GROUP_CONCAT here
-        String expectedSql =
-            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
-                + " FROM config_info  a LEFT JOIN "
-                + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
-                + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
-        assertEquals(expectedSql, mapperResult.getSql());
-        List<Object> list = CollectionUtils.list(tenantId);
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
-        
-        // Test with content to verify LIKE ESCAPE
+        assertEquals(EXACT_PAGE_SELECT + " WHERE a.tenant_id = ? AND " + EXACT_TAGS + PAGE_TAIL,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(params(tenantId, tagArr), mapperResult.getParamList().toArray());
+    }
+    
+    @Test
+    void testFindConfigInfo4PageFetchRowsWithContent() {
         context.putWhereParameter(FieldConstant.CONTENT, "test_content");
-        mapperResult = configInfoTagsRelationMapperByH2.findConfigInfo4PageFetchRows(context);
-        expectedSql =
-            "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,"
-                + "a.encrypted_data_key,a.c_desc" + " FROM config_info  a LEFT JOIN "
-                + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND a.content LIKE ? ESCAPE '\\' "
-                + " AND b.tag_name IN (?, ?, ?, ?, ?)  " + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
-        assertEquals(expectedSql, mapperResult.getSql());
-        list = CollectionUtils.list(tenantId, "test_content");
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
+        MapperResult mapperResult =
+            configInfoTagsRelationMapperByH2.findConfigInfo4PageFetchRows(context);
+        assertEquals(
+            EXACT_PAGE_SELECT + " WHERE a.tenant_id = ? AND a.content LIKE ? ESCAPE '\\' AND "
+                + EXACT_TAGS + PAGE_TAIL,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(params(tenantId, "test_content", tagArr),
+            mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
         MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfoLike4PageCountRows(context);
-        // Verify LIKE ESCAPE is used for all LIKE conditions
-        assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b "
-            + "ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
-            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  ) ",
-            mapperResult.getSql());
-        List<Object> list = CollectionUtils.list(tenantId);
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
+        assertEquals(
+            "SELECT count(*) FROM config_info a WHERE a.tenant_id LIKE ? ESCAPE '\\' AND "
+                + LIKE_TAGS,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(params(tenantId, tagArr), mapperResult.getParamList().toArray());
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageCountRowsAppliesTheTypeFilterLikeThePage() {
+        context.putWhereParameter(FieldConstant.TYPE, new String[] {"json", "yaml"});
+        MapperResult count =
+            configInfoTagsRelationMapperByH2.findConfigInfoLike4PageCountRows(context);
+        MapperResult page =
+            configInfoTagsRelationMapperByH2.findConfigInfoLike4PageFetchRows(context);
+        
+        assertEquals(
+            "SELECT count(*) FROM config_info a WHERE a.tenant_id LIKE ? ESCAPE '\\' AND "
+                + LIKE_TAGS
+                + " AND a.type IN (?, ?)",
+            normalize(count.getSql()));
+        assertEquals(LIKE_PAGE_SELECT + " WHERE a.tenant_id LIKE ? ESCAPE '\\' AND " + LIKE_TAGS
+            + " AND a.type IN (?, ?)" + PAGE_TAIL,
+            normalize(page.getSql()));
+        assertArrayEquals(params(tenantId, tagArr, "json", "yaml"), count.getParamList().toArray());
+        assertArrayEquals(params(tenantId, tagArr, "json", "yaml"), page.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfoLike4PageFetchRows(context);
-        // The SQL selects the new columns but not configTags (no GROUP_CONCAT in H2), and checks LIKE ESCAPE
-        String expectedSql =
-            "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
-                + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
-                + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\'  AND "
-                + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-                + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  )"
-                + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
-        assertEquals(expectedSql, mapperResult.getSql());
-        List<Object> list = CollectionUtils.list(tenantId);
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
-        
-        // Test with dataId, group, and content to verify LIKE ESCAPE
+        assertEquals(
+            LIKE_PAGE_SELECT + " WHERE a.tenant_id LIKE ? ESCAPE '\\' AND " + LIKE_TAGS + PAGE_TAIL,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(params(tenantId, tagArr), mapperResult.getParamList().toArray());
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageFetchRowsWithAllFilters() {
         context.putWhereParameter(FieldConstant.DATA_ID, "test_data");
         context.putWhereParameter(FieldConstant.GROUP_ID, "test_group");
+        context.putWhereParameter(FieldConstant.APP_NAME, "test_app");
         context.putWhereParameter(FieldConstant.CONTENT, "test_content");
-        mapperResult =
+        MapperResult mapperResult =
             configInfoTagsRelationMapperByH2.findConfigInfoLike4PageFetchRows(context);
-        expectedSql = "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
-            + "a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
-            + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ? ESCAPE '\\' "
-            + " AND a.data_id LIKE ? ESCAPE '\\'  AND a.group_id LIKE ? ESCAPE '\\'  AND a.content LIKE ? ESCAPE '\\'  AND "
-            + " ( b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\' "
-            + " OR b.tag_name LIKE ? ESCAPE '\\'  OR b.tag_name LIKE ? ESCAPE '\\'  )"
-            + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
-        assertEquals(expectedSql, mapperResult.getSql());
-        list = CollectionUtils.list(tenantId, "test_data", "test_group", "test_content");
-        list.addAll(Arrays.asList(tagArr));
-        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
+        assertEquals(LIKE_PAGE_SELECT + " WHERE a.tenant_id LIKE ? ESCAPE '\\' "
+            + "AND a.data_id LIKE ? ESCAPE '\\' AND a.group_id LIKE ? ESCAPE '\\' "
+            + "AND a.app_name = ? AND a.content LIKE ? ESCAPE '\\' AND " + LIKE_TAGS + PAGE_TAIL,
+            normalize(mapperResult.getSql()));
+        assertArrayEquals(
+            params(tenantId, "test_data", "test_group", "test_app", "test_content", tagArr),
+            mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -158,5 +170,24 @@ class ConfigInfoTagsRelationMapperByH2Test {
     void testGetDataSource() {
         String dataSource = configInfoTagsRelationMapperByH2.getDataSource();
         assertEquals(DataSourceConstant.H2, dataSource);
+    }
+    
+    private static String normalize(String sql) {
+        return sql.replaceAll("\\s+", " ").trim();
+    }
+    
+    /**
+     * Build the expected parameter list. Array arguments contribute their elements, in order.
+     */
+    private static Object[] params(Object... parts) {
+        List<Object> result = new ArrayList<>();
+        for (Object part : parts) {
+            if (part instanceof Object[]) {
+                result.addAll(Arrays.asList((Object[]) part));
+            } else {
+                result.add(part);
+            }
+        }
+        return result.toArray();
     }
 }
