@@ -123,7 +123,8 @@ default 中硬编码，因为各数据库能接受的转义字符字面量写法
 遵循同一转义顺序：先转义字符 `\`，再 `_`，最后把 Nacos 通配符 `*` 替换为 `%`。
 
 `MapperManager` 通过 SPI 加载 mapper，并按 `dataSource + tableName` 建立索引。
-缺少数据源或表 mapper 是启动或操作错误，而不是空结果。
+缺少数据源或表 mapper 是启动或操作错误，而不是空结果。数据源名不区分大小写，名称完全一致的
+匹配优先：配置的 datasource platform 是小写，而 mapper 可以用任意大小写声明自己的数据源。
 
 ## 选择与状态
 

@@ -157,7 +157,9 @@ first, then `_`, and finally the Nacos wildcard `*` to `%`.
 
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
-operation error, not an empty result.
+operation error, not an empty result. The data source name matches
+case-insensitively, and a match of the exact name wins: the configured datasource
+platform is lower case, whereas a mapper may declare its data source in any case.
 
 ## Selection And State
 

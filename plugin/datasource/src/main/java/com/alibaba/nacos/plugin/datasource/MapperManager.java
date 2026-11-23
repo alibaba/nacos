@@ -109,7 +109,7 @@ public class MapperManager {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE,
                 "dataSource or tableName is null");
         }
-        Map<String, Mapper> tableMapper = MAPPER_SPI_MAP.get(dataSource);
+        Map<String, Mapper> tableMapper = findTableMappers(dataSource);
         if (Objects.isNull(tableMapper)) {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE,
                 "[MapperManager] Failed to find the datasource,dataSource:" + dataSource);
@@ -123,6 +123,32 @@ public class MapperManager {
             return MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
+    }
+    
+    /**
+     * Find the mappers of a datasource.
+     *
+     * <p>Datasource names are matched case-insensitively. The configured datasource platform is normalized to lower
+     * case, whereas a mapper declares its datasource in any case. A match of the exact name wins over a match that
+     * differs in case.
+     *
+     * @param dataSource the datasource name
+     * @return the mappers of the datasource by table name, or {@code null} if no mapper declares the datasource
+     */
+    private static Map<String, Mapper> findTableMappers(String dataSource) {
+        Map<String, Mapper> exact = MAPPER_SPI_MAP.get(dataSource);
+        if (null != exact) {
+            return exact;
+        }
+        // join(Mapper) holds this lock, so the scan does not meet a map that is being changed.
+        synchronized (MapperManager.class) {
+            for (Map.Entry<String, Map<String, Mapper>> each : MAPPER_SPI_MAP.entrySet()) {
+                if (each.getKey().equalsIgnoreCase(dataSource)) {
+                    return each.getValue();
+                }
+            }
+        }
+        return null;
     }
     
     /**
