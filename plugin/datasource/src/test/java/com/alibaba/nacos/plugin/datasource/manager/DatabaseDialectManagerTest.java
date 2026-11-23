@@ -70,6 +70,23 @@ class DatabaseDialectManagerTest {
     }
     
     @Test
+    void testGetDialectMatchesTypeCaseInsensitively() {
+        DatabaseDialect h2 = new TestDatabaseDialect("h2");
+        dialectMap.put("h2", h2);
+        
+        assertSame(h2, DatabaseDialectManager.getInstance().getDialect("H2"));
+    }
+    
+    @Test
+    void testGetDialectChecksEnabledStateWithTheNormalizedName() {
+        dialectMap.put("h2", new TestDatabaseDialect("h2"));
+        PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> !"h2".equals(pluginName));
+        
+        assertThrows(IllegalStateException.class,
+            () -> DatabaseDialectManager.getInstance().getDialect("H2"));
+    }
+    
+    @Test
     void testGetDialectWhenDisabled() {
         dialectMap.put("mysql", new TestDatabaseDialect("mysql"));
         PluginStateCheckerHolder.setInstance((pluginType, pluginName) -> false);

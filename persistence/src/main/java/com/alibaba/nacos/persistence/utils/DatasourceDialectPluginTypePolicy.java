@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -80,7 +81,7 @@ public class DatasourceDialectPluginTypePolicy implements PluginTypePolicy {
         String selected =
             configuration.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
         if (StringUtils.isNotBlank(selected)) {
-            return selected.trim();
+            return normalizeSelection(selected);
         }
         selected = configuration.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
         if (StringUtils.isNotBlank(selected)) {
@@ -88,10 +89,21 @@ public class DatasourceDialectPluginTypePolicy implements PluginTypePolicy {
                 + "is read from legacy property '{}'. Migrate to '{}'.", selected,
                 PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY,
                 PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
-            return selected.trim();
+            return normalizeSelection(selected);
         }
         boolean embeddedStorage = EnvUtil.getStandaloneMode()
             || Boolean.getBoolean(PersistenceConstant.EMBEDDED_STORAGE);
         return embeddedStorage ? PersistenceConstant.DERBY : PersistenceConstant.MYSQL;
+    }
+    
+    /**
+     * Normalize a configured dialect name to the lower-case type that dialect plugins declare. Required plugin names
+     * are matched exactly against discovered plugins, so {@code H2} must select the {@code h2} plugin.
+     *
+     * @param selected configured dialect name, not blank
+     * @return trimmed lower-case dialect name
+     */
+    private static String normalizeSelection(String selected) {
+        return selected.trim().toLowerCase(Locale.ROOT);
     }
 }
