@@ -121,6 +121,15 @@ def main():
     # Native preparation must leave the ordinary JVM application artifact unchanged.
     jar = root / "bootstrap/target/nacos-server.jar"
     before = hashlib.sha256(jar.read_bytes()).digest()
+    # The Native profile does not select embedded Derby, so its plugin and drivers come from the release install.
+    derby = work / "derby plugins"
+    derby.mkdir(exist_ok=True)
+    for pattern in ("nacos-datasource-plugin-derby-*.jar", "derby-*.jar", "derbytools-*.jar",
+                    "derbyshared-*.jar"):
+        for source in (root / "distribution/plugins").glob(pattern):
+            shutil.copy2(source, derby / source.name)
+    assert len(list(derby.glob("*.jar"))) == 4, "Run after the release-nacos install"
+    derby_plugins = "-Dnacos.native.plugins=" + str(derby)
     common = ["-Pnative,!dev", "-pl", "bootstrap", "-DskipNativeBuild=true", "package"]
     saved = work / "previous-native-output"
     assert not saved.exists(), "Use a fresh work directory"
@@ -128,7 +137,8 @@ def main():
         shutil.move(native, saved)
     try:
         run("merged-derby", common + [configuration("derby", "derby", True),
-            "-Dnacos.native.standalone=true", "-Dnacos.native.derby.experimental=true"])
+            "-Dnacos.native.standalone=true", "-Dnacos.native.derby.experimental=true",
+            derby_plugins])
         manifest = properties(native / "aot-manifest.properties")
         assert all(key in manifest for key in ("core", "web", "console", "ai-registry"))
         assert manifest["deployment"] == "MERGED" and manifest["datasource"] == "derby"
@@ -164,6 +174,13 @@ def main():
         assert "sample.CustomDialect" in manifest["spi.com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect"]
         assert str(plugin) in shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)
         assert "RuntimeClassLoading" not in (native / "options.args").read_text()
+        # The Native profile selects its plugins one by one: the MySQL and PostgreSQL datasources with
+        # their drivers and the default plugins. LDAP, OIDC, Oracle and Derby are not on the classpath.
+        selected = shlex.split((native / "classpath.args").read_text())[1]
+        assert all(name in selected for name in ("nacos-datasource-plugin-mysql", "mysql-connector-j",
+            "nacos-datasource-plugin-postgresql", "postgresql-", "default-auth-plugin"))
+        assert not any(name in selected for name in ("nacos-ldap-auth-plugin", "nacos-oidc-auth-plugin",
+            "nacos-datasource-plugin-oracle", "nacos-datasource-plugin-derby", "/org/apache/derby/"))
         run("console-postgresql", common + [configuration("postgresql", "postgresql", False),
             "-Dnacos.native.deployment=console"])
         manifest = properties(native / "aot-manifest.properties")
@@ -172,7 +189,7 @@ def main():
         assert not (native / "aot/core").exists() and not (native / "aot/web").exists()
         assert not list((native / "classes").rglob("*__CoreApplicationContextInitializer.class"))
         run("derby-opt-in-required", common + [configuration("derby", "derby", True),
-            "-Dnacos.native.standalone=true"], "Embedded Derby Native requires")
+            "-Dnacos.native.standalone=true", derby_plugins], "Embedded Derby Native requires")
         release = ["-pl", "distribution", "package"]
         run("release-requires-native", release + ["-Prelease-native"],
             "release-native requires -Pnative,release-native")
