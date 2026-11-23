@@ -162,8 +162,10 @@ with a total record limit of 64 MiB.
 | 16 | L | JRaft LogEntry payload |
 | 16 + L | 8 | payload CRC64 |
 
-Reads validate the header, length, and record boundaries before allocating and
-reading the payload. Encoding and decoding validate positive indexes,
+Reads may prefetch raw bytes within the published range into a buffer with a
+fixed size limit. The header, length, and record boundaries must be validated
+before allocating a dedicated buffer based on the record header's length or
+decoding the payload. Encoding and decoding validate positive indexes,
 nonnegative terms, and valid entry types. Configuration entries also validate
 membership relationships among peers, learners, and the old configuration.
 Recovery scanning requires decoded indexes to match the expected continuous sequence.

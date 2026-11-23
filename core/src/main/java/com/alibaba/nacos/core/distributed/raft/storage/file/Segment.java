@@ -225,6 +225,21 @@ final class Segment implements AutoCloseable {
     }
     
     ByteBuffer read(long offset, int length, long publishedEnd) throws IOException {
+        checkReadRange(offset, length, publishedEnd);
+        ByteBuffer result = ByteBuffer.allocate(length).order(ByteOrder.BIG_ENDIAN);
+        readFully(channel, result, offset, path);
+        return result.flip();
+    }
+    
+    void readInto(long offset, ByteBuffer target, long publishedEnd) throws IOException {
+        if (target == null || target.isReadOnly()) {
+            throw new IOException("Segment read target must be writable: " + path);
+        }
+        checkReadRange(offset, target.remaining(), publishedEnd);
+        readFully(channel, target, offset, path);
+    }
+    
+    private void checkReadRange(long offset, int length, long publishedEnd) throws IOException {
         if (offset < FileLogFormat.SEGMENT_HEADER_SIZE || length < 0
             || publishedEnd > logicalEnd) {
             throw new IOException("Invalid segment read at " + path + " offset " + offset);
@@ -239,9 +254,6 @@ final class Segment implements AutoCloseable {
         if (end > publishedEnd) {
             throw new IOException("Invalid segment read at " + path + " offset " + offset);
         }
-        ByteBuffer result = ByteBuffer.allocate(length).order(ByteOrder.BIG_ENDIAN);
-        readFully(channel, result, offset, path);
-        return result.flip();
     }
     
     Path getPath() {

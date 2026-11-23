@@ -452,6 +452,12 @@ class FileLogStorageRecoveryTest {
                         scannedEntries.incrementAndGet();
                         return appended;
                     }).when(index).append(anyLong(), anyLong(), anyInt());
+                    doAnswer(append -> {
+                        Object appended = append.callRealMethod();
+                        scannedEntries.addAndGet(append.getArgument(4));
+                        return appended;
+                    }).when(index).appendBatch(anyLong(), anyLong(), any(int[].class),
+                        anyInt(), anyInt());
                     return index;
                 }
                 return result;
