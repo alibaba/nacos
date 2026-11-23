@@ -74,7 +74,8 @@ dialect behavior are used. When the selected type is `derby`, Derby remains the
 embedded default for standalone development and local testing.
 
 When the selected type is `h2`, H2 is an opt-in embedded engine for standalone servers. It is
-never chosen implicitly, and cluster startup with `h2` fails fast. See the
+never chosen implicitly, and cluster server startup with `h2` fails fast. A console-only
+process does not run this check. See the
 [Foundation Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md#32-embedded-h2-runtime-contract).
 
 ## Compatibility

@@ -63,7 +63,7 @@ Nacos 从 `nacos.plugin.datasource-dialect.type` 选择启动数据库类型。
 当选择类型为 `mysql` 时，使用 MySQL mapper 和 MySQL 兼容的默认 dialect 行为。当选择类型
 为 `derby` 时，Derby 仍是 standalone 开发和本地测试的嵌入式默认数据库。
 
-为 `h2` 时，H2 是 standalone 服务器可选的嵌入式存储引擎。它从不隐式选择，集群模式下选择 `h2` 会在启动时快速失败，参见 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md#32-嵌入式-h2-运行时契约)。
+为 `h2` 时，H2 是 standalone 服务器可选的嵌入式存储引擎。它从不隐式选择，服务端在集群模式下选择 `h2` 会在启动时快速失败；仅充当控制台的进程不执行该检查，参见 [持久化与 Dump 规范](../design/foundation-persistence-dump-spec.md#32-嵌入式-h2-运行时契约)。
 
 ## 兼容性
 

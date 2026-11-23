@@ -52,7 +52,7 @@ Nacos 支持两类存储模式：
 
 - 单机模式默认使用嵌入式存储；
 - 集群模式默认使用外部存储；
-- datasource platform 非空且不是 `derby` 时，选择外部存储；
+- datasource platform 非空且不是嵌入式引擎 `derby` 或 `h2` 时，选择外部存储；
 - 集群模式可以通过 embedded storage 配置开启嵌入式分布式存储；
 - 存储模式确定后，`DynamicDataSource` 必须返回匹配的 `DataSourceService`，并在进程内只初始化一次。
 
@@ -124,11 +124,11 @@ Nacos 支持两类存储模式：
 | 规则 | 要求 |
 | --- | --- |
 | 制品 | `com.h2database:h2` 2.2.224，由根 POM 的 `h2.version` 统一管理；默认插件包不包含它。H2 部署需要把它与 `nacos-datasource-plugin-h2` 一起放入 `plugins/`；Native Image 通过 `bootstrap` 的 `native-h2` profile 同时加入两者。 |
-| 模式 | 仅支持单机模式。集群模式选择 `h2` 时启动失败，并指出选择器属性；集群嵌入式存储继续使用 Derby。 |
+| 模式 | 仅支持单机模式。服务端进程在集群模式下选择 `h2` 时启动失败，并指出选择器属性；集群嵌入式存储继续使用 Derby。启动检查只在承载服务端持久化的进程中执行：仅充当控制台的进程（`nacos.deployment.type=console`）通过远程服务端读取配置，不执行这些检查，因此不需要 H2 驱动即可启动。 |
 | 位置 | `${nacos.home}/data/h2-data/nacos.mv.db`，以 `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0` 打开。 |
 | 持久性 | 必须使用 `WRITE_DELAY=0`，因为 H2 默认 500 ms 的写延迟会让已提交的变更最多等待这么久才刷盘。单机服务在 publish 返回后被 SIGKILL，重启后该次 publish 仍然保留。这些检查不覆盖掉电场景的持久性。 |
-| Schema | 来自 H2 dialect 插件的 `h2-schema.sql`。所有语句都是幂等的（`IF NOT EXISTS`），每次启动执行且不改变已有行。 |
-| 仅 Derby 的操作 | Derby ops 的查询与导入，以及 CP 快照的 reopen 路径（`cleanAndReopenDerby`、`restoreDerby`），在 `h2` 下会被拒绝。 |
+| Schema | 来自 H2 dialect 插件的 `h2-schema.sql`。所有语句都是幂等的（`IF NOT EXISTS`），每次启动执行且不改变已有行。失败的语句会中止初始化，并在错误中指出该语句；Derby 会对已有对象重复执行 schema，因此仍然只记录并跳过失败语句。 |
+| 仅 Derby 的操作 | Derby ops 的查询与导入会检查活动数据源是否为嵌入式 Derby 引擎；CP 快照的 reopen 路径（`cleanAndReopenDerby`、`restoreDerby`）要求 Derby。两者在 `h2` 下都会被拒绝。 |
 | 迁移 | 不提供 Derby 到 H2 的自动迁移。切换引擎的服务器从新的 H2 数据库开始，其中只有 schema 和服务器自身启动时写入的记录，Derby 数据保持不动。 |
 | 备份 | 停止服务器后，将 `data/h2-data` 作为一个目录整体复制。 |
 | Native Image | 本契约不声明 Native Image 支持。H2 只有在嵌入式存储验证 harness 通过后才会进入 Native 支持范围。 |

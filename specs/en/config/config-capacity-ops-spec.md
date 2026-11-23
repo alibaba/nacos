@@ -118,8 +118,8 @@ Config operation APIs are administrative repair or diagnostics surfaces:
 | Metrics | Queries client cache and snapshot metrics locally or across [cluster members](../design/foundation-cluster-membership-spec.md), following the [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md). |
 
 Derby ops are maintainer-only behavior. They must require Admin permission and
-must remain disabled by default. They apply only to the Derby engine; when
-`h2` is selected, these endpoints return the not-Derby error.
+must remain disabled by default. They apply only when the active datasource is the embedded Derby
+engine. The endpoints check the active engine, so when `h2` is selected they return the not-Derby error.
 
 ## 7. Related Specs
 
