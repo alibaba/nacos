@@ -20,6 +20,8 @@ import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
+import java.util.Locale;
+
 /**
  * get datasource platform util.
  *
@@ -30,16 +32,23 @@ public class DatasourcePlatformUtil {
     /**
      * get datasource platform.
      *
+     * <p>The configured name is trimmed and returned in lower case. Every datasource dialect declares its type in lower
+     * case, and the mappers are registered under that name.
+     *
      * @param defaultPlatform default platform.
-     * @return
+     * @return datasource platform in lower case
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
         String result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
         if (StringUtils.isNotBlank(result)) {
-            return result.trim();
+            return normalize(result);
         }
         result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
-        return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
+        return StringUtils.isBlank(result) ? defaultPlatform : normalize(result);
+    }
+    
+    private static String normalize(String platform) {
+        return platform.trim().toLowerCase(Locale.ROOT);
     }
     
     /**

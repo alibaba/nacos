@@ -61,6 +61,19 @@ class DatasourcePlatformUtilTest {
     }
     
     @Test
+    void testGetDatasourcePlatformReturnsLowerCaseName() {
+        environment.setProperty("nacos.plugin.datasource-dialect.type", " MySQL ");
+        assertEquals("mysql", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+        
+        environment.setProperty("nacos.plugin.datasource-dialect.type", "H2");
+        assertEquals("h2", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+        
+        environment.setProperty("nacos.plugin.datasource-dialect.type", " ");
+        environment.setProperty("spring.sql.init.platform", "PostgreSQL");
+        assertEquals("postgresql", DatasourcePlatformUtil.getDatasourcePlatform("derby"));
+    }
+    
+    @Test
     void testGetDatasourcePlatformUsesDefaultForBlankProperties() {
         environment.setProperty("spring.sql.init.platform", " ");
         environment.setProperty("nacos.plugin.datasource-dialect.type", " ");

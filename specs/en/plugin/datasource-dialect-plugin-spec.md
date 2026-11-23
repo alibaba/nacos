@@ -181,6 +181,11 @@ with `-DembeddedStorage=true` select `derby`; ordinary cluster mode selects
 it must be configured explicitly and is accepted only in standalone mode. Server
 processes check it at startup; a console-only process does not run that check.
 
+Dialect type names are case-insensitive. The registry stores each type in lower case, and that
+lower-case name is the plugin name used by plugin management, the enabled state, and the critical
+plugin check. The configured selector and the datasource platform passed to the datasource layer
+are normalized the same way.
+
 The persistence subsystem always makes this critical type active. If the requested dialect is
 disabled or missing, startup must fail explicitly and identify the selected dialect and selection
 property. The server must not continue with another discovered dialect as a fallback.
