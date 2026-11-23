@@ -106,24 +106,6 @@
             </build>
         </profile>
         <profile>
-            <!-- Opt-in H2 embedded storage for the Native Image. The default plugin bundle does not carry the
-                 H2 driver or the H2 dialect plugin; this profile adds them to the Native build only. -->
-            <id>native-h2</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-datasource-plugin-h2</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>native</id>
             <properties>
                 <nacos.native.config>${project.basedir}/../distribution/conf/application.properties</nacos.native.config>
