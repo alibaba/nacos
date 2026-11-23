@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -99,6 +101,22 @@ class LocalDataSourceServiceH2Test {
         Integer rows = service.getJdbcTemplate().queryForObject("SELECT count(*) FROM h2_probe",
             Integer.class);
         assertEquals(1, rows);
+    }
+    
+    @Test
+    void testFailingSchemaStatementStopsInitialization() throws Exception {
+        Path confDir = Files.createDirectories(tempDir.resolve("conf"));
+        Files.write(confDir.resolve("h2-schema.sql"), ("CREATE TABLE IF NOT EXISTS h2_probe "
+            + "(id bigint NOT NULL PRIMARY KEY);\n"
+            + "CREATE UNIQUE INDEX uk_broken_probe ON h2_probe (no_such_column);\n")
+            .getBytes(StandardCharsets.UTF_8));
+        
+        service = new LocalDataSourceServiceImpl();
+        NacosRuntimeException error =
+            assertThrows(NacosRuntimeException.class, () -> service.init());
+        
+        assertTrue(error.getCause().getMessage().contains("uk_broken_probe"),
+            error.getCause().getMessage());
     }
     
     private static void closeDataSource(LocalDataSourceServiceImpl dataSourceService) {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.persistence.configuration;
 
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,7 @@ class DatasourceConfigurationH2Test {
         DatasourceConfiguration.embeddedStorage = true;
         EnvUtil.setIsStandalone(true);
         EnvUtil.setEnvironment(null);
+        EnvUtil.setDeploymentType(null);
     }
     
     @Test
@@ -95,6 +97,51 @@ class DatasourceConfigurationH2Test {
                 () -> DatasourceConfiguration.checkEmbeddedDriverAvailable("h2", withoutDriver));
             assertTrue(error.getMessage().contains("plugins directory"), error.getMessage());
         }
+    }
+    
+    @Test
+    void testConsoleOnlyProcessStartsWithH2SelectedAndWithoutDriver() throws Exception {
+        EnvUtil.setDeploymentType(DeploymentType.CONSOLE);
+        EnvUtil.setIsStandalone(false);
+        DatasourceConfiguration.embeddedStorage = false;
+        
+        try (URLClassLoader withoutDriver = new URLClassLoader(new URL[0], null)) {
+            assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformStartup(
+                PersistenceConstant.H2, false, DatasourceConfiguration.hostsServerPersistence(),
+                withoutDriver));
+        }
+        assertDoesNotThrow(() -> new DatasourceConfiguration().initialize(null));
+        
+        // A console reads configuration through the remote server, so it keeps no embedded storage.
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
+        assertFalse(DatasourceConfiguration.isEmbeddedStorage());
+    }
+    
+    @Test
+    void testServerProcessStillRequiresStandaloneModeAndDriverForH2() throws Exception {
+        EnvUtil.setDeploymentType(DeploymentType.SERVER);
+        try (URLClassLoader withoutDriver = new URLClassLoader(new URL[0], null)) {
+            assertThrows(IllegalStateException.class,
+                () -> DatasourceConfiguration.checkEmbeddedPlatformStartup(PersistenceConstant.H2,
+                    false,
+                    DatasourceConfiguration.hostsServerPersistence(), withoutDriver));
+            assertThrows(IllegalStateException.class,
+                () -> DatasourceConfiguration.checkEmbeddedPlatformStartup(PersistenceConstant.H2,
+                    true,
+                    DatasourceConfiguration.hostsServerPersistence(), withoutDriver));
+        }
+    }
+    
+    @Test
+    void testOnlyConsoleDeploymentSkipsServerPersistenceChecks() {
+        EnvUtil.setDeploymentType(null);
+        assertTrue(DatasourceConfiguration.hostsServerPersistence());
+        EnvUtil.setDeploymentType(DeploymentType.MERGED);
+        assertTrue(DatasourceConfiguration.hostsServerPersistence());
+        EnvUtil.setDeploymentType(DeploymentType.SERVER);
+        assertTrue(DatasourceConfiguration.hostsServerPersistence());
+        EnvUtil.setDeploymentType(DeploymentType.CONSOLE);
+        assertFalse(DatasourceConfiguration.hostsServerPersistence());
     }
     
     @Test

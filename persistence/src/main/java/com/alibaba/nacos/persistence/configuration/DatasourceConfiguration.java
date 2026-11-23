@@ -18,6 +18,7 @@ package com.alibaba.nacos.persistence.configuration;
 
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -59,8 +60,9 @@ public class DatasourceConfiguration
     private void loadDatasourceConfiguration() {
         // External data sources are used by default in cluster mode
         String platform = DatasourcePlatformUtil.getDatasourcePlatform("");
-        checkEmbeddedPlatformSupported(platform, EnvUtil.getStandaloneMode());
-        checkEmbeddedDriverAvailable(platform, DatasourceConfiguration.class.getClassLoader());
+        checkEmbeddedPlatformStartup(platform, EnvUtil.getStandaloneMode(),
+            hostsServerPersistence(),
+            DatasourceConfiguration.class.getClassLoader());
         boolean useExternalStorage =
             !PersistenceConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
                 && !DatasourcePlatformUtil.isEmbeddedPlatform(platform);
@@ -84,6 +86,38 @@ public class DatasourceConfiguration
                 setUseExternalDb(true);
             }
         }
+    }
+    
+    /**
+     * Runs the H2 startup checks in processes that host server persistence. A console-only process reads configuration
+     * through a remote Nacos Server, so a shared configuration file may select {@code h2} there without the console
+     * needing the H2 driver or standalone mode.
+     *
+     * @param platform      selected datasource platform, blank when the default embedded platform is used
+     * @param standalone    whether the server runs in standalone mode
+     * @param serverProcess whether this process hosts server persistence, see {@link #hostsServerPersistence()}
+     * @param classLoader   the class loader that must see the H2 driver
+     * @throws IllegalStateException when a server process selects {@code h2} outside standalone mode or without the
+     *                               H2 driver
+     */
+    static void checkEmbeddedPlatformStartup(String platform, boolean standalone,
+        boolean serverProcess,
+        ClassLoader classLoader) {
+        if (!serverProcess) {
+            return;
+        }
+        checkEmbeddedPlatformSupported(platform, standalone);
+        checkEmbeddedDriverAvailable(platform, classLoader);
+    }
+    
+    /**
+     * Whether this process hosts server persistence. Only console-only deployments, which set
+     * {@code nacos.deployment.type=console}, do not.
+     *
+     * @return {@code false} for console-only deployments, {@code true} otherwise
+     */
+    static boolean hostsServerPersistence() {
+        return DeploymentType.CONSOLE != EnvUtil.getDeploymentType();
     }
     
     /**

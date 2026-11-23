@@ -260,6 +260,10 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     /**
      * Execute sql.
      *
+     * <p>Derby re-runs its schema against existing objects, so a failing statement is logged and skipped. The H2
+     * schema is idempotent, so a failing statement is a genuine error: it stops initialization and names the
+     * statement.
+     *
      * @param conn    connect.
      * @param sqlFile sql.
      * @throws Exception Exception.
@@ -271,6 +275,12 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
+                    if (engine.failOnSchemaError) {
+                        throw new IllegalStateException(
+                            "Failed to execute a statement of " + engine.schemaFileName() + ": "
+                                + sql,
+                            e);
+                    }
                     LOGGER.warn(e.getMessage());
                 }
             }
@@ -284,10 +294,10 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     private enum EmbeddedEngine {
         
         DERBY(PersistenceConstant.DERBY, "org.apache.derby.jdbc.EmbeddedDriver",
-            PersistenceConstant.DERBY_BASE_DIR, "derby-schema.sql"),
+            PersistenceConstant.DERBY_BASE_DIR, "derby-schema.sql", false),
         
         H2(PersistenceConstant.H2, "org.h2.Driver", PersistenceConstant.H2_BASE_DIR,
-            "h2-schema.sql");
+            "h2-schema.sql", true);
         
         /**
          * Name of the H2 database file, stored as {@code nacos.mv.db} in the H2 data directory.
@@ -302,12 +312,20 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         
         private final String schemaFileName;
         
+        /**
+         * Whether a failing schema statement stops initialization. The H2 schema is idempotent ({@code IF NOT
+         * EXISTS}), so a failing statement is a genuine error. Derby re-runs its schema against existing objects, so
+         * its failing statements are logged and skipped.
+         */
+        private final boolean failOnSchemaError;
+        
         EmbeddedEngine(String type, String driverClassName, String baseDir,
-            String schemaFileName) {
+            String schemaFileName, boolean failOnSchemaError) {
             this.type = type;
             this.driverClassName = driverClassName;
             this.baseDir = baseDir;
             this.schemaFileName = schemaFileName;
+            this.failOnSchemaError = failOnSchemaError;
         }
         
         static EmbeddedEngine fromPlatform(String platform) {
