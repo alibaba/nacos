@@ -57,12 +57,16 @@ public class DatasourceConfiguration
         DatasourceConfiguration.embeddedStorage = embeddedStorage;
     }
     
-    private void loadDatasourceConfiguration() {
+    /**
+     * Loads the datasource selection and the embedded storage flags of this process.
+     *
+     * @param classLoader the class loader that must see the H2 driver for a server process
+     */
+    void loadDatasourceConfiguration(ClassLoader classLoader) {
         // External data sources are used by default in cluster mode
         String platform = DatasourcePlatformUtil.getDatasourcePlatform("");
         checkEmbeddedPlatformStartup(platform, EnvUtil.getStandaloneMode(),
-            hostsServerPersistence(),
-            DatasourceConfiguration.class.getClassLoader());
+            hostsServerPersistence(), classLoader);
         boolean useExternalStorage =
             !PersistenceConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
                 && !DatasourcePlatformUtil.isEmbeddedPlatform(platform);
@@ -162,6 +166,6 @@ public class DatasourceConfiguration
     
     @Override
     public void initialize(final ConfigurableApplicationContext applicationContext) {
-        loadDatasourceConfiguration();
+        loadDatasourceConfiguration(DatasourceConfiguration.class.getClassLoader());
     }
 }

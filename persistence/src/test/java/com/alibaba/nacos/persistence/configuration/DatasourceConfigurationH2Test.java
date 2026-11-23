@@ -100,35 +100,44 @@ class DatasourceConfigurationH2Test {
     }
     
     @Test
-    void testConsoleOnlyProcessStartsWithH2SelectedAndWithoutDriver() throws Exception {
+    void testConsoleOnlyProcessLoadsH2ConfigurationWithoutTheDriver() throws Exception {
         EnvUtil.setDeploymentType(DeploymentType.CONSOLE);
-        EnvUtil.setIsStandalone(false);
-        DatasourceConfiguration.embeddedStorage = false;
-        
         try (URLClassLoader withoutDriver = new URLClassLoader(new URL[0], null)) {
-            assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformStartup(
-                PersistenceConstant.H2, false, DatasourceConfiguration.hostsServerPersistence(),
-                withoutDriver));
+            for (boolean standalone : new boolean[] {false, true}) {
+                EnvUtil.setIsStandalone(standalone);
+                DatasourceConfiguration.embeddedStorage = standalone;
+                DatasourceConfiguration.useExternalDb = false;
+                assertDoesNotThrow(
+                    () -> new DatasourceConfiguration().loadDatasourceConfiguration(withoutDriver));
+            }
+            
+            // A cluster console reads configuration through the remote server and keeps no embedded storage.
+            EnvUtil.setIsStandalone(false);
+            DatasourceConfiguration.embeddedStorage = false;
+            DatasourceConfiguration.useExternalDb = false;
+            new DatasourceConfiguration().loadDatasourceConfiguration(withoutDriver);
+            assertTrue(DatasourceConfiguration.isUseExternalDb());
         }
-        assertDoesNotThrow(() -> new DatasourceConfiguration().initialize(null));
-        
-        // A console reads configuration through the remote server, so it keeps no embedded storage.
-        assertTrue(DatasourceConfiguration.isUseExternalDb());
-        assertFalse(DatasourceConfiguration.isEmbeddedStorage());
     }
     
     @Test
-    void testServerProcessStillRequiresStandaloneModeAndDriverForH2() throws Exception {
-        EnvUtil.setDeploymentType(DeploymentType.SERVER);
+    void testServerProcessFailsFastForH2WithoutStandaloneModeOrDriver() throws Exception {
         try (URLClassLoader withoutDriver = new URLClassLoader(new URL[0], null)) {
-            assertThrows(IllegalStateException.class,
-                () -> DatasourceConfiguration.checkEmbeddedPlatformStartup(PersistenceConstant.H2,
-                    false,
-                    DatasourceConfiguration.hostsServerPersistence(), withoutDriver));
-            assertThrows(IllegalStateException.class,
-                () -> DatasourceConfiguration.checkEmbeddedPlatformStartup(PersistenceConstant.H2,
-                    true,
-                    DatasourceConfiguration.hostsServerPersistence(), withoutDriver));
+            for (DeploymentType type : new DeploymentType[] {null, DeploymentType.MERGED,
+                DeploymentType.SERVER}) {
+                EnvUtil.setDeploymentType(type);
+                EnvUtil.setIsStandalone(false);
+                IllegalStateException clusterError = assertThrows(IllegalStateException.class,
+                    () -> new DatasourceConfiguration().loadDatasourceConfiguration(withoutDriver));
+                assertTrue(clusterError.getMessage().contains("standalone mode only"),
+                    clusterError.getMessage());
+                
+                EnvUtil.setIsStandalone(true);
+                IllegalStateException driverError = assertThrows(IllegalStateException.class,
+                    () -> new DatasourceConfiguration().loadDatasourceConfiguration(withoutDriver));
+                assertTrue(driverError.getMessage().contains("plugins directory"),
+                    driverError.getMessage());
+            }
         }
     }
     
