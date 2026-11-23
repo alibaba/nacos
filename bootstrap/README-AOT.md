@@ -94,20 +94,11 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.deployment` | `merged` | `merged`, `server`, or `console`; requires rebuilding to change |
 | `nacos.native.standalone` | `false` | Standalone or cluster Bean selection |
 | `nacos.native.embedded-storage` | `false` | Explicit embedded storage selection |
-| `nacos.native.datasources` | empty | Additional datasource platforms that the archive accepts at run time, comma separated, such as `mysql,postgresql`. The platform of `nacos.native.config` is always accepted |
 | `nacos.native.plugins` | `bootstrap/target/native-plugins` | Additional plugin/driver JAR directory |
 | `nacos.native.metadata` | `bootstrap/target/native-metadata` | Additional exercised Native metadata directory |
 | `nacos.native.derby.experimental` | `false` | Explicit opt-in to the experimental Derby arguments below |
 | `nacos.native.build.heap` | `8g` | Maximum Native builder heap |
 | `nacos.native.build.parallelism` | `2` | Native compiler parallelism |
-
-`nacos.native.datasources` lets one archive serve several datasource platforms. The generated manifest
-records every accepted platform in its `datasource` key, and the runtime `nacos.plugin.datasource-dialect.type`
-must name one of them. Any other platform stops the Server at startup with
-`Nacos AOT artifact mismatch for datasource`. The platform of the build configuration is always accepted, so a
-build without this option records the same single value as before. Each declared platform needs its JDBC driver
-and dialect plugin on the build classpath, which the default datasource plugins provide for MySQL and PostgreSQL.
-Declaring `derby` follows the rules of embedded Derby below.
 
 Embedded Derby Server builds fail with an explanatory error unless
 `-Dnacos.native.derby.experimental=true` is provided. This flag additionally requires the

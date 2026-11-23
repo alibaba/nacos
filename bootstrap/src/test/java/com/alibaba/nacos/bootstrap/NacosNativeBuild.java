@@ -92,9 +92,7 @@ public final class NacosNativeBuild {
     
     static void validateCapabilities(Properties manifest, boolean experimentalDerby) {
         if (!"CONSOLE".equals(manifest.getProperty("deployment"))
-            && NacosAotManifest
-                .supportsDatasource(manifest.getProperty(NacosAotManifest.DATASOURCE), "derby")
-            && !experimentalDerby) {
+            && "derby".equals(manifest.getProperty("datasource")) && !experimentalDerby) {
             throw new IllegalArgumentException(
                 "Embedded Derby Native requires a toolchain with experimental "
                     + "runtime class loading and -Dnacos.native.derby.experimental=true; "

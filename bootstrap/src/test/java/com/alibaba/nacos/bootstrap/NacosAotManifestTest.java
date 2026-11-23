@@ -132,59 +132,6 @@ class NacosAotManifestTest {
     }
     
     @Test
-    void shouldAcceptEveryDeclaredDatasourceAtRuntime() {
-        properties.put("nacos.plugin.datasource-dialect.type", "mysql");
-        Properties manifest = NacosAotManifest.snapshot(environment, loader);
-        manifest.setProperty("datasource",
-            NacosAotManifest.acceptedDatasources("mysql", "postgresql"));
-        assertEquals("mysql,postgresql", manifest.getProperty("datasource"));
-        properties.put("nacos.plugin.datasource-dialect.type", "postgresql");
-        assertDoesNotThrow(() -> NacosAotManifest.validate(manifest, environment, loader));
-        properties.put("nacos.plugin.datasource-dialect.type", "mysql");
-        assertDoesNotThrow(() -> NacosAotManifest.validate(manifest, environment, loader));
-    }
-    
-    @Test
-    void shouldRejectDatasourceOutsideTheAcceptedPlatforms() {
-        properties.put("nacos.plugin.datasource-dialect.type", "mysql");
-        Properties manifest = NacosAotManifest.snapshot(environment, loader);
-        manifest.setProperty("datasource",
-            NacosAotManifest.acceptedDatasources("mysql", "postgresql"));
-        properties.put("nacos.plugin.datasource-dialect.type", "oracle");
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-            () -> NacosAotManifest.validate(manifest, environment, loader));
-        assertTrue(error.getMessage().contains("mismatch for datasource"));
-        assertTrue(error.getMessage().contains("[mysql,postgresql]"));
-    }
-    
-    @Test
-    void shouldKeepSingleDatasourceArtifactsStrict() {
-        properties.put("nacos.plugin.datasource-dialect.type", "mysql");
-        Properties manifest = NacosAotManifest.snapshot(environment, loader);
-        properties.put("nacos.plugin.datasource-dialect.type", "postgresql");
-        assertThrows(IllegalStateException.class,
-            () -> NacosAotManifest.validate(manifest, environment, loader));
-    }
-    
-    @Test
-    void shouldNormalizeDeclaredDatasources() {
-        assertEquals("mysql", NacosAotManifest.acceptedDatasources("mysql", null));
-        assertEquals("mysql", NacosAotManifest.acceptedDatasources("mysql", " , "));
-        assertEquals("mysql,postgresql",
-            NacosAotManifest.acceptedDatasources("mysql", " PostgreSQL , MySQL ,"));
-        assertEquals("mysql,postgresql",
-            NacosAotManifest.acceptedDatasources("postgresql", "mysql"));
-    }
-    
-    @Test
-    void shouldAcceptOnlyListedDatasources() {
-        assertTrue(NacosAotManifest.supportsDatasource("mysql,postgresql", "postgresql"));
-        assertFalse(NacosAotManifest.supportsDatasource("mysql,postgresql", "postgres"));
-        assertFalse(NacosAotManifest.supportsDatasource("mysql", null));
-        assertFalse(NacosAotManifest.supportsDatasource(null, "mysql"));
-    }
-    
-    @Test
     void shouldRejectDeploymentAndProfileChanges() {
         Properties manifest = NacosAotManifest.snapshot(environment, loader);
         global.when(EnvUtil::getDeploymentType).thenReturn(DeploymentType.MERGED);

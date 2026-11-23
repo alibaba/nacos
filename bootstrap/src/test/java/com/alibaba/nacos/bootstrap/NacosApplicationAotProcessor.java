@@ -115,12 +115,6 @@ public final class NacosApplicationAotProcessor {
             } else {
                 throw new IllegalArgumentException("Unsupported deployment: " + deployment);
             }
-            // The platform of the generation configuration always stays accepted. Platforms declared
-            // with nacos.native.datasources only widen the runtime check of the datasource key.
-            initializers.setProperty(NacosAotManifest.DATASOURCE,
-                NacosAotManifest.acceptedDatasources(
-                    initializers.getProperty(NacosAotManifest.DATASOURCE),
-                    System.getProperty("nacos.native.datasources")));
             if (ApplicationUtils.isStarted()) {
                 throw new IllegalStateException("AOT processing must not mark the server ready");
             }

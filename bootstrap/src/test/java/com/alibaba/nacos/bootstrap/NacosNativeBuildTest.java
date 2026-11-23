@@ -163,9 +163,7 @@ class NacosNativeBuildTest {
     @ParameterizedTest
     @CsvSource({"MERGED,derby,false,false", "SERVER,derby,false,false",
         "MERGED,derby,true,true", "CONSOLE,derby,false,true", "SERVER,mysql,false,true",
-        "SERVER,postgresql,false,true", "SERVER,custom,false,true",
-        "SERVER,'mysql,postgresql',false,true", "SERVER,'mysql,derby',false,false",
-        "SERVER,'mysql,derby',true,true"})
+        "SERVER,postgresql,false,true", "SERVER,custom,false,true"})
     void shouldRequireExplicitExperimentalDerbyForServer(String deployment, String datasource,
         boolean experimental, boolean valid) {
         Properties manifest = new Properties();
