@@ -148,6 +148,7 @@ engine.
 | Rule | Requirement |
 | --- | --- |
 | Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle does not include it. An H2 deployment places it under `plugins/` together with `nacos-datasource-plugin-h2`. |
+| Selector | `nacos.plugin.datasource-dialect.type=h2` (or the legacy `spring.sql.init.platform=h2`), in lower case. The dialect and mapper lookups match the name exactly, so a server process that selects `H2` fails at startup, and the message names the property. |
 | Mode | Standalone only. A server process that selects `h2` in cluster mode fails at startup and names the selector property. Cluster embedded storage keeps Derby. The startup checks run only in processes that host server persistence. A console-only process (`nacos.deployment.type=console`) reads configuration through a remote server, does not run these checks, and starts without the H2 driver. |
 | Location | `${nacos.home}/data/h2-data/nacos.mv.db`, opened as `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0`. |
 | Durability | `WRITE_DELAY=0` is required, because H2's default write delay of 500 ms lets a committed change wait before it is flushed. A standalone server killed with SIGKILL right after a publish returned kept that publish after restart. Power-loss durability is not covered by these checks. |

@@ -157,9 +157,7 @@ first, then `_`, and finally the Nacos wildcard `*` to `%`.
 
 `MapperManager` loads mapper SPI implementations and indexes them by
 `dataSource + tableName`. Missing data source or table mapper is a startup or
-operation error, not an empty result. The data source name matches
-case-insensitively, and a match of the exact name wins: the configured datasource
-platform is lower case, whereas a mapper may declare its data source in any case.
+operation error, not an empty result.
 
 ## Selection And State
 
@@ -180,16 +178,14 @@ When neither the standard selector nor its legacy alias is configured, the
 selection follows the server storage default: standalone mode and cluster mode
 with `-DembeddedStorage=true` select `derby`; ordinary cluster mode selects
 `mysql`. This implicit selection is also snapshotted at startup. The `h2` selection is never implicit:
-it must be configured explicitly and is accepted only in standalone mode. Server
-processes check it at startup; a console-only process does not run that check.
+it must be configured explicitly, in lower case, and is accepted only in standalone mode. Server
+processes check it at startup and reject `H2` or any other spelling of it, with a message that names the
+property. A console-only process does not run that check.
 
-Dialect type names are case-insensitive. The registry stores each type in lower case, and that
-lower-case name is the plugin name used by plugin management, the enabled state, and the critical
-plugin check. The configured selector and the datasource platform passed to the datasource layer
-are normalized the same way. A third-party plugin that declares its dialect type and its mapper data
-source in mixed case, such as `AcmeDB`, keeps working without a rename or a recompile: the registry
-stores its dialect in lower case, the selector matches it in any case, and the data source name of its
-mapper matches case-insensitively as described in the mapper section.
+Dialect type names and mapper data source names are matched exactly, as the plugin declares them. The
+configured selector is trimmed and used as written. A third-party plugin that declares its dialect type
+and the data source of its mapper in mixed case, such as `AcmeDB`, keeps working without a rename or a
+recompile when the selector spells the name the same way. The built-in dialects declare lower-case names.
 
 The persistence subsystem always makes this critical type active. If the requested dialect is
 disabled or missing, startup must fail explicitly and identify the selected dialect and selection

@@ -86,32 +86,6 @@ class MapperManagerTest {
     }
     
     @Test
-    void testFindMapperMatchesTheDataSourceNameCaseInsensitively() {
-        Mapper mixedCase = new TestMapper("MyDb");
-        MapperManager.join(mixedCase);
-        
-        // The configured platform is lower case, the mapper of a third-party plugin may not be.
-        assertSame(mixedCase, MapperManager.instance(false).findMapper("mydb", "config_info"));
-        assertSame(mixedCase, MapperManager.instance(false).findMapper("MYDB", "config_info"));
-        assertSame(mixedCase, MapperManager.instance(false).findMapper("MyDb", "config_info"));
-        assertThrows(NacosRuntimeException.class,
-            () -> MapperManager.instance(false).findMapper("mydb", "missing_table"));
-        assertThrows(NacosRuntimeException.class,
-            () -> MapperManager.instance(false).findMapper("other", "config_info"));
-    }
-    
-    @Test
-    void testFindMapperPrefersTheExactDataSourceName() {
-        Mapper upper = new TestMapper("MYSQL");
-        Mapper lower = new TestMapper("mysql");
-        MapperManager.join(upper);
-        MapperManager.join(lower);
-        
-        assertSame(lower, MapperManager.instance(false).findMapper("mysql", "config_info"));
-        assertSame(upper, MapperManager.instance(false).findMapper("MYSQL", "config_info"));
-    }
-    
-    @Test
     void testLoadInitialFromSpi() throws Exception {
         Method method = MapperManager.class.getDeclaredMethod("loadInitial");
         method.setAccessible(true);
@@ -124,16 +98,6 @@ class MapperManagerTest {
     }
     
     private static class TestMapper implements Mapper {
-        
-        private final String dataSource;
-        
-        private TestMapper() {
-            this("mysql");
-        }
-        
-        private TestMapper(String dataSource) {
-            this.dataSource = dataSource;
-        }
         
         @Override
         public String select(List<String> columns, List<String> where) {
@@ -168,7 +132,7 @@ class MapperManagerTest {
         
         @Override
         public String getDataSource() {
-            return dataSource;
+            return "mysql";
         }
         
         @Override

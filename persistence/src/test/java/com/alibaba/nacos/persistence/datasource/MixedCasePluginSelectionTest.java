@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.persistence.datasource;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.plugin.PluginTypeConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.utils.DatasourceDialectPluginTypePolicy;
@@ -40,12 +41,13 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A plugin that declares its dialect type and its mapper data source in mixed case keeps working. The plugin is the
- * pair of classes that {@code src/test/resources/META-INF/services} registers through SPI, and the selector that the
- * operator configures names it in any case.
+ * A plugin that declares its dialect type and its mapper data source in mixed case keeps working when the selector
+ * spells the name the same way, as it did before the datasource platform was lower-cased. The plugin is the pair of
+ * classes that {@code src/test/resources/META-INF/services} registers through SPI.
  */
 class MixedCasePluginSelectionTest {
     
@@ -65,13 +67,14 @@ class MixedCasePluginSelectionTest {
     }
     
     @Test
-    void testDialectAndMapperResolveThroughTheConfiguredSelectorInAnyCase() {
-        for (String selector : new String[] {MixedCaseTestDialect.TYPE, "acmedb", "ACMEDB",
-            " AcmeDB "}) {
+    void testDialectAndMapperResolveThroughTheConfiguredSelector() {
+        for (String selector : new String[] {MixedCaseTestDialect.TYPE,
+            " " + MixedCaseTestDialect.TYPE + " "}) {
             MockEnvironment environment = environmentSelecting(selector);
             EnvUtil.setEnvironment(environment);
             String platform =
                 DatasourcePlatformUtil.getDatasourcePlatform(PersistenceConstant.DERBY);
+            assertEquals(MixedCaseTestDialect.TYPE, platform, selector);
             
             // The external datasource asks the dialect of the selected platform for the driver.
             List<HikariDataSource> pools =
@@ -89,22 +92,33 @@ class MixedCasePluginSelectionTest {
     
     @Test
     void testPluginManagerFindsTheSelectedDialectAmongTheDiscoveredPlugins() {
-        for (String selector : new String[] {MixedCaseTestDialect.TYPE, "acmedb", "ACMEDB"}) {
-            PluginTypeConfiguration configuration = configurationSelecting(selector);
-            DatasourceDialectPluginTypePolicy policy = new DatasourceDialectPluginTypePolicy();
-            policy.initialize(configuration);
-            
-            // The plugin manager discovers the dialects through the provider and requires the selected plugin among
-            // them by its exact name, which is the name that the policy returns.
-            Map<String, DatabaseDialect> discovered =
-                new DatasourceDialectPluginProvider().getAllPlugins();
-            Set<String> required = policy.getRequiredPluginNames(configuration);
-            assertTrue(discovered.keySet().containsAll(required),
-                selector + " is required, discovered are " + discovered.keySet());
-            String pluginName = required.iterator().next();
-            assertInstanceOf(MixedCaseTestDialect.class, discovered.get(pluginName), selector);
-            assertTrue(policy.isPluginEnabledByDefault(pluginName, configuration), selector);
-        }
+        PluginTypeConfiguration configuration = configurationSelecting(MixedCaseTestDialect.TYPE);
+        DatasourceDialectPluginTypePolicy policy = new DatasourceDialectPluginTypePolicy();
+        policy.initialize(configuration);
+        
+        // The plugin manager discovers the dialects through the provider and requires the selected plugin among
+        // them by its exact name, which is the name that the policy returns.
+        Map<String, DatabaseDialect> discovered =
+            new DatasourceDialectPluginProvider().getAllPlugins();
+        Set<String> required = policy.getRequiredPluginNames(configuration);
+        assertTrue(discovered.keySet().containsAll(required),
+            "required " + required + ", discovered " + discovered.keySet());
+        String pluginName = required.iterator().next();
+        assertEquals(MixedCaseTestDialect.TYPE, pluginName);
+        assertInstanceOf(MixedCaseTestDialect.class, discovered.get(pluginName));
+        assertTrue(policy.isPluginEnabledByDefault(pluginName, configuration));
+    }
+    
+    @Test
+    void testNamesAreMatchedExactlyAsDeclared() {
+        // The lower-case spelling names no registered plugin or mapper: the lookups do not fold the case.
+        EnvUtil.setEnvironment(environmentSelecting("acmedb"));
+        String platform = DatasourcePlatformUtil.getDatasourcePlatform(PersistenceConstant.DERBY);
+        assertEquals("acmedb", platform);
+        assertThrows(NacosRuntimeException.class,
+            () -> MapperManager.instance(false).findMapper(platform, TableConstant.CONFIG_INFO));
+        assertThrows(IllegalStateException.class,
+            () -> DatabaseDialectManager.getInstance().getDialect(platform));
     }
     
     private static MockEnvironment environmentSelecting(String selector) {

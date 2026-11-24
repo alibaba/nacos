@@ -112,21 +112,6 @@ class DatasourceDialectPluginTypePolicyTest {
         assertTrue(policy.isPluginEnabledByDefault("POSTGRESQL", configuration));
     }
     
-    @Test
-    void testSelectedDialectNameIsLowerCaseForPluginLookup() {
-        MapConfiguration configuration = new MapConfiguration();
-        configuration.setProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY, " H2 ");
-        policy.initialize(configuration);
-        
-        assertEquals("h2", policy.getRequiredPluginNames(configuration).iterator().next());
-        assertTrue(policy.isPluginEnabledByDefault("h2", configuration));
-        
-        MapConfiguration legacy = new MapConfiguration();
-        legacy.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, "H2");
-        policy.initialize(legacy);
-        assertEquals("h2", policy.getRequiredPluginNames(legacy).iterator().next());
-    }
-    
     private static class MapConfiguration implements PluginTypeConfiguration {
         
         private final Map<String, String> properties = new HashMap<>();

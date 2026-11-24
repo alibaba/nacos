@@ -350,7 +350,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         
         static EmbeddedEngine fromPlatform(String platform) {
-            return PersistenceConstant.H2.equalsIgnoreCase(platform) ? H2 : DERBY;
+            return PersistenceConstant.H2.equals(platform) ? H2 : DERBY;
         }
         
         Path dataDir(String nacosHome) {

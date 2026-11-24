@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,7 +54,7 @@ public class DatabaseDialectManager {
         Collection<DatabaseDialect> dialectList = NacosServiceLoader.load(DatabaseDialect.class);
         
         for (DatabaseDialect dialect : dialectList) {
-            String dialectType = dialect == null ? null : normalizeDialectType(dialect.getType());
+            String dialectType = dialect == null ? null : dialect.getType();
             PluginRegistryUtils.registerFirst(SUPPORT_DIALECT_MAP,
                 PluginType.DATASOURCE_DIALECT.getType(), dialectType, dialect, LOGGER);
         }
@@ -65,23 +64,10 @@ public class DatabaseDialectManager {
         }
     }
     
-    /**
-     * Normalize a dialect name. Dialect names are matched case-insensitively, as the persistence checks match the
-     * selected platform.
-     *
-     * @param dialectType dialect name, may be {@code null}
-     * @return lower-case dialect name, or {@code null}
-     */
-    private static String normalizeDialectType(String dialectType) {
-        return null == dialectType ? null : dialectType.toLowerCase(Locale.ROOT);
-    }
-    
     public DatabaseDialect getDialect(String databaseType) {
-        // Normalize first, so a disabled dialect cannot be selected by writing its name in another case
-        String dialectType = normalizeDialectType(databaseType);
         // Check if plugin is enabled
         if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(),
-            dialectType)) {
+            databaseType)) {
             LOGGER.debug("[DatabaseDialectManager] Plugin DATASOURCE_DIALECT:{} is disabled",
                 databaseType);
             throw new IllegalStateException(
@@ -89,7 +75,7 @@ public class DatabaseDialectManager {
                     + ". Please enable it via plugin management API.");
         }
         
-        DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(dialectType);
+        DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(databaseType);
         if (databaseDialect == null) {
             throw new IllegalStateException(
                 "No DatabaseDialect implementation found for selected type: " + databaseType

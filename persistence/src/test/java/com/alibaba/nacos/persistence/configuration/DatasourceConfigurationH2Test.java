@@ -83,7 +83,30 @@ class DatasourceConfigurationH2Test {
             () -> DatasourceConfiguration.checkEmbeddedPlatformSupported("mysql", false));
         assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformSupported("", false));
         assertThrows(IllegalStateException.class,
-            () -> DatasourceConfiguration.checkEmbeddedPlatformSupported("H2", false));
+            () -> DatasourceConfiguration.checkEmbeddedPlatformSupported("h2", false));
+    }
+    
+    @Test
+    void testCheckEmbeddedPlatformNameAcceptsOnlyTheLowerCaseH2() {
+        assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformName("h2"));
+        assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformName("derby"));
+        assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformName("mysql"));
+        assertDoesNotThrow(() -> DatasourceConfiguration.checkEmbeddedPlatformName(""));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+            () -> DatasourceConfiguration.checkEmbeddedPlatformName("H2"));
+        assertTrue(error.getMessage().contains("'h2'"), error.getMessage());
+        assertTrue(error.getMessage().contains("case-sensitive"), error.getMessage());
+    }
+    
+    @Test
+    void testServerProcessRejectsUppercaseH2AtStartup() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY, "H2");
+        EnvUtil.setEnvironment(environment);
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+            () -> new DatasourceConfiguration().loadDatasourceConfiguration(
+                DatasourceConfiguration.class.getClassLoader()));
+        assertTrue(error.getMessage().contains("case-sensitive"), error.getMessage());
     }
     
     @Test

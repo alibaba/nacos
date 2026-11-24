@@ -20,8 +20,6 @@ import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
-import java.util.Locale;
-
 /**
  * get datasource platform util.
  *
@@ -32,33 +30,30 @@ public class DatasourcePlatformUtil {
     /**
      * get datasource platform.
      *
-     * <p>The configured name is trimmed and returned in lower case. Every datasource dialect declares its type in lower
-     * case, and the mappers are registered under that name.
-     *
      * @param defaultPlatform default platform.
-     * @return datasource platform in lower case
+     * @return
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
         String result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY);
         if (StringUtils.isNotBlank(result)) {
-            return normalize(result);
+            return result.trim();
         }
         result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
-        return StringUtils.isBlank(result) ? defaultPlatform : normalize(result);
-    }
-    
-    private static String normalize(String platform) {
-        return platform.trim().toLowerCase(Locale.ROOT);
+        return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
     }
     
     /**
      * Check whether the datasource platform selects a local embedded database engine.
+     *
+     * <p>Derby is matched case-insensitively, as it always was. H2 is matched exactly, as the dialect plugin lookup
+     * matches its name. A platform that spells H2 in another case is not the embedded H2 engine, and the startup
+     * checks reject it.
      *
      * @param platform datasource platform as returned by {@link #getDatasourcePlatform(String)}
      * @return {@code true} for {@code derby} and {@code h2}; {@code false} for any other platform
      */
     public static boolean isEmbeddedPlatform(String platform) {
         return PersistenceConstant.DERBY.equalsIgnoreCase(platform)
-            || PersistenceConstant.H2.equalsIgnoreCase(platform);
+            || PersistenceConstant.H2.equals(platform);
     }
 }

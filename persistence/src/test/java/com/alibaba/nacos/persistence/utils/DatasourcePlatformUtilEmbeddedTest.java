@@ -26,7 +26,9 @@ class DatasourcePlatformUtilEmbeddedTest {
     @Test
     void testEmbeddedPlatforms() {
         assertTrue(DatasourcePlatformUtil.isEmbeddedPlatform("derby"));
-        assertTrue(DatasourcePlatformUtil.isEmbeddedPlatform("H2"));
+        assertTrue(DatasourcePlatformUtil.isEmbeddedPlatform("DERBY"));
+        assertTrue(DatasourcePlatformUtil.isEmbeddedPlatform("h2"));
+        assertFalse(DatasourcePlatformUtil.isEmbeddedPlatform("H2"));
         assertFalse(DatasourcePlatformUtil.isEmbeddedPlatform("mysql"));
         assertFalse(DatasourcePlatformUtil.isEmbeddedPlatform("postgresql"));
         assertFalse(DatasourcePlatformUtil.isEmbeddedPlatform(""));

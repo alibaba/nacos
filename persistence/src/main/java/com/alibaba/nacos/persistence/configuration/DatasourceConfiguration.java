@@ -101,8 +101,8 @@ public class DatasourceConfiguration
      * @param standalone    whether the server runs in standalone mode
      * @param serverProcess whether this process hosts server persistence, see {@link #hostsServerPersistence()}
      * @param classLoader   the class loader that must see the H2 driver
-     * @throws IllegalStateException when a server process selects {@code h2} outside standalone mode or without the
-     *                               H2 driver
+     * @throws IllegalStateException when a server process spells {@code h2} in another case, selects it outside
+     *                               standalone mode, or selects it without the H2 driver
      */
     static void checkEmbeddedPlatformStartup(String platform, boolean standalone,
         boolean serverProcess,
@@ -110,6 +110,7 @@ public class DatasourceConfiguration
         if (!serverProcess) {
             return;
         }
+        checkEmbeddedPlatformName(platform);
         checkEmbeddedPlatformSupported(platform, standalone);
         checkEmbeddedDriverAvailable(platform, classLoader);
     }
@@ -125,6 +126,24 @@ public class DatasourceConfiguration
     }
     
     /**
+     * The dialect name is case-sensitive. The H2 dialect plugin, its mappers and the lookups of both match the name
+     * {@code h2} exactly, so a selection that spells it differently fails here and names the spelling to write,
+     * instead of passing this check and failing later in the plugin lookup.
+     *
+     * @param platform selected datasource platform, blank when the default embedded platform is used
+     * @throws IllegalStateException when {@code platform} spells H2 in another case
+     */
+    static void checkEmbeddedPlatformName(String platform) {
+        if (PersistenceConstant.H2.equalsIgnoreCase(platform)
+            && !PersistenceConstant.H2.equals(platform)) {
+            throw new IllegalStateException("Datasource dialect '" + platform
+                + "' is not a known dialect."
+                + " The dialect name is case-sensitive: write '" + PersistenceConstant.H2 + "' in "
+                + PersistenceConstant.DATASOURCE_DIALECT_TYPE_PROPERTY + ".");
+        }
+    }
+    
+    /**
      * H2 embedded storage is standalone-only: cluster embedded storage replicates through the CP state machine and
      * reopens the local database from Derby-specific snapshot code, which H2 does not implement.
      *
@@ -133,7 +152,7 @@ public class DatasourceConfiguration
      * @throws IllegalStateException when {@code h2} is selected outside standalone mode
      */
     static void checkEmbeddedPlatformSupported(String platform, boolean standalone) {
-        if (PersistenceConstant.H2.equalsIgnoreCase(platform) && !standalone) {
+        if (PersistenceConstant.H2.equals(platform) && !standalone) {
             throw new IllegalStateException("Datasource dialect '" + PersistenceConstant.H2
                 + "' embedded storage supports standalone mode only. Set nacos.standalone=true, or"
                 + " select mysql, postgresql, or oracle for cluster deployments. Check property "
@@ -151,7 +170,7 @@ public class DatasourceConfiguration
      * @throws IllegalStateException when {@code h2} is selected and the driver is not on the class path
      */
     static void checkEmbeddedDriverAvailable(String platform, ClassLoader classLoader) {
-        if (!PersistenceConstant.H2.equalsIgnoreCase(platform)) {
+        if (!PersistenceConstant.H2.equals(platform)) {
             return;
         }
         try {
