@@ -186,7 +186,10 @@ processes check it at startup; a console-only process does not run that check.
 Dialect type names are case-insensitive. The registry stores each type in lower case, and that
 lower-case name is the plugin name used by plugin management, the enabled state, and the critical
 plugin check. The configured selector and the datasource platform passed to the datasource layer
-are normalized the same way.
+are normalized the same way. A third-party plugin that declares its dialect type and its mapper data
+source in mixed case, such as `AcmeDB`, keeps working without a rename or a recompile: the registry
+stores its dialect in lower case, the selector matches it in any case, and the data source name of its
+mapper matches case-insensitively as described in the mapper section.
 
 The persistence subsystem always makes this critical type active. If the requested dialect is
 disabled or missing, startup must fail explicitly and identify the selected dialect and selection
