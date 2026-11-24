@@ -40,6 +40,15 @@ public final class MetricsMonitor {
     
     private static final String METER_REGISTRY = NacosMeterRegistryCenter.CORE_STABLE_REGISTRY;
     
+    /**
+     * Dedicated meters for per-raft-group gauges. Prometheus rejects meters that share a name but not tag keys, so
+     * these gauges cannot live in the {@code nacos_monitor} family, whose meters carry only {@code module} and
+     * {@code name} tags.
+     */
+    private static final String RAFT_LEADER_METER = "nacos_raft_leader";
+    
+    private static final String RAFT_TERM_METER = "nacos_raft_term";
+    
     private static final DistributionSummary RAFT_READ_INDEX_FAILED;
     
     private static final DistributionSummary RAFT_FROM_LEADER;
@@ -203,10 +212,9 @@ public final class MetricsMonitor {
     
     private static AtomicInteger registerRaftGroupLeaderStatus(String groupId) {
         AtomicInteger result = new AtomicInteger();
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, RAFT_LEADER_METER,
             Arrays.asList(
                 new ImmutableTag("module", "core"),
-                new ImmutableTag("name", "raftLeaderStatus"),
                 new ImmutableTag("group", groupId)),
             result);
         return result;
@@ -214,10 +222,9 @@ public final class MetricsMonitor {
     
     private static AtomicLong registerRaftGroupTerm(String groupId) {
         AtomicLong result = new AtomicLong();
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, RAFT_TERM_METER,
             Arrays.asList(
                 new ImmutableTag("module", "core"),
-                new ImmutableTag("name", "raftTerm"),
                 new ImmutableTag("group", groupId)),
             result);
         return result;
