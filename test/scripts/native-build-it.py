@@ -19,6 +19,7 @@ Run after the ordinary release-nacos install. No Native compiler or database is 
 This checks AOT preparation, not Native executable or database runtime compatibility.
 """
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -176,11 +177,15 @@ def main():
         assert "RuntimeClassLoading" not in (native / "options.args").read_text()
         # The Native profile selects its plugins one by one: the MySQL and PostgreSQL datasources with
         # their drivers and the default plugins. LDAP, OIDC, Oracle and Derby are not on the classpath.
-        selected = shlex.split((native / "classpath.args").read_text())[1]
-        assert all(name in selected for name in ("nacos-datasource-plugin-mysql", "mysql-connector-j",
-            "nacos-datasource-plugin-postgresql", "postgresql-", "default-auth-plugin"))
-        assert not any(name in selected for name in ("nacos-ldap-auth-plugin", "nacos-oidc-auth-plugin",
-            "nacos-datasource-plugin-oracle", "nacos-datasource-plugin-derby", "/org/apache/derby/"))
+        # Each JAR is matched by its file name, so that a dialect plugin cannot stand in for its driver.
+        selected = [os.path.basename(entry) for entry in
+                    shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)]
+        assert all(any(fnmatch.fnmatch(jar, pattern) for jar in selected) for pattern in (
+            "nacos-datasource-plugin-mysql-*.jar", "mysql-connector-j-*.jar",
+            "nacos-datasource-plugin-postgresql-*.jar", "postgresql-*.jar", "default-auth-plugin-*.jar"))
+        assert not any(fnmatch.fnmatch(jar, pattern) for jar in selected for pattern in (
+            "nacos-ldap-auth-plugin-*.jar", "nacos-oidc-auth-plugin-*.jar",
+            "nacos-datasource-plugin-oracle-*.jar", "nacos-datasource-plugin-derby-*.jar", "derby*.jar"))
         run("console-postgresql", common + [configuration("postgresql", "postgresql", False),
             "-Dnacos.native.deployment=console"])
         manifest = properties(native / "aot-manifest.properties")
