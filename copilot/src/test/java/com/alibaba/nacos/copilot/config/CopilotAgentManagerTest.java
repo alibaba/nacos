@@ -25,6 +25,7 @@ import com.alibaba.nacos.copilot.connection.CopilotConnectionValidator;
 import com.alibaba.nacos.copilot.connection.CopilotModelConnection;
 import com.alibaba.nacos.copilot.connection.CopilotModelResolver;
 import com.alibaba.nacos.copilot.connection.CopilotModelRouter;
+import com.alibaba.nacos.copilot.connection.CredentialSource;
 import com.alibaba.nacos.copilot.connection.DefaultCopilotModelRouter;
 import com.alibaba.nacos.copilot.connection.DeploymentConfigProviderReader;
 import com.alibaba.nacos.copilot.connection.LegacyConfigProviderReader;
@@ -41,21 +42,27 @@ import io.agentscope.core.studio.StudioManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -83,8 +90,7 @@ class CopilotAgentManagerTest {
     @Mock
     private CopilotConfigStorage configStorage;
     
-    @Mock
-    private CopilotProperties defaultProperties;
+    private MockEnvironment environment;
     
     @Mock
     private ProviderReaderAggregator providerReaders;
@@ -101,8 +107,9 @@ class CopilotAgentManagerTest {
     
     @BeforeEach
     void setUp() {
-        copilotAgentManager = new CopilotAgentManager(configStorage, defaultProperties,
-            providerReaders, modelResolver, modelRouter, new MockEnvironment());
+        environment = new MockEnvironment();
+        copilotAgentManager = new CopilotAgentManager(configStorage,
+            providerReaders, modelResolver, modelRouter, environment);
     }
     
     @Test
@@ -110,7 +117,7 @@ class CopilotAgentManagerTest {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.isEnabled()).thenReturn(false);
+        environment.setProperty("nacos.copilot.enabled", "false");
         copilotAgentManager.refreshConfig();
         
         // When
@@ -125,7 +132,7 @@ class CopilotAgentManagerTest {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), any())).thenReturn(null);
         copilotAgentManager.refreshConfig();
         
@@ -142,7 +149,7 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), any())).thenReturn(connection);
         copilotAgentManager.refreshConfig();
         
@@ -158,7 +165,7 @@ class CopilotAgentManagerTest {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.isEnabled()).thenReturn(false);
+        environment.setProperty("nacos.copilot.enabled", "false");
         copilotAgentManager.refreshConfig();
         
         // When
@@ -173,7 +180,7 @@ class CopilotAgentManagerTest {
         // Given
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), any())).thenReturn(null);
         copilotAgentManager.refreshConfig();
         
@@ -190,7 +197,7 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection(null, ConnectionSource.DEPLOYMENT);
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), any())).thenReturn(connection);
         when(modelResolver.resolve(connection)).thenReturn(mockModel());
         copilotAgentManager.refreshConfig();
@@ -208,12 +215,12 @@ class CopilotAgentManagerTest {
         // Given
         CopilotModelConnection connection = buildConnection("test-api-key")
             .withAvailability(false, "missing provider");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, new DefaultCopilotModelRouter(),
             new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         manager.refreshConfig();
         
         // When
@@ -230,8 +237,8 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.isEnabled()).thenReturn(true);
-        when(defaultProperties.getSelectedConnection()).thenReturn("selected");
+        environment.setProperty("nacos.copilot.enabled", "true");
+        environment.setProperty("nacos.copilot.selectedConnection", "selected");
         when(modelRouter.route(any(), eq("selected"))).thenReturn(connection);
         when(modelResolver.resolve(connection)).thenReturn(mockModel());
         copilotAgentManager.refreshConfig();
@@ -250,7 +257,7 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection("test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), any())).thenReturn(connection);
         when(modelResolver.resolve(connection))
             .thenThrow(new IllegalArgumentException("no provider"));
@@ -283,8 +290,8 @@ class CopilotAgentManagerTest {
         CopilotModelConnection connection = buildConnection("super-secret-key");
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.getSelectedConnection()).thenReturn("legacy");
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.selectedConnection", "legacy");
+        environment.setProperty("nacos.copilot.enabled", "true");
         when(modelRouter.route(any(), eq("legacy"))).thenReturn(connection);
         copilotAgentManager.refreshConfig();
         
@@ -326,7 +333,7 @@ class CopilotAgentManagerTest {
         StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"alpha\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "beta");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -344,7 +351,7 @@ class CopilotAgentManagerTest {
         StoredCopilotConfig stored = snapshotOf("{\"apiKey\":\"console-key\"}");
         MockEnvironment environment =
             new MockEnvironment().withProperty("nacos.copilot.apiKey", "deploy-key");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -355,14 +362,14 @@ class CopilotAgentManagerTest {
         manager.refreshConfig();
         
         verify(providerReaders).readAll(captor.capture());
-        assertTrue(captor.getValue().isLegacyApiKeyFromDeployment());
+        assertEquals(CredentialSource.DEPLOYMENT, captor.getValue().getLegacyCredentialSource());
         assertEquals("deploy-key", captor.getValue().getLegacyConfig().getApiKey());
     }
     
     @Test
     void testGetConnectionStatusReportsStoredSelection() {
         StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"alpha\"}");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -392,7 +399,7 @@ class CopilotAgentManagerTest {
         StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"beta\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -410,7 +417,7 @@ class CopilotAgentManagerTest {
         StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"beta\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "   ");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -429,7 +436,7 @@ class CopilotAgentManagerTest {
             "{\"enabled\":false,\"selectedConnection\":\"prod-qwen\"}");
         CopilotModelConnection connection = buildConnection("test-api-key",
             ConnectionSource.DEPLOYMENT);
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, new DefaultCopilotModelRouter(),
             new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
@@ -450,7 +457,7 @@ class CopilotAgentManagerTest {
             "{\"enabled\":true,\"selectedConnection\":\"prod-qwen\"}");
         CopilotModelConnection connection = buildConnection("test-api-key",
             ConnectionSource.DEPLOYMENT);
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, new DefaultCopilotModelRouter(),
             new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
@@ -483,18 +490,16 @@ class CopilotAgentManagerTest {
     @Test
     void testCreateAgentWithRealModelRegistry() {
         // Given
-        Environment environment = mock(Environment.class);
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("test-api-key");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("COPILOT_API_KEY", "test-api-key");
         when(configStorage.isAvailable()).thenReturn(false);
-        when(defaultProperties.isEnabled()).thenReturn(true);
-        when(defaultProperties.getModel()).thenReturn("qwen-plus");
+        environment.setProperty("nacos.copilot.enabled", "true");
         CopilotConnectionValidator validator = new CopilotConnectionValidator(
             new CopilotModelResolver());
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
-            Collections.singletonList(new LegacyConfigProviderReader(environment)), validator);
-        CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
-            realReaders, new CopilotModelResolver(), new DefaultCopilotModelRouter(),
-            new MockEnvironment());
+            Collections.singletonList(new LegacyConfigProviderReader()), validator);
+        CopilotAgentManager realManager = new CopilotAgentManager(configStorage,
+            realReaders, new CopilotModelResolver(), new DefaultCopilotModelRouter(), environment);
         realManager.refreshConfig();
         
         // When
@@ -511,11 +516,10 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
         when(modelResolver.canResolve(any())).thenReturn(true);
-        Environment environment = mock(Environment.class);
         CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
-            Collections.singletonList(new LegacyConfigProviderReader(environment)), validator);
-        CopilotAgentManager realManager = new CopilotAgentManager(configStorage, defaultProperties,
+            Collections.singletonList(new LegacyConfigProviderReader()), validator);
+        CopilotAgentManager realManager = new CopilotAgentManager(configStorage,
             realReaders, modelResolver, new DefaultCopilotModelRouter(), new MockEnvironment());
         
         realManager.refreshConfig();
@@ -530,7 +534,7 @@ class CopilotAgentManagerTest {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty("nacos.copilot.selectedConnection", "prod-qwen");
         environment.setProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
@@ -546,7 +550,7 @@ class CopilotAgentManagerTest {
             "{\"apiKey\":\"old-key\",\"model\":\"qwen-turbo\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "beta");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -568,7 +572,7 @@ class CopilotAgentManagerTest {
             .withProperty("nacos.copilot.enabled", "true")
             .withProperty("nacos.copilot.model", "qwen-max")
             .withProperty("nacos.copilot.selectedConnection", "beta");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -590,7 +594,7 @@ class CopilotAgentManagerTest {
             "{\"apiKey\":\"old-key\",\"model\":\"qwen-turbo\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "alpha");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -610,7 +614,7 @@ class CopilotAgentManagerTest {
     void testStoredConfigurationRemainsEffectiveWithoutDeploymentOverrides() {
         StoredCopilotConfig stored = snapshotOf("{\"enabled\":false,\"apiKey\":\"old-key\","
             + "\"model\":\"qwen-turbo\",\"selectedConnection\":\"stored-choice\"}");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(stored);
@@ -635,13 +639,13 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(false);
         when(modelResolver.canResolve(any())).thenReturn(true);
         when(modelResolver.resolve(any())).thenReturn(mock(Model.class));
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
-            Arrays.asList(new DeploymentConfigProviderReader(environment),
-                new LegacyConfigProviderReader(environment)),
+            Arrays.asList(new DeploymentConfigProviderReader(),
+                new LegacyConfigProviderReader()),
             validator);
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             realReaders, modelResolver, new DefaultCopilotModelRouter(), environment);
         
         manager.refreshConfig();
@@ -657,7 +661,7 @@ class CopilotAgentManagerTest {
                 .withAvailability(false, "missing provider");
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
-        when(defaultProperties.getSelectedConnection()).thenReturn("prod-qwen");
+        environment.setProperty("nacos.copilot.selectedConnection", "prod-qwen");
         
         List<ILoggingEvent> warnings = refreshAndCaptureWarnings();
         
@@ -670,7 +674,7 @@ class CopilotAgentManagerTest {
     void testRefreshWarnsWhenSelectedConnectionDoesNotExist() {
         when(configStorage.isAvailable()).thenReturn(false);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.getSelectedConnection()).thenReturn("unknown");
+        environment.setProperty("nacos.copilot.selectedConnection", "unknown");
         
         List<ILoggingEvent> warnings = refreshAndCaptureWarnings();
         
@@ -715,8 +719,8 @@ class CopilotAgentManagerTest {
             StudioManager.Builder builder = mockStudio(studio);
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.init();
             
@@ -731,8 +735,8 @@ class CopilotAgentManagerTest {
             StudioManager.Builder builder = mockStudio(studio);
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.refreshConfig();
             copilotAgentManager.refreshConfig();
@@ -748,10 +752,11 @@ class CopilotAgentManagerTest {
             StudioManager.Builder builder = mockStudio(studio);
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio", "http://studio-2");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.refreshConfig();
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-2");
             copilotAgentManager.refreshConfig();
             
             studio.verify(StudioManager::init, times(2));
@@ -775,12 +780,13 @@ class CopilotAgentManagerTest {
             });
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio-a",
-                "http://studio-b", "http://studio-a");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-a");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.refreshConfig();
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-b");
             copilotAgentManager.refreshConfig();
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-a");
             copilotAgentManager.refreshConfig();
             
             studio.verify(StudioManager::init, times(3));
@@ -795,8 +801,8 @@ class CopilotAgentManagerTest {
             StudioManager.Builder builder = mockStudio(studio);
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.refreshConfig();
             studioInitialized.set(false);
@@ -821,12 +827,13 @@ class CopilotAgentManagerTest {
             });
             when(configStorage.isAvailable()).thenReturn(false);
             when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-            when(defaultProperties.getStudioUrl()).thenReturn("http://studio-a",
-                "http://studio-b", "http://studio-a");
-            when(defaultProperties.getStudioProject()).thenReturn("project");
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-a");
+            environment.setProperty("nacos.copilot.studioProject", "project");
             
             copilotAgentManager.refreshConfig();
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-b");
             copilotAgentManager.refreshConfig();
+            environment.setProperty("nacos.copilot.studioUrl", "http://studio-a");
             copilotAgentManager.refreshConfig();
             
             studio.verify(StudioManager::init, times(3));
@@ -840,11 +847,10 @@ class CopilotAgentManagerTest {
         when(configStorage.getSnapshot())
             .thenReturn(snapshotOf("{\"selectedConnection\":\"alpha\"}"));
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.getModel()).thenReturn("qwen-plus");
         
         copilotAgentManager.refreshConfig();
         
-        assertEquals("qwen-plus", copilotAgentManager.getConfig().getModel());
+        assertEquals("qwen-turbo", copilotAgentManager.getConfig().getModel());
         assertEquals("alpha", copilotAgentManager.getConfig().getSelectedConnection());
     }
     
@@ -853,7 +859,6 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"model\":null}"));
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.getModel()).thenReturn("qwen-plus");
         
         copilotAgentManager.refreshConfig();
         
@@ -863,13 +868,14 @@ class CopilotAgentManagerTest {
     @Test
     void testStoredBlankStringClearsFieldInsteadOfInheritingDefault() {
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"studioUrl\":\"   \"}"));
+        when(configStorage.getSnapshot()).thenReturn(
+            snapshotOf("{\"studioUrl\":\"   \",\"studioProject\":\"   \"}"));
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
         
         copilotAgentManager.refreshConfig();
         
         assertNull(copilotAgentManager.getConfig().getStudioUrl());
+        assertNull(copilotAgentManager.getConfig().getStudioProject());
     }
     
     @Test
@@ -877,7 +883,7 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"enabled\":false}"));
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
-        when(defaultProperties.isEnabled()).thenReturn(true);
+        environment.setProperty("nacos.copilot.enabled", "true");
         
         copilotAgentManager.refreshConfig();
         
@@ -900,7 +906,7 @@ class CopilotAgentManagerTest {
     void testDeploymentBlankApiKeyClearsStoredCredential() {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.apiKey", "");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot())
@@ -917,7 +923,7 @@ class CopilotAgentManagerTest {
     void testStoredClearDoesNotOverrideDeploymentValue() {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.apiKey", "deploy-key");
-        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
         when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"apiKey\":null}"));
@@ -929,17 +935,261 @@ class CopilotAgentManagerTest {
         assertNull(manager.getConfig().getApiKeyCleared());
     }
     
+    @ParameterizedTest
+    @MethodSource("legacyCredentialCases")
+    void testLegacyCredentialPrecedence(String storedJson, boolean deploymentDeclared,
+        String deploymentKey, String expectedKey, CredentialSource expectedSource) {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("COPILOT_API_KEY", "env-key");
+        if (deploymentDeclared) {
+            Map<String, Object> fields = new LinkedHashMap<>();
+            fields.put("nacos.copilot.apiKey", deploymentKey);
+            environment.getPropertySources().addFirst(new MapPropertySource("deployment", fields));
+        }
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf(storedJson));
+        CopilotAgentManager manager = managerWithRealReaders(environment);
+        
+        manager.refreshConfig();
+        
+        CopilotConnectionInfo legacy = manager.getConnectionStatus().getConnections().get(0);
+        assertEquals(expectedSource, legacy.getActualSource());
+        assertEquals(expectedKey != null, legacy.isApiKeyConfigured());
+        assertEquals(expectedKey != null, legacy.isAvailable());
+        if (expectedKey != null) {
+            ArgumentCaptor<CopilotModelConnection> captor =
+                ArgumentCaptor.forClass(CopilotModelConnection.class);
+            verify(modelResolver).canResolve(captor.capture());
+            assertEquals(expectedKey, captor.getValue().getApiKey());
+        } else {
+            assertEquals(Boolean.TRUE, manager.getConfig().getApiKeyCleared());
+            verifyNoInteractions(modelResolver);
+        }
+    }
+    
+    private static Stream<Arguments> legacyCredentialCases() {
+        return Stream.of(
+            Arguments.of("{\"apiKey\":\"stored-key\"}", true, "deploy-key", "deploy-key",
+                CredentialSource.DEPLOYMENT),
+            Arguments.of("{\"apiKey\":\"stored-key\"}", false, null, "stored-key",
+                CredentialSource.CONSOLE),
+            Arguments.of("{}", false, null, "env-key", CredentialSource.ENVIRONMENT),
+            Arguments.of("{\"apiKey\":\"stored-key\"}", true, "", null, null),
+            Arguments.of("{\"apiKey\":\"stored-key\"}", true, "   ", null, null),
+            Arguments.of("{\"apiKey\":\"stored-key\"}", true, null, null, null),
+            Arguments.of("{\"apiKey\":null}", false, null, null, null),
+            Arguments.of("{\"apiKey\":\"\"}", false, null, null, null),
+            Arguments.of("{\"apiKey\":\"   \"}", false, null, null, null),
+            Arguments.of("{\"apiKeyCleared\":true}", false, null, null, null),
+            Arguments.of("{\"apiKey\":null}", true, "deploy-key", "deploy-key",
+                CredentialSource.DEPLOYMENT),
+            Arguments.of("{\"apiKeyCleared\":true}", true, "deploy-key", "deploy-key",
+                CredentialSource.DEPLOYMENT));
+    }
+    
+    @Test
+    void testRefreshUsesPureDefaultsAfterCurrentDeclarationsAreRemoved() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.enabled", "false")
+            .withProperty("nacos.copilot.model", "old-model")
+            .withProperty("nacos.copilot.apiKey", "old-key")
+            .withProperty("nacos.copilot.defaultNamespace", "old-namespace")
+            .withProperty("nacos.copilot.studioProject", "old-project")
+            .withProperty("nacos.copilot.selectedConnection", "old-choice");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(false);
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        manager.refreshConfig();
+        environment.getPropertySources().remove("mockProperties");
+        
+        manager.refreshConfig();
+        
+        CopilotProperties config = manager.getConfig();
+        assertTrue(config.isEnabled());
+        assertEquals("qwen-turbo", config.getModel());
+        assertEquals("public", config.getDefaultNamespace());
+        assertEquals("NacosCopilot", config.getStudioProject());
+        assertNull(config.getApiKey());
+        assertNull(config.getSelectedConnection());
+        assertEquals(SelectionSource.NONE, manager.getConnectionStatus().getSelectionSource());
+    }
+    
+    @ParameterizedTest
+    @MethodSource("legacyDeclarationCases")
+    void testLegacyExistsOnlyForActualDeclarations(String storedJson, String deploymentModel,
+        boolean expectedLegacy) {
+        MockEnvironment environment = new MockEnvironment();
+        if (deploymentModel != null) {
+            environment.setProperty("nacos.copilot.model", deploymentModel);
+        }
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf(storedJson));
+        CopilotAgentManager manager = managerWithRealReaders(environment);
+        
+        List<ILoggingEvent> warnings = refreshAndCaptureWarnings(manager);
+        
+        assertEquals(expectedLegacy ? 1 : 0, manager.getConnectionStatus().getConnections().size());
+        assertEquals(expectedLegacy ? 1 : 0, warnings.size());
+        if (expectedLegacy) {
+            assertFalse(manager.getConnectionStatus().getConnections().get(0).isAvailable());
+        }
+        verifyNoInteractions(modelResolver);
+    }
+    
+    private static Stream<Arguments> legacyDeclarationCases() {
+        return Stream.of(Arguments.of("{}", null, false),
+            Arguments.of("{\"selectedConnection\":null}", null, false),
+            Arguments.of("{\"model\":\"qwen-turbo\"}", null, true),
+            Arguments.of("{}", "qwen-turbo", true),
+            Arguments.of("{\"model\":null}", null, true),
+            Arguments.of("{}", "", true),
+            Arguments.of("{\"apiKey\":null}", null, true));
+    }
+    
+    @Test
+    void testDeploymentConnectionNamedLegacyDoesNotWarnOrInheritLegacyFields() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.LEGACY.model", "deployment-model");
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot())
+            .thenReturn(snapshotOf("{\"apiKey\":\"stored-key\",\"model\":\"stored-model\"}"));
+        CopilotAgentManager manager = managerWithRealReaders(environment);
+        
+        List<ILoggingEvent> warnings = refreshAndCaptureWarnings(manager);
+        
+        assertTrue(warnings.isEmpty());
+        CopilotConnectionInfo connection = manager.getConnectionStatus().getConnections().get(0);
+        assertEquals(ConnectionSource.DEPLOYMENT, connection.getSource());
+        assertEquals("deployment-model", connection.getModel());
+        assertNull(connection.getProviderId());
+        assertFalse(connection.isApiKeyConfigured());
+        assertFalse(connection.isAvailable());
+        verifyNoInteractions(modelResolver);
+    }
+    
+    @Test
+    void testRefreshReadersUseSameCapturedGenerationDespiteEnvironmentMutation() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.selectedConnection", "alpha")
+            .withProperty("nacos.copilot.model", "qwen-plus")
+            .withProperty("COPILOT_API_KEY", "env-before")
+            .withProperty("MODEL", "qwen-max")
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "${MODEL}")
+            .withProperty("nacos.copilot.connections.alpha.apiKey", "${COPILOT_API_KEY}");
+        when(configStorage.isAvailable()).thenReturn(false);
+        CopilotConnectionValidator validator = mock(CopilotConnectionValidator.class);
+        when(validator.validate(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        ProviderReaderAggregator realReaders = new ProviderReaderAggregator(Arrays.asList(
+            new DeploymentConfigProviderReader(),
+            new LegacyConfigProviderReader()), validator);
+        when(providerReaders.readAll(any())).thenAnswer(invocation -> {
+            environment.setProperty("nacos.copilot.selectedConnection", "beta");
+            environment.setProperty("nacos.copilot.model", "qwen-turbo");
+            environment.setProperty("COPILOT_API_KEY", "env-after");
+            environment.setProperty("MODEL", "qwen-turbo");
+            ConnectionTable table = realReaders.readAll(invocation.getArgument(0));
+            assertEquals("qwen-max", table.get("alpha").getModel());
+            assertEquals("env-before", table.get("alpha").getApiKey());
+            assertEquals("qwen-plus", table.get("legacy").getModel());
+            assertEquals("env-before", table.get("legacy").getApiKey());
+            return table;
+        });
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage,
+            providerReaders, modelResolver, new DefaultCopilotModelRouter(), environment);
+        
+        manager.refreshConfig();
+        
+        assertEquals("alpha", manager.getConfig().getSelectedConnection());
+        assertEquals("alpha", manager.getConnectionStatus().getActiveConnection());
+        assertEquals(SelectionSource.DEPLOYMENT,
+            manager.getConnectionStatus().getSelectionSource());
+    }
+    
+    @Test
+    void testCapturedSourcesKeepRelaxedPrecedenceAndResolvePlaceholders() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.api-key", "lower-key")
+            .withProperty("nacos.copilot.selected-connection", "lower-choice")
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "lower-model")
+            .withProperty("nacos.copilot.connections.alpha.apiKey", "lower-key")
+            .withProperty("KEY", "lower-placeholder");
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("nacos.copilot.apiKey", "${KEY}");
+        fields.put("nacos.copilot.selectedConnection", "alpha");
+        fields.put("nacos.copilot.connections.alpha.model", "higher-model");
+        fields.put("nacos.copilot.connections.alpha.apiKey", "");
+        fields.put("KEY", "higher-placeholder");
+        environment.getPropertySources().addFirst(new MapPropertySource("higher", fields));
+        when(configStorage.isAvailable()).thenReturn(false);
+        CopilotAgentManager manager = managerWithRealReaders(environment);
+        
+        manager.refreshConfig();
+        
+        assertEquals("higher-placeholder", manager.getConfig().getApiKey());
+        assertEquals("alpha", manager.getConfig().getSelectedConnection());
+        CopilotConnectionInfo alpha = manager.getConnectionStatus().getConnections().get(0);
+        assertEquals("higher-model", alpha.getModel());
+        assertEquals("dashscope", alpha.getProviderId());
+        assertFalse(alpha.isApiKeyConfigured());
+        assertTrue(alpha.isAvailable());
+    }
+    
+    @Test
+    void testDeploymentNullClearBlocksLowerPropertySources() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.api-key", "lower-key")
+            .withProperty("nacos.copilot.selected-connection", "lower-choice")
+            .withProperty("COPILOT_API_KEY", "env-key");
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("nacos.copilot.apiKey", null);
+        fields.put("nacos.copilot.selectedConnection", null);
+        environment.getPropertySources().addFirst(new MapPropertySource("higher", fields));
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot())
+            .thenReturn(snapshotOf("{\"apiKey\":\"stored-key\","
+                + "\"selectedConnection\":\"stored\"}"));
+        CopilotAgentManager manager = managerWithRealReaders(environment);
+        
+        manager.refreshConfig();
+        
+        assertNull(manager.getConfig().getApiKey());
+        assertNull(manager.getConfig().getSelectedConnection());
+        assertEquals(SelectionSource.NONE, manager.getConnectionStatus().getSelectionSource());
+        CopilotConnectionInfo legacy = manager.getConnectionStatus().getConnections().get(0);
+        assertFalse(legacy.isApiKeyConfigured());
+        assertNull(legacy.getActualSource());
+        verifyNoInteractions(modelResolver);
+    }
+    
+    private CopilotAgentManager managerWithRealReaders(MockEnvironment environment) {
+        CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
+        // Model-only/cleared connections must fail existing validation before probing.
+        org.mockito.Mockito.lenient().when(modelResolver.canResolve(any())).thenReturn(true);
+        ProviderReaderAggregator readers = new ProviderReaderAggregator(Arrays.asList(
+            new DeploymentConfigProviderReader(),
+            new LegacyConfigProviderReader()), validator);
+        return new CopilotAgentManager(configStorage, readers,
+            modelResolver, new DefaultCopilotModelRouter(), environment);
+    }
+    
     private StoredCopilotConfig snapshotOf(String json) {
         return StoredCopilotConfig.parse(json);
     }
     
     private List<ILoggingEvent> refreshAndCaptureWarnings() {
+        return refreshAndCaptureWarnings(copilotAgentManager);
+    }
+    
+    private List<ILoggingEvent> refreshAndCaptureWarnings(CopilotAgentManager manager) {
         Logger logger = (Logger) LoggerFactory.getLogger(CopilotAgentManager.class);
         ListAppender<ILoggingEvent> events = new ListAppender<>();
         events.start();
         logger.addAppender(events);
         try {
-            copilotAgentManager.refreshConfig();
+            manager.refreshConfig();
         } finally {
             logger.detachAppender(events);
             events.stop();

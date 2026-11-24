@@ -29,6 +29,7 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -142,6 +143,20 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(
             new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode()));
+    }
+    
+    @Test
+    void handleTypeMismatchException() throws Exception {
+        TypeMismatchException exception =
+            new TypeMismatchException("probe-secret-value", Boolean.class);
+        exception.initPropertyName("updateForExist");
+        mockControllerThrowException(exception);
+        mockMvc.perform(post("/v3/admin/core/namespace"))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andExpect(
+                new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode()))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data")
+                .value("Invalid value for parameter: updateForExist"));
     }
     
     @Test

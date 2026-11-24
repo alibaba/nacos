@@ -77,6 +77,12 @@ Maintainer SDK 应被视为 Nacos Admin API 能力面的类型化门面。只对
 原映射。首期不新增应用层 `ConfigService` 方法。具体 SDK 签名及传输入口须随接口方案
 审阅，公开合同变更同时更新对应 SDK IT 和场景文档。
 
+正式 Config 管理发布可在完整元数据及 `changeMessage` 之外携带原生 CAS 和仅创建条件。
+Maintainer 门面必须保留 `casMd5`、`updateForExist`，不得使用伪造 md5 或先查询后写入。
+既有重载保持无条件发布，Beta 不变；不支持的实现必须拒绝条件请求而非丢弃保护条件。
+原生重复创建和 CAS 冲突必须以类型化错误到达调用方；参见
+[Java SDK 实现规范](./sdk-java-impl-spec.md#72-configmaintainerservice)。
+
 ## 4. Agent 与 RAD 目标契约
 
 本节定义 Agent 管理和 [Remote Agent Discovery（RAD）](../ai/rad-protocol-spec.md)

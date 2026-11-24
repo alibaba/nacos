@@ -130,10 +130,66 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configForm.setNamespaceId("namespaceId");
         configForm.setContent("content");
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setCasMd5("  ");
         when(configMaintainerService.publishConfig(eq("dataId"), eq("group"), eq("namespaceId"),
             eq("content"), any(),
             any(), any(), any(), any())).thenReturn(true);
         assertTrue(configRemoteHandler.publishConfig(configForm, configRequestInfo));
+    }
+    
+    @Test
+    void publishConfigForwardsBothGuardsAndMessage() throws NacosException {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("dataId");
+        form.setGroup("group");
+        form.setNamespaceId("namespaceId");
+        form.setContent("content");
+        form.setChangeMessage("save settings");
+        ConfigRequestInfo info = new ConfigRequestInfo();
+        info.setCasMd5("previous-md5");
+        info.setUpdateForExist(false);
+        configRemoteHandler.publishConfig(form, info);
+        Object[] arguments = Mockito.mockingDetails(configMaintainerService).getInvocations()
+            .iterator().next().getArguments();
+        assertEquals(12, arguments.length);
+        assertEquals("save settings", arguments[9]);
+        assertEquals("previous-md5", arguments[10]);
+        assertEquals(false, arguments[11]);
+    }
+    
+    @Test
+    void publishConfigForwardsCreateOnlyWithoutCasOrMessage() throws NacosException {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("dataId");
+        form.setGroup("group");
+        form.setNamespaceId("namespaceId");
+        form.setContent("content");
+        ConfigRequestInfo info = new ConfigRequestInfo();
+        info.setUpdateForExist(false);
+        configRemoteHandler.publishConfig(form, info);
+        Object[] arguments = Mockito.mockingDetails(configMaintainerService).getInvocations()
+            .iterator().next().getArguments();
+        assertEquals(12, arguments.length);
+        assertNull(arguments[9]);
+        assertNull(arguments[10]);
+        assertEquals(false, arguments[11]);
+    }
+    
+    @Test
+    void publishConfigForwardsCasWithDefaultUpdateForExist() throws NacosException {
+        ConfigForm form = new ConfigForm();
+        form.setDataId("dataId");
+        form.setGroup("group");
+        form.setNamespaceId("namespaceId");
+        form.setContent("content");
+        ConfigRequestInfo info = new ConfigRequestInfo();
+        info.setCasMd5("previous-md5");
+        configRemoteHandler.publishConfig(form, info);
+        Object[] arguments = Mockito.mockingDetails(configMaintainerService).getInvocations()
+            .iterator().next().getArguments();
+        assertEquals(12, arguments.length);
+        assertEquals("previous-md5", arguments[10]);
+        assertEquals(true, arguments[11]);
     }
     
     @Test
@@ -146,6 +202,8 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configForm.setChangeMessage("x".repeat(513));
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setBetaIps("127.0.0.1");
+        configRequestInfo.setCasMd5("previous-md5");
+        configRequestInfo.setUpdateForExist(false);
         when(configMaintainerService.publishBetaConfig(eq("dataId"), eq("group"), eq("namespaceId"),
             eq("content"),
             any(), any(), any(), any(), any(), eq("127.0.0.1"))).thenReturn(true);

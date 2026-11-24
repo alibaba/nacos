@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCopilotConfigPayload,
-  hasLegacyConnection,
   isConnectionUsable,
   isSelectionOverriddenByDeployment,
   type CopilotConnectionInfo,
-  type CopilotConnectionSource,
 } from '../copilot-config';
 
 const deploymentConnection: CopilotConnectionInfo = {
@@ -25,15 +23,54 @@ const legacyConnection: CopilotConnectionInfo = {
 };
 
 describe('copilot config payload', () => {
-  it('submits only the connection selection when no legacy connection is visible', () => {
-    expect(
-      buildCopilotConfigPayload({
-        selectedConnection: 'prod-qwen',
-        connections: [deploymentConnection],
-        apiKey: 'st******ey',
-        model: 'qwen-max',
-      })
-    ).toEqual({ selectedConnection: 'prod-qwen' });
+  describe.each([
+    { name: 'missing runtime table', connections: undefined },
+    { name: 'empty runtime table', connections: [] },
+    { name: 'deployment-only table', connections: [deploymentConnection] },
+    {
+      name: 'deployment connection replacing legacy',
+      connections: [{ ...deploymentConnection, name: 'legacy' }],
+    },
+  ])('$name', ({ connections }) => {
+    it('submits legacy key and model updates independently of runtime entries', () => {
+      expect(
+        buildCopilotConfigPayload({
+          selectedConnection: '',
+          connections,
+          apiKey: 'local-test-key',
+          model: 'qwen-max',
+        })
+      ).toEqual({ selectedConnection: '', apiKey: 'local-test-key', model: 'qwen-max' });
+    });
+
+    it('keeps the masked stored key when submitting a model update', () => {
+      expect(
+        buildCopilotConfigPayload({
+          selectedConnection: '',
+          connections,
+          apiKey: 'st******ey',
+          model: 'qwen-plus',
+        })
+      ).toEqual({ selectedConnection: '', apiKey: 'st******ey', model: 'qwen-plus' });
+    });
+
+    it('submits blank legacy fields to clear stored values', () => {
+      expect(
+        buildCopilotConfigPayload({
+          selectedConnection: '',
+          connections,
+          apiKey: '',
+          model: '',
+        })
+      ).toEqual({ selectedConnection: '', apiKey: '', model: '' });
+    });
+  });
+
+  it('omits unsubmitted legacy fields rather than clearing them', () => {
+    expect(buildCopilotConfigPayload({ selectedConnection: '', apiKey: 'local-test-key' }))
+      .toEqual({ selectedConnection: '', apiKey: 'local-test-key' });
+    expect(buildCopilotConfigPayload({ selectedConnection: '', model: 'qwen-max' }))
+      .toEqual({ selectedConnection: '', model: 'qwen-max' });
   });
 
   it('submits the legacy api key and model when a legacy connection is visible', () => {
@@ -72,17 +109,6 @@ describe('copilot config payload', () => {
         model: 'qwen-turbo',
       }).apiKey
     ).toBe('te******34');
-  });
-
-  it('detects the legacy connection regardless of case or order', () => {
-    expect(hasLegacyConnection([deploymentConnection])).toBe(false);
-    expect(hasLegacyConnection([deploymentConnection, legacyConnection])).toBe(true);
-    expect(
-      hasLegacyConnection([
-        { ...legacyConnection, source: 'legacy' as CopilotConnectionSource },
-      ])
-    ).toBe(true);
-    expect(hasLegacyConnection(undefined)).toBe(false);
   });
 
   it('treats only enabled and available connections as usable', () => {

@@ -19,7 +19,6 @@ package com.alibaba.nacos.copilot.connection;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -67,18 +66,6 @@ public class DeploymentConfigProviderReader implements ProviderReader {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DeploymentConfigProviderReader.class);
     
-    private final ConfigurableEnvironment environment;
-    
-    /**
-     * Create the deployment reader.
-     *
-     * @param environment Spring environment holding the deployment configuration
-     */
-    @Autowired
-    public DeploymentConfigProviderReader(ConfigurableEnvironment environment) {
-        this.environment = environment;
-    }
-    
     @Override
     public int order() {
         return ORDER;
@@ -86,10 +73,12 @@ public class DeploymentConfigProviderReader implements ProviderReader {
     
     @Override
     public List<CopilotModelConnection> read(ProviderReadContext context) {
+        ConfigurableEnvironment environment = context.getDeployment();
         List<CopilotModelConnection> result = new ArrayList<>();
-        for (Map.Entry<String, String> entry : connectionNames().entrySet()) {
+        for (Map.Entry<String, String> entry : connectionNames(environment).entrySet()) {
             try {
-                BindResult<DeploymentConnectionDefinition> bound = bind(entry.getValue());
+                BindResult<DeploymentConnectionDefinition> bound =
+                    bind(environment, entry.getValue());
                 if (bound.isBound()) {
                     result.add(bound.get().toConnection(entry.getKey()));
                 }
@@ -105,33 +94,38 @@ public class DeploymentConfigProviderReader implements ProviderReader {
      * Bind one declared block through a synthetic source, so properties of a spelling that
      * was not selected can not leak into the connection.
      */
-    private BindResult<DeploymentConnectionDefinition> bind(String declaredName) {
-        Map<String, Object> properties = new LinkedHashMap<>();
+    private BindResult<DeploymentConnectionDefinition> bind(ConfigurableEnvironment environment,
+        String declaredName) {
+        List<PropertySource<?>> blocks = new ArrayList<>();
         String blockPrefix = PREFIX + declaredName + ".";
         for (PropertySource<?> source : environment.getPropertySources()) {
             if (!(source instanceof EnumerablePropertySource)) {
                 continue;
             }
+            Map<String, Object> properties = new LinkedHashMap<>();
             for (String propertyName : ((EnumerablePropertySource<?>) source).getPropertyNames()) {
                 if (!propertyName.startsWith(blockPrefix)) {
                     continue;
                 }
                 String suffix = propertyName.substring(blockPrefix.length());
-                String value = environment.getProperty(propertyName);
+                Object value = source.getProperty(propertyName);
                 if (StringUtils.isNotBlank(suffix) && value != null) {
-                    properties.putIfAbsent(BIND_PREFIX + "." + suffix, value);
+                    properties.put(BIND_PREFIX + "." + suffix, value);
                 }
             }
+            blocks.add(new MapPropertySource(source.getName(), properties));
         }
-        return new Binder(ConfigurationPropertySources.from(
-            new MapPropertySource("copilot-connection-" + declaredName, properties)))
+        // Binder selects the winning relaxed property before resolving its placeholders.
+        return new Binder(ConfigurationPropertySources.from(blocks),
+            value -> value instanceof String
+                ? environment.resolveRequiredPlaceholders((String) value) : value)
             .bind(BIND_PREFIX, Bindable.of(DeploymentConnectionDefinition.class));
     }
     
     /**
      * Map normalized connection names to the declared spelling used to bind each block.
      */
-    private Map<String, String> connectionNames() {
+    private Map<String, String> connectionNames(ConfigurableEnvironment environment) {
         Map<String, String> names = new LinkedHashMap<>();
         for (PropertySource<?> source : environment.getPropertySources()) {
             if (!(source instanceof EnumerablePropertySource)) {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -158,16 +159,15 @@ class ConsoleCopilotConfigControllerTest {
     }
     
     @Test
-    void testGetConfigReturnsDefaultWhenReadFails() throws Exception {
+    void testGetConfigReadFailureDoesNotReturnDefaultsOrRawReason() throws Exception {
         when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
-            .thenThrow(new RuntimeException("read failed"));
-        when(agentManager.getConnectionStatus()).thenReturn(statusOf(null));
+            .thenThrow(new RuntimeException("probe-secret-key"));
         
-        ConsoleCopilotConfig result = getConfig();
+        MockHttpServletResponse response = mockMvc.perform(get("/v3/console/copilot/config"))
+            .andExpect(status().isServiceUnavailable()).andReturn().getResponse();
         
-        assertNotNull(result);
-        assertNull(result.getApiKey());
-        assertEquals("qwen-turbo", result.getModel());
+        assertFalse(response.getContentAsString().contains("probe-secret-key"));
+        verify(agentManager, never()).getConnectionStatus();
     }
     
     @Test
@@ -425,7 +425,9 @@ class ConsoleCopilotConfigControllerTest {
         
         saveConfig("{\"selectedConnection\":\"   \"}");
         
-        assertFalse(savedConfig().containsKey("selectedConnection"));
+        Map<String, Object> saved = savedConfig();
+        assertTrue(saved.containsKey("selectedConnection"));
+        assertNull(saved.get("selectedConnection"));
     }
     
     @Test
@@ -522,6 +524,133 @@ class ConsoleCopilotConfigControllerTest {
         
         verify(configProxy).publishConfig(any(), any());
         assertTrue(response.getContentAsString().contains("stored but not activated"));
+    }
+    
+    @Test
+    void testUnrelatedSavePreservesNullDeclarations() throws Exception {
+        String stored = "{\"apiKey\":null,\"model\":null,\"selectedConnection\":null,"
+            + "\"custom\":{\"keep\":null}}";
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetailJson(stored));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"studioProject\":\"new-project\"}");
+        
+        Map<String, Object> saved = savedConfig();
+        assertTrue(saved.containsKey("apiKey"));
+        assertNull(saved.get("apiKey"));
+        assertTrue(saved.containsKey("model"));
+        assertNull(saved.get("model"));
+        assertTrue(saved.containsKey("selectedConnection"));
+        assertNull(saved.get("selectedConnection"));
+        Map<?, ?> custom = (Map<?, ?>) saved.get("custom");
+        assertTrue(custom.containsKey("keep"));
+        assertNull(custom.get("keep"));
+        assertEquals("new-project", saved.get("studioProject"));
+    }
+    
+    @Test
+    void testFirstSaveUsesCreateOnlyGuard() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"model\":\"new-model\"}");
+        
+        ArgumentCaptor<ConfigRequestInfo> captor =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configProxy).publishConfig(any(), captor.capture());
+        assertEquals(Boolean.FALSE, captor.getValue().getUpdateForExist());
+        assertNull(captor.getValue().getCasMd5());
+    }
+    
+    @Test
+    void testConcurrentFirstSaveRereadsAndKeepsClearedCredential() throws Exception {
+        String concurrent = "{\"apiKey\":\"\",\"apiKeyCleared\":true,"
+            + "\"studioProject\":\"concurrent\"}";
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(null, configDetailJson(concurrent));
+        when(configProxy.publishConfig(any(), any()))
+            .thenThrow(new NacosException(NacosException.CONFIG_ALREADY_EXISTS, "exists"))
+            .thenReturn(true);
+        
+        saveConfig("{\"model\":\"new-model\"}");
+        
+        ArgumentCaptor<ConfigForm> forms = ArgumentCaptor.forClass(ConfigForm.class);
+        ArgumentCaptor<ConfigRequestInfo> requests =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configProxy, times(2)).publishConfig(forms.capture(), requests.capture());
+        assertEquals(Boolean.FALSE, requests.getAllValues().get(0).getUpdateForExist());
+        assertEquals(MD5Utils.md5Hex(concurrent, StandardCharsets.UTF_8.name()),
+            requests.getAllValues().get(1).getCasMd5());
+        Map<String, Object> saved = JacksonUtils.toObj(forms.getAllValues().get(1).getContent(),
+            new TypeReference<>() {
+            });
+        assertEquals("", saved.get("apiKey"));
+        assertEquals(Boolean.TRUE, saved.get("apiKeyCleared"));
+        assertEquals("concurrent", saved.get("studioProject"));
+        assertEquals("new-model", saved.get("model"));
+        verify(agentManager).refreshConfig();
+    }
+    
+    @Test
+    void testStoredReadFailureRejectsSaveWithoutLeakingDetails() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenThrow(new NacosException(503, "probe-secret-key"));
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            post("/v3/console/copilot/config").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"model\":\"new-model\"}"))
+            .andExpect(status().isServiceUnavailable()).andReturn().getResponse();
+        
+        assertFalse(response.getContentAsString().contains("probe-secret-key"));
+        verify(configProxy, never()).publishConfig(any(), any());
+        verify(agentManager, never()).refreshConfig();
+    }
+    
+    @Test
+    void testMalformedStoredDocumentRejectsSave() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetailJson("{\"apiKey\":\"probe-secret-key\""));
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            post("/v3/console/copilot/config").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"model\":\"new-model\"}"))
+            .andExpect(status().isServiceUnavailable()).andReturn().getResponse();
+        
+        assertFalse(response.getContentAsString().contains("probe-secret-key"));
+        verify(configProxy, never()).publishConfig(any(), any());
+        verify(agentManager, never()).refreshConfig();
+    }
+    
+    @Test
+    void testStoredDocumentWithTrailingContentRejectsSave() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetailJson("{\"apiKey\":\"probe-secret-key\"} trailing-not-json"));
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            post("/v3/console/copilot/config").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"model\":\"new-model\"}"))
+            .andExpect(status().isServiceUnavailable()).andReturn().getResponse();
+        
+        assertFalse(response.getContentAsString().contains("probe-secret-key"));
+        verify(configProxy, never()).publishConfig(any(), any());
+        verify(agentManager, never()).refreshConfig();
+    }
+    
+    @Test
+    void testActivationFailureDoesNotExposeRawReason() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        doThrow(new IllegalStateException("probe-secret-key"))
+            .when(agentManager).refreshConfig();
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            post("/v3/console/copilot/config").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"model\":\"new-model\"}"))
+            .andExpect(status().isInternalServerError()).andReturn().getResponse();
+        
+        assertTrue(response.getContentAsString().contains("stored but not activated"));
+        assertFalse(response.getContentAsString().contains("probe-secret-key"));
     }
     
     private ConsoleCopilotConfig getConfig() throws Exception {

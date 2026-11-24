@@ -128,6 +128,26 @@ responses may omit frontmatter and the truncation flag or return null; API model
 round-trip unit tests cover that boundary.
 
 
+## Native conditional Config publish bridge
+
+The full-metadata `publishConfig` overload adds `changeMessage`, `casMd5`, and
+`updateForExist` as its final three arguments (12 total). Existing overloads
+remain unconditional and Beta retains its existing surface.
+
+| Scenario | Required behavior | Test/status |
+| --- | --- | --- |
+| Create-only insertion and duplicate | `updateForExist=false` without CAS creates once; a duplicate retains existing content/md5 and exposes `NacosApiException` with HTTP/detail code 410. | `shouldEnforceNativeCreateOnlyAndCasPublish`; passed default and Jackson 3 standalone, 2026-11-24. |
+| CAS success and stale md5 | A current md5 updates content; a stale md5 exposes `RESOURCE_CONFLICT` and leaves content/md5/history message unchanged. | Same test; passed default and Jackson 3 standalone, 2026-11-24. |
+| Metadata, message, and compatibility | Conditional publish carries full metadata/message; successful CAS history contains its message; the legacy publish overload still updates normally; Beta remains on its existing overload. | Conditional lifecycle passed default and Jackson 3 standalone; legacy overload update included. Existing Beta lifecycle was not rerun; request capture passed in `NacosConfigMaintainerServiceImplTest`. |
+| Oversized conditional message | Local `INVALID_PARAM` occurs before HTTP write and the config remains absent. | `shouldRejectOversizedConditionalMessageBeforeWrite`; passed default and Jackson 3 standalone, 2026-11-24. |
+
+These additions do not upgrade the historical coverage status or surface counts.
+On 2026-11-24, both new cases passed with the current Maintainer artifact against
+a rebuilt isolated standalone server: default 2/2 and Jackson 3 2/2, no skips.
+Test compilation and quality gates passed. Auth-on and the existing Beta
+lifecycle were not rerun. Independent-console integration and concurrent
+native-storage insertion remain separate validation boundaries.
+
 ## Config operation messages (#10978)
 
 The application ConfigService public methods are unchanged. Old application SDK publishes remain valid. ConfigHistoryDetailInfo exposes optional changeMessage; history-list models do not. Maintainer formal publish overloads carry the optional text, including when the API creates a config. Beta publish has no message overload. RPC transport accepts the optional addition parameter without changing ConfigService signatures.

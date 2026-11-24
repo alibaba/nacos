@@ -42,12 +42,6 @@ interface CopilotConfigPayloadInput {
   model?: string;
 }
 
-export function hasLegacyConnection(connections?: CopilotConnectionInfo[]): boolean {
-  return (connections ?? []).some(
-    (connection) => (connection.source ?? '').toUpperCase() === 'LEGACY'
-  );
-}
-
 export function isConnectionUsable(connection: CopilotConnectionInfo): boolean {
   return connection.enabled !== false && connection.available !== false;
 }
@@ -58,20 +52,16 @@ export function isSelectionOverriddenByDeployment(config: CopilotConfigView): bo
 
 export function buildCopilotConfigPayload({
   selectedConnection,
-  connections,
   apiKey,
   model,
 }: CopilotConfigPayloadInput): CopilotConfigPayload {
   const payload: CopilotConfigPayload = { selectedConnection: selectedConnection.trim() };
-  // Without a legacy connection the backend keeps the stored key/model, so submitting them
-  // could overwrite a value the operator can no longer see.
-  if (hasLegacyConnection(connections)) {
-    if (apiKey !== undefined) {
-      payload.apiKey = apiKey;
-    }
-    if (model !== undefined) {
-      payload.model = model;
-    }
+  // Stored legacy fields remain editable throughout deprecation, independently of routing.
+  if (apiKey !== undefined) {
+    payload.apiKey = apiKey;
+  }
+  if (model !== undefined) {
+    payload.model = model;
   }
   return payload;
 }

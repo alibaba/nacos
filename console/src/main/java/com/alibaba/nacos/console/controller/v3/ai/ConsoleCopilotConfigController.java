@@ -45,6 +45,8 @@ import com.alibaba.nacos.copilot.connection.CopilotConnectionInfo;
 import com.alibaba.nacos.copilot.connection.CopilotConnectionStatus;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
 import com.alibaba.nacos.core.plugin.config.PluginConfigMasker;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -87,6 +89,9 @@ public class ConsoleCopilotConfigController {
     private static final String CONFIG_TYPE = "json";
     
     private static final int MAX_SAVE_ATTEMPTS = 3;
+    
+    private static final ObjectMapper STORED_DOCUMENT_MAPPER =
+        new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     
     private static final ConfigItemDefinition API_KEY_DEFINITION =
         new ConfigItemDefinition.Builder("apiKey", "Copilot api key", ConfigItemType.STRING)
@@ -179,11 +184,16 @@ public class ConsoleCopilotConfigController {
             boolean persisted;
             try {
                 persisted = publishStoredConfig(request, document, current);
-            } catch (NacosApiException e) {
-                if (isCasConflict(e) && attempt < MAX_SAVE_ATTEMPTS - 1) {
+            } catch (NacosException e) {
+                if (!isCasConflict(e)) {
+                    throw e;
+                }
+                if (attempt < MAX_SAVE_ATTEMPTS - 1) {
                     continue;
                 }
-                throw e;
+                throw new NacosApiException(HttpStatus.CONFLICT.value(),
+                    ErrorCode.RESOURCE_CONFLICT,
+                    "Copilot configuration changed concurrently, please retry");
             }
             if (!persisted) {
                 return Result.success(false);
@@ -269,8 +279,11 @@ public class ConsoleCopilotConfigController {
             && StringUtils.isNotEmpty(current.getProperties().getApiKey());
     }
     
-    private boolean isCasConflict(NacosApiException exception) {
-        return exception.getDetailErrCode() == ErrorCode.RESOURCE_CONFLICT.getCode();
+    private boolean isCasConflict(NacosException exception) {
+        return exception.getErrCode() == NacosException.CONFIG_ALREADY_EXISTS
+            || exception instanceof NacosApiException
+                && ((NacosApiException) exception).getDetailErrCode() == ErrorCode.RESOURCE_CONFLICT
+                    .getCode();
     }
     
     /**
@@ -282,12 +295,9 @@ public class ConsoleCopilotConfigController {
         try {
             agentManager.refreshConfig();
         } catch (RuntimeException e) {
-            String reason = StringUtils.isBlank(e.getMessage())
-                ? e.getClass().getSimpleName() : e.getMessage();
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ErrorCode.SERVER_ERROR, "Copilot configuration was stored but not activated: "
-                    + reason + "; this node keeps the previous configuration until the next "
-                    + "refresh");
+                ErrorCode.SERVER_ERROR, "Copilot configuration was stored but not activated; "
+                    + "this node keeps the previous configuration until the next refresh");
         }
     }
     
@@ -310,21 +320,25 @@ public class ConsoleCopilotConfigController {
         return PluginConfigMasker.mask(API_KEY_DEFINITION, apiKey);
     }
     
-    private CopilotProperties getStoredConfig() {
+    private CopilotProperties getStoredConfig() throws NacosApiException {
         StoredCopilotConfig stored = readStoredDocument();
         return stored == null ? null : stored.getProperties();
     }
     
-    private StoredCopilotConfig readStoredDocument() {
+    private StoredCopilotConfig readStoredDocument() throws NacosApiException {
         try {
             ConfigDetailInfo configInfo =
                 configProxy.getConfigDetail(CONFIG_DATA_ID, CONFIG_GROUP, getConfigNamespace());
-            if (configInfo == null || StringUtils.isBlank(configInfo.getContent())) {
+            if (configInfo == null) {
                 return null;
+            }
+            if (!STORED_DOCUMENT_MAPPER.readTree(configInfo.getContent()).isObject()) {
+                throw new IllegalArgumentException("Stored configuration must be an object");
             }
             return StoredCopilotConfig.parse(configInfo.getContent());
         } catch (Exception e) {
-            return null;
+            throw new NacosApiException(HttpStatus.SERVICE_UNAVAILABLE.value(),
+                ErrorCode.SERVER_ERROR, "Unable to read stored Copilot configuration");
         }
     }
     
@@ -334,7 +348,7 @@ public class ConsoleCopilotConfigController {
         configForm.setDataId(CONFIG_DATA_ID);
         configForm.setGroup(CONFIG_GROUP);
         configForm.setNamespaceId(getConfigNamespace());
-        configForm.setContent(JacksonUtils.toJson(document));
+        configForm.setContent(JacksonUtils.toJson(STORED_DOCUMENT_MAPPER.valueToTree(document)));
         configForm.setAppName(CONFIG_APP_NAME);
         configForm.setSrcUser(CONFIG_SRC_USER);
         configForm.setDesc(CONFIG_DESC);
@@ -344,9 +358,11 @@ public class ConsoleCopilotConfigController {
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
-        if (current != null && StringUtils.isNotBlank(current.getContent())) {
+        if (current != null) {
             configRequestInfo.setCasMd5(
                 MD5Utils.md5Hex(current.getContent(), StandardCharsets.UTF_8.name()));
+        } else {
+            configRequestInfo.setUpdateForExist(Boolean.FALSE);
         }
         return Boolean.TRUE.equals(configProxy.publishConfig(configForm, configRequestInfo));
     }
