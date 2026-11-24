@@ -176,15 +176,17 @@ def main():
         assert str(plugin) in shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)
         assert "RuntimeClassLoading" not in (native / "options.args").read_text()
         # The Native profile selects its plugins one by one: the MySQL and PostgreSQL datasources with
-        # their drivers and the default plugins. LDAP, OIDC, Oracle and Derby are not on the classpath.
-        # Each JAR is matched by its file name, so that a dialect plugin cannot stand in for its driver.
+        # their drivers and the default auth and control plugins. The AI plugins, LDAP, OIDC, Oracle and
+        # Derby are not on the classpath. Each JAR is matched by its file name, so that a dialect plugin
+        # cannot stand in for its driver.
         selected = [os.path.basename(entry) for entry in
                     shlex.split((native / "classpath.args").read_text())[1].split(os.pathsep)]
         assert all(any(fnmatch.fnmatch(jar, pattern) for jar in selected) for pattern in (
             "nacos-datasource-plugin-mysql-*.jar", "mysql-connector-j-*.jar",
-            "nacos-datasource-plugin-postgresql-*.jar", "postgresql-*.jar", "default-auth-plugin-*.jar"))
+            "nacos-datasource-plugin-postgresql-*.jar", "postgresql-*.jar",
+            "default-auth-plugin-*.jar", "default-control-plugin-*.jar"))
         assert not any(fnmatch.fnmatch(jar, pattern) for jar in selected for pattern in (
-            "nacos-ldap-auth-plugin-*.jar", "nacos-oidc-auth-plugin-*.jar",
+            "nacos-default-ai-*.jar", "nacos-ldap-auth-plugin-*.jar", "nacos-oidc-auth-plugin-*.jar",
             "nacos-datasource-plugin-oracle-*.jar", "nacos-datasource-plugin-derby-*.jar", "derby*.jar"))
         run("console-postgresql", common + [configuration("postgresql", "postgresql", False),
             "-Dnacos.native.deployment=console"])

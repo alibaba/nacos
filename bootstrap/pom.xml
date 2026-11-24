@@ -159,30 +159,6 @@
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>
-                <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-default-ai-pipeline-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-default-ai-importer-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-default-ai-trace-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-default-ai-vector-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
             </dependencies>
             <build>
                 <plugins>

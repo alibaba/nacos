@@ -89,9 +89,9 @@ Java implementations into an already compiled executable. Rebuild after adding o
 plugin, JDBC driver, or Spring configuration.
 
 The `native` profile selects its plugins one by one instead of taking `nacos-default-plugin-all`. It
-selects the MySQL and PostgreSQL datasource plugins with their JDBC drivers, and the default auth,
-control and AI plugins. It does not select the LDAP and OIDC auth plugins, the Oracle dialect or the
-Derby datasource. A build that needs one of them adds its plugin JARs and drivers to
+selects the MySQL and PostgreSQL datasource plugins with their JDBC drivers, and the default auth and
+control plugins. It does not select the AI plugins, the LDAP and OIDC auth plugins, the Oracle dialect
+or the Derby datasource. A build that needs one of them adds its plugin JARs and drivers to
 `nacos.native.plugins`, which is the route for embedded Derby described below.
 
 | Property | Default | Purpose |
