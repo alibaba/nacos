@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 /**
  * Copilot agent manager that manages AgentScope agents with dynamic configuration.
@@ -300,68 +301,148 @@ public class CopilotAgentManager {
     }
     
     /**
-     * Get the effective configuration: deployment configuration overrides the stored
-     * configuration for the fields it declares, and the stored configuration overrides the
-     * defaults. The stored configuration is read once per refresh.
+     * Get the effective configuration: each source is read once per refresh, then merged
+     * field by field. The deployment configuration overrides the stored configuration for
+     * the fields it declares, and the stored configuration overrides the defaults. An
+     * explicit clear at the highest declaring source keeps the field empty and blocks the
+     * lower sources.
      *
      * @return effective configuration with the deployment fields that were applied
      */
     private EffectiveConfig resolveEffectiveConfig() {
-        CopilotProperties stored = null;
-        if (configStorage != null && configStorage.isAvailable()) {
-            stored = configStorage.getConfig();
-        }
+        StoredCopilotConfig stored = readStoredConfig();
         CopilotProperties effective =
-            stored == null ? new CopilotProperties() : copyOf(stored);
+            copyOf(defaultProperties == null ? new CopilotProperties() : defaultProperties);
+        applyStoredConfig(stored, effective);
         DeploymentOverrides overrides = applyDeploymentConfig(effective);
-        if (stored == null && !overrides.applied) {
-            return new EffectiveConfig(defaultProperties, overrides);
-        }
+        effective.setApiKeyCleared(resolveApiKeyCleared(stored, overrides, effective)
+            ? Boolean.TRUE : null);
         return new EffectiveConfig(effective, overrides);
     }
     
+    private StoredCopilotConfig readStoredConfig() {
+        if (configStorage == null || !configStorage.isAvailable()) {
+            return null;
+        }
+        return configStorage.getSnapshot();
+    }
+    
     /**
-     * Apply the deployment configuration fields that are explicitly set, so that every
-     * other field keeps its stored or default value.
+     * Apply the stored fields the document actually declares. Values are kept as declared,
+     * so a blank value clears the field instead of falling back to a lower source.
+     */
+    private void applyStoredConfig(StoredCopilotConfig stored, CopilotProperties target) {
+        if (stored == null) {
+            return;
+        }
+        if (stored.declares(StoredCopilotConfig.ENABLED)) {
+            Object enabled = stored.getRaw(StoredCopilotConfig.ENABLED);
+            if (enabled instanceof Boolean) {
+                target.setEnabled((Boolean) enabled);
+            } else if (enabled != null) {
+                LOGGER.warn("Ignoring stored Copilot enabled value [{}] because it is not a "
+                    + "boolean", enabled);
+            }
+        }
+        if (stored.declares(StoredCopilotConfig.DEFAULT_NAMESPACE)) {
+            target.setDefaultNamespace(
+                clearable(stored.getRaw(StoredCopilotConfig.DEFAULT_NAMESPACE)));
+        }
+        if (stored.declares(StoredCopilotConfig.API_KEY)) {
+            target.setApiKey(clearable(stored.getRaw(StoredCopilotConfig.API_KEY)));
+        }
+        if (stored.declares(StoredCopilotConfig.MODEL)) {
+            target.setModel(clearable(stored.getRaw(StoredCopilotConfig.MODEL)));
+        }
+        if (stored.declares(StoredCopilotConfig.STUDIO_URL)) {
+            target.setStudioUrl(clearable(stored.getRaw(StoredCopilotConfig.STUDIO_URL)));
+        }
+        if (stored.declares(StoredCopilotConfig.STUDIO_PROJECT)) {
+            target.setStudioProject(clearable(stored.getRaw(StoredCopilotConfig.STUDIO_PROJECT)));
+        }
+        if (stored.declares(StoredCopilotConfig.SELECTED_CONNECTION)) {
+            target.setSelectedConnection(
+                clearable(stored.getRaw(StoredCopilotConfig.SELECTED_CONNECTION)));
+        }
+    }
+    
+    /**
+     * Normalize a declared string value: a missing or blank value means the field is
+     * cleared.
+     */
+    private String clearable(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString().trim();
+        return text.isEmpty() ? null : text;
+    }
+    
+    /**
+     * The effective credential is blocked from the environment fallback when the highest
+     * source that declares it clears it.
+     */
+    private boolean resolveApiKeyCleared(StoredCopilotConfig stored,
+        DeploymentOverrides overrides, CopilotProperties effective) {
+        if (overrides.apiKey) {
+            return StringUtils.isBlank(effective.getApiKey());
+        }
+        if (stored != null && stored.declares(StoredCopilotConfig.API_KEY)) {
+            return StringUtils.isBlank(effective.getApiKey());
+        }
+        return stored != null && Boolean.TRUE.equals(stored.getProperties().getApiKeyCleared());
+    }
+    
+    /**
+     * Apply the deployment configuration fields that are declared, so that every other
+     * field keeps its stored or default value. A declared blank string clears the field
+     * instead of counting as not declared.
      *
      * @param target configuration to update
-     * @return whether the deployment configuration declares at least one field
+     * @return which fields the deployment configuration declared
      */
     private DeploymentOverrides applyDeploymentConfig(CopilotProperties target) {
         Binder binder = Binder.get(environment);
-        BindResult<Boolean> enabled =
-            binder.bind(CONFIG_PREFIX + ".enabled", Boolean.class);
-        enabled.ifBound(target::setEnabled);
-        BindResult<String> defaultNamespace =
-            binder.bind(CONFIG_PREFIX + ".default-namespace", String.class);
-        defaultNamespace.ifBound(target::setDefaultNamespace);
+        applyDeploymentBoolean(binder, CONFIG_PREFIX + ".enabled", target);
+        applyDeploymentString(binder, CONFIG_PREFIX + ".default-namespace",
+            target::setDefaultNamespace);
         BindResult<String> apiKey = binder.bind(CONFIG_PREFIX + ".api-key", String.class);
-        apiKey.ifBound(target::setApiKey);
-        BindResult<String> model = binder.bind(CONFIG_PREFIX + ".model", String.class);
-        model.ifBound(target::setModel);
-        BindResult<String> studioUrl = binder.bind(CONFIG_PREFIX + ".studio-url", String.class);
-        studioUrl.ifBound(target::setStudioUrl);
-        BindResult<String> studioProject =
-            binder.bind(CONFIG_PREFIX + ".studio-project", String.class);
-        studioProject.ifBound(target::setStudioProject);
+        if (apiKey.isBound()) {
+            target.setApiKey(clearable(apiKey.get()));
+        }
+        applyDeploymentString(binder, CONFIG_PREFIX + ".model", target::setModel);
+        applyDeploymentString(binder, CONFIG_PREFIX + ".studio-url", target::setStudioUrl);
+        applyDeploymentString(binder, CONFIG_PREFIX + ".studio-project",
+            target::setStudioProject);
         BindResult<String> selectedConnection =
             binder.bind(CONFIG_PREFIX + ".selected-connection", String.class);
-        // A blank deployment selection means "not declared" for this field, so it neither
-        // clears the stored selection nor counts as a deployment override. Explicit clears
-        // remain specific to the credential fields.
-        String deploymentSelection =
-            selectedConnection.isBound() ? selectedConnection.get().trim() : null;
-        boolean deploymentSelectionApplied = StringUtils.isNotBlank(deploymentSelection);
-        if (deploymentSelectionApplied) {
-            target.setSelectedConnection(deploymentSelection);
+        if (selectedConnection.isBound()) {
+            target.setSelectedConnection(clearable(selectedConnection.get()));
         }
         DeploymentOverrides overrides = new DeploymentOverrides();
         overrides.apiKey = apiKey.isBound();
-        overrides.selectedConnection = deploymentSelectionApplied;
-        overrides.applied = enabled.isBound() || defaultNamespace.isBound()
-            || apiKey.isBound() || model.isBound() || studioUrl.isBound()
-            || studioProject.isBound() || deploymentSelectionApplied;
+        // A blank deployment selection clears the stored selection, so it only counts as a
+        // deployment-scope value when it actually selects a connection.
+        overrides.selectedConnection =
+            selectedConnection.isBound() && StringUtils.isNotBlank(selectedConnection.get());
         return overrides;
+    }
+    
+    private void applyDeploymentString(Binder binder, String key, Consumer<String> setter) {
+        BindResult<String> result = binder.bind(key, String.class);
+        if (result.isBound()) {
+            setter.accept(clearable(result.get()));
+        }
+    }
+    
+    private void applyDeploymentBoolean(Binder binder, String key, CopilotProperties target) {
+        try {
+            BindResult<Boolean> result = binder.bind(key, Boolean.class);
+            result.ifBound(target::setEnabled);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Ignoring deployment Copilot value for [{}] because it is not a "
+                + "boolean: {}", key, e.getMessage());
+        }
     }
     
     private CopilotProperties copyOf(CopilotProperties source) {
@@ -445,8 +526,6 @@ public class CopilotAgentManager {
      * Deployment fields that were explicitly bound during this refresh.
      */
     private static final class DeploymentOverrides {
-        
-        private boolean applied;
         
         private boolean apiKey;
         

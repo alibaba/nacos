@@ -323,14 +323,13 @@ class CopilotAgentManagerTest {
     
     @Test
     void testGetConnectionStatusReportsDeploymentSelection() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setSelectedConnection("alpha");
+        StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"alpha\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "beta");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -342,15 +341,13 @@ class CopilotAgentManagerTest {
     
     @Test
     void testRefreshPassesDeploymentApiKeyOriginToReaders() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setApiKey("console-key");
-        stored.setApiKeyCleared(Boolean.TRUE);
+        StoredCopilotConfig stored = snapshotOf("{\"apiKey\":\"console-key\"}");
         MockEnvironment environment =
             new MockEnvironment().withProperty("nacos.copilot.apiKey", "deploy-key");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         ArgumentCaptor<ProviderReadContext> captor =
             ArgumentCaptor.forClass(ProviderReadContext.class);
@@ -364,12 +361,11 @@ class CopilotAgentManagerTest {
     
     @Test
     void testGetConnectionStatusReportsStoredSelection() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setSelectedConnection("alpha");
+        StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"alpha\"}");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -392,55 +388,52 @@ class CopilotAgentManagerTest {
     }
     
     @Test
-    void testGetConnectionStatusKeepsStoredSelectionWhenDeploymentSelectionIsEmpty() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setSelectedConnection("beta");
+    void testGetConnectionStatusClearsStoredSelectionWhenDeploymentSelectionIsEmpty() {
+        StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"beta\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
         CopilotConnectionStatus status = manager.getConnectionStatus();
         
-        assertEquals("beta", status.getEffectiveSelectedConnection());
-        assertEquals(SelectionSource.STORED, status.getSelectionSource());
+        assertNull(status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.NONE, status.getSelectionSource());
     }
     
     @Test
-    void testGetConnectionStatusKeepsStoredSelectionWhenDeploymentSelectionIsWhitespace() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setSelectedConnection("beta");
+    void testGetConnectionStatusClearsStoredSelectionWhenDeploymentSelectionIsWhitespace() {
+        StoredCopilotConfig stored = snapshotOf("{\"selectedConnection\":\"beta\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "   ");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
         CopilotConnectionStatus status = manager.getConnectionStatus();
         
-        assertEquals("beta", status.getEffectiveSelectedConnection());
-        assertEquals(SelectionSource.STORED, status.getSelectionSource());
+        assertNull(status.getEffectiveSelectedConnection());
+        assertEquals(SelectionSource.NONE, status.getSelectionSource());
     }
     
     @Test
     void testGetConnectionStatusReturnsNoActiveConnectionWhenDisabled() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setEnabled(false);
-        stored.setSelectedConnection("prod-qwen");
+        StoredCopilotConfig stored = snapshotOf(
+            "{\"enabled\":false,\"selectedConnection\":\"prod-qwen\"}");
         CopilotModelConnection connection = buildConnection("test-api-key",
             ConnectionSource.DEPLOYMENT);
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, new DefaultCopilotModelRouter(),
             new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         
         manager.refreshConfig();
@@ -453,16 +446,15 @@ class CopilotAgentManagerTest {
     
     @Test
     void testGetConnectionStatusRoutesWhenEnabled() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setEnabled(true);
-        stored.setSelectedConnection("prod-qwen");
+        StoredCopilotConfig stored = snapshotOf(
+            "{\"enabled\":true,\"selectedConnection\":\"prod-qwen\"}");
         CopilotModelConnection connection = buildConnection("test-api-key",
             ConnectionSource.DEPLOYMENT);
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, new DefaultCopilotModelRouter(),
             new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(tableOf(connection));
         
         manager.refreshConfig();
@@ -475,11 +467,9 @@ class CopilotAgentManagerTest {
     @Test
     void testRefreshKeepsClearedApiKeyMarker() {
         // Given
-        CopilotProperties stored = new CopilotProperties();
-        stored.setApiKey("");
-        stored.setApiKeyCleared(Boolean.TRUE);
+        StoredCopilotConfig stored = snapshotOf("{\"apiKey\":\"\",\"apiKeyCleared\":true}");
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         // When
@@ -487,7 +477,7 @@ class CopilotAgentManagerTest {
         
         // Then
         assertEquals(Boolean.TRUE, copilotAgentManager.getConfig().getApiKeyCleared());
-        assertEquals("", copilotAgentManager.getConfig().getApiKey());
+        assertNull(copilotAgentManager.getConfig().getApiKey());
     }
     
     @Test
@@ -516,12 +506,10 @@ class CopilotAgentManagerTest {
     
     @Test
     void testRefreshReadsStoredConfigurationOnce() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setEnabled(true);
-        stored.setModel("qwen-max");
-        stored.setApiKey("stored-key");
+        StoredCopilotConfig stored = snapshotOf(
+            "{\"enabled\":true,\"model\":\"qwen-max\",\"apiKey\":\"stored-key\"}");
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored, (CopilotProperties) null);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(modelResolver.canResolve(any())).thenReturn(true);
         Environment environment = mock(Environment.class);
         CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
@@ -532,7 +520,7 @@ class CopilotAgentManagerTest {
         
         realManager.refreshConfig();
         
-        verify(configStorage, times(1)).getConfig();
+        verify(configStorage, times(1)).getSnapshot();
         assertEquals("qwen-max", realManager.getConfig().getModel());
         assertTrue(realManager.isEnabled());
     }
@@ -554,15 +542,14 @@ class CopilotAgentManagerTest {
     
     @Test
     void testDeploymentSelectionOverridesStoredConfiguration() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setApiKey("old-key");
-        stored.setModel("qwen-turbo");
+        StoredCopilotConfig stored = snapshotOf(
+            "{\"apiKey\":\"old-key\",\"model\":\"qwen-turbo\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "beta");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -574,12 +561,9 @@ class CopilotAgentManagerTest {
     
     @Test
     void testDeploymentConfigurationOverridesStoredValues() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setEnabled(false);
-        stored.setDefaultNamespace("legacy-namespace");
-        stored.setApiKey("old-key");
-        stored.setModel("qwen-turbo");
-        stored.setSelectedConnection("stored-choice");
+        StoredCopilotConfig stored = snapshotOf("{\"enabled\":false,"
+            + "\"defaultNamespace\":\"legacy-namespace\",\"apiKey\":\"old-key\","
+            + "\"model\":\"qwen-turbo\",\"selectedConnection\":\"stored-choice\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.enabled", "true")
             .withProperty("nacos.copilot.model", "qwen-max")
@@ -587,7 +571,7 @@ class CopilotAgentManagerTest {
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -602,15 +586,14 @@ class CopilotAgentManagerTest {
     
     @Test
     void testDeploymentSelectionChangeAppliesWhileStoredConfigurationExists() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setApiKey("old-key");
-        stored.setModel("qwen-turbo");
+        StoredCopilotConfig stored = snapshotOf(
+            "{\"apiKey\":\"old-key\",\"model\":\"qwen-turbo\"}");
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.selectedConnection", "alpha");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, environment);
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -620,20 +603,17 @@ class CopilotAgentManagerTest {
         manager.refreshConfig();
         
         assertEquals("beta", manager.getConfig().getSelectedConnection());
-        verify(configStorage, times(2)).getConfig();
+        verify(configStorage, times(2)).getSnapshot();
     }
     
     @Test
     void testStoredConfigurationRemainsEffectiveWithoutDeploymentOverrides() {
-        CopilotProperties stored = new CopilotProperties();
-        stored.setEnabled(false);
-        stored.setApiKey("old-key");
-        stored.setModel("qwen-turbo");
-        stored.setSelectedConnection("stored-choice");
+        StoredCopilotConfig stored = snapshotOf("{\"enabled\":false,\"apiKey\":\"old-key\","
+            + "\"model\":\"qwen-turbo\",\"selectedConnection\":\"stored-choice\"}");
         CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
             providerReaders, modelResolver, modelRouter, new MockEnvironment());
         when(configStorage.isAvailable()).thenReturn(true);
-        when(configStorage.getConfig()).thenReturn(stored);
+        when(configStorage.getSnapshot()).thenReturn(stored);
         when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
         
         manager.refreshConfig();
@@ -655,6 +635,7 @@ class CopilotAgentManagerTest {
         when(configStorage.isAvailable()).thenReturn(false);
         when(modelResolver.canResolve(any())).thenReturn(true);
         when(modelResolver.resolve(any())).thenReturn(mock(Model.class));
+        when(defaultProperties.isEnabled()).thenReturn(true);
         CopilotConnectionValidator validator = new CopilotConnectionValidator(modelResolver);
         ProviderReaderAggregator realReaders = new ProviderReaderAggregator(
             Arrays.asList(new DeploymentConfigProviderReader(environment),
@@ -851,6 +832,105 @@ class CopilotAgentManagerTest {
             studio.verify(StudioManager::init, times(3));
             verify(builder, times(3)).initialize();
         }
+    }
+    
+    @Test
+    void testStoredConfigurationInheritsDefaultsForAbsentFields() {
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot())
+            .thenReturn(snapshotOf("{\"selectedConnection\":\"alpha\"}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(defaultProperties.getModel()).thenReturn("qwen-plus");
+        
+        copilotAgentManager.refreshConfig();
+        
+        assertEquals("qwen-plus", copilotAgentManager.getConfig().getModel());
+        assertEquals("alpha", copilotAgentManager.getConfig().getSelectedConnection());
+    }
+    
+    @Test
+    void testStoredNullClearsFieldInsteadOfInheritingDefault() {
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"model\":null}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(defaultProperties.getModel()).thenReturn("qwen-plus");
+        
+        copilotAgentManager.refreshConfig();
+        
+        assertNull(copilotAgentManager.getConfig().getModel());
+    }
+    
+    @Test
+    void testStoredBlankStringClearsFieldInsteadOfInheritingDefault() {
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"studioUrl\":\"   \"}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(defaultProperties.getStudioUrl()).thenReturn("http://studio");
+        
+        copilotAgentManager.refreshConfig();
+        
+        assertNull(copilotAgentManager.getConfig().getStudioUrl());
+    }
+    
+    @Test
+    void testStoredFalseIsARealValue() {
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"enabled\":false}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        when(defaultProperties.isEnabled()).thenReturn(true);
+        
+        copilotAgentManager.refreshConfig();
+        
+        assertFalse(copilotAgentManager.isEnabled());
+    }
+    
+    @Test
+    void testStoredBlankApiKeyBlocksEnvironmentFallback() {
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"apiKey\":\"\"}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        copilotAgentManager.refreshConfig();
+        
+        assertNull(copilotAgentManager.getConfig().getApiKey());
+        assertEquals(Boolean.TRUE, copilotAgentManager.getConfig().getApiKeyCleared());
+    }
+    
+    @Test
+    void testDeploymentBlankApiKeyClearsStoredCredential() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.apiKey", "");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot())
+            .thenReturn(snapshotOf("{\"apiKey\":\"console-key\"}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        assertNull(manager.getConfig().getApiKey());
+        assertEquals(Boolean.TRUE, manager.getConfig().getApiKeyCleared());
+    }
+    
+    @Test
+    void testStoredClearDoesNotOverrideDeploymentValue() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.apiKey", "deploy-key");
+        CopilotAgentManager manager = new CopilotAgentManager(configStorage, defaultProperties,
+            providerReaders, modelResolver, modelRouter, environment);
+        when(configStorage.isAvailable()).thenReturn(true);
+        when(configStorage.getSnapshot()).thenReturn(snapshotOf("{\"apiKey\":null}"));
+        when(providerReaders.readAll(any())).thenReturn(ConnectionTable.empty());
+        
+        manager.refreshConfig();
+        
+        assertEquals("deploy-key", manager.getConfig().getApiKey());
+        assertNull(manager.getConfig().getApiKeyCleared());
+    }
+    
+    private StoredCopilotConfig snapshotOf(String json) {
+        return StoredCopilotConfig.parse(json);
     }
     
     private List<ILoggingEvent> refreshAndCaptureWarnings() {

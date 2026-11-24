@@ -188,19 +188,30 @@ Current enablement and surface:
 - AgentScope Studio is configured through `nacos.copilot.studioUrl` and
   `nacos.copilot.studioProject`.
 
-The effective configuration is merged field by field: a field explicitly set in
-`nacos.copilot.*` overrides the same field in `copilot-config.json`, and
-`copilot-config.json` overrides the built-in default. A field that the deployment
-configuration does not set falls back to the stored value, then to the default.
-`selectedConnection`, `enabled`, and `studioUrl` follow the same precedence, so an
-existing `copilot-config.json` from an older installation does not hide values
-explicitly set in the new deployment configuration. The connection table is merged
-independently by connection source (a deployment connection replaces the `legacy`
-connection with the same name). A blank (empty or whitespace-only)
-`nacos.copilot.selectedConnection` counts as not declared for this field: the
-stored selection stays in effect and the field is not reported as a deployment
-override. This blank-value rule is specific to the selection field and does not
-change the explicit-clear semantics of the credential fields.
+The effective configuration is resolved field by field from three inputs, each
+captured once per refresh: the deployment configuration, `copilot-config.json`,
+and the built-in defaults. A field the deployment configuration declares
+overrides the stored value, which overrides the default. The deployment-declared
+credential and selection are also reported with their source, so the console can
+tell a deployment value from a stored one. An existing `copilot-config.json` from
+an older installation therefore does not hide values explicitly set in the new
+deployment configuration.
+
+String fields are three-state. A field absent from a source is inherited from
+the next lower source. A field declared as `null`, an empty string, or a
+whitespace-only string clears the value and blocks every lower source. `false`
+and `0` are real values, and type and required-field checks still apply. The
+stored document is read as raw JSON, so a field it does not contain is not
+confused with a field it clears, and a clear is never expressed by dropping the
+declaration, which would let the old value return. Settings, the connection
+table, and their sources are published together in one snapshot.
+
+`nacos.copilot.selectedConnection` follows the same three-state rule: a blank
+deployment value now clears the selection so routing uses `Automatic`, instead
+of leaving the stored selection in effect as in the previous release. The
+connection table is merged independently by connection source: a deployment
+connection replaces the connection with the same normalized name as a complete
+definition and does not inherit any stored or legacy field.
 
 Model connection rules:
 
@@ -231,13 +242,14 @@ Model connection rules:
   ordered by priority and then by name, so ties within a source resolve
   deterministically.
 - Every connection is validated at load time: `providerId` and `model` are
-  required; the `legacy` connection is usable only when `COPILOT_API_KEY` or
-  the stored `apiKey` provides a key, so clearing both makes the connection
-  unavailable instead of leaving the provider's own environment fallback in
-  charge; the provider prefix is checked with
-  `canResolve` before a `resolve` probe reports construction errors; an
-  explicit `baseUrl` must use https and resolve to a public address unless its
-  host matches `nacos.copilot.base-url.allowlist`.
+  required; the `legacy` connection uses `COPILOT_API_KEY` when it is present
+  and not cleared, otherwise the effective `apiKey` (deployment over stored);
+  an explicit clear at either configuration level stops that environment
+  fallback, so a cleared credential makes the connection unavailable instead of
+  leaving the provider's own environment fallback in charge; the provider
+  prefix is checked with `canResolve` before a `resolve` probe reports
+  construction errors; an explicit `baseUrl` must use https and resolve to a
+  public address unless its host matches `nacos.copilot.base-url.allowlist`.
 - A connection that fails validation is only marked unavailable with its
   diagnostic reason; other connections keep serving. Upstream provider
   diagnostics are preserved verbatim rather than replaced by a generic error.
@@ -298,11 +310,14 @@ Console configuration API rules:
   clears the stored selection but cannot override the deployment value. The
   API reports the effective selection and its origin so the console can explain
   this state instead of presenting a saved value as if it were in use. A blank
-  or whitespace-only deployment value counts as not declared, so the stored
-  selection stays effective and the source is `STORED`.
+  or whitespace-only deployment value is a clear, so the selection becomes
+  `Automatic` and the stored selection is no longer effective; the effective
+  source stays `NONE` because no connection is selected.
 - `POST /v3/console/copilot/config` accepts only `apiKey`, `model`, `studioUrl`,
   `studioProject`, and `selectedConnection`; other fields are ignored. A field
-  absent from the request keeps its stored value.
+  absent from the request keeps its stored value, and only the submitted fields
+  are patched into the stored document; absent fields are not backfilled from
+  deployment values or defaults.
 - The api key is three-state: absent or masked keeps the stored key, a non-blank
   value replaces it, and a blank value clears a stored key and marks the
   `legacy` connection so it no longer falls back to `COPILOT_API_KEY`. A blank
@@ -328,6 +343,16 @@ Console configuration API rules:
   published configuration, so `GET` reports the resulting table; there is no
   pending-validation state, and moving the refresh off the request thread is
   deferred to the asynchronous validation design.
+- A save validates the request, persists the stored document successfully, runs
+  the unified resolution, activates the new snapshot atomically, and only then
+  returns success. A failed persist leaves the in-memory configuration unchanged.
+  Saves use the stored document's MD5 as a compare-and-set guard and re-read and
+  re-apply the patch on conflict, so concurrent saves do not drop another field's
+  update or restore a key that was just cleared. A stored-configuration read
+  failure after a successful persist is a known gap in this iteration: it is not
+  compensated and introduces no extra state protocol, and the failure is only
+  logged. If activation itself throws, the save returns an explicit error and
+  the node keeps the previous snapshot.
 - The stored api key and model remain editable only as a deprecation path for
   the `legacy` connection: new deployments declare
   `nacos.copilot.connections.*`, and the console presents these fields as

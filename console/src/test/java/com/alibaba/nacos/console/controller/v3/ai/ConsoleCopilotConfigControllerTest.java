@@ -17,8 +17,11 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.model.ai.ConsoleCopilotConfig;
@@ -39,12 +42,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -194,6 +201,7 @@ class ConsoleCopilotConfigControllerTest {
         assertEquals("Copilot configuration", configFormCaptor.getValue().getDesc());
         assertEquals("json", configFormCaptor.getValue().getType());
         assertEquals("http", requestInfoCaptor.getValue().getSrcType());
+        assertNull(requestInfoCaptor.getValue().getCasMd5());
         Map<String, Object> saved = savedConfig();
         assertEquals("new-key-1234", saved.get("apiKey"));
         assertEquals("qwen-max", saved.get("model"));
@@ -312,7 +320,6 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testSaveConfigRejectsUnknownSelectedConnection() throws Exception {
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(agentManager.getConnectionStatus()).thenReturn(
             statusOfConnections(deploymentConnection("prod-qwen", true, true, null)));
         
@@ -327,7 +334,6 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testSaveConfigRejectsDisabledSelectedConnection() throws Exception {
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(agentManager.getConnectionStatus()).thenReturn(
             statusOfConnections(deploymentConnection("prod-qwen", false, true, null)));
         
@@ -341,7 +347,6 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testSaveConfigRejectsUnavailableSelectedConnection() throws Exception {
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(agentManager.getConnectionStatus()).thenReturn(
             statusOfConnections(deploymentConnection("prod-qwen", true, false, "no provider")));
         
@@ -355,7 +360,6 @@ class ConsoleCopilotConfigControllerTest {
     
     @Test
     void testSaveConfigRejectsSelectingLegacyBeforeItsNewKeyIsApplied() throws Exception {
-        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
         when(agentManager.getConnectionStatus()).thenReturn(
             statusOfConnections(legacyConnection(false, "legacy connection has no api key")));
         
@@ -465,6 +469,61 @@ class ConsoleCopilotConfigControllerTest {
         verify(agentManager, never()).refreshConfig();
     }
     
+    @Test
+    void testSaveConfigSetsCasMd5FromStoredDocument() throws Exception {
+        String storedJson = "{\"model\":\"old-model\"}";
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetailJson(storedJson));
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        
+        saveConfig("{\"model\":\"new-model\"}");
+        
+        ArgumentCaptor<ConfigRequestInfo> captor =
+            ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        verify(configProxy).publishConfig(any(), captor.capture());
+        assertEquals(MD5Utils.md5Hex(storedJson, StandardCharsets.UTF_8.name()),
+            captor.getValue().getCasMd5());
+    }
+    
+    @Test
+    void testSaveConfigRetriesOnConflictAndKeepsConcurrentUpdate() throws Exception {
+        String firstRead = "{\"model\":\"old-model\"}";
+        String secondRead = "{\"model\":\"old-model\",\"studioProject\":\"concurrent\"}";
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE))
+            .thenReturn(configDetailJson(firstRead), configDetailJson(secondRead));
+        when(configProxy.publishConfig(any(), any()))
+            .thenThrow(new NacosApiException(HttpStatus.CONFLICT.value(),
+                ErrorCode.RESOURCE_CONFLICT, "changed"))
+            .thenReturn(true);
+        
+        saveConfig("{\"model\":\"new-model\"}");
+        
+        ArgumentCaptor<ConfigForm> captor = ArgumentCaptor.forClass(ConfigForm.class);
+        verify(configProxy, times(2)).publishConfig(captor.capture(), any());
+        Map<String, Object> saved = JacksonUtils.toObj(captor.getAllValues().get(1).getContent(),
+            new TypeReference<>() {
+            });
+        assertEquals("new-model", saved.get("model"));
+        assertEquals("concurrent", saved.get("studioProject"));
+        verify(agentManager).refreshConfig();
+    }
+    
+    @Test
+    void testSaveConfigReportsStoredButNotActivatedWhenRefreshFails() throws Exception {
+        when(configProxy.getConfigDetail(DATA_ID, GROUP, NAMESPACE)).thenReturn(null);
+        when(configProxy.publishConfig(any(), any())).thenReturn(true);
+        doThrow(new IllegalStateException("model registry unavailable"))
+            .when(agentManager).refreshConfig();
+        
+        MockHttpServletResponse response = mockMvc.perform(
+            post("/v3/console/copilot/config")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"model\":\"qwen-max\"}"))
+            .andExpect(status().isInternalServerError()).andReturn().getResponse();
+        
+        verify(configProxy).publishConfig(any(), any());
+        assertTrue(response.getContentAsString().contains("stored but not activated"));
+    }
+    
     private ConsoleCopilotConfig getConfig() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(
             get("/v3/console/copilot/config"))
@@ -546,6 +605,12 @@ class ConsoleCopilotConfigControllerTest {
     private ConfigDetailInfo configDetail(CopilotProperties config) {
         ConfigDetailInfo result = new ConfigDetailInfo();
         result.setContent(JacksonUtils.toJson(config));
+        return result;
+    }
+    
+    private ConfigDetailInfo configDetailJson(String json) {
+        ConfigDetailInfo result = new ConfigDetailInfo();
+        result.setContent(json);
         return result;
     }
 }
