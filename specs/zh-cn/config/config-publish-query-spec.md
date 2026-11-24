@@ -37,8 +37,9 @@ Config 变更事件遵循
 
 CAS 发布必须比较请求携带的 `casMd5` 和已存储 md5。md5 不匹配表示资源冲突，不能覆盖已存储配置。
 
-正式 Admin 发布接受可选 `updateForExist` 参数，由 HTTP 框架转换为 boolean，默认 `true`；
-非法 boolean 在写入前拒绝。未提供非空白 `casMd5` 时，`false` 使用原生仅创建插入，
+正式 Admin 发布接受可选 `updateForExist` 参数，由控制器严格解析为 boolean，默认 `true`；
+仅接受 `true` / `false`（忽略大小写），其他值在写入前以 `PARAMETER_VALIDATE_ERROR`
+（HTTP 400）拒绝，不改变其他接口的异常映射。未提供非空白 `casMd5` 时，`false` 使用原生仅创建插入，
 而非先查询后写入或 upsert；重复插入不得覆盖现有内容。本地服务抛出
 `ConfigAlreadyExistsException`（`NacosException.CONFIG_ALREADY_EXISTS`，410）；
 v3 Admin 将 HTTP 状态及 Result 类型化错误码均保留为 410，Maintainer SDK 收到携带原生

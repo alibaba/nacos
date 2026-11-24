@@ -27,7 +27,6 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
-import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -98,13 +97,6 @@ public class NacosApiExceptionHandler {
     public Result<String> handleHttpMessageConversionException(HttpMessageConversionException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
         return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
-    }
-    
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(TypeMismatchException.class)
-    public Result<String> handleTypeMismatchException(TypeMismatchException e) {
-        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR,
-            "Invalid value for parameter: " + e.getPropertyName());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)

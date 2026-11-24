@@ -193,8 +193,9 @@ public class ConfigControllerV3 {
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm,
-        @RequestParam(value = "updateForExist", defaultValue = "true") boolean updateForExist)
+        @RequestParam(value = "updateForExist", defaultValue = "true") String updateForExist)
         throws NacosException {
+        final boolean createOnly = parseUpdateForExist(updateForExist);
         // check required field
         configForm.validateWithContent();
         configForm
@@ -228,7 +229,7 @@ public class ConfigControllerV3 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        configRequestInfo.setUpdateForExist(updateForExist);
+        configRequestInfo.setUpdateForExist(createOnly);
         
         try {
             return Result.success(configOperationService.publishConfig(configForm,
@@ -238,6 +239,18 @@ public class ConfigControllerV3 {
             throw new NacosApiException(e.getErrCode(), e.getErrCode(),
                 "Config already exists", e.getErrMsg());
         }
+    }
+    
+    private static boolean parseUpdateForExist(String value) throws NacosApiException {
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+            ErrorCode.PARAMETER_VALIDATE_ERROR,
+            "Invalid value for parameter: updateForExist");
     }
     
     /**
