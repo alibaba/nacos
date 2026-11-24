@@ -46,8 +46,11 @@ public class DynamicDataSource {
             
             if (DatasourceConfiguration.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
-                    localDataSourceService = new LocalDataSourceServiceImpl();
-                    localDataSourceService.init();
+                    // Cache the service only after it initialized. When init() throws, the next call has to
+                    // initialize again and fail again while the cause stays, not get a half-initialized service.
+                    LocalDataSourceServiceImpl created = new LocalDataSourceServiceImpl();
+                    created.init();
+                    localDataSourceService = created;
                 }
                 return localDataSourceService;
             } else {

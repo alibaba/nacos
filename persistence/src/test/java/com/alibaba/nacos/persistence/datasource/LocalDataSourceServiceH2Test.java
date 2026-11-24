@@ -17,6 +17,7 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.persistence.H2TestUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -27,15 +28,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocalDataSourceServiceH2Test {
+    
+    private static final String PROBE_TABLE =
+        "CREATE TABLE IF NOT EXISTS h2_probe (id bigint NOT NULL PRIMARY KEY);\n";
+    
+    private static final String BROKEN_INDEX =
+        "CREATE UNIQUE INDEX uk_broken_probe ON h2_probe (no_such_column);\n";
+    
+    private static final String VALID_INDEX =
+        "CREATE UNIQUE INDEX IF NOT EXISTS uk_probe ON h2_probe (id);\n";
     
     @TempDir
     Path tempDir;
@@ -105,11 +115,7 @@ class LocalDataSourceServiceH2Test {
     
     @Test
     void testFailingSchemaStatementStopsInitialization() throws Exception {
-        Path confDir = Files.createDirectories(tempDir.resolve("conf"));
-        Files.write(confDir.resolve("h2-schema.sql"), ("CREATE TABLE IF NOT EXISTS h2_probe "
-            + "(id bigint NOT NULL PRIMARY KEY);\n"
-            + "CREATE UNIQUE INDEX uk_broken_probe ON h2_probe (no_such_column);\n")
-            .getBytes(StandardCharsets.UTF_8));
+        H2TestUtils.writeSchema(tempDir, PROBE_TABLE + BROKEN_INDEX);
         
         service = new LocalDataSourceServiceImpl();
         NacosRuntimeException error =
@@ -119,8 +125,32 @@ class LocalDataSourceServiceH2Test {
             error.getCause().getMessage());
     }
     
+    @Test
+    void testFailedInitializationClosesItsPoolAndTheServiceCanInitializeAgain() throws Exception {
+        H2TestUtils.writeSchema(tempDir, PROBE_TABLE + BROKEN_INDEX);
+        service = new LocalDataSourceServiceImpl();
+        
+        assertThrows(NacosRuntimeException.class, () -> service.init());
+        assertEquals(1, H2TestUtils.countOpenSessions(tempDir),
+            "the pool of the failed initialization must be closed");
+        
+        // Another attempt with the same schema fails the same way, and closes its pool as well.
+        assertThrows(NacosRuntimeException.class, () -> service.init());
+        assertEquals(1, H2TestUtils.countOpenSessions(tempDir),
+            "the pool of the second failed initialization must be closed");
+        
+        // The service holds no datasource of the failed attempts, and initializes once the schema is valid.
+        assertNull(service.getJdbcTemplate());
+        H2TestUtils.writeSchema(tempDir, PROBE_TABLE + VALID_INDEX);
+        service.init();
+        assertEquals(PersistenceConstant.H2, service.getDataSourceType());
+        assertEquals(0, service.getJdbcTemplate().queryForObject("SELECT count(*) FROM h2_probe",
+            Integer.class));
+    }
+    
     private static void closeDataSource(LocalDataSourceServiceImpl dataSourceService) {
-        if (null != dataSourceService) {
+        // A service whose initialization failed has no datasource, because it closed its pool itself.
+        if (null != dataSourceService && null != dataSourceService.getJdbcTemplate()) {
             ((HikariDataSource) dataSourceService.getDatasource()).close();
         }
     }

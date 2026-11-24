@@ -97,7 +97,17 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         if (ds == null) {
             throw new RuntimeException("datasource is null");
         }
-        try (Connection connection = ds.getConnection()) {
+        loadSchema(ds);
+    }
+    
+    /**
+     * Run the schema script of the selected engine on a datasource.
+     *
+     * @param dataSource the datasource to initialize
+     * @throws NacosRuntimeException when the script cannot be loaded or a statement of it fails
+     */
+    private void loadSchema(DataSource dataSource) {
+        try (Connection connection = dataSource.getConnection()) {
             execute(connection, engine.schemaResource());
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled()) {
@@ -167,6 +177,18 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         poolProperties.setUsername(userName);
         poolProperties.setPassword(password);
         HikariDataSource ds = poolProperties.getDataSource();
+        // The schema runs on the new pool before the pool is handed to the templates. A failing schema closes the
+        // pool and leaves the templates as they were, so a failed initialization keeps neither an open pool nor a
+        // half-initialized service.
+        boolean schemaLoaded = false;
+        try {
+            loadSchema(ds);
+            schemaLoaded = true;
+        } finally {
+            if (!schemaLoaded) {
+                ds.close();
+            }
+        }
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
         tm.setDataSource(ds);
         if (jdbcTemplateInit) {
@@ -181,7 +203,6 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             tjt.setTimeout(5000);
             jdbcTemplateInit = true;
         }
-        reload();
     }
     
     @Override
