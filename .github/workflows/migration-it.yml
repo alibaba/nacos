@@ -36,7 +36,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+        run: mvn -B clean install '-Prelease-nacos,!dev' -DskipTests=true
 
       - name: Start MCP Server In Syncing Mode
         run: |
@@ -146,7 +146,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+        run: mvn -B clean install '-Prelease-nacos,!dev' -DskipTests=true
 
       - name: Start Canonical A2A Fixture Server
         run: |
