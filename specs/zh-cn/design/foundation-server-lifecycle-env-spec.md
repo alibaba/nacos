@@ -223,12 +223,12 @@ Bootstrap 为默认 Server 组合内置 GraalVM 可达性元数据，Native 构�
   classpath 上包含该类或资源的 jar 所属的构件。目录上的版本号即该 jar 的版本，因此版本升级不可能
   静默复用另一个版本的条目。`native` profile
   将这些文件作为 Bootstrap 类的一部分读取。普通 JVM 不得读取它们，JVM 产物契约也不得依赖它们。
-- 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为内置默认插件、内置 MySQL 与
-  PostgreSQL 驱动、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
+- 范围。覆盖静态分析和 Spring AOT 看不到的动态访问，对象为 `native` profile 逐个选定的插件（MySQL 与
+  PostgreSQL 数据源插件及其驱动，以及默认的鉴权和控制插件）、gRPC payload 与模型类、SPI provider、资源与资源包，依据是独立 Server 的
   OpenAPI、Java SDK 和 Maintainer SDK 集成测试所实际执行的路径，以及这些测试覆盖不到、在各自独立
   构建上所实际执行的路径：三个 AI registry context、Kubernetes 同步、Istio 适配器、DNS 适配器和由
-  三个节点组成的集群（Distro、Raft 以及节点之间的请求）。其他插件与驱动、内嵌 Derby 以及 Oracle
-  不在内置范围内；它们的元数据来自扩展自身、GraalVM 可达性元数据仓库（只适用于模块的 Maven 依赖，
+  三个节点组成的集群（Distro、Raft 以及节点之间的请求）。其他插件与驱动、AI 插件、LDAP 与 OIDC 鉴权插件、内嵌 Derby 以及 Oracle
+  不在内置范围内，`native` profile 也不选定它们；它们的元数据来自扩展自身、GraalVM 可达性元数据仓库（只适用于模块的 Maven 依赖，
   不适用于插件目录中的 jar）或 `nacos.native.metadata`，其支持情况必须单独验证和报告。Oracle 驱动还有
   额外要求：在驱动的再分发条款，以及驱动所支持的数据库版本（少于数据源插件支持的 Oracle 12c 及以后
   版本）明确之前，不支持带该驱动的 Native 构建。

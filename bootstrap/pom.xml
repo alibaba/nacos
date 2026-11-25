@@ -121,10 +121,41 @@
                 <nacos.native.build.parallelism>2</nacos.native.build.parallelism>
             </properties>
             <dependencies>
-                <!-- Default SPI implementations and drivers must participate in AOT and compilation. -->
+                <!-- The plugins of the Native build are selected one by one, so that nacos-default-plugin-all
+                     (LDAP and OIDC auth, the Oracle dialect and Derby) is not on the Native classpath. The
+                     default SPI implementations and drivers must participate in AOT and compilation. Embedded
+                     Derby needs its own plugin and drivers in nacos.native.plugins, with the experimental opt-in. -->
                 <dependency>
                     <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-default-plugin-all</artifactId>
+                    <artifactId>nacos-datasource-plugin-mysql</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.mysql</groupId>
+                    <artifactId>mysql-connector-j</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>nacos-datasource-plugin-postgresql</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>default-auth-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>default-control-plugin</artifactId>
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>

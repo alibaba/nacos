@@ -299,12 +299,12 @@ build does not require the operator to trace the Server first.
   as part of Bootstrap's classes. An ordinary JVM must not read them, and the JVM artifact
   contract must not depend on them.
 - Scope. It covers the dynamic access that static analysis and Spring AOT cannot see for the
-  bundled default plugins, the bundled MySQL and PostgreSQL drivers, gRPC payload and model
+  plugins that the `native` profile selects one by one (the MySQL and PostgreSQL datasource plugins with their drivers, and the default auth and control plugins), gRPC payload and model
   classes, SPI providers, resources and resource bundles, as exercised by the standalone OpenAPI,
   Java SDK and Maintainer SDK integration suites, and, as exercised on builds of their own, the
   three AI registry contexts, the Kubernetes sync, the Istio adaptor, the DNS adaptor and a
   cluster of three nodes (Distro, Raft and the requests between the nodes), which those suites do
-  not reach. Other plugins and drivers, embedded Derby and Oracle are outside the bundled scope.
+  not reach. Other plugins and drivers, the AI plugins, the LDAP and OIDC auth plugins, embedded Derby and Oracle are outside the bundled scope and are not selected by the profile.
   Their metadata comes from the extension itself, from the GraalVM reachability metadata
   repository, which applies to the Maven dependencies of the module and not to the jars of the
   plugin directory, or from `nacos.native.metadata`, and their support must be validated and

@@ -88,6 +88,12 @@ compilation. Maven runtime dependencies can also supply plugins. A plugin's own
 Java implementations into an already compiled executable. Rebuild after adding or upgrading a
 plugin, JDBC driver, or Spring configuration.
 
+The `native` profile selects its plugins one by one instead of taking `nacos-default-plugin-all`. It
+selects the MySQL and PostgreSQL datasource plugins with their JDBC drivers, and the default auth and
+control plugins. It does not select the AI plugins, the LDAP and OIDC auth plugins, the Oracle dialect
+or the Derby datasource. A build that needs one of them adds its plugin JARs and drivers to
+`nacos.native.plugins`, which is the route for embedded Derby described below.
+
 | Property | Default | Purpose |
 | --- | --- | --- |
 | `nacos.native.config` | `distribution/conf/application.properties` | Configuration used during AOT generation |
@@ -101,7 +107,8 @@ plugin, JDBC driver, or Spring configuration.
 | `nacos.native.build.parallelism` | `2` | Native compiler parallelism |
 
 Embedded Derby Server builds fail with an explanatory error unless
-`-Dnacos.native.derby.experimental=true` is provided. This flag additionally requires the
+`-Dnacos.native.derby.experimental=true` is provided. The profile does not select the Derby plugin or
+its drivers, so the build also needs them in `nacos.native.plugins`. This flag additionally requires the
 experimental toolchain described below; it does not make ordinary GraalVM support runtime class
 loading. Independent Console images do not embed the Server's database.
 
@@ -394,8 +401,8 @@ described above.
 After the ordinary `release-nacos` install, run `python3 test/scripts/native-build-it.py` with
 `JAVA_HOME` pointing to JDK 17+. This CI check uses `skipNativeBuild=true` only to omit the Native
 compiler; it executes real multi-context AOT generation and generated-source compilation on the
-ordinary JDK. It verifies merged Derby, MySQL Server and PostgreSQL Console preparation, an external
-SPI JAR in a directory with spaces, incremental configuration/Context replacement, explicit Derby
+ordinary JDK. It verifies merged Derby, MySQL Server and PostgreSQL Console preparation, the plugin set
+that the Native profile selects, an external SPI JAR in a directory with spaces, incremental configuration/Context replacement, explicit Derby
 opt-in, release rejection for skipped/dry builds, and launcher argument handling. It also checks
 that the ordinary JVM server JAR and classes are not contaminated by generated AOT/build tools.
 Logs are retained in the printed temporary directory; `--work-dir` selects a fresh directory.
