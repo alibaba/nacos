@@ -232,7 +232,7 @@
 {
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
+  "allDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] },
@@ -282,7 +282,7 @@
 {
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
+  "allDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] },
@@ -361,7 +361,7 @@
 {
   "name":"com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
+  "allDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] },
