@@ -352,10 +352,11 @@ class DeploymentConfigProviderReaderTest {
             .withProperty("nacos.copilot.connections.alpha.model", "file-model")
             .withProperty("nacos.copilot.connections.alpha.apiKey", "file-key")
             .withProperty("nacos.copilot.connections.alpha.enabled", "true");
-        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
-            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model",
-                "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "env-key",
-                "NACOS_COPILOT_CONNECTIONS_ALPHA_ENABLED", "false")));
+        environment.getPropertySources()
+            .addFirst(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model",
+                    "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "env-key",
+                    "NACOS_COPILOT_CONNECTIONS_ALPHA_ENABLED", "false")));
         DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
         
         List<CopilotModelConnection> connections = reader.read(context(environment));
@@ -373,9 +374,10 @@ class DeploymentConfigProviderReaderTest {
             .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
             .withProperty("nacos.copilot.connections.alpha.model", "file-model")
             .withProperty("nacos.copilot.connections.alpha.apiKey", "file-key");
-        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
-            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "",
-                "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "")));
+        environment.getPropertySources()
+            .addFirst(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "",
+                    "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "")));
         DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
         
         List<CopilotModelConnection> connections = reader.read(context(environment));
@@ -391,8 +393,9 @@ class DeploymentConfigProviderReaderTest {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
             .withProperty("nacos.copilot.connections.alpha.model", "file-model");
-        environment.getPropertySources().addLast(new SystemEnvironmentPropertySource("env",
-            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model")));
+        environment.getPropertySources()
+            .addLast(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model")));
         environment.getPropertySources().addFirst(new MapPropertySource("systemProperties",
             Map.of("nacos.copilot.connections.alpha.model", "jvm-model")));
         DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
@@ -406,11 +409,46 @@ class DeploymentConfigProviderReaderTest {
             .withProperty("MODEL", "qwen-max")
             .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
             .withProperty("nacos.copilot.connections.alpha.model", "file-model");
-        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
-            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "${MODEL}")));
+        environment.getPropertySources()
+            .addFirst(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "${MODEL}")));
         DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
         
         assertEquals("qwen-max", reader.read(context(environment)).get(0).getModel());
+    }
+    
+    @Test
+    void testEnvironmentOverrideOfHyphenatedConnectionName() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.prod-qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.prod-qwen.apiKey", "file-key");
+        environment.getPropertySources()
+            .addFirst(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_PROD_QWEN_MODEL", "env-model",
+                    "NACOS_COPILOT_CONNECTIONS_PROD_QWEN_API_KEY", "env-key")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("prod-qwen", connections.get(0).getName());
+        assertEquals("env-model", connections.get(0).getModel());
+        assertEquals("env-key", connections.get(0).getApiKey());
+    }
+    
+    @Test
+    void testEnvironmentApiKeySpellingWithoutHyphen() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "file-model")
+            .withProperty("nacos.copilot.connections.alpha.apiKey", "file-key");
+        environment.getPropertySources()
+            .addFirst(new SystemEnvironmentPropertySource("systemEnvironment",
+                Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_APIKEY", "env-key")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        assertEquals("env-key", reader.read(context(environment)).get(0).getApiKey());
     }
     
     @Test
