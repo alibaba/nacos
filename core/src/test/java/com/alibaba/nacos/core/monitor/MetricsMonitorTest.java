@@ -20,6 +20,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -150,21 +153,18 @@ class MetricsMonitorTest {
         
         Gauge serviceLeaderStatus = NacosMeterRegistryCenter
             .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
-            .find("nacos_monitor")
-            .tags("module", "core", "name", "raftLeaderStatus", "group",
-                "naming_persistent_service")
+            .find("nacos_raft_leader")
+            .tags("module", "core", "group", "naming_persistent_service")
             .gauge();
         Gauge metadataLeaderStatus = NacosMeterRegistryCenter
             .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
-            .find("nacos_monitor")
-            .tags("module", "core", "name", "raftLeaderStatus", "group",
-                "naming_instance_metadata")
+            .find("nacos_raft_leader")
+            .tags("module", "core", "group", "naming_instance_metadata")
             .gauge();
         Gauge serviceTerm = NacosMeterRegistryCenter
             .getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
-            .find("nacos_monitor")
-            .tags("module", "core", "name", "raftTerm", "group",
-                "naming_persistent_service")
+            .find("nacos_raft_term")
+            .tags("module", "core", "group", "naming_persistent_service")
             .gauge();
         
         assertEquals(1D, serviceLeaderStatus.value(), 0.01);
@@ -185,6 +185,27 @@ class MetricsMonitorTest {
             null, null, selfMember);
         assertEquals(1D, serviceLeaderStatus.value(), 0.01);
         assertEquals(5D, serviceTerm.value(), 0.01);
+    }
+    
+    @Test
+    void testRaftGroupMetricsDoNotBreakNacosMonitorFamily() {
+        // force MetricsMonitor static initialization so that the [module, name] meters exist
+        MetricsMonitor.getLongConnectionMonitor();
+        MetricsMonitor.refreshRaftGroupMetrics("naming_persistent_service",
+            "127.0.0.1:7848", 1L, "127.0.0.1:7848");
+        
+        PrometheusMeterRegistry prometheusMeterRegistry =
+            new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+            .add(prometheusMeterRegistry);
+        
+        String scrape = prometheusMeterRegistry.scrape();
+        assertTrue(scrape.contains("nacos_monitor{module=\"core\",name=\"longConnection\"}"));
+        assertTrue(scrape.contains(
+            "nacos_raft_leader{group=\"naming_persistent_service\",module=\"core\"}"));
+        assertTrue(scrape.contains(
+            "nacos_raft_term{group=\"naming_persistent_service\",module=\"core\"}"));
+        assertFalse(scrape.contains("nacos_monitor{group="));
     }
     
     @Test
