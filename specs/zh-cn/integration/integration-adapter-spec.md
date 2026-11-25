@@ -174,14 +174,18 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
   `apiKey`、`baseUrl`、`endpointPath`、`displayName`、`enabled`、`stream`、
   `enableThinking` 与 `options`；`<name>` 是连接名，`legacy` 是旧配置映射出的连接名，同名部署侧
   连接会替换它。
-- 连接名大小写不敏感：合并、查找与选择前会去掉首尾空白并用 `Locale.ROOT` 转为小写，因此
-  `Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个连接，`selectedConnection` 遵循同样规则。
-  连接名是配置 key 的一个元素，可用 ASCII 字母、数字与 `-`，不含点号；key 中不允许首尾空白。
-  不符合该语法的名称会被跳过并上报，不会加载。
-- 同一连接用多种拼写声明时，存在全小写拼写则采用它，否则采用字典序最小的拼写；其余拼写
-  （包括其字段）被忽略并上报。
-- 连接按来源合并：部署侧连接替换同名的旧配置连接；部署侧同名多拼写按上一条规则去重，
-  聚合器对任一 reader 返回的重复连接仍保留第一个并告警。
+- 连接名按 Spring 的 relaxed key 规则解析：`Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个
+  连接，`selectedConnection` 在合并、查找与选择前去掉首尾空白并按 `Locale.ROOT` 转小写。
+  `<name>` 是配置 key 的一个元素；含点号或非 ASCII 字符的声明 Spring 无法解析，会被忽略。
+  下划线不是连接名分隔符：`prod_qwen` 解析为另一个连接 `prodqwen`，不是 `prod-qwen`。
+- 同一连接以多种拼写声明时，各拼写属于同一块配置，字段合并到同一个连接；不再按拼写择一，
+  也不忽略其余拼写的字段。
+- 连接块中的字段按 Spring 的优先级解析：JVM 系统属性高于环境变量，环境变量高于配置文件；
+  环境变量把点号与连字符换成下划线，例如 `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_MODEL` 与
+  `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_API_KEY`。高优先级的显式空值会阻止更低优先级取值。
+  该规则只作用于 key，模型、凭据与选择等取值按原样使用，不做 relaxed 转换。
+- 连接按来源合并：部署侧连接替换同名的旧配置连接；聚合器对任一 reader 返回的重复连接
+  保留第一个并告警。
 - 选择顺序为：`nacos.copilot.selectedConnection` 指定的连接、第一个可用部署侧连接、
   第一个可用 `legacy` 连接。连接先按优先级、再按连接名排序，因此同一来源内的并列顺序是
   确定的。

@@ -230,20 +230,24 @@ Model connection rules:
   connection name, and `legacy` is the name of the connection built from the
   deprecated configuration, which a deployment connection with the same name
   replaces.
-- Connection names are case-insensitive: leading and trailing whitespace is
-  trimmed and the name is lower-cased with `Locale.ROOT` before merging, lookup,
-  and selection, so `Prod-Qwen`, `PROD-QWEN`, and `prod-qwen` identify the same
-  connection and `selectedConnection` follows the same rule. A name is one
-  configuration-key element, so it uses ASCII letters, digits, and `-`, with no
-  dots; surrounding whitespace is not valid in a key. A declared name that does
-  not follow this grammar is skipped and reported instead of being loaded.
-- When the same connection is declared under several spellings, the lower-case
-  spelling wins if it is present, otherwise the first spelling in lexicographic
-  order is used; the other spellings are reported and ignored, including their
-  fields.
-- Connections are merged by source: a deployment connection replaces the
-  deprecated connection with the same name; deployment spellings are resolved by
-  the rule above, and for any reader that still returns duplicate connections
+- Connection names follow Spring's relaxed key rules: `Prod-Qwen`, `PROD-QWEN`, and
+  `prod-qwen` identify the same connection, and `selectedConnection` is trimmed and
+  lower-cased with `Locale.ROOT` before merging, lookup, and selection. A name is one
+  configuration-key element; declarations containing dots or non-ASCII characters cannot
+  be resolved by Spring and are ignored. An underscore is not a name separator:
+  `prod_qwen` resolves to a separate connection named `prodqwen`, not `prod-qwen`.
+- When one connection is declared under several spellings, the spellings belong to the
+  same configuration block and their fields merge into one connection; no spelling is
+  selected over another and no spelling's fields are dropped.
+- Fields inside a connection block follow Spring's precedence: JVM system properties over
+  environment variables, and environment variables over property files. The
+  environment-variable spelling replaces dots and hyphens with underscores, for example
+  `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_MODEL` and
+  `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_API_KEY`; an explicit empty value at a higher
+  precedence blocks lower values. This applies to keys only: model, credential, and
+  selection values are used verbatim, without relaxed conversion.
+- Connections are merged by source: a deployment connection replaces the deprecated
+  connection with the same name; for any reader that still returns duplicate connections
   the aggregator keeps the first one and reports it.
 - Selection order is the connection named by
   `nacos.copilot.selectedConnection`, then the first available deployment

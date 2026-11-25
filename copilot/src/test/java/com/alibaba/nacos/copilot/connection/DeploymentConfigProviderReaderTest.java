@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
@@ -98,69 +99,51 @@ class DeploymentConfigProviderReaderTest {
     }
     
     @Test
-    void testRejectsNamesOutsideDocumentedGrammar() {
+    void testUnsupportedNameSpellingsAreIgnored() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.prod-qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.生产.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.生产.model", "qwen-plus");
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("prod-qwen", connections.get(0).getName());
+    }
+    
+    @Test
+    void testRelaxedSpellingsShareOneConnectionBlock() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max")
+            .withProperty("nacos.copilot.connections.PROD-QWEN.apiKey", "secret");
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("prod-qwen", connections.get(0).getName());
+        assertEquals("dashscope", connections.get(0).getProviderId());
+        assertEquals("qwen-max", connections.get(0).getModel());
+        assertEquals("secret", connections.get(0).getApiKey());
+    }
+    
+    @Test
+    void testUnderscoredNameBecomesItsOwnConnection() {
         MockEnvironment environment = new MockEnvironment()
             .withProperty("nacos.copilot.connections.prod-qwen.providerId", "dashscope")
             .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max")
             .withProperty("nacos.copilot.connections.prod_qwen.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.prod_qwen.model", "qwen-max")
-            .withProperty("nacos.copilot.connections.生产.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.生产.model", "qwen-max")
-            .withProperty("nacos.copilot.connections. prod-qwen .providerId", "dashscope")
-            .withProperty("nacos.copilot.connections. prod-qwen .model", "qwen-max");
+            .withProperty("nacos.copilot.connections.prod_qwen.model", "qwen-plus");
         DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
         
-        List<CopilotModelConnection> connections = reader.read(context(environment));
+        Map<String, CopilotModelConnection> connections = byName(reader.read(context(environment)));
         
-        assertEquals(1, connections.size());
-        assertEquals("prod-qwen", connections.get(0).getName());
-    }
-    
-    @Test
-    void testDuplicateSpellingsKeepOneConnection() {
-        MockEnvironment environment = new MockEnvironment()
-            .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.Prod-Qwen.model", "qwen-plus")
-            .withProperty("nacos.copilot.connections.prod-qwen.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max");
-        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
-        
-        List<CopilotModelConnection> connections = reader.read(context(environment));
-        
-        assertEquals(1, connections.size());
-        assertEquals("prod-qwen", connections.get(0).getName());
-        assertEquals("qwen-max", connections.get(0).getModel());
-    }
-    
-    @Test
-    void testDuplicateNonCanonicalSpellingsKeepDeterministicConnection() {
-        MockEnvironment environment = new MockEnvironment()
-            .withProperty("nacos.copilot.connections.PROD-QWEN.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.PROD-QWEN.model", "qwen-max")
-            .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.Prod-Qwen.model", "qwen-plus");
-        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
-        
-        List<CopilotModelConnection> connections = reader.read(context(environment));
-        
-        assertEquals(1, connections.size());
-        assertEquals("prod-qwen", connections.get(0).getName());
-        assertEquals("qwen-max", connections.get(0).getModel());
-    }
-    
-    @Test
-    void testIgnoredSpellingDoesNotLeakIntoConnection() {
-        MockEnvironment environment = new MockEnvironment()
-            .withProperty("nacos.copilot.connections.Prod-Qwen.providerId", "dashscope")
-            .withProperty("nacos.copilot.connections.prod-qwen.model", "qwen-max");
-        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
-        
-        List<CopilotModelConnection> connections = reader.read(context(environment));
-        
-        assertEquals(1, connections.size());
-        assertEquals("prod-qwen", connections.get(0).getName());
-        assertNull(connections.get(0).getProviderId());
-        assertEquals("qwen-max", connections.get(0).getModel());
+        assertEquals(2, connections.size());
+        assertEquals("qwen-max", connections.get("prod-qwen").getModel());
+        assertEquals("qwen-plus", connections.get("prodqwen").getModel());
     }
     
     @Test
@@ -360,6 +343,91 @@ class DeploymentConfigProviderReaderTest {
         
         assertEquals(1, connections.size());
         assertEquals("healthy-key", connections.get(0).getApiKey());
+    }
+    
+    @Test
+    void testEnvironmentVariablesOverrideDeclaredConnectionValues() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "file-model")
+            .withProperty("nacos.copilot.connections.alpha.apiKey", "file-key")
+            .withProperty("nacos.copilot.connections.alpha.enabled", "true");
+        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
+            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model",
+                "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "env-key",
+                "NACOS_COPILOT_CONNECTIONS_ALPHA_ENABLED", "false")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("env-model", connections.get(0).getModel());
+        assertEquals("env-key", connections.get(0).getApiKey());
+        assertFalse(connections.get(0).isEnabled());
+        assertEquals(CredentialSource.DEPLOYMENT, connections.get(0).getCredentialSource());
+    }
+    
+    @Test
+    void testEmptyEnvironmentValueBlocksDeclaredValue() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "file-model")
+            .withProperty("nacos.copilot.connections.alpha.apiKey", "file-key");
+        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
+            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "",
+                "NACOS_COPILOT_CONNECTIONS_ALPHA_API_KEY", "")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("", connections.get(0).getModel());
+        assertEquals("", connections.get(0).getApiKey());
+        assertNull(connections.get(0).getCredentialSource());
+    }
+    
+    @Test
+    void testJvmPropertiesWinOverEnvironmentVariables() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "file-model");
+        environment.getPropertySources().addLast(new SystemEnvironmentPropertySource("env",
+            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "env-model")));
+        environment.getPropertySources().addFirst(new MapPropertySource("systemProperties",
+            Map.of("nacos.copilot.connections.alpha.model", "jvm-model")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        assertEquals("jvm-model", reader.read(context(environment)).get(0).getModel());
+    }
+    
+    @Test
+    void testEnvironmentOverrideResolvesPlaceholders() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("MODEL", "qwen-max")
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "file-model");
+        environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("env",
+            Map.of("NACOS_COPILOT_CONNECTIONS_ALPHA_MODEL", "${MODEL}")));
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        assertEquals("qwen-max", reader.read(context(environment)).get(0).getModel());
+    }
+    
+    @Test
+    void testOnlyConnectionsUnderThePrefixAreRead() {
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("nacos.copilot.connections.alpha.providerId", "dashscope")
+            .withProperty("nacos.copilot.connections.alpha.model", "qwen-max")
+            .withProperty("nacos.copilot.other.providerId", "dashscope")
+            .withProperty("nacos.copilot.other.model", "qwen-plus")
+            .withProperty("nacos.copilot.connections.providerId", "dashscope");
+        DeploymentConfigProviderReader reader = new DeploymentConfigProviderReader();
+        
+        List<CopilotModelConnection> connections = reader.read(context(environment));
+        
+        assertEquals(1, connections.size());
+        assertEquals("alpha", connections.get(0).getName());
+        assertEquals("qwen-max", connections.get(0).getModel());
     }
     
     private Map<String, CopilotModelConnection> byName(List<CopilotModelConnection> connections) {
