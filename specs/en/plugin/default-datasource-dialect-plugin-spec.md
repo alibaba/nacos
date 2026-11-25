@@ -34,6 +34,7 @@ The current implementation packages these database families:
 | Database type | Dialect provider | Mapper package |
 |---------------|------------------|----------------|
 | `derby` | `DerbyDatabaseDialect` | `impl.derby` |
+| `h2` | `H2DatabaseDialect` | `impl.h2` |
 | `mysql` | `MysqlDatabaseDialect` and `DefaultDatabaseDialect` | `impl.mysql` |
 | `postgresql` | `PostgresqlDatabaseDialect` | `impl.postgresql` |
 | `oracle` | `OracleDatabaseDialect` | `impl.oracle` |
@@ -71,6 +72,11 @@ legacy alias, while `spring.datasource.platform` is no longer supported.
 When the selected type is `mysql`, MySQL mappers and MySQL-compatible default
 dialect behavior are used. When the selected type is `derby`, Derby remains the
 embedded default for standalone development and local testing.
+
+When the selected type is `h2`, H2 is an opt-in embedded engine for standalone servers. It is
+never chosen implicitly, and cluster server startup with `h2` fails fast. A console-only
+process does not run this check. See the
+[Foundation Persistence And Dump Spec](../design/foundation-persistence-dump-spec.md#32-embedded-h2-runtime-contract).
 
 ## Compatibility
 

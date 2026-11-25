@@ -41,4 +41,19 @@ public class DatasourcePlatformUtil {
         result = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY);
         return StringUtils.isBlank(result) ? defaultPlatform : result.trim();
     }
+    
+    /**
+     * Check whether the datasource platform selects a local embedded database engine.
+     *
+     * <p>Derby is matched case-insensitively, as it always was. H2 is matched exactly, as the dialect plugin lookup
+     * matches its name. A platform that spells H2 in another case is not the embedded H2 engine, and the startup
+     * checks reject it.
+     *
+     * @param platform datasource platform as returned by {@link #getDatasourcePlatform(String)}
+     * @return {@code true} for {@code derby} and {@code h2}; {@code false} for any other platform
+     */
+    public static boolean isEmbeddedPlatform(String platform) {
+        return PersistenceConstant.DERBY.equalsIgnoreCase(platform)
+            || PersistenceConstant.H2.equals(platform);
+    }
 }

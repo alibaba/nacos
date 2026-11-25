@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -25,7 +26,10 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.ExternalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -56,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -124,11 +129,8 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-        DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
-        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
-        LocalDataSourceServiceImpl dataSourceService =
-            Mockito.mock(LocalDataSourceServiceImpl.class);
-        when(dataSource.getDataSource()).thenReturn(dataSourceService);
+        LocalDataSourceServiceImpl dataSourceService = localDataSource(PersistenceConstant.DERBY);
+        mockActiveDataSource(dataSourceService);
         JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
         when(dataSourceService.getJdbcTemplate()).thenReturn(template);
         when(template.queryForList("SELECT * FROM TEST")).thenReturn(new ArrayList<>());
@@ -147,6 +149,7 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
+        mockActiveDataSource(localDataSource(PersistenceConstant.DERBY));
         
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
             .thenReturn(Mockito.mock(DatabaseOperate.class));
@@ -178,7 +181,7 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-        mockLocalDataSource();
+        mockActiveDataSource(localDataSource(PersistenceConstant.DERBY));
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(
                 Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby")
@@ -189,11 +192,67 @@ class ConfigOpsControllerV3Test {
     }
     
     @Test
+    void testDerbyOpsRejectsH2EmbeddedEngine() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        mockActiveDataSource(localDataSource(PersistenceConstant.H2));
+        Result<Object> result = configOpsControllerV3.derbyOps("SELECT * FROM TEST");
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
+    }
+    
+    @Test
+    void testDerbyOpsRejectsExternalDataSourceEvenWhenEmbeddedFlagIsSet() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        mockActiveDataSource(Mockito.mock(ExternalDataSourceServiceImpl.class));
+        Result<Object> result = configOpsControllerV3.derbyOps("SELECT * FROM TEST");
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
+    }
+    
+    @Test
+    void testImportDerbyRejectsH2EmbeddedEngine() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        mockActiveDataSource(localDataSource(PersistenceConstant.H2));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.sql", "text/plain", "test".getBytes());
+        DeferredResult<Result<String>> deferred = configOpsControllerV3.importDerby(file);
+        Object body = deferred.getResult();
+        assertTrue(body instanceof Result, String.valueOf(body));
+        Result<?> result = (Result<?>) body;
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
+        applicationUtilsMockedStatic.verify(() -> ApplicationUtils.getBean(DatabaseOperate.class),
+            Mockito.never());
+    }
+    
+    @Test
+    void testImportDerbyRejectsExternalDataSource() {
+        ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
+            .thenReturn(true);
+        mockActiveDataSource(Mockito.mock(ExternalDataSourceServiceImpl.class));
+        MockMultipartFile file =
+            new MockMultipartFile("file", "test.sql", "text/plain", "test".getBytes());
+        DeferredResult<Result<String>> deferred = configOpsControllerV3.importDerby(file);
+        Object body = deferred.getResult();
+        assertTrue(body instanceof Result, String.valueOf(body));
+        Result<?> result = (Result<?>) body;
+        assertTrue(result.getMessage().contains("not Derby"), result.getMessage());
+        applicationUtilsMockedStatic.verify(() -> ApplicationUtils.getBean(DatabaseOperate.class),
+            Mockito.never());
+    }
+    
+    @Test
     void testDerbyOpsNonSelectSqlDirectly() {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-        mockLocalDataSource();
+        mockActiveDataSource(localDataSource(PersistenceConstant.DERBY));
         
         assertEquals(30000,
             configOpsControllerV3.derbyOps("DELETE FROM TEST").getCode());
@@ -261,12 +320,8 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-        DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
-        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
-            .thenReturn(dataSource);
-        LocalDataSourceServiceImpl dataSourceService =
-            Mockito.mock(LocalDataSourceServiceImpl.class);
-        when(dataSource.getDataSource()).thenReturn(dataSourceService);
+        LocalDataSourceServiceImpl dataSourceService = localDataSource(PersistenceConstant.DERBY);
+        mockActiveDataSource(dataSourceService);
         JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
         when(dataSourceService.getJdbcTemplate()).thenReturn(template);
         String sqlWithLimit =
@@ -286,12 +341,8 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
-        DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
-        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
-            .thenReturn(dataSource);
-        LocalDataSourceServiceImpl dataSourceService =
-            Mockito.mock(LocalDataSourceServiceImpl.class);
-        when(dataSource.getDataSource()).thenReturn(dataSourceService);
+        LocalDataSourceServiceImpl dataSourceService = localDataSource(PersistenceConstant.DERBY);
+        mockActiveDataSource(dataSourceService);
         JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
         when(dataSourceService.getJdbcTemplate()).thenReturn(template);
         when(template.queryForList(Mockito.anyString()))
@@ -327,6 +378,7 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
+        mockActiveDataSource(localDataSource(PersistenceConstant.DERBY));
         
         DatabaseOperate mockDbOperate = Mockito.mock(DatabaseOperate.class);
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
@@ -353,6 +405,7 @@ class ConfigOpsControllerV3Test {
         ConfigCommonConfig.getInstance().setDerbyOpsEnabled(true);
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage)
             .thenReturn(true);
+        mockActiveDataSource(localDataSource(PersistenceConstant.DERBY));
         
         DatabaseOperate mockDbOperate = Mockito.mock(DatabaseOperate.class);
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
@@ -417,11 +470,21 @@ class ConfigOpsControllerV3Test {
         assertNull(wrappedResult.getResult());
     }
     
-    private void mockLocalDataSource() {
+    /**
+     * Make the static {@link DynamicDataSource} return a datasource that serves this process.
+     */
+    private void mockActiveDataSource(DataSourceService activeDataSource) {
         DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
-        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance)
-            .thenReturn(dataSource);
-        when(dataSource.getDataSource())
-            .thenReturn(Mockito.mock(LocalDataSourceServiceImpl.class));
+        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
+        when(dataSource.getDataSource()).thenReturn(activeDataSource);
+    }
+    
+    /**
+     * A mocked embedded datasource whose engine is {@code engineType}.
+     */
+    private static LocalDataSourceServiceImpl localDataSource(String engineType) {
+        LocalDataSourceServiceImpl localDataSource = Mockito.mock(LocalDataSourceServiceImpl.class);
+        when(localDataSource.getDataSourceType()).thenReturn(engineType);
+        return localDataSource;
     }
 }

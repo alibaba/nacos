@@ -34,6 +34,8 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
@@ -74,6 +76,19 @@ public class ConfigOpsControllerV3 {
     
     public ConfigOpsControllerV3(DumpService dumpService) {
         this.dumpService = dumpService;
+    }
+    
+    /**
+     * Derby ops only target the embedded Derby engine. The active datasource must be the embedded local datasource and
+     * its engine must be Derby. Other embedded engines, such as H2, have their own file layout and SQL dialect, so the
+     * Derby ops endpoints reject them.
+     *
+     * @param activeDataSource the datasource that serves the storage of this process
+     * @return {@code true} when the active datasource is the embedded Derby engine
+     */
+    private static boolean isDerbyEngine(DataSourceService activeDataSource) {
+        return activeDataSource instanceof LocalDataSourceServiceImpl
+            && PersistenceConstant.DERBY.equalsIgnoreCase(activeDataSource.getDataSourceType());
     }
     
     /**
@@ -145,9 +160,13 @@ public class ConfigOpsControllerV3 {
                     null);
             }
             
+            DataSourceService activeDataSource = DynamicDataSource.getInstance().getDataSource();
+            if (!isDerbyEngine(activeDataSource)) {
+                return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                    "The current storage mode is not Derby", null);
+            }
             LocalDataSourceServiceImpl dataSourceService =
-                (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
-                    .getDataSource();
+                (LocalDataSourceServiceImpl) activeDataSource;
             if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
                 if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
                     sql += limit;
@@ -194,6 +213,10 @@ public class ConfigOpsControllerV3 {
         if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
             response.setResult(RestResultUtils.failed(
                 "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature."));
+            return convertToResult(response);
+        }
+        if (!isDerbyEngine(DynamicDataSource.getInstance().getDataSource())) {
+            response.setResult(RestResultUtils.failed("The current storage mode is not Derby"));
             return convertToResult(response);
         }
         DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);

@@ -71,6 +71,13 @@
             <artifactId>derbytools</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Local H2 datasource loads org.h2.Driver at runtime. The default plugin bundle does not ship the driver:
+             an H2 deployment adds it to plugins/. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>

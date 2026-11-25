@@ -76,7 +76,7 @@ datasource 模块仅在完成历史和标准连接池配置绑定后，驱动类
 当所选方言无法解析、已被禁用或返回 `null`/空白时，datasource 模块保持 MySQL 驱动兼容默认值。
 内置的 `mysql`、`postgresql`、
 `oracle`、`derby` 方言分别提供 `com.mysql.cj.jdbc.Driver`、`org.postgresql.Driver`、
-`oracle.jdbc.OracleDriver` 和 `org.apache.derby.jdbc.EmbeddedDriver`。提供默认驱动类名
+`oracle.jdbc.OracleDriver` 和 `org.apache.derby.jdbc.EmbeddedDriver`，`h2` 方言提供 `org.h2.Driver`。提供默认驱动类名
 并不意味着打包驱动 jar，部署时仍需将驱动放入 classpath 或 `${nacos.home}/plugins`。
 驱动类的兼容回退不会替换所选方言，也不会放宽该方言的启动校验。
 
@@ -138,7 +138,9 @@ default 中硬编码，因为各数据库能接受的转义字符字面量写法
 
 标准选择 key 与历史 alias 均未配置时，选择结果沿用服务端存储默认值：单机模式以及
 配置了 `-DembeddedStorage=true` 的集群模式选择 `derby`，普通集群模式选择 `mysql`。
-这一隐式选择同样在启动时形成快照。
+这一隐式选择同样在启动时形成快照。`h2` 永远不会被隐式选择：必须显式配置，使用小写名称，并且只在单机模式下接受。承载服务端持久化的进程在启动时检查它，并拒绝 `H2` 或其他大小写写法，错误信息会指出该属性；仅充当控制台的进程不执行该检查。
+
+方言类型名和 mapper 数据源名都按插件声明的原样精确匹配。选择器去除首尾空白后原样使用。第三方插件即使在方言类型和 mapper 数据源名中使用混合大小写（例如 `AcmeDB`），只要选择器与之写法一致，也无需改名或重新编译即可继续工作。内置方言均声明小写名称。
 
 持久化子系统始终使该 critical 类型处于 active 状态。如果请求的方言被禁用或缺失，启动
 必须显式失败，并明确记录选中的方言和选择配置。服务端不得 fallback 到另一个已发现方言后
@@ -181,7 +183,7 @@ datasource 配置 owner，不能把同一份凭据复制到所有方言。
 | `nacos.plugin.datasource.db.url.{index}` | `db.url.{index}` | 从 `0` 到 `num - 1` 每个 index 的 JDBC URL。 |
 | `nacos.plugin.datasource.db.user[.{index}]` | `db.user[.{index}]` | 共享或按 index 配置的用户名；缺少某个 index 时回退共享值或 index `0`。 |
 | `nacos.plugin.datasource.db.password[.{index}]` | `db.password[.{index}]` | 共享或按 index 配置的密码，回退规则与 `user` 相同；该值属于敏感信息。 |
-| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒；外部数据源默认 `3000`，嵌入式 Derby 默认 `10000`。 |
+| `nacos.plugin.datasource.db.pool.config.connection-timeout` | `db.pool.config.connectionTimeout` 或对应 kebab-case | Hikari 连接超时，单位毫秒；外部数据源默认 `3000`，嵌入式 Derby 和 H2 默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.validation-timeout` | `db.pool.config.validationTimeout` 或对应 kebab-case | Hikari 校验超时，单位毫秒，默认 `10000`。 |
 | `nacos.plugin.datasource.db.pool.config.idle-timeout` | `db.pool.config.idleTimeout` 或对应 kebab-case | Hikari 空闲超时，单位毫秒，默认 `600000`。 |
 | `nacos.plugin.datasource.db.pool.config.maximum-pool-size` | `db.pool.config.maximumPoolSize` 或对应 kebab-case | Hikari 最大连接数，默认 `20`。 |
@@ -200,7 +202,7 @@ Hikari datasource，从而保留已有 Hikari 属性透传能力，并让标准�
 接受随附 Hikari 版本提供的 JavaBean 配置面，但只有上表明确列出的稳定子集属于 Nacos 长期
 配置契约。
 
-未配置连接超时时，嵌入式 Derby 使用更长的默认值，以容忍数据库创建期间的本地文件系统延迟。
+未配置连接超时时，嵌入式 Derby 和 H2 使用更长的默认值，以容忍数据库创建期间的本地文件系统延迟。
 显式配置的标准 key 或历史 alias 会覆盖所选存储模式的默认值。
 
 `nacos.plugin.datasource.log.enabled` 仍是独立的数据源日志开关。embedded/external

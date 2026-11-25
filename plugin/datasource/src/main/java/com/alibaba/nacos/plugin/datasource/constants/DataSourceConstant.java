@@ -28,5 +28,7 @@ public class DataSourceConstant {
     
     public static final String DERBY = "derby";
     
+    public static final String H2 = "h2";
+    
     public static final String ORACLE = "oracle";
 }
