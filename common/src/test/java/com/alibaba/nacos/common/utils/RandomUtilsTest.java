@@ -36,9 +36,36 @@ class RandomUtilsTest {
     }
     
     @Test
+    void testNextLongNearMaxValue() {
+        final long startInclusive = Long.MAX_VALUE - 1;
+        assertEquals(startInclusive, RandomUtils.nextLong(startInclusive, Long.MAX_VALUE));
+    }
+    
+    @Test
+    void testNextLongAboveDoublePrecisionLimit() {
+        final long startInclusive = (1L << 53) + 1;
+        assertEquals(startInclusive, RandomUtils.nextLong(startInclusive, startInclusive + 1));
+    }
+    
+    @Test
     void testNextLongWithSame() {
         final long result = RandomUtils.nextLong(1L, 1L);
         assertEquals(1L, result);
+    }
+    
+    @Test
+    void testNextLongWithSameMaxValue() {
+        assertEquals(Long.MAX_VALUE, RandomUtils.nextLong(Long.MAX_VALUE, Long.MAX_VALUE));
+    }
+    
+    @Test
+    void testNextLongWithSameZero() {
+        assertEquals(0L, RandomUtils.nextLong(0L, 0L));
+    }
+    
+    @Test
+    void testNextLongWithSameNegativeValue() {
+        assertThrows(IllegalArgumentException.class, () -> RandomUtils.nextLong(-1L, -1L));
     }
     
     @Test

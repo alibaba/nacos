@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.utils;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Random utils.
@@ -43,11 +44,10 @@ public class RandomUtils {
      */
     public static long nextLong(final long startInclusive, final long endExclusive) {
         checkParameters(startInclusive, endExclusive);
-        long diff = endExclusive - startInclusive;
-        if (diff == 0) {
+        if (startInclusive == endExclusive) {
             return startInclusive;
         }
-        return (long) (startInclusive + (diff * RANDOM.nextDouble()));
+        return ThreadLocalRandom.current().nextLong(startInclusive, endExclusive);
     }
     
     /**
