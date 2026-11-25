@@ -123,7 +123,14 @@ response objects. Nacos maps MCP metadata, version information, packages,
 icons, website, repository, tools, and endpoints into the registry response
 shape. Frontend endpoints are preferred over backend endpoints when both are
 available. Endpoint data is converted into registry `remotes` according to the
-MCP front protocol, such as streamable HTTP or SSE. Endpoints that do not carry
+MCP front protocol, such as streamable HTTP or SSE.
+When the front protocol is absent or blank, the adaptor uses the server's backend
+protocol if it is `mcp-streamable` or `mcp-sse`.
+A plain `http` backend is not an MCP transport and still requires an explicit
+MCP front protocol to expose `remotes`.
+An explicit front protocol takes precedence; unsupported or missing protocols
+omit `remotes` without dropping the server or failing version queries.
+Endpoints that do not carry
 `protocol` or `path` — for example `DIRECT` endpoint specifications that only
 provide address and port — default the URL protocol to `http` and the path to
 empty, so every remote URL is a valid absolute URL. The `_meta` `official`

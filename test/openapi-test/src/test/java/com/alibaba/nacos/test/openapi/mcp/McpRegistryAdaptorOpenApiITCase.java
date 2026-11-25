@@ -20,7 +20,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,13 +54,17 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     
     private static final String V0_SERVERS_PATH = "/v0/servers";
     
-    @Test
-    public void testDirectEndpointWithoutProtocolOrPathRendersHttpUrlAndOfficialStatus() throws Exception {
+    @ParameterizedTest
+    @CsvSource(value = {"http,mcp-sse,sse", "mcp-sse,NULL,sse",
+            "mcp-streamable,NULL,streamable-http"}, nullValues = "NULL")
+    public void testDirectEndpointWithoutProtocolOrPathRendersHttpUrlAndOfficialStatus(
+            String protocol, String frontProtocol, String expectedTransport) throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String mcpName = "oit-mcpreg-mcp-" + suffix;
         String version = "1.0.0";
         
-        JsonNode created = postFormOk(ADMIN_MCP_PATH, directEndpointMcpForm(mcpName, version, suffix));
+        JsonNode created = postFormOk(ADMIN_MCP_PATH,
+                directEndpointMcpForm(mcpName, version, suffix, protocol, frontProtocol));
         String mcpId = created.get("data").asText();
         assertFalse(mcpId.isBlank(), created.toString());
         addCleanup(() -> deleteMcpServerQuietly(mcpName, mcpId));
@@ -73,7 +78,18 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode remotes = listed.path("server").path("remotes");
         assertTrue(remotes.isArray() && remotes.size() > 0, listed.toString());
         assertEquals(expectedUrl, remotes.get(0).path("url").asText(), listed.toString());
+        assertEquals(expectedTransport, remotes.get(0).path("type").asText(), listed.toString());
         assertOfficialStatusPresent(listed);
+
+        HttpResponse versions = executeRaw(
+                new HttpGet(MCP_REGISTRY_BASE_URL + V0_SERVERS_PATH + '/' + mcpName
+                        + "/versions"), identity);
+        assertEquals(200, versions.code(), versions.body());
+        JsonNode versionServers = JacksonUtils.toObj(versions.body()).path("servers");
+        assertTrue(versionServers.isArray() && versionServers.size() > 0, versions.body());
+        assertEquals(expectedTransport,
+                versionServers.get(0).path("server").path("remotes").get(0).path("type").asText(),
+                versions.body());
         
         // The version detail keeps the same contract.
         HttpResponse detail = executeRaw(
@@ -83,6 +99,8 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         JsonNode detailDocument = JacksonUtils.toObj(detail.body());
         assertEquals(expectedUrl, detailDocument.path("server").path("remotes").get(0)
                 .path("url").asText(), detail.body());
+        assertEquals(expectedTransport, detailDocument.path("server").path("remotes").get(0)
+                .path("type").asText(), detail.body());
         assertOfficialStatusPresent(detailDocument);
     }
     
@@ -114,13 +132,16 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertFalse(official.path("status").asText().isBlank(), serverResponse.toString());
     }
     
-    private Map<String, String> directEndpointMcpForm(String mcpName, String version, String suffix) {
+    private Map<String, String> directEndpointMcpForm(String mcpName, String version, String suffix,
+            String protocol, String frontProtocol) {
         Map<String, Object> versionDetail = new LinkedHashMap<>();
         versionDetail.put("version", version);
         Map<String, Object> server = new LinkedHashMap<>();
         server.put("name", mcpName);
-        server.put("protocol", "http");
-        server.put("frontProtocol", "mcp-sse");
+        server.put("protocol", protocol);
+        if (frontProtocol != null) {
+            server.put("frontProtocol", frontProtocol);
+        }
         server.put("description", "MCP Registry IT " + suffix);
         server.put("versionDetail", versionDetail);
         server.put("enabled", true);
