@@ -178,8 +178,8 @@ public class DatasourceConfiguration
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Datasource dialect '" + PersistenceConstant.H2
                 + "' needs the H2 JDBC driver org.h2.Driver on the class path. Add the H2 driver"
-                + " (com.h2database:h2) and nacos-datasource-plugin-h2 to the plugins directory of the"
-                + " server.", e);
+                + " (com.h2database:h2) and nacos-datasource-plugin-h2 to the plugins directory of the server,"
+                + " or build the Native Image with the native-h2 profile.", e);
         }
     }
     

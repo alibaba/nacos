@@ -147,7 +147,7 @@ engine.
 
 | Rule | Requirement |
 | --- | --- |
-| Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle does not include it. An H2 deployment places it under `plugins/` together with `nacos-datasource-plugin-h2`. |
+| Artifact | `com.h2database:h2` 2.2.224, managed by the root POM through `h2.version`. The default plugin bundle does not include it. An H2 deployment places it under `plugins/` together with `nacos-datasource-plugin-h2`; the Native Image adds both through the `native-h2` profile of `bootstrap`. |
 | Selector | `nacos.plugin.datasource-dialect.type=h2` (or the legacy `spring.sql.init.platform=h2`), in lower case. The dialect and mapper lookups match the name exactly, so a server process that selects `H2` fails at startup, and the message names the property. |
 | Mode | Standalone only. A server process that selects `h2` in cluster mode fails at startup and names the selector property. Cluster embedded storage keeps Derby. The startup checks run only in processes that host server persistence. A console-only process (`nacos.deployment.type=console`) reads configuration through a remote server, does not run these checks, and starts without the H2 driver. |
 | Location | `${nacos.home}/data/h2-data/nacos.mv.db`, opened as `jdbc:h2:file:<dir>/nacos;WRITE_DELAY=0;TRACE_LEVEL_FILE=0`. |
@@ -157,7 +157,8 @@ engine.
 | Derby-only operations | Derby ops query and import check that the active datasource is the embedded Derby engine. The CP snapshot reopen path (`cleanAndReopenDerby`, `restoreDerby`) requires Derby. Both reject `h2`. |
 | Migration | No automatic Derby-to-H2 migration. A server that switches engines starts from a new H2 database that holds only the schema and the server's own startup records. Derby data is left untouched. |
 | Backup | Stop the server, then copy `data/h2-data` as one directory. |
-| Native Image | Not covered by this contract. The Native Image does not carry H2. |
+| Native Image | The Native Image carries H2 only when it is built with the `native-h2` profile of `bootstrap`; the default Native Image does not carry H2. A Native Image with H2 follows the same contract as the JVM server. |
+| Maintenance | The H2 dialect, the mappers and the schema belong to the datasource plugin `nacos-datasource-plugin-h2` and to the embedded datasource path of `persistence`. Changes to them are reviewed with those modules by the Nacos maintainers. The H2 unit tests of both modules run in the normal build. The `standalone-h2` case of `test/scripts/native-build-it.py` checks the Native build. The Native restart check publishes a configuration, updates it, restarts the Server on the same data directory and compares the configuration and its history. The maintainers run it on a Native build when the H2 plugin, the embedded datasource, the schema or the `native-h2` profile changes. Its harness is part of the Native test work (#15837). |
 
 ## 4. Repository Contract
 
