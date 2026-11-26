@@ -466,7 +466,7 @@
 {
   "name":"com.alibaba.nacos.api.naming.pojo.Instance",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
+  "allDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] }, 
@@ -499,7 +499,7 @@
 {
   "name":"com.alibaba.nacos.api.naming.pojo.ServiceInfo",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
+  "allDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] }, 
