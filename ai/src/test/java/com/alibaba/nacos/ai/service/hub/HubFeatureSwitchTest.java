@@ -177,7 +177,7 @@ class HubFeatureSwitchTest {
         assertDisabled(() -> transfer.importFromHub(null));
         // Direct Namespace copy retains its existing validation, not a Hub-disabled error.
         assertEquals(NacosException.INVALID_PARAM,
-            assertThrows(NacosException.class, () -> transfer.copyDirect(null)).getErrCode());
+            assertThrows(NacosException.class, () -> transfer.cloneDirect(null)).getErrCode());
         AiResourceManager manager = mock(AiResourceManager.class);
         HubEntryStorage storage = mock(HubEntryStorage.class);
         HubSkillPermissionGuard statePermissions = mock(HubSkillPermissionGuard.class);

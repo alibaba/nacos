@@ -1,3 +1,5 @@
+import { useResourceLifecycleConfirmation } from '@/components/ai/hub/ResourceLifecycleConfirmation';
+import { ResourceHubActions } from '@/components/ai/hub/ResourceHubActions';
 import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -91,6 +93,7 @@ export default function AgentSpecDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { name: routeName } = useParams<{ name: string }>();
+  const requestedVersion = searchParams.get('version') || '';
   const agentSpecName = routeName ? decodeURIComponent(routeName) : '';
   const { currentNamespace } = useNamespaceStore();
   const namespaceId =
@@ -111,7 +114,8 @@ export default function AgentSpecDetailPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [selectedVersion, setSelectedVersion] = useState<string>(requestedVersion);
+  const hubLifecycle = useResourceLifecycleConfirmation('agentspec', namespaceId, agentSpecName, selectedVersion);
   const [detailDocument, setDetailDocument] = useState<AgentSpecDocument | null>(null);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
@@ -147,7 +151,7 @@ export default function AgentSpecDetailPage() {
 
   useEffect(() => {
     setDetailDocument(null);
-    setSelectedVersion('');
+    setSelectedVersion(requestedVersion);
     setIsEditingDraft(false);
     loadDetail();
     return () => {
@@ -157,7 +161,7 @@ export default function AgentSpecDetailPage() {
       clearError();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentSpecName, namespaceId]);
+  }, [agentSpecName, namespaceId, requestedVersion]);
 
   useEffect(() => {
     setBizTags(parseBizTags(currentDetail?.bizTags));
@@ -210,6 +214,7 @@ export default function AgentSpecDetailPage() {
 
   const handleToggleEnable = async () => {
     if (!currentDetail) return;
+    if (currentDetail.enable && !await hubLifecycle.confirmLifecycle('disable')) return;
     setEnableToggling(true);
     try {
       if (currentDetail.enable) {
@@ -228,6 +233,7 @@ export default function AgentSpecDetailPage() {
 
   const handleToggleScope = async () => {
     if (!currentDetail) return;
+    if (currentDetail.scope === 'PUBLIC' && !await hubLifecycle.confirmLifecycle('private')) return;
     setScopeToggling(true);
     try {
       const newScope = currentDetail.scope === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
@@ -366,6 +372,7 @@ export default function AgentSpecDetailPage() {
   };
 
   const handleOffline = async (version: string) => {
+    if (!await hubLifecycle.confirmLifecycle('offline', version)) return;
     setActionLoading(true);
     try {
       await agentSpecApi.offline({ namespaceId, agentSpecName, version });
@@ -1179,6 +1186,9 @@ export default function AgentSpecDetailPage() {
           </div>
         </div>
       </div>
+
+      <ResourceHubActions type="agentspec" namespaceId={namespaceId} name={agentSpecName} version={selectedVersion} status={currentVersionStatus} scope={detail.scope} enabled={detail.enable} canWrite={canWriteResource} onShareStateChange={hubLifecycle.onShareStateChange} />
+      {hubLifecycle.lifecycleDialog}
 
       {/* ===== Tabs Content ===== */}
       <Tabs defaultValue="overview" className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>

@@ -157,20 +157,20 @@ describe('direct Skill copy to an independent namespace draft', () => {
     status: 'draft', targetResourceId: '9007199254740999', origin: '{}', hubEntryId: null };
   it('uses the existing copy route with exact source and target identities, without first sharing', async () => {
     post.mockResolvedValue({ code: 0, data: created });
-    expect((await hubSkillApi.copy(request)).data).toEqual(created);
+    expect((await hubSkillApi.clone(request)).data).toEqual(created);
     expect(post).toHaveBeenCalledOnce();
-    expect(post).toHaveBeenCalledWith('v3/console/ai/hub/skills/copy', request, { timeout: 60000 });
+    expect(post).toHaveBeenCalledWith('v3/console/ai/hub/skills/clone', request, { timeout: 60000 });
   });
   it('never reports a draft for a different target or version as a successful copy', async () => {
     for (const change of [{ targetNamespaceId: 'tenant-a' }, { targetName: 'other' }, { draftVersion: '9.0.0' },
       { status: 'online' }, { targetResourceId: Number('9007199254740999') }, { hubEntryId: '901' }]) {
       post.mockResolvedValue({ code: 0, data: { ...created, ...change } });
-      await expect(hubSkillApi.copy(request)).rejects.toThrow('Mismatched');
+      await expect(hubSkillApi.clone(request)).rejects.toThrow('Mismatched');
     }
   });
   it('does not retry a target conflict as an overwrite or a share operation', async () => {
     post.mockResolvedValue({ code: 20005, message: 'target exists' });
-    await expect(hubSkillApi.copy(request)).rejects.toMatchObject({ code: 20005 });
+    await expect(hubSkillApi.clone(request)).rejects.toMatchObject({ code: 20005 });
     expect(post).toHaveBeenCalledOnce();
   });
 });

@@ -16,13 +16,23 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubPromptImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubSharePromptRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
 /**
@@ -418,5 +428,51 @@ public interface PromptMaintainerService {
     default boolean updatePromptMetadata(String namespaceId, String promptKey, String description)
         throws NacosException {
         return updatePromptMetadata(namespaceId, promptKey, description, null);
+    }
+    
+    /** Execute Prompt Hub share. */
+    default HubShareResult shareHubPrompt(HubSharePromptRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Execute Prompt Hub adjust. */
+    default HubShareResult adjustHubPromptShare(HubAdjustShareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Execute Prompt Hub unshare. */
+    default HubShareResult unshareHubPrompt(HubUnshareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Execute Prompt Hub forceUnshare. */
+    default HubShareResult forceUnshareHubPrompt(HubForceUnshareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Execute Prompt Hub sourceState. */
+    default HubResourceShareState getHubPromptSourceState(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Execute Prompt Hub governanceState. */
+    default HubResourceShareState getHubPromptGovernanceState(Long entryId) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Prompt Hub is unavailable");
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    default HubResourceTransferResult importHubPrompt(HubPromptImportRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub import is unavailable");
     }
 }

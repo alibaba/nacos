@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.agent;
 
 import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentMetadata;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
 
 /**
  * Agent metadata shared by management and discovery catalog views.
@@ -31,6 +32,16 @@ import com.alibaba.nacos.api.ai.model.agent.base.AbstractAgentMetadata;
 public class AgentSummary extends AbstractAgentMetadata {
     
     private static final long serialVersionUID = 1L;
+    
+    private HubResourceDiscoveryInfo hub;
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
     
     private String namespaceId;
     

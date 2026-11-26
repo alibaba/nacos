@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.hub.HubResourceReference;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.HubEntryStorage;
@@ -27,6 +28,8 @@ import com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -56,6 +59,38 @@ import static org.mockito.Mockito.when;
 
 /** Behavior tests for the Hub persistence adapter with deterministic DB fakes. */
 class HubShareRepositoryImplTest {
+    
+    @ParameterizedTest
+    @EnumSource(HubResourceType.class)
+    void eachTypePinsItsOwnImmutableVersionAndCas(HubResourceType type) throws Exception {
+        Fixture fixture = new Fixture();
+        HubShareRepository typed = ((HubShareRepositoryImpl) fixture.repository)
+            .forResourceType(type);
+        HubResourceReference one = ref(101L, 501L, "1.0.0");
+        AiResource entry = typed.reserveEntry(one, "description");
+        assertEquals(type.resourceType(), entry.getType());
+        assertEquals(AiResourceConstants.META_STATUS_DISABLE, entry.getStatus());
+        AiResourceVersion version = typed.ensureReferenceVersion(entry.getId(), one);
+        assertEquals(type.resourceType(), version.getType());
+        assertTrue(typed.publish(entry.getId(), 1, one));
+        assertFalse(typed.publish(entry.getId(), 1, one));
+        assertEquals(NacosException.CONFLICT, assertThrows(NacosException.class,
+            () -> typed.ensureReferenceVersion(entry.getId(), ref(101L, 999L, "1.0.0")))
+            .getErrCode());
+        for (HubResourceType other : HubResourceType.values()) {
+            if (other != type) {
+                HubShareRepository otherRepository = ((HubShareRepositoryImpl) fixture.repository)
+                    .forResourceType(other);
+                assertEquals(null, otherRepository.findByEntryId(entry.getId()));
+                AiResource otherEntry = otherRepository.reserveEntry(one, "same internal name");
+                assertFalse(entry.getId().equals(otherEntry.getId()));
+                assertEquals(other.resourceType(), otherEntry.getType());
+            }
+        }
+        assertTrue(typed.disable(entry.getId(), 2));
+        assertEquals(AiResourceConstants.META_STATUS_DISABLE,
+            typed.findByEntryId(entry.getId()).getStatus());
+    }
     
     @Test
     void reserveEntryMustBeDisabledAndStableAcrossRetries() throws Exception {
@@ -277,24 +312,43 @@ class HubShareRepositoryImplTest {
             AiResourcePersistService resources = mock(AiResourcePersistService.class);
             when(hubStorage.findByInternalName(anyString())).thenAnswer(invocation -> {
                 synchronized (mutex) {
-                    return copy(metaByName.get(invocation.getArgument(0)));
+                    return copy(metaByName.get("skill:" + invocation.getArgument(0)));
                 }
             });
+            when(hubStorage.findByInternalName(any(HubResourceType.class), anyString()))
+                .thenAnswer(invocation -> {
+                    synchronized (mutex) {
+                        HubResourceType type = invocation.getArgument(0);
+                        return copy(metaByName.get(type.resourceType() + ":"
+                            + invocation.getArgument(1)));
+                    }
+                });
+            when(hubStorage.findByEntryId(any(HubResourceType.class), anyLong()))
+                .thenAnswer(invocation -> {
+                    synchronized (mutex) {
+                        HubResourceType type = invocation.getArgument(0);
+                        long key = invocation.getArgument(1);
+                        return metaByName.values().stream().filter(r -> r.getId() == key
+                            && type.resourceType().equals(r.getType()))
+                            .findFirst().map(Fixture::copy).orElse(null);
+                    }
+                });
             when(hubStorage.findByEntryId(anyLong())).thenAnswer(invocation -> {
                 synchronized (mutex) {
                     long key = invocation.getArgument(0);
-                    return metaByName.values().stream().filter(r -> r.getId() == key)
+                    return metaByName.values().stream()
+                        .filter(r -> r.getId() == key && "skill".equals(r.getType()))
                         .findFirst().map(Fixture::copy).orElse(null);
                 }
             });
             doAnswer(invocation -> {
                 synchronized (mutex) {
                     AiResource newRow = invocation.getArgument(0);
-                    if (metaByName.containsKey(newRow.getName())) {
+                    if (metaByName.containsKey(newRow.getType() + ":" + newRow.getName())) {
                         throw new IllegalStateException("duplicate meta");
                     }
                     newRow.setId(id.incrementAndGet());
-                    metaByName.put(newRow.getName(), copy(newRow));
+                    metaByName.put(newRow.getType() + ":" + newRow.getName(), copy(newRow));
                     return newRow.getId();
                 }
             }).when(resources).insert(any(AiResource.class));
@@ -304,7 +358,7 @@ class HubShareRepositoryImplTest {
                         AiResource old = invocation.getArgument(0);
                         long expected = invocation.getArgument(1);
                         AiResource next = invocation.getArgument(2);
-                        AiResource current = metaByName.get(old.getName());
+                        AiResource current = metaByName.get(old.getType() + ":" + old.getName());
                         if (current == null || !Objects.equals(current.getId(), old.getId())
                             || !Objects.equals(current.getMetaVersion(), expected)) {
                             return false;
@@ -318,11 +372,22 @@ class HubShareRepositoryImplTest {
                         return true;
                     }
                 });
+            when(hubStorage.updateMetaCas(any(HubResourceType.class), any(AiResource.class),
+                anyLong(), any(AiResource.class))).thenAnswer(invocation -> {
+                    HubResourceType type = invocation.getArgument(0);
+                    AiResource existing = invocation.getArgument(1);
+                    if (!type.resourceType().equals(existing.getType())) {
+                        return false;
+                    }
+                    return hubStorage.updateMetaCas(existing, invocation.getArgument(2),
+                        invocation.getArgument(3));
+                });
             when(versions.find(anyString(), anyString(), anyString(), anyString()))
                 .thenAnswer(invocation -> {
                     synchronized (mutex) {
-                        return versionByKey.get(invocation.getArgument(1) + ":"
-                            + invocation.getArgument(3));
+                        return versionByKey
+                            .get(invocation.getArgument(2) + ":" + invocation.getArgument(1) + ":"
+                                + invocation.getArgument(3));
                     }
                 });
             doAnswer(invocation -> {
@@ -331,7 +396,7 @@ class HubShareRepositoryImplTest {
                         throw new IllegalStateException("injected version insert failure");
                     }
                     AiResourceVersion row = invocation.getArgument(0);
-                    String key = row.getName() + ":" + row.getVersion();
+                    String key = row.getType() + ":" + row.getName() + ":" + row.getVersion();
                     if (versionByKey.containsKey(key)) {
                         throw new IllegalStateException("duplicate version");
                     }

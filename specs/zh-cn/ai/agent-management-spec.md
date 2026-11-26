@@ -442,3 +442,6 @@ Java 绑定的统一 Agent/RAD 包、抽象字段基类和具体模型边界遵�
 可选引用属性允许省略或 null，不产生额外业务含义。Endpoint priority/weight/healthy/enabled 为非 null 生效值，默认依次为 0/1/true/true，priority 按升序优先。定义存储保留显式投影，排除健康、bindings、enabled 和观测字段；管理运行时查询保留 Naming 的实际健康及启用状态。Java 版本派生方法采用 onlineCnt()/latestVersion()，JSON 仍只有 labels 与 onlineVersions 等事实字段。
 
 采用[管理 Schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json)。[Artifact Schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) 引用该公开结构，Artifact payload schemaVersion 仍为 1.0。历史 Schema 通过 Git tag/commit 追溯。
+
+
+Hub 范围、克隆限制和服务实例语义见 [Agentic Resource Hub](agentic-resource-hub-spec.md).

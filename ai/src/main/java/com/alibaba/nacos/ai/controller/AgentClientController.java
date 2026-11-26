@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.ai.controller;
 
+import com.alibaba.nacos.ai.utils.HubSharedReadValidator;
 import com.alibaba.nacos.ai.service.agent.AgentClientMigrationGuard;
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.ai.form.agent.client.AgentDiscoveryForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointDeregistrationForm;
 import com.alibaba.nacos.ai.form.agent.client.AgentEndpointRegistrationForm;
@@ -46,6 +48,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.http.HubAwareAiReadHttpResourceParser;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.constants.ClientConstants;
@@ -59,6 +62,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
+
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.NAMESPACE_ID;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Hub.ENTRY_RESOURCE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /**
  * RAD Agent Client HTTP API.
@@ -101,6 +109,7 @@ public class AgentClientController {
     public Result<AgentVersionDetail> publish(AgentPublishForm form) throws NacosException {
         AgentPublishRequest request = form.toRequest();
         migrationGuard.checkReady();
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         return Result.success(publishService.publish(form.getNamespaceId(), request));
     }
     
@@ -109,14 +118,17 @@ public class AgentClientController {
      */
     @Since("3.3.0")
     @GetMapping("/search")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<Page<AgentSummary>> search(AgentSearchForm form,
         @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
             required = false) String clientId)
         throws NacosException {
         AgentSearchRequest request = form.toRequest();
         migrationGuard.checkReady();
-        clientLifecycleService.renewForQuery(clientId, form.getNamespaceId());
+        if (!HubNamespaceUtils.isHubNamespace(form.getNamespaceId())) {
+            clientLifecycleService.renewForQuery(clientId, form.getNamespaceId());
+        }
         return Result.success(discoveryService.search(form.getNamespaceId(), request));
     }
     
@@ -125,14 +137,17 @@ public class AgentClientController {
      */
     @Since("3.3.0")
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        parser = HubAwareAiReadHttpResourceParser.class)
     public Result<AgentDiscoveryResult> discover(AgentDiscoveryForm form,
         @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
             required = false) String clientId)
         throws NacosException {
         AgentDiscoveryRequest request = form.toRequest();
         migrationGuard.checkReady();
-        clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
+        if (!HubNamespaceUtils.isHubNamespace(request.getNamespaceId())) {
+            clientLifecycleService.renewForQuery(clientId, request.getNamespaceId());
+        }
         return Result.success(discoveryService.discover(request));
     }
     
@@ -150,6 +165,12 @@ public class AgentClientController {
         throws NacosException {
         AgentWatchBatchRequest request = form.toRequest();
         migrationGuard.checkReady();
+        if (request.getWatches() != null) {
+            for (com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchItem item : request
+                .getWatches()) {
+                HubNamespaceUtils.rejectIfHubNamespace(item.getDiscoveryRequest().getNamespaceId());
+            }
+        }
         return watchService.watch(clientId, requestModule, request,
             form.getWatchPayloadBytes());
     }
@@ -168,6 +189,7 @@ public class AgentClientController {
         throws NacosException {
         AgentEndpointRegistrationBatch batch = form.toRequest();
         migrationGuard.checkReady();
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         return Result.success(
             clientLifecycleService.register(clientId, requestModule, form.getNamespaceId(), batch));
     }
@@ -185,6 +207,7 @@ public class AgentClientController {
             required = false) String requestModule)
         throws NacosException {
         form.validate();
+        HubNamespaceUtils.rejectIfHubNamespace(form.getNamespaceId());
         clientLifecycleService.deregister(clientId, requestModule, form.getNamespaceId(),
             form.getAgentName(), form.getProtocol());
         return Result.success();
@@ -203,5 +226,37 @@ public class AgentClientController {
             required = false) String requestModule)
         throws NacosException {
         return Result.success(clientLifecycleService.heartbeat(clientId, requestModule));
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(value = "/search", params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.OPEN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<Page<AgentSummary>> searchShared(AgentSearchForm form,
+        @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
+            required = false) String clientId)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return search(form, clientId);
+    }
+    
+    /** Shared read binding; ordinary Namespace authorization is unchanged. */
+    @Since("3.3.0")
+    @GetMapping(params = "namespaceId=" + NAMESPACE_ID)
+    @Secured(action = ActionTypes.READ, signType = SignType.SPECIFIED,
+        resource = ENTRY_RESOURCE,
+        apiType = ApiType.OPEN_API, parser = HubAwareAiReadHttpResourceParser.class,
+        tags = {ONLY_IDENTITY,
+            ALLOW_ANONYMOUS})
+    public Result<AgentDiscoveryResult> discoverShared(AgentDiscoveryForm form,
+        @RequestHeader(name = ClientConstants.HTTP_CLIENT_ID_HEADER,
+            required = false) String clientId)
+        throws NacosException {
+        HubSharedReadValidator.requireHubNamespace(form.getNamespaceId());
+        return discover(form, clientId);
     }
 }

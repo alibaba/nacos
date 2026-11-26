@@ -159,13 +159,13 @@ export const hubSkillApi = {
     requireSuccess(client.post(`${BASE}/unshare`, data) as ApiResult<HubShareResult>),
   forceUnshare: (data: { hubEntryId: string; expectedMetaVersion: string; reason: string }) =>
     requireSuccess(client.post(`${BASE}/force-unshare`, data) as ApiResult<HubShareResult>),
-  copy: async (data: { sourceNamespaceId: string; sourceName: string; sourceVersion: string;
+  clone: async (data: { sourceNamespaceId: string; sourceName: string; sourceVersion: string;
     targetNamespaceId: string; targetName: string; targetVersion: string }) => {
-    const response = await requireSuccess(client.post(`${BASE}/copy`, data, { timeout: 60000 }) as ApiResult<HubTransferResult>);
+    const response = await requireSuccess(client.post(`${BASE}/clone`, data, { timeout: 60000 }) as ApiResult<HubTransferResult>);
     const result = response.data;
     if (result.targetNamespaceId !== data.targetNamespaceId || result.targetName !== data.targetName ||
         result.draftVersion !== data.targetVersion || result.status !== 'draft' || !validHubId(result.targetResourceId) || result.hubEntryId != null) {
-      throw new Error('Mismatched copied Skill identity');
+      throw new Error('Mismatched cloned Skill identity');
     }
     return response;
   },

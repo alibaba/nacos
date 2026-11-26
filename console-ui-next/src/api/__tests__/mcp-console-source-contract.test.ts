@@ -29,7 +29,7 @@ describe('MCP Console lifecycle source contract', () => {
     const api = read('console-ui-next/src/api/mcp.ts');
     const management = read('console-ui-next/src/pages/mcpServerManagement/index.tsx');
     const editor = read('console-ui-next/src/pages/newMcpServer/index.tsx');
-    const detail = read('console-ui-next/src/pages/mcpServerDetail/index.tsx');
+    const detail = read('console-ui-next/src/pages/mcpServerDetail/index.tsx') + read('console-ui-next/src/components/ai/mcp/McpDetailContent.tsx');
     const mutationSources = `${management}\n${editor}\n${detail}`;
 
     expect(api).toContain("client.post(`${BASE}/draft`");

@@ -205,7 +205,7 @@ revocation, safe source navigation, invalid/overflow IDs and page limits,
 and raw ZIP downloads for both audiences. Removed dedicated Hub
 list/detail/content/download routes must return 404, without compatibility aliases.
 
-Only share/adjust/unshare/force-unshare, source-share/governance-state, import/copy
+Only share/adjust/unshare/force-unshare, source-share/governance-state, import/clone
 retain special management routes. Existing CAS, source and target authorization,
 independent draft copy, lifecycle revocation and state scenarios remain.
 `HubDisabledApiOpenApiITCase` covers empty shared lists and controlled 501
@@ -220,6 +220,11 @@ order using Hub counters, and page-two consistency after server-side ordering.
 Client discovery keeps its popularity order; no new route or Client sort parameter is added.
 
 
+2026-10-29 Hub expansion: see [Hub resource scenario matrix](../openapi-test/HUB_RESOURCE_INTEGRATION_TEST_SCENARIOS.md). Four non-Skill types support publication/read/import/governance; Hub import only; no direct source clone API. MCP keeps the existing detail response and presentation; Agent runtime-endpoints projects the pinned source snapshot. Existing ordinary namespace behavior is unchanged. Live deployed integration remains pending.
+
+
+Fixed per-resource Hub controllers: MCP, Agent, Prompt, AgentSpec each expose their own literal route and deployment chain. Skill cross-namespace clone now uses `/hub/skills/clone` (old `/copy` removed); SDK `cloneHubSkill`. Updated Skill API/SDK IT source assertions require a deployed run. Dedicated Admin controller tests verify each fixed resource route and presence of Hub import and absence of direct clone/copy for non-Skill resources.
+
 ### Hub reserved namespace and failure regressions (PR #15913 review)
 
 | Scenario | Expected result | Evidence |
@@ -228,3 +233,4 @@ Client discovery keeps its popularity order; no new route or Client sort paramet
 | Ordinary Skill/Prompt/AgentSpec/Agent/MCP and compatibility mutations target the Hub namespace | Reject before storage or compatibility dispatch; internal Hub persistence remains separate | `ai:HubReservedNamespaceWriteTest`; HTTP IT currently covers Prompt draft creation |
 | Source metadata/version lookup fails during a shared directory request | Sanitized 5xx, never a successful empty or partial page | `ai:HubSkillDirectoryServiceTest.sourceQueryFailurePropagatesThroughRealValidationToDirectory`, using real eligibility/read validators; standalone IT cannot inject DB outages |
 | Import rollback file cleanup fails | Disabled resource, draft version and storage descriptor survive for recovery | `ai:HubSkillDraftTransferWriterTest.fileCleanupFailureKeepsDisabledNameReservation`; standalone IT cannot inject storage failures |
+| Typed Hub read receives both reserved and ordinary namespaceId values, in either order | HTTP 400 / 20002 before business delegation; no source read through identity-only admission | `HubTypedManagementOpenApiITCase.conflictingNamespacesNeverReachIdentityOnlySharedReads`; AI/Console binding tests cover all typed wrappers |

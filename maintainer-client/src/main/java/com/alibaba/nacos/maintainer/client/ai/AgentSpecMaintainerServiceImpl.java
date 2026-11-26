@@ -16,11 +16,21 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubAgentSpecImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubShareAgentSpecRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -51,8 +61,11 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
         this(new AiMaintainerHttpContext(properties));
     }
     
+    private final HubResourceMaintainerServiceImpl hubPublications;
+    
     AgentSpecMaintainerServiceImpl(AiMaintainerHttpContext context) {
         super(context);
+        this.hubPublications = new HubResourceMaintainerServiceImpl(context);
     }
     
     @Override
@@ -481,5 +494,53 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
             }
         }
         return null;
+    }
+    
+    /** Execute AgentSpec Hub share. */
+    @Override
+    public HubShareResult shareHubAgentSpec(HubShareAgentSpecRequest request)
+        throws NacosException {
+        return hubPublications.share("agentspec", request);
+    }
+    
+    /** Execute AgentSpec Hub adjust. */
+    @Override
+    public HubShareResult adjustHubAgentSpecShare(HubAdjustShareRequest request)
+        throws NacosException {
+        return hubPublications.adjust("agentspec", request);
+    }
+    
+    /** Execute AgentSpec Hub unshare. */
+    @Override
+    public HubShareResult unshareHubAgentSpec(HubUnshareRequest request) throws NacosException {
+        return hubPublications.unshare("agentspec", request);
+    }
+    
+    /** Execute AgentSpec Hub forceUnshare. */
+    @Override
+    public HubShareResult forceUnshareHubAgentSpec(HubForceUnshareRequest request)
+        throws NacosException {
+        return hubPublications.forceUnshare("agentspec", request);
+    }
+    
+    /** Execute AgentSpec Hub sourceState. */
+    @Override
+    public HubResourceShareState getHubAgentSpecSourceState(String namespaceId, String name)
+        throws NacosException {
+        return hubPublications.sourceState("agentspec", namespaceId, name);
+    }
+    
+    /** Execute AgentSpec Hub governanceState. */
+    @Override
+    public HubResourceShareState getHubAgentSpecGovernanceState(Long entryId)
+        throws NacosException {
+        return hubPublications.governanceState("agentspec", entryId);
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    @Override
+    public HubResourceTransferResult importHubAgentSpec(HubAgentSpecImportRequest request)
+        throws NacosException {
+        return hubPublications.importFromHub("agentspec", request);
     }
 }

@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-export type ShareableResourceType = 'skill';
-export function canShareResource(_type: ShareableResourceType, version: string | null | undefined,
+import type { HubResourceType } from '@/api/hub-resource';
+
+export type ShareableResourceType = HubResourceType | 'skill';
+export function canShareResource(type: ShareableResourceType, version: string | null | undefined,
   status: string | null | undefined, scope: string | null | undefined, enabled = true): boolean {
-  return !!version && enabled && status === 'online' && scope === 'PUBLIC';
+  return !!version && enabled && status === 'online' && (type === 'prompt' || scope === 'PUBLIC');
 }
-export function canCopyResource(_type: ShareableResourceType, version: string | null | undefined,
+export function canCopyResource(type: ShareableResourceType, version: string | null | undefined,
   status: string | null | undefined, enabled = true): boolean {
-  return !!version && enabled && status === 'online';
+  return type === 'skill' && !!version && enabled && status === 'online';
 }

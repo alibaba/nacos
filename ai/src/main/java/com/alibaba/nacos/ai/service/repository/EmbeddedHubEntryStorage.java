@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.hub.HubResourceType;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -41,8 +42,6 @@ public class EmbeddedHubEntryStorage implements HubEntryStorage {
         + "status, namespace_id, biz_tags, ext, c_from, version_info, meta_version, "
         + "scope, owner, download_count";
     
-    private static final String RESOURCE_KIND = "skill";
-    
     private static final String SOURCE = "hub";
     
     private final DatabaseOperate databaseOperate;
@@ -59,59 +58,115 @@ public class EmbeddedHubEntryStorage implements HubEntryStorage {
     }
     
     @Override
+    public boolean incrementDownloads(HubResourceType type, long entryId, long versionId,
+        String internalName, long increment) {
+        if (entryId <= 0 || versionId <= 0 || internalName == null || increment <= 0) {
+            return false;
+        }
+        EmbeddedStorageContextHolder.addSqlContext(true,
+            "UPDATE ai_resource_version SET download_count=download_count+? "
+                + "WHERE id=? AND namespace_id=? AND name=? AND type=?",
+            increment, versionId, AiConstants.Hub.NAMESPACE_ID, internalName, type.resourceType());
+        EmbeddedStorageContextHolder.addSqlContext(true,
+            "UPDATE ai_resource SET download_count=download_count+? "
+                + "WHERE id=? AND namespace_id=? AND name=? AND type=? AND c_from=?",
+            increment, entryId, AiConstants.Hub.NAMESPACE_ID, internalName, type.resourceType(),
+            SOURCE);
+        return Boolean.TRUE.equals(databaseOperate.blockUpdate());
+    }
+    
+    @Override
     public AiResource findByInternalName(String internalName) {
+        return findByInternalName(HubResourceType.SKILL, internalName);
+    }
+    
+    @Override
+    public AiResource findByInternalName(HubResourceType type, String internalName) {
         String sql = "SELECT " + COLUMNS + " FROM ai_resource WHERE namespace_id=? "
             + "AND name=? AND type=? AND c_from=?";
         return databaseOperate.queryOne(sql,
-            new Object[] {AiConstants.Hub.NAMESPACE_ID, internalName, RESOURCE_KIND, SOURCE},
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, internalName, type.resourceType(), SOURCE},
             AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
     
     @Override
     public AiResource findByEntryId(long hubEntryId) {
+        return findByEntryId(HubResourceType.SKILL, hubEntryId);
+    }
+    
+    @Override
+    public AiResource findByEntryId(HubResourceType type, long hubEntryId) {
         String sql = "SELECT " + COLUMNS + " FROM ai_resource WHERE id=? "
             + "AND namespace_id=? AND type=? AND c_from=?";
         return databaseOperate.queryOne(sql,
-            new Object[] {hubEntryId, AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE},
+            new Object[] {hubEntryId, AiConstants.Hub.NAMESPACE_ID, type.resourceType(), SOURCE},
             AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
     
     @Override
     public long maxEntryId() {
+        return maxEntryId(HubResourceType.SKILL);
+    }
+    
+    @Override
+    public long maxEntryId(HubResourceType type) {
         Long max = databaseOperate.queryOne(
             "SELECT MAX(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=?",
-            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE}, Long.class);
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, type.resourceType(), SOURCE}, Long.class);
         return max == null ? 0L : max;
     }
     
     @Override
     public Long nextEntryId(long afterId, long maxId) {
+        return nextEntryId(HubResourceType.SKILL, afterId, maxId);
+    }
+    
+    @Override
+    public Long nextEntryId(HubResourceType type, long afterId, long maxId) {
         return databaseOperate.queryOne(
             "SELECT MIN(id) FROM ai_resource WHERE namespace_id=? AND type=? AND c_from=? "
                 + "AND id>? AND id<=?",
-            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, afterId, maxId},
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, type.resourceType(), SOURCE, afterId,
+                maxId},
             Long.class);
     }
     
     @Override
     public List<AiResource> entriesInIdRange(long fromId, long toId) {
+        return entriesInIdRange(HubResourceType.SKILL, fromId, toId);
+    }
+    
+    @Override
+    public List<AiResource> entriesInIdRange(HubResourceType type, long fromId, long toId) {
         String sql = "SELECT " + COLUMNS + " FROM ai_resource WHERE namespace_id=? "
             + "AND type=? AND c_from=? AND id>=? AND id<=? ORDER BY id ASC";
         return databaseOperate.queryMany(sql,
-            new Object[] {AiConstants.Hub.NAMESPACE_ID, RESOURCE_KIND, SOURCE, fromId, toId},
+            new Object[] {AiConstants.Hub.NAMESPACE_ID, type.resourceType(), SOURCE, fromId, toId},
             AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
     
     @Override
     public boolean updateMetaCas(AiResource existing, long expectedMetaVersion,
         AiResource next) {
+        return updateMetaCas(HubResourceType.SKILL, existing, expectedMetaVersion, next);
+    }
+    
+    @Override
+    public boolean updateMetaCas(HubResourceType type, AiResource existing,
+        long expectedMetaVersion,
+        AiResource next) {
+        if (existing == null || !AiConstants.Hub.NAMESPACE_ID.equals(existing.getNamespaceId())
+            || !type.resourceType().equals(existing.getType())
+            || !SOURCE.equals(existing.getFrom())) {
+            return false;
+        }
         String sql = "UPDATE ai_resource SET status=?, c_desc=?, biz_tags=?, ext=?, "
             + "version_info=?, meta_version=meta_version+1, gmt_modified="
             + mapper.getFunction("NOW()") + " WHERE id=? AND namespace_id=? AND name=? "
             + "AND type=? AND c_from=? AND meta_version=?";
         Object[] args = new Object[] {next.getStatus(), next.getDesc(), next.getBizTags(),
             next.getExt(), next.getVersionInfo(), existing.getId(), AiConstants.Hub.NAMESPACE_ID,
-            existing.getName(), RESOURCE_KIND, SOURCE, expectedMetaVersion};
+            existing.getName(), type.resourceType(), SOURCE, expectedMetaVersion};
         // A zero-row CAS must fail inside the transaction, including Raft apply.
         // Acknowledgement alone cannot distinguish a stale identical-target write.
         EmbeddedStorageContextHolder.addSqlContext(true, sql, args);

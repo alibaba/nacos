@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.ai.service.agentspecs;
 
+import com.alibaba.nacos.ai.service.hub.HubAgentSpecReadAdapter;
 import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
+
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
@@ -127,6 +129,22 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         this.resourceManager = resourceManager;
     }
     
+    private HubAgentSpecReadAdapter sharedAgentSpecs;
+    
+    /** Route reserved-namespace reads through the fixed shared-version adapter. */
+    @Autowired
+    public void setSharedAgentSpecReadAdapter(HubAgentSpecReadAdapter adapter) {
+        this.sharedAgentSpecs = adapter;
+    }
+    
+    private HubAgentSpecReadAdapter sharedReads() throws NacosException {
+        if (sharedAgentSpecs == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                "Shared AgentSpec read service is unavailable");
+        }
+        return sharedAgentSpecs;
+    }
+    
     @Autowired(required = false)
     public void setAiResourceIndexMaintenanceService(
         AiResourceIndexMaintenanceService resourceIndexMaintenanceService) {
@@ -183,6 +201,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getMeta(agentSpecName);
+        }
         // Step 1: Find meta and verify read permission
         AiResource meta =
             resourceManager.findMeta(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
@@ -246,6 +267,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public AgentSpec getAgentSpecVersionDetail(String namespaceId, String agentSpecName,
         String version)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getVersion(agentSpecName, version);
+        }
         AiResource meta =
             resourceManager.findMeta(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {
@@ -275,6 +299,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName,
         String version)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().getVersionMeta(agentSpecName, version);
+        }
         AiResource meta =
             resourceManager.findMeta(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {
@@ -333,6 +360,10 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String search,
         String orderBy, String owner, String scope, int pageNo, int pageSize)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().list(agentSpecName, search, owner, scope, orderBy, pageNo,
+                pageSize);
+        }
         String nameLike = null;
         if (StringUtils.isNotBlank(agentSpecName)) {
             if (Constants.AgentSpecs.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
@@ -623,6 +654,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public AgentSpec queryAgentSpec(String namespaceId, String name, String version, String label)
         throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().query(name, version, label, null).getAgentSpec();
+        }
         // Step 1: Verify meta exists, is readable, and is enabled
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {
@@ -659,6 +693,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public AgentSpecQueryResult queryAgentSpecForClient(String namespaceId, String name,
         String version, String label, String clientMd5) throws NacosException {
+        if (HubNamespaceUtils.isHubNamespace(namespaceId)) {
+            return sharedReads().query(name, version, label, clientMd5);
+        }
         // Step 1: Resolve version via existing logic (validates meta, status, etc.)
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {

@@ -44,8 +44,8 @@ public class HubSkillTransferInnerHandler implements HubSkillTransferHandler {
     }
     
     @Override
-    public HubSkillTransferResult copyDirect(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneDirect(HubSkillTransferRequest request)
         throws NacosException {
-        return service.copyDirect(request);
+        return service.cloneDirect(request);
     }
 }

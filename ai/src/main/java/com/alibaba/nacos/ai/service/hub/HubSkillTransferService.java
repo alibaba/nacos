@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
-/** S3 orchestrator. Import and direct copy share exactly one target draft writer. */
+/** S3 orchestrator. Import and direct clone share exactly one target draft writer. */
 @Service
 public class HubSkillTransferService {
     
@@ -89,7 +89,7 @@ public class HubSkillTransferService {
     }
     
     /** Copy an explicit online version without any Hub publication. Source READ is mandatory. */
-    public HubSkillTransferResult copyDirect(HubSkillTransferRequest request)
+    public HubSkillTransferResult cloneDirect(HubSkillTransferRequest request)
         throws NacosException {
         request = snapshot(request);
         String targetVersion = HubSkillTransferRequestValidator.validate(request, false);
@@ -105,7 +105,7 @@ public class HubSkillTransferService {
         AiResourceVersion sourceRow = sources.requireStillLive(source);
         HubSkillTransferFileService.Files contents = files.load(source, sourceRow,
             request.getTargetName(), targetVersion);
-        // A direct copy does not acquire a Hub grant: always recheck source READ.
+        // A direct clone does not acquire a Hub grant: always recheck source READ.
         permissions.requireDirectSourceRead(sources.lookupDirectSource(
             source.getNamespaceId(), source.getName()));
         return writer.create(source, request.getTargetNamespaceId(), request.getTargetName(),

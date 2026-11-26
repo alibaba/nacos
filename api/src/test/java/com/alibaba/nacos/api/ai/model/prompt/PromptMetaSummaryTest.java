@@ -179,4 +179,25 @@ class PromptMetaSummaryTest extends BasicRequestTest {
         assertEquals("review", summary.getReviewingVersion());
         assertEquals(2, summary.getOnlineCnt());
     }
+    
+    @Test
+    void optionalHubMetadataPreservesOrdinaryJsonAndLongEntryIdentity() throws Exception {
+        PromptMetaSummary ordinary = new PromptMetaSummary();
+        assertTrue(!mapper.writeValueAsString(ordinary).contains("\"hub\""));
+        PromptVersionSummary version = new PromptVersionSummary();
+        assertTrue(!mapper.writeValueAsString(version).contains("\"hub\""));
+        com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo hub =
+            new com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo();
+        hub.setHubEntryId(9007199254740993L);
+        hub.setResourceName("same-name");
+        hub.setVersion("1.0.0");
+        ordinary.setHub(hub);
+        String json = mapper.writeValueAsString(ordinary);
+        assertTrue(json.contains("\"hubEntryId\":\"9007199254740993\""));
+        assertTrue(!json.contains("sourceResourceId"));
+        assertTrue(!json.contains("sourceNamespaceId"));
+        assertEquals(9007199254740993L,
+            mapper.readValue(json, PromptMetaSummary.class).getHub().getHubEntryId());
+    }
+    
 }

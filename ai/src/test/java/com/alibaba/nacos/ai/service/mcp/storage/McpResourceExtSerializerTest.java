@@ -31,6 +31,22 @@ class McpResourceExtSerializerTest {
     private static final String MCP_ID = "4d7939c0-72ea-4ef4-b232-418d1e16b45c";
     
     @Test
+    void pendingRecoveryRoundTripPreservesMarkerAndCoordinates() {
+        McpResourceExt ext = McpResourceExtSerializer
+            .deserialize("{\"schemaVersion\":1,\"mcpId\":\"" + MCP_ID + "\"}");
+        ext.setImportPending(true);
+        ext.setImportRecovery(java.util.Map.of("storage", "target-only descriptor", "files",
+            java.util.List
+                .of(java.util.Map.of("provider", "target-provider", "key", "target-key"))));
+        McpResourceExt restored = McpResourceExtSerializer.deserialize(
+            McpResourceExtSerializer.serialize(ext));
+        assertEquals(Boolean.TRUE, restored.getImportPending());
+        assertEquals(ext.getImportRecovery(), restored.getImportRecovery());
+        ext.setImportRecovery(null);
+        assertThrows(IllegalArgumentException.class, () -> McpResourceExtSerializer.serialize(ext));
+    }
+    
+    @Test
     void testRoundTripUsesCanonicalProjection() {
         McpResourceExt original = new McpResourceExt();
         original.setSchemaVersion(McpResourceExt.SCHEMA_VERSION);
@@ -100,4 +116,30 @@ class McpResourceExtSerializerTest {
         assertThrows(IllegalArgumentException.class,
             () -> McpResourceExtSerializer.deserialize(json));
     }
+    
+    @Test
+    void transferredOriginRoundTripsWithoutChangingOtherSchemaFields() {
+        McpResourceExt ext = new McpResourceExt();
+        ext.setSchemaVersion(1);
+        ext.setMcpId(MCP_ID);
+        java.util.Map<String, Object> origin = new java.util.LinkedHashMap<>();
+        origin.put("schemaVersion", 1);
+        origin.put("sourceNamespaceId", "source");
+        origin.put("sourceResourceId", 101L);
+        origin.put("sourceName", "same-name");
+        origin.put("sourceVersionId", 201L);
+        origin.put("sourceVersion", "1.0.0");
+        origin.put("importedAt", "2026-10-23T01:00:00Z");
+        ext.setOrigin(origin);
+        origin.put("sourceName", "changed externally");
+        McpResourceExt restored =
+            McpResourceExtSerializer.deserialize(McpResourceExtSerializer.serialize(ext));
+        assertEquals("same-name", restored.getOrigin().get("sourceName"));
+        java.util.Map<String, Object> readCopy = restored.getOrigin();
+        readCopy.put("sourceName", "changed externally");
+        assertEquals("same-name", restored.getOrigin().get("sourceName"));
+        origin.put("untrustedExtra", true);
+        assertThrows(IllegalArgumentException.class, () -> ext.setOrigin(origin));
+    }
+    
 }

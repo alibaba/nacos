@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.utils.AiResourceImportUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -168,6 +169,10 @@ public class VisibilityHelper {
      * @return true when writable, false otherwise
      */
     public static boolean canWriteResource(VisibilityResource resource) {
+        if (resource instanceof AiResource
+            && AiResourceImportUtils.isPending((AiResource) resource)) {
+            return false;
+        }
         Optional<VisibilityService> visibilityService = findVisibilityService();
         if (visibilityService.isEmpty()) {
             return true;
@@ -186,6 +191,7 @@ public class VisibilityHelper {
      * @throws NacosException if no write permission
      */
     public static void checkWritableResource(AiResource resource) throws NacosException {
+        AiResourceImportUtils.checkNotPending(resource);
         Optional<VisibilityService> visibilityService = findVisibilityService();
         if (visibilityService.isEmpty()) {
             return;

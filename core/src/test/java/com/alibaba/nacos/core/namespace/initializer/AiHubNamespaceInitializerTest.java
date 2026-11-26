@@ -44,6 +44,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class AiHubNamespaceInitializerTest {
+    
     @Mock
     private NamespacePersistService namespacePersistService;
     
@@ -55,8 +56,8 @@ class AiHubNamespaceInitializerTest {
     @BeforeEach
     void setUp() {
         initializer = new AiHubNamespaceInitializer(
-                namespacePersistService,
-                namespaceOperationService);
+            namespacePersistService,
+            namespaceOperationService);
     }
     
     @Test
@@ -65,33 +66,33 @@ class AiHubNamespaceInitializerTest {
         tenantInfo.setTenantId(AiConstants.Hub.NAMESPACE_ID);
         
         when(namespacePersistService.findTenantByKp(
-                String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
-                AiConstants.Hub.NAMESPACE_ID))
-                .thenReturn(tenantInfo);
+            String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
+            AiConstants.Hub.NAMESPACE_ID))
+            .thenReturn(tenantInfo);
         
         assertDoesNotThrow(initializer::ensureHubNamespace);
         
         verify(namespaceOperationService, never())
-                .createNamespace(
-                        eq(AiConstants.Hub.NAMESPACE_ID),
-                        org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.anyString(),
-                        eq(NamespaceTypeEnum.AI_HUB));
+            .createNamespace(
+                eq(AiConstants.Hub.NAMESPACE_ID),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                eq(NamespaceTypeEnum.AI_HUB));
     }
     
     @Test
     void testHubNamespaceIdOccupiedByCustomNamespace() {
         when(namespacePersistService.findTenantByKp(
-                String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
-                AiConstants.Hub.NAMESPACE_ID))
-                .thenReturn(null);
+            String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
+            AiConstants.Hub.NAMESPACE_ID))
+            .thenReturn(null);
         
         when(namespacePersistService.tenantInfoCountByTenantId(
-                AiConstants.Hub.NAMESPACE_ID))
-                .thenReturn(1);
+            AiConstants.Hub.NAMESPACE_ID))
+            .thenReturn(1);
         
         assertThrows(IllegalStateException.class,
-                initializer::ensureHubNamespace);
+            initializer::ensureHubNamespace);
     }
     
     @Test
@@ -100,21 +101,21 @@ class AiHubNamespaceInitializerTest {
         created.setTenantId(AiConstants.Hub.NAMESPACE_ID);
         
         when(namespacePersistService.findTenantByKp(
-                String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
-                AiConstants.Hub.NAMESPACE_ID))
-                .thenReturn(null)
-                .thenReturn(created);
+            String.valueOf(NamespaceTypeEnum.AI_HUB.getType()),
+            AiConstants.Hub.NAMESPACE_ID))
+            .thenReturn(null)
+            .thenReturn(created);
         
         when(namespacePersistService.tenantInfoCountByTenantId(
-                AiConstants.Hub.NAMESPACE_ID))
-                .thenReturn(0);
+            AiConstants.Hub.NAMESPACE_ID))
+            .thenReturn(0);
         
         assertDoesNotThrow(initializer::ensureHubNamespace);
         
         verify(namespaceOperationService).createNamespace(
-                eq(AiConstants.Hub.NAMESPACE_ID),
-                eq("Nacos AI Resource Hub"),
-                eq("System namespace for Nacos AI Resource Hub"),
-                eq(NamespaceTypeEnum.AI_HUB));
+            eq(AiConstants.Hub.NAMESPACE_ID),
+            eq("Nacos AI Resource Hub"),
+            eq("System namespace for Nacos AI Resource Hub"),
+            eq(NamespaceTypeEnum.AI_HUB));
     }
 }

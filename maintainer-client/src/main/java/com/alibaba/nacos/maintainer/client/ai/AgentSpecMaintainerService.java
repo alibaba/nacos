@@ -16,13 +16,23 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubAgentSpecImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubShareAgentSpecRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
 /**
@@ -419,4 +429,52 @@ public interface AgentSpecMaintainerService {
     @Since("3.2.0")
     boolean updateScope(String namespaceId, String agentSpecName, String scope)
         throws NacosException;
+    
+    /** Execute AgentSpec Hub share. */
+    default HubShareResult shareHubAgentSpec(HubShareAgentSpecRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Execute AgentSpec Hub adjust. */
+    default HubShareResult adjustHubAgentSpecShare(HubAdjustShareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Execute AgentSpec Hub unshare. */
+    default HubShareResult unshareHubAgentSpec(HubUnshareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Execute AgentSpec Hub forceUnshare. */
+    default HubShareResult forceUnshareHubAgentSpec(HubForceUnshareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Execute AgentSpec Hub sourceState. */
+    default HubResourceShareState getHubAgentSpecSourceState(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Execute AgentSpec Hub governanceState. */
+    default HubResourceShareState getHubAgentSpecGovernanceState(Long entryId)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "AgentSpec Hub is unavailable");
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    default HubResourceTransferResult importHubAgentSpec(HubAgentSpecImportRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub import is unavailable");
+    }
 }

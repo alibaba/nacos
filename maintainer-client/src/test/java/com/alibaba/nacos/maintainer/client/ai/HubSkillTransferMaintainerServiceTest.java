@@ -65,9 +65,9 @@ class HubSkillTransferMaintainerServiceTest {
         request.setSourceNamespaceId("source-ns");
         request.setSourceName("original");
         request.setSourceVersion("1.0.0");
-        service.copyHubSkill(request);
+        service.cloneHubSkill(request);
         HttpRequest http = capture();
-        assertEquals("/v3/admin/ai/hub/skills/copy", http.getPath());
+        assertEquals("/v3/admin/ai/hub/skills/clone", http.getPath());
         assertEquals("1.0.0", http.getParamValues().get("sourceVersion"));
         assertEquals(null, http.getParamValues().get("hubEntryId"));
     }
@@ -109,7 +109,7 @@ class HubSkillTransferMaintainerServiceTest {
         assertEquals(501,
             assertThrows(NacosException.class, () -> legacy.importHubSkill(null)).getErrCode());
         assertEquals(501,
-            assertThrows(NacosException.class, () -> legacy.copyHubSkill(null)).getErrCode());
+            assertThrows(NacosException.class, () -> legacy.cloneHubSkill(null)).getErrCode());
     }
     
     private HubSkillTransferRequest request() {

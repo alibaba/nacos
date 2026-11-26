@@ -310,7 +310,57 @@
         },
         "versionCatalog": {
           "$ref": "#/$defs/AgentVersionCatalog"
+        },
+        "importPending": {
+          "const": true,
+          "description": "Server-owned import reservation; ordinary writes are blocked until completion CAS."
+        },
+        "importRecovery": {
+          "type": "object",
+          "required": [
+            "storage",
+            "files"
+          ],
+          "properties": {
+            "storage": {
+              "type": "string"
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "provider",
+                  "key"
+                ],
+                "properties": {
+                  "provider": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "naming": {
+              "type": "object",
+              "description": "MCP Direct target coordinates, fixed instance and unique import ownership token."
+            }
+          }
+        },
+        "origin": {
+          "type": "object",
+          "description": "Pinned source provenance retained by Hub imports and Skill direct clones."
         }
+      },
+      "dependentRequired": {
+        "importPending": [
+          "importRecovery"
+        ],
+        "importRecovery": [
+          "importPending"
+        ]
       }
     },
     "MetadataKey": {

@@ -57,7 +57,7 @@ class NamespaceTypeEnumTest {
     void testAiHub() {
         assertEquals(3, NamespaceTypeEnum.AI_HUB.getType());
         assertEquals("Nacos AI Resource Hub namespace",
-                NamespaceTypeEnum.AI_HUB.getDescription());
+            NamespaceTypeEnum.AI_HUB.getDescription());
     }
     
     @Test

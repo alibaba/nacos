@@ -28,6 +28,14 @@ class HubSkillConsoleApiOpenApiITCase extends HubSkillApiBaseITCase {
 
     @Override
     protected String hubPath() {
-        return "http://" + NACOS_HOST + ":" + System.getProperty("nacos.console.port", "8080") + Constants.Hub.CONSOLE_PATH;
+        return Constants.Hub.CONSOLE_PATH;
+    }
+
+    @Override
+    protected String requestUrl(String path) {
+        if (path.startsWith("/v3/console/")) {
+            return "http://" + NACOS_HOST + ":" + System.getProperty("nacos.console.port", "8080") + path;
+        }
+        return super.requestUrl(path);
     }
 }

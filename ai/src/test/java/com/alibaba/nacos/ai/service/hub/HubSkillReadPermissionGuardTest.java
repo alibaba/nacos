@@ -132,6 +132,28 @@ class HubSkillReadPermissionGuardTest {
         requests.close();
     }
     
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(com.alibaba.nacos.ai.model.hub.HubResourceType.class)
+    void typedSourceNavigationRequiresBothOrdinaryReadAndVisibility(
+        com.alibaba.nacos.ai.model.hub.HubResourceType type) throws Exception {
+        AiResource source = sourceSkill();
+        source.setType(type.resourceType());
+        when(visibilityService.validateVisibility("alice", VisibilityConstants.ACTION_READ,
+            ApiType.CONSOLE_API.name(), source)).thenReturn(ValidationResult.allow());
+        assertTrue(guard.canReadSource(type, source));
+        ArgumentCaptor<Permission> captured = ArgumentCaptor.forClass(Permission.class);
+        verify(authService).validateAuthority(eq(identity), captured.capture());
+        assertEquals("r", captured.getValue().getAction());
+        assertEquals(type == com.alibaba.nacos.ai.model.hub.HubResourceType.AGENTSPEC
+            ? Constants.Resource.AI_TYPE_AGENT_SPEC : type.resourceType(),
+            captured.getValue().getResource().getProperties()
+                .getProperty(Constants.Resource.AI_TYPE));
+        when(authService.validateAuthority(eq(identity), any(Permission.class)))
+            .thenReturn(AuthResult.failureResult(403, "no ordinary source READ"));
+        assertFalse(guard.canReadSource(type, source));
+        guard.requireHubRead();
+    }
+    
     @Test
     void authenticatedConsoleViewerDoesNotNeedSourceReadGrant() throws Exception {
         assertDoesNotThrow(guard::requireHubRead);

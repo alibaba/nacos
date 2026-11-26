@@ -1,3 +1,5 @@
+import { ResourceDeleteWarning } from '@/components/ai/hub/ResourceDeleteWarning';
+import { ResourceManagementTabs } from '@/components/ai/hub/ResourceManagementTabs';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -140,6 +142,8 @@ export default function AgentManagementPage() {
           {t('agent.createAgent')}
         </Button>
       </div>
+
+      <ResourceManagementTabs type="agent" />
 
       <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto px-0.5 py-2">
         <div className="relative min-w-[12rem] max-w-md flex-1">
@@ -301,6 +305,7 @@ export default function AgentManagementPage() {
           <DialogHeader>
             <DialogTitle>{t('common.delete')}</DialogTitle>
             <DialogDescription>{t('agent.deleteConfirm', { name: deleteTarget })}</DialogDescription>
+              <ResourceDeleteWarning type="agent" />
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
@@ -319,6 +324,7 @@ export default function AgentManagementPage() {
             <DialogTitle>{t('agent.batchDelete')}</DialogTitle>
             <DialogDescription>
               {t('agent.batchDeleteConfirm', { count: selectedNames.size })}
+              <ResourceDeleteWarning type="agent" />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

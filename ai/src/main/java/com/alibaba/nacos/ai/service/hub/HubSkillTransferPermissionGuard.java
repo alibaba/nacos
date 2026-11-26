@@ -45,7 +45,7 @@ import org.springframework.stereotype.Component;
 /**
  * Target WRITE is an explicit AI auth-plugin authority check against the proposed
  * new target name. A nonexistent target cannot be authorized by its ownership.
- * Direct copy additionally needs independent source READ; Hub import does not.
+ * Direct clone additionally needs independent source READ; Hub import does not.
  */
 @Component
 public class HubSkillTransferPermissionGuard {

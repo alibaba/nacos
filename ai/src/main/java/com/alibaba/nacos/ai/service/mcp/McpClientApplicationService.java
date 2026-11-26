@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.mcp;
 
 import com.alibaba.nacos.ai.service.McpEndpointOperationService;
+import com.alibaba.nacos.ai.utils.HubNamespaceUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -110,6 +111,7 @@ public class McpClientApplicationService {
     public String release(ReleaseMcpServerRequest request, String publisher)
         throws NacosException {
         validateRelease(request);
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         String namespaceId = request.getNamespaceId();
         McpServerBasicInfo server = request.getServerSpecification();
         LOGGER.info("Release MCP Server {}, Version {} into namespaceId {} from {}.",
@@ -134,6 +136,7 @@ public class McpClientApplicationService {
     public void operateEndpoint(McpServerEndpointRequest request, String publisherId,
         String sourceIp) throws NacosException {
         validateEndpoint(request);
+        HubNamespaceUtils.rejectIfHubNamespace(request.getNamespaceId());
         Instance instance = buildInstance(request);
         McpServerDetailInfo mcpServer = query(request.getNamespaceId(), request.getMcpName(),
             request.getVersion());

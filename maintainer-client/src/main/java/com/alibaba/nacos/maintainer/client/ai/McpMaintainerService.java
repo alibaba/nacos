@@ -16,6 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.ai;
 
+import com.alibaba.nacos.api.ai.model.hub.HubMcpImportRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceTransferResult;
+
+import com.alibaba.nacos.api.ai.model.hub.HubAdjustShareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubForceUnshareRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubResourceShareState;
+import com.alibaba.nacos.api.ai.model.hub.HubShareMcpRequest;
+import com.alibaba.nacos.api.ai.model.hub.HubShareResult;
+import com.alibaba.nacos.api.ai.model.hub.HubUnshareRequest;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -30,7 +41,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -1057,5 +1067,44 @@ public interface McpMaintainerService {
     @Since("3.3.0")
     default boolean updateMcpServerScope(String mcpName, String scope) throws NacosException {
         return updateMcpServerScope(Constants.DEFAULT_NAMESPACE_ID, mcpName, scope);
+    }
+    
+    /** Execute Mcp Hub share. */
+    default HubShareResult shareHubMcp(HubShareMcpRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Execute Mcp Hub adjust. */
+    default HubShareResult adjustHubMcpShare(HubAdjustShareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Execute Mcp Hub unshare. */
+    default HubShareResult unshareHubMcp(HubUnshareRequest request) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Execute Mcp Hub forceUnshare. */
+    default HubShareResult forceUnshareHubMcp(HubForceUnshareRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Execute Mcp Hub sourceState. */
+    default HubResourceShareState getHubMcpSourceState(String namespaceId, String name)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Execute Mcp Hub governanceState. */
+    default HubResourceShareState getHubMcpGovernanceState(Long entryId) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED, "Mcp Hub is unavailable");
+    }
+    
+    /** Import the pinned Hub entry into an independent target draft. */
+    default HubResourceTransferResult importHubMcp(HubMcpImportRequest request)
+        throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+            "Hub import is unavailable");
     }
 }

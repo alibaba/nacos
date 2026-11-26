@@ -518,3 +518,6 @@ This organization does not rename protocol/schema concepts or change storage and
 Optional reference properties may be absent or null, without adding new business meaning. Endpoint priority/weight/healthy/enabled are non-null effective values: 0/1/true/true, respectively. Priority sorts ascending. Definition storage remains an explicit projection and excludes health, bindings, enabled and observations. Management runtime queries retain current Naming health and enabled. Java derived version helpers are onlineCnt()/latestVersion(); JSON remains labels plus onlineVersions.
 
 Use [management schema 0.5.0](../../schemas/ai/agent/agent-management.schema.json). [Artifact schema 0.5.0](../../schemas/ai/agent/agent-artifact.schema.json) references that public shape; the artifact payload schemaVersion remains 1.0. Historical schema revisions are retained in Git tags/commits.
+
+
+Hub scope, clone restrictions and service instance behavior follow [Agentic Resource Hub](agentic-resource-hub-spec.md).

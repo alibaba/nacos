@@ -20,10 +20,12 @@ import dayjs from 'dayjs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter } from '@/components/ui/card';
+import { McpProtocolBadge } from '@/components/ai/mcp/McpProtocolBadge';
 
 interface Props {
   name: string;
   version: string;
+  protocol?: string;
   sourceDisplayName?: string | null;
   description?: string | null;
   author?: string | null;
@@ -36,7 +38,7 @@ interface Props {
 }
 
 /** Shared directory card using the established Skill Hub layout for all resource types. */
-export function HubResourceCard({ name, version, sourceDisplayName, description, author, tags,
+export function HubResourceCard({ name, version, protocol, sourceDisplayName, description, author, tags,
   downloadCount, updatedAt, icon: Icon, gradient, onOpen }: Props) {
   const { t } = useTranslation();
   const source = sourceDisplayName || t('hub.unknownNamespace');
@@ -62,6 +64,7 @@ export function HubResourceCard({ name, version, sourceDisplayName, description,
           </Badge>
         </div>
         <div className="flex items-center gap-1.5 mt-1">
+          {protocol && <McpProtocolBadge protocol={protocol} />}
           <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">{version}</span>
         </div>
       </div>

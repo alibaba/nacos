@@ -99,6 +99,36 @@ class AgentRuntimeRegistryServiceTest {
     }
     
     @Test
+    void hubRuntimeUsesPinnedSourceWithoutCreatingNamingState() throws Exception {
+        com.alibaba.nacos.ai.service.hub.HubResourcePublicationService publications =
+            mock(com.alibaba.nacos.ai.service.hub.HubResourcePublicationService.class);
+        AgentRuntimeRegistryService spy = org.mockito.Mockito.spy(registryService);
+        spy.setHubPublications(publications);
+        RuntimeEndpointSnapshot original = new RuntimeEndpointSnapshot();
+        original.setNamespaceId("source");
+        original.setAgentName("demo-agent");
+        original.setVersion("1.0.0");
+        org.mockito.Mockito.doReturn(original).when(spy)
+            .getRuntimeEndpointSnapshot("source", "demo-agent", "a2a", "1.0.0");
+        when(publications.inspectPinned(eq(com.alibaba.nacos.ai.model.hub.HubResourceType.AGENT),
+            eq(501L), eq("1.0.0"), any())).thenAnswer(call -> {
+                com.alibaba.nacos.ai.service.hub.HubResourcePublicationService.PinnedPublicationReader<?> reader =
+                    call.getArgument(3);
+                return reader.read(new com.alibaba.nacos.ai.model.AiResource(),
+                    new com.alibaba.nacos.ai.model.AiResource(),
+                    com.alibaba.nacos.ai.utils.HubResourceReferenceJsonUtil.build(
+                        "source", 101L, "demo-agent", 201L, "1.0.0"));
+            });
+        RuntimeEndpointSnapshot result = spy.getRuntimeEndpointSnapshot(
+            "__nacos_ai_hub__", "501", "a2a", "1.0.0");
+        assertEquals("source", result.getNamespaceId());
+        assertEquals("demo-agent", result.getAgentName());
+        assertEquals("1.0.0", result.getVersion());
+        verify(spy).getRuntimeEndpointSnapshot("source", "demo-agent", "a2a", "1.0.0");
+        org.mockito.Mockito.verifyNoInteractions(serviceStorage, clientOperationService);
+    }
+    
+    @Test
     void testMixedEndpointVersionsAreNormalizedBeforeOneAtomicNamingWrite() throws Exception {
         Endpoint first = endpoint("https://one.example.com/agent", "json-rpc");
         Endpoint second = endpoint("https://two.example.com/agent", "json-rpc");
@@ -650,4 +680,17 @@ class AgentRuntimeRegistryServiceTest {
         }
         throw new AssertionError("Missing Runtime Endpoint snapshot item: " + uri);
     }
+    
+    @Test
+    void hubCannotOwnRuntimePublicationsOrSnapshots() throws Exception {
+        AgentEndpointRegistrationBatch batch = registration("1.0.0", null,
+            Collections.singletonList(endpoint("https://one.example.com/agent", "json-rpc")));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.register(PUBLISHER_ID, "__nacos_ai_hub__", batch));
+        assertThrows(IllegalArgumentException.class,
+            () -> registryService.deregisterPublisher(PUBLISHER_ID,
+                "__nacos_ai_hub__", AGENT_NAME, PROTOCOL));
+        org.mockito.Mockito.verifyNoInteractions(clientOperationService, serviceStorage);
+    }
+    
 }

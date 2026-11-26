@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
+import com.alibaba.nacos.api.ai.model.hub.HubResourceDiscoveryInfo;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.Objects;
 
 /**
@@ -26,6 +29,17 @@ import java.util.Objects;
 public class AgentSpecBasicInfo extends AgentSpecBase {
     
     private Long updateTime;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HubResourceDiscoveryInfo hub;
+    
+    public HubResourceDiscoveryInfo getHub() {
+        return hub;
+    }
+    
+    public void setHub(HubResourceDiscoveryInfo hub) {
+        this.hub = hub;
+    }
     
     public Long getUpdateTime() {
         return updateTime;

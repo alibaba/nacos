@@ -28,6 +28,7 @@ interface Props {
   canWrite: boolean;
   eligible: boolean;
   copyable: boolean;
+  showClone?: boolean;
   eligibilityHint: string;
   copyHint: string;
   lifecycleHint: string;
@@ -68,11 +69,11 @@ export function ResourceSharingPanel(props: Props) {
           </Button>}
         {canWrite && share?.active && <Button size="sm" variant="destructive" disabled={loading || busy || !!error}
           onClick={props.onUnshare}>{t('hub.unshare')}</Button>}
-        <Button size="sm" variant="outline" disabled={busy || !copyable} onClick={props.onCopy}>
+        {props.showClone !== false && <Button size="sm" variant="outline" disabled={busy || !copyable} onClick={props.onCopy}>
           <Copy className="mr-1.5 h-3.5 w-3.5" />{t('hubResource.copy')}
-        </Button>
+        </Button>}
       </div>
-      {!copyable && <p className="text-xs text-muted-foreground">{props.copyHint}</p>}
+      {props.showClone !== false && !copyable && <p className="text-xs text-muted-foreground">{props.copyHint}</p>}
     </CardContent>
   </Card>;
 }

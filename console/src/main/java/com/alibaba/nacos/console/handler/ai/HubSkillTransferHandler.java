@@ -25,5 +25,5 @@ public interface HubSkillTransferHandler {
     
     HubSkillTransferResult importFromHub(HubSkillTransferRequest request) throws NacosException;
     
-    HubSkillTransferResult copyDirect(HubSkillTransferRequest request) throws NacosException;
+    HubSkillTransferResult cloneDirect(HubSkillTransferRequest request) throws NacosException;
 }

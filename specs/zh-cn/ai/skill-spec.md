@@ -209,9 +209,10 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 导入的 Skill 遵循 upload 和 draft 规则，除非该操作是服务端拥有的显式 bootstrap 流程。
 依赖处理，例如 Skill 引用 MCP tools，应通过统一导入流程 preview，默认不得递归导入依赖。
 
-Hub 导入回滚必须先清理目标文件，再删除草稿版本及 disabled 资源占位记录。
-文件清理失败时，必须保留版本记录、完整 storage 描述符（provider、scope、files）
-及 disabled 占位记录，以便后续清理定位残留文件。
+Hub 导入与跨 Namespace 克隆统一遵循 [Agentic Resource Hub](agentic-resource-hub-spec.md)
+的 pending 占位、持久化恢复信息及最终完成 CAS 规则。回滚先清理目标文件，再删除对应
+草稿版本和 disabled 占位。清理失败时，即使版本记录尚未插入，也必须保留 importPending
+及 importRecovery；恢复完成前不允许普通编辑或删除。
 
 ## 6. 运行时行为
 
@@ -315,8 +316,7 @@ Admin 和 Console 的管理读取也复用现有 Skill 接口：
 客户端是否合并共享发现由 `nacosAiAccessHub`（默认 false）控制，与服务端
 `nacos.ai.hub.enabled`（既有默认 true）及状态 `ai_hub_enabled` 分离。合并规则见
 [SDK 规范](../sdk/sdk-spec.md)。默认或显式 false 时只查询业务 namespace，显式 true 时合并共享；SDK 配置
-不改变 HTTP 省略 namespace 时使用 public 的规则。控制台入口按资源类型组织；目前完整共享生命周期仅实现
-Skill，类型专属 Admin/Console 分享、撤销、导入和治理接口继续保留。
+不改变 HTTP 省略 namespace 时使用 public 的规则。控制台入口按资源类型组织；五类资源均支持共享生命周期；只有 Skill 提供克隆及导入，其他四类提供 Hub 共享、读取、导入及治理。
 
 源元数据或版本查询故障不等于撤销。数据库等系统故障必须返回脱敏的 5xx，
 并在内部保留原始原因供排查；目录查询必须失败，不能成功返回空列表或不完整分页。
@@ -336,6 +336,6 @@ Skill 包约定可能随 AI Agent framework 演进而变化。新的 Skill 包�
 校验、存储和迁移规则。除非明确废弃，已有 Skill 版本必须保持可获取。
 
 
-### Console 源资源共享管理区
 
-五类资源详情页统一在资源信息及生命周期操作下方、内容标签页/内容区域上方展示共享管理卡片，集中放置共享、调整版本、取消共享和跨命名空间复制。复制与共享 WRITE/PUBLIC 资格分开，提交时仍校验源 READ 和目标 WRITE。Skill 复用既有管理 /copy 接口，源须启用且指定版本 online；其余四类资源保留既有已发布版本复制规则。无可用版本时仍展示复制按钮，禁用并说明原因。Hub 关闭不展示卡片。Prompt 不显示 PUBLIC/PRIVATE 共享条件或新增 scope 操作。
+
+Hub 范围、克隆限制和服务实例语义见 [Agentic Resource Hub](agentic-resource-hub-spec.md).

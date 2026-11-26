@@ -39,7 +39,8 @@ public final class McpResourceExtSerializer {
         "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
     
     private static final Set<String> FIELDS = Collections.unmodifiableSet(
-        new HashSet<String>(Arrays.asList("schemaVersion", "mcpId")));
+        new HashSet<String>(
+            Arrays.asList("schemaVersion", "mcpId", "origin", "importPending", "importRecovery")));
     
     private McpResourceExtSerializer() {
     }
@@ -55,6 +56,13 @@ public final class McpResourceExtSerializer {
         Map<String, Object> projection = new LinkedHashMap<String, Object>();
         projection.put("schemaVersion", McpResourceExt.SCHEMA_VERSION);
         projection.put("mcpId", resourceExt.getMcpId());
+        if (resourceExt.getOrigin() != null) {
+            projection.put("origin", resourceExt.getOrigin());
+        }
+        if (resourceExt.getImportPending() != null) {
+            projection.put("importPending", resourceExt.getImportPending());
+            projection.put("importRecovery", resourceExt.getImportRecovery());
+        }
         try {
             return JacksonUtils.toJson(projection);
         } catch (NacosSerializationException e) {
@@ -71,10 +79,21 @@ public final class McpResourceExtSerializer {
     public static McpResourceExt deserialize(String json) {
         Map<?, ?> root = McpJsonValidationSupport.parseObject(json, "McpResourceExt");
         McpJsonValidationSupport.rejectUnknownFields(root, FIELDS, "McpResourceExt");
+        com.alibaba.nacos.ai.utils.AiResourceImportUtils.validateState(
+            root.get("importPending"), root.get("importRecovery"));
         McpResourceExt result = new McpResourceExt();
+        result.setImportPending((Boolean) root.get("importPending"));
+        result.setImportRecovery((Map<String, Object>) root.get("importRecovery"));
         result.setSchemaVersion(McpJsonValidationSupport.requireInteger(root, "schemaVersion",
             "McpResourceExt"));
         result.setMcpId(McpJsonValidationSupport.requireText(root, "mcpId", "McpResourceExt"));
+        if (root.containsKey("origin")) {
+            if (!(root.get("origin") instanceof Map)) {
+                throw new IllegalArgumentException("McpResourceExt origin must be an object");
+            }
+            result.setOrigin(com.alibaba.nacos.ai.utils.AiResourceOriginUtils
+                .copy((Map<?, ?>) root.get("origin")));
+        }
         validate(result);
         return result;
     }
@@ -88,12 +107,15 @@ public final class McpResourceExtSerializer {
         if (resourceExt == null) {
             throw new IllegalArgumentException("McpResourceExt must not be null");
         }
+        com.alibaba.nacos.ai.utils.AiResourceImportUtils.validateState(
+            resourceExt.getImportPending(), resourceExt.getImportRecovery());
         if (!Integer.valueOf(McpResourceExt.SCHEMA_VERSION)
             .equals(resourceExt.getSchemaVersion())) {
             throw new IllegalArgumentException("McpResourceExt schemaVersion must be "
                 + McpResourceExt.SCHEMA_VERSION);
         }
         validateMcpId(resourceExt.getMcpId());
+        resourceExt.getOrigin();
     }
     
     /**
