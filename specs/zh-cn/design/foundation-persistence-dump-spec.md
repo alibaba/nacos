@@ -134,6 +134,7 @@ Nacos 支持两类存储模式：
 | 迁移 | 不提供 Derby 到 H2 的自动迁移。切换引擎的服务器从新的 H2 数据库开始，其中只有 schema 和服务器自身启动时写入的记录，Derby 数据保持不动。 |
 | 备份 | 停止服务器后，将 `data/h2-data` 作为一个目录整体复制。 |
 | Native Image | 只有使用 `bootstrap` 的 `native-h2` profile 构建的 Native Image 才包含 H2，默认的 Native Image 不包含 H2。包含 H2 的 Native Image 遵循与 JVM 服务端相同的契约。 |
+| 维护 | H2 方言、mapper 与 schema 属于数据源插件 `nacos-datasource-plugin-h2`，以及 `persistence` 的嵌入式数据源路径。对它们的变更与这两个模块一起由 Nacos 维护者评审。两个模块的 H2 单元测试随常规构建运行。`test/scripts/native-build-it.py` 的 `standalone-h2` 用例检查 Native 构建。Native 重启检查发布一个配置、更新它、在同一数据目录上重启服务端，并比较配置与历史。当 H2 插件、嵌入式数据源、schema 或 `native-h2` profile 变更时，维护者在 Native 构建上运行该检查。它的 harness 属于 Native 测试工作（#15837）。 |
 
 ## 4. Repository 契约
 

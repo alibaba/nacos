@@ -158,6 +158,7 @@ engine.
 | Migration | No automatic Derby-to-H2 migration. A server that switches engines starts from a new H2 database that holds only the schema and the server's own startup records. Derby data is left untouched. |
 | Backup | Stop the server, then copy `data/h2-data` as one directory. |
 | Native Image | The Native Image carries H2 only when it is built with the `native-h2` profile of `bootstrap`; the default Native Image does not carry H2. A Native Image with H2 follows the same contract as the JVM server. |
+| Maintenance | The H2 dialect, the mappers and the schema belong to the datasource plugin `nacos-datasource-plugin-h2` and to the embedded datasource path of `persistence`. Changes to them are reviewed with those modules by the Nacos maintainers. The H2 unit tests of both modules run in the normal build. The `standalone-h2` case of `test/scripts/native-build-it.py` checks the Native build. The Native restart check publishes a configuration, updates it, restarts the Server on the same data directory and compares the configuration and its history. The maintainers run it on a Native build when the H2 plugin, the embedded datasource, the schema or the `native-h2` profile changes. Its harness is part of the Native test work (#15837). |
 
 ## 4. Repository Contract
 
