@@ -43,8 +43,8 @@ OIDC 不属于默认 Nacos 用户名/密码鉴权插件。它是通过
 | `isLoginEnabled()` | 返回 `true`；控制台登录由 OIDC login controller 处理。 |
 | `isAdminRequest()` | 返回 `false`；用户初始化和用户管理由 IdP 负责。 |
 
-插件不得以 Nacos 本地用户、角色、权限管理作为事实来源。选择 OIDC 时，控制台中的用户、
-角色、权限和密码管理面应隐藏或禁用。
+插件不得以 Nacos 本地用户、角色、权限管理作为事实来源。选择 OIDC 时，即使登录用户被映射为
+`globalAdmin`，控制台中的用户、角色、权限和密码管理面也必须保持隐藏或禁用，同时正常保留集群管理、插件管理等管理员能力菜单。
 
 ## 必要配置
 
@@ -105,18 +105,20 @@ false，因为统一管理器也会初始化未被选择的已发现鉴权插件
 
 | 端点 | 目的 |
 |------|------|
-| `/v1/auth/oidc/login` | 将浏览器重定向到 IdP authorization endpoint。 |
-| `/v1/auth/oidc/callback` | 接收 authorization code，校验 state 和 nonce，交换 token，并返回控制台。 |
-| `/v1/auth/oidc/logout` | 清理控制台侧鉴权状态，并可选重定向到 IdP logout endpoint。 |
+| `/v1/auth/oidc/login` | 生成 PKCE (`S256`) 参数与浏览器绑定事务 Cookie，并将浏览器重定向到 IdP authorization endpoint。 |
+| `/v1/auth/oidc/callback` | 接收 authorization code，校验 state 与浏览器绑定事务 Cookie，提交 `code_verifier` 交换 token，并返回控制台。 |
+| `/v1/auth/oidc/logout` | 清理控制台侧 `id_token` Cookie 等状态，支持自动回填 `id_token_hint` 重定向到 IdP logout endpoint，无配置时回跳登录页。 |
 | `/v1/auth/oidc/config` | 告诉控制台 OIDC 模式已启用，且本地用户/角色/权限管理已禁用。 |
 
-登录流程必须：
+登录与登出流程必须：
 
 - 使用 `{issuer-uri}/.well-known/openid-configuration` 进行 OIDC discovery。
-- 生成自包含签名的 `state` 和 `nonce`。
-- 在 IdP token endpoint 交换 authorization code。
+- 生成自包含签名的 `state`、`nonce` 与 PKCE (`S256`) `code_verifier`/`code_challenge`，并使用常量时间比较校验 HMAC 签名与 `nonce`。
+- 在发起登录时写入短期（10 分钟）加密签名的 `HttpOnly`、`SameSite=Lax`、`Secure`（HTTPS 时）浏览器绑定事务 Cookie（绑定 `state` 与 `code_verifier`）；回调时严格核验一致性防 Login CSRF，并在任何重定向前立即清除该 Cookie。
+- 在 IdP token endpoint 交换 authorization code 时提交 `code_verifier`。
 - 接受用户前校验 ID token 签名和 claims。
-- 只把短期 console cookie 作为前端交接机制，随后依赖正常请求身份传播。
+- 只把短期 console cookie（`accessToken`、`username`、`globalAdmin`）作为前端交接机制，由前端同步到 `localStorage` 后同时对应用 `contextPath` 和根路径 `/` 执行过期清除，随后依赖正常请求身份传播。
+- 在 `id_token` 长度安全范围内通过 `HttpOnly`、`SameSite=Lax`、`Secure`（HTTPS 时）Cookie 保存 `id_token`（超长或不存在时安全降级并清理残留 Cookie）；`/v1/auth/oidc/logout` 在清理该 Cookie 后，若 `redirect=true` 且未显式传 `idToken` 参数则自动读取其作为 `id_token_hint`，若 IdP 无 `end_session_endpoint` 则重定向回 `/#/login`。
 
 ## Token 校验
 

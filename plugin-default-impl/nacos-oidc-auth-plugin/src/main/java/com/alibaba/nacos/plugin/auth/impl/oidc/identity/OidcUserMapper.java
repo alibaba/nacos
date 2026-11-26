@@ -88,6 +88,8 @@ public class OidcUserMapper {
         
         private String token;
         
+        private String idToken;
+        
         public String getUsername() {
             return username;
         }
@@ -150,6 +152,14 @@ public class OidcUserMapper {
         
         public void setToken(String token) {
             this.token = token;
+        }
+        
+        public String getIdToken() {
+            return idToken;
+        }
+        
+        public void setIdToken(String idToken) {
+            this.idToken = idToken;
         }
         
         @Override

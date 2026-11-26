@@ -47,8 +47,10 @@ alternative auth mode selected by `nacos.plugin.auth.type=oidc`.
 | `isAdminRequest()` | Return `false`; the IdP owns user bootstrap and user management. |
 
 The plugin must not use Nacos local user, role, or permission management as the
-source of truth. Console user, role, permission, and password management
-surfaces should be hidden or disabled when OIDC is selected.
+source of truth. When OIDC is selected, console user, role, permission, and
+password management surfaces must remain hidden or disabled even for users mapped
+as `globalAdmin`, while administrative surfaces such as cluster management and
+plugin management remain available to `globalAdmin`.
 
 ## Required Configuration
 
@@ -120,19 +122,20 @@ Any new Nacos auth HTTP API should follow the v3 API rules in
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/v1/auth/oidc/login` | Redirect the browser to the IdP authorization endpoint. |
-| `/v1/auth/oidc/callback` | Receive authorization code, validate state and nonce, exchange code for tokens, and return to the console. |
-| `/v1/auth/oidc/logout` | Clear console-side auth state and optionally redirect to the IdP logout endpoint. |
+| `/v1/auth/oidc/login` | Issue PKCE (`S256`) parameters and a browser-bound transaction cookie, then redirect the browser to the IdP authorization endpoint. |
+| `/v1/auth/oidc/callback` | Receive authorization code, verify state and the browser-bound transaction cookie, submit `code_verifier` to exchange tokens, and return to the console. |
+| `/v1/auth/oidc/logout` | Clear console-side auth cookies such as `id_token`, redirect to the IdP logout endpoint (auto-populating `id_token_hint` when omitted), or fall back to `/#/login`. |
 | `/v1/auth/oidc/config` | Tell the console that OIDC mode is enabled and that local user/role/permission management is disabled. |
 
-The login flow must:
+The login and logout flow must:
 
 - Use OIDC discovery from `{issuer-uri}/.well-known/openid-configuration`.
-- Generate a self-contained signed `state` value and a `nonce`.
-- Exchange the authorization code at the IdP token endpoint.
+- Generate a self-contained signed `state`, a `nonce`, and PKCE (`S256`) `code_verifier`/`code_challenge`, verifying HMAC signatures and `nonce` in constant time.
+- Issue a short-lived (10-minute), authenticated-encrypted, `HttpOnly`, `SameSite=Lax`, `Secure` (on HTTPS) browser-bound transaction cookie binding `state` and `code_verifier` on `/login`; validate it on `/callback` to prevent Login CSRF and expire it before any redirect.
+- Submit `code_verifier` when exchanging the authorization code at the IdP token endpoint.
 - Validate the ID token signature and claims before accepting the user.
-- Deliver short-lived console cookies only as a handoff mechanism for the
-  frontend, then rely on normal request identity propagation.
+- Deliver short-lived console handoff cookies (`accessToken`, `username`, `globalAdmin`) only as a frontend sync mechanism; the console clears them across both its context path and `/` after syncing to `localStorage`, then relies on normal request identity propagation.
+- Store `id_token` in an `HttpOnly`, `SameSite=Lax`, `Secure` (on HTTPS) cookie when within safe size and character bounds (degrading safely and clearing stale cookies otherwise); `/v1/auth/oidc/logout` clears this cookie, uses it as `id_token_hint` when `redirect=true` and `idToken` is not explicitly supplied, and redirects back to `/#/login` when `redirect=true` and the IdP has no `end_session_endpoint`.
 
 ## Token Validation
 

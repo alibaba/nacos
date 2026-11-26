@@ -29,6 +29,34 @@ describe('Sidebar platform layout', () => {
     expect(platformPathsBlock).toContain("'/settingCenter'");
   });
 
+  it('hides authority control for OIDC global admins while keeping cluster and plugin menus', () => {
+    expect(SIDEBAR_SOURCE).toContain('const { globalAdmin, oidc } = useAuthStore();');
+    expect(SIDEBAR_SOURCE).toContain('authSystemType');
+    expect(SIDEBAR_SOURCE).toContain("const isOidcMode = oidc || authSystemType === 'oidc';");
+
+    const clusterBlock = SIDEBAR_SOURCE.slice(
+      SIDEBAR_SOURCE.indexOf("key: 'cluster'") - 60,
+      SIDEBAR_SOURCE.indexOf('if (globalAdmin && functionMode'),
+    );
+    expect(clusterBlock).toContain('if (globalAdmin)');
+    expect(clusterBlock).not.toContain('!isOidcMode');
+
+    const pluginBlock = SIDEBAR_SOURCE.slice(
+      SIDEBAR_SOURCE.indexOf('if (globalAdmin && functionMode'),
+      SIDEBAR_SOURCE.indexOf('if (globalAdmin && !isOidcMode)'),
+    );
+    expect(pluginBlock).toContain('if (globalAdmin && functionMode');
+    expect(pluginBlock).toContain("key: 'plugin'");
+    expect(pluginBlock).not.toContain('!isOidcMode');
+
+    const authorityBlock = SIDEBAR_SOURCE.slice(
+      SIDEBAR_SOURCE.indexOf('if (globalAdmin && !isOidcMode)'),
+      SIDEBAR_SOURCE.indexOf('if (copilotEnabled)'),
+    );
+    expect(authorityBlock).toContain('if (globalAdmin && !isOidcMode)');
+    expect(authorityBlock).toContain("key: 'authority'");
+  });
+
   it('leaves only version information in the sidebar bottom section', () => {
     const bottomBlock = SIDEBAR_SOURCE.slice(
       SIDEBAR_SOURCE.indexOf('{/* Bottom Section */}'),

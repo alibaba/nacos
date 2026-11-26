@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.authenticate;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler.AuthorizationRequestData;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthPluginConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadata;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcProviderMetadataProvider;
@@ -31,12 +32,19 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,6 +86,30 @@ class AuthorizationCodeHandlerTest {
         assertTrue(url.contains("scope=openid+profile"));
         assertTrue(url.contains("state="));
         assertTrue(url.contains("nonce="));
+        assertTrue(url.contains("code_challenge="));
+        assertTrue(url.contains("code_challenge_method=S256"));
+    }
+    
+    @Test
+    void testCreateAuthorizationRequestIncludesPkceAndEncryptedCookie() throws Exception {
+        AuthorizationCodeHandler handler = newHandler(mockConfig());
+        
+        AuthorizationRequestData data = handler.createAuthorizationRequest("http://nacos/callback");
+        
+        assertNotNull(data.getAuthorizationUrl());
+        assertNotNull(data.getState());
+        assertNotNull(data.getCodeVerifier());
+        assertNotNull(data.getTransactionCookieValue());
+        assertFalse(data.getTransactionCookieValue().contains(data.getCodeVerifier()));
+        assertFalse(data.getTransactionCookieValue().contains(data.getState()));
+        
+        Map<String, String> queryParams = parseQueryParams(data.getAuthorizationUrl());
+        assertEquals("S256", queryParams.get("code_challenge_method"));
+        assertEquals(data.getState(), queryParams.get("state"));
+        byte[] digest = MessageDigest.getInstance("SHA-256")
+            .digest(data.getCodeVerifier().getBytes(StandardCharsets.UTF_8));
+        String expectedChallenge = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        assertEquals(expectedChallenge, queryParams.get("code_challenge"));
     }
     
     @Test
@@ -121,6 +153,20 @@ class AuthorizationCodeHandlerTest {
         
         assertEquals("http://idp/logout?post_logout_redirect_uri=http://nacos&client_id=client",
             logoutUrl);
+    }
+    
+    @Test
+    void testBuildLogoutUrlEncodesIdTokenHint() {
+        OidcAuthPluginConfig config = mockConfig();
+        AuthorizationCodeHandler handler = newHandler(config);
+        
+        String logoutUrl = handler.buildLogoutUrl(
+            "tok&post_logout_redirect_uri=https://evil.example#frag", "http://nacos");
+        
+        assertTrue(logoutUrl.contains(
+            "id_token_hint=tok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fevil.example%23frag"));
+        assertFalse(logoutUrl.contains("&post_logout_redirect_uri=https://evil.example"));
+        assertTrue(logoutUrl.contains("&post_logout_redirect_uri=http://nacos&client_id=client"));
     }
     
     @Test
@@ -168,6 +214,24 @@ class AuthorizationCodeHandlerTest {
         assertThrows(RuntimeException.class,
             () -> ReflectionTestUtils.invokeMethod(handler, "buildSignedState", "nonce",
                 System.currentTimeMillis() + 60_000L));
+    }
+    
+    @Test
+    void testHmacVerifyConstantTimeBranches() {
+        AuthorizationCodeHandler handler = newHandler(mockConfig());
+        String validSig = ReflectionTestUtils.invokeMethod(handler, "hmacSign", "payload");
+        assertNotNull(validSig);
+        String tamperedSameLen = (validSig.charAt(0) == 'A' ? "B" : "A") + validSig.substring(1);
+        assertNotEquals(validSig, tamperedSameLen);
+        
+        assertTrue(Boolean.TRUE.equals(
+            ReflectionTestUtils.invokeMethod(handler, "hmacVerify", "payload", validSig)));
+        assertFalse(Boolean.TRUE.equals(
+            ReflectionTestUtils.invokeMethod(handler, "hmacVerify", "payload", (Object) null)));
+        assertFalse(Boolean.TRUE.equals(
+            ReflectionTestUtils.invokeMethod(handler, "hmacVerify", "payload", "short")));
+        assertFalse(Boolean.TRUE.equals(
+            ReflectionTestUtils.invokeMethod(handler, "hmacVerify", "payload", tamperedSameLen)));
     }
     
     @Test
@@ -256,6 +320,94 @@ class AuthorizationCodeHandlerTest {
                 () -> handler.exchangeCodeForUser("code", state, "http://nacos/callback"));
             
             assertTrue(exception.getErrMsg().contains("Authentication failed"));
+        } finally {
+            server.stop(0);
+        }
+    }
+    
+    @Test
+    void testExchangeCodeWithTransactionCookieSubmitsCodeVerifierAndCapturesIdToken()
+        throws Exception {
+        String idToken = plainJwt();
+        AtomicReference<String> requestBody = new AtomicReference<>();
+        AtomicInteger callCount = new AtomicInteger();
+        HttpServer server =
+            startTokenServer(200, tokenSuccessBody(idToken), requestBody, callCount);
+        try {
+            JwtTokenValidator validator = mock(JwtTokenValidator.class);
+            OidcUserMapper mapper = mock(OidcUserMapper.class);
+            AuthorizationCodeHandler handler = tokenHandler(server, true, validator, mapper);
+            AuthorizationRequestData requestData =
+                handler.createAuthorizationRequest("http://nacos/callback");
+            Object stateData = ReflectionTestUtils.invokeMethod(handler, "verifyAndDecodeState",
+                requestData.getState());
+            String nonce = (String) ReflectionTestUtils.getField(stateData, "nonce");
+            JWTClaimsSet claims =
+                new JWTClaimsSet.Builder().subject("subject").claim("nonce", nonce).build();
+            OidcUser user = new OidcUser();
+            user.setUsername("nacos");
+            when(validator.validate(idToken)).thenReturn(claims);
+            when(mapper.mapToUser(claims)).thenReturn(user);
+            
+            OidcUser result = handler.exchangeCodeForUser("code", requestData.getState(),
+                "http://nacos/callback", requestData.getTransactionCookieValue());
+            
+            assertEquals(1, callCount.get());
+            assertEquals("nacos", result.getUsername());
+            assertEquals("access-token", result.getToken());
+            assertEquals(idToken, result.getIdToken());
+            assertTrue(
+                requestBody.get().contains("code_verifier=" + requestData.getCodeVerifier()));
+        } finally {
+            server.stop(0);
+        }
+    }
+    
+    @Test
+    void testExchangeCodeWithTransactionCookieRejectsLoginCsrfAndTampering() throws Exception {
+        String idToken = plainJwt();
+        AtomicInteger callCount = new AtomicInteger();
+        HttpServer server = startTokenServer(200, tokenSuccessBody(idToken), null, callCount);
+        try {
+            AuthorizationCodeHandler handler = tokenHandler(server, true,
+                mock(JwtTokenValidator.class), mock(OidcUserMapper.class));
+            AuthorizationRequestData reqA =
+                handler.createAuthorizationRequest("http://nacos/callback");
+            AuthorizationRequestData reqB =
+                handler.createAuthorizationRequest("http://nacos/callback");
+            
+            AccessException missingErr = assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", null));
+            assertTrue(missingErr.getErrMsg().contains("Missing login transaction cookie"));
+            
+            AccessException blankErr = assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", " "));
+            assertTrue(blankErr.getErrMsg().contains("Missing login transaction cookie"));
+            
+            AccessException csrfErr = assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", reqB.getTransactionCookieValue()));
+            assertTrue(csrfErr.getErrMsg().contains("Invalid or expired login transaction"));
+            
+            String cookieA = reqA.getTransactionCookieValue();
+            String tampered = cookieA.substring(0, cookieA.length() - 1)
+                + (cookieA.endsWith("A") ? "B" : "A");
+            assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", tampered));
+            assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", "%%invalid%%"));
+            
+            String expiredCookie = ReflectionTestUtils.invokeMethod(handler,
+                "encryptTransactionCookie", reqA.getState(), reqA.getCodeVerifier(),
+                System.currentTimeMillis() - 1_000L);
+            assertThrows(AccessException.class,
+                () -> handler.exchangeCodeForUser("code", reqA.getState(),
+                    "http://nacos/callback", expiredCookie));
+            assertEquals(0, callCount.get());
         } finally {
             server.stop(0);
         }
@@ -352,8 +504,21 @@ class AuthorizationCodeHandlerTest {
     }
     
     private HttpServer startTokenServer(int status, String body) throws IOException {
+        return startTokenServer(status, body, null, null);
+    }
+    
+    private HttpServer startTokenServer(int status, String body,
+        AtomicReference<String> requestBody,
+        AtomicInteger callCount) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/token", exchange -> {
+            if (callCount != null) {
+                callCount.incrementAndGet();
+            }
+            byte[] reqBytes = exchange.getRequestBody().readAllBytes();
+            if (requestBody != null) {
+                requestBody.set(new String(reqBytes, StandardCharsets.UTF_8));
+            }
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(status, bytes.length);
@@ -362,6 +527,23 @@ class AuthorizationCodeHandlerTest {
         });
         server.start();
         return server;
+    }
+    
+    private Map<String, String> parseQueryParams(String url) {
+        Map<String, String> result = new LinkedHashMap<>();
+        String query = URI.create(url).getRawQuery();
+        if (query == null) {
+            return result;
+        }
+        for (String pair : query.split("&")) {
+            int idx = pair.indexOf('=');
+            if (idx > 0) {
+                String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                String val = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                result.put(key, val);
+            }
+        }
+        return result;
     }
     
     private String tokenSuccessBody(String idToken) {

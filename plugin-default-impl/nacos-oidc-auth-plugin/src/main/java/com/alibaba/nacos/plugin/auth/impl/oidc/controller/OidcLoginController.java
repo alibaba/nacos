@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OidcAuthPluginService;
+import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler;
+import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHandler.AuthorizationRequestData;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
 import jakarta.servlet.http.Cookie;
@@ -28,7 +30,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -60,6 +64,21 @@ public class OidcLoginController {
      */
     private static final int COOKIE_EXPIRATION_SECONDS = 60;
     
+    /**
+     * HttpOnly cookie name binding the login state and PKCE verifier to the browser.
+     */
+    static final String OIDC_TX_COOKIE_NAME = "nacos_oidc_tx";
+    
+    /**
+     * HttpOnly cookie name storing the ID token for RP-initiated logout hint.
+     */
+    static final String OIDC_ID_TOKEN_COOKIE_NAME = "nacos_oidc_id_token";
+    
+    /**
+     * Safe maximum length for storing an ID token in an HTTP cookie.
+     */
+    private static final int MAX_ID_TOKEN_COOKIE_LENGTH = 3800;
+    
     private final OidcAuthPluginService pluginService;
     
     public OidcLoginController(OidcAuthPluginService pluginService) {
@@ -80,11 +99,15 @@ public class OidcLoginController {
             // Build callback URL
             String callbackUrl = buildCallbackUrl(request);
             
-            // Get authorization URL
-            String authUrl = pluginService.buildAuthorizationUrl(callbackUrl);
+            // Create authorization request with PKCE and browser-bound transaction cookie
+            AuthorizationRequestData authRequest =
+                pluginService.createAuthorizationRequest(callbackUrl);
+            addHttpOnlyCookie(response, OIDC_TX_COOKIE_NAME,
+                authRequest.getTransactionCookieValue(), buildCookiePath(request),
+                isHttps(request), AuthorizationCodeHandler.TRANSACTION_COOKIE_MAX_AGE_SECONDS);
             
             LOGGER.info("Redirecting to IdP for authentication");
-            response.sendRedirect(authUrl);
+            response.sendRedirect(authRequest.getAuthorizationUrl());
             
         } catch (AccessException e) {
             LOGGER.error("Failed to initiate OIDC login: {}", e.getMessage());
@@ -114,6 +137,12 @@ public class OidcLoginController {
         HttpServletRequest request,
         HttpServletResponse response) throws IOException {
         
+        String cookiePath = buildCookiePath(request);
+        boolean secure = isHttps(request);
+        String txCookie = getCookieValue(request, OIDC_TX_COOKIE_NAME);
+        // Always expire the single-use transaction cookie before any redirect
+        clearHttpOnlyCookie(response, OIDC_TX_COOKIE_NAME, cookiePath, secure);
+        
         try {
             // Check for error response from IdP
             if (StringUtils.isNotBlank(error)) {
@@ -142,20 +171,19 @@ public class OidcLoginController {
             // Build callback URL (must match the one used in login)
             String callbackUrl = buildCallbackUrl(request);
             
-            // Exchange code for tokens and get user
-            OidcUser user = pluginService.exchangeCodeForUser(code, state, callbackUrl);
+            // Exchange code for tokens and get user (with browser-bound transaction & PKCE)
+            OidcUser user =
+                pluginService.exchangeCodeForUser(code, state, callbackUrl, txCookie);
             
             LOGGER.info("OIDC authentication successful for user: {}", user.getUsername());
             
             // Set cookies for token delivery (cluster-friendly, no server-side storage)
             // Frontend will read cookies and sync to localStorage, then clear them
-            String contextPath = request.getContextPath();
-            String cookiePath = StringUtils.isBlank(contextPath) ? "/" : contextPath + "/";
             
             // Set accessToken cookie (frontend readable for sync to localStorage)
             Cookie accessTokenCookie = new Cookie("accessToken", user.getToken());
             accessTokenCookie.setHttpOnly(false); // Allow frontend to read
-            accessTokenCookie.setSecure(isHttps(request));
+            accessTokenCookie.setSecure(secure);
             accessTokenCookie.setPath(cookiePath);
             accessTokenCookie.setMaxAge(COOKIE_EXPIRATION_SECONDS);
             response.addCookie(accessTokenCookie);
@@ -164,10 +192,34 @@ public class OidcLoginController {
             Cookie usernameCookie = new Cookie("username",
                 URLEncoder.encode(user.getUsername(), StandardCharsets.UTF_8));
             usernameCookie.setHttpOnly(false);
-            usernameCookie.setSecure(isHttps(request));
+            usernameCookie.setSecure(secure);
             usernameCookie.setPath(cookiePath);
             usernameCookie.setMaxAge(COOKIE_EXPIRATION_SECONDS);
             response.addCookie(usernameCookie);
+            
+            // Set globalAdmin cookie (frontend readable for sync to localStorage)
+            Cookie globalAdminCookie =
+                new Cookie("globalAdmin", String.valueOf(user.isGlobalAdmin()));
+            globalAdminCookie.setHttpOnly(false);
+            globalAdminCookie.setSecure(secure);
+            globalAdminCookie.setPath(cookiePath);
+            globalAdminCookie.setMaxAge(COOKIE_EXPIRATION_SECONDS);
+            response.addCookie(globalAdminCookie);
+            
+            // Store ID token in HttpOnly cookie for RP-initiated logout hint when safe in size
+            String idToken = user.getIdToken();
+            if (StringUtils.isNotBlank(idToken) && idToken.length() <= MAX_ID_TOKEN_COOKIE_LENGTH
+                && isSafeCookieValue(idToken)) {
+                addHttpOnlyCookie(response, OIDC_ID_TOKEN_COOKIE_NAME, idToken, cookiePath, secure,
+                    -1);
+            } else {
+                if (StringUtils.isNotBlank(idToken)) {
+                    LOGGER.warn(
+                        "Skipping id_token cookie storage (length={}): exceeds limit or unsafe",
+                        idToken.length());
+                }
+                clearHttpOnlyCookie(response, OIDC_ID_TOKEN_COOKIE_NAME, cookiePath, secure);
+            }
             
             // Redirect to home page (no parameters in URL)
             String successRedirectUrl = buildBaseUrl(request) + "/#/";
@@ -208,17 +260,26 @@ public class OidcLoginController {
         HttpServletRequest request,
         HttpServletResponse response) throws IOException {
         
+        String cookiePath = buildCookiePath(request);
+        boolean secure = isHttps(request);
+        String effectiveIdToken = StringUtils.isNotBlank(idToken)
+            ? idToken : getCookieValue(request, OIDC_ID_TOKEN_COOKIE_NAME);
+        clearHttpOnlyCookie(response, OIDC_ID_TOKEN_COOKIE_NAME, cookiePath, secure);
+        
         try {
-            // If redirect requested and IdP supports RP-initiated logout
+            // If redirect requested, redirect to IdP logout endpoint or fall back to login page
             if (redirect) {
                 String postLogoutUri = buildBaseUrl(request);
-                String logoutUrl = pluginService.buildLogoutUrl(idToken, postLogoutUri);
+                String logoutUrl = pluginService.buildLogoutUrl(effectiveIdToken, postLogoutUri);
                 
                 if (StringUtils.isNotBlank(logoutUrl)) {
                     LOGGER.info("Redirecting to IdP for logout");
                     response.sendRedirect(logoutUrl);
-                    return null;
+                } else {
+                    LOGGER.info("IdP end_session_endpoint unavailable, redirecting to login page");
+                    response.sendRedirect(postLogoutUri + "/#/login");
                 }
+                return null;
             }
             
             LOGGER.info("User logged out");
@@ -305,5 +366,57 @@ public class OidcLoginController {
      */
     private boolean isHttps(HttpServletRequest request) {
         return OidcConstants.HTTPS_PROTOCOL.equals(request.getScheme());
+    }
+    
+    private String buildCookiePath(HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        if (StringUtils.isBlank(contextPath)) {
+            return "/";
+        }
+        return contextPath.endsWith("/") ? contextPath : contextPath + "/";
+    }
+    
+    private String getCookieValue(HttpServletRequest request, String name) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+    
+    private void addHttpOnlyCookie(HttpServletResponse response, String name, String value,
+        String cookiePath, boolean secure, long maxAgeSeconds) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, value)
+            .httpOnly(true)
+            .secure(secure)
+            .sameSite("Lax")
+            .path(cookiePath);
+        if (maxAgeSeconds >= 0) {
+            builder.maxAge(maxAgeSeconds);
+        }
+        response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
+    }
+    
+    private void clearHttpOnlyCookie(HttpServletResponse response, String name, String cookiePath,
+        boolean secure) {
+        addHttpOnlyCookie(response, name, "", cookiePath, secure, 0);
+    }
+    
+    private boolean isSafeCookieValue(String value) {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c <= 0x20 || c >= 0x7F || c == ';' || c == ',' || c == '"' || c == '\\') {
+                return false;
+            }
+        }
+        return true;
     }
 }

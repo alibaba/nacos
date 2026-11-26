@@ -121,7 +121,12 @@ class OidcAuthPluginServiceTest {
         assertThrows(AccessException.class,
             () -> service.buildAuthorizationUrl("http://nacos/callback"));
         assertThrows(AccessException.class,
+            () -> service.createAuthorizationRequest("http://nacos/callback"));
+        assertThrows(AccessException.class,
             () -> service.exchangeCodeForUser("code", "bad-state", "http://nacos/callback"));
+        assertThrows(AccessException.class,
+            () -> service.exchangeCodeForUser("code", "bad-state", "http://nacos/callback",
+                "bad-tx"));
         assertNull(service.buildLogoutUrl("id-token", "http://nacos"));
     }
     
@@ -132,17 +137,28 @@ class OidcAuthPluginServiceTest {
         Object runtime = ReflectionTestUtils.getField(service, "runtime");
         ReflectionTestUtils.setField(runtime, "authorizationCodeHandler", handler);
         OidcUser user = new OidcUser();
+        AuthorizationCodeHandler.AuthorizationRequestData requestData =
+            new AuthorizationCodeHandler.AuthorizationRequestData(
+                "http://idp/authorize", "state", "verifier", "tx-cookie");
         when(handler.buildAuthorizationUrl("http://nacos/callback"))
             .thenReturn("http://idp/authorize");
+        when(handler.createAuthorizationRequest("http://nacos/callback"))
+            .thenReturn(requestData);
         when(handler.exchangeCodeForUser("code", "state", "http://nacos/callback"))
+            .thenReturn(user);
+        when(handler.exchangeCodeForUser("code", "state", "http://nacos/callback", "tx-cookie"))
             .thenReturn(user);
         when(handler.buildLogoutUrl("id-token", "http://nacos"))
             .thenReturn("http://idp/logout");
         
         assertEquals("http://idp/authorize",
             service.buildAuthorizationUrl("http://nacos/callback"));
+        assertEquals(requestData,
+            service.createAuthorizationRequest("http://nacos/callback"));
         assertEquals(user,
             service.exchangeCodeForUser("code", "state", "http://nacos/callback"));
+        assertEquals(user,
+            service.exchangeCodeForUser("code", "state", "http://nacos/callback", "tx-cookie"));
         assertEquals("http://idp/logout", service.buildLogoutUrl("id-token", "http://nacos"));
     }
     

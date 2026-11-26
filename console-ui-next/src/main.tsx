@@ -37,22 +37,36 @@ import App from './App';
     return null;
   }
 
+  function getConsoleContextPath(): string {
+    const stripped = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/');
+    if (!stripped) {
+      return '/';
+    }
+    return stripped.endsWith('/') ? stripped : `${stripped}/`;
+  }
+
   function deleteCookie(name: string) {
-    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    const contextPath = getConsoleContextPath();
+    if (contextPath !== '/') {
+      document.cookie = `${name}=; Path=${contextPath}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    }
+    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
   }
 
   const accessToken = getCookie('accessToken');
   const username = getCookie('username');
+  const globalAdminCookie = getCookie('globalAdmin');
 
   if (accessToken && username) {
     localStorage.setItem('token', JSON.stringify({
       accessToken,
       username: decodeURIComponent(username),
-      globalAdmin: false,
+      globalAdmin: globalAdminCookie === 'true',
       oidc: true,
     }));
     deleteCookie('accessToken');
     deleteCookie('username');
+    deleteCookie('globalAdmin');
   }
 })();
 
