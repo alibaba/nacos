@@ -37,7 +37,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn -B clean install -Prelease-nacos -DskipTests=true
+        run: mvn -B clean install '-Prelease-nacos,!dev' -DskipTests=true
 
       - name: Generate Ephemeral Auth Test Credentials
         run: |
