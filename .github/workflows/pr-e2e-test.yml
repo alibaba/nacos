@@ -58,7 +58,7 @@ jobs:
           unzip nacos.zip
           mkdir nacos
           cp -r nacos-* nacos/
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: nacos-group/nacos-e2e.git
           ref: main
