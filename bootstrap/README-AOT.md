@@ -94,6 +94,22 @@ control plugins. It does not select the AI plugins, the LDAP and OIDC auth plugi
 or the Derby datasource. A build that needs one of them adds its plugin JARs and drivers to
 `nacos.native.plugins`, which is the route for embedded Derby described below.
 
+The `native-h2` profile adds the H2 datasource plugin and its JDBC driver to a Native build, for a
+standalone Server that selects H2 with `spring.sql.init.platform=h2` (or
+`nacos.plugin.datasource-dialect.type=h2`). H2 is opt-in: the default Native build does not carry it.
+Put the selector in the configuration file of the build:
+
+```sh
+mvn -B '-Pnative,native-h2,release-native,!dev' -pl distribution -am clean package \
+  -Dnacos.native.config=/absolute/path/build/application.properties \
+  -Dnacos.native.standalone=true
+```
+
+H2 is standalone only, the same as on the JVM. It needs neither `nacos.native.derby.experimental` nor
+runtime class loading. Its files live under `${nacos.home}/data/h2-data`; the engine contract, backup,
+and the absence of a Derby-to-H2 migration are in the
+[persistence spec](../specs/en/design/foundation-persistence-dump-spec.md).
+
 | Property | Default | Purpose |
 | --- | --- | --- |
 | `nacos.native.config` | `distribution/conf/application.properties` | Configuration used during AOT generation |
@@ -555,6 +571,7 @@ The opt-in Maven packaging does not establish full API, plugin or platform certi
 | Oracle GraalVM 25.0.4 Native Server / MySQL or PostgreSQL | Selected standalone All-mode paths passed |
 | Oracle GraalVM 25.0.4 Native Server / embedded Derby without runtime class loading | Image compiles, but SQL execution fails |
 | GraalVM CE 25.4.4.1.1 Native Server / Derby with experimental runtime class loading | Selected standalone paths passed; experimental, not a stable compatibility promise |
+| Native Server with `native-h2` / embedded H2, standalone | Smoke and restart checks pass, including the configuration and its history after a restart on the same data directory. The full integration suites do not pass yet: the Native build lacks reflection metadata for the configuration resource parsers, and some suites need components that this profile does not select |
 | Native Console / ordinary JVM Server with Derby | Selected paths passed; Derby runs in the JVM Server |
 | Native Server / Oracle Database | Outside the scope, see [Oracle is outside the scope](#oracle-is-outside-the-scope) |
 
@@ -580,3 +597,14 @@ The local investigation exercised eight deployment combinations (JVM/Native merg
 server-only, and the four independent JVM/Native Server × Console combinations) for MySQL, Derby
 and PostgreSQL on macOS ARM64. These are functional smoke results, not full API/cluster or
 cross-platform certification. PR UT/IT results must be reported separately from that investigation.
+
+### Embedded storage
+
+- The JVM Server keeps Derby as its embedded engine. H2 is an opt-in alternative for standalone servers,
+  selected with `spring.sql.init.platform=h2`. Its contract is in the
+  [persistence spec](../specs/en/design/foundation-persistence-dump-spec.md).
+- On the Native Image, embedded Derby needs the experimental runtime class loading route, which is not a
+  supported deployment.
+- On the Native Image, embedded H2 is available for standalone servers through the `native-h2` profile.
+  It is not available for cluster mode.
+- Embedded storage in a Native cluster is not verified. Use an external database for a Native cluster.
