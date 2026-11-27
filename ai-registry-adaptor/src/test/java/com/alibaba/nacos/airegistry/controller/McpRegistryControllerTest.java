@@ -565,6 +565,146 @@ class McpRegistryControllerTest {
     }
     
     /**
+     * Test GET /v0.1/servers - the frozen stable prefix serves the same list contract as /v0.
+     */
+    @Test
+    void testListMcpServersV01StablePrefix() throws Exception {
+        // Setup
+        McpRegistryServerList mockServerList = createMockServerList(2);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("2", 2));
+        when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
+        
+        // Execute
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0.1/servers")
+            .param("limit", "2");
+        String responseContent = mockMvc.perform(builder)
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        
+        // Verify
+        McpRegistryServerList response =
+            JacksonUtils.toObj(responseContent, McpRegistryServerList.class);
+        assertNotNull(response);
+        assertNotNull(response.getServers());
+        assertEquals(2, response.getServers().size());
+        assertNotNull(response.getMetadata());
+    }
+    
+    /**
+     * Test GET /v0.1/servers/{serverName}/versions - stable prefix lists versions like /v0.
+     */
+    @Test
+    void testGetServerVersionsV01StablePrefix() throws Exception {
+        // Setup
+        String serverName = "com.example%2Fmy-server";
+        McpRegistryServerList mockServerList = createMockServerList(2);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata(null, 2));
+        when(nacosMcpRegistryService.getServerVersions(any(), any())).thenReturn(mockServerList);
+        
+        // Execute
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v0.1/servers/{name}/versions", serverName);
+        String responseContent = mockMvc.perform(builder)
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        
+        // Verify
+        McpRegistryServerList response =
+            JacksonUtils.toObj(responseContent, McpRegistryServerList.class);
+        assertNotNull(response);
+        assertNotNull(response.getServers());
+        assertEquals(2, response.getServers().size());
+    }
+    
+    /**
+     * Test GET /v0.1/servers/{serverName}/versions - stable prefix keeps the 404 error shape.
+     */
+    @Test
+    void testGetServerVersionsV01StablePrefixNotFound() throws Exception {
+        // Setup
+        String serverName = "com.example%2Fnonexistent";
+        when(nacosMcpRegistryService.getServerVersions(any(), any())).thenReturn(null);
+        
+        // Execute
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v0.1/servers/{name}/versions", serverName);
+        String responseContent = mockMvc.perform(builder)
+            .andExpect(status().isNotFound())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        
+        // Verify
+        McpErrorResponse errorResponse =
+            JacksonUtils.toObj(responseContent, McpErrorResponse.class);
+        assertNotNull(errorResponse);
+        assertEquals("Server not found", errorResponse.getError());
+    }
+    
+    /**
+     * Test GET /v0.1/servers/{serverName}/versions/{version} - stable prefix serves a version.
+     */
+    @Test
+    void testGetVersionedServerV01StablePrefix() throws Exception {
+        // Setup
+        String serverName = "com.example%2Fmy-server";
+        String version = "1.0.0";
+        ServerResponse mockServerResponse = createMockServerResponse(serverName, version);
+        when(nacosMcpRegistryService.getServer(eq(serverName), isNull(), eq(version)))
+            .thenReturn(mockServerResponse);
+        
+        // Execute
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v0.1/servers/{serverName}/versions/{version}",
+                serverName, version);
+        String responseContent = mockMvc.perform(builder)
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        
+        // Verify
+        ServerResponse response = JacksonUtils.toObj(responseContent, ServerResponse.class);
+        assertNotNull(response);
+        assertNotNull(response.getServer());
+        assertEquals(serverName, response.getServer().getName());
+        assertEquals(version, response.getServer().getVersion());
+    }
+    
+    /**
+     * Test GET /v0.1/servers/{serverName}/versions/latest - stable prefix resolves `latest`.
+     */
+    @Test
+    void testGetVersionedServerV01StablePrefixLatest() throws Exception {
+        // Setup
+        String serverName = "com.example%2Fmy-server";
+        String version = "latest";
+        ServerResponse mockServerResponse = createMockServerResponse(serverName, "2.0.0");
+        when(nacosMcpRegistryService.getServer(eq(serverName), isNull(), eq(version)))
+            .thenReturn(mockServerResponse);
+        
+        // Execute
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get("/v0.1/servers/{serverName}/versions/{version}",
+                serverName, version);
+        String responseContent = mockMvc.perform(builder)
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        
+        // Verify
+        ServerResponse response = JacksonUtils.toObj(responseContent, ServerResponse.class);
+        assertNotNull(response);
+        assertNotNull(response.getServer());
+        assertEquals(serverName, response.getServer().getName());
+    }
+    
+    /**
      * Helper method to create a mock ServerResponse.
      */
     private ServerResponse createMockServerResponse(String serverName, String version) {

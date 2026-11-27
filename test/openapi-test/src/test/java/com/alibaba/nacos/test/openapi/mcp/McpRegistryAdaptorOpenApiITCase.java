@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.adminapi.ai.AiAdminApiBaseITCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -42,6 +43,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * registered without {@code protocol} or {@code path} must render an {@code http} URL instead of a
  * {@code null} scheme and a {@code null} path fragment.</p>
  *
+ * <p>Alias coverage: the frozen {@code /v0.1} stable prefix from the official MCP Registry API
+ * changelog must serve the same read contract as the development {@code /v0} prefix.</p>
+ *
  * @author xiweng.yy
  */
 public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
@@ -54,6 +58,8 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
     
     private static final String V0_SERVERS_PATH = "/v0/servers";
     
+    private static final String V01_SERVERS_PATH = "/v0.1/servers";
+
     @ParameterizedTest
     @CsvSource(value = {"http,mcp-sse,sse", "mcp-sse,NULL,sse",
             "mcp-streamable,NULL,streamable-http"}, nullValues = "NULL")
@@ -104,10 +110,54 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
         assertOfficialStatusPresent(detailDocument);
     }
     
+    @Test
+    public void testV01StablePrefixServesSameReadContract() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        String mcpName = "oit-mcpreg-v01-" + suffix;
+        String version = "1.0.0";
+        
+        JsonNode created = postFormOk(ADMIN_MCP_PATH, directEndpointMcpForm(mcpName, version, suffix));
+        String mcpId = created.get("data").asText();
+        assertFalse(mcpId.isBlank(), created.toString());
+        addCleanup(() -> deleteMcpServerQuietly(mcpName, mcpId));
+        grantAnonymousReadVisibility("mcp", mcpName);
+        
+        AuthIdentity identity = AUTH_ENABLED ? AuthIdentity.ADMIN : AuthIdentity.ANONYMOUS;
+        String expectedUrl = "http://127.0.0.1:18080";
+        
+        // The frozen /v0.1 list alias exposes the same server document as /v0.
+        JsonNode listed = findListedServer(V01_SERVERS_PATH, mcpName, identity);
+        JsonNode remotes = listed.path("server").path("remotes");
+        assertTrue(remotes.isArray() && remotes.size() > 0, listed.toString());
+        assertEquals(expectedUrl, remotes.get(0).path("url").asText(), listed.toString());
+        assertOfficialStatusPresent(listed);
+        
+        // The /v0.1 versions collection and version detail keep the same contract.
+        HttpResponse versions = executeRaw(
+                new HttpGet(MCP_REGISTRY_BASE_URL + V01_SERVERS_PATH + '/' + mcpName + "/versions"),
+                identity);
+        assertEquals(200, versions.code(), versions.body());
+        assertTrue(JacksonUtils.toObj(versions.body()).path("servers").isArray(), versions.body());
+        
+        HttpResponse detail = executeRaw(
+                new HttpGet(MCP_REGISTRY_BASE_URL + V01_SERVERS_PATH + '/' + mcpName
+                        + "/versions/" + version), identity);
+        assertEquals(200, detail.code(), detail.body());
+        JsonNode detailDocument = JacksonUtils.toObj(detail.body());
+        assertEquals(expectedUrl, detailDocument.path("server").path("remotes").get(0)
+                .path("url").asText(), detail.body());
+        assertOfficialStatusPresent(detailDocument);
+    }
+    
     private JsonNode findListedServer(String mcpName, AuthIdentity identity) throws Exception {
+        return findListedServer(V0_SERVERS_PATH, mcpName, identity);
+    }
+    
+    private JsonNode findListedServer(String serversPath, String mcpName, AuthIdentity identity)
+            throws Exception {
         HttpResponse lastResponse = null;
         for (int retry = 0; retry < 60; retry++) {
-            lastResponse = executeRaw(new HttpGet(MCP_REGISTRY_BASE_URL + V0_SERVERS_PATH
+            lastResponse = executeRaw(new HttpGet(MCP_REGISTRY_BASE_URL + serversPath
                     + "?limit=100"), identity);
             assertEquals(200, lastResponse.code(), lastResponse.body());
             JsonNode servers = JacksonUtils.toObj(lastResponse.body()).path("servers");
@@ -121,7 +171,7 @@ public class McpRegistryAdaptorOpenApiITCase extends AiAdminApiBaseITCase {
             Thread.sleep(500L);
         }
         assertNotNull(lastResponse);
-        fail("MCP server " + mcpName + " not listed by " + V0_SERVERS_PATH + ": " + lastResponse.body());
+        fail("MCP server " + mcpName + " not listed by " + serversPath + ": " + lastResponse.body());
         return null;
     }
     
