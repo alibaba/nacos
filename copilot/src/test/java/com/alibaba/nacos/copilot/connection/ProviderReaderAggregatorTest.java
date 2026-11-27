@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.when;
 class ProviderReaderAggregatorTest {
     
     private static final ProviderReadContext CONTEXT =
-        new ProviderReadContext(new CopilotProperties());
+        new ProviderReadContext(new MockEnvironment(), new CopilotProperties(), false, null);
     
     @Mock
     private CopilotConnectionValidator connectionValidator;

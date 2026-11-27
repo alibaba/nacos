@@ -213,10 +213,18 @@ mapping and cache branches.
 
 Config scenario rows cover the current 3.3 Config model. Blank or omitted
 namespace inputs are expected to use `public`, and beta/tag gray behavior is
-verified through the current gray model. Config publish scenarios preserve dots
-inside names while rejecting exact `.` and `..` identity segments, and gray
-validation rejects directory control names. Batch delete and export-by-id scenarios
-verify that storage IDs remain scoped by the requested namespace, and clone
+verified through the current gray model. The existing Config Admin publish row
+also covers `updateForExist=false` insertion and duplicate HTTP/detail 410 with
+unchanged content/metadata, omitted-flag updates, matching and stale `casMd5`
+header precedence over create-only, and invalid boolean HTTP 400 without writes.
+See the [publish-mode matrix](ADMIN_API_TEST_SCENARIOS.md#config-admin-publish-modes-15906).
+Invalid boolean values return HTTP 400 / `PARAMETER_VALIDATE_ERROR`; stale CAS
+retains existing HTTP 500 / `RESOURCE_CONFLICT`. No API-surface classification or
+coverage total changes.
+Config publish scenarios preserve dots inside names while rejecting exact `.`
+and `..` identity segments, and gray validation rejects directory control names.
+Batch delete and export-by-id scenarios verify that storage IDs remain scoped by
+the requested namespace, and clone
 scenarios verify that storage IDs are resolved only within the requested source
 namespace before writing to the target namespace. Config, history, and capacity
 responses also verify that storage IDs remain JSON strings. Removed pre-3.0 compatibility
@@ -397,6 +405,31 @@ and rejects duplicates, while structured-filter scenarios cover exact-all
 tags, exact-any capabilities, and MCP protocol filtering. Validation coverage
 includes unknown types, malformed cursors, query/limit bounds, numbered-page
 bounds, default namespace, and successful empty results.
+
+## Copilot Step4 configuration contract (#16061)
+
+The existing `CopilotConsoleApiOpenApiITCase` row remains `Partial`; no HTTP
+surface or coverage percentage is added. The external-client cases now assert
+patch-only stored JSON (no deployment/default backfill), preservation of seeded
+`null` clears across unrelated saves, Automatic's persisted clear declaration,
+masked-key/connection metadata, sequential updates and credential clear retention,
+selection validation without a write, and HTTP 503 for invalid stored JSON on
+reads and saves without exposing credential details or changing content.
+Fixtures use the generic Config API and restore the prior document through the
+existing cleanup/session helpers;
+no LLM generation is invoked.
+
+On 2026-11-24, the rebuilt isolated standalone server passed all 9 Copilot cases
+and all 11 Config Admin cases, including the 4 new conditional-publish cases.
+Test compilation and RAT/Checkstyle/SpotBugs/Spotless checks passed. This local
+fixture used disabled auth and no real provider credentials; auth-on execution
+is not claimed. Remote CAS/concurrent-first-create, deployment > stored >
+environment precedence and highest-source clears, deletion/restart behavior,
+per-node refresh, and injected read/persist/activation failures still need
+separately controlled environments; see the [Copilot Step4 matrix](CONSOLE_API_TEST_SCENARIOS.md#copilot-step4-configuration-matrix).
+The rare post-persist local read failure remains explicitly deferred, with no
+compensation/state protocol. Existing historical validation results do not
+validate these new cases.
 
 ## Coverage Documents
 

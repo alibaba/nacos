@@ -96,6 +96,14 @@ public class ConfigRemoteHandler implements ConfigHandler {
         ConfigMaintainerService configMaintainerService = clientHolder.getConfigMaintainerService();
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             configForm.validateChangeMessage();
+            if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())
+                || !configRequestInfo.getUpdateForExist()) {
+                return configMaintainerService.publishConfig(configForm.getDataId(),
+                    configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),
+                    configForm.getAppName(), configForm.getSrcUser(), configForm.getConfigTags(),
+                    configForm.getDesc(), configForm.getType(), configForm.getChangeMessage(),
+                    configRequestInfo.getCasMd5(), configRequestInfo.getUpdateForExist());
+            }
             if (configForm.getChangeMessage() != null) {
                 return configMaintainerService.publishConfig(configForm.getDataId(),
                     configForm.getGroup(), configForm.getNamespaceId(), configForm.getContent(),

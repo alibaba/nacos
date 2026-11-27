@@ -17,11 +17,16 @@
 package com.alibaba.nacos.test.adminapi.config;
 
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,8 +43,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     {@code dataId}, {@code groupName}, and {@code content} are required, embedded dots remain valid in Config names,
  *     directory control segments are rejected, and the legacy {@code group} parameter does not replace
  *     {@code groupName} for the v3 API.</li>
- *     <li>Exception/error handling: absent configs return HTTP 404 with the v3 {@code Result} error envelope, and
- *     invalid namespace values return HTTP 400 instead of leaking HTTP 500.</li>
+ *     <li>Publish modes: create-only inserts absent configs and rejects duplicates with native HTTP/detail 410,
+ *     omitted {@code updateForExist} still updates, and the {@code casMd5} header takes precedence over
+ *     create-only, including stale CAS rejection without overwriting content.</li>
+ *     <li>Exception/error handling: absent configs return HTTP 404 with the v3 {@code Result} error envelope,
+ *     invalid namespace values return HTTP 400 instead of leaking HTTP 500, and invalid
+ *     {@code updateForExist} booleans return controlled HTTP 400 without inserting or updating config.</li>
  * </ul>
  *
  * @author xiweng.yy
@@ -102,6 +111,117 @@ public class ConfigAdminApiOpenApiITCase extends ConfigAdminApiBaseITCase {
                 ErrorCode.RESOURCE_NOT_FOUND, "Config not exist");
     }
     
+    @Test
+    public void testCreateOnlyPublishCreatesAbsentConfigAndRejectsDuplicate() throws Exception {
+        String dataId = randomDataId("create-only");
+        String groupName = randomGroupName("create-only");
+        String initialContent = "create-only=initial";
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, DEFAULT_NAMESPACE));
+        assertError(getRaw(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, DEFAULT_NAMESPACE)),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "Config not exist");
+        Map<String, String> form = new LinkedHashMap<>(Map.of("dataId", dataId,
+                "groupName", groupName, "namespaceId", DEFAULT_NAMESPACE,
+                "content", initialContent, "type", ConfigType.PROPERTIES.getType(),
+                "desc", "original description", "configTags", "original-tag",
+                "updateForExist", "false"));
+        JsonNode result = postFormOk(ADMIN_CONFIG_PATH, form);
+        assertTrue(result.get("data").asBoolean(), result.toString());
+        JsonNode initialData = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertConfigDetail(initialData, dataId, groupName, DEFAULT_NAMESPACE, initialContent,
+                ConfigType.PROPERTIES.getType());
+        assertConfigMetadata(initialData, "original description", "original-tag");
+
+        form.put("content", "{\"rejected\":true}");
+        form.put("type", ConfigType.JSON.getType());
+        form.put("desc", "rejected description");
+        form.put("configTags", "rejected-tag");
+        HttpResponse response = postConfigFormRaw(Header.EMPTY, form);
+        assertEquals(NacosException.CONFIG_ALREADY_EXISTS, response.code(), response.body());
+        JsonNode error = JacksonUtils.toObj(response.body());
+        assertEquals(NacosException.CONFIG_ALREADY_EXISTS, error.get("code").asInt(),
+                response.body());
+        assertEquals("Config already exists", error.get("message").asText(), response.body());
+        assertTrue(error.get("data").asText().contains("config already exist"), response.body());
+        JsonNode afterDuplicate = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertEquals(initialData, afterDuplicate, afterDuplicate.toString());
+    }
+
+    @Test
+    public void testPublishConfigOmittedUpdateForExistStillUpdates() throws Exception {
+        String dataId = randomDataId("default-update");
+        String groupName = randomGroupName("default-update");
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, DEFAULT_NAMESPACE));
+        publishConfig(dataId, groupName, DEFAULT_NAMESPACE, "default-update=initial");
+        String updatedContent = "default-update=updated";
+        Map<String, String> form = Map.of("dataId", dataId, "groupName", groupName,
+                "namespaceId", DEFAULT_NAMESPACE, "content", updatedContent);
+        JsonNode result = postFormOk(ADMIN_CONFIG_PATH, form);
+        assertTrue(result.get("data").asBoolean(), result.toString());
+        JsonNode updatedData = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertConfigDetail(updatedData, dataId, groupName, DEFAULT_NAMESPACE, updatedContent,
+                DEFAULT_TYPE);
+    }
+
+    @Test
+    public void testPublishConfigCasHeaderTakesPrecedenceOverCreateOnly() throws Exception {
+        String dataId = randomDataId("cas-create-only");
+        String groupName = randomGroupName("cas-create-only");
+        String initialContent = "cas-create-only=initial";
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, DEFAULT_NAMESPACE));
+        publishConfig(dataId, groupName, DEFAULT_NAMESPACE, initialContent);
+        JsonNode initialData = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertConfigDetail(initialData, dataId, groupName, DEFAULT_NAMESPACE, initialContent,
+                DEFAULT_TYPE);
+        Header header = Header.newInstance().addParam("casMd5", initialData.get("md5").asText());
+        String updatedContent = "cas-create-only=updated";
+        Map<String, String> form = new LinkedHashMap<>(Map.of("dataId", dataId,
+                "groupName", groupName, "namespaceId", DEFAULT_NAMESPACE,
+                "content", updatedContent, "updateForExist", "false"));
+        JsonNode result = postFormOk(ADMIN_CONFIG_PATH, header, form);
+        assertTrue(result.get("data").asBoolean(), result.toString());
+        JsonNode updatedData = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertConfigDetail(updatedData, dataId, groupName, DEFAULT_NAMESPACE, updatedContent,
+                DEFAULT_TYPE);
+
+        form.put("content", "cas-create-only=rejected");
+        assertError(postConfigFormRaw(header, form), 500, ErrorCode.RESOURCE_CONFLICT,
+                "Cas publish");
+        JsonNode afterStaleCas = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertEquals(updatedData, afterStaleCas, afterStaleCas.toString());
+    }
+
+    @Test
+    public void testPublishConfigInvalidUpdateForExistReturnsBadRequestWithoutWriting()
+            throws Exception {
+        String dataId = randomDataId("invalid-update-flag");
+        String groupName = randomGroupName("invalid-update-flag");
+        addCleanup(() -> deleteConfigQuietly(dataId, groupName, DEFAULT_NAMESPACE));
+        Map<String, String> form = Map.of("dataId", dataId, "groupName", groupName,
+                "namespaceId", DEFAULT_NAMESPACE, "content", "invalid-update-flag=rejected",
+                "updateForExist", "not-a-boolean");
+        assertError(postConfigFormRaw(Header.EMPTY, form), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "updateForExist");
+        assertError(getRaw(ADMIN_CONFIG_PATH, configQuery(dataId, groupName, DEFAULT_NAMESPACE)),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "Config not exist");
+
+        publishConfig(dataId, groupName, DEFAULT_NAMESPACE, "invalid-update-flag=original");
+        JsonNode initialData = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertError(postConfigFormRaw(Header.EMPTY, form), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR, "updateForExist");
+        JsonNode afterInvalidFlag = queryConfig(dataId, groupName, DEFAULT_NAMESPACE).get("data");
+        assertEquals(initialData, afterInvalidFlag, afterInvalidFlag.toString());
+    }
+
+    private HttpResponse postConfigFormRaw(Header header, Map<String, String> form)
+            throws Exception {
+        Header requestHeaders = requestHeader(requestUrl(ADMIN_CONFIG_PATH));
+        requestHeaders.addAll(header.getHeader());
+        HttpRestResult<String> result = nacosRestTemplate.postForm(requestUrl(ADMIN_CONFIG_PATH),
+                requestHeaders, form, String.class);
+        String body = null == result.getData() ? result.getMessage() : result.getData();
+        return httpResponse(result.getCode(), body);
+    }
+
     @Test
     public void testPublishConfigRequiredParametersReturnBadRequest() throws Exception {
         String dataId = randomDataId("required");

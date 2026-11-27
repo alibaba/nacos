@@ -41,6 +41,7 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -191,8 +192,10 @@ public class ConfigControllerV3 {
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm)
+    public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm,
+        @RequestParam(value = "updateForExist", defaultValue = "true") String updateForExist)
         throws NacosException {
+        final boolean createOnly = parseUpdateForExist(updateForExist);
         // check required field
         configForm.validateWithContent();
         configForm
@@ -226,10 +229,28 @@ public class ConfigControllerV3 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setUpdateForExist(createOnly);
         
-        return Result.success(
-            configOperationService.publishConfig(configForm, configRequestInfo,
-                encryptedDataKeyFinal));
+        try {
+            return Result.success(configOperationService.publishConfig(configForm,
+                configRequestInfo, encryptedDataKeyFinal));
+        } catch (ConfigAlreadyExistsException e) {
+            // Preserve the native duplicate-create code through the v3 Result envelope.
+            throw new NacosApiException(e.getErrCode(), e.getErrCode(),
+                "Config already exists", e.getErrMsg());
+        }
+    }
+    
+    private static boolean parseUpdateForExist(String value) throws NacosApiException {
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+            ErrorCode.PARAMETER_VALIDATE_ERROR,
+            "Invalid value for parameter: updateForExist");
     }
     
     /**

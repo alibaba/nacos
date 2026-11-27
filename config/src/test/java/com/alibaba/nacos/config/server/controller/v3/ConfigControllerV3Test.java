@@ -21,12 +21,15 @@ import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
+import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -305,6 +308,73 @@ class ConfigControllerV3Test {
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
         assertEquals("true", data);
+    }
+    
+    @Test
+    void testPublishForwardsCreateOnlyAndCas() throws Exception {
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
+        MvcResult result =
+            mockmvc.perform(MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+                .param("dataId", "test").param("groupName", "test").param("content", "test")
+                .param("updateForExist", "false").header("casMd5", "previous-md5")).andReturn();
+        assertEquals(200, result.getResponse().getStatus());
+        ArgumentCaptor<ConfigRequestInfo> captor = ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        Mockito.verify(configOperationService).publishConfig(any(), captor.capture(), anyString());
+        assertEquals(false, captor.getValue().getUpdateForExist());
+        assertEquals("previous-md5", captor.getValue().getCasMd5());
+    }
+    
+    @Test
+    void testPublishDefaultsToUpdateForExist() throws Exception {
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
+        mockmvc.perform(MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+            .param("dataId", "test").param("groupName", "test").param("content", "test"));
+        ArgumentCaptor<ConfigRequestInfo> captor = ArgumentCaptor.forClass(ConfigRequestInfo.class);
+        Mockito.verify(configOperationService).publishConfig(any(), captor.capture(), anyString());
+        assertEquals(true, captor.getValue().getUpdateForExist());
+    }
+    
+    @Test
+    void testPublishRejectsInvalidUpdateForExistBeforeWrite() throws Exception {
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(configControllerV3)
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+        MvcResult result =
+            mvc.perform(MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+                .param("dataId", "test").param("groupName", "test").param("content", "test")
+                .param("updateForExist", "not-a-boolean")).andReturn();
+        assertEquals(400, result.getResponse().getStatus());
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
+            JacksonUtils.toObj(result.getResponse().getContentAsString()).get("code").asInt());
+        Mockito.verifyNoInteractions(configOperationService);
+    }
+    
+    @Test
+    void testPublishDuplicateCreatePreservesTypedNativeConflict() throws Exception {
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenThrow(
+            new ConfigAlreadyExistsException("already exists"));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(configControllerV3)
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+        MvcResult result = mvc.perform(MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+            .param("dataId", "test").param("groupName", "test").param("content", "test")
+            .param("updateForExist", "false")).andReturn();
+        assertEquals(410, result.getResponse().getStatus());
+        assertEquals(410,
+            JacksonUtils.toObj(result.getResponse().getContentAsString()).get("code").asInt());
+    }
+    
+    @Test
+    void testPublishCasConflictRemainsTyped() throws Exception {
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenThrow(
+            new NacosApiException(500,
+                ErrorCode.RESOURCE_CONFLICT, "CAS conflict"));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(configControllerV3)
+            .setControllerAdvice(new NacosApiExceptionHandler()).build();
+        MvcResult result = mvc.perform(MockMvcRequestBuilders.post(Constants.CONFIG_ADMIN_V3_PATH)
+            .param("dataId", "test").param("groupName", "test").param("content", "test")
+            .header("casMd5", "previous-md5")).andReturn();
+        assertEquals(500, result.getResponse().getStatus());
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(),
+            JacksonUtils.toObj(result.getResponse().getContentAsString()).get("code").asInt());
     }
     
     @Test

@@ -127,10 +127,62 @@ rejection and the resulting force-publish visibility rule.
 | `AgentSpecUploadConsoleApiOpenApiITCase` | `POST /v3/console/ai/agentspecs/upload` | Covered | Verifies single AgentSpec ZIP upload from `manifest.json` plus resources, overwrite of an editing draft, next draft version after publish, seed archives importing multiple AgentSpecs, empty file, malformed ZIP, and missing manifest errors. |
 | `AiResourceImportConsoleApiOpenApiITCase` | `GET /v3/console/ai/import/sources`<br>`POST /v3/console/ai/import/search`<br>`POST /v3/console/ai/import/validate`<br>`POST /v3/console/ai/import/execute` | Covered | Verifies enabled managed importer plugins as the source list, resourceType filters, sanitized source info, unsupported resource type empty result, missing resourceType/sourceId/selectedItems, malformed JSON options/selectedItems, empty selected items, unknown source not-found, unsupported source/resourceType combinations, and controlled error bodies without performing external network import. |
 | `PipelineConsoleApiOpenApiITCase` | `GET /v3/console/ai/pipelines`<br>`GET /v3/console/ai/pipelines/list`<br>`GET /v3/console/ai/pipelines/detail`<br>`GET /v3/console/ai/pipelines/{pipelineId}` | Partial | Verifies the current list/detail contracts for resourceType/resourceName/namespaceId/version filters, required resourceType, page validation, required pipelineId, and absent pipeline not-found errors. The deprecated base-path list and path-variable detail endpoints return HTTP 410 and `API_DEPRECATED` by default and may be temporarily reopened with `nacos.core.api.compatibility.enabled=true`. Successful detail creation is not covered in the default standalone IT environment because pipeline rows require configured publish-pipeline plugins. |
-| `CopilotConsoleApiOpenApiITCase` | `GET,POST /v3/console/copilot/config`<br>`POST /v3/console/copilot/skill/optimize`<br>`POST /v3/console/copilot/skill/generate`<br>`POST /v3/console/copilot/prompt/optimize`<br>`POST /v3/console/copilot/prompt/debug` | Partial | Verifies config save/read for model, studio URL, and studio project; read returns the stored api key masked, the effective selection with its source (`DEPLOYMENT`/`STORED`/`NONE`), the active connection, and a sanitized connection list without credentials but with the effective credential source (`actualSource`: `DEPLOYMENT`/`CONSOLE`/`ENVIRONMENT`); records that non-editable config fields are accepted but ignored by the save path. Verifies malformed JSON config error and SSE validation error events for empty bodies and missing required skill/background/prompt/userInput fields without invoking an external LLM provider. |
+| `CopilotConsoleApiOpenApiITCase` | `GET,POST /v3/console/copilot/config`<br>`POST /v3/console/copilot/skill/optimize`<br>`POST /v3/console/copilot/skill/generate`<br>`POST /v3/console/copilot/prompt/optimize`<br>`POST /v3/console/copilot/prompt/debug` | Partial | Config cases assert patch-only persisted JSON, retained null clears, Automatic's explicit clear declaration, sequential-update preservation, masked-key round trips, sanitized metadata, and invalid selection rejected before any write. Non-editable fields remain ignored. Malformed JSON and SSE validation errors are covered without LLM generation. All 9 cases passed isolated standalone on 2026-11-24; directed remote CAS/first-create, deployment precedence, and fault-injection scenarios remain gaps (matrix below). |
+
+### Copilot Step4 configuration matrix
+
+Contract: #16061 comment7124415443. On 2026-11-24, all 9 cases in
+`CopilotConsoleApiOpenApiITCase` passed against a rebuilt isolated standalone
+server. Test compilation and RAT/Checkstyle/SpotBugs/Spotless checks passed.
+Historical results below remain separate.
+
+| Scenario / test method | Asserted public behavior | Status |
+| --- | --- | --- |
+| `testCopilotConfigPatchDoesNotBackfillAbsentFields` | Seed raw JSON through the generic Config API, save one editable field, then read the stored document: omitted key/model/selection/defaultNamespace stay absent; ignored fields do not change stored values. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigNullClearsSurviveUnrelatedSave` | Seed explicit JSON null for key/model/Studio/selection, update only the project, and prove the other null declarations remain present. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigAutomaticPersistsClearDeclaration` | Submit whitespace for Automatic; persisted `selectedConnection` is present and null, and remains null after another save. GET reports no stored selection; deployment precedence is tested separately. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigSaveAndGetSuccess` | Editable key/model/Studio fields persist, non-editable enabled is ignored, GET masks the key and exposes identity/source/availability/diagnostics without key or provider options. Blank Studio URL avoids Studio calls. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigSequentialUpdatesPreserveStoredFields` | Omitted/masked key retains the credential; unrelated saves retain earlier fields; clearing a stored key followed by a model update keeps the clear marker and earlier project/null URL. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigInvalidSelectionDoesNotPersist` | Unknown connection returns HTTP 400 / parameter validation error; neither selection nor the accompanying project patch is persisted. | Passed isolated standalone, 2026-11-24 |
+| `testCopilotConfigInvalidStoredDocumentRejectsReadAndSave` | Stored JSON followed by garbage rejects GET and POST with HTTP 503 / SERVER_ERROR; responses omit credential details and the document remains unchanged. | Passed isolated standalone, 2026-11-24 |
+| Existing malformed JSON and SSE validation cases | Controlled error envelopes/events without provider generation. | Passed isolated standalone, 2026-11-24 |
+
+The fixed `copilot-config.json` / `nacos-copilot` coordinates require an isolated
+standalone server, public storage namespace, and matching Console/Config storage
+addresses and read/write permissions. Run without concurrent config writers;
+fixtures restore the prior document via generic Config and refresh through the
+existing save API. No server is started inside the test. Keep deployment Studio
+URL unset and do not supply real provider credentials for these cases; refresh
+may construct/validate model clients but no LLM/provider request is sent. Tests
+must use the existing authenticated administrator session when auth is enabled.
+
+| Directed scenario | Required environment / expected result | Status |
+| --- | --- | --- |
+| Remote conditional update and concurrent first create | Separately deployed Console(s) plus controlled concurrent writes to the same Config coordinates. MD5 conflict re-reads/re-applies the patch; a guarded first create cannot overwrite another create; unrelated fields and credential clears survive. Sequential standalone tests do not prove CAS races. | Environment-dependent; not run |
+| Global and credential precedence / whole connection replacement | Startup fixtures for pure defaults, deployment and stored declarations, ENV key, absent/set/clear and same normalized connection name. Globals use deployment > stored > defaults; credentials use deployment > stored > ENV; highest clear blocks lower sources and a stored clear cannot erase deployment. A deployment connection replaces the whole same-name definition. | Environment-dependent; not run |
+| Legacy declaration and editor boundary | No real legacy declarations produces no synthetic connection/warning; real legacy fields still work, deprecated fields stay editable without a runtime LEGACY connection, and a deployment connection named legacy does not emit the legacy-source warning. Console UI/log observations need a directed fixture. | Environment-dependent; not run |
+| Refresh/restart and node isolation | Merged file additions/updates refresh; deleted keys require restart, as do pure-console file and ENV changes. Saving one Console does not implicitly refresh another; align provider/config and storage namespace/permissions. | Environment-dependent; not run |
+| Read/persist/activation failure | Controlled fault injection proves pre-persist read failure rejects without write, failed persistence keeps runtime state, and runtime activation exceptions return stored-but-not-activated with a sanitized reason. Default standalone HTTP APIs cannot inject these failures. | Environment-dependent; not run |
+| Rare local read failure after persistence | Explicitly deferred; no compensation or additional state protocol is promised. | Deferred gap |
+| Step5 asynchronous validation / configValid | Not shipped; current saves wait for DNS/model validation and configured Studio initialization. `available` / `unavailableReason`, selection validation and form fallback remain current behavior. | Deferred |
+
+Commands from the repository root after other compilation finishes (no `-am`):
+
+```shell
+mvn -pl test/openapi-test -DskipTests test-compile
+mvn -pl test/openapi-test -Pintegration-test -DskipTests=false -Dit.test=CopilotConsoleApiOpenApiITCase -Dnacos.test.auth.enabled=true verify
+```
+
+The 2026-11-24 run used `-DskipTests=false` with
+`-Dit.test=CopilotConsoleApiOpenApiITCase,ConfigAdminApiOpenApiITCase` against a
+fresh local auth-disabled fixture without real provider credentials; all 20
+cases passed. Auth-on execution is not claimed. On an auth-enabled server,
+provide `NACOS_TEST_AUTH_ADMIN_PASSWORD` through the existing fixture rather
+than changing its auth switches.
 
 ## Validation Snapshot
 
+The following is historical validation, not validation of the Step4 additions.
 The console API IT set was validated with:
 
 - `mvn -pl test/openapi-test spotless:apply`

@@ -27,6 +27,8 @@ import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.test.maintainer.MaintainerSdkBaseITCase;
@@ -158,6 +160,63 @@ class ConfigMaintainerServiceMaintainerSdkITCase extends MaintainerSdkBaseITCase
         assertTrue(maintainerService.deleteConfig(dataId, group, namespaceId));
         assertThrows(NacosException.class,
                 () -> maintainerService.getConfig(dataId, group, namespaceId));
+    }
+
+    @Test
+    void shouldEnforceNativeCreateOnlyAndCasPublish() throws Exception {
+        ConfigMaintainerService service = createConfigMaintainerService();
+        String dataId = randomDataId("conditional-publish");
+        String group = randomGroup("config");
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        addCleanup(() -> service.deleteConfig(dataId, group, namespaceId));
+
+        assertTrue(service.publishConfig(dataId, group, namespaceId, "first=true",
+                "maintainer-sdk-it", null, null, "conditional config", "text",
+                "create config", null, false));
+        ConfigDetailInfo first = service.getConfig(dataId, group, namespaceId);
+        assertConfigDetail(first, dataId, group, namespaceId, "first=true");
+        assertEquals("maintainer-sdk-it", first.getAppName());
+        assertEquals("conditional config", first.getDesc());
+        NacosApiException duplicate = assertThrows(NacosApiException.class,
+                () -> service.publishConfig(dataId, group, namespaceId, "overwrite=true",
+                        null, null, null, null, "text", "must not apply", null, false));
+        assertEquals(NacosException.CONFIG_ALREADY_EXISTS, duplicate.getErrCode());
+        assertEquals(NacosException.CONFIG_ALREADY_EXISTS, duplicate.getDetailErrCode());
+        assertEquals(first.getMd5(), service.getConfig(dataId, group, namespaceId).getMd5());
+
+        assertTrue(service.publishConfig(dataId, group, namespaceId, "second=true",
+                "maintainer-sdk-it", null, null, "conditional config", "text",
+                "CAS config", first.getMd5(), true));
+        ConfigDetailInfo second = service.getConfig(dataId, group, namespaceId);
+        assertConfigDetail(second, dataId, group, namespaceId, "second=true");
+        NacosApiException stale = assertThrows(NacosApiException.class,
+                () -> service.publishConfig(dataId, group, namespaceId, "stale=true",
+                        null, null, null, null, "text", "must not apply", first.getMd5(), true));
+        assertEquals(ErrorCode.RESOURCE_CONFLICT.getCode(), stale.getDetailErrCode());
+        assertEquals(second.getMd5(), service.getConfig(dataId, group, namespaceId).getMd5());
+        assertEquals("second=true", service.getConfig(dataId, group, namespaceId).getContent());
+        assertEquals("CAS config", service.getPreviousConfigHistoryInfo(dataId, group,
+                namespaceId, second.getId()).getChangeMessage());
+
+        // The nonconditional overload remains an ordinary update.
+        assertTrue(service.publishConfig(dataId, group, namespaceId, "legacy=true"));
+        assertEquals("legacy=true", service.getConfig(dataId, group, namespaceId).getContent());
+    }
+
+    @Test
+    void shouldRejectOversizedConditionalMessageBeforeWrite() throws Exception {
+        ConfigMaintainerService service = createConfigMaintainerService();
+        String dataId = randomDataId("conditional-message");
+        String group = randomGroup("config");
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        addCleanup(() -> service.deleteConfig(dataId, group, namespaceId));
+        NacosException oversized = assertThrows(NacosException.class,
+                () -> service.publishConfig(dataId, group, namespaceId, "content=true",
+                        null, null, null, null, "text", "x".repeat(513), null, false));
+        assertEquals(NacosException.INVALID_PARAM, oversized.getErrCode());
+        NacosException missing = assertThrows(NacosException.class,
+                () -> service.getConfig(dataId, group, namespaceId));
+        assertEquals(NacosException.NOT_FOUND, missing.getErrCode());
     }
 
     @Test

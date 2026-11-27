@@ -16,10 +16,7 @@
 
 package com.alibaba.nacos.copilot.connection;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -28,11 +25,10 @@ import java.util.List;
 /**
  * Reads the legacy Copilot configuration as one connection named {@code legacy}.
  *
- * <p>Until the {@code nacos.copilot.connections.*} keys replace it, the existing
- * {@code copilot-config.json} values plus {@code COPILOT_API_KEY} are mapped to the
- * {@code legacy} connection that keeps today's DashScope behavior. The connection is usable
- * only when one of those two sources provides a key, so clearing both stops using the
- * connection instead of falling back to the provider's own environment variables.
+ * <p>Only actual legacy declarations or a {@code COPILOT_API_KEY} credential create this
+ * connection. The manager resolves deployment, stored and environment credential precedence
+ * from captured inputs, including clears, before invoking the reader. Missing credentials
+ * leave the connection unavailable rather than using the provider's own environment fallback.
  *
  * @author nacos
  */
@@ -46,20 +42,6 @@ public class LegacyConfigProviderReader implements ProviderReader {
     
     static final String PROVIDER_ID = "dashscope";
     
-    private static final String ENV_API_KEY = "COPILOT_API_KEY";
-    
-    private final Environment environment;
-    
-    /**
-     * Create the legacy reader.
-     *
-     * @param environment Spring environment used to read {@code COPILOT_API_KEY}
-     */
-    @Autowired
-    public LegacyConfigProviderReader(Environment environment) {
-        this.environment = environment;
-    }
-    
     @Override
     public int order() {
         return 100;
@@ -67,13 +49,14 @@ public class LegacyConfigProviderReader implements ProviderReader {
     
     @Override
     public List<CopilotModelConnection> read(ProviderReadContext context) {
+        if (!context.isLegacyDeclared()) {
+            return Collections.emptyList();
+        }
         CopilotProperties config = context.getLegacyConfig();
-        String environmentApiKey = Boolean.TRUE.equals(config.getApiKeyCleared())
-            ? null : environment.getProperty(ENV_API_KEY);
-        boolean useEnvironment = StringUtils.isNotBlank(environmentApiKey);
-        String apiKey = useEnvironment ? environmentApiKey : config.getApiKey();
-        CredentialSource credentialSource = resolveCredentialSource(apiKey, useEnvironment,
-            context.isLegacyApiKeyFromDeployment());
+        CredentialSource credentialSource = context.getLegacyCredentialSource();
+        String apiKey = credentialSource == CredentialSource.ENVIRONMENT
+            ? context.getDeployment().getProperty(ProviderReadContext.ENV_API_KEY)
+            : config.getApiKey();
         CopilotModelConnection connection = CopilotModelConnection.builder()
             .name(CONNECTION_NAME)
             .providerId(PROVIDER_ID)
@@ -88,16 +71,5 @@ public class LegacyConfigProviderReader implements ProviderReader {
             .enableThinking(Boolean.TRUE)
             .build();
         return Collections.singletonList(connection);
-    }
-    
-    private CredentialSource resolveCredentialSource(String apiKey, boolean useEnvironment,
-        boolean fromDeployment) {
-        if (StringUtils.isBlank(apiKey)) {
-            return null;
-        }
-        if (useEnvironment) {
-            return CredentialSource.ENVIRONMENT;
-        }
-        return fromDeployment ? CredentialSource.DEPLOYMENT : CredentialSource.CONSOLE;
     }
 }

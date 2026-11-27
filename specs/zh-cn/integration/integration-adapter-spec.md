@@ -144,18 +144,29 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
 - 控制台 route 位于 `/v3/console/copilot/*`；
 - 流式操作使用 server-sent events，而不是普通 JSON response wrapper；
 - LLM 访问通过 `nacos.copilot.connections.<name>.*` 配置的部署侧模型连接提供；没有可用部署侧
-  连接时回退到由 `nacos.copilot.apiKey`、`nacos.copilot.model` 与 `COPILOT_API_KEY` 映射出的
-  `legacy` 连接；
+  连接时回退到由已声明的 `nacos.copilot.apiKey`、`nacos.copilot.model`、已存旧字段或
+  `COPILOT_API_KEY` 映射出的 `legacy` 连接；没有真实的旧配置声明时，不生成虚构的 `legacy`
+  连接，也不输出废弃告警；
 - `nacos.copilot.selectedConnection` 指定控制台选中的连接；
 - AgentScope Studio 通过 `nacos.copilot.studioUrl` 和 `nacos.copilot.studioProject` 配置。
 
-生效配置按字段合并：`nacos.copilot.*` 中显式设置的字段覆盖 `copilot-config.json` 中的同名值，
-`copilot-config.json` 中的值覆盖内置默认值；部署配置未设置的字段回退到 `copilot-config.json`，
-两者都没有时使用默认值。`selectedConnection`、`enabled`、`studioUrl` 等字段遵循同一优先级，
-因此升级时已存在的旧 `copilot-config.json` 不会掩盖新部署配置中显式设置的值。连接表按连接
-来源规则独立合并（部署侧连接替换同名 `legacy` 连接）。`nacos.copilot.selectedConnection`
-的值为空或仅含空白时，视为该字段未声明：已存选择继续生效，也不按部署覆盖上报。该空值规则
-仅针对选择字段，不改变凭据字段"空值即清除"的既有语义。
+生效配置在每次刷新时各读取一次三路输入，再按字段解析：部署配置、`copilot-config.json` 与
+纯内置默认值（不能使用已绑定部署值的 properties bean）。全局字段按部署声明、已存值、默认值
+的优先级解析；部署侧声明的凭据与选择同时带出来源，控制台可以区分部署值与已存值。因此升级时
+已存在的旧 `copilot-config.json` 不会掩盖新部署配置中显式设置的值。
+
+字符串字段为三态：某来源缺失该字段时继承更低来源；声明为 `null`、空串或纯空白表示清除，
+并阻断所有更低来源。`false` 与 `0` 是实值，类型与必填校验仍然保留。已存文档按原始 JSON
+读取，因此"未包含该字段"与"显式清除该字段"可以区分；清除也不通过丢掉声明来表达，否则旧值
+会重新出现。已存 JSON `null` 清除声明在保存其他字段时仍会保留。设置、连接表及其来源一次
+发布到同一快照。
+
+升级影响：部署配置中的空白占位值现在表示清除，不再继承已存值；旧连接凭据优先级改为部署、
+已存、环境变量，不再是环境变量优先。升级前请检查已有占位值与凭据。
+
+`nacos.copilot.selectedConnection` 遵循同一三态规则：部署侧空值现在表示清除，路由使用
+`Automatic`，而不再像上一版本那样让已存选择继续生效。连接表按来源独立合并：部署侧连接以完整
+定义替换归一化名字相同的连接，不继承任何已存或旧配置字段。
 
 模型连接规则：
 
@@ -163,20 +174,25 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
   `apiKey`、`baseUrl`、`endpointPath`、`displayName`、`enabled`、`stream`、
   `enableThinking` 与 `options`；`<name>` 是连接名，`legacy` 是旧配置映射出的连接名，同名部署侧
   连接会替换它。
-- 连接名大小写不敏感：合并、查找与选择前会去掉首尾空白并用 `Locale.ROOT` 转为小写，因此
-  `Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个连接，`selectedConnection` 遵循同样规则。
-  连接名是配置 key 的一个元素，可用 ASCII 字母、数字与 `-`，不含点号；key 中不允许首尾空白。
-  不符合该语法的名称会被跳过并上报，不会加载。
-- 同一连接用多种拼写声明时，存在全小写拼写则采用它，否则采用字典序最小的拼写；其余拼写
-  （包括其字段）被忽略并上报。
-- 连接按来源合并：部署侧连接替换同名的旧配置连接；部署侧同名多拼写按上一条规则去重，
-  聚合器对任一 reader 返回的重复连接仍保留第一个并告警。
+- 连接名按 Spring 的 relaxed key 规则解析：`Prod-Qwen`、`PROD-QWEN` 与 `prod-qwen` 指同一个
+  连接，`selectedConnection` 在合并、查找与选择前去掉首尾空白并按 `Locale.ROOT` 转小写。
+  `<name>` 是配置 key 的一个元素；含点号或非 ASCII 字符的声明 Spring 无法解析，会被忽略。
+  下划线不是连接名分隔符：`prod_qwen` 解析为另一个连接 `prodqwen`，不是 `prod-qwen`。
+- 同一连接以多种拼写声明时，各拼写属于同一块配置，字段合并到同一个连接；不再按拼写择一，
+  也不忽略其余拼写的字段。
+- 连接块中的字段按 Spring 的优先级解析：JVM 系统属性高于环境变量，环境变量高于配置文件；
+  环境变量把点号与连字符换成下划线，例如 `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_MODEL` 与
+  `NACOS_COPILOT_CONNECTIONS_PROD_QWEN_API_KEY`。高优先级的显式空值会阻止更低优先级取值。
+  该规则只作用于 key，模型、凭据与选择等取值按原样使用，不做 relaxed 转换。
+- 连接按来源合并：部署侧连接替换同名的旧配置连接；聚合器对任一 reader 返回的重复连接
+  保留第一个并告警。
 - 选择顺序为：`nacos.copilot.selectedConnection` 指定的连接、第一个可用部署侧连接、
   第一个可用 `legacy` 连接。连接先按优先级、再按连接名排序，因此同一来源内的并列顺序是
   确定的。
-- 加载期校验每个连接：`providerId` 与 `model` 必填；`legacy` 连接仅在 `COPILOT_API_KEY`
-  或已保存的 `apiKey` 提供非空 key 时可用，两者都清空时该连接不可用，而不是把凭据交给
-  provider 自己的环境变量兜底；先确认 classpath 上存在对应 provider
+- 加载期校验每个连接：`providerId` 与 `model` 必填；`legacy` 凭据按部署、已存、
+  `COPILOT_API_KEY` 的顺序解析。最高声明层的显式清除阻断所有更低来源；已存清除不能抹掉
+  部署凭据。清除凭据后该连接不可用，而不是把凭据交给 provider 自己的环境变量
+  兜底；先确认 classpath 上存在对应 provider
   （`canResolve`），再用 `resolve` 探测构造错误；显式设置的 `baseUrl` 必须为 https 且解析
   到公网地址，除非其 host 命中 `nacos.copilot.base-url.allowlist`。
 - 校验失败的连接只标记为不可用并保留诊断原因，不影响其他连接继续服务；上游 provider
@@ -185,8 +201,8 @@ registry、skills.sh 或其他 AI Registry 协议兼容面。
   仍保留供管理查看。
 - 连接字段只在运行时从部署配置读取；通过通用配置接口写入 `copilot-config.json` 的同名字段
   不会覆盖部署连接。
-- Copilot 不做跨节点连接同步：连接表随部署配置分发，各节点的连接配置与 classpath 上的
-  provider 依赖需由部署管线保持一致。
+- 刷新只作用于当前节点；在一个控制台保存不会隐式刷新其他控制台。各节点需要相同的连接配置与
+  provider 依赖，并对齐存储服务地址、命名空间及读写权限；共享已存配置不等于运行快照同步。
 
 示例：
 
@@ -222,27 +238,38 @@ nacos.copilot.selectedConnection=prod-qwen
   部署配置优先于已存值，因此控制台保存的选择会保留，但在部署声明存在期间不生效；
   `Automatic` 同理，它会清除已存选择，但不能覆盖部署值。API 同时返回生效选择和来源，
   让控制台可以解释该状态，而不是把已存值当作正在使用的值展示。部署值为空或仅含空白时
-  视为未声明，已存选择继续生效，来源为 `STORED`。
+  表示清除，选择变为 `Automatic`，已存选择不再生效；由于没有选中连接，生效来源仍为 `NONE`。
 - `POST /v3/console/copilot/config` 只接受 `apiKey`、`model`、`studioUrl`、
   `studioProject` 和 `selectedConnection`，其他字段被忽略；请求中缺失的字段保留已存值。
+  只有提交的字段会写入已存文档，未提交的字段不会用部署值或默认值回填。
 - apiKey 为三态：缺失或掩码值保留已存密钥；非空值替换密钥；空值清除已存密钥，并标记
   `legacy` 连接不再回退到 `COPILOT_API_KEY`。没有已存密钥时提交空值是无操作，避免未改动的
   旧版控制台表单开始阻断环境变量。部署配置显式设置的 `nacos.copilot.apiKey` 仍按既有优先级
   生效。
-- `selectedConnection` 写入前会去除首尾空白；空值清除已存选择，路由回到默认顺序。非空值必须
+- `selectedConnection` 写入前会去除首尾空白；空值为 `Automatic` 保存 JSON `null` 清除声明，
+  保存其他字段时仍保留。部署未声明选择时路由回到默认顺序。非空值必须
   指向存在、已启用且可用的连接：保存的是连接的声明名；选择不存在、被禁用或不可用时返回
   HTTP 400，而不是保存该值。
 - 选择校验读取最近一次刷新得到的连接表，校验本身不做 provider 探测或 DNS 查询。但发布触发
   的刷新仍在该请求线程上同步执行完才返回，刷新中的连接校验可能解析显式设置的 `baseUrl`，
-  因此整个保存请求并非不含可用性检查 I/O。因此 "提交新凭据并同时选择 `legacy`" 会被拒绝，
-  需要先保存凭据、待刷新把该连接标记为可用后再选择；控制台按两次请求提交。清空凭据并同时
+  因此整个保存请求并非不含可用性检查 I/O；配置了 Studio 时也会等待其初始化。因此
+  "提交新凭据并同时选择 `legacy`" 会被拒绝，需要先保存凭据、待刷新把该连接标记为可用后再选择；控制台按两次请求提交。清空凭据并同时
   提交同一选择仍是合法的配置更新，在随后一次刷新后生效。保存请求返回时已经完成由发布触发
-  的刷新，`GET` 直接反映结果表，不存在"校验中"的中间状态；把刷新移出请求线程属于异步校验
-  设计，留待后续迭代。
-- 已存的 apiKey 与 model 仅作为 `legacy` 连接的废弃路径保留可编辑：新部署应声明
-  `nacos.copilot.connections.*`，控制台只在 `legacy` 连接存在时以废弃样式展示这些字段。
-- 加载到 `legacy` 连接时，每次刷新都会输出带 `nacos.copilot.connections.*` 迁移提示的废弃
-  告警；弃用窗口内该连接继续服务。
+  的刷新，`GET` 直接反映结果表，不存在"校验中"的中间状态。异步保存/校验及 `configValid`
+  迁移仍留待 Step5；当前 API 继续使用 `available` 与 `unavailableReason`。
+- 已存文档无法读取或不是合法 JSON 对象时，读取接口返回 HTTP 503 / `SERVER_ERROR`，保存
+  请求在写入前被拒绝；不返回凭证细节或虚构默认值。JSON 后的多余内容也视为非法文档。
+- 保存依次执行：校验补丁、读取已存文档、仅持久化补丁字段（条件更新或受保护的首次创建），然后
+  统一解析并原子激活新快照，才返回成功。持久化前读取失败时拒绝保存，不写入；持久化失败时
+  内存配置不变。本地及远程保存都以已存文档的 MD5 做 compare-and-set，冲突时重新读取并应用
+  补丁；并发首次创建也不能相互覆盖。持久化成功后本地读取偶发失败仍是延后处理的缺口：只记录
+  日志，不做补偿，也不引入额外状态协议。运行时激活抛出异常时，API 返回 HTTP 500 /
+  `SERVER_ERROR`，明确说明 "stored but not activated" 并附脱敏原因；节点保留上一份快照，
+  直到再次刷新。
+- 已存的 apiKey 与 model 作为废弃迁移字段保留可编辑，即使当前没有运行时 `LEGACY` 连接。
+  新部署应声明 `nacos.copilot.connections.*`。
+- 真实的 `LEGACY` 连接每次刷新都会输出带 `nacos.copilot.connections.*` 迁移提示的废弃告警，
+  弃用窗口内继续服务。纯默认值，以及仅命名为 `legacy` 的部署连接，都不会触发该告警。
 
 规则：
 

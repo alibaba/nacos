@@ -355,6 +355,24 @@ Maintainer SDK 中暴露存储 ID 选择器的方法，例如批量删除中的 
 该重载用于独立控制台转发；已有发布签名及共享 HTTP 客户端的响应读取行为保持不变。
 此处定义目标合同；新增公开方法前须审阅签名，并更新 SDK IT、场景及覆盖登记。
 
+原生条件正式发布桥接增加以下 `@Since("3.3.0")` 完整元数据重载；既有九参数及十参数
+方法保持无条件发布（`updateForExist=true`，无 CAS）：
+
+```java
+boolean publishConfig(String dataId, String groupName, String namespaceId,
+    String content, String appName, String srcUser, String configTags, String desc,
+    String type, String changeMessage, String casMd5, boolean updateForExist)
+    throws NacosException;
+```
+
+官方实现复用既有发布实现，以已有 HTTP 请求头传递非空白 `casMd5`，以请求参数传递
+`updateForExist`，不先查询再写入。CAS 优先；无 CAS 时 `false` 使用原生仅创建插入。
+独立控制台仅在 CAS 非空白或请求仅创建时选择新重载。Beta 方法及请求形态不变。
+接口兼容默认实现将无条件调用委托给既有说明重载；不支持的条件调用以
+`SERVER_NOT_IMPLEMENTED` 拒绝，不得静默丢弃保护条件。原生重复创建通过
+`NacosApiException` 向调用方保留 HTTP 状态及 detail code 410；CAS 错误保留既有
+`RESOURCE_CONFLICT` detail code。共享 HTTP 响应处理不变。
+
 ### 7.3 NamingMaintainerService
 
 `NamingMaintainerService` 包含：

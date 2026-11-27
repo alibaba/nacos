@@ -42,6 +42,27 @@ Config change events follow the
 CAS publish must compare the supplied `casMd5` with the stored md5. A mismatch
 is a resource conflict and must not overwrite the stored config.
 
+Formal Admin publish accepts optional `updateForExist`, parsed strictly by the
+controller as a boolean and defaulting to `true`; only `true`/`false`
+(case-insensitive) are accepted, and any other value is rejected with
+`PARAMETER_VALIDATE_ERROR` (HTTP 400) before writing, without changing the
+exception mapping of other endpoints. `false` without a nonblank `casMd5`
+requests native create-only insertion, not a read-before-write check or an
+upsert. A duplicate
+insert leaves the existing content unchanged. The local service throws
+`ConfigAlreadyExistsException` (`NacosException.CONFIG_ALREADY_EXISTS`, 410);
+the v3 Admin endpoint preserves 410 as both HTTP status and typed Result code,
+so the Maintainer SDK receives `NacosApiException` with native code 410 rather
+than a generic server error. CAS conflicts retain the existing
+`RESOURCE_CONFLICT` Result code and HTTP status. A nonblank `casMd5` takes
+precedence over `updateForExist`, matching the native service.
+
+Independent-console forwarding must preserve the CAS header, create-only
+parameter, and optional `changeMessage` through the full Maintainer publish
+overload. Unconditional publish keeps its existing overload path. Beta publish
+is unchanged. No sentinel md5, additional storage protocol, or client-side lock
+is required.
+
 ## 2. Delete
 
 Deleting a formal Config removes the resource identified by

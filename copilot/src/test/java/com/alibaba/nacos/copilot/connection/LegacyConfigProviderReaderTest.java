@@ -17,39 +17,23 @@
 package com.alibaba.nacos.copilot.connection;
 
 import com.alibaba.nacos.copilot.config.CopilotProperties;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.Environment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 /**
  * Test for LegacyConfigProviderReader.
  *
  * @author nacos
  */
-@ExtendWith(MockitoExtension.class)
 class LegacyConfigProviderReaderTest {
     
-    @Mock
-    private Environment environment;
-    
-    private LegacyConfigProviderReader reader;
-    
-    @BeforeEach
-    void setUp() {
-        reader = new LegacyConfigProviderReader(environment);
-    }
+    private final LegacyConfigProviderReader reader = new LegacyConfigProviderReader();
     
     @Test
     void testOrder() {
@@ -58,12 +42,9 @@ class LegacyConfigProviderReaderTest {
     
     @Test
     void testReadUsesConfigurationFromContext() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("config-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn(null);
-        
-        List<CopilotModelConnection> connections = reader.read(new ProviderReadContext(config));
+        CopilotProperties config = configWithKey("config-key");
+        List<CopilotModelConnection> connections =
+            reader.read(context(config, CredentialSource.CONSOLE));
         
         assertEquals(1, connections.size());
         CopilotModelConnection connection = connections.get(0);
@@ -79,51 +60,36 @@ class LegacyConfigProviderReaderTest {
     }
     
     @Test
-    void testReadPrefersEnvironmentApiKey() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("config-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
+    void testReadPrefersStoredApiKeyOverCapturedEnvironment() {
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey("config-key"), CredentialSource.CONSOLE)).get(0);
         
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
-        
-        assertEquals("env-key", connection.getApiKey());
+        assertEquals("config-key", connection.getApiKey());
     }
     
     @Test
     void testReadBlocksEnvironmentApiKeyWhenConsoleClearedIt() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("");
+        CopilotProperties config = configWithKey(null);
         config.setApiKeyCleared(Boolean.TRUE);
-        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
         
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        CopilotModelConnection connection = reader.read(context(config, null)).get(0);
         
-        assertEquals("", connection.getApiKey());
+        assertNull(connection.getApiKey());
     }
     
     @Test
     void testReadUsesDeploymentApiKeyWhenConsoleClearedStoredKey() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("deploy-key");
-        config.setApiKeyCleared(Boolean.TRUE);
-        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
-        
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        // The manager has already resolved the lower clear against the higher deployment key.
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey("deploy-key"), CredentialSource.DEPLOYMENT)).get(0);
         
         assertEquals("deploy-key", connection.getApiKey());
     }
     
     @Test
     void testReadReportsEnvironmentCredentialSource() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("config-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
-        
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey(null), CredentialSource.ENVIRONMENT)).get(0);
         
         assertEquals("env-key", connection.getApiKey());
         assertEquals(CredentialSource.ENVIRONMENT, connection.getCredentialSource());
@@ -131,54 +97,50 @@ class LegacyConfigProviderReaderTest {
     
     @Test
     void testReadReportsConsoleCredentialSourceForStoredKey() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("config-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn(null);
-        
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey("config-key"), CredentialSource.CONSOLE)).get(0);
         
         assertEquals(CredentialSource.CONSOLE, connection.getCredentialSource());
     }
     
     @Test
     void testReadReportsDeploymentCredentialSourceForDeploymentKeyWhenConsoleCleared() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("deploy-key");
-        config.setApiKeyCleared(Boolean.TRUE);
-        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
-        
-        CopilotModelConnection connection =
-            reader.read(new ProviderReadContext(config, true)).get(0);
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey("deploy-key"), CredentialSource.DEPLOYMENT)).get(0);
         
         assertEquals(CredentialSource.DEPLOYMENT, connection.getCredentialSource());
     }
     
     @Test
-    void testReadReportsEnvironmentCredentialSourceBeforeDeploymentKey() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("deploy-key");
-        when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
+    void testReadReportsDeploymentCredentialSourceBeforeEnvironmentKey() {
+        CopilotModelConnection connection = reader.read(
+            context(configWithKey("deploy-key"), CredentialSource.DEPLOYMENT)).get(0);
         
-        CopilotModelConnection connection =
-            reader.read(new ProviderReadContext(config, true)).get(0);
-        
-        assertEquals("env-key", connection.getApiKey());
-        assertEquals(CredentialSource.ENVIRONMENT, connection.getCredentialSource());
+        assertEquals("deploy-key", connection.getApiKey());
+        assertEquals(CredentialSource.DEPLOYMENT, connection.getCredentialSource());
     }
     
     @Test
     void testReadWithoutApiKeyReportsNoCredentialSource() {
-        CopilotProperties config = new CopilotProperties();
-        config.setModel("qwen-turbo");
-        config.setApiKey("");
+        CopilotProperties config = configWithKey(null);
         config.setApiKeyCleared(Boolean.TRUE);
-        lenient().when(environment.getProperty(eq("COPILOT_API_KEY"))).thenReturn("env-key");
         
-        CopilotModelConnection connection = reader.read(new ProviderReadContext(config)).get(0);
+        CopilotModelConnection connection = reader.read(context(config, null)).get(0);
         
         assertNull(connection.getCredentialSource());
+    }
+    
+    private CopilotProperties configWithKey(String apiKey) {
+        CopilotProperties config = new CopilotProperties();
+        config.setModel("qwen-turbo");
+        config.setApiKey(apiKey);
+        return config;
+    }
+    
+    private ProviderReadContext context(CopilotProperties config, CredentialSource source) {
+        MockEnvironment environment =
+            new MockEnvironment().withProperty("COPILOT_API_KEY", "env-key");
+        return new ProviderReadContext(ProviderReadContext.captureDeployment(environment),
+            config, true, source);
     }
 }

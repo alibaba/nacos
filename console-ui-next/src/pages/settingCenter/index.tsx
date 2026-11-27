@@ -10,7 +10,6 @@ import client from '@/api/client';
 import { useServerStore } from '@/stores/server-store';
 import {
   buildCopilotConfigPayload,
-  hasLegacyConnection,
   isConnectionUsable,
   isSelectionOverriddenByDeployment,
   type CopilotConfigView,
@@ -192,7 +191,6 @@ export default function SettingCenterPage() {
   };
 
   const connections = config.connections ?? [];
-  const legacyVisible = hasLegacyConnection(connections);
   const storedSelection = (config.selectedConnection ?? '').trim();
   const selectionKnown =
     !storedSelection || Boolean(matchConnection(connections, storedSelection));
@@ -325,57 +323,55 @@ export default function SettingCenterPage() {
                 </div>
 
                 {/* Legacy Credential */}
-                {legacyVisible && (
-                  <div className="space-y-4 rounded-lg border border-dashed p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold">{t('settings.legacySection')}</h3>
-                      <Badge variant="secondary">{t('settings.deprecated')}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t('settings.legacySectionDesc')}</p>
-
-                    {/* API Key */}
-                    <div className="space-y-2.5">
-                      <Label>{t('settings.apiKey')}</Label>
-                      <div className="relative">
-                        <Input
-                          type={showApiKey ? 'text' : 'password'}
-                          placeholder={t('settings.apiKeyPlaceholder')}
-                          value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{t('settings.legacyApiKeyHint')}</p>
-                    </div>
-
-                    {/* Model */}
-                    <div className="space-y-2.5">
-                      <Label>{t('settings.model')}</Label>
-                      <Select value={model} onValueChange={setModel}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('settings.modelPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {modelOptions.map((m) => (
-                            <SelectItem key={m.value} value={m.value}>
-                              <span>{m.label}</span>
-                              {m.desc && (
-                                <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
-                              )}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="space-y-4 rounded-lg border border-dashed p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold">{t('settings.legacySection')}</h3>
+                    <Badge variant="secondary">{t('settings.deprecated')}</Badge>
                   </div>
-                )}
+                  <p className="text-xs text-muted-foreground">{t('settings.legacySectionDesc')}</p>
+
+                  {/* API Key */}
+                  <div className="space-y-2.5">
+                    <Label>{t('settings.apiKey')}</Label>
+                    <div className="relative">
+                      <Input
+                        type={showApiKey ? 'text' : 'password'}
+                        placeholder={t('settings.apiKeyPlaceholder')}
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{t('settings.legacyApiKeyHint')}</p>
+                  </div>
+
+                  {/* Model */}
+                  <div className="space-y-2.5">
+                    <Label>{t('settings.model')}</Label>
+                    <Select value={model} onValueChange={setModel}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('settings.modelPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modelOptions.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            <span>{m.label}</span>
+                            {m.desc && (
+                              <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
 

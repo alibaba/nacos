@@ -84,7 +84,7 @@ API layer and resource/version descriptors remain available for retry.
 
 | API surface / IT class | Covered API operations | Current status | Current / missing coverage |
 | --- | --- | --- | --- |
-| `ConfigAdminApiOpenApiITCase` | `GET,POST,PUT,DELETE /v3/admin/cs/config` | Covered | Publishes, republishes, queries, updates metadata, and deletes config; covers blank/omitted namespace defaulting to current `public` storage, embedded dots in names, rejection of exact `.`/`..` identity segments, type normalization, required identity/content fields, absent config 404, duplicate/update semantics, and malformed metadata errors. Removed empty-tenant migration and dual-write behavior is outside the 3.3 API contract.  Inherited optional `srcUser`/`appName` binding and persisted detail fields are covered, including the Native remote-Console regression. |
+| `ConfigAdminApiOpenApiITCase` | `GET,POST,PUT,DELETE /v3/admin/cs/config` | Covered | Publishes, republishes, queries, updates metadata, and deletes config; covers blank/omitted namespace defaulting to current `public` storage, embedded dots in names, rejection of exact `.`/`..` identity segments, type normalization, required identity/content fields, absent config 404, create-only insertion and duplicate HTTP/detail 410 with original content/metadata preserved, omitted `updateForExist` defaulting to update, `casMd5` header precedence over `updateForExist=false` with successful matching CAS and stale CAS rejection without mutation, invalid boolean HTTP 400 without insert/update, and malformed metadata errors. Removed empty-tenant migration and dual-write behavior is outside the 3.3 API contract.  Inherited optional `srcUser`/`appName` binding and persisted detail fields are covered, including the Native remote-Console regression. |
 | `ConfigListAdminApiOpenApiITCase` | `GET /v3/admin/cs/config/list` | Covered | Lists published configs through admin page model with fuzzy and accurate filters; covers type and tag filters, blank dataId group-scoped listing, public namespace defaulting, pagination validation, empty pages, and wrapped error bodies. No-tag blur regression uses three ordinary configs to check raw sequence across full/tail/out-of-range pages, md5, namespace/group, type, description, tags, detail content, wildcard content filtering, and literal SQL metacharacters in content filters. |
 | `ConfigBatchDeleteAdminApiOpenApiITCase` | `DELETE /v3/admin/cs/config/batch` | Covered | Deletes multiple configs by comma-separated ids and verifies absence; covers non-existing ids being ignored, namespace-scoped deletion when ids belong to another namespace, required `ids`, and HTTP 400 v3 Result validation errors. |
 | `ConfigBetaAdminApiOpenApiITCase` | `GET,DELETE /v3/admin/cs/config/beta` | Covered | Queries and deletes beta config created via the current publish API and gray model; covers public namespace defaulting, beta rule generated from `betaIps`, required fields, absent beta 404, and v3 error envelope. Removed `config_info_beta` old-table migration is not an expected scenario. |
@@ -97,6 +97,23 @@ API layer and resource/version descriptors remain available for retry.
 | `ConfigCapacityAdminApiOpenApiITCase` | `GET,POST /v3/admin/cs/capacity` | Covered | Updates and queries group/namespace capacity limits and verifies the capacity storage ID remains a JSON string; covers identity requirements, at-least-one capacity field, and validation error envelopes. There is no public delete endpoint for capacity rows. |
 | `ConfigMetricsAdminApiOpenApiITCase` | `GET /v3/admin/cs/metrics` | Covered | Queries config metrics and verifies JSON object shape; covers parameter-free request behavior and success response contract. |
 | `ConfigOpsAdminApiOpenApiITCase` | `POST /v3/admin/cs/ops/localCache`<br>`PUT /v3/admin/cs/ops/log`<br>`GET /v3/admin/cs/ops/derby`<br>`POST /v3/admin/cs/ops/derby/import` | Partial | Triggers local-cache dump success and verifies ops validation; covers log update required params, Derby query required `sql`, Derby import disabled/non-embedded/non-Derby controlled failure, and intentionally avoids successful DB import because it mutates embedded storage. With `nacos.plugin.datasource-dialect.type=h2` the Derby ops query and import return a controlled not-Derby error, which this IT accepts; `ConfigOpsControllerV3Test#testDerbyOpsRejectsH2EmbeddedEngine` and `ConfigOpsControllerV3Test#testImportDerbyRejectsH2EmbeddedEngine` cover both paths. |
+
+### Config Admin publish modes (#15906)
+
+These scenarios extend the existing `ConfigAdminApiOpenApiITCase` surface row;
+classifications and coverage totals remain unchanged. On 2026-11-24, all 11
+class cases passed against the rebuilt isolated standalone server, including
+these 4 conditional-publish cases. Test compilation and quality gates passed;
+auth-on and independent-console concurrency are not covered by this run.
+
+| Scenario | Expected result | Test method |
+| --- | --- | --- |
+| `updateForExist=false`, absent document | Success with `data=true`; query returns the original content, md5, type and metadata. | `testCreateOnlyPublishCreatesAbsentConfigAndRejectsDuplicate` |
+| `updateForExist=false`, duplicate identity with different content/metadata | Native HTTP 410 and Result code 410 (`NacosException.CONFIG_ALREADY_EXISTS`), not generic `SERVER_ERROR`; queried detail remains unchanged. | `testCreateOnlyPublishCreatesAbsentConfigAndRejectsDuplicate` |
+| Omitted `updateForExist`, existing document | Default `true` preserves upsert behavior; query returns the updated content/md5. | `testPublishConfigOmittedUpdateForExistStillUpdates` |
+| Matching `casMd5` header with `updateForExist=false` | CAS takes precedence over create-only; success and updated content/md5. | `testPublishConfigCasHeaderTakesPrecedenceOverCreateOnly` |
+| Stale `casMd5` header with `updateForExist=false` | Existing native HTTP 500 / `RESOURCE_CONFLICT` (20005), with `Cas publish` detail; stored detail remains unchanged. | `testPublishConfigCasHeaderTakesPrecedenceOverCreateOnly` |
+| Invalid `updateForExist` boolean on absent and existing documents | Controlled HTTP 400 / `PARAMETER_VALIDATE_ERROR` (20002), with field detail; no insert or update. | `testPublishConfigInvalidUpdateForExistReturnsBadRequestWithoutWriting` |
 
 ## Naming
 

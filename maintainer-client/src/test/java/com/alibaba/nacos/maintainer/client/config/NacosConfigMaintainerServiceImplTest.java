@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -52,9 +53,12 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -123,7 +127,10 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertTrue(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(captor.capture());
+        assertEquals("true", captor.getValue().getParamValues().get("updateForExist"));
+        assertFalse(captor.getValue().getHeaders().containsKey("casMd5"));
     }
     
     @Test
@@ -210,6 +217,83 @@ class NacosConfigMaintainerServiceImplTest {
     }
     
     @Test
+    void testConditionalPublishForwardsGuardsAndMetadata() throws Exception {
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setData(JacksonUtils.toJson(new Result<>(true)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(response);
+        assertTrue(nacosConfigMaintainerServiceImpl.publishConfig("dataId", "group", "public",
+            "content", "app", "user", "tags", "description", "text", "save settings",
+            "previous-md5", false));
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(captor.capture());
+        HttpRequest request = captor.getValue();
+        assertEquals("previous-md5", request.getHeaders().get("casMd5"));
+        assertEquals("false", request.getParamValues().get("updateForExist"));
+        assertEquals("save settings", request.getParamValues().get("changeMessage"));
+        assertEquals("app", request.getParamValues().get("appName"));
+        assertEquals("user", request.getParamValues().get("srcUser"));
+        assertEquals("tags", request.getParamValues().get("configTags"));
+        assertEquals("description", request.getParamValues().get("desc"));
+    }
+    
+    @Test
+    void testConditionalPublishWithoutCas() throws Exception {
+        HttpRestResult<String> response = new HttpRestResult<>();
+        response.setData(JacksonUtils.toJson(new Result<>(true)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(response);
+        for (boolean updateForExist : new boolean[] {false, true}) {
+            assertTrue(nacosConfigMaintainerServiceImpl.publishConfig("dataId", "group", "public",
+                "content", null, null, null, null, "text", null, "  ", updateForExist));
+        }
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy, times(2)).executeSyncHttpRequest(captor.capture());
+        assertEquals("false", captor.getAllValues().get(0).getParamValues().get("updateForExist"));
+        assertEquals("true", captor.getAllValues().get(1).getParamValues().get("updateForExist"));
+        for (HttpRequest request : captor.getAllValues()) {
+            assertFalse(request.getHeaders().containsKey("casMd5"));
+            assertFalse(request.getParamValues().containsKey("changeMessage"));
+        }
+    }
+    
+    @Test
+    void testConditionalPublishRetainsTypedConflicts() throws Exception {
+        for (int code : new int[] {ErrorCode.RESOURCE_CONFLICT.getCode(),
+            NacosException.CONFIG_ALREADY_EXISTS}) {
+            NacosApiException conflict = new NacosApiException(410, code, "conflict", "conflict");
+            when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class)))
+                .thenThrow(conflict);
+            NacosException actual = assertThrows(NacosException.class,
+                () -> nacosConfigMaintainerServiceImpl.publishConfig("dataId", "group", "public",
+                    "content", null, null, null, null, "text", null, null, false));
+            assertSame(conflict, actual);
+        }
+    }
+    
+    @Test
+    void testConditionalPublishRejectsOversizedMessageBeforeHttp() {
+        NacosException exception = assertThrows(NacosException.class,
+            () -> nacosConfigMaintainerServiceImpl.publishConfig("dataId", "group", "public",
+                "content", null, null, null, null, "text", "x".repeat(513), null, false));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        org.mockito.Mockito.verifyNoInteractions(clientHttpProxy);
+    }
+    
+    @Test
+    void testConditionalPublishDefaultRejectsUnsupportedGuards() throws Exception {
+        ConfigMaintainerService legacy = mock(ConfigMaintainerService.class, CALLS_REAL_METHODS);
+        for (String casMd5 : new String[] {null, "previous-md5"}) {
+            NacosException exception = assertThrows(NacosException.class,
+                () -> legacy.publishConfig("dataId", "group", "public", "content", null, null,
+                    null, null, "text", null, casMd5, casMd5 != null));
+            assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, exception.getErrCode());
+        }
+        legacy.publishConfig("dataId", "group", "public", "content", null, null,
+            null, null, "text", null, null, true);
+        verify(legacy).publishConfig("dataId", "group", "public", "content", null, null,
+            null, null, "text");
+    }
+    
+    @Test
     void testUpdateConfigMetadata() throws Exception {
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
@@ -242,7 +326,11 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertTrue(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientHttpProxy).executeSyncHttpRequest(captor.capture());
+        assertEquals(betaIps, captor.getValue().getHeaders().get("betaIps"));
+        assertFalse(captor.getValue().getHeaders().containsKey("casMd5"));
+        assertFalse(captor.getValue().getParamValues().containsKey("updateForExist"));
     }
     
     @Test
@@ -717,6 +805,8 @@ class NacosConfigMaintainerServiceImplTest {
         verify(clientHttpProxy).executeSyncHttpRequest(captor.capture());
         assertEquals(message, captor.getValue().getParamValues().get("changeMessage"));
         assertEquals("description", captor.getValue().getParamValues().get("desc"));
+        assertEquals("true", captor.getValue().getParamValues().get("updateForExist"));
+        assertFalse(captor.getValue().getHeaders().containsKey("casMd5"));
     }
     
     @Test

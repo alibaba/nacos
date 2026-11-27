@@ -98,11 +98,12 @@ public class CopilotConfigStorage {
     }
     
     /**
-     * Get Copilot configuration from Nacos Config.
+     * Read the stored document once, keeping the raw fields and the parsed values from the
+     * same read.
      *
-     * @return CopilotProperties, or null if not configured
+     * @return stored document, or {@code null} when nothing is stored or the read failed
      */
-    public CopilotProperties getConfig() {
+    public StoredCopilotConfig getSnapshot() {
         if (configMaintainerService == null) {
             return null;
         }
@@ -112,7 +113,7 @@ public class CopilotConfigStorage {
                 CONFIG_DATA_ID, CONFIG_GROUP, configNamespace);
             
             if (configInfo != null && StringUtils.isNotBlank(configInfo.getContent())) {
-                return JacksonUtils.toObj(configInfo.getContent(), CopilotProperties.class);
+                return StoredCopilotConfig.parse(configInfo.getContent());
             }
         } catch (NacosException e) {
             LOGGER.debug("Copilot config not found in Nacos Config, using default configuration",

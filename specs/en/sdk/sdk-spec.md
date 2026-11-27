@@ -98,6 +98,14 @@ their mappings. Add no application `ConfigService` method in this phase. Review
 SDK signatures and transport entry points with the interface design; public
 contract changes must update the appropriate SDK ITs and scenario documentation.
 
+Formal Config management publish may carry native CAS and create-only guards
+alongside full metadata and `changeMessage`. The Maintainer facade must preserve
+`casMd5` and `updateForExist` without substituting sentinel md5 values or reading
+before writing. Existing overloads remain unconditional, Beta is unchanged, and
+unsupported implementations must reject guarded requests instead of dropping
+conditions. Typed native duplicate-create and CAS conflicts must reach callers;
+see the [Java SDK Implementation Spec](./sdk-java-impl-spec.md#72-configmaintainerservice).
+
 ## 4. Agent And RAD Target Contract
 
 This section defines the target SDK contract for Agent management and

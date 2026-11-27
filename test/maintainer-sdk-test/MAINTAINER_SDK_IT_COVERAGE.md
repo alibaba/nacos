@@ -101,6 +101,26 @@ restart that passed in the reliability suite; the other is the exact
   and spec decision is required before callers can explicitly stop its private
   HTTP and auth-refresh resources.
 
+## Native conditional Config publish bridge
+
+`ConfigMaintainerServiceMaintainerSdkITCase` adds
+`shouldEnforceNativeCreateOnlyAndCasPublish` for create-only success, duplicate
+HTTP/detail code 410, CAS success, stale `RESOURCE_CONFLICT` without mutation,
+message history, and legacy unconditional update. It also adds
+`shouldRejectOversizedConditionalMessageBeforeWrite` for local `INVALID_PARAM`
+and absent-after-rejection. Beta uses its existing lifecycle scenario.
+
+On 2026-11-24, both new cases passed against the rebuilt isolated standalone
+server with each adapter: default 2/2 and Jackson 3 2/2, with no skips. Test
+compilation and quality gates passed. This run used the local auth-disabled
+fixture; auth-on, Beta lifecycle, and independent-console concurrency were not
+rerun. Existing aggregate coverage classifications and counts are not upgraded.
+Unit request capture covers both guards, metadata/message, old default/no-CAS
+behavior, unchanged
+Beta request shape, and propagation of typed exceptions. Controller unit tests
+cover default/invalid boolean conversion, CAS forwarding, and the duplicate
+native-code Result envelope. Independent-console integration remains separate.
+
 ## Config detail schema (#15853)
 
 `ConfigMaintainerServiceMaintainerSdkITCase.shouldQueryConfigHistory` verifies

@@ -213,6 +213,37 @@ public interface ConfigMaintainerService
     }
     
     /**
+     * Publish a formal configuration with metadata, an optional message, and native write guards.
+     *
+     * @param dataId configuration data ID
+     * @param groupName configuration group
+     * @param namespaceId namespace ID
+     * @param content configuration content
+     * @param appName application name
+     * @param srcUser source user
+     * @param configTags configuration tags
+     * @param desc configuration description
+     * @param type configuration type
+     * @param changeMessage optional operation message, at most 512 Unicode code points
+     * @param casMd5 optional previous md5 for CAS; a nonblank value takes precedence
+     * @param updateForExist whether an existing config may be updated; false without CAS is create-only
+     * @return whether the publish succeeded
+     * @throws NacosException if publishing fails or this implementation cannot enforce the guards
+     */
+    @Since("3.3.0")
+    default boolean publishConfig(String dataId, String groupName, String namespaceId,
+        String content, String appName, String srcUser, String configTags, String desc,
+        String type, String changeMessage, String casMd5, boolean updateForExist)
+        throws NacosException {
+        if (StringUtils.isNotBlank(casMd5) || !updateForExist) {
+            throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "This maintainer implementation does not support conditional publish");
+        }
+        return publishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
+            configTags, desc, type, changeMessage);
+    }
+    
+    /**
      * Update config metadata boolean.
      *
      * @param dataId      the data id

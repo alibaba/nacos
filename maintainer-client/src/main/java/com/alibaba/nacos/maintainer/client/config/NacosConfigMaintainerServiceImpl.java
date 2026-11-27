@@ -81,7 +81,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         String content, String appName,
         String srcUser, String configTags, String desc, String type) throws NacosException {
         return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
-            configTags, desc, type, null, null);
+            configTags, desc, type, null, null, null, true);
     }
     
     @Override
@@ -89,7 +89,16 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         String content, String appName, String srcUser, String configTags, String desc,
         String type, String changeMessage) throws NacosException {
         return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
-            configTags, desc, type, null, changeMessage);
+            configTags, desc, type, null, changeMessage, null, true);
+    }
+    
+    @Override
+    public boolean publishConfig(String dataId, String groupName, String namespaceId,
+        String content, String appName, String srcUser, String configTags, String desc,
+        String type, String changeMessage, String casMd5, boolean updateForExist)
+        throws NacosException {
+        return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
+            configTags, desc, type, null, changeMessage, casMd5, updateForExist);
     }
     
     @Override
@@ -126,13 +135,13 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         }
         return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser,
             configTags, desc, type,
-            betaIps, null);
+            betaIps, null, null, true);
     }
     
     private boolean doPublishConfig(String dataId, String groupName, String namespaceId,
         String content, String appName,
         String srcUser, String configTags, String desc, String type, String betaIps,
-        String changeMessage)
+        String changeMessage, String casMd5, boolean updateForExist)
         throws NacosException {
         if (changeMessage != null
             && changeMessage.codePointCount(0, changeMessage.length()) > 512) {
@@ -152,6 +161,9 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("configTags", configTags);
         params.put("desc", desc);
         params.put("type", type);
+        if (StringUtils.isBlank(betaIps)) {
+            params.put("updateForExist", String.valueOf(updateForExist));
+        }
         RequestResource resource = buildRequestResource(namespaceId, groupName, dataId);
         HttpRequest.Builder builder =
             buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
@@ -159,6 +171,8 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         if (StringUtils.isNotBlank(betaIps)) {
             Map<String, String> headers = Collections.singletonMap("betaIps", betaIps);
             builder.addHeader(headers);
+        } else if (StringUtils.isNotBlank(casMd5)) {
+            builder.addHeader(Collections.singletonMap("casMd5", casMd5));
         }
         HttpRequest httpRequest = builder.build();
         HttpRestResult<String> httpRestResult =

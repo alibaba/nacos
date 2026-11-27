@@ -422,6 +422,29 @@ signatures and the shared HTTP client's response handling remain unchanged.
 This is a target contract. Review new public signatures and update SDK ITs,
 scenarios, and coverage registry before completing a public API addition.
 
+The native conditional formal-publish bridge adds this `@Since("3.3.0")`
+full-metadata overload; the existing nine- and ten-argument methods remain
+unconditional (`updateForExist=true`, no CAS):
+
+```java
+boolean publishConfig(String dataId, String groupName, String namespaceId,
+    String content, String appName, String srcUser, String configTags, String desc,
+    String type, String changeMessage, String casMd5, boolean updateForExist)
+    throws NacosException;
+```
+
+The official implementation forwards a nonblank `casMd5` through the existing
+HTTP header and `updateForExist` as a request parameter using its existing
+publish implementation. It does not query before writing. CAS takes precedence;
+without CAS, `false` invokes native create-only insertion. Independent-console
+forwarding selects this overload only for nonblank CAS or create-only requests.
+Beta continues using its existing method and request shape. The interface's
+compatibility default delegates unguarded calls to the existing message overload,
+but rejects unsupported guarded calls with `SERVER_NOT_IMPLEMENTED` rather than
+silently dropping a guard. Native duplicate-create errors reach callers as
+`NacosApiException` with HTTP and detail code 410; CAS errors keep the existing
+`RESOURCE_CONFLICT` detail code. Shared HTTP response handling is unchanged.
+
 ### 7.3 NamingMaintainerService
 
 `NamingMaintainerService` includes:
