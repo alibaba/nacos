@@ -308,7 +308,7 @@ experimental and may change with that domain.
 
 | Request type | Response type | Action | Main fields | Contract |
 | --- | --- | --- | --- | --- |
-| `LockOperationRequest` | `LockOperationResponse` | `WRITE` via `SignType.LOCK` | `lockInstance`, `lockOperationEnum` | Try lock, release, renew, cancel wait, or expire a Nacos distributed lock. |
+| `LockOperationRequest` | `LockOperationResponse` | `WRITE` via `SignType.LOCK` | `lockInstance`, `lockOperationEnum` | Try lock, release, renew, or cancel wait on a Nacos distributed lock. |
 
 ## 8. Rules For Adding Or Changing gRPC APIs
 

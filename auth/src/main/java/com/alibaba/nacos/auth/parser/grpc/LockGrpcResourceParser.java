@@ -24,9 +24,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 /**
  * Lock Grpc resource parser.
  *
- * <p>Lock resources are identified by {@code lockType -> key} and are global to the Nacos
- * cluster. The current lock resource model does not contain namespace or group dimensions, so
- * the parser returns empty namespace and group, and uses the lock key as the resource name.
+ * <p>Lock resources are identified by their lock key and are global to the Nacos cluster. The
+ * current lock resource model does not contain namespace or group dimensions, so the parser
+ * returns empty namespace and group, and uses the lock key as the resource name.
  */
 public class LockGrpcResourceParser extends AbstractGrpcResourceParser {
     

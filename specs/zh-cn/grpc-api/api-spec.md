@@ -276,7 +276,7 @@ Lock 领域语义由[分布式锁规范](../lock/lock-spec.md)定义。当前 gR
 
 | Request type | Response type | 动作 | 主要字段 | 契约 |
 | --- | --- | --- | --- | --- |
-| `LockOperationRequest` | `LockOperationResponse` | `SignType.LOCK` 写动作（`WRITE`） | `lockInstance`, `lockOperationEnum` | 加锁、解锁、续约、取消等待或过期 Nacos 分布式锁。 |
+| `LockOperationRequest` | `LockOperationResponse` | `SignType.LOCK` 写动作（`WRITE`） | `lockInstance`, `lockOperationEnum` | 加锁、解锁、续约或取消等待 Nacos 分布式锁。 |
 
 ## 8. 新增或变更 gRPC API 的规则
 
