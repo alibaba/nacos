@@ -58,6 +58,12 @@ public class AuthorizationRequest {
      */
     private String resourceName;
     
+    /**
+     * Request target that triggered the authorization check, such as
+     * {@code GET /v3/console/cs/config/list}.
+     */
+    private String requestTarget;
+    
     public AuthorizationRequest() {
     }
     
@@ -113,6 +119,9 @@ public class AuthorizationRequest {
         }
         if (resourceName != null) {
             json.append(",\"resourceName\":\"").append(escapeJson(resourceName)).append("\"");
+        }
+        if (requestTarget != null) {
+            json.append(",\"requestTarget\":\"").append(escapeJson(requestTarget)).append("\"");
         }
         json.append("}");
         return json.toString();
@@ -187,6 +196,14 @@ public class AuthorizationRequest {
         this.resourceName = resourceName;
     }
     
+    public String getRequestTarget() {
+        return requestTarget;
+    }
+    
+    public void setRequestTarget(String requestTarget) {
+        this.requestTarget = requestTarget;
+    }
+    
     /**
      * Builder for AuthorizationRequest.
      */
@@ -226,6 +243,11 @@ public class AuthorizationRequest {
         
         public Builder resourceName(String resourceName) {
             request.setResourceName(resourceName);
+            return this;
+        }
+        
+        public Builder requestTarget(String requestTarget) {
+            request.setRequestTarget(requestTarget);
             return this;
         }
         

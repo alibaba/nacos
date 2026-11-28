@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -212,6 +214,8 @@ class AuthFilterTest {
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
             this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredSuccess"));
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getRequestURI()).thenReturn("/v3/console/cs/config/list");
         HttpProtocolAuthService protocolAuthService = injectMockPlugins();
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
@@ -226,6 +230,11 @@ class AuthFilterTest {
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
+        ArgumentCaptor<Permission> permissionCaptor = ArgumentCaptor.forClass(Permission.class);
+        verify(protocolAuthService).validateAuthority(any(IdentityContext.class),
+            permissionCaptor.capture());
+        assertEquals("GET /v3/console/cs/config/list",
+            permissionCaptor.getValue().getRequestTarget());
     }
     
     @Test

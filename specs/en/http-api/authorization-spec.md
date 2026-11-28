@@ -27,7 +27,7 @@ contracts are defined by [Auth Plugin Spec](../auth/auth-plugin-spec.md) and
 The effective authorization tuple for v3 HTTP APIs is:
 
 ```text
-apiType + signType + resource + action + tags
+apiType + signType + resource + action + tags + requestTarget
 ```
 
 Where:
@@ -38,6 +38,9 @@ Where:
 - `resource` identifies the protected resource path or logical resource name.
 - `action` is usually `READ` or `WRITE`.
 - `tags` adds special behavior such as `ONLY_IDENTITY` or `ALLOW_ANONYMOUS`.
+- `requestTarget` is the optional `${method} ${uri}` endpoint identifier passed
+  to the auth plugin in `Permission`. It distinguishes endpoints that share the
+  same resource and action, such as config list and config export.
 
 ## 2. Filter Split
 

@@ -117,7 +117,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 String action = secured.action().toString();
                 result = protocolAuthService.validateAuthority(identityContext,
-                    new Permission(resource, action));
+                    new Permission(resource, action, request.getClass().getSimpleName()));
                 if (!result.isSuccess()) {
                     throw new AccessException(result.format());
                 }

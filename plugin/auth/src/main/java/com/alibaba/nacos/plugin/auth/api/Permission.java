@@ -40,12 +40,36 @@ public class Permission implements Serializable {
      */
     private String action;
     
+    /**
+     * Optional request target that triggered this authorization check.
+     *
+     * <p>For HTTP it is {@code ${method} ${uri}}, such as
+     * {@code GET /v3/console/cs/config/list}. For gRPC it is the request class simple name,
+     * such as {@code ConfigQueryRequest}. It is {@code null} when the check is not triggered
+     * by a protocol request, such as an internal visibility check.</p>
+     *
+     * @since 3.3.1
+     */
+    private String requestTarget;
+    
     public Permission() {
     }
     
     public Permission(Resource resource, String action) {
+        this(resource, action, null);
+    }
+    
+    /**
+     * Create a permission with the request target that triggered the authorization check.
+     *
+     * @param resource      resource to authorize
+     * @param action        action on the resource
+     * @param requestTarget request target, or {@code null} when unknown
+     */
+    public Permission(Resource resource, String action, String requestTarget) {
         this.resource = resource;
         this.action = action;
+        this.requestTarget = requestTarget;
     }
     
     public Resource getResource() {
@@ -64,8 +88,28 @@ public class Permission implements Serializable {
         this.action = action;
     }
     
+    /**
+     * Get the request target that triggered this authorization check.
+     *
+     * @return request target, or {@code null} when the check is not triggered by a protocol
+     *     request
+     */
+    public String getRequestTarget() {
+        return requestTarget;
+    }
+    
+    /**
+     * Set the request target that triggered this authorization check.
+     *
+     * @param requestTarget request target, or {@code null} when unknown
+     */
+    public void setRequestTarget(String requestTarget) {
+        this.requestTarget = requestTarget;
+    }
+    
     @Override
     public String toString() {
-        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + '}';
+        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\''
+            + ", requestTarget='" + requestTarget + '\'' + '}';
     }
 }

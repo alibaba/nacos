@@ -135,6 +135,22 @@ Nacos 将请求级授权和数据级可见性分开处理。
 每个非公开的 v3 HTTP API 和 gRPC 请求处理器都必须声明预期的鉴权元数据。公开端点必须由
 所属规范明确记录。
 
+### `Permission`
+
+`Permission` 是插件可见的鉴权输入，包含解析后的 `Resource`、请求的 `ActionTypes`
+值，以及一个可选的 `requestTarget`，用于标识触发本次校验的端点。
+
+`requestTarget` 与 `BasicContext.requestTarget` 取值一致：
+
+| 传输协议 | 形式 | 示例 |
+|----------|------|------|
+| HTTP | `${method} ${uri}` | `GET /v3/console/cs/config/list` |
+| gRPC | 请求类的简单类名 | `ConfigQueryRequest` |
+
+非协议请求触发的校验（例如内部可见性检查）该字段为 `null`。该字段用于让鉴权插件区分
+共享同一资源和动作的不同操作，例如同一个命名空间的列表和导出。它只是补充上下文：
+资源和动作仍是权威的授权输入，插件不得从请求目标推导受保护的资源。
+
 ## 授权流程
 
 通用鉴权流程如下：
@@ -144,7 +160,8 @@ Nacos 将请求级授权和数据级可见性分开处理。
 3. 从请求参数或 `@Secured` 显式资源中解析 Nacos `Resource`。
 4. 询问选中的鉴权插件，该动作和领域是否启用鉴权。
 5. 校验身份。
-6. 针对 `Permission(resource, action)` 校验权限。
+6. 针对 `Permission(resource, action, requestTarget)` 校验权限。协议过滤器会提供
+   请求目标；内部校验可以不设置该字段。
 
 服务端内部请求在继续处理前，还可能要求配置的服务端身份 key 和 value 校验通过。
 

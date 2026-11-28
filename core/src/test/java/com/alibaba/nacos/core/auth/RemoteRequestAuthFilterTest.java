@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
@@ -35,11 +36,13 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -53,6 +56,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -183,6 +187,28 @@ class RemoteRequestAuthFilterTest {
                 AuthResult.successResult());
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNull(actual);
+    }
+    
+    @Test
+    void testFilterPassesRequestTargetToAuthority() throws NacosException, AccessException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        HealthCheckRequest actualRequest = new HealthCheckRequest();
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(actualRequest));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class)))
+            .thenReturn(AuthResult.successResult());
+        when(protocolAuthService.validateAuthority(any(IdentityContext.class),
+            any(Permission.class))).thenReturn(AuthResult.successResult());
+        
+        Response actual = authFilter.filter(actualRequest, requestMeta, MockRequestHandler.class);
+        
+        assertNull(actual);
+        ArgumentCaptor<Permission> permissionCaptor = ArgumentCaptor.forClass(Permission.class);
+        verify(protocolAuthService).validateAuthority(any(IdentityContext.class),
+            permissionCaptor.capture());
+        assertEquals(HealthCheckRequest.class.getSimpleName(),
+            permissionCaptor.getValue().getRequestTarget());
     }
     
     @Test

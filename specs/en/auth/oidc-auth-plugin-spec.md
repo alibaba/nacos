@@ -169,6 +169,7 @@ mapped role. For non-admin users it calls the configured external
 | `resource` | Nacos resource URI derived from `Resource`. |
 | `action` | Nacos action, such as read or write. |
 | `resourceType`, `namespace`, `group`, `resourceName` | Structured Nacos resource identity. |
+| `requestTarget` | Endpoint that triggered the check, for example `GET /v3/console/cs/config/list`. Omitted when unknown. |
 
 If `authorization-endpoint` is empty, the current implementation allows
 non-admin access. Deployments that need authorization isolation must configure

@@ -139,7 +139,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
             }
             String action = secured.action().toString();
             result = protocolAuthService.validateAuthority(identityContext,
-                new Permission(resource, action));
+                new Permission(resource, action, getRequestTarget(req)));
             if (!result.isSuccess()) {
                 throw new AccessException(result.format());
             }
@@ -223,6 +223,10 @@ public abstract class AbstractWebAuthFilter implements Filter {
     private void writeResultResponse(HttpServletResponse response, int status, Result<?> result)
         throws IOException {
         WebUtils.response(response, JacksonUtils.toJson(result), status);
+    }
+    
+    private String getRequestTarget(HttpServletRequest request) {
+        return request.getMethod() + " " + request.getRequestURI();
     }
     
     private boolean isIdentityOnlyApi(Secured secured) {

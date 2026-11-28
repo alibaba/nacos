@@ -149,6 +149,26 @@ Every non-public v3 HTTP API and gRPC request handler must declare the intended
 auth metadata. Public endpoints must be explicitly documented by their owning
 spec.
 
+### `Permission`
+
+A `Permission` is the plugin-visible authorization input. It contains the parsed
+`Resource`, the requested `ActionTypes` value, and an optional `requestTarget`
+that identifies the endpoint which triggered the check.
+
+`requestTarget` uses the same value as `BasicContext.requestTarget`:
+
+| Transport | Form | Example |
+|-----------|------|---------|
+| HTTP | `${method} ${uri}` | `GET /v3/console/cs/config/list` |
+| gRPC | Request class simple name | `ConfigQueryRequest` |
+
+The target is `null` for checks that do not originate from a protocol request,
+such as internal visibility checks. It exists so auth plugins can separate
+operations that share a resource and action, for example listing versus
+exporting the same namespace. The target is supplementary context: resource and
+action remain the authoritative authorization inputs, and a plugin must not
+derive the protected resource from the target.
+
 ## Authorization Flow
 
 The common auth flow is:
@@ -161,7 +181,9 @@ The common auth flow is:
 4. Ask the selected auth plugin whether auth is enabled for the action and
    domain.
 5. Validate identity.
-6. Validate authority for the `Permission(resource, action)`.
+6. Validate authority for the `Permission(resource, action, requestTarget)`.
+   Protocol filters supply the request target; internal checks may leave it
+   unset.
 
 Server-internal requests may also require the configured server identity key and
 value before normal request handling continues.

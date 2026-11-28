@@ -148,6 +148,7 @@ Nacos 资源执行目标动作。
 | `resource` | 从 `Resource` 推导出的 Nacos resource URI。 |
 | `action` | Nacos action，例如 read 或 write。 |
 | `resourceType`, `namespace`, `group`, `resourceName` | 结构化的 Nacos 资源身份。 |
+| `requestTarget` | 触发本次校验的端点，例如 `GET /v3/console/cs/config/list`。未知时省略。 |
 
 如果 `authorization-endpoint` 为空，当前实现会允许非管理员访问。需要授权隔离的部署必须
 配置外部 authorization endpoint，或提供更严格的 OIDC authority provider。

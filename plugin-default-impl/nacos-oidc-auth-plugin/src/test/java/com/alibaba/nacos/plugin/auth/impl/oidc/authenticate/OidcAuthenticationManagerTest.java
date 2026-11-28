@@ -162,6 +162,7 @@ class OidcAuthenticationManagerTest {
         assertEquals("token", captor.getValue().getToken());
         assertEquals("nacos:config:public:DEFAULT_GROUP:data.yaml",
             captor.getValue().buildResourceUri());
+        assertEquals("GET /v3/console/cs/config/list", captor.getValue().getRequestTarget());
     }
     
     @Test
@@ -203,6 +204,6 @@ class OidcAuthenticationManagerTest {
     
     private Permission permission() {
         Resource resource = new Resource("public", "DEFAULT_GROUP", "data.yaml", "config", null);
-        return new Permission(resource, "read");
+        return new Permission(resource, "read", "GET /v3/console/cs/config/list");
     }
 }

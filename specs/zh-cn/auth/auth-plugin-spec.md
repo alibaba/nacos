@@ -22,7 +22,7 @@
 通用契约为：
 
 ```text
-IdentityContext + Resource + Action -> 允许或拒绝
+IdentityContext + Permission(resource, action, requestTarget) -> 允许或拒绝
 ```
 
 鉴权插件不拥有 Nacos 资源模型。它消费由 Nacos Controller、协议过滤器和资源解析器创建的
@@ -39,7 +39,7 @@ IdentityContext + Resource + Action -> 允许或拒绝
 | `identityNames()` | 声明可以从请求中提取的身份字段。 |
 | `enableAuth(action, type)` | 判断该动作和 SignType 是否需要鉴权。 |
 | `validateIdentity(identityContext, resource)` | 认证调用方，并补充身份元数据。 |
-| `validateAuthority(identityContext, permission)` | 校验调用方是否拥有目标资源和动作的权限。 |
+| `validateAuthority(identityContext, permission)` | 校验调用方是否拥有目标资源和动作的权限。权限对象还可能携带触发本次校验的请求目标。 |
 | `isLoginEnabled()` | 声明是否暴露插件提供的登录能力。 |
 | `isAdminRequest()` | 声明当前请求是否属于管理员初始化流程。 |
 
@@ -125,6 +125,15 @@ critical 依赖。即使三个入口开关全部关闭，只要显式配置了 a
 - 资源名语义。
 - `READ` 和 `WRITE` 动作语义。
 - 通过 `SignType.SPECIFIED` 声明的显式资源。
+
+`Permission` 还会携带一个可选的请求目标，用于标识触发本次校验的端点。该目标与
+`BasicContext.requestTarget` 的形式一致：HTTP 为 `${method} ${uri}`，例如
+`GET /v3/console/cs/config/list`；gRPC 为请求类的简单类名。非协议请求触发的校验
+（例如内部可见性检查）该字段为 `null`。
+
+请求目标用于帮助插件区分共享同一资源和动作的不同端点，例如同一个命名空间的列表和
+导出。它只是补充上下文，不能替代资源解析：插件不得从请求目标推导被授权的资源，也
+不得把请求目标匹配本身当成权限。
 
 ## 插件 API
 

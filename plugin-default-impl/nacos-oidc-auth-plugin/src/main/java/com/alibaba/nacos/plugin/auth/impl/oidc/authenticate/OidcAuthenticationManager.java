@@ -139,6 +139,7 @@ public class OidcAuthenticationManager {
             .group(permission.getResource().getGroup())
             .resourceName(permission.getResource().getName())
             .action(permission.getAction())
+            .requestTarget(permission.getRequestTarget())
             .build();
         
         // Call IdP authorization endpoint - Nacos does NOT make the decision
