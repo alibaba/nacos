@@ -187,20 +187,32 @@ Extension rules:
 
 ## 9. Security And Visibility
 
-Lock acquire and release are write operations over lock resources and should be
-authorized as `SignType.LOCK` with write action semantics. The Java client sends
-security headers through the same client security proxy pattern used by other
-runtime clients.
+Client-facing lock gRPC operations (acquire, release, renew, and cancel wait) are
+write operations over lock resources and are authorized as `SignType.LOCK` with
+write action semantics when authentication is enabled. `EXPIRE` and
+`CLEANUP_CONNECTION` are server-internal operations submitted directly to the CP
+protocol and are not part of the client gRPC authorization contract. The Java
+client sends security headers through the same client security proxy pattern
+used by other runtime clients.
+
+The lock gRPC handler declares
+`@Secured(action = ActionTypes.WRITE, signType = SignType.LOCK)`. The
+authorization filter parses the request lock key into a global lock resource
+before invoking the handler; the resource has an empty namespace and group and
+uses the lock key as its name. A client therefore needs a write permission that
+matches the resolved resource, for example `*:*:lock/*` for all lock keys or
+`public:*:lock/<key>` for a single key.
 
 Current implementation status:
 
-- the lock gRPC handler contains a `TODO Support auth` marker;
-- the default auth implementation contains a historical `grpc/lock` operator
-  point;
+- anonymous or unauthorized requests are rejected with
+  `NacosException.NO_RIGHT` before any lock business logic executes;
+- the default auth implementation retains the historical `grpc/lock` operator
+  point constant, which the handler no longer uses;
 - lock requests do not yet have complete owner-token validation or release
   ownership checks.
 
-Until the security contract is completed, deployments should treat lock as a
+Until the ownership contract is completed, deployments should treat lock as a
 trusted-client experimental capability.
 
 ## 10. Observability
@@ -225,8 +237,6 @@ labels.
   token, connection binding, or another community-accepted mechanism.
 - Decide whether lock identity must include `namespaceId`, tenant, or resource
   owner.
-- Complete authorization for lock gRPC operations and align it with
-  `SignType.LOCK`.
 - Decide whether renewal, query, watch, fairness, or reentrant semantics belong
   to Nacos.
 - Define cross-language SDK contracts only after the server semantics are

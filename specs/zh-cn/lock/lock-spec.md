@@ -157,16 +157,25 @@ SDK 不应将 CP group 名称、snapshot 文件、lock manager map 或底层 req
 
 ## 9. 安全与可见性
 
-加锁和解锁是对锁资源的写操作，应按照 `SignType.LOCK` 和写动作语义进行鉴权。Java 客户端通过
-与其他运行时客户端相同的 security proxy 模式传递安全 header。
+面向客户端的锁 gRPC 操作（加锁、解锁、续约、取消等待）是对锁资源的写操作；
+开启鉴权时，这些操作按照 `SignType.LOCK` 的写动作语义进行鉴权。`EXPIRE` 和
+`CLEANUP_CONNECTION` 是服务端内部操作，直接提交到 CP 协议，不属于客户端 gRPC
+鉴权契约。Java 客户端通过与其他运行时客户端相同的 security proxy 模式传递安全
+header。
+
+lock gRPC handler 声明了
+`@Secured(action = ActionTypes.WRITE, signType = SignType.LOCK)`。鉴权 filter
+在调用 handler 前从请求中的锁 key 解析全局锁资源：解析结果使用空的 namespace 和
+group，并以锁 key 作为资源名。因此客户端必须持有与解析后资源匹配的写权限，例如
+`*:*:lock/*` 表示全部锁 key，`public:*:lock/<key>` 表示单个 key。
 
 当前实现状态：
 
-- lock gRPC handler 中仍包含 `TODO Support auth` 标记；
-- 默认鉴权实现中存在历史的 `grpc/lock` 操作点；
+- 匿名或越权请求会在执行任何锁业务逻辑之前以 `NacosException.NO_RIGHT` 拒绝；
+- 默认鉴权实现仍保留历史的 `grpc/lock` 操作点常量，但 handler 已不再使用；
 - 锁请求尚未具备完整的 owner token 校验或解锁持有者校验。
 
-在安全契约补齐之前，部署侧应将分布式锁视为可信客户端场景下的实验能力。
+在所有权契约补齐之前，部署侧仍应将分布式锁视为可信客户端场景下的实验能力。
 
 ## 10. 可观测性
 
@@ -185,7 +194,6 @@ lock 模块应暴露低基数的操作次数、成功次数和 handler 延迟指
 - 判断分布式锁是否应继续作为 Nacos core 能力存在，迁移为扩展模块，或被移除。
 - 定义稳定的解锁所有权语义，包括 owner token、fencing token、连接绑定或其他社区认可机制。
 - 判断锁身份是否必须包含 `namespaceId`、租户或资源 owner。
-- 补齐 lock gRPC 操作鉴权，并与 `SignType.LOCK` 对齐。
 - 判断续约、查询、watch、公平性或可重入语义是否属于 Nacos 范围。
 - 仅在服务端语义稳定后，再定义多语言 SDK 契约。
 - 重新评估 `expiredTime` 等字段命名，该字段当前实际表示租约时长。
