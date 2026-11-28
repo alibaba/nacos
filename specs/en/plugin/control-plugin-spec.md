@@ -135,6 +135,44 @@ Required TPS manager behavior:
 | `buildTpsControlRuleParser()` | Optionally override the rule text parser. |
 | `buildTpsBarrierCreator()` | Optionally override time-window and counter behavior. |
 
+## Check Context
+
+`ConnectionCheckRequest` and `TpsCheckRequest` carry an immutable
+`ControlContext` snapshot. The server assembles the snapshot before the check.
+Plugins must treat it as read-only and must not block inside `check`.
+
+| Key | Kind | Meaning |
+|-----|------|---------|
+| `connection.current.total` | metric | Active connections on this node before the requested connection is admitted. |
+| `connection.current.ip` | metric | Active connections from the requesting client IP before admission. |
+| `push.pending.tasks` | metric | Push tasks waiting in the naming delay engine when a push task is checked. |
+| `push.target.subscribers` | metric | Subscribers targeted by the checked push task. |
+| `push.service.namespace` | attribute | Namespace of the checked push task. |
+| `push.service.group` | attribute | Group of the checked push task. |
+| `push.service.name` | attribute | Service name of the checked push task. |
+
+Absent metrics read as `0`; `ControlContext.hasMetric` distinguishes an absent
+metric from a real zero. The key set is additive: new keys may be delivered
+without an SPI change, and plugins must ignore unknown keys.
+
+The context exists so a custom plugin can apply absolute watermarks. For
+example, a plugin may deny `NAMING_PUSH_TASK` while `push.pending.tasks` is above
+a configured value. A denied push task is re-queued by the naming push engine
+with `nacos.naming.push.pushTaskRetryDelay` and merged with newer changes of the
+same service, so throttling compresses redundant work instead of dropping the
+newest data.
+
+Denial delays a task; it does not drop it. A delayed task stays in the
+`push.pending.tasks` backlog, so a plugin that denies every task while the
+backlog is above a watermark would stop pushes forever. A plugin that uses
+backlog as a watermark must keep a positive admission rate above the watermark,
+for example by lowering a token-bucket rate, so the backlog can drain.
+
+Checks run on connection registration and push scheduling paths, so plugins
+must keep `check` non-blocking. On the push admission path, a plugin exception
+is logged and treated as a pass, so a plugin bug cannot stop pushes permanently.
+Other checks follow the failure semantics in the Degradation section.
+
 ## Rule Model
 
 `ConnectionControlRule` contains:

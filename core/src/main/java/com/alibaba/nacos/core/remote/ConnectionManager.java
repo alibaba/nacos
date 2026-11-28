@@ -32,6 +32,7 @@ import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
+import com.alibaba.nacos.plugin.control.context.ControlContext;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -139,10 +140,22 @@ public class ConnectionManager {
             new ConnectionCheckRequest(metaInfo.getClientIp(),
                 metaInfo.getAppName(), metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
         connectionCheckRequest.setLabels(connection.getLabels());
+        connectionCheckRequest.setControlContext(buildControlContext(metaInfo));
         ConnectionCheckResponse checkResponse =
             ControlManagerCenter.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
         return !checkResponse.isSuccess();
+    }
+    
+    private ControlContext buildControlContext(ConnectionMeta metaInfo) {
+        String clientIp = metaInfo.getClientIp();
+        AtomicInteger currentCountForIp =
+            null == clientIp ? null : connectionForClientIp.get(clientIp);
+        long currentCountForIpValue = null == currentCountForIp ? 0L : currentCountForIp.get();
+        return ControlContext.builder()
+            .metric(ControlContext.CONNECTION_CURRENT_TOTAL, connections.size())
+            .metric(ControlContext.CONNECTION_CURRENT_IP, currentCountForIpValue)
+            .build();
     }
     
     /**

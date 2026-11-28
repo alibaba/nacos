@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.control;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.alibaba.nacos.plugin.control.context.ControlContext;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.spi.ControlPluginProvider;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ControlRequestResponseModelTest {
@@ -46,11 +48,17 @@ class ControlRequestResponseModelTest {
         request.setAppName("console");
         request.setSource("grpc");
         request.setLabels(Collections.singletonMap("region", "cn"));
+        ControlContext context =
+            ControlContext.builder().metric(ControlContext.CONNECTION_CURRENT_TOTAL, 2L).build();
+        request.setControlContext(context);
         
         assertEquals("127.0.0.2", request.getClientIp());
         assertEquals("console", request.getAppName());
         assertEquals("grpc", request.getSource());
         assertEquals(Collections.singletonMap("region", "cn"), request.getLabels());
+        assertSame(context, request.getControlContext());
+        request.setControlContext(null);
+        assertTrue(request.getControlContext().isEmpty());
     }
     
     @Test
@@ -62,12 +70,16 @@ class ControlRequestResponseModelTest {
         request.setClientIp("127.0.0.2");
         request.setTimestamp(100L);
         request.setCount(3L);
+        ControlContext context =
+            ControlContext.builder().metric(ControlContext.PUSH_PENDING_TASKS, 5L).build();
+        request.setControlContext(context);
         
         assertEquals("newPoint", request.getPointName());
         assertEquals("newConn", request.getConnectionId());
         assertEquals("127.0.0.2", request.getClientIp());
         assertEquals(100L, request.getTimestamp());
         assertEquals(3L, request.getCount());
+        assertSame(context, request.getControlContext());
     }
     
     @Test

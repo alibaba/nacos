@@ -122,6 +122,35 @@ TPS manager 必须满足：
 | `buildTpsControlRuleParser()` | 可以覆盖规则文本解析器。 |
 | `buildTpsBarrierCreator()` | 可以覆盖时间窗口和计数行为。 |
 
+## 检查上下文
+
+`ConnectionCheckRequest` 和 `TpsCheckRequest` 都携带一份不可变的 `ControlContext`
+快照。快照由服务端在检查前组装，插件只能读取，不得在 `check` 中阻塞。
+
+| Key | 类型 | 含义 |
+|-----|------|------|
+| `connection.current.total` | metric | 本次连接准入前，本节点上的活跃连接数。 |
+| `connection.current.ip` | metric | 本次连接准入前，请求来源 IP 的活跃连接数。 |
+| `push.pending.tasks` | metric | 推送任务被检查时，naming delay engine 中等待的推送任务数。 |
+| `push.target.subscribers` | metric | 被检查的推送任务的目标订阅者数。 |
+| `push.service.namespace` | attribute | 被检查推送任务所属服务的命名空间。 |
+| `push.service.group` | attribute | 被检查推送任务所属服务的分组。 |
+| `push.service.name` | attribute | 被检查推送任务所属服务的名称。 |
+
+缺失的 metric 读作 `0`，插件可用 `ControlContext.hasMetric` 区分“缺失”和“真实为 0”。
+Key 集合是增量契约：新增 key 不需要修改 SPI，插件必须忽略不认识的 key。
+
+上下文用于让自定义插件实现绝对水位。例如插件可以在 `push.pending.tasks` 超过配置值时
+拒绝 `NAMING_PUSH_TASK`。被拒绝的推送任务会按 `nacos.naming.push.pushTaskRetryDelay`
+重新进入 delay 队列，并与同一服务的新变更合并，因此限流压缩的是重复工作，而不是丢弃最新数据。
+
+拒绝只是延迟任务，不是丢弃任务。被延迟的任务仍留在 `push.pending.tasks` 队列中，所以如果插件
+在 backlog 超过水位时拒绝所有任务，推送会永久停止。用 backlog 做水位的插件必须在水位之上保留
+正的准入速率，例如降低 token bucket 速率，让 backlog 能够被逐步消费。
+
+检查运行在连接注册和推送调度路径上，因此插件必须保证 `check` 不阻塞。在推送准入路径上，
+插件异常会被记录并视为通过，插件缺陷不会永久停止推送；其他检查遵循“降级”一节的失败语义。
+
 ## 规则模型
 
 `ConnectionControlRule` 包含：

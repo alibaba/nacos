@@ -74,6 +74,12 @@ TPS 规则示例：
 {"pointName":"ConfigQuery","pointRule":{"maxCount":100,"monitorType":"intercept"}}
 ```
 
+推送任务准入规则示例，把节点限制为每秒 100 个推送任务：
+
+```json
+{"pointName":"NAMING_PUSH_TASK","pointRule":{"maxCount":100,"monitorType":"intercept"}}
+```
+
 ## 连接行为
 
 `NacosConnectionControlManager` 会汇总所有已加载 `ConnectionMetricsCollector` 的计数。
@@ -92,6 +98,12 @@ TPS 规则示例：
 TPS 和拒绝观测属于运维指标，必须遵循
 [可观测钩子规范](../design/foundation-observability-hooks-spec.md)。
 
+`NAMING_PUSH_TASK` 是推送准入 point，而不是推送结果指标。naming 推送引擎在分发推送任务前
+检查该 point。内置 barrier 可以用 `maxCount` / `period` 对任务做限速；被拒绝的任务会按
+`nacos.naming.push.pushTaskRetryDelay` 回到 delay 队列。基于队列深度的水位需要自定义
+control 插件读取 [Control 插件规范](control-plugin-spec.md)定义的检查上下文中的
+`push.pending.tasks`。
+
 ## 内置 Point Name
 
 当前代码通过 `@TpsControl` 注册以下 point name：
@@ -107,6 +119,10 @@ TPS 和拒绝观测属于运维指标，必须遵循
   `NamingServiceDeregister`, `NamingServiceQuery`, `NamingServiceListQuery`,
   `NamingServiceUpdate`。
 - Core: `HealthCheck`。
+
+`NamingTpsMonitor` 还会以编程方式注册以下运行时 point：`NAMING_RPC_PUSH`、
+`NAMING_RPC_PUSH_SUCCESS`、`NAMING_RPC_PUSH_FAIL`、`NAMING_PUSH_TASK` 以及
+`NAMING_DISTRO_*`。其中 `NAMING_PUSH_TASK` 是准入 point，其余是观测 point。
 
 Point name 一旦文档化就必须保持稳定，因为规则文件和外部规则存储都会把它作为 key。
 

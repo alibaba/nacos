@@ -26,6 +26,7 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
+import com.alibaba.nacos.plugin.control.context.ControlContext;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.jupiter.api.AfterAll;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -54,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -238,6 +241,34 @@ class ConnectionManagerTest {
             when(center.getConnectionControlManager()).thenReturn(connectionControlManager);
             cmMock.when(ControlManagerCenter::getInstance).thenReturn(center);
             assertFalse(connectionManager.register(connectionId2, connection));
+        }
+    }
+    
+    @Test
+    void testRegisterPassesRuntimeContextToControlPlugin() {
+        when(connectionMeta.getClientIp()).thenReturn(clientIp);
+        String connectionId2 = UUID.randomUUID().toString();
+        try (MockedStatic<ControlManagerCenter> cmMock =
+            Mockito.mockStatic(ControlManagerCenter.class)) {
+            ConnectionControlManager connectionControlManager =
+                Mockito.mock(ConnectionControlManager.class);
+            ConnectionCheckResponse checkResponse = new ConnectionCheckResponse();
+            checkResponse.setSuccess(true);
+            when(connectionControlManager.check(any(ConnectionCheckRequest.class)))
+                .thenReturn(checkResponse);
+            ControlManagerCenter center = Mockito.mock(ControlManagerCenter.class);
+            when(center.getConnectionControlManager()).thenReturn(connectionControlManager);
+            cmMock.when(ControlManagerCenter::getInstance).thenReturn(center);
+            
+            assertTrue(connectionManager.register(connectionId2, connection));
+            
+            ArgumentCaptor<ConnectionCheckRequest> captor =
+                ArgumentCaptor.forClass(ConnectionCheckRequest.class);
+            verify(connectionControlManager).check(captor.capture());
+            ControlContext context = captor.getValue().getControlContext();
+            assertEquals(1L, context.getMetric(ControlContext.CONNECTION_CURRENT_TOTAL));
+            assertEquals(1L, context.getMetric(ControlContext.CONNECTION_CURRENT_IP));
+            connectionManager.unregister(connectionId2);
         }
     }
     

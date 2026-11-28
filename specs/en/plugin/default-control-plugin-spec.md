@@ -78,6 +78,13 @@ TPS rule example:
 {"pointName":"ConfigQuery","pointRule":{"maxCount":100,"monitorType":"intercept"}}
 ```
 
+Push task admission rule example, limiting the node to 100 push tasks per
+second:
+
+```json
+{"pointName":"NAMING_PUSH_TASK","pointRule":{"maxCount":100,"monitorType":"intercept"}}
+```
+
 ## Connection Behavior
 
 `NacosConnectionControlManager` sums all loaded `ConnectionMetricsCollector`
@@ -100,6 +107,13 @@ skipped and the request is allowed.
 TPS and denied observations are operational metrics and must follow the
 [Observability Hooks Spec](../design/foundation-observability-hooks-spec.md).
 
+`NAMING_PUSH_TASK` is a push admission point rather than a post-result metric.
+The naming push engine checks it before dispatching a push task. The built-in
+barrier can rate-limit tasks with `maxCount` per `period`; a denied task returns
+to the delay queue with `nacos.naming.push.pushTaskRetryDelay`. Queue-depth
+watermarks require a custom control plugin that reads `push.pending.tasks` from
+the check context defined by the [Control Plugin Spec](control-plugin-spec.md).
+
 ## Built-In Point Names
 
 The current code registers these point names through `@TpsControl`:
@@ -115,6 +129,11 @@ The current code registers these point names through `@TpsControl`:
   `NamingServiceDeregister`, `NamingServiceQuery`, `NamingServiceListQuery`,
   `NamingServiceUpdate`.
 - Core: `HealthCheck`.
+
+`NamingTpsMonitor` additionally registers these runtime points programmatically:
+`NAMING_RPC_PUSH`, `NAMING_RPC_PUSH_SUCCESS`, `NAMING_RPC_PUSH_FAIL`,
+`NAMING_PUSH_TASK`, and the `NAMING_DISTRO_*` points. `NAMING_PUSH_TASK` is an
+admission point; the others are observation points.
 
 Point names must remain stable once documented, because rule files and external
 rule storage use them as keys.

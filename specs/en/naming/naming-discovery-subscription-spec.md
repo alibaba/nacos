@@ -84,6 +84,11 @@ Server push fan-out and retry work must follow the
 [Runtime Push And Reconnect Spec](../client/runtime-push-reconnect-spec.md) and
 the [Task Execution Spec](../design/foundation-task-execution-spec.md).
 
+Before dispatching a push task, the server may consult the control plugin
+`NAMING_PUSH_TASK` admission point. A denied task is returned to the push delay
+queue and merged with newer changes of the same service. See the
+[Control Plugin Spec](../plugin/control-plugin-spec.md).
+
 `NamingEvent.isFromPush()` identifies the notification processing path:
 synchronous subscription responses and direct cache replays return
 `false`; server pushes, background query refreshes, and Failover notifications return `true`.

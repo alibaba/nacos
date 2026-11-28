@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,6 +96,17 @@ class PushDelayTaskTest {
         assertNotNull(singlePushTask.getTargetClients());
         assertEquals(1, singlePushTask.getTargetClients().size());
         assertTrue(singlePushTask.getTargetClients().contains(singleTargetClientId));
+    }
+    
+    @Test
+    void testTargetClientsConstructor() {
+        PushDelayTask task = new PushDelayTask(service, 0L, Arrays.asList("clientA", "clientB"));
+        
+        assertFalse(task.isPushToAll());
+        assertNotNull(task.getTargetClients());
+        assertEquals(2, task.getTargetClients().size());
+        assertTrue(task.getTargetClients().contains("clientA"));
+        assertTrue(task.getTargetClients().contains("clientB"));
     }
     
     @Test

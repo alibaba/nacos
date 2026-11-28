@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,10 +47,20 @@ public class PushDelayTask extends AbstractDelayTask {
     }
     
     public PushDelayTask(Service service, long delay, String targetClient) {
+        this(service, delay, Collections.singleton(targetClient));
+    }
+    
+    /**
+     * Create a push task targeting a fixed set of clients.
+     *
+     * @param service service to push
+     * @param delay delay before execution, in milliseconds
+     * @param targetClients clients to push to
+     */
+    public PushDelayTask(Service service, long delay, Collection<String> targetClients) {
         this.service = service;
         this.pushToAll = false;
-        this.targetClients = new HashSet<>(1);
-        this.targetClients.add(targetClient);
+        this.targetClients = new HashSet<>(targetClients);
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
     }
