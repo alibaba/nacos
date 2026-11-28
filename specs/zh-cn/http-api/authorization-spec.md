@@ -26,7 +26,7 @@
 V3 HTTP API 的有效鉴权元组为：
 
 ```text
-apiType + signType + resource + action + tags
+apiType + signType + resource + action + tags + requestTarget
 ```
 
 其中：
@@ -36,6 +36,8 @@ apiType + signType + resource + action + tags
 - `resource` 标识受保护的资源路径或逻辑资源名。
 - `action` 通常为 `READ` 或 `WRITE`。
 - `tags` 增加特殊行为，例如 `ONLY_IDENTITY` 或 `ALLOW_ANONYMOUS`。
+- `requestTarget` 是通过 `Permission` 传给鉴权插件的可选 `${method} ${uri}` 端点标识，
+  用于区分共享同一资源和动作的端点，例如配置列表和配置导出。
 
 ## 2. Filter 分流
 

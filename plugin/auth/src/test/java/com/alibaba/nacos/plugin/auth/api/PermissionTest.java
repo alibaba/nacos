@@ -36,7 +36,7 @@ class PermissionTest {
     @Test
     void testToString() {
         assertEquals(
-            "Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
+            "Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w', requestTarget='null'}",
             permission.toString());
     }
     
@@ -58,5 +58,15 @@ class PermissionTest {
         Permission permission = new Permission();
         permission.setAction(ActionTypes.READ.toString());
         assertEquals(ActionTypes.READ.toString(), permission.getAction());
+    }
+    
+    @Test
+    void testRequestTarget() {
+        Permission permission = new Permission(Resource.EMPTY_RESOURCE,
+            ActionTypes.READ.toString(), "GET /v3/console/cs/config/list");
+        assertEquals("GET /v3/console/cs/config/list", permission.getRequestTarget());
+        
+        permission.setRequestTarget("GET /v3/console/cs/config/export2");
+        assertEquals("GET /v3/console/cs/config/export2", permission.getRequestTarget());
     }
 }

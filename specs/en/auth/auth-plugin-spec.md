@@ -23,7 +23,7 @@ implementation without changing API controllers or resource parsers. The common
 contract is:
 
 ```text
-IdentityContext + Resource + Action -> allowed or rejected
+IdentityContext + Permission(resource, action, requestTarget) -> allowed or rejected
 ```
 
 The auth plugin does not own Nacos resource modeling. It consumes resources
@@ -42,7 +42,7 @@ A server auth plugin implements `AuthPluginService`.
 | `identityNames()` | Declare identity fields that may be extracted from requests. |
 | `enableAuth(action, type)` | Decide whether this plugin requires auth for the action and sign type. |
 | `validateIdentity(identityContext, resource)` | Authenticate the caller and enrich identity metadata. |
-| `validateAuthority(identityContext, permission)` | Authorize the caller for the target resource and action. |
+| `validateAuthority(identityContext, permission)` | Authorize the caller for the target resource and action. The permission may also carry the request target that triggered the check. |
 | `isLoginEnabled()` | Declare whether plugin-provided login should be exposed. |
 | `isAdminRequest()` | Declare whether the current request should be treated as administrator bootstrap flow. |
 
@@ -147,6 +147,19 @@ map those objects to an external permission system, but it must preserve:
 - Resource name semantics.
 - `READ` and `WRITE` action semantics.
 - Explicit resources declared with `SignType.SPECIFIED`.
+
+`Permission` also carries an optional request target that identifies the
+endpoint which triggered the check. The target uses the same form as
+`BasicContext.requestTarget`: `${method} ${uri}` for HTTP, for example
+`GET /v3/console/cs/config/list`, and the request class simple name for gRPC.
+The field is `null` when the check does not originate from a protocol request,
+such as an internal visibility check.
+
+The request target lets a plugin distinguish endpoints that share the same
+resource and action, such as listing and exporting the same namespace. It is
+supplementary context, not a replacement for resource parsing: a plugin must
+not derive the authorized resource from the target, and must not treat a target
+match as permission by itself.
 
 ## Plugin APIs
 

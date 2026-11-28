@@ -44,6 +44,7 @@ class AuthorizationModelTest {
         request.setNamespace("public");
         request.setGroup("DEFAULT_GROUP");
         request.setResourceName("data.yaml");
+        request.setRequestTarget("GET /v3/console/cs/config/list");
         
         assertEquals("token", request.getToken());
         assertEquals("write", request.getAction());
@@ -51,6 +52,7 @@ class AuthorizationModelTest {
         assertEquals("public", request.getNamespace());
         assertEquals("DEFAULT_GROUP", request.getGroup());
         assertEquals("data.yaml", request.getResourceName());
+        assertEquals("GET /v3/console/cs/config/list", request.getRequestTarget());
         assertEquals("nacos:config:public:DEFAULT_GROUP:data.yaml", request.buildResourceUri());
         request.setResource("nacos:explicit");
         assertEquals("nacos:explicit", request.getResource());
@@ -73,6 +75,26 @@ class AuthorizationModelTest {
             "{\"token\":\"token\",\"resource\":\"nacos:config:public:DEFAULT_GROUP:data.yaml\","
                 + "\"action\":\"write\",\"resourceType\":\"config\",\"namespace\":\"public\","
                 + "\"group\":\"DEFAULT_GROUP\",\"resourceName\":\"data.yaml\"}",
+            request.toJson());
+    }
+    
+    @Test
+    void testRequestSerializesRequestTarget() {
+        AuthorizationRequest request = AuthorizationRequest.builder()
+            .token("token")
+            .resourceType("config")
+            .namespace("public")
+            .group("DEFAULT_GROUP")
+            .resourceName("data.yaml")
+            .action("read")
+            .requestTarget("GET /v3/console/cs/config/export2")
+            .build();
+        
+        assertEquals(
+            "{\"token\":\"token\",\"resource\":\"nacos:config:public:DEFAULT_GROUP:data.yaml\","
+                + "\"action\":\"read\",\"resourceType\":\"config\",\"namespace\":\"public\","
+                + "\"group\":\"DEFAULT_GROUP\",\"resourceName\":\"data.yaml\","
+                + "\"requestTarget\":\"GET /v3/console/cs/config/export2\"}",
             request.toJson());
     }
     
