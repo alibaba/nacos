@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +72,29 @@ class SkillClientOperationServiceImplTest {
             () -> service.querySkill("public", " ", null, null, null));
         
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void getSkillInfoShouldRejectBlankName() {
+        NacosApiException exception = assertThrows(NacosApiException.class,
+            () -> service.getSkillInfo("public", " ", null, null));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void getSkillInfoShouldDelegateToOperationService() throws NacosException {
+        SkillInfo info = new SkillInfo();
+        info.setName("skill-a");
+        info.setVersion("1.0.0");
+        when(skillOperationService.getSkillInfo("public", "skill-a", "1.0.0", "stable"))
+            .thenReturn(info);
+        
+        SkillInfo actual = service.getSkillInfo("public", "skill-a", "1.0.0", "stable");
+        
+        assertSame(info, actual);
+        verify(aiResourceVersionPersistService, never()).find("public", "skill-a",
+            Constants.Skills.RESOURCE_TYPE_SKILL, "1.0.0");
     }
     
     @Test

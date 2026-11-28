@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
@@ -423,6 +424,51 @@ public interface AiService
         AbstractNacosMcpServerListener mcpServerListener)
         throws NacosException {
         mcp().unsubscribeMcpServer(mcpName, version, mcpServerListener);
+    }
+    
+    /**
+     * Get runtime metadata of one skill by skill name. Defaults to latest online version.
+     *
+     * <p>The returned {@link SkillInfo} contains the resolved online version token and metadata
+     * only, without the skill package bytes.</p>
+     *
+     * @param skillName skill name (unique identifier)
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Override
+    @Since("3.3.1")
+    default SkillInfo getSkillInfo(String skillName) throws NacosException {
+        return skill().getSkillInfo(skillName);
+    }
+    
+    /**
+     * Get runtime metadata of one skill by skill name and target version.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param version   target skill version, if null, will get latest version
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Override
+    @Since("3.3.1")
+    default SkillInfo getSkillInfoByVersion(String skillName, String version)
+        throws NacosException {
+        return skill().getSkillInfoByVersion(skillName, version);
+    }
+    
+    /**
+     * Get runtime metadata of one skill by skill name and target label.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param label     target skill label (e.g. "latest", "stable")
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Override
+    @Since("3.3.1")
+    default SkillInfo getSkillInfoByLabel(String skillName, String label) throws NacosException {
+        return skill().getSkillInfoByLabel(skillName, label);
     }
     
     /**

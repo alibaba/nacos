@@ -107,6 +107,78 @@ public class SkillClientOpenApiITCase extends AiOpenApiBaseITCase {
                 404, ErrorCode.RESOURCE_NOT_FOUND, "Skill version not found");
     }
     
+    @Test
+    public void testGetSkillInfoByLatestVersionAndLabel() throws Exception {
+        String skillName = randomSkillName("info");
+        addCleanup(() -> deleteSkill(skillName));
+        publishSkill(skillName, "1.0.0", null, "Use the v1 skill body.", "guide v1");
+        publishSkill(skillName, "2.0.0", "1.0.0", "Use the v2 skill body.", "guide v2");
+        updateLabels(skillName, "{\"stable\":\"1.0.0\"}");
+        
+        JsonNode latest = getJsonOk(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName));
+        assertSkillInfo(latest.get("data"), skillName, "2.0.0", true);
+        assertEquals("1.0.0", latest.get("data").get("labels").get("stable").asText());
+        
+        JsonNode byVersion = getJsonOk(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName).addParam("version", "1.0.0"));
+        assertSkillInfo(byVersion.get("data"), skillName, "1.0.0", false);
+        
+        JsonNode byLabel = getJsonOk(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName).addParam("label", "stable"));
+        assertSkillInfo(byLabel.get("data"), skillName, "1.0.0", false);
+        
+        JsonNode versionBeforeLabel = getJsonOk(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName).addParam("version", "2.0.0")
+                        .addParam("label", "stable"));
+        assertSkillInfo(versionBeforeLabel.get("data"), skillName, "2.0.0", true);
+    }
+    
+    @Test
+    public void testGetSkillInfoMissingOrInvalidNameReturnsBadRequest() throws Exception {
+        assertError(getRaw(SKILL_CLIENT_PATH + "/info?namespaceId=" + DEFAULT_NAMESPACE), 400,
+                ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        assertError(getRaw(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", "invalid_name")), 400,
+                ErrorCode.PARAMETER_VALIDATE_ERROR,
+                "Skill name may only contain lowercase letters, numbers, and hyphens");
+    }
+    
+    @Test
+    public void testGetSkillInfoUnknownResourceAndVersionReturnNotFound() throws Exception {
+        assertError(getRaw(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", randomSkillName("absent-info"))), 404,
+                ErrorCode.RESOURCE_NOT_FOUND, "Skill not found");
+        
+        String skillName = randomSkillName("missing-info");
+        addCleanup(() -> deleteSkill(skillName));
+        publishSkill(skillName, "1.0.0", null, "Only one online skill body.", "guide");
+        assertError(getRaw(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName).addParam("version", "9.9.9")),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "Skill version not found");
+        assertError(getRaw(SKILL_CLIENT_PATH + "/info",
+                Query.newInstance().addParam("name", skillName).addParam("label", "missing")),
+                404, ErrorCode.RESOURCE_NOT_FOUND, "Skill version not found");
+    }
+    
+    private void assertSkillInfo(JsonNode data, String skillName, String version,
+            boolean expectDisplayFrontMatter) {
+        assertEquals(skillName, data.get("name").asText(), data.toString());
+        assertEquals(version, data.get("version").asText(), data.toString());
+        assertEquals("skill client openapi integration test", data.get("description").asText(),
+                data.toString());
+        assertTrue(data.get("enable").asBoolean(), data.toString());
+        assertNotNull(data.get("labels"), data.toString());
+        if (expectDisplayFrontMatter) {
+            assertNotNull(data.get("frontMatter"), data.toString());
+            assertEquals(version, data.get("frontMatter").get("version").asText(),
+                    data.toString());
+        } else {
+            assertTrue(data.get("frontMatter") == null || data.get("frontMatter").isNull(),
+                    data.toString());
+        }
+    }
+    
     private void publishSkill(String skillName, String version, String basedOnVersion, String body,
             String guideContent) throws Exception {
         if (null == basedOnVersion) {

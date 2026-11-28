@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -107,6 +108,16 @@ public class SkillClientOperationServiceImpl implements SkillClientOperationServ
             effectiveMd5 = backfillContentMd5(namespaceId, name, resolvedVersion, skill);
         }
         return new SkillQueryResult(skill, effectiveMd5, resolvedVersion);
+    }
+    
+    @Override
+    public SkillInfo getSkillInfo(String namespaceId, String name, String version, String label)
+        throws NacosException {
+        if (StringUtils.isBlank(name)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                "Required parameter `name` not present");
+        }
+        return skillOperationService.getSkillInfo(namespaceId, name, version, label);
     }
     
     /**

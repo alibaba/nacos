@@ -71,7 +71,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | 注册、心跳、注销和查询服务实例。 |
 | `/v3/client/ai/resources` | 1 | GET | 协议无关的跨资源 Search。 |
 | `/v3/client/ai/prompt` | 2 | GET | 运行时 Prompt 查询和 Search。 |
-| `/v3/client/ai/skills` | 2 | GET | 运行时 Skill zip 下载和 Search。 |
+| `/v3/client/ai/skills` | 3 | GET | 运行时 Skill 元数据查询、zip 下载和 Search。 |
 | `/v3/client/ai/agentspecs` | 2 | GET | 运行时 AgentSpec 获取和搜索。 |
 | `/v3/client/ai/mcp` | 6 | GET, POST, PUT, DELETE | MCP Search、Serving Query、兼容 Release、Runtime Endpoint Publication 和 Heartbeat。 |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader、集群、ops、命名空间、状态、插件。 |
@@ -101,6 +101,7 @@ V3 HTTP 行为当前由以下代码位置定义：
 | `GET /v3/client/ai/resources/search` | 通过统一 cursor Facade 搜索当前可见的 Agent、AgentSpec、Skill、Prompt 和 MCP 资源。 |
 | `GET /v3/client/ai/prompt` | 按版本、标签或 latest 查询 Prompt。 |
 | `GET /v3/client/ai/prompt/search` | 使用 numbered pagination 搜索当前可见 Prompt。 |
+| `GET /v3/client/ai/skills/info` | 查询单个在线 Skill 的运行时元数据，不返回 ZIP 主体。 |
 | `GET /v3/client/ai/skills` | 以 zip 响应下载在线 Skill 包。 |
 | `GET /v3/client/ai/skills/search` | 使用 numbered pagination 搜索当前可见 Skill。 |
 | `GET /v3/client/ai/agentspecs` | 按版本、标签或 latest 查询 AgentSpec。可能允许匿名访问。 |

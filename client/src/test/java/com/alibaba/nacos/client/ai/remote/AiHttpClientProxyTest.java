@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -94,6 +95,58 @@ class AiHttpClientProxyTest {
         if (httpClientProxy != null) {
             httpClientProxy.shutdown();
         }
+    }
+    
+    @Test
+    void getSkillInfoSuccess() throws Exception {
+        SkillInfo expected = new SkillInfo();
+        expected.setNamespaceId("public");
+        expected.setName("test-skill");
+        expected.setVersion("2.0.0");
+        expected.setDescription("Skill description");
+        String responseBody = JacksonUtils.toJson(Result.success(expected));
+        
+        HttpRestResult<String> httpResult = new HttpRestResult<>();
+        httpResult.setCode(200);
+        httpResult.setData(responseBody);
+        
+        when(serverListManager.getServerList()).thenReturn(Arrays.asList("127.0.0.1:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        doReturn(httpResult).when(nacosRestTemplate)
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+        
+        SkillInfo actual = httpClientProxy.getSkillInfo("test-skill", "2.0.0", null);
+        
+        assertNotNull(actual);
+        assertEquals("test-skill", actual.getName());
+        assertEquals("2.0.0", actual.getVersion());
+        assertEquals("Skill description", actual.getDescription());
+        ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(nacosRestTemplate).get(urlCaptor.capture(), any(Header.class), any(Query.class),
+            eq(String.class));
+        assertTrue(urlCaptor.getValue().contains("/v3/client/ai/skills/info"),
+            urlCaptor.getValue());
+    }
+    
+    @Test
+    void getSkillInfoNotFoundShouldThrowNacosApiException() throws Exception {
+        Result<SkillInfo> result = new Result<>(
+            com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+            "Skill not found: test-skill");
+        HttpRestResult<String> httpResult = new HttpRestResult<>();
+        httpResult.setCode(200);
+        httpResult.setData(JacksonUtils.toJson(result));
+        
+        when(serverListManager.getServerList()).thenReturn(Arrays.asList("127.0.0.1:8848"));
+        when(serverListManager.getContextPath()).thenReturn("/nacos");
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        doReturn(httpResult).when(nacosRestTemplate)
+            .get(anyString(), any(Header.class), any(Query.class), eq(String.class));
+        
+        NacosException exception = assertThrows(NacosException.class,
+            () -> httpClientProxy.getSkillInfo("test-skill", null, null));
+        assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
     }
     
     @Test

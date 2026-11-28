@@ -234,6 +234,16 @@ Skill 遵循共享的 [AI 资源生命周期规范](ai-resource-lifecycle-spec.m
 
 运行时客户端不应获得 upload、publish、delete 或无限制列表等宽管理能力。
 
+运行时客户端可以通过 `name`、可选 `version` 和可选 `label` 调用
+`GET /v3/client/ai/skills/info` 查询单个 Skill 的元数据，不传输任何包内容。版本路由与
+下载一致：优先明确 `version`，其次 `label`，最后服务端维护的 `latest`。响应包含解析后的
+在线版本令牌、`name`、`description`、`enable`、label 到版本的映射、`updateTime` 以及
+§4.1 定义的受限展示 `frontMatter` 投影。解析出的版本必须存在于客户端 index manifest，
+因此该接口返回的版本令牌一定可以通过 ZIP 接口下载。元数据查询路径不得读取版本存储或包
+文件；仅当解析版本等于展示版本时返回 `frontMatter`，否则为 null。Java SDK 以
+`SkillService#getSkillInfo`、`SkillService#getSkillInfoByVersion` 和
+`SkillService#getSkillInfoByLabel` 暴露同一契约。
+
 运行时客户端可以通过 `name`、可选 `version`、可选 `label` 和可选 md5 查询
 Skill。如果 md5 与当前命中版本的内容 md5 一致，服务端可以返回 not-modified 错误，
 响应不携带 ZIP 主体。客户端不传 md5 时，服务端必须按当前内容返回 ZIP 与对应 md5。
@@ -277,6 +287,11 @@ Nacos 不为 Skill 提供推送通道，客户端 SDK 通过周期性条件查�
   端发起轮询请求。
 - **首次事件元数据**：初次订阅查询返回 ZIP 时，首个 `NacosSkillEvent` 必须携带该查询返回的
   ZIP、发布内容 md5 和实际解析版本。`subscribeSkill` 的返回值仍为 ZIP 字节。
+- **元数据新鲜度检查**：只判断当前版本是否变化的消费方可以改用
+  `GET /v3/client/ai/skills/info`，无需执行条件 ZIP 下载。响应的 `version` 与
+  `X-Nacos-Skill-Resolved-Version` 为同一解析令牌。Skill 已发布版本不可变，因此令牌不变
+  即表示本地缓存包仍为当前版本。该元数据查询与 md5 条件下载互补，均不能替代上述监听推送
+  语义。
 
 ## 7. 待对齐问题
 

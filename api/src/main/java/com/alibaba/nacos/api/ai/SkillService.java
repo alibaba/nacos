@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.annotation.Since;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -27,6 +28,42 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @since 3.3.0
  */
 public interface SkillService {
+    
+    /**
+     * Get runtime metadata of one skill by skill name. Defaults to latest online version.
+     *
+     * <p>The returned {@link SkillInfo} contains the resolved online version token and metadata
+     * only, without the skill package bytes. Callers detecting a version change can download the
+     * exact package with {@link #downloadSkillZipByVersion(String, String)} afterwards.</p>
+     *
+     * @param skillName skill name (unique identifier)
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Since("3.3.1")
+    SkillInfo getSkillInfo(String skillName) throws NacosException;
+    
+    /**
+     * Get runtime metadata of one skill by skill name and target version.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param version   target skill version, if null, will get latest version
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Since("3.3.1")
+    SkillInfo getSkillInfoByVersion(String skillName, String version) throws NacosException;
+    
+    /**
+     * Get runtime metadata of one skill by skill name and target label.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param label     target skill label (e.g. "latest", "stable")
+     * @return runtime skill metadata
+     * @throws NacosException if skill not found or query error
+     */
+    @Since("3.3.1")
+    SkillInfo getSkillInfoByLabel(String skillName, String label) throws NacosException;
     
     /**
      * Download skill as ZIP byte array by skill name. Defaults to latest version.

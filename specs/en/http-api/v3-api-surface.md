@@ -73,7 +73,7 @@ guide, not as a final OpenAPI export.
 | `/v3/client/ns/instance` | 3 | GET, POST, DELETE | Register, heartbeat, deregister, and list service instances. |
 | `/v3/client/ai/resources` | 1 | GET | Protocol-neutral cross-resource Search. |
 | `/v3/client/ai/prompt` | 2 | GET | Runtime prompt query and Search. |
-| `/v3/client/ai/skills` | 2 | GET | Runtime skill zip download and Search. |
+| `/v3/client/ai/skills` | 3 | GET | Runtime skill metadata query, zip download, and Search. |
 | `/v3/client/ai/agentspecs` | 2 | GET | Runtime AgentSpec get and search. |
 | `/v3/client/ai/mcp` | 6 | GET, POST, PUT, DELETE | MCP Search, serving query, compatibility release, Runtime Endpoint publication, and heartbeat. |
 | `/v3/admin/core/*` | 25 | GET, POST, PUT, DELETE | Loader, cluster, ops, namespace, state, plugin. |
@@ -103,6 +103,7 @@ Implemented Open API surface:
 | `GET /v3/client/ai/resources/search` | Search current visible Agent, AgentSpec, Skill, Prompt, and MCP resources through one cursor-based facade. |
 | `GET /v3/client/ai/prompt` | Query prompt by version, label, or latest. |
 | `GET /v3/client/ai/prompt/search` | Search current visible Prompts with numbered pagination. |
+| `GET /v3/client/ai/skills/info` | Query one online Skill's runtime metadata without the ZIP body. |
 | `GET /v3/client/ai/skills` | Download online skill package as a zip response. |
 | `GET /v3/client/ai/skills/search` | Search current visible Skills with numbered pagination. |
 | `GET /v3/client/ai/agentspecs` | Query AgentSpec by version, label, or latest. May allow anonymous access. |

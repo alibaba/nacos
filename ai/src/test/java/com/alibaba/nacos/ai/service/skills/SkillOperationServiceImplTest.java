@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.TestAiPipelineSupport;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.ai.service.resource.PublishPipelineInfo;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadItemResult;
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -219,6 +221,156 @@ class SkillOperationServiceImplTest {
         NacosApiException exception = assertThrows(NacosApiException.class,
             () -> skillOperationService.getSkillDetail(namespaceId, skillName));
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
+    }
+    
+    @Test
+    void testGetSkillInfoReturnsLatestMetadataWithoutContentOrVersionRows() throws NacosException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        AiResource meta = buildSkillInfoMeta(skillName, "v2");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        when(manifestService.query(namespaceId, skillName))
+            .thenReturn(buildSkillManifest("v2", "v1"));
+        
+        SkillInfo info = skillOperationService.getSkillInfo(namespaceId, skillName, null, null);
+        
+        assertEquals(namespaceId, info.getNamespaceId());
+        assertEquals(skillName, info.getName());
+        assertEquals("Skill description", info.getDescription());
+        assertEquals("v2", info.getVersion());
+        assertTrue(info.isEnable());
+        assertEquals("v2", info.getLabels().get("latest"));
+        assertEquals("v1", info.getLabels().get("stable"));
+        assertEquals("test-skill", info.getFrontMatter().get("name"));
+        assertEquals("Skill description", info.getFrontMatter().get("description"));
+        assertEquals("v2", info.getFrontMatter().get("version"));
+        assertEquals("MIT", info.getFrontMatter().get("license"));
+        assertEquals(Boolean.FALSE, info.getFrontMatterTruncated());
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(),
+            anyString(), anyString());
+        verify(storage, never()).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testGetSkillInfoByLabelResolvesLabelVersion() throws NacosException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(buildSkillInfoMeta(skillName, "v2"));
+        when(manifestService.query(namespaceId, skillName))
+            .thenReturn(buildSkillManifest("v2", "v1"));
+        
+        SkillInfo info =
+            skillOperationService.getSkillInfo(namespaceId, skillName, null, "stable");
+        
+        assertEquals("v1", info.getVersion());
+        assertNull(info.getFrontMatter());
+        assertNull(info.getFrontMatterTruncated());
+    }
+    
+    @Test
+    void testGetSkillInfoByExplicitVersionSkipsNonDisplayFrontMatter() throws NacosException {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(buildSkillInfoMeta(skillName, "v2"));
+        when(manifestService.query(namespaceId, skillName))
+            .thenReturn(buildSkillManifest("v2", "v1"));
+        
+        SkillInfo info = skillOperationService.getSkillInfo(namespaceId, skillName, "v1", null);
+        
+        assertEquals("v1", info.getVersion());
+        assertNull(info.getFrontMatter());
+    }
+    
+    @Test
+    void testGetSkillInfoUnknownVersionAndLabelReturnNotFound() {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(buildSkillInfoMeta(skillName, "v2"));
+        when(manifestService.query(namespaceId, skillName))
+            .thenReturn(buildSkillManifest("v2", "v1"));
+        
+        NacosApiException versionException = assertThrows(NacosApiException.class,
+            () -> skillOperationService.getSkillInfo(namespaceId, skillName, "9.9.9", null));
+        assertEquals(NacosException.NOT_FOUND, versionException.getErrCode());
+        NacosApiException labelException = assertThrows(NacosApiException.class,
+            () -> skillOperationService.getSkillInfo(namespaceId, skillName, null, "missing"));
+        assertEquals(NacosException.NOT_FOUND, labelException.getErrCode());
+    }
+    
+    @Test
+    void testGetSkillInfoMissingManifestAndMetaReturnNotFound() {
+        String namespaceId = "test-namespace";
+        String skillName = "test-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(buildSkillInfoMeta(skillName, "v2"));
+        when(manifestService.query(namespaceId, skillName)).thenReturn(null);
+        NacosApiException manifestException = assertThrows(NacosApiException.class,
+            () -> skillOperationService.getSkillInfo(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, manifestException.getErrCode());
+        
+        String absentSkill = "absent-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(absentSkill), anyString()))
+            .thenReturn(null);
+        NacosApiException metaException = assertThrows(NacosApiException.class,
+            () -> skillOperationService.getSkillInfo(namespaceId, absentSkill, null, null));
+        assertEquals(NacosException.NOT_FOUND, metaException.getErrCode());
+    }
+    
+    @Test
+    void testGetSkillInfoDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString()))
+            .thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ),
+            anyString(), any())).thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+            .thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+            () -> skillOperationService.getSkillInfo(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(manifestService, never()).query(namespaceId, skillName);
+    }
+    
+    private AiResource buildSkillInfoMeta(String skillName, String displayVersion) {
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setDesc("Skill description");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"" + displayVersion
+            + "\",\"stable\":\"v1\"},\"onlineCnt\":2}");
+        meta.setExt("{\"frontMatter\":{\"license\":\"MIT\"},\"frontMatterVersion\":\""
+            + displayVersion + "\",\"frontMatterTruncated\":false}");
+        return meta;
+    }
+    
+    private SkillIndexManifest buildSkillManifest(String latestVersion, String stableVersion) {
+        SkillIndexManifest manifest = new SkillIndexManifest();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("latest", latestVersion);
+        labels.put("stable", stableVersion);
+        manifest.setLabels(labels);
+        Map<String, List<String>> versions = new HashMap<>();
+        versions.put(latestVersion, List.of("SKILL.md"));
+        versions.put(stableVersion, List.of("SKILL.md"));
+        manifest.setVersions(versions);
+        return manifest;
     }
     
     @Test

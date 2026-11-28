@@ -22,8 +22,10 @@ import com.alibaba.nacos.ai.service.skills.SkillClientOperationService;
 import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
@@ -94,6 +96,35 @@ class SkillClientControllerTest {
     @Test
     void testGetSkillWithoutName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH);
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
+            "Skill name is required");
+    }
+    
+    @Test
+    void testGetSkillInfoSuccess() throws Exception {
+        SkillInfo info = new SkillInfo();
+        info.setNamespaceId("public");
+        info.setName("test-skill");
+        info.setVersion("v2");
+        info.setDescription("Skill description");
+        when(skillClientOperationService.getSkillInfo(eq("public"), eq("test-skill"), isNull(),
+            isNull())).thenReturn(info);
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(SKILL_CLIENT_PATH + "/info").param("name", "test-skill");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        com.fasterxml.jackson.databind.JsonNode root =
+            JacksonUtils.toObj(response.getContentAsString(),
+                com.fasterxml.jackson.databind.JsonNode.class);
+        assertEquals("v2", root.get("data").get("version").asText());
+        assertEquals("Skill description", root.get("data").get("description").asText());
+    }
+    
+    @Test
+    void testGetSkillInfoWithoutName() throws Throwable {
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(SKILL_CLIENT_PATH + "/info");
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
             "Skill name is required");
     }

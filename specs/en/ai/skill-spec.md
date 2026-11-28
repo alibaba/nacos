@@ -314,6 +314,20 @@ where supported.
 Runtime clients should not receive broad management operations such as upload,
 publish, delete, or unrestricted listing.
 
+Runtime clients may query one Skill's metadata by `name`, optional `version`, and
+optional `label` through `GET /v3/client/ai/skills/info` without downloading any
+package content. Routing follows the same priority as download: explicit
+`version`, then `label`, then the server-managed `latest`. The response carries
+the resolved online version token, `name`, `description`, `enable`, the
+label-to-version mapping, `updateTime`, and the bounded display `frontMatter`
+projection from §4.1. The resolved version must exist in the client index
+manifest, so a token returned by this endpoint is always downloadable through
+the ZIP endpoint. The metadata path must not read version storage or package
+files; `frontMatter` is returned only when the resolved version equals the
+display version, and is null otherwise. The Java SDK exposes the same contract
+as `SkillService#getSkillInfo`, `SkillService#getSkillInfoByVersion`, and
+`SkillService#getSkillInfoByLabel`.
+
 Runtime clients may query Skill by `name`, optional `version`, optional
 `label`, and optional md5. If md5 equals the content md5 of the currently
 resolved version, the server may return a not-modified error and must not
@@ -381,6 +395,13 @@ any SDK implementing this contract must respect:
 - **Initial callback metadata**: When the initial subscription query returns a ZIP,
   the first `NacosSkillEvent` must carry the ZIP, published md5, and resolved
   version returned by that query. The `subscribeSkill` return value remains the ZIP bytes.
+- **Metadata freshness check**: Consumers that only need to detect whether the
+  current version changed may call `GET /v3/client/ai/skills/info` instead of the
+  conditional ZIP download. The `version` field is the same resolved token used by
+  `X-Nacos-Skill-Resolved-Version`. Published versions are immutable, so an
+  unchanged token means the locally cached package is still current. This
+  metadata check and the md5 conditional download are complementary; neither
+  replaces the listener push semantics above.
 
 ## 7. Pending Alignment Issues
 
