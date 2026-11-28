@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.context.ControlContext;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
 /**
- * Tps and flow control monitor singleton for Naming.
+ * TPS monitor and push admission singleton for Naming.
  *
  * @author xiweng.yy
  */
@@ -41,6 +45,7 @@ public class NamingTpsMonitor {
         tpsControlManager.registerTpsPoint(TpsMonitorItem.NAMING_RPC_PUSH.name());
         tpsControlManager.registerTpsPoint(TpsMonitorItem.NAMING_RPC_PUSH_SUCCESS.name());
         tpsControlManager.registerTpsPoint(TpsMonitorItem.NAMING_RPC_PUSH_FAIL.name());
+        tpsControlManager.registerTpsPoint(TpsMonitorItem.NAMING_PUSH_TASK.name());
     }
     
     private void registerDistroMonitorPoint() {
@@ -54,6 +59,46 @@ public class NamingTpsMonitor {
     
     public static NamingTpsMonitor getInstance() {
         return INSTANCE;
+    }
+    
+    /**
+     * Check whether a naming push task may be dispatched now.
+     *
+     * <p>The selected control plugin receives the current push backlog and the target subscriber
+     * count in the check context, so it can apply absolute watermarks instead of only a
+     * per-second rate. A plugin failure is treated as an allow decision to keep push semantics
+     * unchanged.
+     *
+     * @param service service of the push task
+     * @param pendingPushTasks number of push tasks waiting in the delay engine
+     * @param targetSubscribers number of subscribers targeted by the push task
+     * @return {@code true} when the push task may be dispatched
+     */
+    public static boolean isPushTaskAllowed(Service service, int pendingPushTasks,
+        int targetSubscribers) {
+        return isPushTaskAllowed(INSTANCE.tpsControlManager, service, pendingPushTasks,
+            targetSubscribers);
+    }
+    
+    static boolean isPushTaskAllowed(TpsControlManager tpsControlManager, Service service,
+        int pendingPushTasks, int targetSubscribers) {
+        TpsCheckRequest request =
+            new TpsCheckRequest(TpsMonitorItem.NAMING_PUSH_TASK.name(), null, null);
+        request.setControlContext(ControlContext.builder()
+            .metric(ControlContext.PUSH_PENDING_TASKS, pendingPushTasks)
+            .metric(ControlContext.PUSH_TARGET_SUBSCRIBERS, targetSubscribers)
+            .attribute(ControlContext.PUSH_SERVICE_NAMESPACE, service.getNamespace())
+            .attribute(ControlContext.PUSH_SERVICE_GROUP, service.getGroup())
+            .attribute(ControlContext.PUSH_SERVICE_NAME, service.getName())
+            .build());
+        try {
+            TpsCheckResponse response = tpsControlManager.check(request);
+            return response.isSuccess();
+        } catch (Throwable throwable) {
+            Loggers.PUSH.error("[PUSH] Control plugin check failed for point "
+                + TpsMonitorItem.NAMING_PUSH_TASK.name() + ", pass by default.", throwable);
+            return true;
+        }
     }
     
     /**

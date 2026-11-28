@@ -67,4 +67,9 @@ public enum TpsMonitorItem {
      * Naming rpc distro verify fail count.
      */
     NAMING_DISTRO_VERIFY_FAIL,
+    
+    /**
+     * Naming push task admission.
+     */
+    NAMING_PUSH_TASK,
 }

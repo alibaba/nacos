@@ -73,6 +73,10 @@ Java SDK 使用 `subscribe=true` 发现服务时，如果已有缓存视图且�
 [运行时推送与重连规范](../client/runtime-push-reconnect-spec.md)和
 [任务执行规范](../design/foundation-task-execution-spec.md)。
 
+分发推送任务前，服务端可以检查 control 插件的 `NAMING_PUSH_TASK` 准入 point。被拒绝的任务
+会回到推送 delay 队列，并与同一服务的新变更合并。参见
+[Control 插件规范](../plugin/control-plugin-spec.md)。
+
 `NamingEvent.isFromPush()` 标识通知的处理路径：订阅同步响应和直接缓存重放为 `false`；
 服务端推送、后台查询刷新及 Failover 通知为 `true`。
 

@@ -37,8 +37,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +76,7 @@ class PushDelayTaskExecuteEngineTest {
     @Mock
     private SwitchDomain switchDomain;
     
-    private PushDelayTaskExecuteEngine executeEngine;
+    private TestPushDelayTaskExecuteEngine executeEngine;
     
     @BeforeEach
     void setUp() throws Exception {
@@ -83,7 +86,7 @@ class PushDelayTaskExecuteEngineTest {
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
         when(switchDomain.isPushEnabled()).thenReturn(true);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager,
+        executeEngine = new TestPushDelayTaskExecuteEngine(clientManager, indexesManager,
             serviceStorage, metadataManager, pushExecutor,
             switchDomain);
     }
@@ -101,5 +104,42 @@ class PushDelayTaskExecuteEngineTest {
         verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class),
             any(PushDataWrapper.class),
             any(NamingPushCallback.class));
+    }
+    
+    @Test
+    void testPushTaskRequeuedWhenControlDenies() throws InterruptedException {
+        executeEngine.setAllowed(false);
+        executeEngine.addTask(service, new PushDelayTask(service, 0L));
+        TimeUnit.MILLISECONDS.sleep(300L);
+        
+        verify(pushExecutor, never()).doPushWithCallback(anyString(), any(Subscriber.class),
+            any(PushDataWrapper.class), any(NamingPushCallback.class));
+        assertEquals(1, executeEngine.size());
+        
+        executeEngine.setAllowed(true);
+        verify(pushExecutor, timeout(3000L)).doPushWithCallback(anyString(),
+            any(Subscriber.class), any(PushDataWrapper.class), any(NamingPushCallback.class));
+    }
+    
+    private static class TestPushDelayTaskExecuteEngine extends PushDelayTaskExecuteEngine {
+        
+        private volatile boolean allowed = true;
+        
+        TestPushDelayTaskExecuteEngine(ClientManager clientManager,
+            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
+            NamingMetadataManager metadataManager, PushExecutor pushExecutor,
+            SwitchDomain switchDomain) {
+            super(clientManager, indexesManager, serviceStorage, metadataManager, pushExecutor,
+                switchDomain);
+        }
+        
+        @Override
+        protected boolean allowPush(PushDelayTask task) {
+            return allowed;
+        }
+        
+        void setAllowed(boolean allowed) {
+            this.allowed = allowed;
+        }
     }
 }

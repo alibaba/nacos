@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.control.tps.request;
 
+import com.alibaba.nacos.plugin.control.context.ControlContext;
+
 /**
  * tps request.
  *
@@ -32,6 +34,8 @@ public class TpsCheckRequest {
     private String clientIp;
     
     private long count = 1;
+    
+    private ControlContext controlContext = ControlContext.empty();
     
     public TpsCheckRequest() {
         
@@ -81,6 +85,24 @@ public class TpsCheckRequest {
     
     public void setPointName(String pointName) {
         this.pointName = pointName;
+    }
+    
+    /**
+     * Get the runtime context of this check. Never {@code null}.
+     *
+     * @return runtime context snapshot
+     */
+    public ControlContext getControlContext() {
+        return controlContext;
+    }
+    
+    /**
+     * Set the runtime context of this check. A {@code null} value resets the context to empty.
+     *
+     * @param controlContext runtime context snapshot
+     */
+    public void setControlContext(ControlContext controlContext) {
+        this.controlContext = null == controlContext ? ControlContext.empty() : controlContext;
     }
     
 }

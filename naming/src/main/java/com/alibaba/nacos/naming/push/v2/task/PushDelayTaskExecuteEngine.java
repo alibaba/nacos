@@ -27,7 +27,11 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
+import com.alibaba.nacos.naming.push.v2.PushConfig;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Nacos naming push delay task execute engine.
@@ -35,6 +39,8 @@ import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
  * @author xiweng.yy
  */
 public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
+    
+    private static final long CONTROL_DENY_LOG_INTERVAL = 1000L;
     
     private final ClientManager clientManager;
     
@@ -47,6 +53,8 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
     private final PushExecutor pushExecutor;
     
     private final SwitchDomain switchDomain;
+    
+    private final AtomicLong lastControlDenyLogTime = new AtomicLong(0L);
     
     public PushDelayTaskExecuteEngine(ClientManager clientManager,
         ClientServiceIndexesManager indexesManager,
@@ -82,6 +90,59 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
         return pushExecutor;
     }
     
+    /**
+     * Check whether the push task may be dispatched now.
+     *
+     * <p>The control plugin receives the current backlog of this engine and the target subscriber
+     * count, so it can delay pushes while an absolute watermark is exceeded.
+     *
+     * @param task push task to check
+     * @return {@code true} when the task may be dispatched
+     */
+    protected boolean allowPush(PushDelayTask task) {
+        int pendingTasks = size();
+        int targetSubscribers = getTargetSubscriberCount(task);
+        if (NamingTpsMonitor.isPushTaskAllowed(task.getService(), pendingTasks,
+            targetSubscribers)) {
+            return true;
+        }
+        logControlDeny(task, pendingTasks, targetSubscribers);
+        return false;
+    }
+    
+    private int getTargetSubscriberCount(PushDelayTask task) {
+        if (!task.isPushToAll()) {
+            return task.getTargetClients().size();
+        }
+        return indexesManager.getAllClientsSubscribeService(task.getService()).size();
+    }
+    
+    private void logControlDeny(PushDelayTask task, int pendingTasks, int targetSubscribers) {
+        long now = System.currentTimeMillis();
+        long last = lastControlDenyLogTime.get();
+        if (now - last >= CONTROL_DENY_LOG_INTERVAL
+            && lastControlDenyLogTime.compareAndSet(last, now)) {
+            Loggers.PUSH.warn(
+                "[PUSH] Control plugin delayed push task of {}, pending tasks={}, "
+                    + "target subscribers={}",
+                task.getService(), pendingTasks, targetSubscribers);
+        }
+    }
+    
+    /**
+     * Put a denied push task back into the delay engine, so it is merged with newer changes of the
+     * same service.
+     *
+     * @param task denied push task
+     */
+    void requeue(PushDelayTask task) {
+        long retryDelay = PushConfig.getInstance().getPushTaskRetryDelay();
+        PushDelayTask retryTask = task.isPushToAll()
+            ? new PushDelayTask(task.getService(), retryDelay)
+            : new PushDelayTask(task.getService(), retryDelay, task.getTargetClients());
+        addTask(task.getService(), retryTask);
+    }
+    
     @Override
     protected void processTasks() {
         if (!switchDomain.isPushEnabled()) {
@@ -101,6 +162,10 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
         @Override
         public boolean process(NacosTask task) {
             PushDelayTask pushDelayTask = (PushDelayTask) task;
+            if (!executeEngine.allowPush(pushDelayTask)) {
+                executeEngine.requeue(pushDelayTask);
+                return true;
+            }
             Service service = pushDelayTask.getService();
             NamingExecuteTaskDispatcher.getInstance()
                 .dispatchAndExecuteTask(service,
