@@ -502,6 +502,18 @@ parser tests cover folded scalars, chomping, indentation, and colons in the text
 Historical backfill and frontmatter search are out of scope. Existing `pageSize`
 behavior is unchanged.
 
+## Skill runtime metadata query (#15970)
+
+`SkillClientOpenApiITCase` covers `GET /v3/client/ai/skills/info`: resolved
+latest/version/label tokens, version-over-label priority, display-only
+frontmatter projection (null for non-display versions), label mapping, and the
+missing/invalid name and absent skill/version error paths. Service unit tests
+verify the metadata path performs no version-row or package-storage reads and
+reuses the display frontmatter snapshot; controller and HTTP proxy tests cover
+the new endpoint and SDK model wiring. The path is additive and does not change
+ZIP download or listener semantics; API paths and strict/effective coverage
+totals remain unchanged.
+
 ## Config detail schema (#15853)
 
 Admin and Console config history ITs cover current detail, history detail, and

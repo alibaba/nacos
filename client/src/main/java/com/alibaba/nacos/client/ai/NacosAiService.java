@@ -50,6 +50,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ai.model.agent.AgentSummary;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryFilter;
 import com.alibaba.nacos.api.ai.model.agent.AgentDiscoveryRequest;
@@ -587,6 +588,38 @@ public class NacosAiService implements AiService {
     }
     
     private final class SkillServiceDelegate implements SkillService {
+        
+        @Override
+        public SkillInfo getSkillInfo(String skillName) throws NacosException {
+            return getSkillInfoByVersion(skillName, null);
+        }
+        
+        @Override
+        public SkillInfo getSkillInfoByVersion(String skillName, String version)
+            throws NacosException {
+            if (StringUtils.isBlank(skillName)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillName` not present");
+            }
+            return httpProxy.getSkillInfo(skillName, version, null);
+        }
+        
+        @Override
+        public SkillInfo getSkillInfoByLabel(String skillName, String label)
+            throws NacosException {
+            if (StringUtils.isBlank(skillName)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillName` not present");
+            }
+            if (StringUtils.isBlank(label)) {
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `label` not present");
+            }
+            return httpProxy.getSkillInfo(skillName, null, label);
+        }
         
         @Override
         public byte[] downloadSkillZip(String skillName) throws NacosException {

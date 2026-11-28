@@ -43,6 +43,7 @@ import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -1638,6 +1639,55 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return skill;
     }
     
+    /**
+     * Get runtime metadata of one online skill version without loading any skill package file.
+     */
+    @Override
+    public SkillInfo getSkillInfo(String namespaceId, String name, String version, String label)
+        throws NacosException {
+        // Step 1: Verify meta exists and is readable
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill not found: " + name);
+        }
+        resourceManager.ensureReadableOrNotFound(meta, "Skill not found: " + name);
+        
+        // Step 2: Resolve the target version from the client index manifest only. The
+        // manifest lists downloadable online versions, so metadata never advertises a
+        // version that cannot be downloaded. No version row or storage content is read.
+        SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+        if (manifest == null || manifest.getVersions() == null
+            || manifest.getVersions().isEmpty()) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill not found: " + name);
+        }
+        String resolved = SkillIndexManifestService.resolveVersion(manifest, version, label);
+        if (StringUtils.isBlank(resolved)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill version not found: " + name);
+        }
+        List<String> files = manifest.getVersions().get(resolved);
+        if (files == null || files.isEmpty()) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Skill version not found: " + name + "@" + resolved);
+        }
+        
+        // Step 3: Assemble runtime metadata from the resource row and the resolved version token.
+        // Labels come from the manifest because it is the routing source used to resolve the
+        // version above.
+        SkillInfo info = new SkillInfo();
+        info.setNamespaceId(namespaceId);
+        info.setName(name);
+        info.setDescription(meta.getDesc());
+        info.setVersion(resolved);
+        info.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+        info.setLabels(manifest.getLabels());
+        info.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+        applyDisplayFrontMatter(info, meta, resolved);
+        return info;
+    }
+    
     // ========== Private methods ==========
     
     /**
@@ -1799,27 +1849,69 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     private static void applyDisplayFrontMatter(SkillSummary summary, AiResource meta) {
-        Map<String, Object> ext = parseMetadata(meta.getExt());
+        FrontMatterProjection projection = resolveDisplayFrontMatter(meta, summary.getName(),
+            summary.getDescription(), null);
+        if (projection == null) {
+            return;
+        }
+        summary.setFrontMatter(projection.frontMatter);
+        summary.setFrontMatterTruncated(projection.truncated);
+    }
+    
+    private static void applyDisplayFrontMatter(SkillInfo info, AiResource meta,
+        String resolvedVersion) {
+        FrontMatterProjection projection = resolveDisplayFrontMatter(meta, info.getName(),
+            info.getDescription(), resolvedVersion);
+        if (projection == null) {
+            return;
+        }
+        info.setFrontMatter(projection.frontMatter);
+        info.setFrontMatterTruncated(projection.truncated);
+    }
+    
+    /**
+     * Build the bounded display frontmatter projection. Returns {@code null} when the display
+     * version is unavailable, when the requested version is not the display version, or when the
+     * cached snapshot is missing or stale. This path never reads version rows or package storage.
+     */
+    private static FrontMatterProjection resolveDisplayFrontMatter(AiResource meta, String name,
+        String description, String expectedVersion) {
         String displayVersion = resolveDisplayVersion(meta);
         if (displayVersion == null
-            || !Objects.equals(displayVersion, ext.get(FRONT_MATTER_VERSION))) {
-            return;
+            || (expectedVersion != null && !displayVersion.equals(expectedVersion))) {
+            return null;
+        }
+        Map<String, Object> ext = parseMetadata(meta.getExt());
+        if (!Objects.equals(displayVersion, ext.get(FRONT_MATTER_VERSION))) {
+            return null;
         }
         Map<String, String> customFields = readFrontMatter(ext);
         if (customFields == null) {
-            return;
+            return null;
         }
         Map<String, String> frontMatter = new LinkedHashMap<>(customFields.size() + 3);
-        frontMatter.put("name", summary.getName());
-        frontMatter.put("description", summary.getDescription());
+        frontMatter.put("name", name);
+        frontMatter.put("description", description);
         frontMatter.put("version", displayVersion);
         customFields.forEach((key, value) -> {
             if (!isReservedFrontMatterField(key)) {
                 frontMatter.put(key, value);
             }
         });
-        summary.setFrontMatter(frontMatter);
-        summary.setFrontMatterTruncated(Boolean.TRUE.equals(ext.get(FRONT_MATTER_TRUNCATED)));
+        return new FrontMatterProjection(frontMatter,
+            Boolean.TRUE.equals(ext.get(FRONT_MATTER_TRUNCATED)));
+    }
+    
+    private static final class FrontMatterProjection {
+        
+        private final Map<String, String> frontMatter;
+        
+        private final Boolean truncated;
+        
+        private FrontMatterProjection(Map<String, String> frontMatter, Boolean truncated) {
+            this.frontMatter = frontMatter;
+            this.truncated = truncated;
+        }
     }
     
     private static FrontMatterSnapshot buildFrontMatterSnapshot(

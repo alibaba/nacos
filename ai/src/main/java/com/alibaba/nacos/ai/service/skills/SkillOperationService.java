@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.api.ai.model.skills.BatchUploadResult;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillUploadPrecheckResult;
@@ -331,5 +332,23 @@ public interface SkillOperationService {
      * @param label route label, e.g. latest/stable (optional)
      */
     Skill querySkill(String namespaceId, String name, String version, String label)
+        throws NacosException;
+    
+    /**
+     * Get runtime metadata of one online skill version without loading the skill package.
+     *
+     * <p>The resolved version follows the same rule as {@link #querySkill(String, String, String,
+     * String)}: explicit version first, then label, then {@code latest}. Only versions present in
+     * the client index manifest are resolvable, so a returned {@link SkillInfo} always describes a
+     * version that can be downloaded by that token.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param name skill name
+     * @param version explicit version (optional)
+     * @param label route label, e.g. latest/stable (optional)
+     * @return runtime metadata with the resolved version token, never skill package bytes
+     * @throws NacosException if the skill or the resolved version is not found
+     */
+    SkillInfo getSkillInfo(String namespaceId, String name, String version, String label)
         throws NacosException;
 }

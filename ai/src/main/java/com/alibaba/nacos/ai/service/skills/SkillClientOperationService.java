@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -54,4 +55,20 @@ public interface SkillClientOperationService {
      */
     SkillQueryResult querySkill(String namespaceId, String name, String version, String label,
         String clientMd5) throws NacosException;
+    
+    /**
+     * Get runtime metadata of one online skill version without transferring the skill package.
+     *
+     * <p>The resolved version follows the same routing rule as {@link #querySkill(String, String,
+     * String, String, String)}: explicit version first, then label, then {@code latest}.</p>
+     *
+     * @param namespaceId namespace
+     * @param name        skill name
+     * @param version     explicit version, may be {@code null}
+     * @param label       label, may be {@code null}
+     * @return runtime metadata containing the resolved version token and no package content
+     * @throws NacosException if the skill or the resolved version is not found
+     */
+    SkillInfo getSkillInfo(String namespaceId, String name, String version, String label)
+        throws NacosException;
 }

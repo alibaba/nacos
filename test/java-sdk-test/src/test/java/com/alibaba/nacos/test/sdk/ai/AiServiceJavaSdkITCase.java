@@ -50,12 +50,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.json.JsonUtils;
 import com.alibaba.nacos.maintainer.client.ai.AgentMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.McpMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.SkillMaintainerService;
 import com.alibaba.nacos.test.sdk.JavaSdkBaseITCase;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +66,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -615,6 +619,39 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertNull(aiService.loadAgentSpec(agentSpecName));
         assertNull(aiService.subscribeAgentSpec(agentSpecName, agentSpecListener));
         assertThrows(NacosException.class, () -> aiService.downloadSkillZip(skillName));
+        assertThrows(NacosException.class, () -> aiService.getSkillInfo(skillName));
+    }
+    
+    @Test
+    public void testSkillInfoQueryVariants() throws Exception {
+        AiService aiService = createAiService();
+        SkillMaintainerService maintainer = createSkillMaintainerService();
+        String namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        String skillName = randomServiceName("skill-info");
+        addCleanup(() -> maintainer.deleteSkill(namespaceId, skillName));
+        maintainer.createDraft(namespaceId, skillName, null, "1.0.0",
+                buildSkillCard(skillName, "Use the v1 skill body."), "create v1");
+        assertTrue(maintainer.forcePublish(namespaceId, skillName, "1.0.0", true));
+        grantClientReadVisibility(namespaceId, "skill", skillName);
+        maintainer.createDraft(namespaceId, skillName, "1.0.0", "2.0.0", null, "fork v2");
+        assertTrue(maintainer.forcePublish(namespaceId, skillName, "2.0.0", true));
+        assertTrue(maintainer.updateLabels(namespaceId, skillName, "{\"stable\":\"1.0.0\"}"));
+        
+        SkillInfo latest = aiService.getSkillInfo(skillName);
+        assertEquals("2.0.0", latest.getVersion());
+        assertEquals(skillName, latest.getName());
+        assertEquals("Java SDK IT skill", latest.getDescription());
+        assertTrue(latest.isEnable());
+        assertEquals("1.0.0", latest.getLabels().get("stable"));
+        assertEquals("2.0.0", latest.getFrontMatter().get("version"));
+        
+        SkillInfo byVersion = aiService.getSkillInfoByVersion(skillName, "1.0.0");
+        assertEquals("1.0.0", byVersion.getVersion());
+        assertNull(byVersion.getFrontMatter());
+        
+        SkillInfo byLabel = aiService.skill().getSkillInfoByLabel(skillName, "stable");
+        assertEquals("1.0.0", byLabel.getVersion());
+        assertNull(byLabel.getFrontMatter());
     }
 
     @Test
@@ -645,6 +682,9 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         assertInvalidParam(() -> aiService.subscribePrompt(name, null, null, null));
 
         assertInvalidParam(() -> aiService.downloadSkillZip(""));
+        assertInvalidParam(() -> aiService.getSkillInfo(""));
+        assertInvalidParam(() -> aiService.getSkillInfoByVersion("", "1.0.0"));
+        assertInvalidParam(() -> aiService.getSkillInfoByLabel(name, ""));
         assertInvalidParam(() -> aiService.subscribeSkill(name, null, null, null));
 
         assertInvalidParam(() -> aiService.loadAgentSpec(""));
@@ -818,6 +858,21 @@ public class AiServiceJavaSdkITCase extends JavaSdkBaseITCase {
         Properties properties = maintainerProperties();
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         return AiMaintainerFactory.createAiMaintainerService(properties).mcp();
+    }
+    
+    private SkillMaintainerService createSkillMaintainerService() throws NacosException {
+        Properties properties = maintainerProperties();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        return AiMaintainerFactory.createAiMaintainerService(properties).skill();
+    }
+    
+    private String buildSkillCard(String skillName, String body) {
+        Map<String, Object> card = new LinkedHashMap<>();
+        card.put("name", skillName);
+        card.put("description", "Java SDK IT skill");
+        card.put("skillMd", "---\nname: " + skillName
+                + "\ndescription: Java SDK IT skill\n---\n\n" + body);
+        return JsonUtils.toJson(card);
     }
 
     private void cleanupMcpServer(ConfigService configService, String mcpId, String version)

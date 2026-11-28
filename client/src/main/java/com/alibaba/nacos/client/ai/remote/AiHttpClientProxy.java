@@ -40,6 +40,7 @@ import com.alibaba.nacos.api.ai.model.agent.AgentReference;
 import com.alibaba.nacos.api.ai.model.agent.AgentSearchRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchRequest;
 import com.alibaba.nacos.api.ai.model.agent.AgentWatchBatchResponse;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -104,6 +105,8 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
     private static final String PROMPT_CLIENT_PATH = "/v3/client/ai/prompt";
     
     private static final String SKILL_DOWNLOAD_PATH = "/v3/client/ai/skills";
+    
+    private static final String SKILL_INFO_PATH = SKILL_DOWNLOAD_PATH + "/info";
     
     private static final String AGENTSPEC_CLIENT_PATH = "/v3/client/ai/agentspecs";
     
@@ -577,6 +580,38 @@ public class AiHttpClientProxy implements AiClientProxy, AgentHttpWatchClient {
         String resolvedVersion = restResult.getHeader()
             .getValue("X-Nacos-Skill-Resolved-Version");
         return new SkillQueryResponse(zipBytes, publishedMd5, resolvedVersion);
+    }
+    
+    /**
+     * Query runtime metadata of one skill version without downloading its ZIP package.
+     *
+     * @param skillName skill name
+     * @param version   explicit version (optional)
+     * @param label     route label, e.g. latest/stable (optional)
+     * @return runtime skill metadata carrying the resolved version token
+     * @throws NacosException if request fails
+     */
+    public SkillInfo getSkillInfo(String skillName, String version, String label)
+        throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("name", skillName);
+        if (StringUtils.isNotBlank(version)) {
+            params.put("version", version);
+        }
+        if (StringUtils.isNotBlank(label)) {
+            params.put("label", label);
+        }
+        
+        RequestResource resource = RequestResource.aiBuilder().setNamespace(namespaceId)
+            .setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP)
+            .setResource(null == skillName ? StringUtils.EMPTY : skillName).build();
+        
+        String responseBody = reqApi(SKILL_INFO_PATH, params, resource);
+        Result<SkillInfo> result =
+            JsonUtils.toObj(responseBody, new NacosTypeReference<Result<SkillInfo>>() {
+            });
+        return requireSuccess(result);
     }
     
     @Override

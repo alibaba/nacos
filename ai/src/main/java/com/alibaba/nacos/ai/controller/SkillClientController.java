@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.skills.SkillQueryResult;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillInfo;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -76,6 +77,23 @@ public class SkillClientController {
         pageForm.validate();
         return Result.success(searchService.searchSkills(form, pageForm.getPageNo(),
             pageForm.getPageSize()));
+    }
+    
+    /**
+     * Get one online skill's runtime metadata by name/version/label without transferring the ZIP.
+     *
+     * <p>The resolved {@code version} in the response is the token that can be used with
+     * {@code GET /v3/client/ai/skills?version=...} to download the exact package later. This makes
+     * "poll metadata, download only on change" possible without subscribing to the full package.</p>
+     */
+    @Since("3.3.1")
+    @GetMapping("/info")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+        tags = {ALLOW_ANONYMOUS})
+    public Result<SkillInfo> getInfo(SkillQueryForm form) throws NacosException {
+        form.validate();
+        return Result.success(skillClientOperationService.getSkillInfo(form.getNamespaceId(),
+            form.getName(), form.getVersion(), form.getLabel()));
     }
     
     /**
